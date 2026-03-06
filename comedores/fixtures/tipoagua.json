@@ -1,23 +1,23 @@
 [
-    {
-        "model": "relevamientos.tipoagua",
-        "pk": 1,
-        "fields": {
-            "nombre": "Agua de red"
-        }
-    },
-    {
-        "model": "relevamientos.tipoagua",
-        "pk": 2,
-        "fields": {
-            "nombre": "Pozo"
-        }
-    },
-    {
-        "model": "relevamientos.tipoagua",
-        "pk": 3,
-        "fields": {
-            "nombre": "Otro"
-        }
+{
+    "model": "relevamientos.tipoagua",
+    "pk": 1,
+    "fields": {
+        "nombre": "Agua de red"
     }
+},
+{
+    "model": "relevamientos.tipoagua",
+    "pk": 2,
+    "fields": {
+        "nombre": "Pozo"
+    }
+},
+{
+    "model": "relevamientos.tipoagua",
+    "pk": 3,
+    "fields": {
+        "nombre": "Otro"
+    }
+}
 ]

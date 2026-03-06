@@ -1,9 +1,13 @@
 from datetime import date
 from decimal import Decimal, InvalidOperation
+from urllib.parse import quote_plus
 
 from django import template
 from django.templatetags.static import static
 from django.utils.html import format_html
+
+from core.permissions.registry import resolve_permission_codes
+from iam.services import user_has_permission_code
 
 register = template.Library()
 
@@ -20,13 +24,25 @@ _MEALS = ("desayuno", "almuerzo", "merienda", "merienda_reforzada", "cena")
 
 
 @register.filter
-def has_group(user, group_name):
-    try:
-        if not hasattr(user, "cached_groups"):
-            user.cached_groups = list(user.groups.values_list("name", flat=True))
-        return group_name in user.cached_groups or user.is_superuser
-    except Exception:
+def has_perm_code(user, permission_code):
+    permission_codes = resolve_permission_codes([permission_code])
+    if not permission_codes:
         return False
+    return any(user_has_permission_code(user, code) for code in permission_codes)
+
+
+@register.filter
+def has_any_perm(user, permission_codes):
+    if not permission_codes:
+        return False
+    if isinstance(permission_codes, str):
+        codes = [part.strip() for part in permission_codes.split(",") if part.strip()]
+    else:
+        codes = list(permission_codes)
+    resolved = resolve_permission_codes(codes)
+    if not resolved:
+        return False
+    return any(user_has_permission_code(user, code) for code in resolved)
 
 
 @register.filter
@@ -100,6 +116,16 @@ def es_menor_18(fecha_nacimiento):
     return edad_actual is not None and edad_actual < 18
 
 
+@register.filter
+def es_mayor_65_menor_66(fecha_nacimiento):
+    """Verifica si una persona tiene 65 años o más (hasta 66 años inclusive)"""
+    if not fecha_nacimiento:
+        return False
+
+    edad_actual = edad(fecha_nacimiento)
+    return edad_actual is not None and 65 <= edad_actual <= 66
+
+
 def _normalize_coordinate(value, min_value, max_value):
     if value is None:
         return None
@@ -137,6 +163,24 @@ def google_maps_query(latitud, longitud):
     if lat_value is None or lng_value is None:
         return ""
     return f"{lat_value},{lng_value}"
+
+
+@register.simple_tag
+def google_maps_address(*components):
+    address_parts = []
+    for component in components:
+        if component is None:
+            continue
+        text = str(component).strip()
+        if not text:
+            continue
+        address_parts.append(text)
+
+    if not address_parts:
+        return ""
+
+    joined_address = ", ".join(address_parts)
+    return quote_plus(joined_address)
 
 
 @register.filter

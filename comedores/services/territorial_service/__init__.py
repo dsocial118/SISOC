@@ -1,5 +1,5 @@
 """Servicio para gestión de territoriales."""
 
-from .impl import TerritorialService
+from .impl import Comedor, TerritorialService, cache
 
-__all__ = ["TerritorialService"]
+__all__ = ["TerritorialService", "Comedor", "cache"]

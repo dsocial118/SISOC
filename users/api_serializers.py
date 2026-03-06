@@ -1,8 +1,12 @@
 from rest_framework import serializers
+from django.contrib.auth import password_validation
+from django.core.exceptions import ValidationError as DjangoValidationError
 
+from iam.services import get_effective_permission_codes, get_effective_role_names
 from users.models import AccesoComedorPWA
 from users.services import UserPermissionService
 from users.services_pwa import get_pwa_context
+from users.services_auth import get_user_by_uid
 
 
 class UserContextSerializer(serializers.Serializer):
@@ -17,6 +21,8 @@ class UserContextSerializer(serializers.Serializer):
     profile = serializers.SerializerMethodField()
     scope = serializers.SerializerMethodField()
     pwa = serializers.SerializerMethodField()
+    roles = serializers.SerializerMethodField()
+    permissions = serializers.SerializerMethodField()
 
     def _raise_read_only(self):
         raise NotImplementedError("Serializer de solo lectura.")
@@ -60,6 +66,16 @@ class UserContextSerializer(serializers.Serializer):
 
     def get_pwa(self, obj):
         return get_pwa_context(obj)
+
+    def get_roles(self, obj):
+        if not getattr(obj, "is_authenticated", False):
+            return []
+        return sorted(get_effective_role_names(obj))
+
+    def get_permissions(self, obj):
+        if not getattr(obj, "is_authenticated", False):
+            return []
+        return sorted(get_effective_permission_codes(obj))
 
 
 class OperadorCreateSerializer(serializers.Serializer):
@@ -109,3 +125,45 @@ class OperadorCreateResponseSerializer(serializers.ModelSerializer):
             "rol",
             "activo",
         )
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def _raise_read_only(self):
+        raise NotImplementedError("Serializer de solo lectura.")
+
+    def create(self, validated_data):
+        return self._raise_read_only()
+
+    def update(self, instance, validated_data):
+        return self._raise_read_only()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def _raise_read_only(self):
+        raise NotImplementedError("Serializer de solo lectura.")
+
+    def create(self, validated_data):
+        return self._raise_read_only()
+
+    def update(self, instance, validated_data):
+        return self._raise_read_only()
+
+    def validate(self, attrs):
+        uid = attrs.get("uid")
+        user = get_user_by_uid(uid)
+        if not user:
+            raise serializers.ValidationError({"detail": "Token inválido o expirado."})
+
+        try:
+            password_validation.validate_password(attrs.get("new_password"), user=user)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(
+                {"new_password": list(getattr(exc, "messages", [str(exc)]))}
+            ) from exc
+        return attrs

@@ -16,6 +16,7 @@ import csv
 import io
 import logging
 import re
+import sys
 from io import BytesIO
 from pathlib import Path
 
@@ -308,7 +309,9 @@ class CruceService:
 
     @staticmethod
     def _generar_prd_pdf_html(expediente: Expediente, resumen: dict) -> bytes:
-        if not _WEASY_OK:
+        pkg = sys.modules.get("celiaquia.services.cruce_service")
+        weasy_ok = getattr(pkg, "_WEASY_OK", _WEASY_OK)
+        if not weasy_ok:
             raise RuntimeError("WeasyPrint no disponible")
         total_legajos = int(resumen.get("total_legajos", 0) or 0)
         matcheados = int(resumen.get("matcheados", 0) or 0)
@@ -532,7 +535,9 @@ class CruceService:
 
     @staticmethod
     def _generar_prd_pdf(expediente: Expediente, resumen: dict) -> bytes:
-        if _WEASY_OK:
+        pkg = sys.modules.get("celiaquia.services.cruce_service")
+        weasy_ok = getattr(pkg, "_WEASY_OK", _WEASY_OK)
+        if weasy_ok:
             try:
                 return CruceService._generar_prd_pdf_html(expediente, resumen)
             except Exception as e:

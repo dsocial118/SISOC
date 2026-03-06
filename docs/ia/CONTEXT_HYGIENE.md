@@ -9,6 +9,7 @@ Fuente de verdad general: `../../AGENTS.md`.
 ## Regla principal
 
 Cargar primero el **mínimo contexto suficiente** para resolver la tarea y expandir solo cuando la evidencia lo requiera.
+Además, para trabajo con IA en SISOC, es obligatorio leer `docs/indice.md` y documentación del dominio afectado en `docs/`.
 
 Evitar:
 - abrir módulos enteros sin necesidad,
@@ -41,10 +42,11 @@ bash scripts/ai/preflight.sh feature-api comunicados/api_views.py
 ## Siempre (primeros archivos)
 
 1. `AGENTS.md`
-2. `docs/ia/STYLE_GUIDE.md`
-3. `docs/ia/ARCHITECTURE.md`
-4. `docs/ia/TESTING.md` (si la tarea cambia comportamiento)
-5. Archivos concretos del módulo involucrado
+2. `docs/indice.md`
+3. `docs/ia/STYLE_GUIDE.md`
+4. `docs/ia/ARCHITECTURE.md`
+5. `docs/ia/TESTING.md` (si la tarea cambia comportamiento)
+6. Archivos concretos del módulo involucrado + documentación del dominio afectado en `docs/`
 
 ## Ampliar solo si aplica
 
@@ -175,6 +177,7 @@ Reglas:
 - Antes de tocar más archivos, justificar por qué son necesarios.
 - Si el alcance cambia, declararlo explícitamente.
 - Si detectás mejoras cercanas, listarlas como propuesta; no ejecutarlas fuera de alcance sin aprobación.
+- Registrar cambios/decisiones importantes en `docs/` dentro de subcarpeta temática para mantener trazabilidad spec-as-source.
 
 ## Ejemplos concretos
 

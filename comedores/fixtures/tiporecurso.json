@@ -1,16 +1,16 @@
 [
-    {
-        "model": "relevamientos.tiporecurso",
-        "pk": 1,
-        "fields": {
-            "nombre": "Transferencia monetaria"
-        }
-    },
-    {
-        "model": "relevamientos.tiporecurso",
-        "pk": 2,
-        "fields": {
-            "nombre": "Mercadería"
-        }
+{
+    "model": "relevamientos.tiporecurso",
+    "pk": 1,
+    "fields": {
+        "nombre": "Transferencia monetaria"
     }
+},
+{
+    "model": "relevamientos.tiporecurso",
+    "pk": 2,
+    "fields": {
+        "nombre": "Mercadería"
+    }
+}
 ]

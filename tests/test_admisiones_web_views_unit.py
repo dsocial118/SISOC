@@ -962,7 +962,7 @@ def test_admisiones_legales_ajax_devuelve_json(mocker):
     request = _Req(GET={"busqueda": "abc", "page": 1}, user=_user())
 
     mocker.patch(
-        "core.decorators.group_required",
+        "core.decorators.permissions_any_required",
         return_value=lambda fn: fn,
     )
     mocker.patch(

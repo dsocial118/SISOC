@@ -132,6 +132,6 @@ Usar estas métricas como referencia mínima (nombres orientativos; adaptar a la
 ## Referencias operativas
 
 - Índice de documentación: `docs/indice.md`
-- Operación y monitoreo general: `docs/operaciones.md`
-- Comando de purga de auditoría: `docs/comandos_administracion.md`
+- Operación y monitoreo general: `docs/operacion/operaciones.md`
+- Comando de purga de auditoría: `docs/operacion/comandos_administracion.md`
 - Changelog del release: `CHANGELOG.md`

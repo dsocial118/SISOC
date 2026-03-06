@@ -1,5 +1,6 @@
 from django.views.generic import View
 from django.contrib.auth.models import Group
+from django.db.models import Count
 from core.mixins import CSVExportMixin
 from core.services.column_preferences import (
     build_export_columns,
@@ -14,6 +15,8 @@ from users.views import AdminRequiredMixin
 
 class UserExportView(AdminRequiredMixin, CSVExportMixin, View):
     export_filename = "listado_usuarios.csv"
+    required_permissions = ("auth.view_user", "auth.role_exportar_a_csv")
+    require_all_permissions = True
 
     def get_export_columns(self):
         column_state = resolve_column_state(
@@ -47,6 +50,8 @@ class UserExportView(AdminRequiredMixin, CSVExportMixin, View):
 
 class GroupExportView(AdminRequiredMixin, CSVExportMixin, View):
     export_filename = "listado_grupos.csv"
+    required_permissions = ("auth.view_group", "auth.role_exportar_a_csv")
+    require_all_permissions = True
 
     def get_export_columns(self):
         column_state = resolve_column_state(
@@ -57,7 +62,9 @@ class GroupExportView(AdminRequiredMixin, CSVExportMixin, View):
         return build_export_columns(GRUPOS_COLUMNS, column_state.active_keys)
 
     def get_queryset(self):
-        queryset = Group.objects.all()
+        queryset = Group.objects.annotate(
+            permissions_count=Count("permissions", distinct=True)
+        )
 
         sort_col = self.request.GET.get("sort")
         direction = self.request.GET.get("direction", "asc")

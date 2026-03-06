@@ -3,25 +3,34 @@ Módulo centralizado para validaciones de permisos en comunicados.
 """
 
 from django.core.exceptions import PermissionDenied
-from core.constants import UserGroups
+from iam.services import user_has_any_permission_codes, user_has_permission_code
 from users.services import UserPermissionService
 
+ADMIN_PERMISSION_CODES = (
+    "auth.role_admin",
+    "auth.role_administrador",
+    "auth.role_superadmin",
+)
+COMUNICADO_CREATE_CODE = "comunicados.add_comunicado"
+COMUNICADO_EDIT_CODE = "comunicados.change_comunicado"
 
-def _in_group(user, name: str) -> bool:
-    """Verifica si el usuario pertenece a un grupo específico."""
-    return user.is_authenticated and user.groups.filter(name=name).exists()
+
+def _has_permission(user, permission_code: str) -> bool:
+    return user_has_permission_code(user, permission_code)
 
 
 def is_admin(user) -> bool:
     """Verifica si el usuario es administrador."""
-    return user.is_superuser or _in_group(user, UserGroups.ADMINISTRADOR)
+    return user.is_superuser or user_has_any_permission_codes(
+        user, ADMIN_PERMISSION_CODES
+    )
 
 
 def can_create_comunicado(user) -> bool:
     """Verifica si el usuario puede crear comunicados."""
     if not user.is_authenticated:
         return False
-    return is_admin(user) or _in_group(user, UserGroups.COMUNICADO_CREAR)
+    return is_admin(user) or _has_permission(user, COMUNICADO_CREATE_CODE)
 
 
 def can_edit_comunicado(user, comunicado=None) -> bool:
@@ -35,7 +44,7 @@ def can_edit_comunicado(user, comunicado=None) -> bool:
     if is_admin(user):
         return True
 
-    if not _in_group(user, UserGroups.COMUNICADO_EDITAR):
+    if not _has_permission(user, COMUNICADO_EDIT_CODE):
         return False
 
     # Solo se pueden editar borradores
@@ -49,14 +58,14 @@ def can_publish_comunicado(user) -> bool:
     """Verifica si el usuario puede publicar comunicados."""
     if not user.is_authenticated:
         return False
-    return is_admin(user) or _in_group(user, UserGroups.COMUNICADO_PUBLICAR)
+    return is_admin(user) or _has_permission(user, COMUNICADO_EDIT_CODE)
 
 
 def can_archive_comunicado(user) -> bool:
     """Verifica si el usuario puede archivar comunicados."""
     if not user.is_authenticated:
         return False
-    return is_admin(user) or _in_group(user, UserGroups.COMUNICADO_ARCHIVAR)
+    return is_admin(user) or _has_permission(user, COMUNICADO_EDIT_CODE)
 
 
 def can_delete_comunicado(user, comunicado=None) -> bool:
@@ -87,10 +96,8 @@ def can_manage_comunicados(user) -> bool:
 
     return (
         is_admin(user)
-        or _in_group(user, UserGroups.COMUNICADO_CREAR)
-        or _in_group(user, UserGroups.COMUNICADO_EDITAR)
-        or _in_group(user, UserGroups.COMUNICADO_PUBLICAR)
-        or _in_group(user, UserGroups.COMUNICADO_ARCHIVAR)
+        or _has_permission(user, COMUNICADO_CREATE_CODE)
+        or _has_permission(user, COMUNICADO_EDIT_CODE)
     )
 
 
@@ -125,7 +132,7 @@ def can_toggle_destacado(user) -> bool:
     """
     if not user.is_authenticated:
         return False
-    return is_admin(user) or _in_group(user, UserGroups.COMUNICADO_PUBLICAR)
+    return is_admin(user) or _has_permission(user, COMUNICADO_EDIT_CODE)
 
 
 def require_toggle_destacado_permission(user):
@@ -163,7 +170,7 @@ def get_comedores_del_usuario(user):
     """Retorna los comedores que puede ver/enviar el usuario."""
     from comedores.models import Comedor
 
-    if is_admin(user) or _in_group(user, UserGroups.COMUNICADO_INTERNO_CREAR):
+    if is_admin(user) or _has_permission(user, COMUNICADO_CREATE_CODE):
         # Admin y usuarios con permisos internos ven todos los comedores
         return Comedor.objects.all()
     elif es_tecnico(user):
@@ -177,28 +184,28 @@ def can_create_comunicado_interno(user) -> bool:
     """Verifica si puede crear comunicados internos."""
     if not user.is_authenticated:
         return False
-    return is_admin(user) or _in_group(user, UserGroups.COMUNICADO_INTERNO_CREAR)
+    return is_admin(user) or _has_permission(user, COMUNICADO_CREATE_CODE)
 
 
 def can_edit_comunicado_interno(user) -> bool:
     """Verifica si puede editar comunicados internos."""
     if not user.is_authenticated:
         return False
-    return is_admin(user) or _in_group(user, UserGroups.COMUNICADO_INTERNO_EDITAR)
+    return is_admin(user) or _has_permission(user, COMUNICADO_EDIT_CODE)
 
 
 def can_publish_comunicado_interno(user) -> bool:
     """Verifica si puede publicar comunicados internos."""
     if not user.is_authenticated:
         return False
-    return is_admin(user) or _in_group(user, UserGroups.COMUNICADO_INTERNO_PUBLICAR)
+    return is_admin(user) or _has_permission(user, COMUNICADO_EDIT_CODE)
 
 
 def can_archive_comunicado_interno(user) -> bool:
     """Verifica si puede archivar comunicados internos."""
     if not user.is_authenticated:
         return False
-    return is_admin(user) or _in_group(user, UserGroups.COMUNICADO_INTERNO_ARCHIVAR)
+    return is_admin(user) or _has_permission(user, COMUNICADO_EDIT_CODE)
 
 
 # Permisos para comunicados a comedores (externos)
@@ -208,7 +215,7 @@ def can_create_comunicado_comedores(user) -> bool:
         return False
     return (
         is_admin(user)
-        or _in_group(user, UserGroups.COMUNICADO_COMEDORES_CREAR)
+        or _has_permission(user, COMUNICADO_CREATE_CODE)
         or es_tecnico(user)
     )
 
@@ -219,7 +226,7 @@ def can_edit_comunicado_comedores(user) -> bool:
         return False
     return (
         is_admin(user)
-        or _in_group(user, UserGroups.COMUNICADO_COMEDORES_EDITAR)
+        or _has_permission(user, COMUNICADO_EDIT_CODE)
         or es_tecnico(user)
     )
 
@@ -230,7 +237,7 @@ def can_publish_comunicado_comedores(user) -> bool:
         return False
     return (
         is_admin(user)
-        or _in_group(user, UserGroups.COMUNICADO_COMEDORES_PUBLICAR)
+        or _has_permission(user, COMUNICADO_EDIT_CODE)
         or es_tecnico(user)
     )
 
@@ -241,6 +248,6 @@ def can_archive_comunicado_comedores(user) -> bool:
         return False
     return (
         is_admin(user)
-        or _in_group(user, UserGroups.COMUNICADO_COMEDORES_ARCHIVAR)
+        or _has_permission(user, COMUNICADO_EDIT_CODE)
         or es_tecnico(user)
     )

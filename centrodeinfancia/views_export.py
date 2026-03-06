@@ -19,8 +19,10 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
             {"title": "Municipio"},
             {"title": "Localidad"},
             {"title": "Calle"},
+            {"title": "Número"},
             {"title": "Teléfono"},
-            {"title": "Referente"},
+            {"title": "Nombre del referente"},
+            {"title": "Apellido del referente"},
         ]
         fields = [
             {"name": "nombre"},
@@ -29,8 +31,10 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
             {"name": "municipio"},
             {"name": "localidad"},
             {"name": "calle"},
+            {"name": "numero"},
             {"name": "telefono"},
-            {"name": "referente"},
+            {"name": "nombre_referente"},
+            {"name": "apellido_referente"},
         ]
         columns_context = build_columns_context_from_fields(
             self.request,
@@ -46,8 +50,10 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
             "municipio": ("Municipio", "municipio.nombre"),
             "localidad": ("Localidad", "localidad.nombre"),
             "calle": ("Calle", "calle"),
+            "numero": ("Número", "numero"),
             "telefono": ("Teléfono", "telefono"),
-            "referente": ("Referente", "nombre_referente"),
+            "nombre_referente": ("Nombre del referente", "nombre_referente"),
+            "apellido_referente": ("Apellido del referente", "apellido_referente"),
         }
 
         active_keys = columns_context.get("column_active_keys", [])

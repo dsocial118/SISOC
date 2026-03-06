@@ -1,30 +1,30 @@
 [
-    {
-        "model": "comedores.tipodecomedor",
-        "pk": 1,
-        "fields": {
-            "nombre": "Comedor"
-        }
-    },
-    {
-        "model": "comedores.tipodecomedor",
-        "pk": 2,
-        "fields": {
-            "nombre": "Merendero"
-        }
-    },
-    {
-        "model": "comedores.tipodecomedor",
-        "pk": 3,
-        "fields": {
-            "nombre": "Punto de Entrega"
-        }
-    },
-    {
-        "model": "comedores.tipodecomedor",
-        "pk": 4,
-        "fields": {
-            "nombre": "Comedor y Merendero"
-        }
+{
+    "model": "comedores.tipodecomedor",
+    "pk": 1,
+    "fields": {
+        "nombre": "Comedor"
     }
+},
+{
+    "model": "comedores.tipodecomedor",
+    "pk": 2,
+    "fields": {
+        "nombre": "Merendero"
+    }
+},
+{
+    "model": "comedores.tipodecomedor",
+    "pk": 3,
+    "fields": {
+        "nombre": "Punto de Entrega"
+    }
+},
+{
+    "model": "comedores.tipodecomedor",
+    "pk": 4,
+    "fields": {
+        "nombre": "Comedor y Merendero"
+    }
+}
 ]

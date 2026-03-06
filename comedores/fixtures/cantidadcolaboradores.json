@@ -1,23 +1,23 @@
 [
-    {
-        "model": "relevamientos.cantidadcolaboradores",
-        "pk": 1,
-        "fields": {
-            "nombre": "1 a 3"
-        }
-    },
-    {
-        "model": "relevamientos.cantidadcolaboradores",
-        "pk": 2,
-        "fields": {
-            "nombre": "4 a 7"
-        }
-    },
-    {
-        "model": "relevamientos.cantidadcolaboradores",
-        "pk": 3,
-        "fields": {
-            "nombre": "8 o más"
-        }
+{
+    "model": "relevamientos.cantidadcolaboradores",
+    "pk": 1,
+    "fields": {
+        "nombre": "1 a 3"
     }
+},
+{
+    "model": "relevamientos.cantidadcolaboradores",
+    "pk": 2,
+    "fields": {
+        "nombre": "4 a 7"
+    }
+},
+{
+    "model": "relevamientos.cantidadcolaboradores",
+    "pk": 3,
+    "fields": {
+        "nombre": "8 o más"
+    }
+}
 ]

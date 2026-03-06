@@ -5,6 +5,7 @@ Servicio para gestionar cache de territoriales con GESTIONAR.
 import logging
 import os
 import requests
+from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
@@ -14,6 +15,10 @@ from comedores.models import TerritorialCache, TerritorialSyncLog, Comedor
 from core.models import Provincia
 
 logger = logging.getLogger("django")
+
+
+def _is_gestionar_integration_enabled() -> bool:
+    return bool(getattr(settings, "GESTIONAR_INTEGRATION_ENABLED", False))
 
 
 class TerritorialService:
@@ -85,7 +90,8 @@ class TerritorialService:
             api_url = os.getenv("GESTIONAR_API_CREAR_COMEDOR", "")
 
             gestionar_disponible = bool(
-                api_key
+                _is_gestionar_integration_enabled()
+                and api_key
                 and api_url
                 and api_url not in ["localhost:8001", "http://localhost:8001/", ""]
             )
@@ -259,6 +265,12 @@ class TerritorialService:
         sync_log = TerritorialSyncLog(comedor_id=comedor_id)
 
         try:
+            if not _is_gestionar_integration_enabled():
+                return {
+                    "exitoso": False,
+                    "mensaje": "Integración con GESTIONAR deshabilitada para este entorno",
+                }
+
             payload = {
                 "Action": "Find",
                 "Properties": {"Locale": "es-ES"},
@@ -328,6 +340,12 @@ class TerritorialService:
         sync_log = TerritorialSyncLog(comedor_id=comedor_id)
 
         try:
+            if not _is_gestionar_integration_enabled():
+                return {
+                    "exitoso": False,
+                    "mensaje": "Integración con GESTIONAR deshabilitada para este entorno",
+                }
+
             # API call igual que antes (usa comedor_id)
             payload = {
                 "Action": "Find",

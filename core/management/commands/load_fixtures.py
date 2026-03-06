@@ -64,27 +64,56 @@ class Command(BaseCommand):
             return
 
         created, updated, failed = 0, 0, 0
-        for obj in objects:
-            try:
-                model = obj.object.__class__
-                pk_field = obj.object._meta.pk.attname
-                pk_value = getattr(obj.object, pk_field, None)
-                existed_before = (
-                    bool(pk_value) and model.objects.filter(pk=pk_value).exists()
-                )
+        pending = list(objects)
+        last_errors = {}
 
-                # Guardar cada objeto en su propia transacción para evitar que un
-                # error deje la conexión marcada para rollback y bloquee el resto.
-                with transaction.atomic():
-                    obj.save()  # maneja FKs y M2M luego del save
+        # Reintenta por pasadas para resolver dependencias FK dentro del mismo fixture
+        # (por ejemplo, cuando un hijo aparece antes que su padre en el JSON).
+        while pending:
+            next_pending = []
+            progress = False
 
-                if existed_before:
-                    updated += 1
-                else:
-                    created += 1
-            except Exception as e:
-                failed += 1
-                self.stderr.write(f"⚠️  Falló guardar registro de {fixture_path}: {e}")
+            for obj in pending:
+                try:
+                    model = obj.object.__class__
+                    pk_field = obj.object._meta.pk.attname
+                    pk_value = getattr(obj.object, pk_field, None)
+                    existed_before = (
+                        bool(pk_value) and model.objects.filter(pk=pk_value).exists()
+                    )
+
+                    # Guardar cada objeto en su propia transacción para evitar que un
+                    # error deje la conexión marcada para rollback y bloquee el resto.
+                    with transaction.atomic():
+                        obj.save()  # maneja FKs y M2M luego del save
+
+                    if existed_before:
+                        updated += 1
+                    else:
+                        created += 1
+                    progress = True
+                    last_errors.pop(id(obj), None)
+                except Exception as e:
+                    next_pending.append(obj)
+                    last_errors[id(obj)] = e
+
+            if not next_pending:
+                break
+
+            if not progress:
+                failed = len(next_pending)
+                for obj in next_pending:
+                    obj_label = (
+                        f"{obj.object._meta.label_lower}"
+                        f"(pk={getattr(obj.object, 'pk', None)})"
+                    )
+                    error = last_errors.get(id(obj))
+                    self.stderr.write(
+                        f"⚠️  Falló guardar registro de {fixture_path} [{obj_label}]: {error}"
+                    )
+                break
+
+            pending = next_pending
 
         self.stdout.write(
             f"✅ {fixture_path}: created={created}, updated≈{updated}, failed={failed}"

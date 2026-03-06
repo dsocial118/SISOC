@@ -76,6 +76,20 @@ def test_run_django_commands_omite_makemigrations_en_prd_por_defecto(
     mock_run_server.assert_called_once_with()
 
 
+def test_run_django_commands_ignora_flag_legacy_run_makemigrations(mocker, monkeypatch):
+    module = _load_entrypoint_module()
+    mock_run_command = mocker.patch.object(module, "run_command")
+    mocker.patch.object(module, "run_server")
+    monkeypatch.setenv("ENVIRONMENT", "prd")
+    monkeypatch.delenv("RUN_MAKEMIGRATIONS_ON_START", raising=False)
+    monkeypatch.setenv("RUN_MAKEMIGRATIONS", "true")
+
+    module.run_django_commands()
+
+    stages = [call.kwargs["stage"] for call in mock_run_command.call_args_list]
+    assert "makemigrations" not in stages
+
+
 @pytest.mark.parametrize("flag", ["true", "TRUE", "TrUe"])
 def test_run_django_commands_respeta_flag_explicito_para_makemigrations(
     mocker, monkeypatch, flag

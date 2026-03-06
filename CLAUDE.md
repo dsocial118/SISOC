@@ -10,7 +10,9 @@ Antes de implementar cambios, Claude debe:
 
 1. Leer `AGENTS.md`.
 2. Tomarlo como regla principal.
-3. Luego complementar con `docs/ia/*` según la tarea.
+3. Leer `docs/indice.md` y luego complementar con `docs/ia/*` según la tarea.
+4. Leer la documentación funcional/técnica del dominio afectado dentro de `docs/`.
+5. Registrar cambios o decisiones importantes en `docs/` dentro de la subcarpeta que corresponda (crearla si no existe).
 
 Si el entorno no cargó `AGENTS.md` automáticamente, Claude debe abrirlo manualmente.
 Si no puede leer `AGENTS.md`, debe:
@@ -21,11 +23,13 @@ Si no puede leer `AGENTS.md`, debe:
 ## Orden de lectura recomendado
 
 1. `AGENTS.md`
-2. `docs/ia/CONTEXT_HYGIENE.md`
-3. `docs/ia/STYLE_GUIDE.md`
-4. `docs/ia/ARCHITECTURE.md`
-5. `docs/ia/TESTING.md`
-6. `docs/ia/SECURITY_AI.md` / `docs/ia/ERRORS_LOGGING.md` si el cambio toca auth, datos o logs
+2. `docs/indice.md`
+3. `docs/ia/CONTEXT_HYGIENE.md`
+4. `docs/ia/STYLE_GUIDE.md`
+5. `docs/ia/ARCHITECTURE.md`
+6. `docs/ia/TESTING.md`
+7. `docs/registro/README.md`
+8. `docs/ia/SECURITY_AI.md` / `docs/ia/ERRORS_LOGGING.md` si el cambio toca auth, datos o logs
 
 ## Fallback mínimo (si `AGENTS.md` no está disponible)
 
@@ -38,6 +42,8 @@ Reglas críticas a aplicar igual:
 - No modificar tooling/CI/settings sin pedido explícito.
 - Agregar tests mínimos (y regresión en bugfixes cuando sea viable).
 - No exponer secretos/PII en logs/tests/ejemplos.
+- Leer documentación relevante en `docs/` antes de proponer cambios.
+- Documentar decisiones/cambios importantes en `docs/<subcarpeta>/...` sin herramientas específicas obligatorias.
 - Proponer mejoras cercanas solo como propuesta, sin implementación fuera de alcance sin aprobación.
 - No asumir Celery/colas/workers: **actualmente no se usa Celery**.
 
@@ -68,6 +74,7 @@ Responder con:
 - Validación ejecutada (tests/lint/format).
 - Supuestos y límites.
 - Riesgos o impactos.
+- Registro en `docs/<subcarpeta>/...` para cambios/decisiones importantes (o justificación si no aplica).
 - `Mejoras cercanas detectadas (opcional)`.
 
 ## 4) Seguridad y PII
@@ -88,6 +95,7 @@ Claude puede señalar mejoras cercanas al código tocado (tests faltantes, valid
 - No inventé contratos ni estructuras inexistentes.
 - Mantuve compatibilidad hacia atrás por defecto.
 - Agregué tests mínimos o expliqué la limitación.
+- Registré cambios/decisiones importantes en `docs/` (subcarpeta temática) o expliqué por qué no aplicaba.
 - Declaré supuestos explícitos.
 - Reporté mejoras cercanas sin generar scope creep.
 

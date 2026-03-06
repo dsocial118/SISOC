@@ -44,3 +44,34 @@ def test_form_creacion_no_bloquea_provincia_si_usuario_no_tiene_provincia():
     assert form.fields["provincia"].disabled is False
     assert form.is_valid() is True
     assert form.cleaned_data["provincia"] is None
+
+
+@pytest.mark.django_db
+def test_form_includes_apellido_referente_opcional():
+    user = User.objects.create_user(username="user-apellido", password="test1234")
+    form = CentroDeInfanciaForm(
+        data={"nombre": "CDI Este", "apellido_referente": "Gómez"},
+        user=user,
+        lock_provincia_from_user=False,
+    )
+    assert "apellido_referente" in form.fields
+    assert form.is_valid() is True
+    assert form.cleaned_data["apellido_referente"] == "Gómez"
+
+
+@pytest.mark.django_db
+def test_form_acepta_numero_calle_opcional():
+    user = User.objects.create_user(username="user-numero", password="test1234")
+    form = CentroDeInfanciaForm(
+        data={
+            "nombre": "CDI Norte",
+            "calle": "San Martín",
+            "numero": "123",
+        },
+        user=user,
+        lock_provincia_from_user=False,
+    )
+
+    assert "numero" in form.fields
+    assert form.is_valid()
+    assert form.cleaned_data["numero"] == "123"

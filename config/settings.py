@@ -5,7 +5,9 @@ import logging
 import tempfile
 from pathlib import Path
 from django.contrib.messages import constants as messages
+from django.utils.module_loading import import_string
 from dotenv import load_dotenv
+from config.runtime import is_running_tests
 
 # Cargar variables de entorno
 load_dotenv()
@@ -13,6 +15,7 @@ load_dotenv()
 # Entorno
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "dev")  # dev|qa|prd
+GESTIONAR_INTEGRATION_ENABLED = ENVIRONMENT == "prd"
 ENABLE_API_DOCS = True
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -59,6 +62,19 @@ def _safe_float_env(var_name: str, default: float) -> float:
         return default
 
 
+def _safe_bool_env(var_name: str, default: bool) -> bool:
+    raw_value = os.getenv(var_name)
+    if raw_value is None or raw_value.strip() == "":
+        return default
+
+    normalized = raw_value.strip().lower()
+    if normalized in ("1", "true", "yes", "on"):
+        return True
+    if normalized in ("0", "false", "no", "off"):
+        return False
+    return default
+
+
 CSRF_TRUSTED_ORIGINS = [_to_origin(h) for h in ALLOWED_HOSTS]
 
 # Apps
@@ -86,6 +102,7 @@ INSTALLED_APPS = [
     # Apps propias
     "users",
     "core",
+    "sentry.apps.SentryConfig",
     "dashboard",
     "comedores",
     "organizaciones",
@@ -115,6 +132,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "users.middleware.FirstLoginPasswordChangeMiddleware",
+    "sentry.middleware.SentryUserContextMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -140,6 +159,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "sentry.context_processors.sentry_frontend",
             ],
         },
     },
@@ -158,11 +178,65 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "inicio"
 LOGOUT_REDIRECT_URL = "login"
 ACCOUNT_FORMS = {"login": "users.forms.UserLoginForm"}
+INITIAL_PASSWORD_MAX_AGE_HOURS = _safe_int_env("INITIAL_PASSWORD_MAX_AGE_HOURS", 336)
+PASSWORD_RESET_TIMEOUT = _safe_int_env("PASSWORD_RESET_TIMEOUT", 3600)
 
 # Email
-if ENVIRONMENT == "prd":
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-else:
+settings_logger = logging.getLogger(__name__)
+
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "").strip()
+if not EMAIL_BACKEND:
+    # Fallback seguro por defecto: no rompe entornos sin .env o sin SMTP válido.
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+try:
+    import_string(EMAIL_BACKEND)
+except Exception:  # pragma: no cover - fallback defensivo de configuración
+    settings_logger.warning(
+        "EMAIL_BACKEND inválido (%s). Se usa backend de consola.",
+        EMAIL_BACKEND,
+    )
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+EMAIL_HOST = os.getenv("EMAIL_HOST", "").strip() or "localhost"
+EMAIL_PORT = _safe_int_env("EMAIL_PORT", 587)
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = _safe_bool_env("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = _safe_bool_env("EMAIL_USE_SSL", False)
+EMAIL_TIMEOUT = _safe_int_env("EMAIL_TIMEOUT", 10)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@sisoc.local")
+
+email_backend_errors = []
+if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
+    raw_port = os.getenv("EMAIL_PORT", "").strip()
+    if raw_port:
+        try:
+            parsed_port = int(raw_port)
+            if parsed_port <= 0:
+                email_backend_errors.append("EMAIL_PORT debe ser > 0")
+        except ValueError:
+            email_backend_errors.append("EMAIL_PORT inválido")
+
+    raw_tls = os.getenv("EMAIL_USE_TLS", "").strip().lower()
+    raw_ssl = os.getenv("EMAIL_USE_SSL", "").strip().lower()
+    valid_bool_values = ("1", "true", "yes", "on", "0", "false", "no", "off")
+    if raw_tls and raw_tls not in valid_bool_values:
+        email_backend_errors.append("EMAIL_USE_TLS inválido")
+    if raw_ssl and raw_ssl not in valid_bool_values:
+        email_backend_errors.append("EMAIL_USE_SSL inválido")
+
+    if EMAIL_USE_TLS and EMAIL_USE_SSL:
+        email_backend_errors.append("EMAIL_USE_TLS y EMAIL_USE_SSL no pueden ser true")
+
+    if not os.getenv("EMAIL_HOST", "").strip():
+        email_backend_errors.append("EMAIL_HOST vacío")
+
+if email_backend_errors:
+    settings_logger.warning(
+        "Configuración SMTP inválida. Se usa backend de consola. Errores: %s",
+        "; ".join(email_backend_errors),
+    )
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Mensajes / Crispy
@@ -202,9 +276,7 @@ DATABASES = {
 }
 
 # DB para testing
-RUNNING_TESTS = (
-    any("pytest" in arg for arg in sys.argv) or os.environ.get("PYTEST_RUNNING") == "1"
-)
+RUNNING_TESTS = is_running_tests(os.environ, sys.argv)
 if RUNNING_TESTS and not SECRET_KEY:
     SECRET_KEY = "test-secret-key"
 USE_SQLITE_FOR_TESTS = os.environ.get("USE_SQLITE_FOR_TESTS") == "1"
@@ -284,9 +356,35 @@ SPECTACULAR_SETTINGS = {
 
 # Dominios / Integraciones
 DOMINIO = os.environ.get("DOMINIO", "localhost:8001")
+SENTRY_DSN = (
+    "https://REDACTED_SENTRY_KEY@"
+    "REDACTED_SENTRY_ENDPOINT"
+)
+SENTRY_LOG_EVENT_LEVEL = "WARNING"
+if ENVIRONMENT == "qa":
+    SENTRY_ERROR_SAMPLE_RATE = 0.75
+    SENTRY_TRACES_SAMPLE_RATE = 0.75
+    SENTRY_PROFILES_SAMPLE_RATE = 0.0
+    SENTRY_REPLAY_ENABLED = False
+    SENTRY_REPLAYS_SESSION_SAMPLE_RATE = 0.0
+    SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE = 0.0
+elif ENVIRONMENT == "prd":
+    SENTRY_ERROR_SAMPLE_RATE = 1.0
+    SENTRY_TRACES_SAMPLE_RATE = 1.0
+    SENTRY_PROFILES_SAMPLE_RATE = 0.0
+    SENTRY_REPLAY_ENABLED = True
+    SENTRY_REPLAYS_SESSION_SAMPLE_RATE = 1.0
+    SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE = 1.0
+else:
+    SENTRY_ERROR_SAMPLE_RATE = 0.0
+    SENTRY_TRACES_SAMPLE_RATE = 0.0
+    SENTRY_PROFILES_SAMPLE_RATE = 0.0
+    SENTRY_REPLAY_ENABLED = False
+    SENTRY_REPLAYS_SESSION_SAMPLE_RATE = 0.0
+    SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE = 0.0
 RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
 RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
-RENAPER_API_URL = os.getenv("RENAPER_API_URL")
+RENAPER_API_URL = "https://wsv2.secretarianaf.gob.ar/api"
 RENAPER_VALIDACION_MAX_RETRIES = _safe_int_env(
     "RENAPER_VALIDACION_MAX_RETRIES",
     1,
@@ -298,9 +396,8 @@ RENAPER_VALIDACION_BACKOFF_SECONDS = _safe_float_env(
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
 # Changelog
-CHANGELOG_GITHUB_URL = os.getenv(
-    "CHANGELOG_GITHUB_URL",
-    "https://raw.githubusercontent.com/dsocial118/BACKOFFICE/main/CHANGELOG.md",
+CHANGELOG_GITHUB_URL = (
+    "https://raw.githubusercontent.com/dsocial118/BACKOFFICE/main/CHANGELOG.md"
 )
 
 # IPs internas
@@ -396,6 +493,11 @@ LOGGING = {
             "filename": str(LOG_DIR / "data.log"),
             "formatter": "json_data",
         },
+        "sentry": {
+            "level": SENTRY_LOG_EVENT_LEVEL,
+            "class": "sentry.handlers.SentryEventHandler",
+            "formatter": "verbose",
+        },
     },
     "root": {
         "handlers": [
@@ -404,6 +506,7 @@ LOGGING = {
             "warning_file",
             "critical_file",
             "data_file",
+            "sentry",
         ],
         "level": "DEBUG" if DEBUG else "INFO",
     },
@@ -414,7 +517,7 @@ LOGGING = {
             "propagate": True,
         },
         "django.request": {
-            "handlers": ["error_file"],
+            "handlers": ["error_file", "sentry"],
             "level": "ERROR",
             "propagate": False,
         },
@@ -489,6 +592,9 @@ else:
 # Overrides y flags de endurecimiento CSP (migración gradual)
 ENABLE_CSP = os.getenv("ENABLE_CSP", str(ENABLE_CSP)).lower() == "true"
 CSP_REPORT_ONLY = os.getenv("CSP_REPORT_ONLY", "true").lower() == "true"
+# En tests usamos modo enforce por defecto para evitar dependencia del .env local.
+if RUNNING_TESTS:
+    CSP_REPORT_ONLY = False
 CSP_ALLOW_UNSAFE_INLINE_SCRIPTS = (
     os.getenv("CSP_ALLOW_UNSAFE_INLINE_SCRIPTS", "false").lower() == "true"
 )

@@ -43,6 +43,11 @@ class ContentSecurityPolicyMiddleware:
             script_src_tokens.append(f"'nonce-{request.csp_nonce}'")
         if allow_unsafe_eval:
             script_src_tokens.append("'unsafe-eval'")
+        style_src_tokens = ["'self'"]
+        if allow_unsafe_inline_scripts:
+            style_src_tokens.append("'unsafe-inline'")
+        else:
+            style_src_tokens.append(f"'nonce-{request.csp_nonce}'")
 
         # CSP policy que permite recursos del mismo origen, Google Maps API, y Bootstrap CDN
         # `unsafe-inline` en script-src se controla por flag para compatibilidad temporal.
@@ -50,12 +55,14 @@ class ContentSecurityPolicyMiddleware:
             "default-src 'self'; "
             f"script-src {' '.join(script_src_tokens)} "
             "https://cdn.jsdelivr.net https://cdn.datatables.net https://maps.googleapis.com https://cdnjs.cloudflare.com; "
-            "style-src 'self' 'unsafe-inline' "
+            f"style-src {' '.join(style_src_tokens)} "
             "https://cdn.jsdelivr.net https://cdn.datatables.net https://fonts.googleapis.com https://code.ionicframework.com https://cdnjs.cloudflare.com; "
             "img-src 'self' data: https: blob:; "
             "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-            "connect-src 'self' https://maps.googleapis.com https://app.powerbi.com; "
+            "connect-src 'self' https://maps.googleapis.com https://app.powerbi.com https://*.ingest.sentry.io; "
             "frame-src 'self' https://maps.google.com https://www.google.com https://app.powerbi.com; "
+            "worker-src 'self' blob:; "
+            "child-src 'self' blob:; "
             "object-src 'none'; "
             "base-uri 'self'; "
             "form-action 'self';"
