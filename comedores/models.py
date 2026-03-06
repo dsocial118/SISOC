@@ -487,7 +487,6 @@ class Nomina(SoftDeleteModelMixin, models.Model):
         ordering = ["-fecha"]
         verbose_name = "Nomina"
         verbose_name_plural = "Nominas"
-        indexes = [models.Index(fields=["admision"])]
 
     def __str__(self):
         comedor = (
