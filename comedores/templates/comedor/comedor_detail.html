@@ -70,8 +70,10 @@
                 <a href="{% url 'rendicion_cuentas_final' pk=comedor.id %}" class="btn btn-sm btn-primary">Rendicion de Cuentas Final</a>
             {% endif %}
             {% endcomment %}
-            <a href="{% url 'nomina_ver' pk=comedor.id %}"
-               class="btn btn-sm btn-primary">Nomina</a>
+            {% if selected_admision_id %}
+                <a href="{% url 'nomina_ver' pk=comedor.id admision_pk=selected_admision_id %}"
+                   class="btn btn-sm btn-primary">Nomina</a>
+            {% endif %}
             {% if comedor.estado == "Sin Ingreso" %}
                 <a href="{% url 'dupla_asignar' pk=comedor.id %}"
                    class="btn btn-sm btn-primary">Asignar Equipo Técnico</a>
