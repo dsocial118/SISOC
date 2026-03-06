@@ -108,6 +108,7 @@ INSTALLED_APPS = [
     "importarexpediente",
     "comunicados",
     "centrodeinfancia",
+    "pwa",
 ]
 
 # Middleware (orden CORS correcto)
