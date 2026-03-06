@@ -124,6 +124,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
             "municipio",
             "localidad",
             "calle",
+            "numero",
             "telefono",
             "nombre_referente",
             "apellido_referente",

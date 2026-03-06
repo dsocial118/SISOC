@@ -146,7 +146,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
             {% endif %}
             {% if export_url %}
                 {% with export_group=export_group|default:"Exportar a csv" %}
-                    {% if request.user|has_group:export_group or request.user.is_superuser %}
+                    {% if request.user|has_perm_code:export_group or request.user.is_superuser %}
                         <button type="button"
                                 class="btn btn-lg btn-export-csv"
                                 data-url="{{ export_url }}"

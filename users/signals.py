@@ -4,6 +4,7 @@ from django.contrib.auth.models import Group, User
 
 from core.constants import GROUP_INHERITANCE
 from users.models import Profile
+from users.services_group_permissions import sync_permissions_for_group
 
 
 @receiver(post_save, sender=User)
@@ -19,6 +20,12 @@ def ensure_user_profile(sender, instance, created, **kwargs):
 
     profile, _ = Profile.objects.get_or_create(user=instance)
     profile.save()
+
+
+@receiver(post_save, sender=Group)
+def ensure_group_permission(sender, instance, created, **kwargs):
+    if created:
+        sync_permissions_for_group(instance)
 
 
 @receiver(m2m_changed, sender=Profile.duplas_asignadas.through)
@@ -87,9 +94,11 @@ def ensure_inherited_groups(sender, instance, action, reverse, pk_set, **kwargs)
 
     # Caso típico: se agregan grupos desde user.groups.add(...)
     if not reverse:
-        added_names = set(
-            Group.objects.filter(pk__in=pk_set).values_list("name", flat=True)
-        )
+        added_groups = Group.objects.filter(pk__in=pk_set)
+        for group in added_groups:
+            sync_permissions_for_group(group)
+
+        added_names = set(added_groups.values_list("name", flat=True))
         inherited = set()
         for name in added_names:
             inherited.update(GROUP_INHERITANCE.get(name, []))
@@ -100,6 +109,7 @@ def ensure_inherited_groups(sender, instance, action, reverse, pk_set, **kwargs)
 
     # Caso inverso: se agregan usuarios desde group.user_set.add(...)
     group_name = getattr(instance, "name", None)
+    sync_permissions_for_group(instance)
     inherited = GROUP_INHERITANCE.get(group_name)
     if not inherited:
         return

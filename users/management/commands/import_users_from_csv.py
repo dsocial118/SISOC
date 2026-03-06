@@ -1,8 +1,13 @@
 import csv
+from datetime import timedelta
 from pathlib import Path
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
+
+from users.models import Profile
 
 
 class Command(BaseCommand):
@@ -62,7 +67,7 @@ class Command(BaseCommand):
                     f"El CSV no contiene las columnas requeridas: {missing}"
                 )
 
-            for row in reader:
+            for line_number, row in enumerate(reader, start=2):
                 username = (row.get("Usuario") or "").strip()
                 if not username:
                     self.stdout.write(
@@ -73,6 +78,10 @@ class Command(BaseCommand):
                     continue
 
                 email = (row.get("Email") or "").strip()
+                if not email:
+                    raise CommandError(
+                        f"Fila {line_number}: el campo 'Email' es obligatorio para crear o actualizar usuarios."
+                    )
                 first_name = (row.get("Nombre completo") or "").strip()
                 last_name = (row.get("Apellido") or "").strip()
                 rol = (row.get("Rol") or "").strip()
@@ -94,9 +103,23 @@ class Command(BaseCommand):
                     user.set_password(raw_password)
                 user.save()
 
-                profile = getattr(user, "profile", None)
-                if profile:
-                    profile.rol = rol
+                profile, _ = Profile.objects.get_or_create(user=user)
+                profile.rol = rol
+                if raw_password:
+                    profile.must_change_password = True
+                    profile.password_changed_at = None
+                    profile.initial_password_expires_at = timezone.now() + timedelta(
+                        hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
+                    )
+                    profile.save(
+                        update_fields=[
+                            "rol",
+                            "must_change_password",
+                            "password_changed_at",
+                            "initial_password_expires_at",
+                        ]
+                    )
+                else:
                     profile.save(update_fields=["rol"])
 
                 user.groups.set(reference_groups)

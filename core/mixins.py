@@ -4,6 +4,7 @@ from datetime import datetime
 from django.http import StreamingHttpResponse
 from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
+from iam.services import user_has_permission_code
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class CSVExportMixin:
     """
 
     export_filename = "export.csv"
-    permission_group_export = "Exportar a csv"
+    export_permission_code = "auth.role_exportar_a_csv"
 
     def check_export_permission(self, request):
         if not request.user.is_authenticated:
@@ -24,8 +25,7 @@ class CSVExportMixin:
         if request.user.is_superuser:
             return True
 
-        # Verificar grupo específico
-        if not request.user.groups.filter(name=self.permission_group_export).exists():
+        if not user_has_permission_code(request.user, self.export_permission_code):
             raise PermissionDenied
 
         return True

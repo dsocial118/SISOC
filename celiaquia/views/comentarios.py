@@ -7,16 +7,16 @@ from django.views.decorators.csrf import csrf_protect
 from django.core.exceptions import ObjectDoesNotExist
 
 from celiaquia.models import ExpedienteCiudadano, HistorialComentarios
+from iam.services import user_has_permission_code
 
 logger = logging.getLogger("django")
+ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
+ROLE_TECNICO_CELIAQUIA_PERMISSION = "auth.role_tecnicoceliaquia"
+ROLE_PROVINCIA_CELIAQUIA_PERMISSION = "auth.role_provinciaceliaquia"
 
 
-def _in_group(user, group_name):
-    return (
-        bool(user)
-        and user.is_authenticated
-        and user.groups.filter(name=group_name).exists()
-    )
+def _has_permission(user, permission_code):
+    return user_has_permission_code(user, permission_code)
 
 
 def _safe_profile(user):
@@ -28,10 +28,10 @@ def _safe_profile(user):
         return None
 
 
-def _user_has_group_cached(user, group_name):
+def _user_has_permission_cached(user, permission_code):
     if not user:
         return False
-    return any(group.name == group_name for group in user.groups.all())
+    return user_has_permission_code(user, permission_code)
 
 
 ALLOWED_UPLOAD_TYPES = {"application/pdf", "image/jpeg", "image/png"}
@@ -52,8 +52,8 @@ class LegajoComentarioCreateView(View):
             )
 
         is_admin = user.is_superuser
-        is_coord = _in_group(user, "CoordinadorCeliaquia")
-        is_tec = _in_group(user, "TecnicoCeliaquia")
+        is_coord = _has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        is_tec = _has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
 
         if not (is_admin or is_coord or is_tec):
             return JsonResponse(
@@ -129,7 +129,9 @@ class LegajoComentarioCreateView(View):
                         if comentario.archivo_adjunto
                         else None
                     ),
-                    "es_provincia": _in_group(user, "ProvinciaCeliaquia"),
+                    "es_provincia": _has_permission(
+                        user, ROLE_PROVINCIA_CELIAQUIA_PERMISSION
+                    ),
                 },
             }
         )
@@ -151,9 +153,9 @@ class LegajoComentarioListView(View):
             )
 
         is_admin = user.is_superuser
-        is_coord = _in_group(user, "CoordinadorCeliaquia")
-        is_tec = _in_group(user, "TecnicoCeliaquia")
-        is_prov = _in_group(user, "ProvinciaCeliaquia")
+        is_coord = _has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        is_tec = _has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+        is_prov = _has_permission(user, ROLE_PROVINCIA_CELIAQUIA_PERMISSION)
 
         if not (is_admin or is_coord or is_tec or is_prov):
             return JsonResponse(
@@ -218,7 +220,10 @@ class LegajoComentarioListView(View):
                 "fecha": c.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
                 "tiene_archivo": bool(c.archivo_adjunto),
                 "archivo_url": c.archivo_adjunto.url if c.archivo_adjunto else None,
-                "es_provincia": _user_has_group_cached(c.usuario, "ProvinciaCeliaquia"),
+                "es_provincia": _user_has_permission_cached(
+                    c.usuario,
+                    ROLE_PROVINCIA_CELIAQUIA_PERMISSION,
+                ),
             }
             for c in comentarios
         ]

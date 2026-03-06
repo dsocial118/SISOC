@@ -31,7 +31,7 @@ from auditlog.models import LogEntry
 from ciudadanos.models import Ciudadano
 from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraForm
 from comedores.services.comedor_service import ComedorService
-from core.decorators import group_required
+from core.decorators import permissions_any_required
 from core.security import safe_redirect
 from core.services.column_preferences import build_columns_context_from_fields
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -503,7 +503,7 @@ class CentroDeInfanciaDeleteView(
 
 @login_required
 def centrodeinfancia_ajax(request):
-    @group_required(["Centro de Infancia Listar"])
+    @permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])
     def _centrodeinfancia_ajax(req):
         query = req.GET.get("busqueda", "")
         page = req.GET.get("page", 1)

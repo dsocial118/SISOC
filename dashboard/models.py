@@ -1,7 +1,13 @@
 from django.db import models
 from django.urls import reverse
 
-from core.constants import UserGroups
+from core.permissions.registry import build_legacy_permission_code
+
+ADMIN_DASHBOARD_PERMISSION_CODES = (
+    "auth.role_admin",
+    "auth.role_administrador",
+    "auth.role_superadmin",
+)
 
 
 class Dashboard(models.Model):
@@ -57,7 +63,10 @@ class Tablero(models.Model):
     permisos = models.JSONField(
         default=list,
         blank=True,
-        help_text="Listado de grupos con acceso al tablero.",
+        help_text=(
+            "Listado de permisos con acceso al tablero (app_label.codename). "
+            "Se aceptan nombres de grupo legacy por compatibilidad."
+        ),
     )
 
     class Meta:
@@ -76,29 +85,46 @@ class Tablero(models.Model):
         return reverse("dashboard_tablero", kwargs={"slug": self.slug})
 
     @staticmethod
-    def grupos_de_usuario(user):
+    def permission_codes_de_usuario(user):
         if not user or not user.is_authenticated:
             return []
-        if hasattr(user, "cached_groups"):
-            return list(user.cached_groups)
-        grupos = list(user.groups.values_list("name", flat=True))
-        user.cached_groups = grupos
-        return grupos
+        if hasattr(user, "cached_permission_codes"):
+            return list(user.cached_permission_codes)
+        permission_codes = list(user.get_all_permissions())
+        user.cached_permission_codes = set(permission_codes)
+        return permission_codes
 
-    def tiene_acceso_para_grupos(self, grupos):
+    def _normalized_required_permissions(self):
         if not self.permisos:
+            return []
+
+        normalized = []
+        for raw_value in self.permisos:
+            raw_text = str(raw_value or "").strip()
+            if not raw_text:
+                continue
+            if "." in raw_text:
+                normalized.append(raw_text)
+            else:
+                normalized.append(build_legacy_permission_code(raw_text))
+        return normalized
+
+    def tiene_acceso_para_permisos(self, permission_codes):
+        required = self._normalized_required_permissions()
+        if not required:
             return False
-        return any(grupo in self.permisos for grupo in grupos)
+        return any(permission in permission_codes for permission in required)
 
     def usuario_puede_ver(self, user):
         if not user or not user.is_authenticated:
             return False
         if user.is_superuser:
             return True
-        grupos = self.grupos_de_usuario(user)
-        if UserGroups.ADMINISTRADOR in grupos:
+
+        permission_codes = self.permission_codes_de_usuario(user)
+        if any(code in permission_codes for code in ADMIN_DASHBOARD_PERMISSION_CODES):
             return True
-        return self.tiene_acceso_para_grupos(grupos)
+        return self.tiene_acceso_para_permisos(permission_codes)
 
     def get_mensaje_construccion(self):
         if self.mensaje_construccion:
