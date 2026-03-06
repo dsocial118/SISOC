@@ -68,16 +68,22 @@ class Migration(migrations.Migration):
             asignar_admision_a_nominas,
             migrations.RunPython.noop,
         ),
-        # 3. Eliminar campo comedor (elimina también su índice FK automático)
+        # 3. Eliminar campo comedor (MySQL elimina automáticamente su índice FK al
+        #    hacer DROP COLUMN, pero el estado de Django sigue rastreando el índice
+        #    nombrado creado en 0001_initial. Lo sincronizamos con SeparateDatabaseAndState.)
         migrations.RemoveField(
             model_name="nomina",
             name="comedor",
         ),
-        # 4. Agregar índice explícito sobre admision
-        migrations.AddIndex(
-            model_name="nomina",
-            index=models.Index(
-                fields=["admision"], name="comedores_nomina_admision_id_idx"
-            ),
+        # 4. Sincronizar estado Django: eliminar el índice de comedor del estado de
+        #    migración sin operación en DB (MySQL ya lo eliminó con el DROP COLUMN).
+        migrations.SeparateDatabaseAndState(
+            database_operations=[],
+            state_operations=[
+                migrations.RemoveIndex(
+                    model_name="nomina",
+                    name="comedores_n_comedor_2179d8_idx",
+                ),
+            ],
         ),
     ]
