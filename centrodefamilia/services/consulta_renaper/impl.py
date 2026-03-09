@@ -1,4 +1,4 @@
-﻿import logging
+import logging
 import unicodedata
 
 from django.conf import settings
@@ -85,7 +85,7 @@ class APIClient:
             logger.error(f"No se encontró coincidencia RENAPER DNI {dni}")
             return {
                 "success": False,
-                "error": "No se encontrÃ³ coincidencia.",
+                "error": "No se encontró coincidencia.",
                 "raw_response": data,
             }
 
@@ -128,7 +128,7 @@ def consultar_datos_renaper(dni, sexo):
             sexo_obj = Sexo.objects.filter(sexo=sexo_texto).first()
             sexo_pk = sexo_obj.pk if sexo_obj else None
 
-        # Solo datos bÃ¡sicos de RENAPER, sin mapeo de ubicaciÃ³n
+        # Solo datos básicos de RENAPER, sin mapeo de ubicación
 
         # Mapeo optimizado de datos
         def safe_int(value):
@@ -151,7 +151,7 @@ def consultar_datos_renaper(dni, sexo):
             "sexo": sexo_pk,
             "tipo_documento": Ciudadano.DOCUMENTO_DNI,
             "fecha_nacimiento": datos.get("fechaNacimiento"),
-            # Datos de ubicaciÃ³n sin mapear (se seleccionarÃ¡n manualmente)
+            # Datos de ubicación sin mapear (se seleccionarán manualmente)
             "provincia_api": datos.get("provincia", ""),
             "municipio_api": datos.get("municipio", ""),
             "localidad_api": datos.get("ciudad", ""),
@@ -176,5 +176,3 @@ def consultar_datos_renaper(dni, sexo):
             "success": False,
             "error": f"Error inesperado al consultar RENAPER: {str(exc)}",
         }
-
-
