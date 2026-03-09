@@ -21,8 +21,8 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="colaboradorespaciopwa",
             constraint=models.UniqueConstraint(
-                fields=("comedor", "dni", "activo"),
-                name="uniq_colaborador_pwa_dni_estado_por_comedor",
+                fields=("comedor", "dni"),
+                name="uniq_colaborador_pwa_dni_por_comedor",
             ),
         ),
     ]

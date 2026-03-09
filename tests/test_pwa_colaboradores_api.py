@@ -196,6 +196,55 @@ def test_delete_colaborador_es_baja_logica(comedor):
 
 
 @pytest.mark.django_db
+def test_recrear_y_dar_baja_mismo_dni_no_falla(comedor):
+    representante = _create_representante(comedor=comedor, username="rep_colab_recrear")
+    client = _auth_client_for_user(representante)
+
+    payload = {
+        "nombre": "Ana",
+        "apellido": "Gomez",
+        "dni": "12345678",
+        "telefono": "11111111",
+        "email": "ana@example.com",
+        "rol_funcion": "Cocinera",
+    }
+
+    first_create = client.post(
+        f"/api/pwa/espacios/{comedor.id}/colaboradores/",
+        payload,
+        format="json",
+    )
+    assert first_create.status_code == 201
+    first_id = first_create.data["id"]
+
+    first_delete = client.delete(
+        f"/api/pwa/espacios/{comedor.id}/colaboradores/{first_id}/",
+    )
+    assert first_delete.status_code == 204
+
+    second_create = client.post(
+        f"/api/pwa/espacios/{comedor.id}/colaboradores/",
+        {**payload, "telefono": "22222222"},
+        format="json",
+    )
+    assert second_create.status_code == 201
+    assert second_create.data["id"] == first_id
+
+    second_delete = client.delete(
+        f"/api/pwa/espacios/{comedor.id}/colaboradores/{first_id}/",
+    )
+    assert second_delete.status_code == 204
+
+    assert (
+        ColaboradorEspacioPWA.objects.filter(
+            comedor=comedor,
+            dni="12345678",
+        ).count()
+        == 1
+    )
+
+
+@pytest.mark.django_db
 def test_colaboradores_requiere_representante_del_espacio(comedor):
     user_model = get_user_model()
     other_user = user_model.objects.create_user(

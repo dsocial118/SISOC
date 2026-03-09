@@ -23,17 +23,49 @@ def _snapshot_colaborador(colaborador: ColaboradorEspacioPWA) -> dict:
 
 @transaction.atomic
 def create_colaborador(*, comedor_id: int, actor, data: dict) -> ColaboradorEspacioPWA:
-    colaborador = ColaboradorEspacioPWA.objects.create(
-        comedor_id=comedor_id,
-        nombre=data["nombre"],
-        apellido=data["apellido"],
-        dni=data["dni"],
-        telefono=data["telefono"],
-        email=data["email"],
-        rol_funcion=data["rol_funcion"],
-        creado_por=actor,
-        actualizado_por=actor,
+    colaborador = (
+        ColaboradorEspacioPWA.objects.filter(
+            comedor_id=comedor_id,
+            dni=data["dni"],
+            activo=False,
+        )
+        .order_by("-id")
+        .first()
     )
+    if colaborador:
+        colaborador.nombre = data["nombre"]
+        colaborador.apellido = data["apellido"]
+        colaborador.telefono = data["telefono"]
+        colaborador.email = data["email"]
+        colaborador.rol_funcion = data["rol_funcion"]
+        colaborador.activo = True
+        colaborador.fecha_baja = None
+        colaborador.actualizado_por = actor
+        colaborador.save(
+            update_fields=[
+                "nombre",
+                "apellido",
+                "telefono",
+                "email",
+                "rol_funcion",
+                "activo",
+                "fecha_baja",
+                "actualizado_por",
+                "fecha_actualizacion",
+            ]
+        )
+    else:
+        colaborador = ColaboradorEspacioPWA.objects.create(
+            comedor_id=comedor_id,
+            nombre=data["nombre"],
+            apellido=data["apellido"],
+            dni=data["dni"],
+            telefono=data["telefono"],
+            email=data["email"],
+            rol_funcion=data["rol_funcion"],
+            creado_por=actor,
+            actualizado_por=actor,
+        )
     registrar_evento_operacion(
         actor=actor,
         comedor_id=comedor_id,
