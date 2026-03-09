@@ -143,8 +143,8 @@ def _build_nomina_rangos_resumen(resumen):
     }
 
 
-def _build_nomina_qs_and_age_qs(comedor_pk):
-    qs_nomina = Nomina.objects.filter(comedor_id=comedor_pk).select_related(
+def _build_nomina_qs_and_age_qs(admision_pk):
+    qs_nomina = Nomina.objects.filter(admision_id=admision_pk).select_related(
         "ciudadano__sexo"
     )
     age_expr = TimestampDiffYears(F("ciudadano__fecha_nacimiento"), Now())
@@ -195,14 +195,14 @@ def _validar_dni_para_renaper_response(dni):
     return dni_str, None
 
 
-def _nomina_ya_contiene_ciudadano(comedor_id, ciudadano):
-    return Nomina.objects.filter(ciudadano=ciudadano, comedor_id=comedor_id).exists()
+def _nomina_ya_contiene_ciudadano(admision_id, ciudadano):
+    return Nomina.objects.filter(ciudadano=ciudadano, admision_id=admision_id).exists()
 
 
-def _crear_nomina_registro(comedor_id, ciudadano, estado=None, observaciones=None):
+def _crear_nomina_registro(admision_id, ciudadano, estado=None, observaciones=None):
     return Nomina.objects.create(
         ciudadano=ciudadano,
-        comedor_id=comedor_id,
+        admision_id=admision_id,
         estado=estado or Nomina.ESTADO_PENDIENTE,
         observaciones=observaciones,
     )
@@ -785,8 +785,8 @@ class ComedorService:
         return total_almuerzo_cena * 763 + total_desayuno_merienda * 383
 
     @staticmethod
-    def get_nomina_detail(comedor_pk, page=1, per_page=100):
-        qs_nomina, qs_nomina_age = _build_nomina_qs_and_age_qs(comedor_pk)
+    def get_nomina_detail(admision_pk, page=1, per_page=100):
+        qs_nomina, qs_nomina_age = _build_nomina_qs_and_age_qs(admision_pk)
         resumen = _aggregate_nomina_resumen(qs_nomina_age)
         rangos_resumen = _build_nomina_rangos_resumen(resumen)
         page_obj = _build_nomina_page(qs_nomina, page, per_page)
@@ -1252,17 +1252,17 @@ class ComedorService:
 
     @staticmethod
     def agregar_ciudadano_a_nomina(
-        comedor_id, ciudadano_id, user, estado=None, observaciones=None
+        admision_id, ciudadano_id, user, estado=None, observaciones=None
     ):
         ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
 
-        if _nomina_ya_contiene_ciudadano(comedor_id, ciudadano):
+        if _nomina_ya_contiene_ciudadano(admision_id, ciudadano):
             return False, "Esta persona ya está en la nómina."
 
         try:
             with transaction.atomic():
                 _crear_nomina_registro(
-                    comedor_id=comedor_id,
+                    admision_id=admision_id,
                     ciudadano=ciudadano,
                     estado=estado,
                     observaciones=observaciones,
@@ -1275,7 +1275,7 @@ class ComedorService:
     @staticmethod
     @transaction.atomic
     def crear_ciudadano_y_agregar_a_nomina(
-        ciudadano_data, comedor_id, user, estado, observaciones
+        ciudadano_data, admision_id, user, estado, observaciones
     ):
         """
         Crea un ciudadano nuevo y lo agrega a la nómina con estado y observaciones.
@@ -1284,7 +1284,7 @@ class ComedorService:
         ciudadano = Ciudadano.objects.create(**ciudadano_data)
 
         ok, msg = ComedorService.agregar_ciudadano_a_nomina(
-            comedor_id=comedor_id,
+            admision_id=admision_id,
             ciudadano_id=ciudadano.id,
             user=user,
             estado=estado,
@@ -1293,6 +1293,47 @@ class ComedorService:
         if not ok:
             ciudadano.delete()
         return ok, msg
+
+    @staticmethod
+    def importar_nomina_ultimo_convenio(admision_id, comedor_id):
+        """
+        Copia los registros de nómina de la admisión anterior al convenio actual.
+
+        "Anterior" se define como la admisión con mayor ID del mismo comedor,
+        distinta a la actual, que tenga al menos un registro de nómina.
+
+        Retorna (ok: bool, mensaje: str, cantidad_importada: int).
+        """
+        admision_origen = (
+            Admision.objects.filter(comedor_id=comedor_id)
+            .exclude(id=admision_id)
+            .filter(nominas__isnull=False)
+            .order_by("-id")
+            .first()
+        )
+
+        if not admision_origen:
+            return False, "No se encontró un convenio anterior con nómina.", 0
+
+        nominas_origen = Nomina.objects.filter(admision=admision_origen)
+        ya_en_destino = set(
+            Nomina.objects.filter(admision_id=admision_id).values_list(
+                "ciudadano_id", flat=True
+            )
+        )
+
+        nuevas = [
+            Nomina(
+                admision_id=admision_id,
+                ciudadano_id=nomina.ciudadano_id,
+                estado=Nomina.ESTADO_PENDIENTE,
+            )
+            for nomina in nominas_origen
+            if nomina.ciudadano_id not in ya_en_destino
+        ]
+
+        Nomina.objects.bulk_create(nuevas)
+        return True, f"Se importaron {len(nuevas)} personas a la nómina.", len(nuevas)
 
     @staticmethod
     def crear_admision_desde_comedor(request, comedor):

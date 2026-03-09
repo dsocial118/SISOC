@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, TemplateView
+from django.views.generic import CreateView, DeleteView, TemplateView, View
 
 from comedores.forms.comedor_form import (
     CiudadanoFormParaNomina,
@@ -40,10 +40,11 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor_pk = self.kwargs["pk"]
+        admision_pk = self.kwargs["admision_pk"]
         page = int(self.request.GET.get("page", 1))
 
         page_obj, nomina_m, nomina_f, nomina_x, espera, total, rangos = (
-            ComedorService.get_nomina_detail(comedor_pk, page)
+            ComedorService.get_nomina_detail(admision_pk, page)
         )
 
         menores = (rangos.get("ninos") or 0) + (rangos.get("adolescentes") or 0)
@@ -61,6 +62,7 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "menores": menores,
                 "nomina_rangos": rangos,
                 "object": comedor,
+                "admision_pk": admision_pk,
             }
         )
         return context
@@ -72,11 +74,15 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
     template_name = "comedor/nomina_form.html"
 
     def get_success_url(self):
-        return reverse_lazy("nomina_ver", kwargs={"pk": self.kwargs["pk"]})
+        return reverse_lazy(
+            "nomina_ver",
+            kwargs={"pk": self.kwargs["pk"], "admision_pk": self.kwargs["admision_pk"]},
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["object"] = ComedorService.get_comedor(self.kwargs["pk"])
+        context["admision_pk"] = self.kwargs["admision_pk"]
 
         query = self.request.GET.get("query", "")
         query_clean = query.strip()
@@ -146,6 +152,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
     def post(self, request, *args, **kwargs):
         # Asegura que self.object exista para el contexto de CreateView
         self.object = None
+        admision_id = self.kwargs["admision_pk"]
         ciudadano_id = request.POST.get("ciudadano_id")
 
         if ciudadano_id:
@@ -166,7 +173,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
             observaciones = form_nomina_extra.cleaned_data.get("observaciones", "")
 
             ok, msg = ComedorService.agregar_ciudadano_a_nomina(
-                comedor_id=self.kwargs["pk"],
+                admision_id=admision_id,
                 ciudadano_id=ciudadano_id,
                 user=request.user,
                 estado=estado,
@@ -193,7 +200,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
 
                 ok, msg = ComedorService.crear_ciudadano_y_agregar_a_nomina(
                     ciudadano_data=ciudadano_data,
-                    comedor_id=self.kwargs["pk"],
+                    admision_id=admision_id,
                     user=request.user,
                     estado=estado,
                     observaciones=observaciones,
@@ -221,4 +228,30 @@ class NominaDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
     success_message = "Registro de nómina dado de baja correctamente."
 
     def get_success_url(self):
-        return reverse_lazy("nomina_ver", kwargs={"pk": self.kwargs["pk"]})
+        return reverse_lazy(
+            "nomina_ver",
+            kwargs={"pk": self.kwargs["pk"], "admision_pk": self.kwargs["admision_pk"]},
+        )
+
+
+class NominaImportarView(LoginRequiredMixin, View):
+    """
+    Importa la nómina del convenio anterior al convenio actual.
+    Redirige a la vista de nómina con mensaje de resultado.
+    """
+
+    http_method_names = ["post"]
+
+    def post(self, request, pk, admision_pk):
+        ok, msg, _ = ComedorService.importar_nomina_ultimo_convenio(
+            admision_id=admision_pk,
+            comedor_id=pk,
+        )
+        if ok:
+            messages.success(request, msg)
+        else:
+            messages.warning(request, msg)
+
+        return redirect(
+            reverse_lazy("nomina_ver", kwargs={"pk": pk, "admision_pk": admision_pk})
+        )

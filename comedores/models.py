@@ -461,7 +461,13 @@ class Nomina(SoftDeleteModelMixin, models.Model):
         (ESTADO_BAJA, "Baja"),
     ]
 
-    comedor = models.ForeignKey("Comedor", on_delete=models.SET_NULL, null=True)
+    admision = models.ForeignKey(
+        "admisiones.Admision",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nominas",
+    )
     ciudadano = models.ForeignKey(
         Ciudadano,
         on_delete=models.CASCADE,
@@ -481,10 +487,13 @@ class Nomina(SoftDeleteModelMixin, models.Model):
         ordering = ["-fecha"]
         verbose_name = "Nomina"
         verbose_name_plural = "Nominas"
-        indexes = [models.Index(fields=["comedor"])]
 
     def __str__(self):
-        comedor = self.comedor.nombre if self.comedor else "Comedor sin nombre"
+        comedor = (
+            self.admision.comedor.nombre
+            if self.admision and self.admision.comedor
+            else "Comedor sin nombre"
+        )
         ciudadano = str(self.ciudadano) if self.ciudadano else "Ciudadano no asignado"
         return f"{ciudadano} en {comedor} ({self.get_estado_display()})"
 
