@@ -97,3 +97,19 @@ def test_is_pwa_representative_uses_comedor_id_fallback(mocker):
         permission.has_permission(_request(user), _view({"comedor_id": "15"})) is False
     )
     mock_is_representante.assert_called_once_with(user, 15)
+
+
+def test_is_pwa_representative_prioritizes_comedor_id_over_pk(mocker):
+    permission = IsPWARepresentativeForComedor()
+    user = _user()
+    mock_is_representante = mocker.patch(
+        "users.api_permissions.is_representante", return_value=True
+    )
+
+    assert (
+        permission.has_permission(
+            _request(user), _view({"comedor_id": "15", "pk": "999"})
+        )
+        is True
+    )
+    mock_is_representante.assert_called_once_with(user, 15)

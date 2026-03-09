@@ -9,6 +9,9 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from pwa.models import AuditoriaSesionPWA
+from pwa.services.auditoria_service import registrar_evento_auth
+from users.services_pwa import is_pwa_user
 from users.api_serializers import (
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
@@ -57,13 +60,39 @@ class UserLoginViewSet(viewsets.ViewSet):
                 if isinstance(exc, AuthenticationFailed)
                 else "Credenciales inválidas."
             )
-            return Response(
+            response = Response(
                 {"detail": detail},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
+            registrar_evento_auth(
+                request=request,
+                evento=AuditoriaSesionPWA.EVENTO_LOGIN_ERROR,
+                resultado=AuditoriaSesionPWA.RESULTADO_ERROR,
+                username_intentado=request.data.get("username"),
+                codigo_respuesta=response.status_code,
+                motivo_error=detail,
+            )
+            return response
         user = serializer.validated_data["user"]
+        if not is_pwa_user(user):
+            detail = "Este usuario no tiene acceso PWA activo."
+            response = Response(
+                {"detail": detail},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+            registrar_evento_auth(
+                request=request,
+                evento=AuditoriaSesionPWA.EVENTO_LOGIN_ERROR,
+                resultado=AuditoriaSesionPWA.RESULTADO_ERROR,
+                user=user,
+                username_intentado=request.data.get("username"),
+                codigo_respuesta=response.status_code,
+                motivo_error=detail,
+            )
+            return response
+
         token, _ = Token.objects.get_or_create(user=user)
-        return Response(
+        response = Response(
             {
                 "token": token.key,
                 "token_type": "Token",
@@ -72,6 +101,15 @@ class UserLoginViewSet(viewsets.ViewSet):
             },
             status=status.HTTP_200_OK,
         )
+        registrar_evento_auth(
+            request=request,
+            evento=AuditoriaSesionPWA.EVENTO_LOGIN_OK,
+            resultado=AuditoriaSesionPWA.RESULTADO_OK,
+            user=user,
+            username_intentado=request.data.get("username"),
+            codigo_respuesta=response.status_code,
+        )
+        return response
 
 
 @extend_schema(tags=["Auth"])
@@ -86,7 +124,15 @@ class UserLogoutViewSet(viewsets.ViewSet):
             token.delete()
         else:
             Token.objects.filter(user=request.user).delete()
-        return Response({"detail": "Logout exitoso."}, status=status.HTTP_200_OK)
+        response = Response({"detail": "Logout exitoso."}, status=status.HTTP_200_OK)
+        registrar_evento_auth(
+            request=request,
+            evento=AuditoriaSesionPWA.EVENTO_LOGOUT,
+            resultado=AuditoriaSesionPWA.RESULTADO_OK,
+            user=request.user,
+            codigo_respuesta=response.status_code,
+        )
+        return response
 
 
 @extend_schema(tags=["Auth"])
@@ -97,7 +143,15 @@ class UserContextViewSet(viewsets.ViewSet):
     @extend_schema(responses=UserContextSerializer)
     def list(self, request):
         serializer = UserContextSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        response = Response(serializer.data, status=status.HTTP_200_OK)
+        registrar_evento_auth(
+            request=request,
+            evento=AuditoriaSesionPWA.EVENTO_ME_OK,
+            resultado=AuditoriaSesionPWA.RESULTADO_OK,
+            user=request.user,
+            codigo_respuesta=response.status_code,
+        )
+        return response
 
 
 @extend_schema(tags=["Auth"])

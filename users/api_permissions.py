@@ -24,7 +24,7 @@ class IsPWARepresentativeForComedor(BasePermission):
         user = request.user
         if not user or not user.is_authenticated:
             return False
-        comedor_id = view.kwargs.get("pk") or view.kwargs.get("comedor_id")
+        comedor_id = view.kwargs.get("comedor_id") or view.kwargs.get("pk")
         if not comedor_id:
             return False
         try:
