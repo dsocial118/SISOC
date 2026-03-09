@@ -1299,15 +1299,23 @@ class ComedorService:
         """
         Copia los registros de nómina de la admisión anterior al convenio actual.
 
-        "Anterior" se define como la admisión con mayor ID del mismo comedor,
-        distinta a la actual, que tenga al menos un registro de nómina.
+        "Anterior" se define como la admisión con mayor ID del mismo comedor
+        menor a la admisión destino y que tenga al menos un registro de nómina.
 
         Retorna (ok: bool, mensaje: str, cantidad_importada: int).
         """
+        admision_destino = Admision.objects.filter(
+            id=admision_id, comedor_id=comedor_id
+        ).first()
+        if not admision_destino:
+            return False, "La admisión seleccionada no corresponde al comedor.", 0
+
         admision_origen = (
-            Admision.objects.filter(comedor_id=comedor_id)
-            .exclude(id=admision_id)
-            .filter(nominas__isnull=False)
+            Admision.objects.filter(
+                comedor_id=comedor_id,
+                id__lt=admision_destino.id,
+                nominas__isnull=False,
+            )
             .order_by("-id")
             .first()
         )
