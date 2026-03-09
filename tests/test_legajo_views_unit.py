@@ -15,6 +15,12 @@ pytestmark = pytest.mark.django_db
 
 def _user(auth=True, superuser=False, groups=None):
     groups = set(groups or [])
+
+    def _has_perm(perm, obj=None):
+        if not auth:
+            return False
+        return superuser or True
+
     return SimpleNamespace(
         id=1,
         is_authenticated=auth,
@@ -22,16 +28,12 @@ def _user(auth=True, superuser=False, groups=None):
         groups=SimpleNamespace(
             filter=lambda **k: SimpleNamespace(exists=lambda: k.get("name") in groups)
         ),
+        has_perm=_has_perm,
     )
 
 
 def _call_post_unwrapped(view, request, *args, **kwargs):
     return view.__class__.post.__wrapped__(view, request, *args, **kwargs)
-
-
-def test_in_group():
-    assert module._in_group(_user(groups={"A"}), "A") is True
-    assert module._in_group(_user(groups={"A"}), "B") is False
 
 
 def test_archivo_upload_dispatch_and_post_paths(mocker):

@@ -18,7 +18,7 @@ Documentar el estado actual de la API usada por la PWA, el modelo de acceso por 
   - representantes crean/listan/desactivan operadores por comedor.
 - Web/backoffice:
   - usuarios con acceso PWA activo no pueden iniciar sesión web.
-  - usuarios web siguen pudiendo usar API con token.
+  - usuarios sin acceso PWA activo no pueden iniciar sesión en API PWA.
 
 ## Modelo de acceso PWA
 
@@ -107,6 +107,35 @@ Se exponen campos de aprobadas del informe técnico (`aprobadas_*`), tomando inf
   - body: `username`, `email`, `password`
 - `PATCH /api/comedores/{id}/usuarios/{user_id}/desactivar/`
 
+### 8) Colaboradores del espacio (representante)
+
+- `GET /api/pwa/espacios/{comedor_id}/colaboradores/`
+- `POST /api/pwa/espacios/{comedor_id}/colaboradores/`
+- `PATCH /api/pwa/espacios/{comedor_id}/colaboradores/{id}/`
+- `DELETE /api/pwa/espacios/{comedor_id}/colaboradores/{id}/`
+
+Reglas:
+- baja lógica (`activo=False`, `fecha_baja`) en `DELETE`
+- no se permite duplicar `dni` activo dentro del mismo espacio
+- validaciones de formato para `dni`, `email` y `telefono`
+
+### 9) Mensajes del espacio (comunicados a comedores)
+
+- `GET /api/pwa/espacios/{comedor_id}/mensajes/`
+- `GET /api/pwa/espacios/{comedor_id}/mensajes/{mensaje_id}/`
+- `PATCH /api/pwa/espacios/{comedor_id}/mensajes/{mensaje_id}/marcar-visto/`
+
+Fuente:
+- los mensajes PWA se nutren de `comunicados.Comunicado`
+- se exponen solo comunicados `externo + comedores + publicado`
+- se incluyen comunicados dirigidos al comedor y los marcados para todos los comedores
+- no se exponen comunicados vencidos
+
+Lectura y auditoria:
+- el estado de lectura se persiste en `pwa.LecturaMensajePWA`
+- se registra `visto` y `fecha_visto` por `user + comedor + comunicado`
+- cada primer marcado como visto genera auditoria en `pwa.AuditoriaOperacionPWA` con entidad `mensaje_lectura`
+
 ## Reglas de permisos y alcance
 
 - `TokenAuthentication` + `IsAuthenticated` en API PWA.
@@ -115,6 +144,23 @@ Se exponen campos de aprobadas del informe técnico (`aprobadas_*`), tomando inf
   - usuarios no PWA: filtros existentes de `ComedorService`.
 - Gestión de `/usuarios/` protegida con `IsPWARepresentativeForComedor`.
 - Usuarios PWA bloqueados en login web por `BackofficeAuthenticationForm`.
+
+## Auditoria de operaciones PWA
+
+Modelo: `pwa.AuditoriaOperacionPWA`
+
+- Registra eventos de negocio con:
+  - `entidad`, `entidad_id`, `accion`
+  - `user`, `comedor`, `fecha_evento`
+  - `snapshot_antes`, `snapshot_despues`, `metadata`
+- Alcance actual:
+- colaboradores: alta/edicion/baja logica
+- actividades: alta/edicion/baja logica
+- nomina/perfil PWA: alta/edicion/baja logica
+- inscripciones de actividad: alta/reactivacion/desactivacion
+- lecturas de mensajes/comunicados: marcado de visto por usuario y espacio
+- Objetivo:
+  - conservar trazabilidad de cambios y estado de registros ante bajas o ediciones.
 
 ## Tests automatizados relevantes
 
@@ -133,3 +179,5 @@ Cobertura actual incluye auth, contexto, scope por comedor, gestión de operador
   - colección `postman/PWA Smoke.postman_collection.json`
   - environment `postman/PWA Smoke.postman_environment.json`
   - runner `scripts/run_pwa_smoke_postman.sh`
+
+
