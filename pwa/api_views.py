@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch, Q
+from django.http import Http404
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.authentication import TokenAuthentication
@@ -15,6 +17,7 @@ from pwa.api_serializers import (
     ColaboradorEspacioPWASerializer,
     DiaSerializer,
     InscriptoActividadPWAListSerializer,
+    MensajeEspacioPWASerializer,
     NominaEspacioPWACreateUpdateSerializer,
     NominaEspacioPWAListSerializer,
     NominaRenaperPreviewSerializer,
@@ -36,6 +39,11 @@ from pwa.services.colaboradores_service import (
     soft_delete_colaborador,
     update_colaborador,
 )
+from pwa.services.mensajes_service import (
+    get_mensaje_for_espacio,
+    list_mensajes_for_espacio,
+    marcar_mensaje_como_visto,
+)
 from pwa.services.nomina_service import (
     create_nomina_persona,
     is_menor,
@@ -43,6 +51,7 @@ from pwa.services.nomina_service import (
     split_gender_bucket,
     update_nomina_persona,
 )
+from users.api_permissions import IsPWAAuthenticatedToken
 from users.api_permissions import IsPWARepresentativeForComedor
 from comedores.models import Nomina
 from comedores.services.comedor_service.impl import ComedorService
@@ -57,6 +66,102 @@ class PwaHealthViewSet(viewsets.ViewSet):
 
     def list(self, request):
         return Response({"status": "ok"})
+
+
+@extend_schema(tags=["PWA Mensajes"])
+class MensajeEspacioPWAViewSet(viewsets.ViewSet):
+    """Mensajes por espacio en PWA a partir de comunicados de la webapp."""
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsPWAAuthenticatedToken]
+
+    def list(self, request, comedor_id=None):
+        queryset = list_mensajes_for_espacio(comedor_id=comedor_id, user=request.user)
+        items = list(queryset)
+        paginator = Paginator(items, 20)
+        page_number = request.query_params.get("page", 1)
+        page_obj = paginator.get_page(page_number)
+        serializer = MensajeEspacioPWASerializer(
+            page_obj.object_list,
+            many=True,
+            context={
+                "request": request,
+                "comedor_id": comedor_id,
+                "user": request.user,
+            },
+        )
+        unread_count = 0
+        for item in items:
+            lecturas = getattr(item, "lecturas_pwa_usuario_espacio", None) or []
+            lectura = lecturas[0] if lecturas else None
+            if not lectura or not lectura.visto:
+                unread_count += 1
+        return Response(
+            {
+                "count": paginator.count,
+                "num_pages": paginator.num_pages,
+                "current_page": page_obj.number,
+                "unread_count": unread_count,
+                "results": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def retrieve(self, request, comedor_id=None, pk=None):
+        try:
+            mensaje = get_mensaje_for_espacio(
+                comedor_id=comedor_id,
+                comunicado_id=int(pk),
+                user=request.user,
+            )
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "mensaje_id inválido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Http404 as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = MensajeEspacioPWASerializer(
+            mensaje,
+            context={
+                "request": request,
+                "comedor_id": comedor_id,
+                "user": request.user,
+            },
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def marcar_visto(self, request, comedor_id=None, pk=None):
+        try:
+            mensaje, _ = marcar_mensaje_como_visto(
+                comedor_id=comedor_id,
+                comunicado_id=int(pk),
+                actor=request.user,
+            )
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "mensaje_id inválido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Http404 as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = MensajeEspacioPWASerializer(
+            mensaje,
+            context={
+                "request": request,
+                "comedor_id": comedor_id,
+                "user": request.user,
+            },
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["PWA Colaboradores"])

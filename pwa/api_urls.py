@@ -5,6 +5,7 @@ from pwa.api_views import (
     ActividadEspacioPWAViewSet,
     CatalogoActividadPWAViewSet,
     ColaboradorEspacioPWAViewSet,
+    MensajeEspacioPWAViewSet,
     NominaEspacioPWAViewSet,
     PwaHealthViewSet,
 )
@@ -81,6 +82,33 @@ urlpatterns = [
             }
         ),
         name="pwa-actividades-inscriptos",
+    ),
+    path(
+        "espacios/<int:comedor_id>/mensajes/",
+        MensajeEspacioPWAViewSet.as_view(
+            {
+                "get": "list",
+            }
+        ),
+        name="pwa-mensajes-list",
+    ),
+    path(
+        "espacios/<int:comedor_id>/mensajes/<int:pk>/",
+        MensajeEspacioPWAViewSet.as_view(
+            {
+                "get": "retrieve",
+            }
+        ),
+        name="pwa-mensajes-detail",
+    ),
+    path(
+        "espacios/<int:comedor_id>/mensajes/<int:pk>/marcar-visto/",
+        MensajeEspacioPWAViewSet.as_view(
+            {
+                "patch": "marcar_visto",
+            }
+        ),
+        name="pwa-mensajes-marcar-visto",
     ),
     path(
         "espacios/<int:comedor_id>/nomina/",
