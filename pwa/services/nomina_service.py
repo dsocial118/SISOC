@@ -1,4 +1,4 @@
-﻿import re
+import re
 from datetime import date
 
 from django.core.exceptions import ValidationError
@@ -85,7 +85,7 @@ def _resolve_sexo(sexo_id):
         return None
     sexo = Sexo.objects.filter(pk=sexo_id).first()
     if not sexo:
-        raise ValidationError({"sexo_id": "GÃ©nero invÃ¡lido."})
+        raise ValidationError({"sexo_id": "Género inválido."})
     return sexo
 
 
@@ -122,7 +122,7 @@ def _create_or_resolve_ciudadano(*, actor, data: dict) -> Ciudadano:
     dni = (data.get("dni") or "").strip()
     if not DNI_REGEX.fullmatch(dni):
         raise ValidationError(
-            {"dni": "Formato de DNI invÃ¡lido. Debe tener 7 u 8 dÃ­gitos."}
+            {"dni": "Formato de DNI inválido. Debe tener 7 u 8 dígitos."}
         )
 
     renaper_result = ComedorService.crear_ciudadano_desde_renaper(dni, user=actor)
@@ -224,7 +224,7 @@ def _sync_inscripciones_actividades(
     if missing_ids:
         raise ValidationError(
             {
-                "actividad_ids": f"Actividades invÃ¡lidas para el espacio: {', '.join(map(str, missing_ids))}."
+                "actividad_ids": f"Actividades inválidas para el espacio: {', '.join(map(str, missing_ids))}."
             }
         )
 
@@ -345,12 +345,12 @@ def _validate_asistencia(
     if not asistencia_alimentaria and not asistencia_actividades:
         raise ValidationError(
             {
-                "asistencia": "Debe seleccionar al menos AlimentaciÃ³n o Actividades de FormaciÃ³n."
+                "asistencia": "Debe seleccionar al menos Alimentación o Actividades de Formación."
             }
         )
     if asistencia_actividades and not activity_ids:
         raise ValidationError(
-            {"actividad_ids": "Debe seleccionar al menos una actividad de formaciÃ³n."}
+            {"actividad_ids": "Debe seleccionar al menos una actividad de formación."}
         )
     return asistencia_alimentaria, asistencia_actividades
 
@@ -386,7 +386,7 @@ def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
         .exists()
     ):
         raise ValidationError(
-            {"ciudadano_id": "La persona ya integra la nÃ³mina activa del espacio."}
+            {"ciudadano_id": "La persona ya integra la nómina activa del espacio."}
         )
 
     nomina = Nomina.objects.create(
@@ -460,7 +460,7 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
     ):
         raise ValidationError(
             {
-                "es_indocumentado": "No se permite cambiar el tipo documentado/indocumentado en ediciÃ³n."
+                "es_indocumentado": "No se permite cambiar el tipo documentado/indocumentado en edición."
             }
         )
 

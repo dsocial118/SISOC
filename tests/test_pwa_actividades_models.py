@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 from django.db import IntegrityError, transaction
 
 from comedores.models import Comedor, Nomina
