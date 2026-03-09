@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, TemplateView, View
 
+from admisiones.models.admisiones import Admision
 from comedores.forms.comedor_form import (
     CiudadanoFormParaNomina,
     NominaExtraForm,
@@ -14,6 +15,11 @@ from comedores.forms.comedor_form import (
 from comedores.models import Nomina
 from comedores.services.comedor_service import ComedorService
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+
+
+def _get_admision_del_comedor_or_404(comedor_pk, admision_pk):
+    """Obtiene la admisión sólo si pertenece al comedor de la URL."""
+    return get_object_or_404(Admision, pk=admision_pk, comedor_id=comedor_pk)
 
 
 @login_required
@@ -39,17 +45,17 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        comedor_pk = self.kwargs["pk"]
-        admision_pk = self.kwargs["admision_pk"]
+        admision = _get_admision_del_comedor_or_404(
+            self.kwargs["pk"],
+            self.kwargs["admision_pk"],
+        )
         page = int(self.request.GET.get("page", 1))
 
         page_obj, nomina_m, nomina_f, nomina_x, espera, total, rangos = (
-            ComedorService.get_nomina_detail(admision_pk, page)
+            ComedorService.get_nomina_detail(admision.pk, page)
         )
 
         menores = (rangos.get("ninos") or 0) + (rangos.get("adolescentes") or 0)
-
-        comedor = ComedorService.get_comedor(comedor_pk)
 
         context.update(
             {
@@ -61,8 +67,8 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "cantidad_nomina": total,
                 "menores": menores,
                 "nomina_rangos": rangos,
-                "object": comedor,
-                "admision_pk": admision_pk,
+                "object": admision.comedor,
+                "admision_pk": admision.pk,
             }
         )
         return context
@@ -81,8 +87,12 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["object"] = ComedorService.get_comedor(self.kwargs["pk"])
-        context["admision_pk"] = self.kwargs["admision_pk"]
+        admision = _get_admision_del_comedor_or_404(
+            self.kwargs["pk"],
+            self.kwargs["admision_pk"],
+        )
+        context["object"] = admision.comedor
+        context["admision_pk"] = admision.pk
 
         query = self.request.GET.get("query", "")
         query_clean = query.strip()
@@ -152,7 +162,11 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
     def post(self, request, *args, **kwargs):
         # Asegura que self.object exista para el contexto de CreateView
         self.object = None
-        admision_id = self.kwargs["admision_pk"]
+        admision = _get_admision_del_comedor_or_404(
+            self.kwargs["pk"],
+            self.kwargs["admision_pk"],
+        )
+        admision_id = admision.pk
         ciudadano_id = request.POST.get("ciudadano_id")
 
         if ciudadano_id:
@@ -227,6 +241,16 @@ class NominaDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
     pk_url_kwarg = "pk2"
     success_message = "Registro de nómina dado de baja correctamente."
 
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                admision_id=self.kwargs["admision_pk"],
+                admision__comedor_id=self.kwargs["pk"],
+            )
+        )
+
     def get_success_url(self):
         return reverse_lazy(
             "nomina_ver",
@@ -243,6 +267,7 @@ class NominaImportarView(LoginRequiredMixin, View):
     http_method_names = ["post"]
 
     def post(self, request, pk, admision_pk):
+        _get_admision_del_comedor_or_404(pk, admision_pk)
         ok, msg, _ = ComedorService.importar_nomina_ultimo_convenio(
             admision_id=admision_pk,
             comedor_id=pk,

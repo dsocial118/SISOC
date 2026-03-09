@@ -481,6 +481,61 @@ def test_importar_nomina_evita_duplicados(ciudadano_fixture):
     assert Nomina.objects.filter(admision=admision_actual).count() == 1
 
 
+@pytest.mark.django_db
+def test_importar_nomina_toma_admision_anterior_y_no_una_posterior():
+    """Importa desde la admisión anterior real, no desde una más nueva."""
+    from datetime import date
+
+    comedor = Comedor.objects.create(nombre="Comedor Orden")
+    admision_vieja = Admision.objects.create(comedor=comedor)
+    admision_destino = Admision.objects.create(comedor=comedor)
+    admision_mas_nueva = Admision.objects.create(comedor=comedor)
+
+    ciudadano_viejo = Ciudadano.objects.create(
+        nombre="Ana",
+        apellido="Vieja",
+        fecha_nacimiento=date(1990, 1, 1),
+    )
+    ciudadano_nuevo = Ciudadano.objects.create(
+        nombre="Beto",
+        apellido="Nuevo",
+        fecha_nacimiento=date(1991, 1, 1),
+    )
+    Nomina.objects.create(admision=admision_vieja, ciudadano=ciudadano_viejo)
+    Nomina.objects.create(admision=admision_mas_nueva, ciudadano=ciudadano_nuevo)
+
+    ok, _msg, cantidad = ComedorService.importar_nomina_ultimo_convenio(
+        admision_id=admision_destino.pk,
+        comedor_id=comedor.pk,
+    )
+
+    assert ok is True
+    assert cantidad == 1
+    assert Nomina.objects.filter(
+        admision=admision_destino, ciudadano=ciudadano_viejo
+    ).exists()
+    assert not Nomina.objects.filter(
+        admision=admision_destino, ciudadano=ciudadano_nuevo
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_importar_nomina_falla_si_admision_no_corresponde_al_comedor():
+    """Retorna error si la admisión destino no pertenece al comedor recibido."""
+    comedor_a = Comedor.objects.create(nombre="Comedor A")
+    comedor_b = Comedor.objects.create(nombre="Comedor B")
+    admision_b = Admision.objects.create(comedor=comedor_b)
+
+    ok, msg, cantidad = ComedorService.importar_nomina_ultimo_convenio(
+        admision_id=admision_b.pk,
+        comedor_id=comedor_a.pk,
+    )
+
+    assert ok is False
+    assert "no corresponde al comedor" in msg
+    assert cantidad == 0
+
+
 # ---------------------------------------------------------------------------
 # Tests de vistas
 # ---------------------------------------------------------------------------
@@ -499,6 +554,21 @@ def test_nomina_detail_view_responde_ok(client_nomina_fixture, admision_fixture)
     assert response.status_code == 200
     for key in ["nomina", "cantidad_nomina", "object", "admision_pk"]:
         assert key in response.context
+
+
+@pytest.mark.django_db
+def test_nomina_detail_view_404_si_admision_no_corresponde(client_nomina_fixture):
+    """Retorna 404 si la admisión no pertenece al comedor de la URL."""
+    comedor_a = Comedor.objects.create(nombre="Comedor A")
+    comedor_b = Comedor.objects.create(nombre="Comedor B")
+    admision_b = Admision.objects.create(comedor=comedor_b)
+
+    url = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor_a.pk, "admision_pk": admision_b.pk},
+    )
+    response = client_nomina_fixture.get(url)
+    assert response.status_code == 404
 
 
 @pytest.mark.django_db
@@ -527,3 +597,18 @@ def test_nomina_importar_view_redirige(
         kwargs={"pk": comedor.pk, "admision_pk": admision_nueva.pk},
     )
     assert expected_redirect in response.url
+
+
+@pytest.mark.django_db
+def test_nomina_importar_view_404_si_admision_no_corresponde(client_nomina_fixture):
+    """Retorna 404 si la admisión no corresponde al comedor en la URL."""
+    comedor_a = Comedor.objects.create(nombre="Comedor A")
+    comedor_b = Comedor.objects.create(nombre="Comedor B")
+    admision_b = Admision.objects.create(comedor=comedor_b)
+
+    url = reverse(
+        "nomina_importar",
+        kwargs={"pk": comedor_a.pk, "admision_pk": admision_b.pk},
+    )
+    response = client_nomina_fixture.post(url)
+    assert response.status_code == 404

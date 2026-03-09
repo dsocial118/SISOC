@@ -5,12 +5,12 @@ Pasos:
   1. Agrega campo `admision` FK (nullable).
   2. Data migration: asigna la admisión activa con mayor ID del comedor
      correspondiente a cada registro existente. Si no hay admisión activa,
-     el registro queda con admision=null.
+     usa la admisión más reciente.
   3. Elimina el campo `comedor`.
   4. Agrega índice explícito sobre `admision`.
 
-Supuesto documentado: los registros de comedores sin admisión activa
-quedan con admision=null (sin pérdida de datos, sin asignación incorrecta).
+Supuesto documentado: se prioriza conservar vínculo funcional de datos
+asignando una admisión existente del mismo comedor.
 """
 
 import django.db.models.deletion
@@ -21,6 +21,7 @@ def asignar_admision_a_nominas(apps, schema_editor):
     """
     Para cada Nomina con comedor asignado y sin admision, busca la admision
     activa con mayor ID de ese comedor y la asigna.
+    Si no hay activa, usa la más reciente.
     """
     Nomina = apps.get_model("comedores", "Nomina")
     Admision = apps.get_model("admisiones", "Admision")
@@ -37,10 +38,14 @@ def asignar_admision_a_nominas(apps, schema_editor):
             .order_by("-id")
             .first()
         )
+        if not admision:
+            admision = (
+                Admision.objects.filter(comedor_id=comedor_id).order_by("-id").first()
+            )
         if admision:
-            Nomina.objects.filter(
-                comedor_id=comedor_id, admision__isnull=True
-            ).update(admision=admision)
+            Nomina.objects.filter(comedor_id=comedor_id, admision__isnull=True).update(
+                admision=admision
+            )
 
 
 class Migration(migrations.Migration):
