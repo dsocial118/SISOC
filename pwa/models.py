@@ -124,6 +124,58 @@ class AuditoriaOperacionPWA(models.Model):
         return f"{self.entidad}#{self.entidad_id} {self.accion} {self.fecha_evento:%Y-%m-%d %H:%M:%S}"
 
 
+class LecturaMensajePWA(models.Model):
+    """Estado de lectura de mensajes PWA originados en comunicados."""
+
+    comunicado = models.ForeignKey(
+        "comunicados.Comunicado",
+        on_delete=models.CASCADE,
+        related_name="lecturas_pwa",
+    )
+    comedor = models.ForeignKey(
+        Comedor,
+        on_delete=models.CASCADE,
+        related_name="lecturas_mensajes_pwa",
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="lecturas_mensajes_pwa",
+    )
+    visto = models.BooleanField(default=False)
+    fecha_visto = models.DateTimeField(null=True, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Lectura mensaje PWA"
+        verbose_name_plural = "Lecturas mensajes PWA"
+        ordering = ("-fecha_visto", "-fecha_creacion", "-id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("comunicado", "comedor", "user"),
+                name="uniq_lectura_mensaje_pwa_por_usuario_espacio",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=["comedor", "user", "visto"],
+                name="pwa_msg_read_com_user_seen_idx",
+            ),
+            models.Index(
+                fields=["comunicado", "user"],
+                name="pwa_msg_read_msg_user_idx",
+            ),
+            models.Index(fields=["fecha_visto"], name="pwa_msg_read_seen_at_idx"),
+        ]
+
+    def __str__(self):
+        return (
+            f"Mensaje {self.comunicado_id} - user {self.user_id} - "
+            f"comedor {self.comedor_id} - visto={self.visto}"
+        )
+
+
 class ColaboradorEspacioPWA(models.Model):
     """Colaborador asociado a un espacio (comedor) para la app PWA."""
 

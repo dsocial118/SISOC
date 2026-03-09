@@ -7,6 +7,7 @@ from pwa.models import (
     CatalogoActividadPWA,
     ColaboradorEspacioPWA,
     InscriptoActividadEspacioPWA,
+    LecturaMensajePWA,
     NominaEspacioPWA,
 )
 
@@ -69,6 +70,26 @@ class AuditoriaOperacionPWAAdmin(admin.ModelAdmin):
         "snapshot_despues",
         "metadata",
     )
+
+
+@admin.register(LecturaMensajePWA)
+class LecturaMensajePWAAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "comunicado",
+        "comedor",
+        "user",
+        "visto",
+        "fecha_visto",
+        "fecha_creacion",
+    )
+    list_filter = ("visto", "comedor")
+    search_fields = (
+        "comunicado__titulo",
+        "comedor__nombre",
+        "user__username",
+    )
+    readonly_fields = ("fecha_creacion", "fecha_actualizacion")
 
 
 @admin.register(ColaboradorEspacioPWA)

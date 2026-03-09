@@ -1,9 +1,10 @@
 import re
 
+from django.core.exceptions import ObjectDoesNotExist
+from comunicados.models import Comunicado, ComunicadoAdjunto
 from rest_framework import serializers
 from comedores.models import Nomina
 from core.models import Dia, Sexo
-from django.core.exceptions import ObjectDoesNotExist
 
 from pwa.models import (
     ActividadEspacioPWA,
@@ -381,3 +382,62 @@ class NominaRenaperPreviewSerializer(serializers.Serializer):
                 "Formato de DNI inválido. Debe contener 7 u 8 dígitos."
             )
         return dni
+
+
+class MensajeAdjuntoPWASerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ComunicadoAdjunto
+        fields = ("id", "nombre_original", "url")
+
+    def get_url(self, obj):
+        if not obj.archivo:
+            return None
+        request = self.context.get("request")
+        url = obj.archivo.url
+        return request.build_absolute_uri(url) if request else url
+
+
+class MensajeEspacioPWASerializer(serializers.ModelSerializer):
+    adjuntos = MensajeAdjuntoPWASerializer(many=True, read_only=True)
+    visto = serializers.SerializerMethodField()
+    fecha_visto = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comunicado
+        fields = (
+            "id",
+            "titulo",
+            "cuerpo",
+            "destacado",
+            "subtipo",
+            "fecha_publicacion",
+            "fecha_vencimiento",
+            "visto",
+            "fecha_visto",
+            "adjuntos",
+        )
+
+    def _get_lectura(self, obj):
+        lecturas = getattr(obj, "lecturas_pwa_usuario_espacio", None)
+        if lecturas is not None:
+            return lecturas[0] if lecturas else None
+
+        comedor_id = self.context.get("comedor_id")
+        user = self.context.get("user")
+        if not comedor_id or not user:
+            return None
+        return (
+            obj.lecturas_pwa.filter(comedor_id=comedor_id, user=user)
+            .order_by("-fecha_visto", "-id")
+            .first()
+        )
+
+    def get_visto(self, obj):
+        lectura = self._get_lectura(obj)
+        return bool(lectura and lectura.visto)
+
+    def get_fecha_visto(self, obj):
+        lectura = self._get_lectura(obj)
+        return lectura.fecha_visto if lectura and lectura.visto else None
