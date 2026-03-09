@@ -11,7 +11,6 @@ from rest_framework.response import Response
 
 from pwa.models import AuditoriaSesionPWA
 from pwa.services.auditoria_service import registrar_evento_auth
-from users.api_serializers import UserContextSerializer
 from users.services_pwa import is_pwa_user
 from users.api_serializers import (
     PasswordResetConfirmSerializer,
