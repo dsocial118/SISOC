@@ -239,7 +239,7 @@ def test_gestion_oculta_boton_editar_si_usuario_no_puede_editar(client):
     creador = _create_user("creador_no_edit")
     usuario_gestion = _create_user(
         "gestion_sin_editar",
-        groups=[UserGroups.COMUNICADO_PUBLICAR],
+        groups=[UserGroups.COMUNICADO_CREAR],
     )
     comunicado = _create_comunicado(
         usuario_creador=creador,
