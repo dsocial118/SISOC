@@ -163,8 +163,8 @@ class ColaboradorEspacioPWA(models.Model):
         ordering = ("apellido", "nombre", "-id")
         constraints = [
             models.UniqueConstraint(
-                fields=("comedor", "dni", "activo"),
-                name="uniq_colaborador_pwa_dni_estado_por_comedor",
+                fields=("comedor", "dni"),
+                name="uniq_colaborador_pwa_dni_por_comedor",
             )
         ]
         indexes = [
@@ -317,7 +317,7 @@ class InscriptoActividadEspacioPWA(models.Model):
 
 
 class NominaEspacioPWA(models.Model):
-    """Perfil PWA para una persona de nÃ³mina del espacio."""
+    """Perfil PWA para una persona de nómina del espacio."""
 
     nomina = models.OneToOneField(
         Nomina,
