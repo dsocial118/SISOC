@@ -22,6 +22,12 @@ class _Groups:
         return self.last_name in self.allowed
 
 
+_PERM_TO_GROUP = {
+    "auth.role_tecnicoceliaquia": "TecnicoCeliaquia",
+    "auth.role_coordinadorceliaquia": "CoordinadorCeliaquia",
+}
+
+
 class _User:
     def __init__(self, auth=True, superuser=False, groups=None, user_id=10):
         self.is_authenticated = auth
@@ -31,6 +37,16 @@ class _User:
 
     def get_username(self):
         return "tester"
+
+    def has_perm(self, perm, obj=None):
+        if not self.is_authenticated:
+            return False
+        if self.is_superuser:
+            return True
+        group_name = _PERM_TO_GROUP.get(perm)
+        if group_name:
+            return self.groups.filter(group_name).exists()
+        return False
 
 
 class _Asignaciones:
@@ -68,7 +84,7 @@ def test_helpers_truncate(value, length, expected):
     assert module._truncate(value, length) == expected
 
 
-def test_helpers_build_log_data_and_in_group():
+def test_helpers_build_log_data():
     user = _User(groups=_Groups({"TecnicoCeliaquia"}))
     legajo = SimpleNamespace(pk=2, expediente_id=20)
     ciudadano = SimpleNamespace(id=30, sexo=SimpleNamespace(sexo="Masculino"))
@@ -85,8 +101,6 @@ def test_helpers_build_log_data_and_in_group():
     assert data["user_id"] == 10
     assert data["legajo_id"] == 2
     assert data["documento_consulta"] == "12345678"
-    assert module._in_group(user, "TecnicoCeliaquia") is True
-    assert module._in_group(user, "NoExiste") is False
 
 
 def test_dispatch_permissions():
