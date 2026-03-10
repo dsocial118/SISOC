@@ -16,6 +16,7 @@ from celiaquia.views.expediente import (
     ExpedienteCreateView,
     ExpedienteDetailView,
     ExpedienteUpdateView,
+    ExpedienteDeleteView,
     ExpedientePreviewExcelView,
     ExpedientePlantillaExcelView,
     ExpedienteImportView,
@@ -121,6 +122,13 @@ urlpatterns = [
         "expedientes/<int:pk>/editar/",
         group_required(["ProvinciaCeliaquia"])(ExpedienteUpdateView.as_view()),
         name="expediente_update",
+    ),
+    path(
+        "expedientes/<int:pk>/eliminar/",
+        permissions_any_required(["celiaquia.view_expediente"])(
+            ExpedienteDeleteView.as_view()
+        ),
+        name="expediente_delete",
     ),
     path(
         "expedientes/<int:pk>/importar/",
