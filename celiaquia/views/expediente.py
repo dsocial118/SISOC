@@ -1708,9 +1708,7 @@ class ExpedienteDeleteView(View):
                 {"success": True, "message": "Expediente eliminado correctamente."}
             )
         except Exception as e:
-            logger.error(
-                "Error al eliminar expediente %s: %s", pk, e, exc_info=True
-            )
+            logger.error("Error al eliminar expediente %s: %s", pk, e, exc_info=True)
             return JsonResponse(
                 {"success": False, "error": "Error al eliminar el expediente."},
                 status=500,
