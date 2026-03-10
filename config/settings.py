@@ -357,10 +357,7 @@ SPECTACULAR_SETTINGS = {
 
 # Dominios / Integraciones
 DOMINIO = os.environ.get("DOMINIO", "localhost:8001")
-SENTRY_DSN = (
-    "https://REDACTED_SENTRY_KEY@"
-    "REDACTED_SENTRY_ENDPOINT"
-)
+SENTRY_DSN = os.getenv("SENTRY_DSN", "")
 SENTRY_LOG_EVENT_LEVEL = "WARNING"
 if ENVIRONMENT == "qa":
     SENTRY_ERROR_SAMPLE_RATE = 0.75

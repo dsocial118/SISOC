@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 import shutil
+from pathlib import Path
 
 
 if not logging.getLogger().handlers:
@@ -37,7 +38,7 @@ def borrar_carpetas_logs_viejas(directory):
 
 
 if __name__ == "__main__":
-    # Ruta del directorio donde se encuentran las carpetas de logs
-    LOGS_DIR = "/home/REDACTED_DB_USER/SISOC-Backoffice/logs/"
+    # Usa la carpeta logs del proyecto, evitando rutas hardcodeadas por usuario.
+    LOGS_DIR = str(Path(__file__).resolve().parents[1] / "logs")
 
     borrar_carpetas_logs_viejas(LOGS_DIR)
