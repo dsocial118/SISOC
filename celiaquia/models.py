@@ -83,7 +83,7 @@ class TipoMovimientoCupo(models.TextChoices):
     SUSPENDIDO = "SUSPENDIDO", "Suspendido"
 
 
-class Expediente(models.Model):
+class Expediente(SoftDeleteModelMixin, models.Model):
     usuario_provincia = models.ForeignKey(
         User, on_delete=models.PROTECT, related_name="expedientes_creados"
     )

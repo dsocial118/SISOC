@@ -1679,8 +1679,11 @@ class ExpedienteDeleteView(View):
         expediente = queryset.filter(pk=pk).first()
         if expediente is None:
             return JsonResponse(
-                {"success": False, "error": "El expediente no existe o ya fue eliminado."},
-                status=404,
+                {
+                    "success": True,
+                    "message": "El expediente ya estaba eliminado.",
+                    "already_deleted": True,
+                }
             )
 
         get_data = getattr(request, "GET", {})
