@@ -139,6 +139,15 @@
                                     <i class="fas fa-eye"></i>
                                     Ver
                                 </a>
+                                {% if request.user.is_superuser %}
+                                    <button type="button"
+                                            class="btn btn-danger js-delete-expediente"
+                                            data-exp-id="{{ exp.pk }}"
+                                            title="Eliminar expediente">
+                                        <i class="fas fa-trash"></i>
+                                        Eliminar
+                                    </button>
+                                {% endif %}
                                 <!-- PROVINCIA -->
                                 {% if request.user|has_group:"ProvinciaCeliaquia" %}
                                     {% if exp.estado.nombre == 'CREADO' %}

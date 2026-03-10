@@ -76,7 +76,7 @@ class EditarLegajoView(View):
                     else ""
                 ),
                 "sexo": ciudadano.sexo_id if ciudadano.sexo else "",
-                "nacionalidad": ciudadano.nacionalidad_id or "",
+                "nacionalidad": ciudadano.nacionalidad_id if ciudadano.nacionalidad else "",
                 "telefono": ciudadano.telefono or "",
                 "email": ciudadano.email or "",
                 "calle": ciudadano.calle or "",
