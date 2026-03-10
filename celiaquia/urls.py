@@ -30,6 +30,7 @@ from celiaquia.views.expediente import (
     ActualizarRegistroErroneoView,
     ReprocesarRegistrosErroneosView,
     EliminarRegistroErroneoView,
+    EliminarExpedienteView,
 )
 from celiaquia.views.confirm_envio import ExpedienteConfirmView
 from celiaquia.views.legajo import (
@@ -277,5 +278,10 @@ urlpatterns = [
             LegajoComentarioCreateView.as_view()
         ),
         name="legajo_comentario_create",
+    ),
+    path(
+        "expedientes/<int:pk>/eliminar/",
+        group_required(["CoordinadorCeliaquia"])(EliminarExpedienteView.as_view()),
+        name="expediente_eliminar",
     ),
 ]

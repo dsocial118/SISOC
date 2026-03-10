@@ -961,8 +961,8 @@
                                                         <option value="">Seleccionar...</option>
                                                         {% for nac in nacionalidades %}
                                                             <option value="{{ nac.id }}"
-                                                                    {% if registro.datos_raw.nacionalidad|stringformat:"s" == nac.id|stringformat:"s" or registro.datos_raw.nacionalidad|lower == nac.nombre|lower %}selected{% endif %}>
-                                                                {{ nac.nombre }}
+                                                                    {% if registro.datos_raw.nacionalidad|stringformat:"s" == nac.id|stringformat:"s" or registro.datos_raw.nacionalidad|lower == nac.nacionalidad|lower %}selected{% endif %}>
+                                                                {{ nac.nacionalidad }}
                                                             </option>
                                                         {% endfor %}
                                                     </select>
@@ -1084,12 +1084,11 @@
                                                                value="{{ registro.datos_raw.telefono_responsable|default:'' }}" />
                                                     </div>
                                                     <div class="col-md-6">
-                                                        <label class="form-label">Email Responsable *</label>
+                                                        <label class="form-label">Email Responsable</label>
                                                         <input type="email"
                                                                class="form-control"
                                                                name="email_responsable"
-                                                               value="{{ registro.datos_raw.email_responsable|default:'' }}"
-                                                               required />
+                                                               value="{{ registro.datos_raw.email_responsable|default:'' }}" />
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Domicilio Responsable</label>

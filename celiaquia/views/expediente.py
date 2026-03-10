@@ -1428,17 +1428,27 @@ class ReprocesarRegistrosErroneosView(View):
                     else:
                         rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
 
-                    # Obtener o crear legajo del hijo/beneficiario CON ROL
-                    legajo, created = ExpedienteCiudadano.objects.get_or_create(
+                    # Buscar si ya existe un legajo con este documento en el expediente
+                    legajo_existente = ExpedienteCiudadano.objects.filter(
                         expediente=expediente,
-                        ciudadano=ciudadano,
-                        defaults={"estado": estado_inicial, "rol": rol_beneficiario},
-                    )
+                        ciudadano__documento=doc_beneficiario
+                    ).first()
 
-                    # Si ya existía, actualizar el rol si cambió
-                    if not created and legajo.rol != rol_beneficiario:
-                        legajo.rol = rol_beneficiario
-                        legajo.save(update_fields=["rol"])
+                    if legajo_existente:
+                        # Actualizar el legajo existente con el nuevo ciudadano y rol
+                        legajo_existente.ciudadano = ciudadano
+                        if legajo_existente.rol != rol_beneficiario:
+                            legajo_existente.rol = rol_beneficiario
+                        legajo_existente.save(update_fields=["ciudadano", "rol"])
+                        legajo = legajo_existente
+                        created = False
+                    else:
+                        # Crear nuevo legajo
+                        legajo, created = ExpedienteCiudadano.objects.get_or_create(
+                            expediente=expediente,
+                            ciudadano=ciudadano,
+                            defaults={"estado": estado_inicial, "rol": rol_beneficiario},
+                        )
 
                     if created:
                         creados += 1
@@ -1676,4 +1686,36 @@ class EliminarRegistroErroneoView(View):
             registro.delete()
         return JsonResponse(
             {"success": True, "message": "Registro eliminado correctamente."}
+        )
+
+
+class EliminarExpedienteView(View):
+    def post(self, request, pk):
+        user = request.user
+        if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+            return JsonResponse(
+                {"success": False, "error": "Permiso denegado."}, status=403
+            )
+
+        expediente = get_object_or_404(Expediente, pk=pk)
+
+        get_data = getattr(request, "GET", {})
+        post_data = getattr(request, "POST", {})
+        preview_enabled = str(post_data.get("preview") or get_data.get("preview") or "")
+        if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(
+            expediente
+        ):
+            return JsonResponse(
+                {
+                    "success": True,
+                    "preview": build_delete_preview(expediente),
+                }
+            )
+
+        if is_soft_deletable_instance(expediente):
+            expediente.delete(user=user, cascade=True)
+        else:
+            expediente.delete()
+        return JsonResponse(
+            {"success": True, "message": "Expediente eliminado correctamente."}
         )

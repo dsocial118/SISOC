@@ -397,6 +397,69 @@
     });
   }
 
+  function attachDeleteExpedienteHandlers() {
+    const table = document.querySelector('table');
+    if (!table) return;
+
+    delegate(table, '.js-delete-expediente', 'click', (e, btn) => {
+      e.preventDefault();
+      const expId = btn.getAttribute('data-exp-id');
+      if (!expId) {
+        showAlert('danger', 'ID de expediente no encontrado.');
+        return;
+      }
+
+      const url = `/celiaquia/expedientes/${expId}/eliminar/`;
+
+      const fetchPreviewMessage = async () => {
+        try {
+          const previewUrl = `${url}?preview=1`;
+          const resp = await fetch(previewUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+              'X-CSRFToken': csrfToken(),
+              'X-Requested-With': 'XMLHttpRequest',
+              'Accept': 'application/json'
+            }
+          });
+          const data = await resp.json();
+          if (!resp.ok || !data.success || !data.preview) {
+            return '¿Confirmás la eliminación lógica de este expediente y todo lo relacionado?';
+          }
+          const detalle = (data.preview.desglose_por_modelo || [])
+            .map((item) => `- ${item.modelo}: ${item.cantidad}`)
+            .join('\n');
+          return `Se aplicará baja lógica en cascada.\nTotal afectados: ${data.preview.total_afectados}\n${detalle}`;
+        } catch (error) {
+          console.warn('No se pudo obtener preview:', error);
+          return '¿Confirmás la eliminación lógica de este expediente y todo lo relacionado?';
+        }
+      };
+
+      fetchPreviewMessage().then((previewMessage) => {
+        if (!confirm(previewMessage)) {
+          return;
+        }
+
+        withSpinner(btn, 'Eliminando...', async () => {
+          try {
+            const { ok, data, text, status } = await postJson(url);
+            if (!ok) {
+              const msg = (data && data.error) || text || `HTTP ${status}`;
+              throw new Error(msg);
+            }
+            showAlert('success', 'Expediente eliminado correctamente.');
+            setTimeout(() => window.location.reload(), 1000);
+          } catch (err) {
+            console.error('Eliminar expediente:', err);
+            showAlert('danger', 'No se pudo eliminar el expediente. ' + err.message);
+          }
+        })();
+      });
+    });
+  }
+
   // ---------- Init ----------
   document.addEventListener('DOMContentLoaded', () => {
     attachProcessHandlers();
@@ -404,5 +467,6 @@
     attachRecepcionarHandlers();
     attachAssignHandlers();
     attachRemoveTecnicoHandlers();
+    attachDeleteExpedienteHandlers();
   });
 })();
