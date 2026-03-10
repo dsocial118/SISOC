@@ -465,7 +465,10 @@
             }
             
             if (!resp.ok) {
-              const msg = (data && data.error) || text || `HTTP ${resp.status}`;
+              let msg = (data && data.error) || text || `HTTP ${resp.status}`;
+              if (!data && resp.status === 404) {
+                msg = 'El expediente no existe o ya fue eliminado.';
+              }
               throw new Error(msg);
             }
             

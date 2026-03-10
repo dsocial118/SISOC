@@ -1675,13 +1675,12 @@ class ExpedienteDeleteView(View):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
-
-        # Buscar expediente incluyendo los que tienen soft delete
-        try:
-            expediente = Expediente.all_objects.get(pk=pk)
-        except Expediente.DoesNotExist:
+        queryset = getattr(Expediente, "all_objects", Expediente.objects)
+        expediente = queryset.filter(pk=pk).first()
+        if expediente is None:
             return JsonResponse(
-                {"success": False, "error": "Expediente no encontrado."}, status=404
+                {"success": False, "error": "El expediente no existe o ya fue eliminado."},
+                status=404,
             )
 
         get_data = getattr(request, "GET", {})

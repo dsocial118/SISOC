@@ -9,9 +9,12 @@ En la bandeja de expedientes (`/celiaquia/expedientes/`) el botón **Eliminar** 
 ## Cambios realizados
 
 - Se ajustó `attachDeleteExpedienteHandlers()` en `static/custom/js/celiaquia_list.js` para delegar el click en `document` y capturar de forma robusta `.js-delete-expediente`.
+- Se ajustó `ExpedienteDeleteView` para devolver JSON `404` cuando el expediente no existe/ya fue eliminado (evita volcar HTML de debug en la UI).
+- Se mejoró el manejo de error en frontend para `404` con mensaje corto y claro.
 - Se agregaron tests de regresión del endpoint de eliminación en `celiaquia/tests/test_expediente_delete.py`:
   - superusuario puede eliminar expediente.
   - usuario no superusuario recibe `403`.
+  - expediente inexistente responde `404` en JSON.
 
 ## Impacto
 
