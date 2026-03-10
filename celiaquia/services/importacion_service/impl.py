@@ -421,6 +421,9 @@ def _consolidar_roles_cruzados_importacion(expediente, warnings):
             ):
                 relaciones_cruzadas_creadas += 1
 
+        # Consolidar beneficiarios que son responsables de otros
+        _consolidar_beneficiarios_que_son_responsables(expediente, warnings)
+
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.error("Error en post-procesamiento de relaciones cruzadas: %s", exc)
         _agregar_warning_general_importacion(
@@ -430,6 +433,43 @@ def _consolidar_roles_cruzados_importacion(expediente, warnings):
         )
 
     return relaciones_cruzadas_creadas
+
+
+def _consolidar_beneficiarios_que_son_responsables(expediente, warnings):
+    """Actualiza beneficiarios que también son responsables de otros a doble rol."""
+    from ciudadanos.models import GrupoFamiliar
+    
+    # Obtener todos los responsables (ciudadanos que tienen hijos)
+    responsables_ids = set(
+        GrupoFamiliar.objects.filter(
+            vinculo=GrupoFamiliar.RELACION_PADRE
+        ).values_list("ciudadano_1_id", flat=True)
+    )
+    
+    # Buscar legajos beneficiarios cuyo ciudadano es responsable de otros
+    legajos_beneficiarios = ExpedienteCiudadano.objects.filter(
+        expediente=expediente,
+        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
+        ciudadano_id__in=responsables_ids
+    )
+    
+    actualizados = 0
+    for legajo in legajos_beneficiarios:
+        legajo.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+        legajo.save(update_fields=["rol"])
+        actualizados += 1
+        logger.info(
+            "Actualizado legajo %s a BENEFICIARIO_Y_RESPONSABLE (doc: %s)",
+            legajo.id,
+            legajo.ciudadano.documento
+        )
+    
+    if actualizados > 0:
+        _agregar_warning_general_importacion(
+            warnings,
+            "consolidacion_roles",
+            f"Se actualizaron {actualizados} beneficiarios a doble rol"
+        )
 
 
 def _parse_numeric_field_importacion(

@@ -397,6 +397,95 @@
     });
   }
 
+  function attachDeleteExpedienteHandlers() {
+    // Delegar sobre document evita perder el binding si cambia el contenedor
+    // de la tabla (re-render parcial, plugins de tabla, etc.).
+    delegate(document, '.js-delete-expediente', 'click', (e, btn) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const expId = btn.getAttribute('data-exp-id');
+      
+      if (!expId) {
+        showAlert('danger', 'ID de expediente no encontrado.');
+        return;
+      }
+
+      const url = `/celiaquia/expedientes/${expId}/eliminar/`;
+
+      const fetchPreviewMessage = async () => {
+        try {
+          const previewUrl = `${url}?preview=1`;
+          const resp = await fetch(previewUrl, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: {
+              'X-CSRFToken': csrfToken(),
+              'X-Requested-With': 'XMLHttpRequest',
+              'Accept': 'application/json'
+            }
+          });
+          const data = await resp.json();
+          if (!resp.ok || !data.success || !data.preview) {
+            return '¿Estás seguro de que querés eliminar este expediente?';
+          }
+          const detalle = (data.preview.desglose_por_modelo || [])
+            .map((item) => `- ${item.modelo}: ${item.cantidad}`)
+            .join('\n');
+          return `Se aplicará baja lógica en cascada.\nTotal afectados: ${data.preview.total_afectados}\n${detalle}\n\n¿Confirmar eliminación?`;
+        } catch (error) {
+          console.warn('No se pudo obtener preview:', error);
+          return '¿Estás seguro de que querés eliminar este expediente?';
+        }
+      };
+
+      fetchPreviewMessage().then((previewMessage) => {
+        if (!confirm(previewMessage)) {
+          return;
+        }
+      
+        withSpinner(btn, 'Eliminando...', async () => {
+          try {
+            const resp = await fetch(url, {
+              method: 'DELETE',
+              credentials: 'same-origin',
+              headers: {
+                'X-CSRFToken': csrfToken(),
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+              }
+            });
+            
+            const ct = resp.headers.get('Content-Type') || '';
+            let data, text;
+            if (ct.includes('application/json')) {
+              data = await resp.json();
+            } else {
+              text = await resp.text();
+            }
+            
+            if (!resp.ok) {
+              const msg = (data && data.error) || text || `HTTP ${resp.status}`;
+              throw new Error(msg);
+            }
+            
+            showAlert('success', 'Expediente eliminado correctamente.');
+            
+            // Remover la fila del DOM
+            const row = btn.closest('tr');
+            if (row) {
+              row.remove();
+            }
+            
+          } catch (err) {
+            console.error('Eliminar expediente:', err);
+            showAlert('danger', 'No se pudo eliminar el expediente. ' + err.message);
+          }
+        })();
+      });
+    });
+  }
+
   // ---------- Init ----------
   document.addEventListener('DOMContentLoaded', () => {
     attachProcessHandlers();
@@ -404,5 +493,6 @@
     attachRecepcionarHandlers();
     attachAssignHandlers();
     attachRemoveTecnicoHandlers();
+    attachDeleteExpedienteHandlers();
   });
 })();
