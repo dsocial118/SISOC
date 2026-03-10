@@ -438,21 +438,21 @@ def _consolidar_roles_cruzados_importacion(expediente, warnings):
 def _consolidar_beneficiarios_que_son_responsables(expediente, warnings):
     """Actualiza beneficiarios que también son responsables de otros a doble rol."""
     from ciudadanos.models import GrupoFamiliar
-    
+
     # Obtener todos los responsables (ciudadanos que tienen hijos)
     responsables_ids = set(
-        GrupoFamiliar.objects.filter(
-            vinculo=GrupoFamiliar.RELACION_PADRE
-        ).values_list("ciudadano_1_id", flat=True)
+        GrupoFamiliar.objects.filter(vinculo=GrupoFamiliar.RELACION_PADRE).values_list(
+            "ciudadano_1_id", flat=True
+        )
     )
-    
+
     # Buscar legajos beneficiarios cuyo ciudadano es responsable de otros
     legajos_beneficiarios = ExpedienteCiudadano.objects.filter(
         expediente=expediente,
         rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
-        ciudadano_id__in=responsables_ids
+        ciudadano_id__in=responsables_ids,
     )
-    
+
     actualizados = 0
     for legajo in legajos_beneficiarios:
         legajo.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
@@ -461,14 +461,14 @@ def _consolidar_beneficiarios_que_son_responsables(expediente, warnings):
         logger.info(
             "Actualizado legajo %s a BENEFICIARIO_Y_RESPONSABLE (doc: %s)",
             legajo.id,
-            legajo.ciudadano.documento
+            legajo.ciudadano.documento,
         )
-    
+
     if actualizados > 0:
         _agregar_warning_general_importacion(
             warnings,
             "consolidacion_roles",
-            f"Se actualizaron {actualizados} beneficiarios a doble rol"
+            f"Se actualizaron {actualizados} beneficiarios a doble rol",
         )
 
 
