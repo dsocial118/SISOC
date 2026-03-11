@@ -280,7 +280,7 @@ DATABASES = {
 RUNNING_TESTS = is_running_tests(os.environ, sys.argv)
 if RUNNING_TESTS and not SECRET_KEY:
     SECRET_KEY = "test-secret-key"
-USE_SQLITE_FOR_TESTS = os.environ.get("USE_SQLITE_FOR_TESTS") == "1"
+USE_SQLITE_FOR_TESTS = _safe_bool_env("USE_SQLITE_FOR_TESTS", True)
 if RUNNING_TESTS and (USE_SQLITE_FOR_TESTS or not os.environ.get("DATABASE_HOST")):
     DATABASES = {
         "default": {

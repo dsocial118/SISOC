@@ -1,3 +1,7 @@
+default_install_hook_types:
+  - pre-commit
+  - pre-push
+
 repos:
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.24.2
@@ -11,10 +15,27 @@ repos:
       - id: black
         args:
           - --config=pyproject.toml
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: detect-private-key
   - repo: local
     hooks:
-      - id: pylint
-        name: pylint
+      - id: pylint-pre-push
+        name: pylint (pre-push)
         entry: bash -lc 'pylint $(git ls-files "*.py") --rcfile=.pylintrc'
         language: system
         pass_filenames: false
+        stages:
+          - pre-push
+      - id: pytest-smoke-pre-push
+        name: pytest smoke (pre-push)
+        entry: bash -lc 'docker compose ps django >/dev/null 2>&1 || { echo "Contenedor django no está corriendo. Ejecutá: docker compose up -d"; exit 1; }; docker compose exec -T django pytest -m smoke'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages:
+          - pre-push
