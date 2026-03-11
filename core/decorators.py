@@ -15,7 +15,9 @@ def _has_any_permissions(user, permission_codes):
     if getattr(user, "is_superuser", False):
         return True
 
-    return any(user_has_permission_code(user, code) for code in (permission_codes or []))
+    return any(
+        user_has_permission_code(user, code) for code in (permission_codes or [])
+    )
 
 
 def _has_all_permissions(user, permission_codes):

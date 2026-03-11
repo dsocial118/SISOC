@@ -714,7 +714,10 @@ def test_build_admisiones_y_nomina_context(mocker):
     )
     timeline_mock = mocker.patch(
         "comedores.views.comedor.ComedorService.get_admision_timeline_context",
-        return_value={"timeline_steps": ["x"], "admision_activa": SimpleNamespace(id=2)},
+        return_value={
+            "timeline_steps": ["x"],
+            "admision_activa": SimpleNamespace(id=2),
+        },
     )
     nomina_mock = mocker.patch(
         "comedores.views.comedor.ComedorService.get_nomina_detail",

@@ -126,9 +126,7 @@ def test_centro_list_get_queryset_permissions_and_filter(mocker):
 
     # sin permisos
     view_no = module.CentroListView()
-    view_no.request = SimpleNamespace(
-        user=_build_user(groups=set()), GET={}
-    )
+    view_no.request = SimpleNamespace(user=_build_user(groups=set()), GET={})
     assert view_no.get_queryset() == "none"
     assert none_qs.called
 
@@ -144,9 +142,7 @@ def test_centro_list_get_context_data_can_add_and_buttons(mocker):
     )
 
     view = module.CentroListView()
-    view.request = SimpleNamespace(
-        user=_build_user(groups={"CDF SSE"})
-    )
+    view.request = SimpleNamespace(user=_build_user(groups={"CDF SSE"}))
     ctx = view.get_context_data()
 
     assert ctx["can_add"] is True

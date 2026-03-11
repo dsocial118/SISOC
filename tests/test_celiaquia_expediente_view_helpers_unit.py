@@ -30,7 +30,9 @@ def test_helper_functions_for_user_and_request(mocker):
         groups=SimpleNamespace(filter=mocker.Mock(return_value=groups_filter)),
     )
 
-    assert module._user_has_permission(_user_stub(tec=True), "auth.role_tecnicoceliaquia")
+    assert module._user_has_permission(
+        _user_stub(tec=True), "auth.role_tecnicoceliaquia"
+    )
     assert module._is_admin(user) is True
 
     req = SimpleNamespace(headers={"X-Requested-With": "XMLHttpRequest"})
@@ -340,7 +342,9 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
     mocker.patch("celiaquia.views.expediente.HistorialValidacionTecnica.objects.create")
 
-    req_aprobar = SimpleNamespace(user=_user_stub(user_id=1, tec=True), POST={"accion": "APROBAR"})
+    req_aprobar = SimpleNamespace(
+        user=_user_stub(user_id=1, tec=True), POST={"accion": "APROBAR"}
+    )
     resp_ap = revisar.post(req_aprobar, pk=1, legajo_id=3)
     assert resp_ap.status_code == 200
 
@@ -529,7 +533,9 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
     mocker.patch("celiaquia.views.expediente._user_has_permission", return_value=True)
 
-    invalid_req = SimpleNamespace(user=_user_stub(user_id=1, tec=True), POST={"accion": "foo"})
+    invalid_req = SimpleNamespace(
+        user=_user_stub(user_id=1, tec=True), POST={"accion": "foo"}
+    )
     invalid = view.post(invalid_req, pk=1, legajo_id=3)
     assert invalid.status_code == 400
 
