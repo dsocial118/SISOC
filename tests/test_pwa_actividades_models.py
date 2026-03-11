@@ -1,6 +1,7 @@
 import pytest
 from django.db import IntegrityError, transaction
 
+from admisiones.models.admisiones import Admision
 from comedores.models import Comedor, Nomina
 from core.models import Dia, Provincia
 from pwa.models import (
@@ -21,6 +22,11 @@ def dia_actividad(db):
     return Dia.objects.create(nombre="Lunes")
 
 
+@pytest.fixture
+def admision(comedor):
+    return Admision.objects.create(comedor=comedor, activa=True)
+
+
 @pytest.mark.django_db
 def test_catalogo_actividades_seed_inicial_existe():
     assert CatalogoActividadPWA.objects.filter(
@@ -33,20 +39,22 @@ def test_catalogo_actividades_seed_inicial_existe():
 @pytest.mark.django_db
 def test_catalogo_actividad_no_permite_duplicado_categoria_actividad():
     CatalogoActividadPWA.objects.create(
-        categoria="Cultura", actividad="Jazz", activo=True
+        categoria="Cultura", actividad="Jazz de prueba único", activo=True
     )
 
     with pytest.raises(IntegrityError):
         with transaction.atomic():
             CatalogoActividadPWA.objects.create(
                 categoria="Cultura",
-                actividad="Jazz",
+                actividad="Jazz de prueba único",
                 activo=True,
             )
 
 
 @pytest.mark.django_db
-def test_inscripto_actividad_permite_reingreso_tras_baja_logica(comedor, dia_actividad):
+def test_inscripto_actividad_permite_reingreso_tras_baja_logica(
+    comedor, admision, dia_actividad
+):
     catalogo = CatalogoActividadPWA.objects.create(
         categoria="Deporte",
         actividad="Basquet de prueba",
@@ -59,7 +67,7 @@ def test_inscripto_actividad_permite_reingreso_tras_baja_logica(comedor, dia_act
         horario_actividad="18:00 a 19:30",
         activo=True,
     )
-    nomina = Nomina.objects.create(comedor=comedor, estado=Nomina.ESTADO_ACTIVO)
+    nomina = Nomina.objects.create(admision=admision, estado=Nomina.ESTADO_ACTIVO)
 
     inscripto = InscriptoActividadEspacioPWA.objects.create(
         actividad_espacio=actividad,

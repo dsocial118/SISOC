@@ -277,7 +277,6 @@ def test_comedor_detail_get_context_data_selected_admision_flow(mocker):
         "get_relaciones_optimizadas",
         return_value={"admision": admisiones_qs},
     )
-    mocker.patch.object(view, "_get_environment_config", return_value={"ENV_X": "1"})
     mocker.patch(
         "comedores.views.comedor._get_informe_tecnico_finalizado_from_admision",
         return_value=SimpleNamespace(id=90),
@@ -715,7 +714,7 @@ def test_build_admisiones_y_nomina_context(mocker):
     )
     timeline_mock = mocker.patch(
         "comedores.views.comedor.ComedorService.get_admision_timeline_context",
-        return_value={"timeline_steps": ["x"], "admision_activa": 2},
+        return_value={"timeline_steps": ["x"], "admision_activa": SimpleNamespace(id=2)},
     )
     nomina_mock = mocker.patch(
         "comedores.views.comedor.ComedorService.get_nomina_detail",
@@ -741,7 +740,7 @@ def test_build_admisiones_y_nomina_context(mocker):
     ctx = module._build_admisiones_y_nomina_context(comedor_obj)
 
     assert ctx["admisiones_qs"] is admisiones_qs
-    assert ctx["timeline_context"]["admision_activa"] == 2
+    assert ctx["timeline_context"]["admision_activa"].id == 2
     assert ctx["nomina_total"] == 30
     assert ctx["nomina_hombres"] == 10
     assert ctx["nomina_mujeres"] == 15
@@ -749,4 +748,4 @@ def test_build_admisiones_y_nomina_context(mocker):
     assert ctx["nomina_menores"] == 9
     assert ctx["nomina_pct_adultos"] == 40
     timeline_mock.assert_called_once_with(admisiones_qs)
-    nomina_mock.assert_called_once_with(99, page=1, per_page=1)
+    nomina_mock.assert_called_once_with(2, page=1, per_page=1)

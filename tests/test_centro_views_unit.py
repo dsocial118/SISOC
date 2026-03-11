@@ -22,6 +22,22 @@ class _Groups:
         return self._last in self.names
 
 
+def _build_user(*, is_superuser=False, groups=None, user_id=1):
+    groups = _Groups(groups)
+    perms = set()
+    if "CDF SSE" in groups.names:
+        perms.add("auth.role_cdf_sse")
+    if "ReferenteCentro" in groups.names:
+        perms.add("auth.role_referentecentro")
+    return SimpleNamespace(
+        id=user_id,
+        is_superuser=is_superuser,
+        is_authenticated=True,
+        groups=groups,
+        has_perm=lambda perm, obj=None: perm in perms,
+    )
+
+
 class _QS:
     def __init__(self):
         self.filtered = False
@@ -93,7 +109,7 @@ def test_centro_list_get_queryset_permissions_and_filter(mocker):
     # superuser
     view = module.CentroListView()
     view.request = SimpleNamespace(
-        user=SimpleNamespace(is_superuser=True, groups=_Groups()),
+        user=_build_user(is_superuser=True, groups=set()),
         GET={"busqueda": "abc"},
     )
     assert view.get_queryset() == "filtered"
@@ -102,7 +118,7 @@ def test_centro_list_get_queryset_permissions_and_filter(mocker):
     # referente
     view_ref = module.CentroListView()
     view_ref.request = SimpleNamespace(
-        user=SimpleNamespace(is_superuser=False, groups=_Groups({"ReferenteCentro"})),
+        user=_build_user(groups={"ReferenteCentro"}),
         GET={},
     )
     assert view_ref.get_queryset() == "filtered"
@@ -111,7 +127,7 @@ def test_centro_list_get_queryset_permissions_and_filter(mocker):
     # sin permisos
     view_no = module.CentroListView()
     view_no.request = SimpleNamespace(
-        user=SimpleNamespace(is_superuser=False, groups=_Groups()), GET={}
+        user=_build_user(groups=set()), GET={}
     )
     assert view_no.get_queryset() == "none"
     assert none_qs.called
@@ -129,7 +145,7 @@ def test_centro_list_get_context_data_can_add_and_buttons(mocker):
 
     view = module.CentroListView()
     view.request = SimpleNamespace(
-        user=SimpleNamespace(is_superuser=False, groups=_Groups({"CDF SSE"}))
+        user=_build_user(groups={"CDF SSE"})
     )
     ctx = view.get_context_data()
 
@@ -169,12 +185,7 @@ def test_centro_create_helpers_and_form_valid(mocker):
 
 
 def test_centro_update_delete_permissions_and_success_url(mocker):
-    user = SimpleNamespace(
-        id=5,
-        is_superuser=False,
-        is_authenticated=True,
-        groups=_Groups({"CDF SSE"}),
-    )
+    user = _build_user(user_id=5, groups={"CDF SSE"})
     request = SimpleNamespace(user=user)
     obj = SimpleNamespace(referente_id=1, pk=7)
 
@@ -194,12 +205,7 @@ def test_centro_update_delete_permissions_and_success_url(mocker):
     mocker.patch("django.views.generic.base.View.dispatch", return_value="ok")
     assert view_del.dispatch(request) == "ok"
 
-    bad_user = SimpleNamespace(
-        id=99,
-        is_superuser=False,
-        is_authenticated=True,
-        groups=_Groups(),
-    )
+    bad_user = _build_user(user_id=99, groups=set())
     bad_req = SimpleNamespace(user=bad_user)
     view_bad = module.CentroUpdateView()
     mocker.patch.object(view_bad, "get_object", return_value=obj)
@@ -249,7 +255,7 @@ def test_centros_ajax_returns_json(mocker):
 
     request = SimpleNamespace(
         GET={"busqueda": "abc", "page": "1"},
-        user=SimpleNamespace(is_superuser=True, groups=_Groups()),
+        user=_build_user(is_superuser=True, groups=set()),
     )
     response = module.centros_ajax(request)
     assert isinstance(response, JsonResponse)
