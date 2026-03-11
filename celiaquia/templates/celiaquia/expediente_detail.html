@@ -584,41 +584,43 @@
                                             </div>
                                             <div class="list-divider"></div>
                                             <!-- Acciones -->
-                                            {% if is_tec and expediente.estado.nombre in 'ASIGNADO,PROCESO_DE_CRUCE' %}
-                                                <div class="d-flex justify-content-end mt-2">
-                                                    <div class="btn-toolbar flex-wrap"
-                                                         role="toolbar"
-                                                         aria-label="Acciones del legajo">
-                                                        {% with estado=leg.revision_tecnico %}
-                                                            <div class="btn-group btn-group-sm me-2" role="group">
-                                                                <button type="button"
-                                                                        class="btn btn-info btn-validar-renaper"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-bs-toggle="modal"
-                                                                        data-bs-target="#modalValidarRenaper">
-                                                                    Validar Renaper
-                                                                </button>
-                                                            </div>
-                                                            <div class="btn-group btn-group-sm" role="group">
-                                                                <button type="button"
-                                                                        class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-accion="APROBAR">Aprobar</button>
-                                                                <button type="button"
-                                                                        class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-bs-toggle="modal"
-                                                                        data-bs-target="#modalSubsanar">
-                                                                    Subsanar
-                                                                </button>
-                                                                <button type="button"
-                                                                        class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-accion="RECHAZAR">Rechazar</button>
-                                                            </div>
-                                                        {% endwith %}
+                                            {% if leg.revision_tecnico == 'PENDIENTE' or leg.revision_tecnico == 'SUBSANADO' %}
+                                                {% if is_coord and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' or is_tec and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' %}
+                                                    <div class="d-flex justify-content-end mt-2">
+                                                        <div class="btn-toolbar flex-wrap"
+                                                             role="toolbar"
+                                                             aria-label="Acciones del legajo">
+                                                            {% with estado=leg.revision_tecnico %}
+                                                                <div class="btn-group btn-group-sm me-2" role="group">
+                                                                    <button type="button"
+                                                                            class="btn btn-info btn-validar-renaper"
+                                                                            data-legajo-id="{{ leg.pk }}"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#modalValidarRenaper">
+                                                                        Validar Renaper
+                                                                    </button>
+                                                                </div>
+                                                                <div class="btn-group btn-group-sm" role="group">
+                                                                    <button type="button"
+                                                                            class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
+                                                                            data-legajo-id="{{ leg.pk }}"
+                                                                            data-accion="APROBAR">Aprobar</button>
+                                                                    <button type="button"
+                                                                            class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
+                                                                            data-legajo-id="{{ leg.pk }}"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#modalSubsanar">
+                                                                        Subsanar
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
+                                                                            data-legajo-id="{{ leg.pk }}"
+                                                                            data-accion="RECHAZAR">Rechazar</button>
+                                                                </div>
+                                                            {% endwith %}
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </div>
@@ -768,12 +770,13 @@
                             </div>
                             <div class="list-divider"></div>
                             <!-- Acciones -->
-                            {% if is_tec and expediente.estado.nombre in 'ASIGNADO,PROCESO_DE_CRUCE' %}
-                                <div class="d-flex justify-content-end mt-2">
-                                    <div class="btn-toolbar flex-wrap"
-                                         role="toolbar"
-                                         aria-label="Acciones del legajo">
-                                        {% with estado=leg.revision_tecnico %}
+                            {% if leg.revision_tecnico == 'PENDIENTE' or leg.revision_tecnico == 'SUBSANADO' %}
+                                {% if is_coord and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' or is_tec and expediente.estado.nombre in 'ASIGNADO,PROCESO_DE_CRUCE' %}
+                                    <div class="d-flex justify-content-end mt-2">
+                                        <div class="btn-toolbar flex-wrap"
+                                             role="toolbar"
+                                             aria-label="Acciones del legajo">
+                                            {% with estado=leg.revision_tecnico %}
                                                             <div class="btn-group btn-group-sm me-2" role="group">
                                                                 <button type="button"
                                                                         class="btn btn-info btn-validar-renaper"
@@ -801,8 +804,9 @@
                                                                         data-accion="RECHAZAR">Rechazar</button>
                                                             </div>
                                                         {% endwith %}
+                                        </div>
                                     </div>
-                                </div>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>
@@ -1503,7 +1507,7 @@
                                     <td>{{ h.fecha|date:"d/m/Y H:i" }}</td>
                                     <td>{{ h.estado_anterior.display_name }}</td>
                                     <td>{{ h.estado_nuevo.display_name }}</td>
-                                    <td>{{ h.usuario.get_full_name|default:h.usuario.username|default:"-" }}</td>
+                                    <td>{% if h.usuario %}{{ h.usuario.get_full_name|default:h.usuario.username }}{% else %}-{% endif %}</td>
                                     <td>{{ h.observaciones|default:"-" }}</td>
                                 </tr>
                             {% empty %}
