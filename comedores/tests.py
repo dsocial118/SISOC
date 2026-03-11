@@ -17,7 +17,7 @@ from ciudadanos.models import Ciudadano
 from comedores.models import Comedor, HistorialValidacion, Nomina
 from comedores.services.comedor_service import ComedorService
 from comedores.services.validacion_service import ValidacionService
-from comedores.views import ComedorDetailView
+from comedores.views import ComedorDetailView, NominaImportarView
 
 
 # Tests for ComedorDetailView (HTML)
@@ -612,3 +612,8 @@ def test_nomina_importar_view_404_si_admision_no_corresponde(client_nomina_fixtu
     )
     response = client_nomina_fixture.post(url)
     assert response.status_code == 404
+
+
+def test_comedores_views_exporta_nomina_importar_view():
+    """`comedores.views` expone NominaImportarView para imports de URLs."""
+    assert NominaImportarView.__name__ == "NominaImportarView"
