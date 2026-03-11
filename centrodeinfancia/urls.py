@@ -1,6 +1,6 @@
 from django.urls import path
 
-from core.decorators import group_required
+from core.decorators import permissions_any_required
 from centrodeinfancia.views import (
     CentroDeInfanciaCreateView,
     CentroDeInfanciaDeleteView,
@@ -29,42 +29,42 @@ from centrodeinfancia.views_export import CentroDeInfanciaExportView
 urlpatterns = [
     path(
         "centrodeinfancia/listar",
-        group_required(["Centro de Infancia Listar"])(
+        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
             CentroDeInfanciaListView.as_view()
         ),
         name="centrodeinfancia",
     ),
     path(
         "centrodeinfancia/exportar",
-        group_required(["Centro de Infancia Listar", "Exportar a csv"])(
-            CentroDeInfanciaExportView.as_view()
-        ),
+        permissions_any_required(
+            ["centrodeinfancia.view_centrodeinfancia", "auth.role_exportar_a_csv"]
+        )(CentroDeInfanciaExportView.as_view()),
         name="centrodeinfancia_exportar",
     ),
     path(
         "centrodeinfancia/crear",
-        group_required(["Centro de Infancia Crear"])(
+        permissions_any_required(["centrodeinfancia.add_centrodeinfancia"])(
             CentroDeInfanciaCreateView.as_view()
         ),
         name="centrodeinfancia_crear",
     ),
     path(
         "centrodeinfancia/detalle/<int:pk>",
-        group_required(["Centro de Infancia Ver"])(
+        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
             CentroDeInfanciaDetailView.as_view()
         ),
         name="centrodeinfancia_detalle",
     ),
     path(
         "centrodeinfancia/editar/<int:pk>",
-        group_required(["Centro de Infancia Editar"])(
+        permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
             CentroDeInfanciaUpdateView.as_view()
         ),
         name="centrodeinfancia_editar",
     ),
     path(
         "centrodeinfancia/eliminar/<int:pk>",
-        group_required(["Centro de Infancia Eliminar"])(
+        permissions_any_required(["centrodeinfancia.delete_centrodeinfancia"])(
             CentroDeInfanciaDeleteView.as_view()
         ),
         name="centrodeinfancia_eliminar",
@@ -76,100 +76,100 @@ urlpatterns = [
     ),
     path(
         "centrodeinfancia/<int:pk>/nomina/",
-        group_required(["Centro de Infancia Nomina Ver"])(
+        permissions_any_required(["centrodeinfancia.view_nominacentroinfancia"])(
             NominaCentroInfanciaDetailView.as_view()
         ),
         name="centrodeinfancia_nomina_ver",
     ),
     path(
         "centrodeinfancia/<int:pk>/nomina/crear/",
-        group_required(["Centro de Infancia Nomina Crear"])(
+        permissions_any_required(["centrodeinfancia.add_nominacentroinfancia"])(
             NominaCentroInfanciaCreateView.as_view()
         ),
         name="centrodeinfancia_nomina_crear",
     ),
     path(
         "centrodeinfancia/editar-nomina/<int:pk>/",
-        group_required(["Centro de Infancia Nomina Editar"])(
+        permissions_any_required(["centrodeinfancia.change_nominacentroinfancia"])(
             nomina_centrodeinfancia_editar_ajax
         ),
         name="centrodeinfancia_nomina_editar_ajax",
     ),
     path(
         "centrodeinfancia/<int:pk>/nomina/<int:pk2>/eliminar/",
-        group_required(["Centro de Infancia Nomina Borrar"])(
+        permissions_any_required(["centrodeinfancia.delete_nominacentroinfancia"])(
             NominaCentroInfanciaDeleteView.as_view()
         ),
         name="centrodeinfancia_nomina_borrar",
     ),
     path(
         "centrodeinfancia/intervencion/crear/<int:pk>",
-        group_required(["Centro de Infancia Intervencion Crear"])(
+        permissions_any_required(["centrodeinfancia.add_intervencioncentroinfancia"])(
             IntervencionCentroInfanciaCreateView.as_view()
         ),
         name="centrodeinfancia_intervencion_crear",
     ),
     path(
         "centrodeinfancia/intervencion/editar/<int:pk>/<int:pk2>",
-        group_required(["Centro de Infancia Intervencion Editar"])(
-            IntervencionCentroInfanciaUpdateView.as_view()
-        ),
+        permissions_any_required(
+            ["centrodeinfancia.change_intervencioncentroinfancia"]
+        )(IntervencionCentroInfanciaUpdateView.as_view()),
         name="centrodeinfancia_intervencion_editar",
     ),
     path(
         "centrodeinfancia/intervencion/borrar/<int:pk>/<int:intervencion_id>/",
-        group_required(["Centro de Infancia Intervencion Borrar"])(
-            IntervencionCentroInfanciaDeleteView.as_view()
-        ),
+        permissions_any_required(
+            ["centrodeinfancia.delete_intervencioncentroinfancia"]
+        )(IntervencionCentroInfanciaDeleteView.as_view()),
         name="centrodeinfancia_intervencion_borrar",
     ),
     path(
         "centrodeinfancia/intervencion/detalle/<int:pk>/",
-        group_required(["Centro de Infancia Ver"])(
+        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
             IntervencionCentroInfanciaDetailView.as_view()
         ),
         name="centrodeinfancia_intervencion_detalle",
     ),
     path(
         "centrodeinfancia/intervencion/<int:intervencion_id>/documentacion/subir/",
-        group_required(["Centro de Infancia Intervencion Editar"])(
-            subir_archivo_intervencion_centrodeinfancia
-        ),
+        permissions_any_required(
+            ["centrodeinfancia.change_intervencioncentroinfancia"]
+        )(subir_archivo_intervencion_centrodeinfancia),
         name="centrodeinfancia_subir_archivo_intervencion",
     ),
     path(
         "centrodeinfancia/intervencion/<int:intervencion_id>/documentacion/eliminar/",
-        group_required(["Centro de Infancia Intervencion Borrar"])(
-            eliminar_archivo_intervencion_centrodeinfancia
-        ),
+        permissions_any_required(
+            ["centrodeinfancia.delete_intervencioncentroinfancia"]
+        )(eliminar_archivo_intervencion_centrodeinfancia),
         name="centrodeinfancia_eliminar_archivo_intervencion",
     ),
     path(
         "centrodeinfancia/<int:pk>/observacion/crear/",
-        group_required(["Centro de Infancia Intervencion Crear"])(
+        permissions_any_required(["centrodeinfancia.add_intervencioncentroinfancia"])(
             ObservacionCentroInfanciaCreateView.as_view()
         ),
         name="centrodeinfancia_observacion_crear",
     ),
     path(
         "centrodeinfancia/observacion/<int:pk>/",
-        group_required(["Centro de Infancia Ver"])(
+        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
             ObservacionCentroInfanciaDetailView.as_view()
         ),
         name="centrodeinfancia_observacion_detalle",
     ),
     path(
         "centrodeinfancia/observacion/<int:pk>/editar/",
-        group_required(["Centro de Infancia Intervencion Editar"])(
-            ObservacionCentroInfanciaUpdateView.as_view()
-        ),
+        permissions_any_required(
+            ["centrodeinfancia.change_intervencioncentroinfancia"]
+        )(ObservacionCentroInfanciaUpdateView.as_view()),
         name="centrodeinfancia_observacion_editar",
     ),
     path(
         "centrodeinfancia/observacion/<int:pk>/eliminar/",
-        group_required(["Centro de Infancia Intervencion Borrar"])(
-            ObservacionCentroInfanciaDeleteView.as_view()
-        ),
+        permissions_any_required(
+            ["centrodeinfancia.delete_intervencioncentroinfancia"]
+        )(ObservacionCentroInfanciaDeleteView.as_view()),
         name="centrodeinfancia_observacion_eliminar",
     ),
 ]

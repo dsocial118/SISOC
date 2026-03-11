@@ -142,6 +142,7 @@ def test_ensure_inherited_groups_reverse_mode_assigns_per_user(mocker):
         "users.signals.User.objects.filter", return_value=users
     )
     mock_assign = mocker.patch("users.signals._assign_inherited_groups")
+    mocker.patch("users.signals.sync_permissions_for_group")
 
     signals.ensure_inherited_groups(
         sender=None,
@@ -175,6 +176,7 @@ def test_ensure_inherited_groups_reverse_returns_when_group_has_no_inheritance(m
     group = SimpleNamespace(name="Sin herencia")
     mock_user_filter = mocker.patch("users.signals.User.objects.filter")
     mock_assign = mocker.patch("users.signals._assign_inherited_groups")
+    mocker.patch("users.signals.sync_permissions_for_group")
 
     signals.ensure_inherited_groups(
         sender=None,

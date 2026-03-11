@@ -12,6 +12,14 @@ Estandarizar cómo se piden y revisan cambios hechos por IA para mantener:
 - menos regresiones,
 - menor variabilidad entre asistentes.
 
+## Política spec-as-source (obligatoria)
+
+- Antes de implementar, leer `docs/indice.md`, `docs/ia/*` y documentación de `docs/` del dominio afectado.
+- Cada cambio y decisión importante debe registrarse en Markdown dentro de `docs/` usando la subcarpeta que corresponda al dominio/tema.
+- Si la subcarpeta no existe, debe crearse.
+- Convención sugerida (no obligatoria): `docs/registro/cambios/` y `docs/registro/decisiones/`.
+- El objetivo es trabajar en modo spec-as-source sin depender de herramientas específicas.
+
 ## Cómo pedir cambios a la IA (brief operativo)
 
 Todo pedido debería incluir:
@@ -51,6 +59,7 @@ Podés proponer mejoras cercanas: sí/no
 - Revisar código real del módulo (`views`, `models`, `services`, `tests`).
 - Buscar implementaciones similares.
 - Confirmar contratos existentes antes de escribir.
+- Revisar documentación vigente en `docs/` para el dominio afectado.
 
 ## 2) Delimitar alcance
 
@@ -77,6 +86,7 @@ Podés proponer mejoras cercanas: sí/no
 - Validación ejecutada.
 - Supuestos.
 - Riesgos.
+- Registro spec-as-source en `docs/<subcarpeta>/...` (si aplica).
 - Mejoras cercanas detectadas (opcional).
 
 ## PRs pequeños y revisables (regla)
@@ -94,17 +104,54 @@ Evitar PRs que mezclen:
 - cambios funcionales en múltiples dominios sin relación,
 - limpieza masiva sin criterio de aceptación claro.
 
-## Convenciones de commits (recomendadas)
+## Convenciones de commits (obligatorias)
 
-Alineadas al uso actual del equipo (`README.md`):
+Reglas obligatorias para commits hechos por IA:
+- Mensaje en español.
+- Primera línea obligatoria con patrón: `<type>(<scope>): <subject>`.
+- Usar `scope` semántico y concreto (app, módulo o área real afectada).
+
+Plantilla:
 
 ```text
-feat: agregar filtro por estado en comunicados
-fix: corregir 500 al parsear page en core views
-refactor: extraer helper de normalización en filtros favoritos
-test: agregar regresión para rollback de historial
-docs: actualizar guía IA para testing
-chore: ajustar script local de desarrollo
+Obligatorio:
+<type>(<scope>): <subject>
+
+Opcional:
+<why> (por qué se hace; contexto del problema)
+<what> (qué cambió; bullets si aplica)
+<how>  (cómo se resolvió; opcional, sólo si aporta)
+
+<impact> (impacto / migraciones / flags / backwards-compat)
+<tests>  (cómo se probó)
+
+<refs>   (Refs #123 / Closes #123)
+<breaking> (BREAKING CHANGE: ...)
+```
+
+Ejemplos:
+
+```text
+fix(core): corregir 500 al parsear page en load_organizaciones
+
+why: el endpoint devolvía 500 ante valores no numéricos en `page`.
+what:
+- valida `page` antes de convertirla a entero
+- responde 400 con mensaje de error controlado
+tests:
+- docker compose exec django pytest -n auto core/tests/test_views.py
+refs: Refs #123
+```
+
+```text
+feat(comunicados): agregar filtro opcional por estado en API
+
+what:
+- agrega parámetro `estado` en query params
+- mantiene comportamiento previo cuando no se envía
+impact: sin migraciones; backward compatible
+tests:
+- docker compose exec django pytest -n auto comunicados/tests/
 ```
 
 ## Supuestos explícitos (obligatorio si faltan datos)
@@ -147,6 +194,7 @@ Formato recomendado para PR/comentario:
 - Test de regresión agregado en bugfix cuando aplica.
 - Lint/formato ejecutado si corresponde.
 - Docs actualizadas si cambia comportamiento.
+- Decisiones/cambios importantes registrados en `docs/` (subcarpeta temática) o justificación de excepción.
 - Supuestos y riesgos documentados.
 
 ## Comandos locales y referencia a CI

@@ -16,6 +16,7 @@ from expedientespagos.models import ExpedientePago
 from expedientespagos.forms import ExpedientePagoForm
 from expedientespagos.services import ExpedientesPagosService
 from comedores.models import Comedor
+from iam.services import user_has_any_permission_codes
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -92,11 +93,26 @@ class ExpedientesPagosCreateView(LoginRequiredMixin, CreateView):
     def _get_role_flags(self):
         es_area_legales = (
             self.request.user.is_superuser
-            or self.request.user.groups.filter(name="Area Legales").exists()
+            or user_has_any_permission_codes(
+                self.request.user,
+                [
+                    "comedores.view_comedor",
+                    "admisiones.view_admision",
+                    "acompanamientos.view_informacionrelevante",
+                    "expedientespagos.view_expedientepago",
+                ],
+            )
         )
         es_tecnico_comedor = (
             self.request.user.is_superuser
-            or self.request.user.groups.filter(name="Tecnico Comedor").exists()
+            or user_has_any_permission_codes(
+                self.request.user,
+                [
+                    "comedores.view_comedor",
+                    "admisiones.view_admision",
+                    "acompanamientos.view_informacionrelevante",
+                ],
+            )
         )
         return es_area_legales, es_tecnico_comedor
 
@@ -153,11 +169,26 @@ class ExpedientesPagosUpdateView(LoginRequiredMixin, UpdateView):
     def _get_role_flags(self):
         es_area_legales = (
             self.request.user.is_superuser
-            or self.request.user.groups.filter(name="Area Legales").exists()
+            or user_has_any_permission_codes(
+                self.request.user,
+                [
+                    "comedores.view_comedor",
+                    "admisiones.view_admision",
+                    "acompanamientos.view_informacionrelevante",
+                    "expedientespagos.view_expedientepago",
+                ],
+            )
         )
         es_tecnico_comedor = (
             self.request.user.is_superuser
-            or self.request.user.groups.filter(name="Tecnico Comedor").exists()
+            or user_has_any_permission_codes(
+                self.request.user,
+                [
+                    "comedores.view_comedor",
+                    "admisiones.view_admision",
+                    "acompanamientos.view_informacionrelevante",
+                ],
+            )
         )
         return es_area_legales, es_tecnico_comedor
 

@@ -20,14 +20,18 @@
                 {% if comedor.admision_id %}
                     <a href="{% url 'admisiones_tecnicos_editar' comedor.admision_id %}"
                        class="btn btn-warning btn-sm position-relative">
-                        {% if request.user|has_group:"Tecnico Comedor" %}Editar{% endif %}
-                        {% if request.user|has_group:"Abogado Dupla" %}Ver{% endif %}
+                        {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                            Editar
+                        {% endif %}
+                        {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                            Ver
+                        {% endif %}
                         {% if comedor.estado_legales == "A Rectificar" %}
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">Rectificar</span>
                         {% endif %}
                     </a>
                 {% else %}
-                    {% if request.user|has_group:"Tecnico Comedor" %}
+                    {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
                         <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}"
                            class="btn btn-primary btn-sm">Crear</a>
                     {% endif %}

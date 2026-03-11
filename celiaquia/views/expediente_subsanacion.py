@@ -14,11 +14,6 @@ from celiaquia.utils import error_response, success_response
 logger = logging.getLogger("django")
 
 
-def _in_group(user, name):
-    """Verifica si el usuario pertenece a un grupo específico."""
-    return user.is_authenticated and user.groups.filter(name=name).exists()
-
-
 def _same_owner(user, exp) -> bool:
     """Verifica si el usuario es el propietario del expediente."""
     return exp.usuario_provincia_id == user.id

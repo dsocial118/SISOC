@@ -771,7 +771,7 @@
                             <div class="list-divider"></div>
                             <!-- Acciones -->
                             {% if leg.revision_tecnico == 'PENDIENTE' or leg.revision_tecnico == 'SUBSANADO' %}
-                                {% if is_coord and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' or is_tec and expediente.estado.nombre in 'ASIGNADO,PROCESO_DE_CRUCE' %}
+                                {% if is_coord and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' or is_tec and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' %}
                                     <div class="d-flex justify-content-end mt-2">
                                         <div class="btn-toolbar flex-wrap"
                                              role="toolbar"

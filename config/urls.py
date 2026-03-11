@@ -9,15 +9,37 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 from celiaquia.views.reporter_provincias import ReporterProvinciasView
-from core.decorators import group_required
-from users.views import UsuariosLoginView
+from core.decorators import permissions_any_required
+from users.views import (
+    PasswordResetConfirmCustomView,
+    SisocPasswordResetCompleteView,
+    SisocPasswordResetDoneView,
+    SisocPasswordResetView,
+    UsuariosLoginView,
+)
 
 urlpatterns = [
     path("login/", UsuariosLoginView.as_view(), name="login"),
+    path("password_reset/", SisocPasswordResetView.as_view(), name="password_reset"),
+    path(
+        "password_reset/done/",
+        SisocPasswordResetDoneView.as_view(),
+        name="password_reset_done",
+    ),
+    path(
+        "reset/<uidb64>/<token>/",
+        PasswordResetConfirmCustomView.as_view(),
+        name="password_reset_confirm",
+    ),
+    path(
+        "reset/done/",
+        SisocPasswordResetCompleteView.as_view(),
+        name="password_reset_complete",
+    ),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
-    path("", include("django.contrib.auth.urls")),
     path("", include("users.urls")),
+    path("", include("django.contrib.auth.urls")),
     path("", include("core.urls")),
     path("", include("dashboard.urls")),
     path("", include("comedores.urls")),
@@ -36,7 +58,7 @@ urlpatterns = [
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
     path(
         "reporter-provincias/",
-        group_required(["CoordinadorCeliaquia", "TecnicoCeliaquia"])(
+        permissions_any_required(["celiaquia.view_expediente"])(
             ReporterProvinciasView.as_view()
         ),
         name="reporter_provincias",
@@ -48,6 +70,7 @@ urlpatterns = [
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
     path("api/comunicados/", include("comunicados.api_urls")),
     path("api/renaper/", include("core.api_urls")),
+    path("api/pwa/", include("pwa.api_urls")),
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
 ]

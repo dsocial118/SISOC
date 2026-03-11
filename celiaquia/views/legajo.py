@@ -11,13 +11,17 @@ from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from celiaquia.permissions import can_edit_legajo_files, can_review_legajo
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import is_soft_deletable_instance
+from iam.services import user_has_permission_code
 
 
 logger = logging.getLogger("django")
 
+ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
+ROLE_TECNICO_CELIAQUIA_PERMISSION = "auth.role_tecnicoceliaquia"
 
-def _in_group(user, group_name):
-    return user.groups.filter(name=group_name).exists()
+
+def _has_permission(user, permission_code):
+    return user_has_permission_code(user, permission_code)
 
 
 class LegajoArchivoUploadView(View):
@@ -209,8 +213,8 @@ class LegajoSuspenderView(View):
             raise PermissionDenied("Autenticación requerida.")
 
         is_admin = user.is_superuser
-        is_coord = _in_group(user, "CoordinadorCeliaquia")
-        is_tec = _in_group(user, "TecnicoCeliaquia")
+        is_coord = _has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        is_tec = _has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
 
         if not (is_admin or is_coord or is_tec):
             raise PermissionDenied("Permiso denegado.")
@@ -274,7 +278,7 @@ class LegajoBajaView(View):
             raise PermissionDenied("Autenticación requerida.")
 
         is_admin = user.is_superuser
-        is_coord = _in_group(user, "CoordinadorCeliaquia")
+        is_coord = _has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
 
         if not (is_admin or is_coord):
             raise PermissionDenied("Solo coordinadores pueden dar de baja legajos.")
@@ -334,8 +338,8 @@ class LegajoSubsanarView(View):
     def post(self, request, pk, legajo_id):
         user = request.user
         is_admin = user.is_authenticated and user.is_superuser
-        is_coord = _in_group(user, "CoordinadorCeliaquia")
-        is_tec = _in_group(user, "TecnicoCeliaquia")
+        is_coord = _has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        is_tec = _has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
 
         if not (is_admin or is_coord or is_tec):
             raise PermissionDenied("Permiso denegado.")
@@ -408,7 +412,7 @@ class LegajoEliminarView(View):
         from django.db import transaction
 
         user = request.user
-        is_coord = _in_group(user, "CoordinadorCeliaquia")
+        is_coord = _has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
 
         if not (user.is_superuser or is_coord):
             return JsonResponse(

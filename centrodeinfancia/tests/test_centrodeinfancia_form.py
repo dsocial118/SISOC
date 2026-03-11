@@ -57,3 +57,21 @@ def test_form_includes_apellido_referente_opcional():
     assert "apellido_referente" in form.fields
     assert form.is_valid() is True
     assert form.cleaned_data["apellido_referente"] == "Gómez"
+
+
+@pytest.mark.django_db
+def test_form_acepta_numero_calle_opcional():
+    user = User.objects.create_user(username="user-numero", password="test1234")
+    form = CentroDeInfanciaForm(
+        data={
+            "nombre": "CDI Norte",
+            "calle": "San Martín",
+            "numero": "123",
+        },
+        user=user,
+        lock_provincia_from_user=False,
+    )
+
+    assert "numero" in form.fields
+    assert form.is_valid()
+    assert form.cleaned_data["numero"] == "123"

@@ -8,7 +8,7 @@ Este documento resume cómo reutilizar la infraestructura de exportación CSV ex
    - Definir `export_filename` (ej. `"listado_comedores.csv"`).
    - Sobrescribir `get_export_columns()` para devolver una lista `[("Encabezado","campo.path"), …]`; podés usar `build_export_columns(catalog, active_keys)` para sincronizarla con el catálogo de columnas.
    - En `get()`, obtener el queryset filtrado (reutilizando los mismos filtros que el listado si hace falta) y retornar `self.export_csv(queryset)`.
-2. `CSVExportMixin.check_export_permission()` lanza `PermissionDenied` si el usuario no es superuser ni pertenece al grupo `permission_group_export` (puede redefinirse). Asegurate de remover o crear un grupo nuevo si el permiso es distinto.
+2. `CSVExportMixin.check_export_permission()` lanza `PermissionDenied` si el usuario no es superuser ni tiene `export_permission_code` (por defecto `auth.role_exportar_a_csv`; puede redefinirse).
 3. La respuesta streaming usa `StreamingHttpResponse` para evitar cargar todo el CSV en memoria; cada fila se genera con `resolve_field()` que maneja dicts, objetos y fechas.
 
 ## 2. Frontend
