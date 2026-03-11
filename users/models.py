@@ -83,6 +83,21 @@ class Profile(models.Model):
     )
     rol = models.CharField(max_length=100, null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    must_change_password = models.BooleanField(
+        default=False,
+        verbose_name="Debe cambiar contraseña",
+        help_text="Obliga al usuario a actualizar la contraseña en su próximo login web.",
+    )
+    password_changed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Contraseña actualizada en",
+    )
+    initial_password_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Expira contraseña inicial en",
+    )
     es_coordinador = models.BooleanField(
         default=False,
         verbose_name="Es Coordinador de Gestión",

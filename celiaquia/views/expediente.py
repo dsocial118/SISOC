@@ -21,6 +21,7 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
+from iam.services import user_has_permission_code
 
 from celiaquia.forms import ExpedienteForm, ConfirmarEnvioForm
 from celiaquia.models import (
@@ -51,9 +52,12 @@ from core.soft_delete.view_helpers import is_soft_deletable_instance
 
 logger = logging.getLogger("django")
 
+ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
+ROLE_TECNICO_CELIAQUIA_PERMISSION = "auth.role_tecnicoceliaquia"
 
-def _user_in_group(user, group_name: str) -> bool:
-    return user.is_authenticated and user.groups.filter(name=group_name).exists()
+
+def _user_has_permission(user, permission_code: str) -> bool:
+    return user_has_permission_code(user, permission_code)
 
 
 def _is_admin(user) -> bool:
@@ -78,6 +82,19 @@ def _user_provincia(user):
         return user.profile.provincia
     except ObjectDoesNotExist:
         return None
+
+
+def _tecnicos_queryset():
+    return User.objects.filter(
+        Q(
+            user_permissions__content_type__app_label="auth",
+            user_permissions__codename="role_tecnicoceliaquia",
+        )
+        | Q(
+            groups__permissions__content_type__app_label="auth",
+            groups__permissions__codename="role_tecnicoceliaquia",
+        )
+    ).distinct()
 
 
 def _parse_limit(value, default=None, max_cap=5000):
@@ -106,7 +123,7 @@ class LocalidadesLookupView(View):
         localidades = Localidad.objects.select_related("municipio__provincia")
 
         # Filtrar por provincia del usuario solo si es provincial Y NO es coordinador
-        is_coord = _user_in_group(user, "CoordinadorCeliaquia")
+        is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
         if _is_provincial(user) and not is_coord:
             prov = _user_provincia(user)
             if prov:
@@ -172,9 +189,11 @@ class ExpedienteListView(ListView):
                 "numero_expediente",
             )
         )
-        if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
+        if _is_admin(user) or _user_has_permission(
+            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
+        ):
             qs = qs.order_by("-fecha_creacion")
-        elif _user_in_group(user, "TecnicoCeliaquia"):
+        elif _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION):
             qs = (
                 qs.filter(asignaciones_tecnicos__tecnico=user)
                 .distinct()
@@ -208,10 +227,10 @@ class ExpedienteListView(ListView):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
         ctx["tecnicos"] = []
-        if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
-            ctx["tecnicos"] = User.objects.filter(
-                groups__name="TecnicoCeliaquia"
-            ).order_by("last_name", "first_name")
+        if _is_admin(user) or _user_has_permission(
+            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
+        ):
+            ctx["tecnicos"] = _tecnicos_queryset().order_by("last_name", "first_name")
         return ctx
 
 
@@ -414,9 +433,11 @@ class ExpedienteDetailView(DetailView):
             "expediente_ciudadanos__estado",
             "asignaciones_tecnicos__tecnico",
         )
-        if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
+        if _is_admin(user) or _user_has_permission(
+            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
+        ):
             return base
-        if _user_in_group(user, "TecnicoCeliaquia"):
+        if _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION):
             return base.filter(asignaciones_tecnicos__tecnico=user)
         if _is_provincial(user):
             prov = _user_provincia(user)
@@ -612,10 +633,10 @@ class ExpedienteDetailView(DetailView):
         preview_limit_opciones = ["5", "10", "20", "50", "100", "all"]
 
         tecnicos = []
-        if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
-            tecnicos = User.objects.filter(groups__name="TecnicoCeliaquia").order_by(
-                "last_name", "first_name"
-            )
+        if _is_admin(user) or _user_has_permission(
+            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
+        ):
+            tecnicos = _tecnicos_queryset().order_by("last_name", "first_name")
 
         faltan_archivos = expediente.expediente_ciudadanos.filter(
             Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
@@ -816,7 +837,10 @@ class ExpedienteUpdateView(UpdateView):
 class RecepcionarExpedienteView(View):
     def post(self, request, pk):
         user = self.request.user
-        if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+        if not (
+            _is_admin(user)
+            or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        ):
             if _is_ajax(request):
                 return JsonResponse(
                     {"success": False, "error": "Permiso denegado."}, status=403
@@ -852,7 +876,10 @@ class RecepcionarExpedienteView(View):
 class AsignarTecnicoView(View):
     def post(self, request, pk):
         user = self.request.user
-        if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+        if not (
+            _is_admin(user)
+            or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        ):
             if _is_ajax(request):
                 return JsonResponse(
                     {"success": False, "error": "Permiso denegado."}, status=403
@@ -869,7 +896,7 @@ class AsignarTecnicoView(View):
             messages.error(request, msg)
             return redirect("expediente_detail", pk=pk)
 
-        tecnico_qs = User.objects.filter(groups__name="TecnicoCeliaquia")
+        tecnico_qs = _tecnicos_queryset()
         tecnico = get_object_or_404(tecnico_qs, pk=tecnico_id)
 
         estado_actual = expediente.estado.nombre
@@ -902,7 +929,10 @@ class AsignarTecnicoView(View):
 
     def delete(self, request, pk):
         user = self.request.user
-        if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+        if not (
+            _is_admin(user)
+            or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        ):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
@@ -966,7 +996,10 @@ class SubirCruceExcelView(View):
     def post(self, request, pk):
         user = self.request.user
 
-        if not (_is_admin(user) or _user_in_group(user, "TecnicoCeliaquia")):
+        if not (
+            _is_admin(user)
+            or _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+        ):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
@@ -1025,8 +1058,8 @@ class RevisarLegajoView(View):
         expediente = get_object_or_404(Expediente, pk=pk)
 
         es_admin = _is_admin(user)
-        es_tecnico = _user_in_group(user, "TecnicoCeliaquia")
-        es_coord = _user_in_group(user, "CoordinadorCeliaquia")
+        es_tecnico = _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+        es_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
 
         # Permisos: admin, técnico o coordinador
         if not (es_admin or es_tecnico or es_coord):
@@ -1141,7 +1174,10 @@ class RevisarLegajoView(View):
 
         # ELIMINAR - Solo coordinadores
         if accion == "ELIMINAR":
-            if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+            if not (
+                _is_admin(user)
+                or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+            ):
                 return JsonResponse(
                     {
                         "success": False,

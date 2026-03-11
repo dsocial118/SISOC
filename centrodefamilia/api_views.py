@@ -78,7 +78,7 @@ class CentroViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
     queryset = Centro.objects.select_related(
         "referente", "provincia", "municipio", "localidad"
-    )
+    ).order_by("id")
     serializer_class = CentroSerializer
     permission_classes = [HasAPIKey]
 
@@ -133,7 +133,7 @@ class ActividadViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     - categoria_id: Filtrar actividades por categoría
     """
 
-    queryset = Actividad.objects.select_related("categoria")
+    queryset = Actividad.objects.select_related("categoria").order_by("id")
     serializer_class = ActividadSerializer
     permission_classes = [HasAPIKey]
 
@@ -155,7 +155,7 @@ class CategoriaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     - Nombre de la categoría (ej: Deportiva, Cultural, Educativa)
     """
 
-    queryset = Categoria.objects.all()
+    queryset = Categoria.objects.all().order_by("id")
     serializer_class = CategoriaSerializer
     permission_classes = [HasAPIKey]
 
@@ -179,9 +179,13 @@ class ActividadCentroViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     - estado: Estado de la actividad
     """
 
-    queryset = ActividadCentro.objects.select_related(
-        "centro", "actividad", "actividad__categoria"
-    ).prefetch_related("dias", "sexoact")
+    queryset = (
+        ActividadCentro.objects.select_related(
+            "centro", "actividad", "actividad__categoria"
+        )
+        .prefetch_related("dias", "sexoact")
+        .order_by("id")
+    )
     serializer_class = ActividadCentroSerializer
     permission_classes = [HasAPIKey]
 
@@ -255,9 +259,11 @@ class ParticipanteActividadViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet
     - estado: Estado de inscripción
     """
 
-    queryset = ParticipanteActividad.objects.select_related(
-        "actividad_centro", "ciudadano"
-    ).prefetch_related("historial")
+    queryset = (
+        ParticipanteActividad.objects.select_related("actividad_centro", "ciudadano")
+        .prefetch_related("historial")
+        .order_by("id")
+    )
     serializer_class = ParticipanteActividadSerializer
     permission_classes = [HasAPIKey]
 
@@ -429,7 +435,7 @@ class BeneficiarioResponsableViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewS
 
     queryset = BeneficiarioResponsable.objects.select_related(
         "beneficiario", "responsable"
-    )
+    ).order_by("id")
     serializer_class = BeneficiarioResponsableSerializer
     permission_classes = [HasAPIKey]
 
@@ -453,7 +459,9 @@ class InformeCabalRegistroViewSet(viewsets.ReadOnlyModelViewSet):
     - no_coincidente: Registros sin centro asociado
     """
 
-    queryset = InformeCabalRegistro.objects.select_related("archivo", "centro")
+    queryset = InformeCabalRegistro.objects.select_related(
+        "archivo", "centro"
+    ).order_by("id")
     serializer_class = InformeCabalRegistroSerializer
     permission_classes = [HasAPIKey]
 
@@ -512,8 +520,10 @@ class CabalArchivoViewSet(viewsets.ReadOnlyModelViewSet):
     - Advertencias sobre nombres duplicados
     """
 
-    queryset = CabalArchivo.objects.select_related("usuario").prefetch_related(
-        "registros"
+    queryset = (
+        CabalArchivo.objects.select_related("usuario")
+        .prefetch_related("registros")
+        .order_by("id")
     )
     serializer_class = CabalArchivoSerializer
     permission_classes = [HasAPIKey]

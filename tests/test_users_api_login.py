@@ -63,7 +63,7 @@ def test_api_login_rejects_invalid_credentials(comedor):
 
 
 @pytest.mark.django_db
-def test_api_login_accepts_non_pwa_user():
+def test_api_login_rejects_non_pwa_user():
     user_model = get_user_model()
     user_model.objects.create_user(
         username="api_user",
@@ -78,7 +78,8 @@ def test_api_login_accepts_non_pwa_user():
         format="json",
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 401
+    assert response.data["detail"] == "Este usuario no tiene acceso PWA activo."
 
 
 @pytest.mark.django_db

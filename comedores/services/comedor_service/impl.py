@@ -15,6 +15,7 @@ from django.db.models import (
     Func,
 )
 from django.db import transaction
+from django.db import IntegrityError
 from django.core.paginator import Paginator
 from django.core.files.storage import default_storage
 from django.contrib import messages
@@ -43,7 +44,7 @@ from comedores.utils import (
     preload_valores_comida_cache,
 )
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
-from core.models import Provincia, Municipio, Localidad, Nacionalidad
+from core.models import Provincia, Municipio, Localidad, Nacionalidad, Sexo
 from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
@@ -52,7 +53,6 @@ from duplas.models import Dupla
 
 logger = logging.getLogger("django")
 
-from core.constants import UserGroups
 from core.security import safe_redirect
 from core.services.advanced_filters import AdvancedFilterEngine
 from comedores.services.filter_config import (
@@ -322,7 +322,9 @@ def _build_comedores_list_values_queryset(base_qs):
             "referente__celular",
             "ultimo_estado__estado_general__estado_actividad__estado",
             "ultimo_estado__estado_general__estado_proceso",
+            "ultimo_estado__estado_general__estado_proceso__estado",
             "ultimo_estado__estado_general__estado_detalle",
+            "ultimo_estado__estado_general__estado_detalle__estado",
             "estado_validacion",
             "fecha_validado",
         )
@@ -346,7 +348,7 @@ def _user_tiene_scope_global_comedores(user):
 
     from users.services import UserPermissionService
 
-    return UserPermissionService.tiene_grupo(user, UserGroups.COORDINADOR_GENERAL)
+    return UserPermissionService.tiene_grupo(user, "auth.role_coordinador_general")
 
 
 def _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids):
@@ -1050,7 +1052,8 @@ class ComedorService:
             "altura": str(datos.get("altura")) if datos.get("altura") else None,
             "piso_departamento": datos.get("piso_vivienda")
             or datos.get("departamento_vivienda"),
-            "barrio": datos.get("barrio") or None,
+            # En algunos entornos legacy la columna barrio quedó NOT NULL.
+            "barrio": (datos.get("barrio") or "").strip(),
             "codigo_postal": (
                 str(datos.get("codigo_postal")) if datos.get("codigo_postal") else None
             ),
@@ -1060,11 +1063,11 @@ class ComedorService:
     def _apply_ubicacion_to_ciudadano_data_from_renaper(ciudadano_data, datos):
         ubicacion = ComedorService._mapear_ubicacion_desde_renaper(datos)
         if ubicacion["provincia"]:
-            ciudadano_data["provincia"] = ubicacion["provincia"].pk
+            ciudadano_data["provincia_id"] = ubicacion["provincia"].pk
         if ubicacion["municipio"]:
-            ciudadano_data["municipio"] = ubicacion["municipio"].pk
+            ciudadano_data["municipio_id"] = ubicacion["municipio"].pk
         if ubicacion["localidad"]:
-            ciudadano_data["localidad"] = ubicacion["localidad"].pk
+            ciudadano_data["localidad_id"] = ubicacion["localidad"].pk
 
     @staticmethod
     def _apply_nacionalidad_to_ciudadano_data_from_renaper(ciudadano_data, datos):
@@ -1072,11 +1075,36 @@ class ComedorService:
             datos.get("nacionalidad_api")
         )
         if nacionalidad_obj:
-            ciudadano_data["nacionalidad"] = nacionalidad_obj.pk
+            ciudadano_data["nacionalidad_id"] = nacionalidad_obj.pk
+
+    @staticmethod
+    def _resolve_sexo_desde_renaper(sexo_value):
+        if not sexo_value:
+            return None
+        if hasattr(sexo_value, "pk"):
+            return sexo_value
+        if isinstance(sexo_value, int):
+            return Sexo.objects.filter(pk=sexo_value).first()
+        if isinstance(sexo_value, dict):
+            if sexo_value.get("id"):
+                return Sexo.objects.filter(pk=sexo_value["id"]).first()
+            if sexo_value.get("sexo"):
+                return Sexo.objects.filter(sexo__iexact=sexo_value["sexo"]).first()
+            return None
+        if isinstance(sexo_value, str):
+            normalized = sexo_value.strip().upper()
+            if normalized in ("M", "MASCULINO"):
+                return Sexo.objects.filter(sexo__iexact="Masculino").first()
+            if normalized in ("F", "FEMENINO"):
+                return Sexo.objects.filter(sexo__iexact="Femenino").first()
+            if normalized in ("X", "NO BINARIO", "NB"):
+                return Sexo.objects.filter(sexo__iexact="X").first()
+            return Sexo.objects.filter(sexo__iexact=sexo_value.strip()).first()
+        return None
 
     @staticmethod
     def _buscar_ciudadano_existente_por_dni_renaper(dni_str):
-        return Ciudadano.objects.filter(
+        return Ciudadano.all_objects.filter(
             tipo_documento=Ciudadano.DOCUMENTO_DNI, documento=int(dni_str)
         ).first()
 
@@ -1088,8 +1116,31 @@ class ComedorService:
 
     @staticmethod
     def _crear_ciudadano_desde_datos_renaper(dni_str, ciudadano_data):
+        if ciudadano_data.get("barrio") is None:
+            ciudadano_data["barrio"] = ""
         try:
-            ciudadano = Ciudadano.objects.create(**ciudadano_data)
+            # Savepoint para poder continuar dentro de atomic si hay IntegrityError.
+            with transaction.atomic():
+                ciudadano = Ciudadano.objects.create(**ciudadano_data)
+        except IntegrityError:
+            # Puede ocurrir por ciudadano existente borrado lógicamente (unique_together).
+            existente = Ciudadano.all_objects.filter(
+                tipo_documento=Ciudadano.DOCUMENTO_DNI,
+                documento=int(dni_str),
+            ).first()
+            if existente:
+                if existente.deleted_at is not None:
+                    existente.deleted_at = None
+                    existente.deleted_by = None
+                if not existente.activo:
+                    existente.activo = True
+                existente.save(update_fields=["deleted_at", "deleted_by", "activo"])
+                return existente
+            logger.exception(
+                "No se pudo crear ciudadano desde RENAPER por integridad",
+                extra={"dni": dni_str, "datos": ciudadano_data},
+            )
+            return None
         except Exception:
             logger.exception(
                 "No se pudo crear ciudadano desde RENAPER",
@@ -1163,8 +1214,9 @@ class ComedorService:
             "origen_dato": "renaper",
         }
 
-        if datos.get("sexo"):
-            ciudadano_data["sexo"] = datos["sexo"]
+        sexo_resuelto = ComedorService._resolve_sexo_desde_renaper(datos.get("sexo"))
+        if sexo_resuelto:
+            ciudadano_data["sexo"] = sexo_resuelto
 
         ciudadano_data.update(
             ComedorService._build_ciudadano_data_contacto_desde_renaper(datos)
@@ -1222,6 +1274,16 @@ class ComedorService:
 
         existente = ComedorService._buscar_ciudadano_existente_por_dni_renaper(dni_str)
         if existente:
+            updates = []
+            if existente.deleted_at is not None:
+                existente.deleted_at = None
+                existente.deleted_by = None
+                updates.extend(["deleted_at", "deleted_by"])
+            if not existente.activo:
+                existente.activo = True
+                updates.append("activo")
+            if updates:
+                existente.save(update_fields=updates)
             return ComedorService._build_ciudadano_existente_desde_renaper_response(
                 existente
             )

@@ -1,6 +1,7 @@
 from drf_spectacular.utils import extend_schema
 from django.contrib.auth import authenticate
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from rest_framework import serializers, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
@@ -8,7 +9,16 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from users.api_serializers import UserContextSerializer
+from pwa.models import AuditoriaSesionPWA
+from pwa.services.auditoria_service import registrar_evento_auth
+from users.services_pwa import is_pwa_user
+from users.api_serializers import (
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
+    UserContextSerializer,
+)
+from users.rate_limits import hit_rate_limit
+from users.services_auth import confirm_password_reset, request_password_reset_for_email
 
 
 class LoginSerializer(serializers.Serializer):
@@ -50,13 +60,39 @@ class UserLoginViewSet(viewsets.ViewSet):
                 if isinstance(exc, AuthenticationFailed)
                 else "Credenciales inválidas."
             )
-            return Response(
+            response = Response(
                 {"detail": detail},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
+            registrar_evento_auth(
+                request=request,
+                evento=AuditoriaSesionPWA.EVENTO_LOGIN_ERROR,
+                resultado=AuditoriaSesionPWA.RESULTADO_ERROR,
+                username_intentado=request.data.get("username"),
+                codigo_respuesta=response.status_code,
+                motivo_error=detail,
+            )
+            return response
         user = serializer.validated_data["user"]
+        if not is_pwa_user(user):
+            detail = "Este usuario no tiene acceso PWA activo."
+            response = Response(
+                {"detail": detail},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+            registrar_evento_auth(
+                request=request,
+                evento=AuditoriaSesionPWA.EVENTO_LOGIN_ERROR,
+                resultado=AuditoriaSesionPWA.RESULTADO_ERROR,
+                user=user,
+                username_intentado=request.data.get("username"),
+                codigo_respuesta=response.status_code,
+                motivo_error=detail,
+            )
+            return response
+
         token, _ = Token.objects.get_or_create(user=user)
-        return Response(
+        response = Response(
             {
                 "token": token.key,
                 "token_type": "Token",
@@ -65,6 +101,15 @@ class UserLoginViewSet(viewsets.ViewSet):
             },
             status=status.HTTP_200_OK,
         )
+        registrar_evento_auth(
+            request=request,
+            evento=AuditoriaSesionPWA.EVENTO_LOGIN_OK,
+            resultado=AuditoriaSesionPWA.RESULTADO_OK,
+            user=user,
+            username_intentado=request.data.get("username"),
+            codigo_respuesta=response.status_code,
+        )
+        return response
 
 
 @extend_schema(tags=["Auth"])
@@ -79,7 +124,15 @@ class UserLogoutViewSet(viewsets.ViewSet):
             token.delete()
         else:
             Token.objects.filter(user=request.user).delete()
-        return Response({"detail": "Logout exitoso."}, status=status.HTTP_200_OK)
+        response = Response({"detail": "Logout exitoso."}, status=status.HTTP_200_OK)
+        registrar_evento_auth(
+            request=request,
+            evento=AuditoriaSesionPWA.EVENTO_LOGOUT,
+            resultado=AuditoriaSesionPWA.RESULTADO_OK,
+            user=request.user,
+            codigo_respuesta=response.status_code,
+        )
+        return response
 
 
 @extend_schema(tags=["Auth"])
@@ -90,4 +143,97 @@ class UserContextViewSet(viewsets.ViewSet):
     @extend_schema(responses=UserContextSerializer)
     def list(self, request):
         serializer = UserContextSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        response = Response(serializer.data, status=status.HTTP_200_OK)
+        registrar_evento_auth(
+            request=request,
+            evento=AuditoriaSesionPWA.EVENTO_ME_OK,
+            resultado=AuditoriaSesionPWA.RESULTADO_OK,
+            user=request.user,
+            codigo_respuesta=response.status_code,
+        )
+        return response
+
+
+@extend_schema(tags=["Auth"])
+class PasswordResetRequestViewSet(viewsets.ViewSet):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    @extend_schema(request=PasswordResetRequestSerializer)
+    def create(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        ip = request.META.get("REMOTE_ADDR", "anon")
+        email = serializer.validated_data["email"].lower()
+        if hit_rate_limit(
+            scope="password_reset_request",
+            identity=f"{ip}:{email}",
+            limit=5,
+            window_seconds=900,
+        ):
+            return Response(
+                {
+                    "detail": (
+                        "Demasiados intentos. Intente nuevamente en unos minutos."
+                    )
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        request_password_reset_for_email(
+            email=serializer.validated_data["email"], request=request
+        )
+        return Response(
+            {
+                "detail": (
+                    "Si el correo existe en el sistema, se envio un enlace para restablecer la contraseña."
+                )
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(tags=["Auth"])
+class PasswordResetConfirmViewSet(viewsets.ViewSet):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    @extend_schema(request=PasswordResetConfirmSerializer)
+    @transaction.atomic
+    def create(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        ip = request.META.get("REMOTE_ADDR", "anon")
+        if hit_rate_limit(
+            scope="password_reset_confirm",
+            identity=ip,
+            limit=10,
+            window_seconds=900,
+        ):
+            return Response(
+                {
+                    "detail": (
+                        "Demasiados intentos. Intente nuevamente en unos minutos."
+                    )
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        user = confirm_password_reset(
+            uid=serializer.validated_data["uid"],
+            token=serializer.validated_data["token"],
+            new_password=serializer.validated_data["new_password"],
+        )
+        if not user:
+            return Response(
+                {"detail": "Token inválido o expirado."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        Token.objects.filter(user=user).delete()
+        return Response(
+            {"detail": "Contraseña actualizada correctamente."},
+            status=status.HTTP_200_OK,
+        )
