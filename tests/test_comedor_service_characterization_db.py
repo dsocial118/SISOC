@@ -275,6 +275,8 @@ def test_get_nomina_detail_con_db_real_calcula_resumen_y_rangos():
     c_mayor_avanzado = _ciudadano(1005, 70, sexo_m)
     c_pendiente = _ciudadano(1006, 40, sexo_m)
 
+    admision = Admision.objects.create(comedor=comedor)
+
     for ciudadano, estado in [
         (c_nino, Nomina.ESTADO_ACTIVO),
         (c_ado, Nomina.ESTADO_ACTIVO),
@@ -283,11 +285,11 @@ def test_get_nomina_detail_con_db_real_calcula_resumen_y_rangos():
         (c_mayor_avanzado, Nomina.ESTADO_ACTIVO),
         (c_pendiente, Nomina.ESTADO_PENDIENTE),
     ]:
-        Nomina.objects.create(comedor=comedor, ciudadano=ciudadano, estado=estado)
+        Nomina.objects.create(admision=admision, ciudadano=ciudadano, estado=estado)
 
     page_obj, cant_m, cant_f, cant_x, espera, total, rangos = (
         module.ComedorService.get_nomina_detail(
-            comedor_pk=comedor.pk,
+            admision_pk=admision.pk,
             page=1,
             per_page=10,
         )
@@ -320,13 +322,14 @@ def test_get_nomina_detail_con_db_real_sin_activos_no_divide_por_cero():
         fecha_nacimiento=date(1990, 1, 1),
         sexo=sexo_m,
     )
+    admision = Admision.objects.create(comedor=comedor)
     Nomina.objects.create(
-        comedor=comedor, ciudadano=ciudadano, estado=Nomina.ESTADO_PENDIENTE
+        admision=admision, ciudadano=ciudadano, estado=Nomina.ESTADO_PENDIENTE
     )
 
     _page_obj, _m, _f, _x, espera, total, rangos = (
         module.ComedorService.get_nomina_detail(
-            comedor_pk=comedor.pk,
+            admision_pk=admision.pk,
             page=1,
             per_page=10,
         )
