@@ -142,10 +142,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const apellido_responsable = (form.querySelector('input[name="apellido_responsable"]')?.value || '').trim();
         const nombre_responsable = (form.querySelector('input[name="nombre_responsable"]')?.value || '').trim();
         const documento_responsable = (form.querySelector('input[name="documento_responsable"]')?.value || '').trim();
-        const email_responsable = (form.querySelector('input[name="email_responsable"]')?.value || '').trim();
         const tiene_responsable = apellido_responsable || nombre_responsable || documento_responsable;
         
-        if (tiene_responsable && (!apellido_responsable || !nombre_responsable || !documento_responsable || !email_responsable)) {
+        if (tiene_responsable && (!apellido_responsable || !nombre_responsable || !documento_responsable)) {
             return;
         }
         

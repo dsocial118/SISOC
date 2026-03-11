@@ -953,8 +953,8 @@
                                                         <option value="">Seleccionar...</option>
                                                         {% for nac in nacionalidades %}
                                                             <option value="{{ nac.id }}"
-                                                                    {% if registro.datos_raw.nacionalidad|stringformat:"s" == nac.id|stringformat:"s" or registro.datos_raw.nacionalidad|lower == nac.nombre|lower %}selected{% endif %}>
-                                                                {{ nac.nombre }}
+                                                                    {% if registro.datos_raw.nacionalidad|stringformat:"s" == nac.id|stringformat:"s" or registro.datos_raw.nacionalidad|lower == nac.nacionalidad|lower %}selected{% endif %}>
+                                                                {{ nac.nacionalidad }}
                                                             </option>
                                                         {% endfor %}
                                                     </select>
@@ -1076,12 +1076,11 @@
                                                                value="{{ registro.datos_raw.telefono_responsable|default:'' }}" />
                                                     </div>
                                                     <div class="col-md-6">
-                                                        <label class="form-label">Email Responsable *</label>
+                                                        <label class="form-label">Email Responsable</label>
                                                         <input type="email"
                                                                class="form-control"
                                                                name="email_responsable"
-                                                               value="{{ registro.datos_raw.email_responsable|default:'' }}"
-                                                               required />
+                                                               value="{{ registro.datos_raw.email_responsable|default:'' }}" />
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Domicilio Responsable</label>
@@ -1779,7 +1778,7 @@
           content="{% url 'legajo_editar' expediente.pk 0 %}" />
     <meta name="expediente-id" content="{{ expediente.pk }}" />
     <script src="{% static 'custom/js/expediente_detail_config.js' %}"></script>
-    <script src="{% static 'custom/js/registros_erroneos.js' %}"></script>
+    <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20260310-telefono-opcional"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
     <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>

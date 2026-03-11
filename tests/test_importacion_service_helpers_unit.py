@@ -236,6 +236,39 @@ def test_importacion_helpers_normalizan_dataframe_y_precargas(mocker):
     assert precargas["sexos_cache"]["f"] == 2
 
 
+def test_consolida_beneficiario_que_tambien_es_responsable():
+    expediente = _crear_expediente_test()
+    estado_legajo = _crear_estado_legajo_test()
+    ciudadano_responsable = _crear_ciudadano_test(33000001)
+    ciudadano_hijo = _crear_ciudadano_test(33000002)
+
+    legajo = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano_responsable,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
+    )
+
+    GrupoFamiliar.objects.create(
+        ciudadano_1=ciudadano_responsable,
+        ciudadano_2=ciudadano_hijo,
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+    )
+
+    warnings = []
+    module._consolidar_beneficiarios_que_son_responsables(expediente, warnings)
+    legajo.refresh_from_db()
+
+    assert legajo.rol == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+    assert warnings == [
+        {
+            "fila": "general",
+            "campo": "consolidacion_roles",
+            "detalle": "Se actualizaron 1 beneficiarios a doble rol",
+        }
+    ]
+
+
 def test_importacion_helpers_payload_row_and_defaults_validation():
     warnings = []
 
