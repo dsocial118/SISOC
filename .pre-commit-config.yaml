@@ -5,3 +5,16 @@ repos:
       - id: gitleaks
         args:
           - --config=.gitleaks.toml
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+        args:
+          - --config=pyproject.toml
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: bash -lc 'pylint $(git ls-files "*.py") --rcfile=.pylintrc'
+        language: system
+        pass_filenames: false
