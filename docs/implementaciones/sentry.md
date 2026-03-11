@@ -30,7 +30,7 @@ Además, `config/settings.py` ya incluye:
 
 1. `SENTRY_ENABLED=true` (si no existe, por defecto se toma `true`).
 2. `ENVIRONMENT` es `qa` o `prd`.
-3. `SENTRY_DSN` (definido en `config/settings.py`) tiene valor.
+3. `SENTRY_DSN` (definido por variable de entorno) tiene valor.
 4. `SENTRY_DSN` es un DSN válido (incluye `public_key@...`).
 
 Si `ENVIRONMENT=dev`, Sentry no se inicializa aunque haya DSN.
@@ -41,6 +41,7 @@ Variables soportadas (configurables por `.env`):
 
 ```env
 SENTRY_ENABLED=true
+SENTRY_DSN=
 SENTRY_RELEASE=
 SENTRY_SEND_DEFAULT_PII=false
 # Rates/replay definidos en config/settings.py según ENVIRONMENT
@@ -50,7 +51,7 @@ SENTRY_SEND_DEFAULT_PII=false
 
 Notas:
 
-- `SENTRY_DSN` se define en `config/settings.py`.
+- `SENTRY_DSN` se inyecta por entorno (`.env`/secret manager), nunca hardcodeado.
 - `SENTRY_LOG_EVENT_LEVEL` se define en `config/settings.py` con default `WARNING`.
 - El environment enviado a Sentry se deriva siempre de `ENVIRONMENT` (sin variable extra):
   - `qa -> sisoc-qa`
@@ -124,7 +125,7 @@ Revisar:
 
 1. `ENVIRONMENT` sea `qa` o `prd`.
 2. `SENTRY_ENABLED=true`.
-3. `SENTRY_DSN` definido en `config/settings.py`.
+3. `SENTRY_DSN` definido en variables de entorno.
 4. `SENTRY_DSN` con formato válido: `https://<public_key>@o<org>.ingest.sentry.io/<project_id>`.
 5. Revisar logs de arranque por warning `SENTRY_DSN inválido...`.
 6. Reinicio del contenedor Django tras cambiar `.env`.

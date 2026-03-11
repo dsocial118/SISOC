@@ -1,5 +1,4 @@
 import json
-import os
 from collections import defaultdict
 from typing import Any
 
@@ -983,23 +982,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             **table_contexts,
         }
 
-    def _get_environment_config(self):
-        """Obtiene configuración del entorno."""
-        if not getattr(settings, "GESTIONAR_INTEGRATION_ENABLED", False):
-            return {
-                "GESTIONAR_API_KEY": "",
-                "GESTIONAR_API_CREAR_COMEDOR": "",
-            }
-        return {
-            "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
-            "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-        }
-
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         presupuestos_data = self.get_presupuestos_data()
         relaciones_data = self.get_relaciones_optimizadas()
-        env_config = self._get_environment_config()
         programa_nombre = getattr(
             getattr(self.object, "programa", None), "nombre", None
         )
@@ -1039,7 +1025,6 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             {
                 **presupuestos_data,
                 **relaciones_data,
-                **env_config,
                 **nomina_metrics,
                 "nomina_total": nomina_total,
                 "nomina_hombres": nomina_m,

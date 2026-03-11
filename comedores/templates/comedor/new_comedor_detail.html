@@ -1758,9 +1758,7 @@
     </script>
 
     <script nonce="{{ request.csp_nonce }}">
-    const comedorId = "{{ comedor.id }}"
-    const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
-    const GESTIONAR_API_CREAR_COMEDOR = "{{ GESTIONAR_API_CREAR_COMEDOR }}";
+    const comedorId = "{{ comedor.id }}";
     </script>
     <script src="{% static 'custom/js/comedordetail.js' %}"></script>
     <script src="{% static 'custom/js/newcomedor.js' %}"></script>

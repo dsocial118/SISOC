@@ -41,11 +41,12 @@ def test_comedor_detail_view_get_context(client_logged_fixture, comedor_fixture)
         "imagenes",
         "comedor_categoria",
         "rendicion_cuentas_final_activo",
-        "GESTIONAR_API_KEY",
-        "GESTIONAR_API_CREAR_COMEDOR",
         "admision",
     ]:
         assert key in response.context
+
+    assert "GESTIONAR_API_KEY" not in response.context
+    assert "GESTIONAR_API_CREAR_COMEDOR" not in response.context
 
 
 @pytest.mark.django_db
