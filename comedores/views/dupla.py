@@ -15,7 +15,9 @@ class AsignarDuplaListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
+        comedor = ComedorService.get_scoped_comedor_or_404(
+            self.kwargs["pk"], self.request.user
+        )
         duplas = DuplaService.get_duplas_by_estado_activo()
         data["comedor"] = comedor
         data["duplas"] = duplas
@@ -23,7 +25,10 @@ class AsignarDuplaListView(LoginRequiredMixin, ListView):
 
     def post(self, request, *args, **kwargs):
         dupla_id = request.POST.get("dupla_id")
-        comedor_id = self.kwargs["pk"]
+        comedor = ComedorService.get_scoped_comedor_or_404(
+            self.kwargs["pk"], request.user
+        )
+        comedor_id = comedor.id
 
         if dupla_id:
             try:

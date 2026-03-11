@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
+from comedores.services.comedor_service import ComedorService
 from comedores.services.territorial_service import TerritorialService
 
 logger = logging.getLogger("django")
@@ -23,10 +24,11 @@ def obtener_territoriales_api(request, comedor_id):
     - force_sync: 'true' para forzar sincronización con GESTIONAR
     """
     try:
+        comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, request.user)
         forzar_sync = request.GET.get("force_sync", "false").lower() == "true"
 
         resultado = TerritorialService.obtener_territoriales_para_comedor(
-            comedor_id=comedor_id, forzar_sync=forzar_sync
+            comedor_id=comedor.id, forzar_sync=forzar_sync
         )
 
         response_data = {
@@ -74,8 +76,9 @@ def sincronizar_territoriales_api(request, comedor_id):
     Endpoint para forzar sincronización con GESTIONAR.
     """
     try:
+        comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, request.user)
         resultado = TerritorialService.obtener_territoriales_para_comedor(
-            comedor_id=comedor_id, forzar_sync=True
+            comedor_id=comedor.id, forzar_sync=True
         )
 
         return JsonResponse(

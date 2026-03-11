@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
+from comedores.services.comedor_service import ComedorService
 from comedores.services.validacion_service import ValidacionService
 from core.security import safe_redirect
 
@@ -10,13 +11,14 @@ from core.security import safe_redirect
 @login_required
 @require_POST
 def validar_comedor(request, pk):
+    comedor = ComedorService.get_scoped_comedor_or_404(pk, request.user)
     accion = request.POST.get("accion")
     comentario = request.POST.get("comentario", "")
     opciones = request.POST.getlist("opciones") if accion == "no_validar" else None
     next_url = request.POST.get("next") or request.GET.get("next")
 
     success, mensaje = ValidacionService.validar_comedor(
-        comedor_id=pk,
+        comedor_id=comedor.id,
         user=request.user,
         accion=accion,
         opciones=opciones,
@@ -30,6 +32,6 @@ def validar_comedor(request, pk):
 
     return safe_redirect(
         request,
-        default=reverse("comedor_detalle", kwargs={"pk": pk}),
+        default=reverse("comedor_detalle", kwargs={"pk": comedor.id}),
         target=next_url,
     )

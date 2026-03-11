@@ -6,6 +6,7 @@ from datetime import date, timedelta
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.http import Http404
 from django.test import RequestFactory
 from django.utils import timezone
 
@@ -247,6 +248,37 @@ def test_get_comedor_detail_object_limita_y_ordena_observaciones_prefetch():
     # Debe traer máximo 3 y ordenado por fecha_visita desc
     assert len(obj.observaciones_optimized) == 3
     assert [o.id for o in obj.observaciones_optimized] == obs_ids[:3]
+
+
+def test_get_comedor_detail_object_con_scope_usuario_fuera_de_dupla_devuelve_404():
+    provincia = Provincia.objects.create(nombre="Scope Fuera")
+    abogado = _create_user("abogado_scope_fuera")
+    tecnico_dupla = _create_user("tecnico_dupla_scope_fuera")
+    tecnico_ajeno = _create_user("tecnico_ajeno_scope_fuera")
+    _ensure_group(tecnico_dupla, UserGroups.TECNICO_COMEDOR)
+    _ensure_group(tecnico_ajeno, UserGroups.TECNICO_COMEDOR)
+
+    dupla = _create_dupla("Dupla Scope Fuera", abogado=abogado, tecnico=tecnico_dupla)
+    comedor = _create_comedor("Comedor Scope Fuera", provincia, dupla)
+
+    with pytest.raises(Http404):
+        module.ComedorService.get_comedor_detail_object(comedor.id, user=tecnico_ajeno)
+
+
+def test_get_comedor_detail_object_con_scope_usuario_en_dupla_retorna_objeto():
+    provincia = Provincia.objects.create(nombre="Scope Dentro")
+    abogado = _create_user("abogado_scope_dentro")
+    tecnico_dupla = _create_user("tecnico_dupla_scope_dentro")
+    _ensure_group(tecnico_dupla, UserGroups.TECNICO_COMEDOR)
+
+    dupla = _create_dupla("Dupla Scope Dentro", abogado=abogado, tecnico=tecnico_dupla)
+    comedor = _create_comedor("Comedor Scope Dentro", provincia, dupla)
+
+    obj = module.ComedorService.get_comedor_detail_object(
+        comedor.id, user=tecnico_dupla
+    )
+
+    assert obj.id == comedor.id
 
 
 def test_get_nomina_detail_con_db_real_calcula_resumen_y_rangos():

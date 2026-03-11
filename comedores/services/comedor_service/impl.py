@@ -381,6 +381,30 @@ def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
     return base_qs
 
 
+def _build_comedores_model_queryset():
+    return Comedor.objects.all()
+
+
+def _apply_user_scope_to_comedores_queryset(base_qs, user):
+    if _user_tiene_scope_global_comedores(user):
+        return base_qs
+
+    from users.services import UserPermissionService
+
+    is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
+    is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
+
+    if is_coordinador:
+        return _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
+
+    if is_dupla:
+        return base_qs.filter(
+            Q(dupla__abogado=user) | Q(dupla__tecnico=user)
+        ).distinct()
+
+    return base_qs
+
+
 def _build_relevamientos_detail_prefetch_queryset():
     return Relevamiento.objects.select_related(
         "prestacion",
@@ -681,10 +705,26 @@ class ComedorService:
         return COMEDOR_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
     @staticmethod
-    def get_comedor_detail_object(comedor_id: int):
+    def get_scoped_comedor_queryset(user):
+        """Retorna un queryset de comedores filtrado por alcance del usuario."""
+        base_qs = _build_comedores_model_queryset()
+        return _apply_user_scope_to_comedores_queryset(base_qs, user)
+
+    @staticmethod
+    def get_scoped_comedor_or_404(comedor_id: int, user):
+        """Obtiene un comedor por ID respetando scope del usuario."""
+        return get_object_or_404(
+            ComedorService.get_scoped_comedor_queryset(user), pk=comedor_id
+        )
+
+    @staticmethod
+    def get_comedor_detail_object(comedor_id: int, user=None):
         """Obtiene un comedor con todas sus relaciones optimizadas para la vista de detalle."""
         preload_valores_comida_cache()
         qs = _build_comedor_detail_queryset()
+        if user is not None:
+            scoped_ids = ComedorService.get_scoped_comedor_queryset(user).values("id")
+            qs = qs.filter(id__in=scoped_ids)
         return get_object_or_404(qs, pk=comedor_id)
 
     @staticmethod

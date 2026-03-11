@@ -120,13 +120,14 @@ def test_comedor_create_helpers_and_form_valid_paths(mocker):
 def test_comedor_detail_get_object_presupuestos_and_post_paths(mocker):
     view = module.ComedorDetailView()
     view.kwargs = {"pk": 7}
+    view.request = SimpleNamespace(user=SimpleNamespace())
 
     get_obj = mocker.patch(
         "comedores.views.comedor.ComedorService.get_comedor_detail_object",
         return_value="obj",
     )
     assert view.get_object() == "obj"
-    get_obj.assert_called_once_with(7)
+    get_obj.assert_called_once_with(7, user=view.request.user)
 
     # get_presupuestos_data cache hit
     view.object = SimpleNamespace(id=1, relevamientos_optimized=[1])

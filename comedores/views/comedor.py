@@ -806,7 +806,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "comedor"
 
     def get_object(self, queryset=None):
-        return ComedorService.get_comedor_detail_object(self.kwargs["pk"])
+        return ComedorService.get_comedor_detail_object(
+            self.kwargs["pk"], user=self.request.user
+        )
 
     def get_presupuestos_data(self):
         """Obtiene datos de presupuestos usando cache y datos prefetched cuando sea posible."""
@@ -1060,6 +1062,9 @@ class ComedorUpdateView(LoginRequiredMixin, UpdateView):
     form_class = ComedorForm
     template_name = "comedor/comedor_form.html"
 
+    def get_queryset(self):
+        return ComedorService.get_scoped_comedor_queryset(self.request.user)
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
@@ -1118,3 +1123,6 @@ class ComedorDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteVie
     context_object_name = "comedor"
     success_url = reverse_lazy("comedores")
     success_message = "Comedor dado de baja correctamente."
+
+    def get_queryset(self):
+        return ComedorService.get_scoped_comedor_queryset(self.request.user)
