@@ -1395,17 +1395,6 @@ class ReprocesarRegistrosErroneosView(View):
                 telefono = str(datos.get("telefono", "")).strip()
                 if telefono and len(telefono) < 8:
                     raise ValidationError("Telefono debe tener al menos 8 digitos")
-                tiene_responsable = any(
-                    [
-                        datos.get("apellido_responsable"),
-                        datos.get("nombre_responsable"),
-                        datos.get("documento_responsable"),
-                    ]
-                )
-                if tiene_responsable and not datos.get("email_responsable"):
-                    raise ValidationError(
-                        "Email del responsable es obligatorio si hay datos de responsable"
-                    )
                 # Agregar provincia del usuario
                 datos["provincia"] = provincia_id
 
@@ -1713,3 +1702,50 @@ class EliminarRegistroErroneoView(View):
         return JsonResponse(
             {"success": True, "message": "Registro eliminado correctamente."}
         )
+
+
+class ExpedienteDeleteView(View):
+    def delete(self, request, pk):
+        user = request.user
+        if not _is_admin(user):
+            return JsonResponse(
+                {"success": False, "error": "Permiso denegado."}, status=403
+            )
+        queryset = getattr(Expediente, "all_objects", Expediente.objects)
+        expediente = queryset.filter(pk=pk).first()
+        if expediente is None:
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "El expediente ya estaba eliminado.",
+                    "already_deleted": True,
+                }
+            )
+
+        get_data = getattr(request, "GET", {})
+        post_data = getattr(request, "POST", {})
+        preview_enabled = str(post_data.get("preview") or get_data.get("preview") or "")
+        if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(
+            expediente
+        ):
+            return JsonResponse(
+                {
+                    "success": True,
+                    "preview": build_delete_preview(expediente),
+                }
+            )
+
+        try:
+            if is_soft_deletable_instance(expediente):
+                expediente.delete(user=user, cascade=True)
+            else:
+                expediente.delete()
+            return JsonResponse(
+                {"success": True, "message": "Expediente eliminado correctamente."}
+            )
+        except Exception as e:
+            logger.error("Error al eliminar expediente %s: %s", pk, e, exc_info=True)
+            return JsonResponse(
+                {"success": False, "error": "Error al eliminar el expediente."},
+                status=500,
+            )
