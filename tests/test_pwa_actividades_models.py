@@ -32,7 +32,9 @@ def test_catalogo_actividades_seed_inicial_existe():
 
 @pytest.mark.django_db
 def test_catalogo_actividad_no_permite_duplicado_categoria_actividad():
-    CatalogoActividadPWA.objects.create(categoria="Cultura", actividad="Jazz", activo=True)
+    CatalogoActividadPWA.objects.create(
+        categoria="Cultura", actividad="Jazz", activo=True
+    )
 
     with pytest.raises(IntegrityError):
         with transaction.atomic():
