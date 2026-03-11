@@ -48,7 +48,7 @@ def comedor_fixture(monkeypatch, db):
     comedor = ComedorFactory()
     monkeypatch.setattr(
         "comedores.services.comedor_service.ComedorService.get_comedor_detail_object",
-        lambda pk: comedor,
+        lambda pk, user=None: comedor,
     )
     monkeypatch.setattr(
         "comedores.services.comedor_service.ComedorService.get_presupuestos",

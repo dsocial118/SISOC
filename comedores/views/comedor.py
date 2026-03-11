@@ -1,5 +1,4 @@
 import json
-import os
 from collections import defaultdict
 from typing import Any
 
@@ -543,9 +542,30 @@ def _build_admisiones_y_nomina_context(comedor_obj):
         .order_by("-id")
     )
     timeline_context = ComedorService.get_admision_timeline_context(admisiones_qs)
+    admision_activa = timeline_context.get("admision_activa")
+    admision_activa_id = getattr(admision_activa, "id", None)
+    if admision_activa_id:
+        (
+            _,
+            nomina_hombres,
+            nomina_mujeres,
+            _,
+            nomina_espera,
+            nomina_total,
+            nomina_rangos,
+        ) = ComedorService.get_nomina_detail(admision_activa_id, page=1, per_page=1)
+    else:
+        nomina_hombres = nomina_mujeres = nomina_espera = nomina_total = 0
+        nomina_rangos = {}
+    nomina_metrics = _build_nomina_metrics(nomina_total, nomina_rangos)
     return {
         "admisiones_qs": admisiones_qs,
         "timeline_context": timeline_context,
+        "nomina_total": nomina_total,
+        "nomina_hombres": nomina_hombres,
+        "nomina_mujeres": nomina_mujeres,
+        "nomina_espera": nomina_espera,
+        **nomina_metrics,
     }
 
 
@@ -807,7 +827,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "comedor"
 
     def get_object(self, queryset=None):
-        return ComedorService.get_comedor_detail_object(self.kwargs["pk"])
+        return ComedorService.get_comedor_detail_object(
+            self.kwargs["pk"], user=self.request.user
+        )
 
     def get_presupuestos_data(self):
         """Obtiene datos de presupuestos usando cache y datos prefetched cuando sea posible."""
@@ -983,23 +1005,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             **table_contexts,
         }
 
-    def _get_environment_config(self):
-        """Obtiene configuración del entorno."""
-        if not getattr(settings, "GESTIONAR_INTEGRATION_ENABLED", False):
-            return {
-                "GESTIONAR_API_KEY": "",
-                "GESTIONAR_API_CREAR_COMEDOR": "",
-            }
-        return {
-            "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
-            "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-        }
-
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         presupuestos_data = self.get_presupuestos_data()
         relaciones_data = self.get_relaciones_optimizadas()
-        env_config = self._get_environment_config()
         programa_nombre = getattr(
             getattr(self.object, "programa", None), "nombre", None
         )
@@ -1013,7 +1022,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         informe_tecnico = selected_admision_context["informe_tecnico"]
 
         # Nómina del convenio seleccionado
-        if selected_admision:
+        selected_admision_pk = getattr(selected_admision, "pk", None)
+        if selected_admision_pk is not None:
             (
                 _,
                 nomina_m,
@@ -1023,7 +1033,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 nomina_total,
                 nomina_rangos,
             ) = ComedorService.get_nomina_detail(
-                selected_admision.pk, page=1, per_page=1
+                selected_admision_pk, page=1, per_page=1
             )
         else:
             nomina_m = nomina_f = nomina_espera = nomina_total = 0
@@ -1039,7 +1049,6 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             {
                 **presupuestos_data,
                 **relaciones_data,
-                **env_config,
                 **nomina_metrics,
                 "nomina_total": nomina_total,
                 "nomina_hombres": nomina_m,
@@ -1074,6 +1083,9 @@ class ComedorUpdateView(LoginRequiredMixin, UpdateView):
     model = Comedor
     form_class = ComedorForm
     template_name = "comedor/comedor_form.html"
+
+    def get_queryset(self):
+        return ComedorService.get_scoped_comedor_queryset(self.request.user)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -1133,3 +1145,6 @@ class ComedorDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteVie
     context_object_name = "comedor"
     success_url = reverse_lazy("comedores")
     success_message = "Comedor dado de baja correctamente."
+
+    def get_queryset(self):
+        return ComedorService.get_scoped_comedor_queryset(self.request.user)

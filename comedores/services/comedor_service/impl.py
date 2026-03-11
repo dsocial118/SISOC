@@ -151,6 +151,15 @@ def _build_nomina_qs_and_age_qs(admision_pk):
     return qs_nomina, qs_nomina.annotate(edad=age_expr)
 
 
+def _apply_nomina_dni_filter(qs_nomina, dni_query):
+    dni_clean = str(dni_query or "").strip()
+    if not dni_clean:
+        return qs_nomina
+    if not dni_clean.isdigit():
+        return qs_nomina.none()
+    return qs_nomina.filter(ciudadano__documento__startswith=dni_clean)
+
+
 def _build_nomina_page(qs_nomina, page, per_page):
     paginator = Paginator(
         qs_nomina.only(
@@ -368,6 +377,30 @@ def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
 
     if is_dupla:
         return _build_dupla_user_scoped_comedores_list_queryset(user)
+
+    return base_qs
+
+
+def _build_comedores_model_queryset():
+    return Comedor.objects.all()
+
+
+def _apply_user_scope_to_comedores_queryset(base_qs, user):
+    if _user_tiene_scope_global_comedores(user):
+        return base_qs
+
+    from users.services import UserPermissionService
+
+    is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
+    is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
+
+    if is_coordinador:
+        return _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
+
+    if is_dupla:
+        return base_qs.filter(
+            Q(dupla__abogado=user) | Q(dupla__tecnico=user)
+        ).distinct()
 
     return base_qs
 
@@ -672,10 +705,26 @@ class ComedorService:
         return COMEDOR_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
     @staticmethod
-    def get_comedor_detail_object(comedor_id: int):
+    def get_scoped_comedor_queryset(user):
+        """Retorna un queryset de comedores filtrado por alcance del usuario."""
+        base_qs = _build_comedores_model_queryset()
+        return _apply_user_scope_to_comedores_queryset(base_qs, user)
+
+    @staticmethod
+    def get_scoped_comedor_or_404(comedor_id: int, user):
+        """Obtiene un comedor por ID respetando scope del usuario."""
+        return get_object_or_404(
+            ComedorService.get_scoped_comedor_queryset(user), pk=comedor_id
+        )
+
+    @staticmethod
+    def get_comedor_detail_object(comedor_id: int, user=None):
         """Obtiene un comedor con todas sus relaciones optimizadas para la vista de detalle."""
         preload_valores_comida_cache()
         qs = _build_comedor_detail_queryset()
+        if user is not None:
+            scoped_ids = ComedorService.get_scoped_comedor_queryset(user).values("id")
+            qs = qs.filter(id__in=scoped_ids)
         return get_object_or_404(qs, pk=comedor_id)
 
     @staticmethod
@@ -785,11 +834,12 @@ class ComedorService:
         return total_almuerzo_cena * 763 + total_desayuno_merienda * 383
 
     @staticmethod
-    def get_nomina_detail(admision_pk, page=1, per_page=100):
+    def get_nomina_detail(admision_pk, page=1, per_page=100, dni_query=""):
         qs_nomina, qs_nomina_age = _build_nomina_qs_and_age_qs(admision_pk)
         resumen = _aggregate_nomina_resumen(qs_nomina_age)
         rangos_resumen = _build_nomina_rangos_resumen(resumen)
-        page_obj = _build_nomina_page(qs_nomina, page, per_page)
+        qs_nomina_filtrada = _apply_nomina_dni_filter(qs_nomina, dni_query)
+        page_obj = _build_nomina_page(qs_nomina_filtrada, page, per_page)
         return (
             page_obj,
             resumen["cantidad_nomina_m"],

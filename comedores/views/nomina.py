@@ -17,14 +17,25 @@ from comedores.services.comedor_service import ComedorService
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 
-def _get_admision_del_comedor_or_404(comedor_pk, admision_pk):
+def _get_comedor_scoped_or_404(comedor_pk, user):
+    return ComedorService.get_scoped_comedor_or_404(comedor_pk, user)
+
+
+def _get_admision_del_comedor_or_404(comedor_pk, admision_pk, user):
     """Obtiene la admisión sólo si pertenece al comedor de la URL."""
-    return get_object_or_404(Admision, pk=admision_pk, comedor_id=comedor_pk)
+    comedor = _get_comedor_scoped_or_404(comedor_pk, user)
+    return get_object_or_404(Admision, pk=admision_pk, comedor_id=comedor.id)
 
 
 @login_required
 def nomina_editar_ajax(request, pk):
-    nomina = get_object_or_404(Nomina, pk=pk)
+    scoped_comedores = ComedorService.get_scoped_comedor_queryset(request.user)
+    nomina = get_object_or_404(
+        Nomina.objects.select_related("admision__comedor").filter(
+            admision__comedor__in=scoped_comedores
+        ),
+        pk=pk,
+    )
     if request.method == "POST":
         form = NominaForm(request.POST, instance=nomina)
         if form.is_valid():
@@ -48,11 +59,13 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
         admision = _get_admision_del_comedor_or_404(
             self.kwargs["pk"],
             self.kwargs["admision_pk"],
+            self.request.user,
         )
         page = int(self.request.GET.get("page", 1))
+        dni_query = (self.request.GET.get("dni") or "").strip()
 
         page_obj, nomina_m, nomina_f, nomina_x, espera, total, rangos = (
-            ComedorService.get_nomina_detail(admision.pk, page)
+            ComedorService.get_nomina_detail(admision.pk, page, dni_query=dni_query)
         )
 
         menores = (rangos.get("ninos") or 0) + (rangos.get("adolescentes") or 0)
@@ -69,6 +82,7 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "nomina_rangos": rangos,
                 "object": admision.comedor,
                 "admision_pk": admision.pk,
+                "dni_query": dni_query,
             }
         )
         return context
@@ -90,6 +104,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         admision = _get_admision_del_comedor_or_404(
             self.kwargs["pk"],
             self.kwargs["admision_pk"],
+            self.request.user,
         )
         context["object"] = admision.comedor
         context["admision_pk"] = admision.pk
@@ -165,6 +180,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         admision = _get_admision_del_comedor_or_404(
             self.kwargs["pk"],
             self.kwargs["admision_pk"],
+            request.user,
         )
         admision_id = admision.pk
         ciudadano_id = request.POST.get("ciudadano_id")
@@ -242,12 +258,14 @@ class NominaDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
     success_message = "Registro de nómina dado de baja correctamente."
 
     def get_queryset(self):
+        scoped_comedores = ComedorService.get_scoped_comedor_queryset(self.request.user)
         return (
             super()
             .get_queryset()
             .filter(
                 admision_id=self.kwargs["admision_pk"],
                 admision__comedor_id=self.kwargs["pk"],
+                admision__comedor__in=scoped_comedores,
             )
         )
 
@@ -267,7 +285,7 @@ class NominaImportarView(LoginRequiredMixin, View):
     http_method_names = ["post"]
 
     def post(self, request, pk, admision_pk):
-        _get_admision_del_comedor_or_404(pk, admision_pk)
+        _get_admision_del_comedor_or_404(pk, admision_pk, request.user)
         ok, msg, _ = ComedorService.importar_nomina_ultimo_convenio(
             admision_id=admision_pk,
             comedor_id=pk,

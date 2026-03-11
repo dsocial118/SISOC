@@ -41,11 +41,12 @@ def test_comedor_detail_view_get_context(client_logged_fixture, comedor_fixture)
         "imagenes",
         "comedor_categoria",
         "rendicion_cuentas_final_activo",
-        "GESTIONAR_API_KEY",
-        "GESTIONAR_API_CREAR_COMEDOR",
         "admision",
     ]:
         assert key in response.context
+
+    assert "GESTIONAR_API_KEY" not in response.context
+    assert "GESTIONAR_API_CREAR_COMEDOR" not in response.context
 
 
 @pytest.mark.django_db
@@ -243,10 +244,15 @@ def test_relevamiento_create_edit_ajax_editar(
         "relevamientos.service.RelevamientoService.update_territorial",
         mock.Mock(return_value=relevamiento_mock),
     )
+    monkeypatch.setattr(
+        "comedores.views.relevamientos.get_object_or_404",
+        mock.Mock(return_value=relevamiento_mock),
+    )
 
     url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
     data = {
         "territorial_editar": "1",
+        "relevamiento_id": "1000",
     }
     response = client_logged_fixture.post(
         url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
@@ -554,6 +560,55 @@ def test_nomina_detail_view_responde_ok(client_nomina_fixture, admision_fixture)
     assert response.status_code == 200
     for key in ["nomina", "cantidad_nomina", "object", "admision_pk"]:
         assert key in response.context
+
+
+@pytest.mark.django_db
+def test_nomina_detail_view_filtra_por_dni_en_toda_la_nomina(
+    client_nomina_fixture, admision_fixture
+):
+    """El filtro por DNI debe aplicarse antes de paginar, no solo sobre la página actual."""
+    from datetime import date
+
+    ciudadano_objetivo = Ciudadano.objects.create(
+        nombre="Persona",
+        apellido="Objetivo",
+        documento=12345678,
+        fecha_nacimiento=date(1990, 1, 1),
+    )
+    Nomina.objects.create(
+        admision=admision_fixture,
+        ciudadano=ciudadano_objetivo,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    # Crea 100 registros más nuevos para forzar que el objetivo quede fuera de la página 1.
+    for idx in range(100):
+        ciudadano = Ciudadano.objects.create(
+            nombre=f"Persona{idx}",
+            apellido=f"Apellido{idx}",
+            documento=30000000 + idx,
+            fecha_nacimiento=date(1990, 1, 1),
+        )
+        Nomina.objects.create(
+            admision=admision_fixture,
+            ciudadano=ciudadano,
+            estado=Nomina.ESTADO_ACTIVO,
+        )
+
+    comedor = admision_fixture.comedor
+    url = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_fixture.pk},
+    )
+
+    response_sin_filtro = client_nomina_fixture.get(url, {"page": 1})
+    assert response_sin_filtro.status_code == 200
+    assert "12345678" not in response_sin_filtro.content.decode()
+
+    response_filtrada = client_nomina_fixture.get(url, {"page": 1, "dni": "12345678"})
+    assert response_filtrada.status_code == 200
+    assert "12345678" in response_filtrada.content.decode()
+    assert response_filtrada.context["nomina"].paginator.count == 1
 
 
 @pytest.mark.django_db

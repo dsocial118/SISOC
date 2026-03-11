@@ -2,6 +2,7 @@ name: Tests automatizados
 
 permissions:
     contents: read
+    checks: read
 
 on:
     pull_request:
@@ -65,7 +66,58 @@ jobs:
               if: always()
               run: docker compose down -v
 
-    tests:
+    migrations_check:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4.1.7
+
+            - name: Create .env for CI
+              run: |
+                  cat > .env <<'EOF'
+                  DJANGO_DEBUG=False
+                  DJANGO_SECRET_KEY=ci-secret-key
+                  DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,testserver
+                  DATABASE_HOST=mysql
+                  DATABASE_PORT=3306
+                  DATABASE_USER=root
+                  DATABASE_PASSWORD=root1-password2
+                  DATABASE_NAME=sisoc-local
+                  WAIT_FOR_DB=true
+                  DOCKER_MYSQL_PORT_FORWARD=3307
+                  DOCKER_MYSQL_PORT=3306
+                  DOCKER_DJANGO_PORT_FORWARD=8000
+                  DOCKER_DJANGO_PORT=8000
+                  DOCKER_DEBUGGER_PORT_FORWARD=5678
+                  DOCKER_DEBUGGER_PORT=5678
+                  EOF
+
+            - name: Build and start services
+              run: docker compose up -d --build
+
+            - name: Wait for MySQL
+              run: |
+                  for i in {1..20}; do
+                      if docker compose exec -T mysql mysqladmin ping -h "localhost" -P 3306 --silent; then
+                          echo "MySQL is ready!"
+                          exit 0
+                      fi
+                      echo "Waiting for MySQL..."
+                      sleep 5
+                  done
+                  echo "MySQL did not become ready in time."
+                  docker compose logs mysql
+                  exit 1
+
+            - name: Check pending migrations
+              run: docker compose exec -T django python manage.py makemigrations --check --dry-run
+
+            - name: Shutdown services
+              if: always()
+              run: docker compose down -v
+
+    pytest:
         if: github.event_name == 'pull_request'
         runs-on: ubuntu-latest
 
@@ -110,9 +162,102 @@ jobs:
                   docker compose logs mysql
                   exit 1
 
-            - name: Run Django tests
-              run: docker compose exec -T django pytest -n auto
+            - name: Run tests with coverage gate
+              run: docker compose exec -T django pytest -n auto --cov=. --cov-report=term-missing --cov-fail-under=75
 
             - name: Shutdown services
               if: always()
               run: docker compose down -v
+
+    deploy_guard:
+        if: github.event_name == 'pull_request'
+        runs-on: ubuntu-latest
+        needs:
+            - smoke
+            - migrations_check
+            - pytest
+        steps:
+            - name: Validate required CI checks
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const required = [
+                        "gitleaks",
+                        "black",
+                        "djlint",
+                        "pylint",
+                        "smoke",
+                        "pytest",
+                        "migrations_check",
+                      ];
+                      const owner = context.repo.owner;
+                      const repo = context.repo.repo;
+                      const ref = context.payload.pull_request?.head?.sha ?? context.sha;
+                      const passConclusions = new Set(["success", "neutral", "skipped"]);
+
+                      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+                      const maxAttempts = 40;
+                      const waitMs = 15000;
+
+                      let checkRuns = [];
+                      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+                        const response = await github.rest.checks.listForRef({
+                          owner,
+                          repo,
+                          ref,
+                          per_page: 100,
+                        });
+                        checkRuns = response.data.check_runs;
+                        const byName = new Map();
+                        for (const run of checkRuns) {
+                          const current = byName.get(run.name);
+                          if (!current || new Date(run.started_at) > new Date(current.started_at)) {
+                            byName.set(run.name, run);
+                          }
+                        }
+
+                        const pending = required.filter((name) => {
+                          const run = byName.get(name);
+                          return !run || run.status !== "completed";
+                        });
+
+                        if (pending.length === 0) {
+                          break;
+                        }
+
+                        if (attempt === maxAttempts) {
+                          core.setFailed(
+                            `Checks requeridos pendientes tras espera: ${pending.join(", ")}`
+                          );
+                          return;
+                        }
+                        core.info(`Esperando checks requeridos: ${pending.join(", ")}`);
+                        await sleep(waitMs);
+                      }
+
+                      const latestByName = new Map();
+                      for (const run of checkRuns) {
+                        const current = latestByName.get(run.name);
+                        if (!current || new Date(run.started_at) > new Date(current.started_at)) {
+                          latestByName.set(run.name, run);
+                        }
+                      }
+
+                      const failed = [];
+                      for (const name of required) {
+                        const run = latestByName.get(name);
+                        if (!run) {
+                          failed.push(`${name} (missing)`);
+                          continue;
+                        }
+                        if (!passConclusions.has(run.conclusion)) {
+                          failed.push(`${name} (${run.conclusion})`);
+                        }
+                      }
+
+                      if (failed.length > 0) {
+                        core.setFailed(`Deploy guard bloqueado. Checks no conformes: ${failed.join(", ")}`);
+                        return;
+                      }
+
+                      core.info("Deploy guard OK: todos los checks requeridos están en estado válido.");

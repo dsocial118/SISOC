@@ -96,8 +96,9 @@ def test_base_apply_filters_and_context_data(mocker):
     # keyword + model + object_pk + actor + start + end
     assert len(qs.calls) == 6
     assert any(
-        call[1]
-        in ({"changes__icontains": "estado"}, {"changes_text__icontains": "estado"})
+        call[0]
+        and "changes__icontains" in str(call[0][0])
+        and "estado" in str(call[0][0])
         for call in qs.calls
     )
 
@@ -226,13 +227,12 @@ def test_keyword_filter_form_normalizes_and_applies_and_terms():
     qs = _QS()
     out = query_service.apply_keyword_filter(qs, form.cleaned_data["keyword"])
     assert out is qs
-    assert len(qs.calls) == 2
-    first_lookup = next(iter(qs.calls[0][1].keys()))
-    second_lookup = next(iter(qs.calls[1][1].keys()))
-    assert first_lookup in {"changes__icontains", "changes_text__icontains"}
-    assert second_lookup in {"changes__icontains", "changes_text__icontains"}
-    assert qs.calls[0][1][first_lookup] == "estado"
-    assert qs.calls[1][1][second_lookup] == "aprobado"
+    assert len(qs.calls) == 1
+    assert qs.calls[0][0]
+    query_repr = str(qs.calls[0][0][0])
+    assert "estado" in query_repr
+    assert "aprobado" in query_repr
+    assert "changes__icontains" in query_repr or "changes_text__icontains" in query_repr
 
 
 def test_filter_form_requires_date_range_for_text_or_field_search():
@@ -347,6 +347,115 @@ def test_query_service_new_filters_and_export_guards(mocker):
     out_ft = query_service.apply_optimized_keyword_filter(qs_ft, "aprobado convenio")
     assert out_ft is qs_ft
     assert any(call[0] == ("annotate",) for call in qs_ft.calls)
+    filter_calls = [
+        call for call in qs_ft.calls if call[0] and call[0] != ("annotate",)
+    ]
+    assert filter_calls
+    filter_repr = str(filter_calls[-1][0][0])
+    assert "_audittrail_changes_rank" in filter_repr
+    assert (
+        "changes__icontains" in filter_repr or "changes_text__icontains" in filter_repr
+    )
+
+
+def test_query_service_actor_filter_includes_snapshot_fields():
+    qs = _QS()
+    out = query_service.apply_filters(
+        qs,
+        {
+            "field_name": "",
+            "origin": "",
+            "batch_key": "",
+            "keyword": "",
+            "model": "",
+            "object_pk": "",
+            "actor": "fixer.bot",
+            "action": "",
+            "start_date": None,
+            "end_date": None,
+        },
+    )
+    assert out is qs
+
+    actor_calls = [call for call in qs.calls if call[0]]
+    assert actor_calls
+    actor_query = str(actor_calls[0][0][0])
+    assert "actor__username__icontains" in actor_query
+    assert "audittrail_meta__actor_username_snapshot__icontains" in actor_query
+    assert "audittrail_meta__actor_full_name_snapshot__icontains" in actor_query
+    assert "audittrail_meta__actor_display_snapshot__icontains" in actor_query
+
+
+def test_query_service_model_filter_supports_app_model_format():
+    qs = _QS()
+    out = query_service.apply_filters(
+        qs,
+        {
+            "field_name": "",
+            "origin": "",
+            "batch_key": "",
+            "keyword": "",
+            "model": "comedores.comedor",
+            "object_pk": "",
+            "actor": "",
+            "action": "",
+            "start_date": None,
+            "end_date": None,
+        },
+    )
+    assert out is qs
+    assert any(
+        call[1].get("content_type__app_label__iexact") == "comedores"
+        and call[1].get("content_type__model__iexact") == "comedor"
+        for call in qs.calls
+    )
+
+
+def test_query_service_object_pk_and_actor_trim_spaces():
+    qs = _QS()
+    out = query_service.apply_filters(
+        qs,
+        {
+            "field_name": "",
+            "origin": "",
+            "batch_key": "",
+            "keyword": "",
+            "model": "",
+            "object_pk": "   123   ",
+            "actor": "  fixer.bot  ",
+            "action": "",
+            "start_date": None,
+            "end_date": None,
+        },
+    )
+    assert out is qs
+    assert any(call[1].get("object_pk") == "123" for call in qs.calls)
+    actor_calls = [call for call in qs.calls if call[0]]
+    assert actor_calls
+    actor_query = str(actor_calls[0][0][0])
+    assert "actor__username__icontains" in actor_query
+    assert "fixer.bot" in actor_query
+
+
+def test_query_service_does_not_filter_action_when_missing():
+    qs = _QS()
+    out = query_service.apply_filters(
+        qs,
+        {
+            "field_name": "",
+            "origin": "",
+            "batch_key": "",
+            "keyword": "",
+            "model": "",
+            "object_pk": "",
+            "actor": "",
+            "start_date": None,
+            "end_date": None,
+            # action ausente para simular llamadas parciales
+        },
+    )
+    assert out is qs
+    assert not any("action" in call[1] for call in qs.calls)
 
 
 def test_instance_allowlist_validation_rejects_untracked_model():

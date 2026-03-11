@@ -8,10 +8,14 @@ from comedores.views import nomina as module
 
 
 def test_nomina_editar_ajax_get_and_post_paths(mocker):
-    req_get = SimpleNamespace(method="GET")
-    req_post = SimpleNamespace(method="POST", POST={})
+    req_get = SimpleNamespace(method="GET", user=SimpleNamespace())
+    req_post = SimpleNamespace(method="POST", POST={}, user=SimpleNamespace())
     nomina = object()
 
+    mocker.patch(
+        "comedores.views.nomina.ComedorService.get_scoped_comedor_queryset",
+        return_value=[],
+    )
     mocker.patch("comedores.views.nomina.get_object_or_404", return_value=nomina)
 
     form_get = object()
@@ -41,22 +45,27 @@ def test_nomina_detail_context_data(mocker):
     mocker.patch(
         "django.views.generic.base.ContextMixin.get_context_data", return_value={}
     )
-    mocker.patch(
+    get_nomina_detail_mock = mocker.patch(
         "comedores.views.nomina.ComedorService.get_nomina_detail",
         return_value=("page_obj", 1, 2, 3, 4, 10, {"ninos": 2, "adolescentes": 3}),
     )
     mocker.patch(
-        "comedores.views.nomina.ComedorService.get_comedor", return_value="comedor"
+        "comedores.views.nomina._get_admision_del_comedor_or_404",
+        return_value=SimpleNamespace(pk=77, comedor="comedor"),
     )
 
     view = module.NominaDetailView()
-    view.kwargs = {"pk": 9}
-    view.request = SimpleNamespace(GET={"page": "2"})
+    view.kwargs = {"pk": 9, "admision_pk": 77}
+    view.request = SimpleNamespace(
+        GET={"page": "2", "dni": "1234"}, user=SimpleNamespace()
+    )
 
     ctx = view.get_context_data()
     assert ctx["object"] == "comedor"
     assert ctx["cantidad_nomina"] == 10
     assert ctx["menores"] == 5
+    assert ctx["dni_query"] == "1234"
+    get_nomina_detail_mock.assert_called_once_with(77, 2, dni_query="1234")
 
 
 def test_prepare_renaper_initial_data_uses_data_and_datos_api(mocker):
@@ -81,7 +90,8 @@ def test_nomina_create_get_context_data_with_renaper(mocker):
         "django.views.generic.base.ContextMixin.get_context_data", return_value={}
     )
     mocker.patch(
-        "comedores.views.nomina.ComedorService.get_comedor", return_value="comedor"
+        "comedores.views.nomina._get_admision_del_comedor_or_404",
+        return_value=SimpleNamespace(pk=77, comedor="comedor"),
     )
     mocker.patch(
         "comedores.views.nomina.ComedorService.buscar_ciudadanos_por_documento",
@@ -99,9 +109,14 @@ def test_nomina_create_get_context_data_with_renaper(mocker):
     info = mocker.patch("comedores.views.nomina.messages.info")
 
     view = module.NominaCreateView()
-    view.kwargs = {"pk": 1}
+    view.kwargs = {"pk": 1, "admision_pk": 77}
     view.object = None
-    view.request = SimpleNamespace(method="GET", GET={"query": "12345678"}, POST={})
+    view.request = SimpleNamespace(
+        method="GET",
+        GET={"query": "12345678"},
+        POST={},
+        user=SimpleNamespace(),
+    )
     mocker.patch.object(view, "get_form", return_value="main_form")
 
     form_ciudadano = mocker.patch(
@@ -118,11 +133,15 @@ def test_nomina_create_get_context_data_with_renaper(mocker):
 
 def test_nomina_create_post_ciudadano_existente(mocker):
     view = module.NominaCreateView()
-    view.kwargs = {"pk": 5}
+    view.kwargs = {"pk": 5, "admision_pk": 88}
     view.object = None
 
     req = SimpleNamespace(POST={"ciudadano_id": "10"}, user="u")
     view.request = req
+    mocker.patch(
+        "comedores.views.nomina._get_admision_del_comedor_or_404",
+        return_value=SimpleNamespace(pk=88),
+    )
 
     form = SimpleNamespace(
         is_valid=lambda: True, cleaned_data={"estado": "A", "observaciones": "o"}
@@ -143,11 +162,15 @@ def test_nomina_create_post_ciudadano_existente(mocker):
 
 def test_nomina_create_post_ciudadano_nuevo_success_and_error(mocker):
     view = module.NominaCreateView()
-    view.kwargs = {"pk": 5}
+    view.kwargs = {"pk": 5, "admision_pk": 88}
     view.object = None
 
     req = SimpleNamespace(POST={"origen_dato": "renaper"}, user="u")
     view.request = req
+    mocker.patch(
+        "comedores.views.nomina._get_admision_del_comedor_or_404",
+        return_value=SimpleNamespace(pk=88),
+    )
 
     form_ciudadano = SimpleNamespace(
         is_valid=lambda: True, cleaned_data={"nombre": "A"}

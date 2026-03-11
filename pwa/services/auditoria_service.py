@@ -43,7 +43,9 @@ def registrar_evento_auth(
             comedor_ids_snapshot=sorted(comedor_ids),
             app_version=(request.META.get("HTTP_X_APP_VERSION", "")[:50] or None),
             platform=(request.META.get("HTTP_X_PLATFORM", "")[:30] or None),
-            is_standalone=_parse_optional_bool(request.META.get("HTTP_X_PWA_STANDALONE")),
+            is_standalone=_parse_optional_bool(
+                request.META.get("HTTP_X_PWA_STANDALONE")
+            ),
         )
     except Exception:  # pragma: no cover - no bloquear login por auditoría
         LOGGER.exception("Error registrando auditoría de sesión PWA")

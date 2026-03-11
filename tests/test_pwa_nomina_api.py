@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
+from admisiones.models.admisiones import Admision
 from ciudadanos.models import Ciudadano
 from comedores.models import Comedor, Nomina
 from core.models import Dia, Provincia, Sexo
@@ -20,6 +21,11 @@ from users.models import AccesoComedorPWA
 def comedor(db):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     return Comedor.objects.create(nombre="Comedor Nómina API", provincia=provincia)
+
+
+@pytest.fixture
+def admision(comedor):
+    return Admision.objects.create(comedor=comedor, activa=True)
 
 
 @pytest.fixture
@@ -61,7 +67,7 @@ def _auth_client_for_user(user):
 
 
 @pytest.mark.django_db
-def test_nomina_list_stats_and_tabs(comedor, sexo_f, sexo_m, dia):
+def test_nomina_list_stats_and_tabs(comedor, admision, sexo_f, sexo_m, dia):
     representante = _create_representante(comedor=comedor, username="rep_nomina_tabs")
     client = _auth_client_for_user(representante)
 
@@ -80,12 +86,12 @@ def test_nomina_list_stats_and_tabs(comedor, sexo_f, sexo_m, dia):
         sexo=sexo_m,
     )
     nomina_1 = Nomina.objects.create(
-        comedor=comedor,
+        admision=admision,
         ciudadano=ciudadano_1,
         estado=Nomina.ESTADO_ACTIVO,
     )
     nomina_2 = Nomina.objects.create(
-        comedor=comedor,
+        admision=admision,
         ciudadano=ciudadano_2,
         estado=Nomina.ESTADO_ACTIVO,
     )
@@ -167,7 +173,9 @@ def test_nomina_create_indocumentado_ok(comedor, sexo_f):
 
 
 @pytest.mark.django_db
-def test_nomina_create_rejects_duplicate_dni_in_same_space(comedor, sexo_f, mocker):
+def test_nomina_create_rejects_duplicate_dni_in_same_space(
+    comedor, admision, sexo_f, mocker
+):
     representante = _create_representante(comedor=comedor, username="rep_nomina_dup")
     client = _auth_client_for_user(representante)
 
@@ -179,7 +187,7 @@ def test_nomina_create_rejects_duplicate_dni_in_same_space(comedor, sexo_f, mock
         sexo=sexo_f,
     )
     Nomina.objects.create(
-        comedor=comedor,
+        admision=admision,
         ciudadano=ciudadano,
         estado=Nomina.ESTADO_ACTIVO,
     )
@@ -204,7 +212,7 @@ def test_nomina_create_rejects_duplicate_dni_in_same_space(comedor, sexo_f, mock
 
 
 @pytest.mark.django_db
-def test_nomina_delete_is_logical(comedor, sexo_m, dia):
+def test_nomina_delete_is_logical(comedor, admision, sexo_m, dia):
     representante = _create_representante(comedor=comedor, username="rep_nomina_delete")
     client = _auth_client_for_user(representante)
 
@@ -216,7 +224,7 @@ def test_nomina_delete_is_logical(comedor, sexo_m, dia):
         sexo=sexo_m,
     )
     nomina = Nomina.objects.create(
-        comedor=comedor,
+        admision=admision,
         ciudadano=ciudadano,
         estado=Nomina.ESTADO_ACTIVO,
     )

@@ -280,7 +280,7 @@ DATABASES = {
 RUNNING_TESTS = is_running_tests(os.environ, sys.argv)
 if RUNNING_TESTS and not SECRET_KEY:
     SECRET_KEY = "test-secret-key"
-USE_SQLITE_FOR_TESTS = os.environ.get("USE_SQLITE_FOR_TESTS") == "1"
+USE_SQLITE_FOR_TESTS = _safe_bool_env("USE_SQLITE_FOR_TESTS", True)
 if RUNNING_TESTS and (USE_SQLITE_FOR_TESTS or not os.environ.get("DATABASE_HOST")):
     DATABASES = {
         "default": {
@@ -357,10 +357,7 @@ SPECTACULAR_SETTINGS = {
 
 # Dominios / Integraciones
 DOMINIO = os.environ.get("DOMINIO", "localhost:8001")
-SENTRY_DSN = (
-    "https://adeea29eb91a3def6f8a9df142019b21@"
-    "o4510947069788160.ingest.us.sentry.io/4510947077193728"
-)
+SENTRY_DSN = os.getenv("SENTRY_DSN", "").strip()
 SENTRY_LOG_EVENT_LEVEL = "WARNING"
 if ENVIRONMENT == "qa":
     SENTRY_ERROR_SAMPLE_RATE = 0.75
