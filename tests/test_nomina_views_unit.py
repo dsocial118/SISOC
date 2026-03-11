@@ -41,22 +41,25 @@ def test_nomina_detail_context_data(mocker):
     mocker.patch(
         "django.views.generic.base.ContextMixin.get_context_data", return_value={}
     )
-    mocker.patch(
+    get_nomina_detail_mock = mocker.patch(
         "comedores.views.nomina.ComedorService.get_nomina_detail",
         return_value=("page_obj", 1, 2, 3, 4, 10, {"ninos": 2, "adolescentes": 3}),
     )
     mocker.patch(
-        "comedores.views.nomina.ComedorService.get_comedor", return_value="comedor"
+        "comedores.views.nomina._get_admision_del_comedor_or_404",
+        return_value=SimpleNamespace(pk=77, comedor="comedor"),
     )
 
     view = module.NominaDetailView()
-    view.kwargs = {"pk": 9}
-    view.request = SimpleNamespace(GET={"page": "2"})
+    view.kwargs = {"pk": 9, "admision_pk": 77}
+    view.request = SimpleNamespace(GET={"page": "2", "dni": "1234"})
 
     ctx = view.get_context_data()
     assert ctx["object"] == "comedor"
     assert ctx["cantidad_nomina"] == 10
     assert ctx["menores"] == 5
+    assert ctx["dni_query"] == "1234"
+    get_nomina_detail_mock.assert_called_once_with(77, 2, dni_query="1234")
 
 
 def test_prepare_renaper_initial_data_uses_data_and_datos_api(mocker):

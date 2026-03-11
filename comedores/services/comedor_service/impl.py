@@ -151,6 +151,15 @@ def _build_nomina_qs_and_age_qs(admision_pk):
     return qs_nomina, qs_nomina.annotate(edad=age_expr)
 
 
+def _apply_nomina_dni_filter(qs_nomina, dni_query):
+    dni_clean = str(dni_query or "").strip()
+    if not dni_clean:
+        return qs_nomina
+    if not dni_clean.isdigit():
+        return qs_nomina.none()
+    return qs_nomina.filter(ciudadano__documento__startswith=dni_clean)
+
+
 def _build_nomina_page(qs_nomina, page, per_page):
     paginator = Paginator(
         qs_nomina.only(
@@ -785,11 +794,12 @@ class ComedorService:
         return total_almuerzo_cena * 763 + total_desayuno_merienda * 383
 
     @staticmethod
-    def get_nomina_detail(admision_pk, page=1, per_page=100):
+    def get_nomina_detail(admision_pk, page=1, per_page=100, dni_query=""):
         qs_nomina, qs_nomina_age = _build_nomina_qs_and_age_qs(admision_pk)
         resumen = _aggregate_nomina_resumen(qs_nomina_age)
         rangos_resumen = _build_nomina_rangos_resumen(resumen)
-        page_obj = _build_nomina_page(qs_nomina, page, per_page)
+        qs_nomina_filtrada = _apply_nomina_dni_filter(qs_nomina, dni_query)
+        page_obj = _build_nomina_page(qs_nomina_filtrada, page, per_page)
         return (
             page_obj,
             resumen["cantidad_nomina_m"],

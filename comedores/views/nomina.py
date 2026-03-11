@@ -50,9 +50,10 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
             self.kwargs["admision_pk"],
         )
         page = int(self.request.GET.get("page", 1))
+        dni_query = (self.request.GET.get("dni") or "").strip()
 
         page_obj, nomina_m, nomina_f, nomina_x, espera, total, rangos = (
-            ComedorService.get_nomina_detail(admision.pk, page)
+            ComedorService.get_nomina_detail(admision.pk, page, dni_query=dni_query)
         )
 
         menores = (rangos.get("ninos") or 0) + (rangos.get("adolescentes") or 0)
@@ -69,6 +70,7 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "nomina_rangos": rangos,
                 "object": admision.comedor,
                 "admision_pk": admision.pk,
+                "dni_query": dni_query,
             }
         )
         return context

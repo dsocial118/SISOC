@@ -558,6 +558,55 @@ def test_nomina_detail_view_responde_ok(client_nomina_fixture, admision_fixture)
 
 
 @pytest.mark.django_db
+def test_nomina_detail_view_filtra_por_dni_en_toda_la_nomina(
+    client_nomina_fixture, admision_fixture
+):
+    """El filtro por DNI debe aplicarse antes de paginar, no solo sobre la página actual."""
+    from datetime import date
+
+    ciudadano_objetivo = Ciudadano.objects.create(
+        nombre="Persona",
+        apellido="Objetivo",
+        documento=12345678,
+        fecha_nacimiento=date(1990, 1, 1),
+    )
+    Nomina.objects.create(
+        admision=admision_fixture,
+        ciudadano=ciudadano_objetivo,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    # Crea 100 registros más nuevos para forzar que el objetivo quede fuera de la página 1.
+    for idx in range(100):
+        ciudadano = Ciudadano.objects.create(
+            nombre=f"Persona{idx}",
+            apellido=f"Apellido{idx}",
+            documento=30000000 + idx,
+            fecha_nacimiento=date(1990, 1, 1),
+        )
+        Nomina.objects.create(
+            admision=admision_fixture,
+            ciudadano=ciudadano,
+            estado=Nomina.ESTADO_ACTIVO,
+        )
+
+    comedor = admision_fixture.comedor
+    url = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_fixture.pk},
+    )
+
+    response_sin_filtro = client_nomina_fixture.get(url, {"page": 1})
+    assert response_sin_filtro.status_code == 200
+    assert "12345678" not in response_sin_filtro.content.decode()
+
+    response_filtrada = client_nomina_fixture.get(url, {"page": 1, "dni": "12345678"})
+    assert response_filtrada.status_code == 200
+    assert "12345678" in response_filtrada.content.decode()
+    assert response_filtrada.context["nomina"].paginator.count == 1
+
+
+@pytest.mark.django_db
 def test_nomina_detail_view_404_si_admision_no_corresponde(client_nomina_fixture):
     """Retorna 404 si la admisión no pertenece al comedor de la URL."""
     comedor_a = Comedor.objects.create(nombre="Comedor A")

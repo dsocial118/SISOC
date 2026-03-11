@@ -50,24 +50,6 @@ document.addEventListener("DOMContentLoaded", function() {
     modalBody.appendChild(div);
   }
 
-  // Funcionalidad de búsqueda
-  const searchInput = document.getElementById("nominaSearch");
-  if (searchInput) {
-    searchInput.addEventListener("input", function() {
-      const searchTerm = this.value.toLowerCase();
-      const tableRows = document.querySelectorAll(".nomina-table-row");
-
-      tableRows.forEach(function(row) {
-        const text = row.textContent.toLowerCase();
-        if (text.includes(searchTerm)) {
-          row.style.display = "";
-        } else {
-          row.style.display = "none";
-        }
-      });
-    });
-  }
-
   document.querySelectorAll(".editar-nomina").forEach(function(btn) {
     btn.addEventListener("click", function(e) {
       e.preventDefault();
