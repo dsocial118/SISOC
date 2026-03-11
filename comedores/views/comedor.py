@@ -542,9 +542,32 @@ def _build_admisiones_y_nomina_context(comedor_obj):
         .order_by("-id")
     )
     timeline_context = ComedorService.get_admision_timeline_context(admisiones_qs)
+    admision_activa = timeline_context.get("admision_activa")
+    admision_activa_id = getattr(admision_activa, "id", None)
+    if admision_activa_id:
+        (
+            _,
+            nomina_hombres,
+            nomina_mujeres,
+            _,
+            nomina_espera,
+            nomina_total,
+            nomina_rangos,
+        ) = ComedorService.get_nomina_detail(
+            admision_activa_id, page=1, per_page=1
+        )
+    else:
+        nomina_hombres = nomina_mujeres = nomina_espera = nomina_total = 0
+        nomina_rangos = {}
+    nomina_metrics = _build_nomina_metrics(nomina_total, nomina_rangos)
     return {
         "admisiones_qs": admisiones_qs,
         "timeline_context": timeline_context,
+        "nomina_total": nomina_total,
+        "nomina_hombres": nomina_hombres,
+        "nomina_mujeres": nomina_mujeres,
+        "nomina_espera": nomina_espera,
+        **nomina_metrics,
     }
 
 
@@ -1001,7 +1024,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         informe_tecnico = selected_admision_context["informe_tecnico"]
 
         # Nómina del convenio seleccionado
-        if selected_admision:
+        selected_admision_pk = getattr(selected_admision, "pk", None)
+        if selected_admision_pk is not None:
             (
                 _,
                 nomina_m,
@@ -1011,7 +1035,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 nomina_total,
                 nomina_rangos,
             ) = ComedorService.get_nomina_detail(
-                selected_admision.pk, page=1, per_page=1
+                selected_admision_pk, page=1, per_page=1
             )
         else:
             nomina_m = nomina_f = nomina_espera = nomina_total = 0
@@ -1054,7 +1078,6 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         )
         context.update(timeline_selected)
         return context
-
 
 # TODO: Sacar de la vista de comedores
 class ComedorUpdateView(LoginRequiredMixin, UpdateView):

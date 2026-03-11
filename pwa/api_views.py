@@ -377,7 +377,7 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         comedor_id = self.kwargs["comedor_id"]
         return (
             Nomina.objects.filter(
-                comedor_id=comedor_id,
+                admision__comedor_id=comedor_id,
                 deleted_at__isnull=True,
                 estado=Nomina.ESTADO_ACTIVO,
             )

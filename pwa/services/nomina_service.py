@@ -19,10 +19,14 @@ from pwa.services.auditoria_operacion_service import registrar_evento_operacion
 DNI_REGEX = re.compile(r"^\d{7,8}$")
 
 
+def _nomina_comedor_id(nomina: Nomina):
+    return getattr(getattr(nomina, "admision", None), "comedor_id", None)
+
+
 def _snapshot_nomina(nomina: Nomina) -> dict:
     return {
         "id": nomina.id,
-        "comedor_id": nomina.comedor_id,
+        "comedor_id": _nomina_comedor_id(nomina),
         "ciudadano_id": nomina.ciudadano_id,
         "estado": nomina.estado,
         "observaciones": nomina.observaciones,
@@ -57,9 +61,25 @@ def _snapshot_inscripto(inscripto: InscriptoActividadEspacioPWA) -> dict:
 
 def _active_nomina_queryset(*, comedor_id: int):
     return Nomina.objects.filter(
-        comedor_id=comedor_id,
+        admision__comedor_id=comedor_id,
         deleted_at__isnull=True,
     ).exclude(estado=Nomina.ESTADO_BAJA)
+
+
+def _resolve_admision_para_comedor(*, comedor_id: int):
+    from admisiones.models.admisiones import Admision
+
+    admision = (
+        Admision.objects.filter(comedor_id=comedor_id, activa=True)
+        .order_by("-id")
+        .first()
+    )
+    if admision:
+        return admision
+    admision = Admision.objects.filter(comedor_id=comedor_id).order_by("-id").first()
+    if admision:
+        return admision
+    return Admision.objects.create(comedor_id=comedor_id, activa=True)
 
 
 def _get_or_create_profile(nomina: Nomina, actor):
@@ -390,7 +410,7 @@ def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
         )
 
     nomina = Nomina.objects.create(
-        comedor_id=comedor_id,
+        admision=_resolve_admision_para_comedor(comedor_id=comedor_id),
         ciudadano=ciudadano,
         estado=Nomina.ESTADO_ACTIVO,
         observaciones=(data.get("observaciones") or "").strip() or None,
@@ -510,7 +530,7 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
         else list(
             InscriptoActividadEspacioPWA.objects.filter(
                 nomina=nomina,
-                actividad_espacio__comedor_id=nomina.comedor_id,
+                actividad_espacio__comedor_id=_nomina_comedor_id(nomina),
                 activo=True,
             ).values_list("actividad_espacio_id", flat=True)
         )
@@ -553,13 +573,13 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
 
     _sync_inscripciones_actividades(
         nomina=nomina,
-        comedor_id=nomina.comedor_id,
+        comedor_id=_nomina_comedor_id(nomina),
         activity_ids=activity_ids if asistencia_actividades else [],
         actor=actor,
     )
     registrar_evento_operacion(
         actor=actor,
-        comedor_id=nomina.comedor_id,
+        comedor_id=_nomina_comedor_id(nomina),
         entidad="nomina",
         entidad_id=nomina.id,
         accion="update",
@@ -568,7 +588,7 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
     )
     registrar_evento_operacion(
         actor=actor,
-        comedor_id=nomina.comedor_id,
+        comedor_id=_nomina_comedor_id(nomina),
         entidad="nomina_perfil",
         entidad_id=profile.id,
         accion="update",
@@ -624,7 +644,7 @@ def soft_delete_nomina_persona(*, nomina: Nomina, actor):
     )
     registrar_evento_operacion(
         actor=actor,
-        comedor_id=nomina.comedor_id,
+        comedor_id=_nomina_comedor_id(nomina),
         entidad="nomina",
         entidad_id=nomina.id,
         accion="delete",
@@ -634,7 +654,7 @@ def soft_delete_nomina_persona(*, nomina: Nomina, actor):
     if profile:
         registrar_evento_operacion(
             actor=actor,
-            comedor_id=nomina.comedor_id,
+            comedor_id=_nomina_comedor_id(nomina),
             entidad="nomina_perfil",
             entidad_id=profile.id,
             accion="delete",
@@ -644,7 +664,7 @@ def soft_delete_nomina_persona(*, nomina: Nomina, actor):
     for inscripto in inscripciones_activas:
         registrar_evento_operacion(
             actor=actor,
-            comedor_id=nomina.comedor_id,
+            comedor_id=_nomina_comedor_id(nomina),
             entidad="inscripcion_actividad",
             entidad_id=inscripto.id,
             accion="deactivate",
