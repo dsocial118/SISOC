@@ -45,6 +45,8 @@ def relevamiento_crear_editar_ajax(request, pk):
                 )
         elif "territorial_editar" in request.POST:
             relevamiento_id = request.POST.get("relevamiento_id")
+            if not relevamiento_id:
+                return JsonResponse({"error": "Falta relevamiento_id"}, status=400)
             scoped_comedores = ComedorService.get_scoped_comedor_queryset(request.user)
             get_object_or_404(
                 Relevamiento.objects.filter(comedor__in=scoped_comedores),

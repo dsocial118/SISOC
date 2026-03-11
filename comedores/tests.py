@@ -244,10 +244,15 @@ def test_relevamiento_create_edit_ajax_editar(
         "relevamientos.service.RelevamientoService.update_territorial",
         mock.Mock(return_value=relevamiento_mock),
     )
+    monkeypatch.setattr(
+        "comedores.views.relevamientos.get_object_or_404",
+        mock.Mock(return_value=relevamiento_mock),
+    )
 
     url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
     data = {
         "territorial_editar": "1",
+        "relevamiento_id": "1000",
     }
     response = client_logged_fixture.post(
         url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
