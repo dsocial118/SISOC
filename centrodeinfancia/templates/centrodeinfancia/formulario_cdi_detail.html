@@ -1,0 +1,145 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Formulario CDI #{{ formulario.id }}{% endblock %}
+{% block titulo-pagina %}Formulario CDI #{{ formulario.id }}{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between mb-3">
+            <a href="{% url 'centrodeinfancia_formulario_listado' centro.id %}" class="btn btn-secondary">Volver al listado</a>
+            <a href="{% url 'centrodeinfancia_formulario_editar' centro.id formulario.id %}"
+               class="btn btn-warning">Editar</a>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3 class="mb-1">{{ centro.nombre }}</h3>
+                <p class="text-muted mb-1">Formulario #{{ formulario.id }} | CDI code {{ formulario.cdi_code|default:"-" }}</p>
+                <p class="text-muted mb-0">
+                    Creado {{ formulario.created_at|date:"d/m/Y H:i" }}
+                    {% if formulario.created_by %}por {{ formulario.created_by.get_full_name|default:formulario.created_by.username }}{% endif %}
+                </p>
+            </div>
+        </div>
+
+        {% for section in detail_sections %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>{{ section.title }}</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for item in section.items %}
+                            <div class="col-md-6 mb-3">
+                                <div class="text-muted small">{{ item.label }}</div>
+                                <div>{{ item.value }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <strong>Organizacion de salas</strong>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Grupo etario</th>
+                                <th>Salas</th>
+                                <th>Superficie m2</th>
+                                <th>Niñas y niños</th>
+                                <th>Personal</th>
+                                <th>Personal por sala</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in room_rows %}
+                                <tr>
+                                    <td>{{ row.get_age_group_display }}</td>
+                                    <td>{{ row.room_count|default:"-" }}</td>
+                                    <td>{{ row.exclusive_area_m2|default:"-" }}</td>
+                                    <td>{{ row.children_count|default:"-" }}</td>
+                                    <td>{{ row.staff_count|default:"-" }}</td>
+                                    <td>{{ row.staff_per_room|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th>Total</th>
+                                <th>{{ room_totals.room_count }}</th>
+                                <th>{{ room_totals.exclusive_area_m2 }}</th>
+                                <th>{{ room_totals.children_count }}</th>
+                                <th>{{ room_totals.staff_count }}</th>
+                                <th>-</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <strong>Demanda insatisfecha por sala</strong>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Grupo etario</th>
+                                <th>Lista de espera</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in waitlist_rows %}
+                                <tr>
+                                    <td>{{ row.get_age_group_display }}</td>
+                                    <td>{{ row.waitlist_count|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th>Total</th>
+                                <th>{{ waitlist_total }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>Articulaciones institucionales</strong>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Institucion</th>
+                                <th>Frecuencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in articulation_rows %}
+                                <tr>
+                                    <td>{{ row.get_institution_type_display }}</td>
+                                    <td>{{ row.get_frequency_display|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

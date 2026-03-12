@@ -53,6 +53,7 @@ from centrodeinfancia.models import (
     NominaCentroInfancia,
     ObservacionCentroInfancia,
 )
+from centrodeinfancia.views_formulario_cdi import build_formulario_summary_items
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 
 
@@ -452,6 +453,13 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         )
         context["intervencion_form"] = intervencion_form
         context["observacion_form"] = ObservacionCentroInfanciaForm()
+        formularios_qs = self.object.formularios.select_related("created_by").order_by(
+            "-survey_date", "-created_at", "-id"
+        )
+        context["formularios_total"] = formularios_qs.count()
+        context["formularios_recent"] = build_formulario_summary_items(
+            list(formularios_qs[:3])
+        )
 
         tipo_intervencion_queryset = list(
             intervencion_form.fields["tipo_intervencion"].queryset

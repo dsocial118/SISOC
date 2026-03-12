@@ -23,6 +23,12 @@ from centrodeinfancia.views import (
     nomina_centrodeinfancia_editar_ajax,
     subir_archivo_intervencion_centrodeinfancia,
 )
+from centrodeinfancia.views_formulario_cdi import (
+    FormularioCDICreateView,
+    FormularioCDIDetailView,
+    FormularioCDIListView,
+    FormularioCDIUpdateView,
+)
 from centrodeinfancia.views_export import CentroDeInfanciaExportView
 
 
@@ -171,5 +177,33 @@ urlpatterns = [
             ["centrodeinfancia.delete_intervencioncentroinfancia"]
         )(ObservacionCentroInfanciaDeleteView.as_view()),
         name="centrodeinfancia_observacion_eliminar",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/formularios/",
+        permissions_any_required(["centrodeinfancia.view_formulariocdi"])(
+            FormularioCDIListView.as_view()
+        ),
+        name="centrodeinfancia_formulario_listado",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/formularios/crear/",
+        permissions_any_required(["centrodeinfancia.add_formulariocdi"])(
+            FormularioCDICreateView.as_view()
+        ),
+        name="centrodeinfancia_formulario_crear",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/formularios/<int:form_pk>/",
+        permissions_any_required(["centrodeinfancia.view_formulariocdi"])(
+            FormularioCDIDetailView.as_view()
+        ),
+        name="centrodeinfancia_formulario_detalle",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/formularios/<int:form_pk>/editar/",
+        permissions_any_required(["centrodeinfancia.change_formulariocdi"])(
+            FormularioCDIUpdateView.as_view()
+        ),
+        name="centrodeinfancia_formulario_editar",
     ),
 ]
