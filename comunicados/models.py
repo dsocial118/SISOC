@@ -95,8 +95,9 @@ class Comunicado(models.Model):
         self.save()
 
     def archivar(self, usuario):
-        """Archiva el comunicado."""
+        """Archiva el comunicado y quita el flag de destacado."""
         self.estado = EstadoComunicado.ARCHIVADO
+        self.destacado = False
         self.usuario_ultima_modificacion = usuario
         self.save()
 
