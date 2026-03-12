@@ -369,6 +369,11 @@ class ComedorForm(forms.ModelForm):
         labels = {
             "tipocomedor": "Tipo comedor",
         }
+        widgets = {
+            "es_judicializado": forms.Select(
+                choices=[("", "---------"), ("True", "Sí"), ("False", "No")]
+            ),
+        }
 
 
 class ImagenComedorForm(forms.ModelForm):
