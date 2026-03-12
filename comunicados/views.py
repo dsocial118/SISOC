@@ -50,39 +50,27 @@ class ComunicadoListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        estado = self.request.GET.get("estado", "publicado")
-
         queryset = (
             Comunicado.objects.select_related("usuario_creador")
             .annotate(adjuntos_count=Count("adjuntos", distinct=True))
+            .filter(tipo=TipoComunicado.INTERNO)
+            .filter(estado=EstadoComunicado.PUBLICADO)
             .filter(
-                tipo=TipoComunicado.INTERNO  # Solo comunicados internos en la grilla pública
-            )
-        )
-
-        if estado == "archivado":
-            queryset = queryset.filter(estado=EstadoComunicado.ARCHIVADO)
-        else:
-            queryset = queryset.filter(estado=EstadoComunicado.PUBLICADO)
-            # Excluir vencidos solo para publicados
-            queryset = queryset.filter(
                 Q(fecha_vencimiento__isnull=True)
                 | Q(fecha_vencimiento__gt=timezone.now())
             )
+        )
 
-        # Filtros
         titulo = self.request.GET.get("titulo")
         if titulo:
             queryset = queryset.filter(titulo__icontains=titulo)
 
-        # Ordenar: destacados primero, luego por fecha de publicación
         return queryset.order_by("-destacado", "-fecha_publicacion")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["can_manage"] = can_manage_comunicados(self.request.user)
         ctx["filtro_titulo"] = self.request.GET.get("titulo", "")
-        ctx["filtro_estado"] = self.request.GET.get("estado", "publicado")
         return ctx
 
 
