@@ -12,19 +12,18 @@
         <div class="card mb-4">
             <div class="card-body" style="padding: 20px;">
                 <!-- Búsqueda + Gestionar -->
-                <div class="d-flex gap-3 align-items-center mb-3 flex-wrap">
+                <div class="d-flex gap-3 align-items-center flex-wrap">
                     <form method="get" class="input-group" style="flex: 1; min-width: 250px;">
                         <input type="text"
                                name="titulo"
                                class="form-control"
                                placeholder="Buscar por título..."
                                value="{{ filtro_titulo }}" />
-                        {% if filtro_estado %}<input type="hidden" name="estado" value="{{ filtro_estado }}" />{% endif %}
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-search"></i>
                         </button>
                         {% if filtro_titulo %}
-                            <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}"
+                            <a href="?"
                                class="btn btn-outline-danger"
                                title="Limpiar búsqueda">
                                 <i class="fas fa-times"></i>
@@ -38,18 +37,6 @@
                             <i class="fas fa-cog me-1"></i> Gestionar
                         </a>
                     {% endif %}
-                </div>
-
-                <!-- Filtros -->
-                <div class="d-flex gap-2 flex-wrap">
-                    <a href="?estado=publicado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
-                       class="btn {% if filtro_estado == 'publicado' or not filtro_estado %}btn-success{% else %}btn-outline-secondary{% endif %}">
-                        <i class="fas fa-check-circle me-1"></i> Publicados
-                    </a>
-                    <a href="?estado=archivado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
-                       class="btn {% if filtro_estado == 'archivado' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
-                        <i class="fas fa-archive me-1"></i> Archivados
-                    </a>
                 </div>
             </div>
         </div>
