@@ -20,11 +20,12 @@
                                placeholder="Buscar por título..."
                                value="{{ filtro_titulo }}" />
                         {% if filtro_estado %}<input type="hidden" name="estado" value="{{ filtro_estado }}" />{% endif %}
+                        {% if filtro_tipo %}<input type="hidden" name="tipo" value="{{ filtro_tipo }}" />{% endif %}
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-search"></i>
                         </button>
                         {% if filtro_titulo %}
-                            <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}"
+                            <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% if filtro_tipo %}&tipo={{ filtro_tipo }}{% endif %}{% elif filtro_tipo %}tipo={{ filtro_tipo }}{% endif %}"
                                class="btn btn-outline-danger"
                                title="Limpiar búsqueda">
                                 <i class="fas fa-times"></i>
@@ -41,24 +42,42 @@
                 </div>
 
                 <!-- Filtros de estado -->
-                <div class="d-flex gap-2 flex-wrap">
-                    <a href="?{% if filtro_titulo %}titulo={{ filtro_titulo }}{% endif %}"
+                <div class="d-flex gap-2 flex-wrap mb-2">
+                    <a href="?{% if filtro_titulo %}titulo={{ filtro_titulo }}&{% endif %}{% if filtro_tipo %}tipo={{ filtro_tipo }}{% endif %}"
                        class="btn {% if not filtro_estado %}btn-primary{% else %}btn-outline-secondary{% endif %}">
                         <i class="fas fa-list me-1"></i> Todos
                     </a>
-                    <a href="?estado=borrador{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
+                    <a href="?estado=borrador{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}{% if filtro_tipo %}&tipo={{ filtro_tipo }}{% endif %}"
                        class="btn {% if filtro_estado == 'borrador' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
                         <i class="fas fa-pencil-alt me-1"></i> Borrador
                     </a>
-                    <a href="?estado=publicado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
+                    <a href="?estado=publicado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}{% if filtro_tipo %}&tipo={{ filtro_tipo }}{% endif %}"
                        class="btn {% if filtro_estado == 'publicado' %}btn-success{% else %}btn-outline-secondary{% endif %}">
                         <i class="fas fa-check-circle me-1"></i> Publicado
                     </a>
-                    <a href="?estado=archivado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
+                    <a href="?estado=archivado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}{% if filtro_tipo %}&tipo={{ filtro_tipo }}{% endif %}"
                        class="btn {% if filtro_estado == 'archivado' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
                         <i class="fas fa-archive me-1"></i> Archivado
                     </a>
                 </div>
+
+                <!-- Filtros de tipo (no aplica para técnicos, que solo ven externo) -->
+                {% if not es_tecnico %}
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="?{% if filtro_titulo %}titulo={{ filtro_titulo }}&{% endif %}{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}"
+                           class="btn {% if not filtro_tipo %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                            <i class="fas fa-layer-group me-1"></i> Todos
+                        </a>
+                        <a href="?tipo=interno{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}{% if filtro_estado %}&estado={{ filtro_estado }}{% endif %}"
+                           class="btn {% if filtro_tipo == 'interno' %}btn-info{% else %}btn-outline-secondary{% endif %}">
+                            <i class="fas fa-building me-1"></i> Internos
+                        </a>
+                        <a href="?tipo=externo{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}{% if filtro_estado %}&estado={{ filtro_estado }}{% endif %}"
+                           class="btn {% if filtro_tipo == 'externo' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+                            <i class="fas fa-external-link-alt me-1"></i> Externos
+                        </a>
+                    </div>
+                {% endif %}
             </div>
         </div>
 
@@ -112,7 +131,11 @@
                                         {% if comunicado.estado == 'borrador' %}
                                             <span class="badge bg-secondary">Borrador</span>
                                         {% elif comunicado.estado == 'publicado' %}
-                                            <span class="badge bg-success">Publicado</span>
+                                            {% if comunicado.esta_vencido %}
+                                                <span class="badge bg-danger">Vencido</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Publicado</span>
+                                            {% endif %}
                                         {% elif comunicado.estado == 'archivado' %}
                                             <span class="badge bg-dark">Archivado</span>
                                         {% endif %}
