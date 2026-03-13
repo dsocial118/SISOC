@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
 from django.http import Http404
 from django.test import RequestFactory
 from django.urls import reverse
@@ -166,6 +166,57 @@ def test_detalle_cdi_muestra_solo_ultimos_tres_formularios(client):
     assert f">{formularios[2].id}<" in content
     assert f">{formularios[1].id}<" in content
     assert f">{formularios[0].id}<" not in content
+    assert 'accordion-header--formularios">Formularios</button>' in content
+
+
+@pytest.mark.django_db
+def test_detalle_cdi_no_expone_formularios_sin_permiso_especifico(client):
+    user = _crear_usuario("user-form-card-hidden")
+    user.user_permissions.add(
+        Permission.objects.get(codename="view_centrodeinfancia")
+    )
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI Permisos")
+    FormularioCDI.objects.create(
+        centro=centro,
+        cdi_code=centro.cdi_code,
+        respondent_full_name="Persona Reservada",
+    )
+
+    response = client.get(reverse("centrodeinfancia_detalle", kwargs={"pk": centro.pk}))
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "Formularios" not in content
+    assert "Persona Reservada" not in content
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_editar_preserva_snapshot_historico_del_centro(client):
+    user = _crear_usuario("super-form-edit-snapshot", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="Centro Actual", calle="Calle Actual")
+    formulario = FormularioCDI.objects.create(
+        centro=centro,
+        cdi_code=centro.cdi_code,
+        cdi_name="Centro Historico",
+        cdi_street="Calle Historica",
+    )
+
+    centro.nombre = "Centro Modificado"
+    centro.calle = "Calle Modificada"
+    centro.save()
+
+    response = client.get(
+        reverse(
+            "centrodeinfancia_formulario_editar",
+            kwargs={"pk": centro.pk, "form_pk": formulario.pk},
+        )
+    )
+
+    assert response.status_code == 200
+    assert response.context["form"]["cdi_name"].value() == "Centro Historico"
+    assert response.context["form"]["cdi_street"].value() == "Calle Historica"
 
 
 @pytest.mark.django_db
