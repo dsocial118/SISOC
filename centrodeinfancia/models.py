@@ -686,15 +686,38 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
                 f"{field_name}:{','.join(str(item) for item in invalid_values)}"
             )
 
-    def clean(self):
-        super().clean()
+    def _collect_multi_choice_errors(self):
         errors = {}
-
         for field_name in MULTI_CHOICE_FIELDS:
             try:
                 self._validate_multi_choice_field(field_name, getattr(self, field_name))
             except ValueError:
                 errors[field_name] = "Seleccione opciones validas."
+        return errors
+
+    def _collect_required_field_errors(self):
+        errors = {}
+        conditional_required_fields = (
+            ("workday_type", "other", "workday_type_other"),
+            ("management_mode", "otra", "management_mode_other"),
+            ("tenure_mode", "otra", "tenure_mode_other"),
+        )
+
+        for field_name, expected_value, detail_field in conditional_required_fields:
+            if getattr(self, field_name) == expected_value and not getattr(
+                self, detail_field
+            ):
+                errors[detail_field] = "Este campo es obligatorio."
+
+        meals = self.meals_provided or []
+        if "otra" in meals and not self.meals_provided_other:
+            errors["meals_provided_other"] = "Este campo es obligatorio."
+
+        return errors
+
+    def _collect_consistency_errors(self):
+        errors = {}
+        meals = self.meals_provided or []
 
         if (
             self.opening_time
@@ -705,55 +728,85 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
                 "El horario de cierre debe ser posterior al de apertura."
             )
 
-        if self.workday_type == "other" and not self.workday_type_other:
-            errors["workday_type_other"] = "Este campo es obligatorio."
-
-        if self.management_mode == "otra" and not self.management_mode_other:
-            errors["management_mode_other"] = "Este campo es obligatorio."
-
-        if self.tenure_mode == "otra" and not self.tenure_mode_other:
-            errors["tenure_mode_other"] = "Este campo es obligatorio."
-
-        if "otra" in (self.meals_provided or []) and not self.meals_provided_other:
-            errors["meals_provided_other"] = "Este campo es obligatorio."
-
-        meals = self.meals_provided or []
         if "ninguna" in meals and len(meals) > 1:
             errors["meals_provided"] = "No puede combinar 'ninguna' con otras opciones."
 
-        if self.has_kitchen_space == "no" and self.cooking_fuel:
-            errors["cooking_fuel"] = (
-                "Este campo debe quedar vacio cuando no hay cocina."
-            )
+        dependent_field_rules = (
+            (
+                "has_kitchen_space",
+                "no",
+                "cooking_fuel",
+                "Este campo debe quedar vacio cuando no hay cocina.",
+            ),
+            (
+                "has_outdoor_space",
+                "no",
+                "has_outdoor_playground",
+                "Este campo debe quedar vacio cuando no hay espacio exterior.",
+            ),
+        )
 
-        if self.has_outdoor_space == "no" and self.has_outdoor_playground:
-            errors["has_outdoor_playground"] = (
-                "Este campo debe quedar vacio cuando no hay espacio exterior."
-            )
+        for (
+            controller_field,
+            expected_value,
+            dependent_field,
+            message,
+        ) in dependent_field_rules:
+            if getattr(self, controller_field) == expected_value and getattr(
+                self, dependent_field
+            ):
+                errors[dependent_field] = message
 
-        if self.cdi_municipality and self.cdi_province:
-            if self.cdi_municipality.provincia_id != self.cdi_province_id:
-                errors["cdi_municipality"] = (
-                    "El municipio no pertenece a la provincia indicada."
-                )
+        return errors
 
-        if self.cdi_locality and self.cdi_municipality:
-            if self.cdi_locality.municipio_id != self.cdi_municipality_id:
-                errors["cdi_locality"] = (
-                    "La localidad no pertenece al municipio indicado."
-                )
+    def _collect_geography_errors(self):
+        errors = {}
+        relation_rules = (
+            (
+                "cdi_municipality",
+                "cdi_province",
+                "provincia_id",
+                "El municipio no pertenece a la provincia indicada.",
+            ),
+            (
+                "cdi_locality",
+                "cdi_municipality",
+                "municipio_id",
+                "La localidad no pertenece al municipio indicado.",
+            ),
+            (
+                "org_municipality",
+                "org_province",
+                "provincia_id",
+                "El municipio no pertenece a la provincia indicada.",
+            ),
+            (
+                "org_locality",
+                "org_municipality",
+                "municipio_id",
+                "La localidad no pertenece al municipio indicado.",
+            ),
+        )
 
-        if self.org_municipality and self.org_province:
-            if self.org_municipality.provincia_id != self.org_province_id:
-                errors["org_municipality"] = (
-                    "El municipio no pertenece a la provincia indicada."
-                )
+        for child_field, parent_field, relation_attr, message in relation_rules:
+            child_value = getattr(self, child_field)
+            parent_id = getattr(self, f"{parent_field}_id")
+            if (
+                child_value
+                and parent_id
+                and getattr(child_value, relation_attr) != parent_id
+            ):
+                errors[child_field] = message
 
-        if self.org_locality and self.org_municipality:
-            if self.org_locality.municipio_id != self.org_municipality_id:
-                errors["org_locality"] = (
-                    "La localidad no pertenece al municipio indicado."
-                )
+        return errors
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        errors.update(self._collect_multi_choice_errors())
+        errors.update(self._collect_required_field_errors())
+        errors.update(self._collect_consistency_errors())
+        errors.update(self._collect_geography_errors())
 
         if errors:
             raise ValidationError(errors)

@@ -82,28 +82,28 @@ def _choice_map_for(field_name):
 
 def _display_value(obj, field_name):
     value = getattr(obj, field_name, None)
-    if value in (None, "", []):
-        return "-"
+    display_value = "-"
 
-    if hasattr(value, "strftime"):
-        if field_name.endswith("_time"):
-            return value.strftime("%H:%M")
-        if field_name.endswith("_date") or "date" in field_name:
-            return value.strftime("%d/%m/%Y")
-        return value.strftime("%d/%m/%Y %H:%M")
+    if value not in (None, "", []):
+        if hasattr(value, "strftime"):
+            if field_name.endswith("_time"):
+                display_value = value.strftime("%H:%M")
+            elif field_name.endswith("_date") or "date" in field_name:
+                display_value = value.strftime("%d/%m/%Y")
+            else:
+                display_value = value.strftime("%d/%m/%Y %H:%M")
+        elif isinstance(value, bool):
+            display_value = "Si" if value else "No"
+        elif isinstance(value, list):
+            option_map = _choice_map_for(field_name)
+            display_value = (
+                ", ".join(option_map.get(item, item) for item in value) or "-"
+            )
+        else:
+            option_map = _choice_map_for(field_name)
+            display_value = option_map.get(value, value) if option_map else str(value)
 
-    if isinstance(value, bool):
-        return "Si" if value else "No"
-
-    if isinstance(value, list):
-        option_map = _choice_map_for(field_name)
-        return ", ".join(option_map.get(item, item) for item in value) or "-"
-
-    option_map = _choice_map_for(field_name)
-    if option_map:
-        return option_map.get(value, value)
-
-    return str(value)
+    return display_value
 
 
 def build_formulario_summary_items(formularios):
@@ -220,7 +220,7 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
         return _get_centro_scoped_or_404(self.request.user, self.kwargs["pk"])
 
     def get_form_instance(self):
-        return None
+        return getattr(self, "_form_instance", None)
 
     def get_initial(self):
         centro = self.get_centro()
@@ -471,11 +471,13 @@ class FormularioCDICreateView(FormularioCDIEditBaseView):
 
 class FormularioCDIUpdateView(FormularioCDIEditBaseView):
     def get_form_instance(self):
-        return _get_formulario_scoped_or_404(
-            self.request.user,
-            self.kwargs["pk"],
-            self.kwargs["form_pk"],
-        )
+        if not hasattr(self, "_form_instance"):
+            self._form_instance = _get_formulario_scoped_or_404(
+                self.request.user,
+                self.kwargs["pk"],
+                self.kwargs["form_pk"],
+            )
+        return self._form_instance
 
     def get_success_message(self, formulario):
         return f"Formulario #{formulario.pk} actualizado correctamente."

@@ -20,6 +20,18 @@ from centrodeinfancia.forms_formulario_cdi import (
     build_waitlist_formset_class,
 )
 
+__all__ = [
+    "CentroDeInfanciaForm",
+    "NominaCentroInfanciaForm",
+    "NominaCentroInfanciaCreateForm",
+    "IntervencionCentroInfanciaForm",
+    "FormularioCDIForm",
+    "build_fixed_initial_rows",
+    "build_articulation_formset_class",
+    "build_room_distribution_formset_class",
+    "build_waitlist_formset_class",
+]
+
 
 class CentroDeInfanciaForm(forms.ModelForm):
 
