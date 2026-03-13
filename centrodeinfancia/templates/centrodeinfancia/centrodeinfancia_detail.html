@@ -221,7 +221,7 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <div>
                     <h4 class="mb-0">Formularios</h4>
-                    <small class="text-muted">Ultimas 3 instancias del formulario del centro.</small>
+                    <small class="text-muted">Últimas 3 instancias del formulario del centro.</small>
                 </div>
                 <div class="d-flex gap-2">
                     {% if request.user|has_perm_code:'centrodeinfancia.view_formulariocdi' %}
@@ -265,7 +265,7 @@
                             {% empty %}
                                 <tr>
                                     <td colspan="5" class="text-center text-muted py-4">Todavia no hay formularios cargados para este centro.</td>
-                                </tr>
+                                        Todavía no hay formularios cargados para este centro.
                             {% endfor %}
                         </tbody>
                     </table>
