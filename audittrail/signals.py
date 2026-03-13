@@ -13,6 +13,7 @@ from auditlog.models import LogEntry
 from admisiones.models.admisiones import Admision
 from centrodeinfancia.models import (
     CentroDeInfancia,
+    FormularioCDI,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
 )
@@ -398,6 +399,31 @@ def log_intervencion_centro_infancia_creation(
     _log_centro_infancia_event(
         instance.centro,
         {"Intervención": [None, description]},
+        LogEntry.Action.CREATE,
+    )
+
+
+@receiver(post_save, sender=FormularioCDI)
+def log_formulario_cdi_creation(
+    sender, instance: FormularioCDI, created: bool, **kwargs
+):
+    """
+    Registra altas de formularios CDI vinculadas a un centro de infancia.
+    """
+    if not created or not instance.centro:
+        return
+
+    fecha = None
+    if getattr(instance, "survey_date", None):
+        fecha = instance.survey_date.strftime("%Y-%m-%d")
+
+    description = f"Formulario CDI #{instance.pk}"
+    if fecha:
+        description = f"{description} - {fecha}"
+
+    _log_centro_infancia_event(
+        instance.centro,
+        {"Formulario CDI": [None, description]},
         LogEntry.Action.CREATE,
     )
 

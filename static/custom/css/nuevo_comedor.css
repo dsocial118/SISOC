@@ -573,6 +573,11 @@ body.sidebar-collapse .sidebar-user-name {
   color: #ffffff;
 }
 
+.accordion-header--formularios {
+  background-color: #00897b;
+  color: #ffffff;
+}
+
 .accordion-header--prestaciones {
   background-color: #2e7d33;
   color: #ffffff;

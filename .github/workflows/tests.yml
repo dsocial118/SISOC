@@ -40,31 +40,11 @@ jobs:
                   DOCKER_DJANGO_PORT=8000
                   DOCKER_DEBUGGER_PORT_FORWARD=5678
                   DOCKER_DEBUGGER_PORT=5678
+                  USE_SQLITE_FOR_TESTS=1
                   EOF
 
-            - name: Build and start services
-              run: docker compose up -d --build
-
-            - name: Wait for MySQL
-              run: |
-                  for i in {1..20}; do
-                      if docker compose exec -T mysql mysqladmin ping -h "localhost" -P 3306 --silent; then
-                          echo "MySQL is ready!"
-                          exit 0
-                      fi
-                      echo "Waiting for MySQL..."
-                      sleep 5
-                  done
-                  echo "MySQL did not become ready in time."
-                  docker compose logs mysql
-                  exit 1
-
-            - name: Run smoke tests
-              run: docker compose exec -T django pytest -m smoke
-
-            - name: Shutdown services
-              if: always()
-              run: docker compose down -v
+            - name: Run smoke tests in one-off container
+              run: docker compose run --build --rm --no-deps -T django pytest -m smoke
 
     migrations_check:
         runs-on: ubuntu-latest
@@ -143,31 +123,11 @@ jobs:
                   DOCKER_DJANGO_PORT=8000
                   DOCKER_DEBUGGER_PORT_FORWARD=5678
                   DOCKER_DEBUGGER_PORT=5678
+                  USE_SQLITE_FOR_TESTS=1
                   EOF
 
-            - name: Build and start services
-              run: docker compose up -d --build
-
-            - name: Wait for MySQL
-              run: |
-                  for i in {1..20}; do
-                      if docker compose exec -T mysql mysqladmin ping -h "localhost" -P 3306 --silent; then
-                          echo "MySQL is ready!"
-                          exit 0
-                      fi
-                      echo "Waiting for MySQL..."
-                      sleep 5
-                  done
-                  echo "MySQL did not become ready in time."
-                  docker compose logs mysql
-                  exit 1
-
-            - name: Run tests with coverage gate
-              run: docker compose exec -T django pytest -n auto --cov=. --cov-report=term-missing --cov-fail-under=75
-
-            - name: Shutdown services
-              if: always()
-              run: docker compose down -v
+            - name: Run tests with coverage gate in one-off container
+              run: docker compose run --build --rm --no-deps -T django pytest -n auto --cov=. --cov-report=term-missing --cov-fail-under=75
 
     deploy_guard:
         if: github.event_name == 'pull_request'
