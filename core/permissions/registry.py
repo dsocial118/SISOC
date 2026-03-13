@@ -116,6 +116,10 @@ LEGACY_ALIAS_TO_PERMISSION_CODES: dict[str, tuple[str, ...]] = {
     "Centro de Infancia Intervencion Borrar": (
         "centrodeinfancia.delete_intervencioncentroinfancia",
     ),
+    "Centro de Infancia Formulario Ver": ("centrodeinfancia.view_formulariocdi",),
+    "Centro de Infancia Formulario Crear": ("centrodeinfancia.add_formulariocdi",),
+    "Centro de Infancia Formulario Editar": ("centrodeinfancia.change_formulariocdi",),
+    "Centro de Infancia Formulario Borrar": ("centrodeinfancia.delete_formulariocdi",),
     # Importación
     "Importar Expediente": ("importarexpediente.view_archivosimportados",),
     # Comunicados
