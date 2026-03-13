@@ -35,6 +35,7 @@ from core.decorators import permissions_any_required
 from core.security import safe_redirect
 from core.services.column_preferences import build_columns_context_from_fields
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from iam.services import user_has_permission_code
 
 from centrodeinfancia.access import (
     aplicar_filtro_provincia_usuario as _aplicar_filtro_provincia_usuario,
@@ -53,6 +54,7 @@ from centrodeinfancia.models import (
     NominaCentroInfancia,
     ObservacionCentroInfancia,
 )
+from centrodeinfancia.views_formulario_cdi import build_formulario_summary_items
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 
 
@@ -452,6 +454,19 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         )
         context["intervencion_form"] = intervencion_form
         context["observacion_form"] = ObservacionCentroInfanciaForm()
+        if user_has_permission_code(
+            self.request.user, "centrodeinfancia.view_formulariocdi"
+        ):
+            formularios_qs = self.object.formularios.select_related(
+                "created_by"
+            ).order_by("-survey_date", "-created_at", "-id")
+            context["formularios_total"] = formularios_qs.count()
+            context["formularios_recent"] = build_formulario_summary_items(
+                list(formularios_qs[:3])
+            )
+        else:
+            context["formularios_total"] = 0
+            context["formularios_recent"] = []
 
         tipo_intervencion_queryset = list(
             intervencion_form.fields["tipo_intervencion"].queryset
