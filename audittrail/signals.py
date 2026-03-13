@@ -404,7 +404,9 @@ def log_intervencion_centro_infancia_creation(
 
 
 @receiver(post_save, sender=FormularioCDI)
-def log_formulario_cdi_creation(sender, instance: FormularioCDI, created: bool, **kwargs):
+def log_formulario_cdi_creation(
+    sender, instance: FormularioCDI, created: bool, **kwargs
+):
     """
     Registra altas de formularios CDI vinculadas a un centro de infancia.
     """

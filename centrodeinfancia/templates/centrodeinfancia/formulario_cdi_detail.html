@@ -6,7 +6,8 @@
 {% block content %}
     <div class="container-fluid">
         <div class="d-flex justify-content-between mb-3">
-            <a href="{% url 'centrodeinfancia_formulario_listado' centro.id %}" class="btn btn-secondary">Volver al listado</a>
+            <a href="{% url 'centrodeinfancia_formulario_listado' centro.id %}"
+               class="btn btn-secondary">Volver al listado</a>
             <a href="{% url 'centrodeinfancia_formulario_editar' centro.id formulario.id %}"
                class="btn btn-warning">Editar</a>
         </div>
@@ -17,7 +18,9 @@
                 <p class="text-muted mb-1">Formulario #{{ formulario.id }} | CDI code {{ formulario.cdi_code|default:"-" }}</p>
                 <p class="text-muted mb-0">
                     Creado {{ formulario.created_at|date:"d/m/Y H:i" }}
-                    {% if formulario.created_by %}por {{ formulario.created_by.get_full_name|default:formulario.created_by.username }}{% endif %}
+                    {% if formulario.created_by %}
+                        por {{ formulario.created_by.get_full_name|default:formulario.created_by.username }}
+                    {% endif %}
                 </p>
             </div>
         </div>

@@ -40,9 +40,7 @@ class NullableBooleanChoiceField(forms.TypedChoiceField):
             lambda value: (
                 True
                 if value in (True, "true", "True", "1", 1)
-                else False
-                if value in (False, "false", "False", "0", 0)
-                else None
+                else False if value in (False, "false", "False", "0", 0) else None
             ),
         )
         super().__init__(*args, **kwargs)
@@ -140,7 +138,9 @@ class FormularioCDIForm(forms.ModelForm):
         ).first()
         locality = Localidad.objects.filter(pk=self._parse_pk(locality_value)).first()
 
-        self.fields[province_field].queryset = Provincia.objects.all().order_by("nombre")
+        self.fields[province_field].queryset = Provincia.objects.all().order_by(
+            "nombre"
+        )
         self.fields[municipality_field].queryset = (
             Municipio.objects.filter(provincia=province).order_by("nombre")
             if province
@@ -180,10 +180,14 @@ class FormularioCDIForm(forms.ModelForm):
             if isinstance(field.widget, forms.CheckboxSelectMultiple):
                 field.widget.attrs["class"] = f"{existing} form-check-input".strip()
                 continue
-            widget_class = "form-select" if isinstance(
-                field.widget,
-                (forms.Select, forms.SelectMultiple),
-            ) else "form-control"
+            widget_class = (
+                "form-select"
+                if isinstance(
+                    field.widget,
+                    (forms.Select, forms.SelectMultiple),
+                )
+                else "form-control"
+            )
             field.widget.attrs["class"] = f"{existing} {widget_class}".strip()
 
     def clean(self):
@@ -253,7 +257,12 @@ class FormularioCDIRoomDistributionForm(FixedRowLabelMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field_name in ["room_count", "exclusive_area_m2", "children_count", "staff_count"]:
+        for field_name in [
+            "room_count",
+            "exclusive_area_m2",
+            "children_count",
+            "staff_count",
+        ]:
             self.fields[field_name].required = False
             self.fields[field_name].widget.attrs["class"] = "form-control"
 

@@ -81,8 +81,12 @@ def test_formulario_cdi_filtra_municipio_y_localidad_por_ubicacion_seleccionada(
         }
     )
 
-    municipio_ids = set(form.fields["cdi_municipality"].queryset.values_list("id", flat=True))
-    localidad_ids = set(form.fields["cdi_locality"].queryset.values_list("id", flat=True))
+    municipio_ids = set(
+        form.fields["cdi_municipality"].queryset.values_list("id", flat=True)
+    )
+    localidad_ids = set(
+        form.fields["cdi_locality"].queryset.values_list("id", flat=True)
+    )
 
     assert municipio_ids == {municipio_ba.id}
     assert localidad_ids == {localidad_ba.id}
@@ -94,7 +98,10 @@ def test_formulario_cdi_labels_custom_quedan_en_espanol():
 
     assert form.fields["operation_months"].label == "Meses de funcionamiento del CDI"
     assert form.fields["operation_days"].label == "Días de funcionamiento del CDI"
-    assert form.fields["has_fire_extinguishers_current"].label == "Existencia de extintores"
+    assert (
+        form.fields["has_fire_extinguishers_current"].label
+        == "Existencia de extintores"
+    )
     assert form.fields["has_admission_prioritization_tool"].label == (
         "Existe instrumento de priorización de ingreso de los niños/as"
     )

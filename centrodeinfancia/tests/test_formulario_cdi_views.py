@@ -57,7 +57,14 @@ def _build_formulario_create_payload(centro, **overrides):
     }
 
     for index, value in enumerate(
-        ["lactantes", "deambuladores", "dos_anos", "tres_anos", "cuatro_anos", "multiedad"]
+        [
+            "lactantes",
+            "deambuladores",
+            "dos_anos",
+            "tres_anos",
+            "cuatro_anos",
+            "multiedad",
+        ]
     ):
         payload[f"room_distribution-{index}-age_group"] = value
 
@@ -111,8 +118,12 @@ def test_formulario_cdi_detalle_respeta_scope_por_provincia():
     provincia_a = Provincia.objects.create(nombre="Mendoza")
     provincia_b = Provincia.objects.create(nombre="Salta")
     user = _crear_usuario("user-form-det", provincia=provincia_a)
-    centro_b = CentroDeInfancia.objects.create(nombre="CDI Salta", provincia=provincia_b)
-    formulario = FormularioCDI.objects.create(centro=centro_b, cdi_code=centro_b.cdi_code)
+    centro_b = CentroDeInfancia.objects.create(
+        nombre="CDI Salta", provincia=provincia_b
+    )
+    formulario = FormularioCDI.objects.create(
+        centro=centro_b, cdi_code=centro_b.cdi_code
+    )
 
     request = RequestFactory().get(
         f"/centrodeinfancia/{centro_b.pk}/formularios/{formulario.pk}/"

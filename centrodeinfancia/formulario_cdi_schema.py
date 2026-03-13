@@ -160,7 +160,11 @@ CHOICE_FIELDS = {
         "mala_calidad_con_acceso_personal",
         "sin_servicio",
     ),
-    "has_kitchen_space": [("si", "Si"), ("no", "No"), ("no_sabe_no_responde", "No sabe / No responde")],
+    "has_kitchen_space": [
+        ("si", "Si"),
+        ("no", "No"),
+        ("no_sabe_no_responde", "No sabe / No responde"),
+    ],
     "cooking_fuel": _options(
         "gas_red",
         "gas_granel_tubo_garrafa",
@@ -169,7 +173,11 @@ CHOICE_FIELDS = {
         "no_utiliza",
     ),
     "has_outdoor_space": [("si", "Si"), ("no", "No"), ("no_responde", "No responde")],
-    "has_outdoor_playground": [("si", "Si"), ("no", "No"), ("no_responde", "No responde")],
+    "has_outdoor_playground": [
+        ("si", "Si"),
+        ("no", "No"),
+        ("no_responde", "No responde"),
+    ],
     "evacuation_plan_and_drills": _options(
         "protocolo_escrito_y_2_simulacros_o_mas",
         "protocolo_escrito_y_simulacros_sin_frecuencia",
@@ -243,7 +251,11 @@ CHOICE_FIELDS = {
         "no_se_realizan",
     ),
     "actions_promoting_rights_access": [("si", "Si"), ("no", "No"), ("ns_nc", "NS/NC")],
-    "actions_against_rights_violations": [("si", "Si"), ("no", "No"), ("ns_nc", "NS/NC")],
+    "actions_against_rights_violations": [
+        ("si", "Si"),
+        ("no", "No"),
+        ("ns_nc", "NS/NC"),
+    ],
     "networking_level": _options(
         "red_mapeo_mesas_trimestral_o_mas",
         "red_mapeo_mesas_semestral",
@@ -416,7 +428,10 @@ MULTI_CHOICE_FIELDS = {
 }
 
 BOOLEAN_LABELS = {
-    "exclusive_space_use": ("Si, compartido con otras actividades/personas/organizaciones", "No"),
+    "exclusive_space_use": (
+        "Si, compartido con otras actividades/personas/organizaciones",
+        "No",
+    ),
 }
 
 FIELD_LABELS = {

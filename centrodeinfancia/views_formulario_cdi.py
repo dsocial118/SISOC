@@ -54,7 +54,9 @@ def _formularios_cdi_queryset_scoped(user):
         "org_municipality",
         "org_locality",
     )
-    return aplicar_filtro_provincia_usuario(queryset, user, provincia_lookup="centro__provincia")
+    return aplicar_filtro_provincia_usuario(
+        queryset, user, provincia_lookup="centro__provincia"
+    )
 
 
 def _get_centro_scoped_or_404(user, pk):
@@ -135,7 +137,9 @@ class FormularioCDIListView(LoginRequiredMixin, ListView):
 
     def get_centro(self):
         if not hasattr(self, "_centro_cache"):
-            self._centro_cache = _get_centro_scoped_or_404(self.request.user, self.kwargs["pk"])
+            self._centro_cache = _get_centro_scoped_or_404(
+                self.request.user, self.kwargs["pk"]
+            )
         return self._centro_cache
 
     def get_queryset(self):
@@ -147,7 +151,9 @@ class FormularioCDIListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         centro = self.get_centro()
         context["centro"] = centro
-        context["summary_items"] = build_formulario_summary_items(context["object_list"])
+        context["summary_items"] = build_formulario_summary_items(
+            context["object_list"]
+        )
         page_obj = context.get("page_obj")
         if page_obj:
             context["page_range"] = context["paginator"].get_elided_page_range(
@@ -250,14 +256,22 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
             0 if instance and instance.pk else len(ARTICULATION_INSTITUTION_OPTIONS)
         )
 
-        room_initial = [] if instance else build_fixed_initial_rows(
-            ROOM_AGE_GROUP_OPTIONS, "age_group"
+        room_initial = (
+            []
+            if instance
+            else build_fixed_initial_rows(ROOM_AGE_GROUP_OPTIONS, "age_group")
         )
-        waitlist_initial = [] if instance else build_fixed_initial_rows(
-            WAITLIST_AGE_GROUP_OPTIONS, "age_group"
+        waitlist_initial = (
+            []
+            if instance
+            else build_fixed_initial_rows(WAITLIST_AGE_GROUP_OPTIONS, "age_group")
         )
-        articulation_initial = [] if instance else build_fixed_initial_rows(
-            ARTICULATION_INSTITUTION_OPTIONS, "institution_type"
+        articulation_initial = (
+            []
+            if instance
+            else build_fixed_initial_rows(
+                ARTICULATION_INSTITUTION_OPTIONS, "institution_type"
+            )
         )
         formsets = {
             "room_formset": room_formset_class(
@@ -294,7 +308,11 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
                 current_name = field_names[index]
                 forced_row = FORCED_FIELD_ROWS.get(current_name)
 
-                if forced_row and tuple(field_names[index : index + len(forced_row)]) == forced_row:
+                if (
+                    forced_row
+                    and tuple(field_names[index : index + len(forced_row)])
+                    == forced_row
+                ):
                     rows.append(
                         [
                             {
@@ -326,7 +344,9 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
                     "name": current_name,
                     "col_class": "col-md-6",
                 }
-                next_name = field_names[index + 1] if index + 1 < len(field_names) else None
+                next_name = (
+                    field_names[index + 1] if index + 1 < len(field_names) else None
+                )
 
                 if (
                     next_name
@@ -374,7 +394,9 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
         room_existing = set(
             formulario.room_distribution_rows.values_list("age_group", flat=True)
         )
-        waitlist_existing = set(formulario.waitlist_rows.values_list("age_group", flat=True))
+        waitlist_existing = set(
+            formulario.waitlist_rows.values_list("age_group", flat=True)
+        )
         articulation_existing = set(
             formulario.articulation_rows.values_list("institution_type", flat=True)
         )
@@ -404,7 +426,9 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
         instance = self.get_form_instance()
         form = self.build_form(instance=instance)
         formsets = self.build_formsets(instance=instance)
-        return render(request, self.template_name, self.get_context(form, formsets, instance))
+        return render(
+            request, self.template_name, self.get_context(form, formsets, instance)
+        )
 
     def post(self, request, *args, **kwargs):
         instance = self.get_form_instance()

@@ -1,13 +1,28 @@
 {% extends "includes/main.html" %}
 {% load crispy_forms_tags static %}
 
-{% block title %}{% if is_edit %}Editar{% else %}Nuevo{% endif %} Formulario CDI{% endblock %}
-{% block titulo-pagina %}{% if is_edit %}Editar{% else %}Nuevo{% endif %} Formulario CDI{% endblock %}
+{% block title %}
+    {% if is_edit %}
+        Editar
+    {% else %}
+        Nuevo
+    {% endif %}
+    Formulario CDI
+{% endblock %}
+{% block titulo-pagina %}
+    {% if is_edit %}
+        Editar
+    {% else %}
+        Nuevo
+    {% endif %}
+    Formulario CDI
+{% endblock %}
 
 {% block content %}
     <div class="container-fluid">
         <div class="d-flex justify-content-between mb-3">
-            <a href="{% url 'centrodeinfancia_detalle' centro.id %}" class="btn btn-secondary">Volver al CDI</a>
+            <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
+               class="btn btn-secondary">Volver al CDI</a>
             <a href="{% url 'centrodeinfancia_formulario_listado' centro.id %}"
                class="btn btn-outline-secondary">Ver formularios</a>
         </div>
@@ -15,7 +30,9 @@
         <div class="card mb-3">
             <div class="card-body">
                 <h3 class="mb-1">{{ centro.nombre }}</h3>
-                <p class="text-muted mb-0">Formulario vinculado al centro #{{ centro.id }} ({{ centro.cdi_code|default:"Sin codigo" }})</p>
+                <p class="text-muted mb-0">
+                    Formulario vinculado al centro #{{ centro.id }} ({{ centro.cdi_code|default:"Sin codigo" }})
+                </p>
             </div>
         </div>
 
@@ -25,9 +42,7 @@
             {% if form.errors or room_formset.errors or room_formset.non_form_errors or waitlist_formset.errors or waitlist_formset.non_form_errors or articulation_formset.errors or articulation_formset.non_form_errors %}
                 <div class="alert alert-danger">
                     No se pudo guardar el formulario. Revisá los campos marcados.
-                    {% if form.non_field_errors %}
-                        <div class="mt-2">{{ form.non_field_errors }}</div>
-                    {% endif %}
+                    {% if form.non_field_errors %}<div class="mt-2">{{ form.non_field_errors }}</div>{% endif %}
                 </div>
             {% endif %}
 
@@ -84,7 +99,9 @@
                                         </td>
                                         <td>
                                             {{ row_form.exclusive_area_m2 }}
-                                            {% for error in row_form.exclusive_area_m2.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                            {% for error in row_form.exclusive_area_m2.errors %}
+                                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
                                         </td>
                                         <td>
                                             {{ row_form.children_count }}

@@ -299,7 +299,9 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
     )
     management_mode_other = models.CharField(max_length=255, blank=True, null=True)
-    managing_organization_name = models.CharField(max_length=1000, blank=True, null=True)
+    managing_organization_name = models.CharField(
+        max_length=1000, blank=True, null=True
+    )
     managing_organization_cuit = models.CharField(
         max_length=13,
         blank=True,
@@ -359,7 +361,9 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
     )
     tenure_mode_other = models.CharField(max_length=255, blank=True, null=True)
     exclusive_space_use = models.BooleanField(blank=True, null=True)
-    room_count_excluding_service_areas = models.PositiveIntegerField(blank=True, null=True)
+    room_count_excluding_service_areas = models.PositiveIntegerField(
+        blank=True, null=True
+    )
 
     electricity_access = models.CharField(
         max_length=64,
@@ -489,8 +493,12 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
     )
     has_admission_prioritization_tool = models.BooleanField(blank=True, null=True)
-    children_with_disabilities_count = models.PositiveIntegerField(blank=True, null=True)
-    children_specific_ethnicity_count = models.PositiveIntegerField(blank=True, null=True)
+    children_with_disabilities_count = models.PositiveIntegerField(
+        blank=True, null=True
+    )
+    children_specific_ethnicity_count = models.PositiveIntegerField(
+        blank=True, null=True
+    )
     has_entry_exit_staff = models.CharField(
         max_length=16,
         choices=CHOICE_FIELDS["has_entry_exit_staff"],
@@ -660,7 +668,9 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         verbose_name_plural = "Formularios CDI"
 
     def __str__(self):
-        fecha = self.survey_date.strftime("%Y-%m-%d") if self.survey_date else "sin fecha"
+        fecha = (
+            self.survey_date.strftime("%Y-%m-%d") if self.survey_date else "sin fecha"
+        )
         return f"Formulario CDI #{self.pk} - {self.centro} - {fecha}"
 
     @staticmethod
@@ -672,7 +682,9 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
             raise ValueError(field_name)
         invalid_values = [item for item in value if item not in allowed]
         if invalid_values:
-            raise ValueError(f"{field_name}:{','.join(str(item) for item in invalid_values)}")
+            raise ValueError(
+                f"{field_name}:{','.join(str(item) for item in invalid_values)}"
+            )
 
     def clean(self):
         super().clean()
@@ -684,8 +696,14 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
             except ValueError:
                 errors[field_name] = "Seleccione opciones validas."
 
-        if self.opening_time and self.closing_time and self.opening_time >= self.closing_time:
-            errors["closing_time"] = "El horario de cierre debe ser posterior al de apertura."
+        if (
+            self.opening_time
+            and self.closing_time
+            and self.opening_time >= self.closing_time
+        ):
+            errors["closing_time"] = (
+                "El horario de cierre debe ser posterior al de apertura."
+            )
 
         if self.workday_type == "other" and not self.workday_type_other:
             errors["workday_type_other"] = "Este campo es obligatorio."
@@ -704,7 +722,9 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
             errors["meals_provided"] = "No puede combinar 'ninguna' con otras opciones."
 
         if self.has_kitchen_space == "no" and self.cooking_fuel:
-            errors["cooking_fuel"] = "Este campo debe quedar vacio cuando no hay cocina."
+            errors["cooking_fuel"] = (
+                "Este campo debe quedar vacio cuando no hay cocina."
+            )
 
         if self.has_outdoor_space == "no" and self.has_outdoor_playground:
             errors["has_outdoor_playground"] = (
@@ -713,19 +733,27 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
 
         if self.cdi_municipality and self.cdi_province:
             if self.cdi_municipality.provincia_id != self.cdi_province_id:
-                errors["cdi_municipality"] = "El municipio no pertenece a la provincia indicada."
+                errors["cdi_municipality"] = (
+                    "El municipio no pertenece a la provincia indicada."
+                )
 
         if self.cdi_locality and self.cdi_municipality:
             if self.cdi_locality.municipio_id != self.cdi_municipality_id:
-                errors["cdi_locality"] = "La localidad no pertenece al municipio indicado."
+                errors["cdi_locality"] = (
+                    "La localidad no pertenece al municipio indicado."
+                )
 
         if self.org_municipality and self.org_province:
             if self.org_municipality.provincia_id != self.org_province_id:
-                errors["org_municipality"] = "El municipio no pertenece a la provincia indicada."
+                errors["org_municipality"] = (
+                    "El municipio no pertenece a la provincia indicada."
+                )
 
         if self.org_locality and self.org_municipality:
             if self.org_locality.municipio_id != self.org_municipality_id:
-                errors["org_locality"] = "La localidad no pertenece al municipio indicado."
+                errors["org_locality"] = (
+                    "La localidad no pertenece al municipio indicado."
+                )
 
         if errors:
             raise ValidationError(errors)
