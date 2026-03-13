@@ -240,7 +240,10 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
         }
 
     def build_form(self, data=None, instance=None):
-        return self.form_class(data=data, instance=instance, initial=self.get_initial())
+        initial = None
+        if not instance or not instance.pk:
+            initial = self.get_initial()
+        return self.form_class(data=data, instance=instance, initial=initial)
 
     def build_formsets(self, data=None, instance=None):
         if instance and instance.pk:

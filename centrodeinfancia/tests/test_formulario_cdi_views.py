@@ -172,9 +172,7 @@ def test_detalle_cdi_muestra_solo_ultimos_tres_formularios(client):
 @pytest.mark.django_db
 def test_detalle_cdi_no_expone_formularios_sin_permiso_especifico(client):
     user = _crear_usuario("user-form-card-hidden")
-    user.user_permissions.add(
-        Permission.objects.get(codename="view_centrodeinfancia")
-    )
+    user.user_permissions.add(Permission.objects.get(codename="view_centrodeinfancia"))
     client.force_login(user)
     centro = CentroDeInfancia.objects.create(nombre="CDI Permisos")
     FormularioCDI.objects.create(
@@ -195,7 +193,9 @@ def test_detalle_cdi_no_expone_formularios_sin_permiso_especifico(client):
 def test_formulario_cdi_editar_preserva_snapshot_historico_del_centro(client):
     user = _crear_usuario("super-form-edit-snapshot", superuser=True)
     client.force_login(user)
-    centro = CentroDeInfancia.objects.create(nombre="Centro Actual", calle="Calle Actual")
+    centro = CentroDeInfancia.objects.create(
+        nombre="Centro Actual", calle="Calle Actual"
+    )
     formulario = FormularioCDI.objects.create(
         centro=centro,
         cdi_code=centro.cdi_code,
