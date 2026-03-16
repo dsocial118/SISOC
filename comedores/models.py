@@ -244,6 +244,11 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
     )
+    es_judicializado = models.BooleanField(
+        null=True,
+        blank=True,
+        verbose_name="¿Es judicializado?",
+    )
     comienzo = models.IntegerField(
         validators=[
             MinValueValidator(1900),

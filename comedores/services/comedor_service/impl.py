@@ -55,6 +55,7 @@ logger = logging.getLogger("django")
 from core.security import safe_redirect
 from core.services.advanced_filters import AdvancedFilterEngine
 from comedores.services.filter_config import (
+    BOOL_OPS,
     CHOICE_OPS,
     FIELD_MAP,
     FIELD_TYPES,
@@ -70,6 +71,7 @@ COMEDOR_ADVANCED_FILTER = AdvancedFilterEngine(
         "text": TEXT_OPS,
         "number": NUM_OPS,
         "choice": CHOICE_OPS,
+        "boolean": BOOL_OPS,
     },
     field_casts={
         "latitud": float,
