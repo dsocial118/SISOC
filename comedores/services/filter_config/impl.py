@@ -211,6 +211,7 @@ def get_filters_ui_config() -> Dict[str, Any]:
             "text": list(TEXT_OPS),
             "number": list(NUM_OPS),
             "choice": list(CHOICE_OPS),
+            "boolean": list(BOOL_OPS),
         },
     }
 

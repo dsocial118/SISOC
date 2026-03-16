@@ -1,5 +1,6 @@
 """Tests for test favorite filters unit."""
 
+from comedores.services.filter_config import BOOL_OPS as COMEDORES_BOOL_OPS
 from core.services.favorite_filters import (
     ConfiguracionFiltrosSeccion,
     SeccionesFiltrosFavoritos,
@@ -98,3 +99,22 @@ def test_obtener_items_obsoletos_keeps_valid_items():
     }
 
     assert obtener_items_obsoletos(payload, config) == []
+
+
+def test_configuracion_favoritos_comedores_acepta_booleanos():
+    config = obtener_configuracion_seccion(SeccionesFiltrosFavoritos.COMEDORES)
+
+    assert config is not None
+    assert config.tipos_campos["es_judicializado"] == "boolean"
+    assert list(config.operadores_permitidos["boolean"]) == list(COMEDORES_BOOL_OPS)
+    assert (
+        obtener_items_obsoletos(
+            {
+                "items": [
+                    {"field": "es_judicializado", "op": "eq", "value": "true"},
+                ]
+            },
+            config,
+        )
+        == []
+    )
