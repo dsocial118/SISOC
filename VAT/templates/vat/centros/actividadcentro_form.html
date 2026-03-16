@@ -1,0 +1,34 @@
+﻿{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% block title %}Nueva Actividad{% endblock %}
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/duplasSelect2.min.css' %}" />
+{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    {% include 'components/alert_message.html' with show_django_messages=True %}
+    <div class="container">
+        {% include 'components/form_card.html' with title=page_title form=form cancel_url=cancel_url submit_text=submit_text %}
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/centro_familia_categoria.js' %}"></script>
+    <!-- CSS -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <!-- JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script nonce="{{ request.csp_nonce }}">
+  flatpickr(".timepicker", {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "H:i",
+    time_24hr: true
+  });
+    </script>
+{% endblock %}
+

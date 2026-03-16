@@ -1,0 +1,807 @@
+﻿[
+  {
+    "model": "VAT.categoria",
+    "pk": 1,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Deporte"
+    }
+  },
+  {
+    "model": "VAT.categoria",
+    "pk": 2,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Cultura"
+    }
+  },
+  {
+    "model": "VAT.categoria",
+    "pk": 3,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "EducaciÃ³n"
+    }
+  },
+  {
+    "model": "VAT.categoria",
+    "pk": 4,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Salud"
+    }
+  },
+  {
+    "model": "VAT.categoria",
+    "pk": 5,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Artes PlÃ¡sticas y Manualidades"
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 1,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "FÃºtbol infantil",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 2,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Taller de pintura",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 3,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Apoyo escolar primario",
+      "categoria": 3
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 4,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Charla sobre nutriciÃ³n",
+      "categoria": 4
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 5,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "FÃºtbol masculino y femenino",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 6,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Apoyo escolar",
+      "categoria": 3
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 7,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Basquet",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 8,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Taekwondo",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 9,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Karate",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 10,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Handball",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 11,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Boxeo",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 12,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Newcon",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 13,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Futsal",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 14,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Gimnasio",
+      "categoria": 4
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 15,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "MusculaciÃ³n",
+      "categoria": 4
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 16,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Danzas y talleres de arte",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 17,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "FÃºtbol masculino",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 18,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "FÃºtbol masculino y femenino y hockey",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 19,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Talleres de apoyo escolar y alfabetizaciÃ³n",
+      "categoria": 3
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 20,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Voley",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 21,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Taller de percusiÃ³n y trompeta",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 22,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Taller de guitarra",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 23,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Talleres de alfabetizaciÃ³n",
+      "categoria": 3
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 24,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Lectoescritura",
+      "categoria": 3
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 25,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "MatemÃ¡ticas",
+      "categoria": 3
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 26,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "AcompaÃ±amiento pedagÃ³gico y emocional",
+      "categoria": 3
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 27,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Artes marciales mixtas y deportes de combate",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 28,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "EnseÃ±anza de danzas clÃ¡sicas",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 29,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Jazz",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 30,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Urbano",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 31,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Ritmos latinos y pilates",
+      "categoria": 4
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 32,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Rugby y hockey masculino y femenino",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 33,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Talleres educativos y de crecimiento personal",
+      "categoria": 3
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 34,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Gimnasia artÃ­stica",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 35,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Clases de danzas",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 36,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "ClÃ¡sico",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 37,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Arabe",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 38,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Pop",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 39,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Danza aÃ©rea juvenil",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 40,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Zumba",
+      "categoria": 4
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 41,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Strong nation",
+      "categoria": 4
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 42,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Artes marciales",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 43,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Dibujo y pintura",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 44,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Art toy",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 45,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Caricaturas",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 46,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Stop motions",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 47,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "PatÃ­n",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 48,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Telas",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 49,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Boxeo recreativo",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 50,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Danzas brasileras",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 51,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Reggaeton",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 52,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "TikTokdance",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 53,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Bachata",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 54,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Clases de apoyo escolar",
+      "categoria": 3
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 55,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Taller de costura y bordado",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 56,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Dibujo y artesanÃ­as manuales",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 57,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Deportes y recreaciÃ³n",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 58,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "KPOP ",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 60,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Zumba kids",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 61,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "strong Nation",
+      "categoria": 4
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 62,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Zumba Fitness",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 63,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Yoga kids",
+      "categoria": 4
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 64,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Hatha yoga",
+      "categoria": 4
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 65,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Aeroyoga ",
+      "categoria": 4
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 66,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Modelado en porcelana fria",
+      "categoria": 5
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 67,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Ingles",
+      "categoria": 3
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 68,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Defensa Personal",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 69,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Modelaje ",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 70,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Hip hop",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 71,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Clases de piano",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 72,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Clases de guitarra",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 73,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Clases de trompeta",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 74,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Clases de baterÃ­a",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 75,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Clases de canto",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 76,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Clases de bajo",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "VAT.actividad",
+    "pk": 77,
+    "fields": {
+      "deleted_at": null,
+      "deleted_by": null,
+      "nombre": "Taller de Carnaval",
+      "categoria": 2
+    }
+  }
+]
