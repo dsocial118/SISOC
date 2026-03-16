@@ -81,13 +81,14 @@
                         <div class="form-group row">
                             <div class="col-md-4">{{ form.organizacion|as_crispy_field }}</div>
                             <div class="col-md-4">{{ form.programa|as_crispy_field }}</div>
-                            <div class="col-md-4">
+                            <div class="col-md-2">
                                 {{ form.codigo_de_proyecto|as_crispy_field }}
                                 <span class="field-tooltip">
                                     <i class="fas fa-info-circle"></i>
                                     <span class="tooltip-text">Código de 7 caracteres máximo</span>
                                 </span>
                             </div>
+                            <div class="col-md-2">{{ form.es_judicializado|as_crispy_field }}</div>
                         </div>
                     </div>
                 </div>

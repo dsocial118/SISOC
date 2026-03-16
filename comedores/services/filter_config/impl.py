@@ -26,6 +26,7 @@ FIELD_MAP: Dict[str, str] = {
     "partido": "partido",
     "barrio": "barrio",
     "codigo_de_proyecto": "codigo_de_proyecto",
+    "es_judicializado": "es_judicializado",
     # FKs -> nombre
     "organizacion": "organizacion__nombre",
     "programa": "programa__nombre",
@@ -86,6 +87,8 @@ FIELD_TYPES: Dict[str, str] = {
             "estado_validacion",
         ]
     },
+    # Booleanos
+    "es_judicializado": "boolean",
     # Numéricos
     **{
         k: "number"
@@ -105,6 +108,7 @@ FIELD_TYPES: Dict[str, str] = {
 TEXT_OPS = ["contains", "ncontains", "eq", "ne", "empty"]
 NUM_OPS = ["eq", "ne", "gt", "lt", "empty"]
 CHOICE_OPS = ["eq", "ne"]
+BOOL_OPS = ["eq", "ne"]
 
 # Configuración para la UI de filtros avanzados
 FILTER_FIELDS = [
@@ -138,6 +142,7 @@ FILTER_FIELDS = [
         "label": "Código de proyecto",
         "type": "text",
     },
+    {"name": "es_judicializado", "label": "¿Es judicializado?", "type": "boolean"},
     {"name": "id", "label": "ID", "type": "number"},
     {"name": "id_externo", "label": "ID Externo", "type": "number"},
     {"name": "comienzo", "label": "Comienzo (año)", "type": "number"},
@@ -206,6 +211,7 @@ def get_filters_ui_config() -> Dict[str, Any]:
             "text": list(TEXT_OPS),
             "number": list(NUM_OPS),
             "choice": list(CHOICE_OPS),
+            "boolean": list(BOOL_OPS),
         },
     }
 
@@ -216,6 +222,7 @@ __all__ = [
     "TEXT_OPS",
     "NUM_OPS",
     "CHOICE_OPS",
+    "BOOL_OPS",
     "FILTER_FIELDS",
     "DEFAULT_FIELD",
     "get_filters_ui_config",
