@@ -9,6 +9,7 @@ from centrodeinfancia.models import (
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     ObservacionCentroInfancia,
+    Trabajador,
 )
 
 
@@ -23,6 +24,13 @@ class NominaCentroInfanciaAdmin(admin.ModelAdmin):
     list_display = ("id", "centro", "ciudadano", "estado", "fecha")
     list_filter = ("estado",)
     search_fields = ("centro__nombre", "ciudadano__apellido", "ciudadano__nombre")
+
+
+@admin.register(Trabajador)
+class TrabajadorAdmin(admin.ModelAdmin):
+    list_display = ("id", "centro", "apellido", "nombre", "rol", "telefono")
+    list_filter = ("rol",)
+    search_fields = ("centro__nombre", "apellido", "nombre", "telefono")
 
 
 @admin.register(IntervencionCentroInfancia)

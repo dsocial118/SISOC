@@ -7,6 +7,7 @@ from django.apps import apps
 from django.contrib.auth.models import Group
 
 from core.constants import UserGroups
+from users.bootstrap.groups_seed import bootstrap_group_names
 
 pytestmark = pytest.mark.django_db
 
@@ -19,7 +20,7 @@ migration_0004 = importlib.import_module("comunicados.migrations.0004_create_v2_
 def test_comunicados_permissions_are_in_bootstrap_seed():
     """Todos los permisos de comunicados deben crearse por bootstrap."""
     assert set(UserGroups.COMUNICADOS_TODOS_PERMISOS).issubset(
-        set(UserGroups.CREATE_GROUPS_SEED)
+        set(bootstrap_group_names())
     )
 
 

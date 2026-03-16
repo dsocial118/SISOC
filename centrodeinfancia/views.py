@@ -47,12 +47,14 @@ from centrodeinfancia.forms import (
     NominaCentroInfanciaCreateForm,
     NominaCentroInfanciaForm,
     ObservacionCentroInfanciaForm,
+    TrabajadorForm,
 )
 from centrodeinfancia.models import (
     CentroDeInfancia,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     ObservacionCentroInfancia,
+    Trabajador,
 )
 from centrodeinfancia.views_formulario_cdi import build_formulario_summary_items
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
@@ -123,9 +125,40 @@ def _nomina_cdi_queryset_scoped(user):
     return _aplicar_scope_provincia_centro_relacion(queryset, user)
 
 
+def _trabajadores_cdi_queryset_scoped(user):
+    queryset = Trabajador.objects.select_related("centro")
+    return _aplicar_scope_provincia_centro_relacion(queryset, user)
+
+
 def _observaciones_cdi_queryset_scoped(user):
     queryset = ObservacionCentroInfancia.objects.select_related("centro")
     return _aplicar_scope_provincia_centro_relacion(queryset, user)
+
+
+def _build_trabajadores_context(
+    request,
+    centro,
+    form=None,
+    *,
+    modal_open=False,
+    modal_mode="create",
+    modal_action=None,
+):
+    form = form or TrabajadorForm()
+    return {
+        "trabajadores": centro.trabajadores.order_by("apellido", "nombre"),
+        "trabajador_form": form,
+        "trabajador_modal_open": modal_open,
+        "trabajador_modal_mode": modal_mode,
+        "trabajador_form_action": modal_action
+        or reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk}),
+        "puede_editar_trabajadores": request.user.has_perm(
+            "centrodeinfancia.change_centrodeinfancia"
+        ),
+        "puede_eliminar_trabajadores": request.user.has_perm(
+            "centrodeinfancia.delete_centrodeinfancia"
+        ),
+    }
 
 
 def _validar_archivo_documentacion_intervencion(file_obj):
@@ -480,6 +513,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["tipo_intervencion_programa_aliases"] = alias_list
         context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)
         context["tipo_intervencion_programa_aliases_json"] = json.dumps(alias_list)
+        context.update(_build_trabajadores_context(self.request, self.object))
         return context
 
 
@@ -514,6 +548,111 @@ class CentroDeInfanciaDeleteView(
 
     def get_queryset(self):
         return _centros_cdi_queryset_scoped(self.request.user)
+
+
+class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
+    model = Trabajador
+    form_class = TrabajadorForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.centro = _get_centro_cdi_scoped_or_404(request.user, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.centro = self.centro
+        response = super().form_valid(form)
+        messages.success(self.request, "Trabajador agregado correctamente.")
+        return response
+
+    def form_invalid(self, form):
+        detail_view = CentroDeInfanciaDetailView()
+        detail_view.setup(self.request, pk=self.centro.pk)
+        detail_view.object = self.centro
+        context = detail_view.get_context_data(object=self.centro)
+        context.update(
+            _build_trabajadores_context(
+                self.request,
+                self.centro,
+                form=form,
+                modal_open=True,
+                modal_mode="create",
+                modal_action=self.request.path,
+            )
+        )
+        return render(
+            self.request,
+            "centrodeinfancia/centrodeinfancia_detail.html",
+            context,
+            status=400,
+        )
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_detalle", kwargs={"pk": self.centro.pk})
+
+
+class TrabajadorCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
+    model = Trabajador
+    form_class = TrabajadorForm
+    pk_url_kwarg = "trabajador_id"
+
+    def get_queryset(self):
+        return _trabajadores_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Trabajador actualizado correctamente.")
+        return response
+
+    def form_invalid(self, form):
+        centro = self.object.centro
+        detail_view = CentroDeInfanciaDetailView()
+        detail_view.setup(self.request, pk=centro.pk)
+        detail_view.object = centro
+        context = detail_view.get_context_data(object=centro)
+        context.update(
+            _build_trabajadores_context(
+                self.request,
+                centro,
+                form=form,
+                modal_open=True,
+                modal_mode="edit",
+                modal_action=self.request.path,
+            )
+        )
+        return render(
+            self.request,
+            "centrodeinfancia/centrodeinfancia_detail.html",
+            context,
+            status=400,
+        )
+
+    def get_success_url(self):
+        return reverse(
+            "centrodeinfancia_detalle",
+            kwargs={"pk": self.object.centro_id},
+        )
+
+
+class TrabajadorCentroInfanciaDeleteView(
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
+):
+    model = Trabajador
+    pk_url_kwarg = "trabajador_id"
+    template_name = "centrodeinfancia/trabajador_confirm_delete.html"
+    context_object_name = "trabajador"
+    success_message = "Trabajador eliminado correctamente."
+
+    def get_queryset(self):
+        return _trabajadores_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_detalle", kwargs={"pk": self.kwargs["pk"]})
 
 
 @login_required

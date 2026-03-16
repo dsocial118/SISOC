@@ -20,4 +20,13 @@ Vincular el #ISSUE
 ### **Prubeas Manuales:**
 -
 
+# Metadata para documentación automática
+
+- Contexto funcional:
+- Tipo de cambio:
+- Área principal:
+- Resumen para changelog:
+- Impacto usuario:
+- Riesgos / rollback:
+
 # Capturas de Pantalla

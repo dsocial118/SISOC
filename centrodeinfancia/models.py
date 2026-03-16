@@ -92,6 +92,31 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
             self.cdi_code = cdi_code
 
 
+class Trabajador(SoftDeleteModelMixin, models.Model):
+    class Rol(models.TextChoices):
+        PROFESOR = "profesor", "Profesor"
+        DIRECTOR = "director", "Director"
+        ADMINISTRATIVO = "administrativo", "Administrativo"
+
+    centro = models.ForeignKey(
+        CentroDeInfancia,
+        on_delete=models.CASCADE,
+        related_name="trabajadores",
+    )
+    nombre = models.CharField(max_length=255)
+    apellido = models.CharField(max_length=255)
+    telefono = models.CharField(max_length=50, blank=True, null=True)
+    rol = models.CharField(max_length=20, choices=Rol.choices)
+
+    class Meta:
+        verbose_name = "Trabajador"
+        verbose_name_plural = "Trabajadores"
+        ordering = ["apellido", "nombre"]
+
+    def __str__(self):
+        return f"{self.apellido}, {self.nombre}"
+
+
 class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     ESTADO_PENDIENTE = "pendiente"
     ESTADO_ACTIVO = "activo"

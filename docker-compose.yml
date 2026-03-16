@@ -33,7 +33,7 @@ services:
     volumes:
       - .:/sisoc/
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
-    restart: always
+    restart: "no"
 
 volumes:
   mysql_data:
