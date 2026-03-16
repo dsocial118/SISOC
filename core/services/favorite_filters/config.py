@@ -38,6 +38,7 @@ from centrodefamilia.services.responsables_filter_config import (
     TEXT_OPS as RESPONSABLES_OPS_TEXTO,
 )
 from comedores.services.filter_config import (
+    BOOL_OPS as COMEDORES_OPS_BOOLEANO,
     CHOICE_OPS as COMEDORES_OPS_ELECCION,
     FIELD_TYPES as COMEDORES_TIPOS_CAMPOS,
     NUM_OPS as COMEDORES_OPS_NUMERO,
@@ -83,6 +84,7 @@ CONFIGURACIONES_POR_SECCION = {
             "text": COMEDORES_OPS_TEXTO,
             "number": COMEDORES_OPS_NUMERO,
             "choice": COMEDORES_OPS_ELECCION,
+            "boolean": COMEDORES_OPS_BOOLEANO,
         },
     ),
     SeccionesFiltrosFavoritos.USUARIOS: ConfiguracionFiltrosSeccion(
