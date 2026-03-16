@@ -273,6 +273,20 @@ def test_gestion_muestra_boton_editar_si_usuario_tiene_permiso(client):
     assert edit_url.encode() in response.content
 
 
+def test_gestion_limpiar_busqueda_preserva_filtros_activos(client):
+    admin = User.objects.create_superuser(
+        "admin_clear_filters", "clear_filters@test.com", "test"
+    )
+    client.force_login(admin)
+
+    response = client.get(
+        reverse("comunicados_gestion") + "?titulo=foo&estado=archivado&tipo=externo"
+    )
+
+    assert response.status_code == 200
+    assert b'href="?estado=archivado&amp;tipo=externo"' in response.content
+
+
 def test_create_guarda_adjuntos_y_destinatarios(client):
     admin = User.objects.create_superuser(
         "admin_create_ok", "create_ok@test.com", "test"

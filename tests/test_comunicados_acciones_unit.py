@@ -192,6 +192,25 @@ def test_archivar_ya_archivado_no_cambia_estado(client):
     assert comunicado.estado == EstadoComunicado.ARCHIVADO
 
 
+def test_archivar_destacado_limpia_flag_destacado(client):
+    """Regresión TK1.1: al archivar un comunicado destacado, destacado debe quedar False."""
+    admin = User.objects.create_superuser(
+        "admin_arch_dest", "arch_dest@test.com", "test"
+    )
+    comunicado = _create_comunicado(
+        usuario_creador=admin,
+        estado=EstadoComunicado.PUBLICADO,
+        destacado=True,
+    )
+    client.force_login(admin)
+
+    client.post(reverse("comunicados_archivar", kwargs={"pk": comunicado.pk}))
+
+    comunicado.refresh_from_db()
+    assert comunicado.estado == EstadoComunicado.ARCHIVADO
+    assert comunicado.destacado is False
+
+
 # =============================================================================
 # Toggle Destacado
 # =============================================================================
@@ -391,7 +410,8 @@ def test_listado_publico_filtra_por_titulo(client):
     assert "seguridad" in resultados[0].titulo.lower()
 
 
-def test_listado_publico_con_estado_archivado_muestra_archivados(client):
+def test_listado_publico_no_muestra_archivados(client):
+    """Regresión TK2.1: la vista pública solo muestra publicados, nunca archivados."""
     creador = _create_user("creador_arch_pub")
     viewer = _create_user("viewer_arch_pub")
     archivado = _create_comunicado(
@@ -406,11 +426,12 @@ def test_listado_publico_con_estado_archivado_muestra_archivados(client):
     )
     client.force_login(viewer)
 
+    # Incluso con ?estado=archivado, la vista pública ignora el parámetro
     response = client.get(reverse("comunicados") + "?estado=archivado")
 
     pks = [c.pk for c in response.context["comunicados"]]
-    assert archivado.pk in pks
-    assert publicado.pk not in pks
+    assert archivado.pk not in pks
+    assert publicado.pk in pks
 
 
 def test_listado_publico_destacados_aparecen_primero(client):
