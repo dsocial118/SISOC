@@ -31,7 +31,7 @@
                                 </button>
 
                                 {% if filtro_titulo %}
-                                    <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}{% if filtro_tipo %}{% if filtro_estado %}&{% endif %}tipo={{ filtro_tipo }}{% endif %}"
+                                    <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}{% if filtro_tipo %}{% if filtro_estado %}&amp;{% endif %}tipo={{ filtro_tipo }}{% endif %}"
                                        class="btn btn-outline-danger"
                                        title="Limpiar búsqueda">
                                         <i class="fas fa-times"></i>
