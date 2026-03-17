@@ -1,7 +1,3 @@
-"""Compatibility alias that preserves original module patch semantics."""
+from .impl import PreviewRow, persist_file_and_rows, read_excel_preview
 
-import sys as _sys
-
-from . import impl as _impl
-
-_sys.modules[__name__] = _impl
+__all__ = ["PreviewRow", "read_excel_preview", "persist_file_and_rows"]

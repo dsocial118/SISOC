@@ -1,7 +1,3 @@
-"""Compatibility alias that preserves original module patch semantics."""
+from .impl import consultar_datos_renaper
 
-import sys as _sys
-
-from . import impl as _impl
-
-_sys.modules[__name__] = _impl
+__all__ = ["consultar_datos_renaper"]

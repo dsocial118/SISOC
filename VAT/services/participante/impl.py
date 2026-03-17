@@ -2,7 +2,6 @@ import logging
 from django.db import transaction
 
 from VAT.models import (
-    Centro,
     ActividadCentro,
     ParticipanteActividad,
     ParticipanteActividadHistorial,

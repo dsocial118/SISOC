@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import CreateView, View, ListView
 
-from VAT.models import ParticipanteActividad, ActividadCentro
+from VAT.models import ParticipanteActividad
 from VAT.forms import ParticipanteActividadForm
 from VAT.services.participante import (
     ParticipanteService,
@@ -48,7 +48,7 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
             return self.form_invalid(form)
 
         try:
-            tipo, participante = ParticipanteService.procesar_creacion(
+            tipo, _ = ParticipanteService.procesar_creacion(
                 usuario=request.user,
                 actividad_id=actividad_id,
                 ciudadano_id=ciudadano_id,
@@ -68,7 +68,7 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
             messages.warning(request, str(e))
             return redirect(self.get_success_url())
         except CupoExcedido:
-            tipo2, participante2 = ParticipanteService.procesar_creacion(
+            ParticipanteService.procesar_creacion(
                 usuario=request.user,
                 actividad_id=actividad_id,
                 ciudadano_id=ciudadano_id,
@@ -113,7 +113,7 @@ class ParticipanteActividadDeleteView(LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         participante_id = kwargs["pk"]
-        participante = get_object_or_404(ParticipanteActividad, pk=participante_id)
+        get_object_or_404(ParticipanteActividad, pk=participante_id)
         try:
             ParticipanteService.dar_de_baja(participante_id, request.user)
             messages.success(request, "Participante dado de baja correctamente.")

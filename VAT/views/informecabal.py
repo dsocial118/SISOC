@@ -1,20 +1,19 @@
-from django.db.models import F
 import logging
-from django.views import View
-from django.views.generic import ListView, DetailView, TemplateView
-from django.http import JsonResponse, HttpResponseBadRequest
+
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
+from django.http import HttpResponseBadRequest, JsonResponse
 from django.utils.decorators import method_decorator
-from django.shortcuts import get_object_or_404, render
-from django.contrib import messages
+from django.views import View
+from django.views.generic import DetailView, TemplateView
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from VAT.services.informe_cabal_reprocess import (
     ReprocessError,
     reprocesar_registros_rechazados_por_codigo,
 )
 
-from VAT.models import CabalArchivo, Centro, InformeCabalRegistro
+from VAT.models import CabalArchivo, InformeCabalRegistro
 from VAT.services.informe_cabal_service import (
     read_excel_preview,
     persist_file_and_rows,

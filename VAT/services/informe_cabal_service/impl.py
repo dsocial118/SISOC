@@ -54,7 +54,7 @@ def _get_cell(row, col_index):
     return "" if val is None else val
 
 
-def read_excel_preview(
+def read_excel_preview(  # pylint: disable=too-many-locals
     file: UploadedFile, page: int = 1, per_page: int = 25
 ) -> Tuple[List[PreviewRow], List[int], int]:
 
@@ -113,7 +113,7 @@ def read_excel_preview(
 
 
 @transaction.atomic
-def persist_file_and_rows(
+def persist_file_and_rows(  # pylint: disable=too-many-locals
     file: UploadedFile,
     user,
     force_proceed: bool = False,

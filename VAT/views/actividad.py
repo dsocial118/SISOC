@@ -11,7 +11,6 @@ from VAT.models import (
     Asistencia,
     Centro,
     Encuentro,
-    ParticipanteActividad,
     Actividad,
 )
 from VAT.forms import ActividadCentroForm, ActividadForm

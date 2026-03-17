@@ -12,13 +12,12 @@ from django.db.models import Q, Count, F, ExpressionWrapper, IntegerField
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from django.http import Http404
+from django.http import Http404, JsonResponse
 
 from django.utils import timezone
 
 from VAT.models import (
     CabalArchivo,
-    Categoria,
     Centro,
     ActividadCentro,
     Encuentro,
@@ -142,7 +141,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             raise PermissionDenied
         return obj
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs):  # pylint: disable=too-many-locals
         ctx = super().get_context_data(**kwargs)
         centro = self.object
 
@@ -179,13 +178,11 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         ctx["total_actividades"] = qs_acts.count()
         ctx["total_recaudado"] = sum((act.ganancia or 0) for act in ctx["actividades"])
 
-        total_part = sum(a.inscritos for a in qs_acts)
         qs_inscritos = ParticipanteActividad.objects.filter(
             estado="inscrito", actividad_centro__centro=centro
         )
         hombres = qs_inscritos.filter(ciudadano__sexo__sexo__iexact="Masculino").count()
         mujeres = qs_inscritos.filter(ciudadano__sexo__sexo__iexact="Femenino").count()
-        mixtas = total_part - hombres - mujeres
         espera = ParticipanteActividad.objects.filter(
             estado="lista_espera", actividad_centro__centro=centro
         ).count()
@@ -245,12 +242,6 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     template_name = "vat/centros/centro_form.html"
     success_url = reverse_lazy("vat_centro_list")
 
-    def get_initial(self):
-        return super().get_initial()
-
-    def get_form_kwargs(self):
-        return super().get_form_kwargs()
-
     def form_valid(self, form):
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
@@ -303,8 +294,8 @@ class InformeCabalArchivoPorCentroDetailView(LoginRequiredMixin, DetailView):
 
         try:
             centro_id = int(centro_id_raw)
-        except (TypeError, ValueError):
-            raise Http404("Parámetro 'centro_id' inválido.")
+        except (TypeError, ValueError) as exc:
+            raise Http404("Parámetro 'centro_id' inválido.") from exc
 
         centro = get_object_or_404(Centro, id=centro_id)
 
@@ -343,8 +334,6 @@ class InformeCabalArchivoPorCentroDetailView(LoginRequiredMixin, DetailView):
 
 def centros_ajax(request):
     from django.template.loader import render_to_string
-    from django.core.paginator import Paginator
-    from django.http import JsonResponse
 
     def _centros_ajax(request):
         query = request.GET.get("busqueda", "")
