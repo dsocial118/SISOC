@@ -568,6 +568,11 @@ body.sidebar-collapse .sidebar-user-name {
   color: #ffffff;
 }
 
+.accordion-header--trabajadores {
+  background-color: #991b1b;
+  color: #ffffff;
+}
+
 .accordion-header--nomina {
   background-color: #1565c0;
   color: #ffffff;

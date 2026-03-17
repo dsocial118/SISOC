@@ -4,10 +4,10 @@ import importlib
 
 import pytest
 from django.apps import apps
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.core.management import call_command
 
-from core.constants import UserGroups
+from users.bootstrap.groups_seed import bootstrap_group_names
 
 pytestmark = pytest.mark.django_db
 
@@ -18,13 +18,13 @@ UNUSED_GROUPS = set(migration_module.UNUSED_GROUPS)
 
 
 def test_create_groups_creates_canonical_seed_only():
-    """El comando debe crear exactamente la semilla canónica definida en constants."""
+    """El comando debe crear exactamente la semilla canónica declarativa."""
     Group.objects.all().delete()
 
     call_command("create_groups", verbosity=0)
 
     created_groups = set(Group.objects.values_list("name", flat=True))
-    assert created_groups == set(UserGroups.CREATE_GROUPS_SEED)
+    assert created_groups == set(bootstrap_group_names())
     assert created_groups.isdisjoint(UNUSED_GROUPS)
 
 
@@ -38,7 +38,22 @@ def test_create_groups_is_idempotent():
     call_command("create_groups", verbosity=0)
     second_count = Group.objects.count()
 
-    assert first_count == second_count == len(UserGroups.CREATE_GROUPS_SEED)
+    assert first_count == second_count == len(bootstrap_group_names())
+
+
+def test_create_groups_assigns_cross_group_role_permissions():
+    """La siembra debe resolver permisos `auth.role_*` en una sola corrida."""
+    Group.objects.all().delete()
+
+    call_command("create_groups", verbosity=0)
+
+    admin = Group.objects.get(name="Admin")
+    export_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="role_exportar_a_csv",
+    )
+
+    assert admin.permissions.filter(pk=export_permission.pk).exists()
 
 
 def test_cleanup_unused_groups_migration_forward_and_reverse():

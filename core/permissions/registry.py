@@ -4,6 +4,10 @@ from collections.abc import Iterable
 
 from django.utils.text import slugify
 
+from users.bootstrap.groups_seed import (
+    permission_codes_for_bootstrap_group as seed_permission_codes_for_bootstrap_group,
+)
+
 
 def _build_legacy_codename(alias: str) -> str:
     base = f"role_{slugify(alias).replace('-', '_')}"[:100]
@@ -148,76 +152,6 @@ LEGACY_ALIAS_TO_PERMISSION_CODES: dict[str, tuple[str, ...]] = {
 }
 
 
-# Alias extra para no perder capacidades operativas en grupos bootstrap.
-GROUP_BOOTSTRAP_PERMISSION_ALIASES: dict[str, tuple[str, ...]] = {
-    "Admin": (
-        "Admin",
-        "Usuario Ver",
-        "Usuario Crear",
-        "Usuario Editar",
-        "Usuario Eliminar",
-        "Grupos Ver",
-        "auth.add_group",
-        "auth.change_group",
-        "Exportar a csv",
-    ),
-    "Administrador": (
-        "Administrador",
-        "Usuario Ver",
-        "Usuario Crear",
-        "Usuario Editar",
-        "Usuario Eliminar",
-        "Grupos Ver",
-        "auth.add_group",
-        "auth.change_group",
-        "Exportar a csv",
-    ),
-    "superadmin": (
-        "superadmin",
-        "Usuario Ver",
-        "Usuario Crear",
-        "Usuario Editar",
-        "Usuario Eliminar",
-        "Grupos Ver",
-        "auth.add_group",
-        "auth.change_group",
-        "Exportar a csv",
-    ),
-    "Comedores": ("Comedores Ver",),
-    "Comedores Listar": ("Comedores Ver",),
-    "Tecnico Comedor": (
-        "Tecnico Comedor",
-        "Comedores Ver",
-        "Comedores Relevamiento Ver",
-        "Comedores Intervencion Ver",
-        "Comedores Nomina Ver",
-        "Acompanamiento Listar",
-    ),
-    "Abogado Dupla": (
-        "Abogado Dupla",
-        "Comedores Ver",
-        "Acompanamiento Listar",
-    ),
-    "Area Legales": (
-        "Area Legales",
-        "Comedores Ver",
-        "Acompanamiento Listar",
-    ),
-    "Area Contable": ("Area Contable", "Comedores Ver"),
-    "Coordinador Equipo Tecnico": (
-        "Coordinador Equipo Tecnico",
-        "Comedores Ver",
-        "Acompanamiento Listar",
-        "Comedores Relevamiento Ver",
-    ),
-    "Coordinador general": ("Coordinador general", "Comedores Ver"),
-    "ReferenteCentro": ("ReferenteCentro", "CDF SSE"),
-    "Dashboard Centrodefamilia": ("Dashboard Centrodefamilia", "CDF SSE"),
-    "ReferenteCentroVAT": ("ReferenteCentroVAT",),
-    "VAT SSE": ("VAT SSE",),
-}
-
-
 SIDEBAR_MODULE_PERMISSIONS: dict[str, tuple[str, ...]] = {
     "comedores": ("comedores.view_comedor",),
     "organizaciones": ("organizaciones.view_organizacion",),
@@ -278,21 +212,16 @@ def resolve_permission_codes(values: str | Iterable[str]) -> tuple[str, ...]:
     return tuple(result)
 
 
-def aliases_for_bootstrap_group(group_name: str) -> tuple[str, ...]:
-    aliases = GROUP_BOOTSTRAP_PERMISSION_ALIASES.get(group_name)
-    if aliases:
-        return aliases
-    return (group_name,)
-
-
 def permission_codes_for_bootstrap_group(group_name: str) -> tuple[str, ...]:
-    aliases = aliases_for_bootstrap_group(group_name)
+    seeded_permission_codes = seed_permission_codes_for_bootstrap_group(group_name)
+    if seeded_permission_codes:
+        return seeded_permission_codes
+
     result: list[str] = []
     seen: set[str] = set()
-    for alias in aliases:
-        for code in permission_codes_for_alias(alias):
-            normalized = _normalize_permission_code(code)
-            if normalized and normalized not in seen:
-                seen.add(normalized)
-                result.append(normalized)
+    for code in permission_codes_for_alias(group_name):
+        normalized = _normalize_permission_code(code)
+        if normalized and normalized not in seen:
+            seen.add(normalized)
+            result.append(normalized)
     return tuple(result)
