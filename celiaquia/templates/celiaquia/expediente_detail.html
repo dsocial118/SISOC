@@ -10,7 +10,7 @@
     </ol>
 {% endblock %}
 {% block content %}
-    {% with is_tec=request.user|has_group:"TecnicoCeliaquia" is_coord=request.user|has_group:"CoordinadorCeliaquia" is_prov=request.user|has_group:"ProvinciaCeliaquia" %}
+    {% with is_tec=is_tecnico_celiaquia is_coord=is_coord_celiaquia is_prov=is_provincial_celiaquia %}
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
                 <a href="{% url 'expediente_list' %}"
@@ -1794,4 +1794,3 @@
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
     <script src="{% static 'custom/js/legajo_comentarios.js' %}"></script>
 {% endblock %}
-
