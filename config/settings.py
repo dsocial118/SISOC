@@ -117,6 +117,7 @@ INSTALLED_APPS = [
     "rendicioncuentasfinal",
     "rendicioncuentasmensual",
     "centrodefamilia",
+    "VAT",
     "celiaquia",
     "audittrail",
     "importarexpediente",

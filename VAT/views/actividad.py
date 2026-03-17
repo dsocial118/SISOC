@@ -1,0 +1,182 @@
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView, CreateView, DetailView, UpdateView
+from django.urls import reverse, reverse_lazy
+from django.contrib import messages
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+
+from VAT.models import (
+    ActividadCentro,
+    Asistencia,
+    Centro,
+    Encuentro,
+    Actividad,
+)
+from VAT.forms import ActividadCentroForm, ActividadForm
+from VAT.services.participante import ParticipanteService
+from VAT.services.encuentro_service import EncuentroService
+
+
+class ActividadCentroListView(LoginRequiredMixin, ListView):
+    model = ActividadCentro
+    template_name = "vat/centros/actividadcentro_list.html"
+    context_object_name = "actividades"
+
+    def get_queryset(self):
+        queryset = (
+            super()
+            .get_queryset()
+            .select_related("centro", "actividad", "actividad__categoria")
+            .order_by("centro__nombre", "actividad__nombre")
+        )
+        centro_id = self.request.GET.get("centro")
+        if centro_id:
+            queryset = queryset.filter(centro_id=centro_id)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["table_headers"] = [
+            {"title": "Centro", "sortable": True, "sort_key": "centro"},
+            {"title": "Actividad", "sortable": True, "sort_key": "actividad"},
+            {"title": "Días", "sortable": True, "sort_key": "dias"},
+            {"title": "Horario Desde", "sortable": True, "sort_key": "horariosdesde"},
+            {"title": "Horario Hasta", "sortable": True, "sort_key": "horarioshasta"},
+            {"title": "Estado", "sortable": True, "sort_key": "estado"},
+        ]
+        return context
+
+
+class ActividadCentroCreateView(LoginRequiredMixin, CreateView):
+    model = ActividadCentro
+    form_class = ActividadCentroForm
+    template_name = "vat/centros/actividadcentro_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.centro_id = self.kwargs.get("centro_id") or self.request.GET.get("centro")
+        self.centro = get_object_or_404(Centro, pk=self.centro_id)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["centro"] = self.centro
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.centro = self.centro
+        response = super().form_valid(form)
+        cantidad = EncuentroService.generar_encuentros(self.object)
+        if cantidad:
+            messages.success(
+                self.request,
+                f"La actividad fue creada correctamente. Se generaron {cantidad} encuentros.",
+            )
+        else:
+            messages.success(self.request, "La actividad fue creada correctamente.")
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["centro_id"] = self.centro.pk
+        return context
+
+    def get_success_url(self):
+        return reverse("vat_centro_detail", kwargs={"pk": self.centro.pk})
+
+
+class ActividadCentroDetailView(LoginRequiredMixin, DetailView):
+    model = ActividadCentro
+    template_name = "vat/centros/actividadcentro_detail.html"
+    context_object_name = "actividad"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        actividad = self.get_object()
+
+        inscritos = ParticipanteService.obtener_inscritos(actividad)
+        lista_espera = ParticipanteService.obtener_lista_espera(actividad)
+
+        precio = actividad.precio or 0
+        precio_total = inscritos.count() * precio
+
+        # Encuentros con conteo de asistencias para mostrar en el detalle
+        encuentros = Encuentro.objects.filter(actividad_centro=actividad).order_by(
+            "fecha"
+        )
+        total_inscritos = inscritos.count()
+        encuentros_con_stats = []
+        for enc in encuentros:
+            presentes = Asistencia.objects.filter(
+                encuentro=enc, estado="presente"
+            ).count()
+            encuentros_con_stats.append(
+                {
+                    "encuentro": enc,
+                    "presentes": presentes,
+                    "total": total_inscritos,
+                }
+            )
+
+        context.update(
+            {
+                "participantes": inscritos,
+                "lista_espera": lista_espera,
+                "precio_total": precio_total,
+                "promo_error": self.request.GET.get("promo_error"),
+                "encuentros": encuentros_con_stats,
+            }
+        )
+        return context
+
+
+class ActividadCentroUpdateView(LoginRequiredMixin, UpdateView):
+    model = ActividadCentro
+    form_class = ActividadCentroForm
+    template_name = "vat/centros/actividadcentro_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["centro"] = self.get_object().centro
+        return kwargs
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        cantidad = EncuentroService.regenerar_encuentros(self.object)
+        if cantidad:
+            messages.success(
+                self.request,
+                f"La actividad fue actualizada. Se generaron {cantidad} encuentros nuevos.",
+            )
+        else:
+            messages.success(
+                self.request, "La actividad fue actualizada correctamente."
+            )
+        return response
+
+    def get_success_url(self):
+        return reverse("vat_centro_detail", kwargs={"pk": self.object.centro.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["centro_id"] = self.object.centro.pk
+        return context
+
+
+@login_required
+def cargar_actividades_por_categoria(request):
+    categoria_id = request.GET.get("categoria_id")
+    actividades = Actividad.objects.filter(categoria_id=categoria_id).values(
+        "id", "nombre"
+    )
+    return JsonResponse(list(actividades), safe=False)
+
+
+class ActividadCreateView(LoginRequiredMixin, CreateView):
+    model = Actividad
+    form_class = ActividadForm
+    template_name = "vat/centros/actividad_form.html"
+    success_url = reverse_lazy("vat_centro_list")
+
+    def test_func(self):
+        return self.request.user.is_superuser

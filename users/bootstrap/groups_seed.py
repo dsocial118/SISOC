@@ -356,6 +356,11 @@ COMUNICADOS_GROUPS = (
     ),
 )
 
+VAT_GROUPS = (
+    BootstrapGroupSeed("ReferenteCentroVAT", ("VAT.view_centro",)),
+    BootstrapGroupSeed("VAT SSE", ("VAT.view_centro",)),
+)
+
 BOOTSTRAP_GROUPS = (
     *CORE_GROUPS,
     *CENTRO_INFANCIA_GROUPS,
@@ -363,6 +368,7 @@ BOOTSTRAP_GROUPS = (
     *DATACALLE_GROUPS,
     *CELIAQUIA_GROUPS,
     *COMUNICADOS_GROUPS,
+    *VAT_GROUPS,
 )
 
 BOOTSTRAP_GROUPS_BY_NAME = {group.name: group for group in BOOTSTRAP_GROUPS}
