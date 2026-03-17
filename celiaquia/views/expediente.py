@@ -611,6 +611,15 @@ class ExpedienteDetailView(DetailView):
         # Agregar hijos sin responsable al final
         legajos_enriquecidos.extend(hijos_sin_responsable)
 
+        # Agregar legajos huérfanos: tienen responsable_id pero ese responsable
+        # no está en el expediente (fue eliminado o nunca se importó).
+        # Sin este paso quedan invisibles en la vista pero siguen existiendo en BD,
+        # lo que provoca errores en la validación de confirm_envío.
+        for legajo in legajos_list:
+            if legajo.ciudadano_id not in agregados:
+                legajos_enriquecidos.append(legajo)
+                agregados.add(legajo.ciudadano_id)
+
         faltantes_list = LegajoService.faltantes_archivos(expediente)
         # Obtener estructura familiar completa
         estructura_familiar = FamiliaService.obtener_estructura_familiar_expediente(
@@ -1720,7 +1729,7 @@ class EliminarRegistroErroneoView(View):
 class ExpedienteDeleteView(View):
     def delete(self, request, pk):
         user = request.user
-        if not _is_admin(user):
+        if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
