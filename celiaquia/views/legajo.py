@@ -464,19 +464,14 @@ class LegajoEliminarView(View):
                     )
                     raise
 
-                # Eliminar registros relacionados primero
-                from celiaquia.models import CupoMovimiento, PagoNomina
-
-                # Eliminar movimientos de cupo relacionados
-                CupoMovimiento.objects.filter(legajo=legajo).delete()
-
-                # Eliminar registros de pago relacionados
-                PagoNomina.objects.filter(legajo=legajo).delete()
-
-                # Eliminar el legajo
+                # Eliminar el legajo (soft delete con cascade=True eliminará relacionados)
                 if is_soft_deletable_instance(legajo):
                     legajo.delete(user=user, cascade=True)
                 else:
+                    # Hard delete solo si no soporta soft delete
+                    from celiaquia.models import CupoMovimiento, PagoNomina
+                    CupoMovimiento.objects.filter(legajo=legajo).delete()
+                    PagoNomina.objects.filter(legajo=legajo).delete()
                     legajo.delete()
 
             return JsonResponse(

@@ -10,7 +10,7 @@
     </ol>
 {% endblock %}
 {% block content %}
-    {% with is_tec=request.user|has_perm_code:"celiaquia.view_expediente" is_coord=request.user|has_perm_code:"celiaquia.view_expediente" is_prov=request.user|has_perm_code:"celiaquia.view_expediente" %}
+    {% with is_tec=request.user|has_group:"TecnicoCeliaquia" is_coord=request.user|has_group:"CoordinadorCeliaquia" is_prov=request.user|has_group:"ProvinciaCeliaquia" %}
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
                 <a href="{% url 'expediente_list' %}"
@@ -472,7 +472,9 @@
                                                         <div class="small muted">Observación (subsanación):</div>
                                                         <div class="mt-1">
                                                             {% if leg.subsanacion_motivo %}
-                                                                <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08)">
+                                                                <div class="p-2 rounded"
+                                                                     style="background:rgba(255,255,255,.04);
+                                                                            border:1px solid rgba(255,255,255,.08)">
                                                                     <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
                                                                 </div>
                                                             {% else %}
@@ -582,41 +584,43 @@
                                             </div>
                                             <div class="list-divider"></div>
                                             <!-- Acciones -->
-                                            {% if is_tec and expediente.estado.nombre in 'ASIGNADO,PROCESO_DE_CRUCE' %}
-                                                <div class="d-flex justify-content-end mt-2">
-                                                    <div class="btn-toolbar flex-wrap"
-                                                         role="toolbar"
-                                                         aria-label="Acciones del legajo">
-                                                        {% with estado=leg.revision_tecnico %}
-                                                            <div class="btn-group btn-group-sm me-2" role="group">
-                                                                <button type="button"
-                                                                        class="btn btn-info btn-validar-renaper"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-bs-toggle="modal"
-                                                                        data-bs-target="#modalValidarRenaper">
-                                                                    Validar Renaper
-                                                                </button>
-                                                            </div>
-                                                            <div class="btn-group btn-group-sm" role="group">
-                                                                <button type="button"
-                                                                        class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-accion="APROBAR">Aprobar</button>
-                                                                <button type="button"
-                                                                        class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-bs-toggle="modal"
-                                                                        data-bs-target="#modalSubsanar">
-                                                                    Subsanar
-                                                                </button>
-                                                                <button type="button"
-                                                                        class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-accion="RECHAZAR">Rechazar</button>
-                                                            </div>
-                                                        {% endwith %}
+                                            {% if leg.revision_tecnico == 'PENDIENTE' or leg.revision_tecnico == 'SUBSANADO' %}
+                                                {% if is_coord and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' or is_tec and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' %}
+                                                    <div class="d-flex justify-content-end mt-2">
+                                                        <div class="btn-toolbar flex-wrap"
+                                                             role="toolbar"
+                                                             aria-label="Acciones del legajo">
+                                                            {% with estado=leg.revision_tecnico %}
+                                                                <div class="btn-group btn-group-sm me-2" role="group">
+                                                                    <button type="button"
+                                                                            class="btn btn-info btn-validar-renaper"
+                                                                            data-legajo-id="{{ leg.pk }}"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#modalValidarRenaper">
+                                                                        Validar Renaper
+                                                                    </button>
+                                                                </div>
+                                                                <div class="btn-group btn-group-sm" role="group">
+                                                                    <button type="button"
+                                                                            class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
+                                                                            data-legajo-id="{{ leg.pk }}"
+                                                                            data-accion="APROBAR">Aprobar</button>
+                                                                    <button type="button"
+                                                                            class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
+                                                                            data-legajo-id="{{ leg.pk }}"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#modalSubsanar">
+                                                                        Subsanar
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
+                                                                            data-legajo-id="{{ leg.pk }}"
+                                                                            data-accion="RECHAZAR">Rechazar</button>
+                                                                </div>
+                                                            {% endwith %}
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </div>
@@ -682,7 +686,9 @@
                                         <div class="small muted">Comentario enviado a provincia:</div>
                                         <div class="mt-1">
                                             {% if leg.subsanacion_motivo %}
-                                                <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08)">
+                                                <div class="p-2 rounded"
+                                                     style="background:rgba(255,255,255,.04);
+                                                            border:1px solid rgba(255,255,255,.08)">
                                                     <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
                                                 </div>
                                             {% else %}
@@ -764,37 +770,43 @@
                             </div>
                             <div class="list-divider"></div>
                             <!-- Acciones -->
-                            {% if is_tec and expediente.estado.nombre in 'ASIGNADO,PROCESO_DE_CRUCE' %}
-                                <div class="d-flex justify-content-end mt-2">
-                                    <div class="btn-toolbar flex-wrap"
-                                         role="toolbar"
-                                         aria-label="Acciones del legajo">
-                                        {% with estado=leg.revision_tecnico %}
-                                            <div class="btn-group btn-group-sm me-2" role="group">
-                                                <button type="button"
-                                                        class="btn btn-info btn-validar-renaper"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalValidarRenaper">Validar Renaper</button>
-                                            </div>
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <button type="button"
-                                                        class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-accion="APROBAR">Aprobar</button>
-                                                <button type="button"
-                                                        class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalSubsanar">Subsanar</button>
-                                                <button type="button"
-                                                        class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-accion="RECHAZAR">Rechazar</button>
-                                            </div>
-                                        {% endwith %}
+                            {% if leg.revision_tecnico == 'PENDIENTE' or leg.revision_tecnico == 'SUBSANADO' %}
+                                {% if is_coord and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' or is_tec and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' %}
+                                    <div class="d-flex justify-content-end mt-2">
+                                        <div class="btn-toolbar flex-wrap"
+                                             role="toolbar"
+                                             aria-label="Acciones del legajo">
+                                            {% with estado=leg.revision_tecnico %}
+                                                            <div class="btn-group btn-group-sm me-2" role="group">
+                                                                <button type="button"
+                                                                        class="btn btn-info btn-validar-renaper"
+                                                                        data-legajo-id="{{ leg.pk }}"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#modalValidarRenaper">
+                                                                    Validar Renaper
+                                                                </button>
+                                                            </div>
+                                                            <div class="btn-group btn-group-sm" role="group">
+                                                                <button type="button"
+                                                                        class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
+                                                                        data-legajo-id="{{ leg.pk }}"
+                                                                        data-accion="APROBAR">Aprobar</button>
+                                                                <button type="button"
+                                                                        class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
+                                                                        data-legajo-id="{{ leg.pk }}"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#modalSubsanar">
+                                                                    Subsanar
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
+                                                                        data-legajo-id="{{ leg.pk }}"
+                                                                        data-accion="RECHAZAR">Rechazar</button>
+                                                            </div>
+                                                        {% endwith %}
+                                        </div>
                                     </div>
-                                </div>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>
@@ -1153,10 +1165,7 @@
                 <input type="hidden" id="subsanar-legajo-id" name="legajo_id" value="" />
                 <div class="mb-3">
                     <label for="subsanar-tipo" class="form-label">Tipo de subsanación *</label>
-                    <select id="subsanar-tipo"
-                            name="tipo_subsanacion"
-                            class="form-select"
-                            required>
+                    <select id="subsanar-tipo" name="tipo_subsanacion" class="form-select" required>
                         <option value="">Seleccionar...</option>
                         <option value="DOCUMENTACION">Documentación</option>
                         <option value="DATOS_PERSONALES">Datos personales</option>
@@ -1498,7 +1507,7 @@
                                     <td>{{ h.fecha|date:"d/m/Y H:i" }}</td>
                                     <td>{{ h.estado_anterior.display_name }}</td>
                                     <td>{{ h.estado_nuevo.display_name }}</td>
-                                    <td>{{ h.usuario.get_full_name|default:h.usuario.username|default:"-" }}</td>
+                                    <td>{% if h.usuario %}{{ h.usuario.get_full_name|default:h.usuario.username }}{% else %}-{% endif %}</td>
                                     <td>{{ h.observaciones|default:"-" }}</td>
                                 </tr>
                             {% empty %}
@@ -1785,3 +1794,4 @@
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
     <script src="{% static 'custom/js/legajo_comentarios.js' %}"></script>
 {% endblock %}
+

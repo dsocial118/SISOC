@@ -332,6 +332,7 @@ def _persistir_legajos_importacion(
         _crear_relaciones_familiares_importacion(relaciones_familiares, warnings)
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.error("Error en bulk_create de legajos: %s", exc)
+        raise
 
 
 def _serializar_datos_importacion_para_json(datos):
@@ -1354,8 +1355,11 @@ def _leer_bytes_archivo_importacion(archivo_excel):
 
 
 def _precargar_conflictos_y_existentes_importacion(expediente):
+    # Usar all_objects para incluir legajos soft-deleted: si un ciudadano fue eliminado
+    # lógicamente de este expediente, su fila aún existe en BD y el unique_together
+    # bloquearía un bulk_create duplicado.
     existentes_ids = set(
-        ExpedienteCiudadano.objects.filter(expediente=expediente).values_list(
+        ExpedienteCiudadano.all_objects.filter(expediente=expediente).values_list(
             "ciudadano_id", flat=True
         )
     )
