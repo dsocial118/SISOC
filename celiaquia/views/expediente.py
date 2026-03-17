@@ -463,6 +463,13 @@ class ExpedienteDetailView(DetailView):
         ctx = super().get_context_data(**kwargs)
         expediente = self.object
         user = self.request.user
+        is_admin = _is_admin(user)
+        is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        is_tecnico = _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+        ctx["is_tecnico_celiaquia"] = is_tecnico
+        ctx["is_coord_celiaquia"] = is_coord
+        ctx["is_provincial_celiaquia"] = _is_provincial(user)
+        ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
 
         preview = preview_error = None
         preview_limit_actual = None
