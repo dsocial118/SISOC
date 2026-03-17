@@ -14,8 +14,6 @@ from VAT.models import (
     Beneficiario,
     Responsable,
     BeneficiarioResponsable,
-    CabalArchivo,
-    InformeCabalRegistro,
 )
 from VAT.serializers import (
     CentroSerializer,
@@ -26,8 +24,6 @@ from VAT.serializers import (
     BeneficiarioSerializer,
     ResponsableSerializer,
     BeneficiarioResponsableSerializer,
-    CabalArchivoSerializer,
-    InformeCabalRegistroSerializer,
     ProvinciaSerializer,
     MunicipioSerializer,
     LocalidadSerializer,
@@ -255,50 +251,6 @@ class BeneficiarioResponsableViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewS
         "beneficiario", "responsable"
     ).order_by("id")
     serializer_class = BeneficiarioResponsableSerializer
-    permission_classes = [HasAPIKey]
-
-
-@extend_schema(tags=["VAT - Informes CABAL"])
-class InformeCabalRegistroViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = InformeCabalRegistro.objects.select_related(
-        "archivo", "centro"
-    ).order_by("id")
-    serializer_class = InformeCabalRegistroSerializer
-    permission_classes = [HasAPIKey]
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        archivo_id = self.request.query_params.get("archivo_id")
-        centro_id = self.request.query_params.get("centro_id")
-        no_coincidente = self.request.query_params.get("no_coincidente")
-        if archivo_id:
-            queryset = queryset.filter(archivo_id=archivo_id)
-        if centro_id:
-            queryset = queryset.filter(centro_id=centro_id)
-        if no_coincidente is not None:
-            queryset = queryset.filter(no_coincidente=no_coincidente.lower() == "true")
-        return queryset
-
-    @action(detail=False, methods=["get"])
-    def por_centro(self, request):
-        centro_id = request.query_params.get("centro_id")
-        if not centro_id:
-            return Response(
-                {"error": "centro_id es requerido"}, status=status.HTTP_400_BAD_REQUEST
-            )
-        registros = self.get_queryset().filter(centro_id=centro_id)
-        serializer = self.get_serializer(registros, many=True)
-        return Response(serializer.data)
-
-
-@extend_schema(tags=["VAT - Archivos CABAL"])
-class CabalArchivoViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = (
-        CabalArchivo.objects.select_related("usuario")
-        .prefetch_related("registros")
-        .order_by("id")
-    )
-    serializer_class = CabalArchivoSerializer
     permission_classes = [HasAPIKey]
 
 

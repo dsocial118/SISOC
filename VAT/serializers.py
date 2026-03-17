@@ -9,8 +9,6 @@ from VAT.models import (
     Beneficiario,
     Responsable,
     BeneficiarioResponsable,
-    CabalArchivo,
-    InformeCabalRegistro,
 )
 from core.models import Provincia, Municipio, Localidad
 
@@ -216,47 +214,6 @@ class ParticipanteActividadSerializer(serializers.ModelSerializer):
             "fecha_registro",
             "fecha_modificacion",
             "historial",
-        ]
-
-
-class InformeCabalRegistroSerializer(serializers.ModelSerializer):
-    centro_nombre = serializers.CharField(source="centro.nombre", read_only=True)
-
-    class Meta:
-        model = InformeCabalRegistro
-        fields = [
-            "id",
-            "centro",
-            "centro_nombre",
-            "nro_tarjeta",
-            "nro_auto",
-            "nro_comercio",
-            "razon_social",
-            "importe",
-            "fecha_trx",
-            "no_coincidente",
-            "fila_numero",
-        ]
-
-
-class CabalArchivoSerializer(serializers.ModelSerializer):
-    registros = InformeCabalRegistroSerializer(many=True, read_only=True)
-    usuario_nombre = serializers.CharField(
-        source="usuario.get_full_name", read_only=True
-    )
-
-    class Meta:
-        model = CabalArchivo
-        fields = [
-            "id",
-            "nombre_original",
-            "usuario",
-            "usuario_nombre",
-            "fecha_subida",
-            "total_filas",
-            "total_validas",
-            "total_invalidas",
-            "registros",
         ]
 
 

@@ -1,22 +1,12 @@
 from django.urls import path
 from core.decorators import permissions_any_required
 
-from VAT.views.informecabal import (
-    InformeCabalArchivoDetailView,
-    InformeCabalListView,
-    InformeCabalPreviewAjaxView,
-    InformeCabalProcessAjaxView,
-    InformeCabalRegistroDetailView,
-    InformeCabalReprocessCenterAjaxView,
-)
-
 from VAT.views.centro import (
     CentroCreateView,
     CentroDeleteView,
     CentroDetailView,
     CentroListView,
     CentroUpdateView,
-    InformeCabalArchivoPorCentroDetailView,
     centros_ajax,
 )
 
@@ -49,13 +39,6 @@ from .views.beneficiarios import (
 )
 
 urlpatterns = [
-    path(
-        "vat/centros/<int:centro_id>/informecabal/<int:pk>/",
-        permissions_any_required(["VAT.view_centro"])(
-            InformeCabalArchivoPorCentroDetailView.as_view()
-        ),
-        name="vat_informecabal_archivo_centro_detail",
-    ),
     path(
         "vat/centros/",
         permissions_any_required(["VAT.view_centro"])(CentroListView.as_view()),
@@ -155,51 +138,10 @@ urlpatterns = [
         ),
         name="vat_encuentro_asistencia",
     ),
-    # Informe CABAL
-    path(
-        "vat/informecabal/",
-        permissions_any_required(["VAT.view_centro"])(InformeCabalListView.as_view()),
-        name="vat_informecabal_list",
-    ),
-    path(
-        "vat/informecabal/preview/",
-        permissions_any_required(["VAT.view_centro"])(
-            InformeCabalPreviewAjaxView.as_view()
-        ),
-        name="vat_informecabal_preview",
-    ),
-    path(
-        "vat/informecabal/<int:pk>/",
-        permissions_any_required(["VAT.view_centro"])(
-            InformeCabalArchivoDetailView.as_view()
-        ),
-        name="vat_informecabal_archivo_detail",
-    ),
-    path(
-        "vat/informecabal/process/",
-        permissions_any_required(["VAT.view_centro"])(
-            InformeCabalProcessAjaxView.as_view()
-        ),
-        name="vat_informecabal_process",
-    ),
-    path(
-        "vat/informecabal/registro/<int:pk>/",
-        permissions_any_required(["VAT.view_centro"])(
-            InformeCabalRegistroDetailView.as_view()
-        ),
-        name="vat_informecabal_registro_detail",
-    ),
     path(
         "vat/actividades/nueva/",
         permissions_any_required(["VAT.view_centro"])(ActividadCreateView.as_view()),
         name="vat_actividad_create_sola",
-    ),
-    path(
-        "vat/informecabal/reprocess/",
-        permissions_any_required(["VAT.view_centro"])(
-            InformeCabalReprocessCenterAjaxView.as_view()
-        ),
-        name="vat_informecabal_reprocess_center",
     ),
     # Beneficiarios
     path(

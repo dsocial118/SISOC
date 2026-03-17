@@ -11,17 +11,14 @@ from django.urls import reverse_lazy, reverse
 from django.db.models import Q, Count, F, ExpressionWrapper, IntegerField
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.shortcuts import get_object_or_404
-from django.http import Http404, JsonResponse
+from django.http import JsonResponse
 
 from django.utils import timezone
 
 from VAT.models import (
-    CabalArchivo,
     Centro,
     ActividadCentro,
     Encuentro,
-    InformeCabalRegistro,
     ParticipanteActividad,
 )
 from VAT.services.centro_filter_config import (
@@ -115,12 +112,6 @@ class CentroListView(LoginRequiredMixin, ListView):
                     "url": reverse("vat_actividad_create_sola"),
                     "label": "Agregar Actividad",
                     "class": "btn btn-primary btn-lg text-white text-nowrap",
-                },
-                {
-                    "url": reverse("vat_informecabal_list"),
-                    "label": "Procesar Informe Cabal",
-                    "class": "btn btn-info btn-lg text-white text-nowrap",
-                    "id": "btn-cabal",
                 },
             ]
 
@@ -227,12 +218,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             estado_counts[key] += 1
         ctx["estado_counts"] = estado_counts
 
-        ctx["archivos_cabal_centro"] = (
-            CabalArchivo.objects.filter(registros__centro=centro)
-            .distinct()
-            .order_by("-fecha_subida")
-        )
-
         return ctx
 
 
@@ -281,55 +266,6 @@ class CentroDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
         if not (centro.referente_id == user.id or user.is_superuser or es_vat_sse):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
-
-
-class InformeCabalArchivoPorCentroDetailView(LoginRequiredMixin, DetailView):
-    model = CabalArchivo
-    template_name = "vat/informecabal/archivo_por_centro.html"
-    context_object_name = "archivo"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        centro_id_raw = self.kwargs.get("centro_id")
-
-        try:
-            centro_id = int(centro_id_raw)
-        except (TypeError, ValueError) as exc:
-            raise Http404("Parámetro 'centro_id' inválido.") from exc
-
-        centro = get_object_or_404(Centro, id=centro_id)
-
-        registros_qs = (
-            InformeCabalRegistro.objects.filter(
-                archivo=self.object, centro_id=centro_id
-            )
-            .only(
-                "id",
-                "nro_comercio",
-                "razon_social",
-                "importe",
-                "fecha_trx",
-                "moneda_origen",
-                "importe_pesos",
-                "motivo_rechazo",
-                "desc_motivo_rechazo",
-                "no_coincidente",
-                "fila_numero",
-                "centro_id",
-            )
-            .order_by("fila_numero")
-        )
-
-        paginator = Paginator(registros_qs, 50)
-        page_param = self.request.GET.get("page") or 1
-        try:
-            page_obj = paginator.get_page(page_param)
-        except Exception:
-            page_obj = paginator.get_page(1)
-
-        context["registros"] = page_obj
-        context["centro"] = centro
-        return context
 
 
 def centros_ajax(request):

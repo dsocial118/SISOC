@@ -64,9 +64,7 @@ class CentroListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        base_qs = Centro.objects.select_related("referente").order_by(
-            "nombre"
-        )
+        base_qs = Centro.objects.select_related("referente").order_by("nombre")
 
         user = self.request.user
         busq = self.request.GET.get("busqueda", "").strip()

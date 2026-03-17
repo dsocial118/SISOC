@@ -153,27 +153,6 @@
                 </div>
             </div>
         </div>
-        <!-- CABAL -->
-        <div class="accordion-panel">
-            <div class="accordion-header bg-panel5 h6">CABAL</div>
-            <div class="accordion-content">
-                <div class="section-title">Último Informe CABAL</div>
-                <hr class="section-divider" />
-                {% with ultimo=archivos_cabal_centro|first %}
-                    {% if ultimo %}
-                        <ul class="no-bullets">
-                            <li><i class="fas fa-file-alt me-2 text-info"></i>{{ ultimo.nombre_original }}</li>
-                            <li><i class="fas fa-calendar me-2 text-info"></i>{{ ultimo.fecha_subida|date:"d/m/Y H:i" }}</li>
-                            <li><i class="fas fa-user me-2 text-info"></i>{{ ultimo.usuario.get_full_name|default:ultimo.usuario.username }}</li>
-                        </ul>
-                        <a href="{% url 'vat_informecabal_archivo_centro_detail' centro.id ultimo.id %}"
-                           class="btn btn-sm btn-outline-info mt-2">Ver registros</a>
-                    {% else %}
-                        <p class="text-muted">No hay informes CABAL vinculados.</p>
-                    {% endif %}
-                {% endwith %}
-            </div>
-        </div>
     </div>
 
     <!-- 4) MÉTRICAS -->

@@ -18,9 +18,7 @@ def _crear_usuario(username, provincia=None, *, superuser=False, permisos=None):
     else:
         user = User.objects.create_user(username=username, password="test1234")
         if permisos:
-            user.user_permissions.add(
-                *Permission.objects.filter(codename__in=permisos)
-            )
+            user.user_permissions.add(*Permission.objects.filter(codename__in=permisos))
 
     profile, _ = Profile.objects.get_or_create(user=user)
     profile.provincia = provincia

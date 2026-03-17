@@ -9,8 +9,6 @@ from VAT.api_views import (
     BeneficiarioViewSet,
     ResponsableViewSet,
     BeneficiarioResponsableViewSet,
-    InformeCabalRegistroViewSet,
-    CabalArchivoViewSet,
     ProvinciaViewSet,
     MunicipioViewSet,
     LocalidadViewSet,
@@ -33,13 +31,6 @@ router.register(
     BeneficiarioResponsableViewSet,
     basename="vat-api-beneficiario-responsable",
 )
-router.register(
-    r"cabal-registros", InformeCabalRegistroViewSet, basename="vat-api-cabal-registro"
-)
-router.register(
-    r"cabal-archivos", CabalArchivoViewSet, basename="vat-api-cabal-archivo"
-)
-
 router.register(r"provincias", ProvinciaViewSet, basename="vat-api-provincia")
 router.register(r"municipios", MunicipioViewSet, basename="vat-api-municipio")
 router.register(r"localidades", LocalidadViewSet, basename="vat-api-localidad")
