@@ -29,15 +29,23 @@ class Centro(SoftDeleteModelMixin, models.Model):
         related_name="vat_centros",
     )
     provincia = models.ForeignKey(
-        to=Provincia, on_delete=models.PROTECT, null=True,
+        to=Provincia,
+        on_delete=models.PROTECT,
+        null=True,
         related_name="vat_centros",
     )
     municipio = models.ForeignKey(
-        to=Municipio, on_delete=models.SET_NULL, null=True, blank=True,
+        to=Municipio,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="vat_centros",
     )
     localidad = models.ForeignKey(
-        to=Localidad, on_delete=models.SET_NULL, null=True, blank=True,
+        to=Localidad,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="vat_centros",
     )
     calle = models.CharField(max_length=255, blank=True, null=True)
@@ -155,9 +163,7 @@ class ActividadCentro(SoftDeleteModelMixin, models.Model):
     fecha_inicio = models.DateField(
         null=True, blank=True, verbose_name="Fecha de inicio"
     )
-    fecha_fin = models.DateField(
-        null=True, blank=True, verbose_name="Fecha de fin"
-    )
+    fecha_fin = models.DateField(null=True, blank=True, verbose_name="Fecha de fin")
 
     def __str__(self):
         return f"{self.actividad.nombre} en {self.centro.nombre}"
@@ -186,7 +192,9 @@ class ParticipanteActividad(SoftDeleteModelMixin, models.Model):
         ActividadCentro, on_delete=models.CASCADE, verbose_name="Actividad del Centro"
     )
     ciudadano = models.ForeignKey(
-        Ciudadano, on_delete=models.CASCADE, verbose_name="Ciudadano",
+        Ciudadano,
+        on_delete=models.CASCADE,
+        verbose_name="Ciudadano",
         related_name="vat_participaciones",
     )
     estado = models.CharField(
@@ -212,9 +220,7 @@ class ParticipanteActividad(SoftDeleteModelMixin, models.Model):
         verbose_name = "Participante"
         verbose_name_plural = "Participantes"
         indexes = [
-            models.Index(
-                fields=["actividad_centro"], name="vat_part_actcentro_idx"
-            ),
+            models.Index(fields=["actividad_centro"], name="vat_part_actcentro_idx"),
             GinIndex(
                 fields=["estado"],
                 name="vat_part_estado_trgm",
@@ -244,7 +250,9 @@ class ParticipanteActividadHistorial(models.Model):
         auto_now_add=True, verbose_name="Fecha de Cambio"
     )
     usuario = models.ForeignKey(
-        User, on_delete=models.PROTECT, verbose_name="Usuario que realizó el cambio",
+        User,
+        on_delete=models.PROTECT,
+        verbose_name="Usuario que realizó el cambio",
         related_name="vat_historial_participantes",
     )
 
@@ -283,7 +291,9 @@ class Encuentro(models.Model):
         default="programado",
         verbose_name="Estado",
     )
-    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
 
     def __str__(self):
         return (
@@ -332,7 +342,9 @@ class Asistencia(models.Model):
         related_name="vat_asistencias_registradas",
         verbose_name="Registrado por",
     )
-    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
 
     def __str__(self):
         return (
@@ -358,7 +370,9 @@ class CabalArchivo(models.Model):
     archivo = models.FileField(upload_to="vat_informes_cabal/")
     nombre_original = models.CharField(max_length=255)
     usuario = models.ForeignKey(
-        User, on_delete=models.PROTECT, related_name="vat_archivos_cabal",
+        User,
+        on_delete=models.PROTECT,
+        related_name="vat_archivos_cabal",
     )
     fecha_subida = models.DateTimeField(auto_now_add=True)
     advertencia_nombre_duplicado = models.BooleanField(default=False)
@@ -383,7 +397,10 @@ class InformeCabalRegistro(models.Model):
         CabalArchivo, on_delete=models.CASCADE, related_name="registros"
     )
     centro = models.ForeignKey(
-        Centro, null=True, blank=True, on_delete=models.SET_NULL,
+        Centro,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
         related_name="vat_registros_cabal",
     )
 
@@ -447,15 +464,24 @@ class Responsable(SoftDeleteModelMixin, models.Model):
     fecha_nacimiento = models.DateField()
 
     provincia = models.ForeignKey(
-        Provincia, on_delete=models.PROTECT, null=True, blank=True,
+        Provincia,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="vat_responsables",
     )
     municipio = models.ForeignKey(
-        Municipio, on_delete=models.PROTECT, null=True, blank=True,
+        Municipio,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="vat_responsables",
     )
     localidad = models.ForeignKey(
-        Localidad, on_delete=models.PROTECT, null=True, blank=True,
+        Localidad,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="vat_responsables",
     )
     codigo_postal = models.IntegerField(null=True, blank=True)
@@ -533,15 +559,24 @@ class Beneficiario(SoftDeleteModelMixin, models.Model):
 
     domicilio = models.CharField(max_length=255)
     provincia = models.ForeignKey(
-        Provincia, on_delete=models.PROTECT, null=True, blank=True,
+        Provincia,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="vat_beneficiarios",
     )
     municipio = models.ForeignKey(
-        Municipio, on_delete=models.PROTECT, null=True, blank=True,
+        Municipio,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="vat_beneficiarios",
     )
     localidad = models.ForeignKey(
-        Localidad, on_delete=models.PROTECT, null=True, blank=True,
+        Localidad,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="vat_beneficiarios",
     )
     codigo_postal = models.IntegerField(null=True, blank=True)

@@ -45,9 +45,14 @@ def _normalize_genero(value):
             return value
 
         mapping = {
-            "f": "F", "femenino": "F",
-            "m": "M", "masculino": "M",
-            "x": "X", "otro": "X", "no binario": "X", "otro/no binario": "X",
+            "f": "F",
+            "femenino": "F",
+            "m": "M",
+            "masculino": "M",
+            "x": "X",
+            "otro": "X",
+            "no binario": "X",
+            "otro/no binario": "X",
         }
         return mapping.get(normalized, value.strip())
     return value
@@ -168,7 +173,9 @@ def guardar_datos_renaper(request, persona, tipo, es_nuevo=True):
             tipo=tipo,
             defaults={
                 "iD_TRAMITE_PRINCIPAL": datos_api.get("iD_TRAMITE_PRINCIPAL"),
-                "iD_TRAMITE_TARJETA_REIMPRESA": datos_api.get("iD_TRAMITE_TARJETA_REIMPRESA"),
+                "iD_TRAMITE_TARJETA_REIMPRESA": datos_api.get(
+                    "iD_TRAMITE_TARJETA_REIMPRESA"
+                ),
                 "ejemplar": datos_api.get("ejemplar"),
                 "vencimiento": datos_api.get("vencimiento"),
                 "emision": datos_api.get("emision"),
@@ -255,7 +262,10 @@ def generar_respuesta(request, beneficiario, forms_data, template_name):
         messages.success(request, "Datos cargados con éxito")
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return JsonResponse(
-                {"status": "success", "message": "Preinscripción confirmada exitosamente"}
+                {
+                    "status": "success",
+                    "message": "Preinscripción confirmada exitosamente",
+                }
             )
         return redirect("vat_beneficiarios_crear")
 
@@ -429,7 +439,9 @@ def buscar_cuil_beneficiario(request, cuil):
             return JsonResponse(
                 {
                     "status": "not_found",
-                    "message": resultado.get("error", "No se encontraron datos en RENAPER"),
+                    "message": resultado.get(
+                        "error", "No se encontraron datos en RENAPER"
+                    ),
                 }
             )
 
@@ -487,25 +499,62 @@ def buscar_cuil_beneficiario(request, cuil):
 def get_beneficiarios_list_context(request=None):
     headers = [
         {"title": "CUIL", "width": "12%", "sortable": True, "sort_key": "cuil"},
-        {"title": "Apellido y Nombre", "width": "20%", "sortable": True, "sort_key": "apellido_nombre"},
+        {
+            "title": "Apellido y Nombre",
+            "width": "20%",
+            "sortable": True,
+            "sort_key": "apellido_nombre",
+        },
         {"title": "DNI", "width": "10%", "sortable": True, "sort_key": "dni"},
-        {"title": "Género", "width": "8%", "sortable": True, "sort_key": "genero_display"},
-        {"title": "Responsable", "width": "20%", "sortable": True, "sort_key": "responsable_nombre"},
-        {"title": "Provincia", "width": "15%", "sortable": True, "sort_key": "provincia"},
-        {"title": "Municipio", "width": "15%", "sortable": True, "sort_key": "municipio"},
+        {
+            "title": "Género",
+            "width": "8%",
+            "sortable": True,
+            "sort_key": "genero_display",
+        },
+        {
+            "title": "Responsable",
+            "width": "20%",
+            "sortable": True,
+            "sort_key": "responsable_nombre",
+        },
+        {
+            "title": "Provincia",
+            "width": "15%",
+            "sortable": True,
+            "sort_key": "provincia",
+        },
+        {
+            "title": "Municipio",
+            "width": "15%",
+            "sortable": True,
+            "sort_key": "municipio",
+        },
     ]
     fields = [
-        {"name": "cuil"}, {"name": "apellido_nombre"}, {"name": "dni"},
-        {"name": "genero_display"}, {"name": "responsable_nombre"},
-        {"name": "provincia"}, {"name": "municipio"},
+        {"name": "cuil"},
+        {"name": "apellido_nombre"},
+        {"name": "dni"},
+        {"name": "genero_display"},
+        {"name": "responsable_nombre"},
+        {"name": "provincia"},
+        {"name": "municipio"},
     ]
     columns_context = build_columns_context_from_fields(
-        request, "vat_beneficiarios_list", headers, fields,
+        request,
+        "vat_beneficiarios_list",
+        headers,
+        fields,
     )
     return {
         **columns_context,
         "table_actions": [
-            {"url_name": "vat_beneficiarios_detail", "type": "info", "label": "Ver", "class": "btn-sm"},
+            {
+                "url_name": "vat_beneficiarios_detail",
+                "type": "info",
+                "label": "Ver",
+                "class": "btn-sm",
+            },
         ],
     }
 
@@ -513,25 +562,62 @@ def get_beneficiarios_list_context(request=None):
 def get_responsables_list_context(request=None):
     headers = [
         {"title": "CUIL", "width": "15%", "sortable": True, "sort_key": "cuil"},
-        {"title": "Apellido y Nombre", "width": "25%", "sortable": True, "sort_key": "apellido_nombre"},
+        {
+            "title": "Apellido y Nombre",
+            "width": "25%",
+            "sortable": True,
+            "sort_key": "apellido_nombre",
+        },
         {"title": "DNI", "width": "10%", "sortable": True, "sort_key": "dni"},
-        {"title": "Género", "width": "15%", "sortable": True, "sort_key": "genero_display"},
-        {"title": "Beneficiarios", "width": "10%", "sortable": True, "sort_key": "cantidad_beneficiarios"},
-        {"title": "Provincia", "width": "15%", "sortable": True, "sort_key": "provincia"},
-        {"title": "Municipio", "width": "10%", "sortable": True, "sort_key": "municipio"},
+        {
+            "title": "Género",
+            "width": "15%",
+            "sortable": True,
+            "sort_key": "genero_display",
+        },
+        {
+            "title": "Beneficiarios",
+            "width": "10%",
+            "sortable": True,
+            "sort_key": "cantidad_beneficiarios",
+        },
+        {
+            "title": "Provincia",
+            "width": "15%",
+            "sortable": True,
+            "sort_key": "provincia",
+        },
+        {
+            "title": "Municipio",
+            "width": "10%",
+            "sortable": True,
+            "sort_key": "municipio",
+        },
     ]
     fields = [
-        {"name": "cuil"}, {"name": "apellido_nombre"}, {"name": "dni"},
-        {"name": "genero_display"}, {"name": "cantidad_beneficiarios"},
-        {"name": "provincia"}, {"name": "municipio"},
+        {"name": "cuil"},
+        {"name": "apellido_nombre"},
+        {"name": "dni"},
+        {"name": "genero_display"},
+        {"name": "cantidad_beneficiarios"},
+        {"name": "provincia"},
+        {"name": "municipio"},
     ]
     columns_context = build_columns_context_from_fields(
-        request, "vat_responsables_list", headers, fields,
+        request,
+        "vat_responsables_list",
+        headers,
+        fields,
     )
     return {
         **columns_context,
         "table_actions": [
-            {"url_name": "vat_responsables_detail", "type": "info", "label": "Ver", "class": "btn-sm"},
+            {
+                "url_name": "vat_responsables_detail",
+                "type": "info",
+                "label": "Ver",
+                "class": "btn-sm",
+            },
         ],
     }
 

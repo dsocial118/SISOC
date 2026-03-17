@@ -27,7 +27,9 @@ class RegistrarAsistenciaView(LoginRequiredMixin, TemplateView):
             .select_related("ciudadano", "ciudadano__sexo")
             .order_by("ciudadano__apellido", "ciudadano__nombre")
         )
-        asistencias_map = AsistenciaService.obtener_asistencias_para_encuentro(encuentro)
+        asistencias_map = AsistenciaService.obtener_asistencias_para_encuentro(
+            encuentro
+        )
 
         resultado = []
         for p in participantes:

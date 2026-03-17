@@ -123,9 +123,7 @@ urlpatterns = [
     ),
     path(
         "vat/ajax/actividades/",
-        permissions_any_required(["VAT.view_centro"])(
-            cargar_actividades_por_categoria
-        ),
+        permissions_any_required(["VAT.view_centro"])(cargar_actividades_por_categoria),
         name="vat_ajax_cargar_actividades",
     ),
     path(
@@ -160,9 +158,7 @@ urlpatterns = [
     # Informe CABAL
     path(
         "vat/informecabal/",
-        permissions_any_required(["VAT.view_centro"])(
-            InformeCabalListView.as_view()
-        ),
+        permissions_any_required(["VAT.view_centro"])(InformeCabalListView.as_view()),
         name="vat_informecabal_list",
     ),
     path(
@@ -195,9 +191,7 @@ urlpatterns = [
     ),
     path(
         "vat/actividades/nueva/",
-        permissions_any_required(["VAT.view_centro"])(
-            ActividadCreateView.as_view()
-        ),
+        permissions_any_required(["VAT.view_centro"])(ActividadCreateView.as_view()),
         name="vat_actividad_create_sola",
     ),
     path(
@@ -210,9 +204,7 @@ urlpatterns = [
     # Beneficiarios
     path(
         "vat/beneficiarios/beneficiarios/",
-        permissions_any_required(["VAT.view_centro"])(
-            BeneficiariosListView.as_view()
-        ),
+        permissions_any_required(["VAT.view_centro"])(BeneficiariosListView.as_view()),
         name="vat_beneficiarios_list",
     ),
     path(
@@ -231,30 +223,22 @@ urlpatterns = [
     ),
     path(
         "vat/beneficiarios/responsables/",
-        permissions_any_required(["VAT.view_centro"])(
-            ResponsableListView.as_view()
-        ),
+        permissions_any_required(["VAT.view_centro"])(ResponsableListView.as_view()),
         name="vat_responsables_list",
     ),
     path(
         "vat/beneficiarios/responsables/<int:pk>/",
-        permissions_any_required(["VAT.view_centro"])(
-            ResponsableDetailView.as_view()
-        ),
+        permissions_any_required(["VAT.view_centro"])(ResponsableDetailView.as_view()),
         name="vat_responsables_detail",
     ),
     path(
         "vat/beneficiarios/buscar-cuil/",
-        permissions_any_required(["VAT.view_centro"])(
-            BuscarCUILView.as_view()
-        ),
+        permissions_any_required(["VAT.view_centro"])(BuscarCUILView.as_view()),
         name="vat_buscar_cuil",
     ),
     path(
         "vat/beneficiarios/buscar-responsable/",
-        permissions_any_required(["VAT.view_centro"])(
-            BuscarResponsableView.as_view()
-        ),
+        permissions_any_required(["VAT.view_centro"])(BuscarResponsableView.as_view()),
         name="vat_buscar_responsable",
     ),
 ]

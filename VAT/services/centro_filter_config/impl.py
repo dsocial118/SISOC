@@ -73,7 +73,11 @@ FILTER_FIELDS = [
     {"name": "localidad", "label": "Localidad", "type": "text"},
     {"name": "calle", "label": "Calle", "type": "text"},
     {"name": "numero", "label": "Número", "type": "number"},
-    {"name": "domicilio_actividad", "label": "Domicilio de actividades", "type": "text"},
+    {
+        "name": "domicilio_actividad",
+        "label": "Domicilio de actividades",
+        "type": "text",
+    },
     {"name": "telefono", "label": "Teléfono", "type": "text"},
     {"name": "celular", "label": "Celular", "type": "text"},
     {"name": "correo", "label": "Correo", "type": "text"},
@@ -99,6 +103,11 @@ def get_filters_ui_config() -> Dict[str, Any]:
 
 
 __all__ = [
-    "FIELD_MAP", "FIELD_TYPES", "TEXT_OPS", "NUM_OPS", "BOOL_OPS",
-    "FILTER_FIELDS", "get_filters_ui_config",
+    "FIELD_MAP",
+    "FIELD_TYPES",
+    "TEXT_OPS",
+    "NUM_OPS",
+    "BOOL_OPS",
+    "FILTER_FIELDS",
+    "get_filters_ui_config",
 ]

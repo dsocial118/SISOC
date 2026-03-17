@@ -3,7 +3,10 @@
     "allow": [
       "Bash(docker compose:*)",
       "Bash(find:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(gh pr:*)"
     ]
   }
 }

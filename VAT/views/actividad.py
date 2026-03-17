@@ -6,7 +6,14 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 
-from VAT.models import ActividadCentro, Asistencia, Centro, Encuentro, ParticipanteActividad, Actividad
+from VAT.models import (
+    ActividadCentro,
+    Asistencia,
+    Centro,
+    Encuentro,
+    ParticipanteActividad,
+    Actividad,
+)
 from VAT.forms import ActividadCentroForm, ActividadForm
 from VAT.services.participante import ParticipanteService
 from VAT.services.encuentro_service import EncuentroService
@@ -95,9 +102,8 @@ class ActividadCentroDetailView(LoginRequiredMixin, DetailView):
         precio_total = inscritos.count() * precio
 
         # Encuentros con conteo de asistencias para mostrar en el detalle
-        encuentros = (
-            Encuentro.objects.filter(actividad_centro=actividad)
-            .order_by("fecha")
+        encuentros = Encuentro.objects.filter(actividad_centro=actividad).order_by(
+            "fecha"
         )
         total_inscritos = inscritos.count()
         encuentros_con_stats = []
@@ -144,7 +150,9 @@ class ActividadCentroUpdateView(LoginRequiredMixin, UpdateView):
                 f"La actividad fue actualizada. Se generaron {cantidad} encuentros nuevos.",
             )
         else:
-            messages.success(self.request, "La actividad fue actualizada correctamente.")
+            messages.success(
+                self.request, "La actividad fue actualizada correctamente."
+            )
         return response
 
     def get_success_url(self):

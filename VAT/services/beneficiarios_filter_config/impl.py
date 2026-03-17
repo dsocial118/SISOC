@@ -24,9 +24,16 @@ FIELD_TYPES: Dict[str, str] = {
     **{
         key: "text"
         for key in [
-            "apellido", "nombre", "domicilio", "barrio", "correo_electronico",
-            "responsable_apellido", "responsable_nombre",
-            "provincia", "municipio", "localidad",
+            "apellido",
+            "nombre",
+            "domicilio",
+            "barrio",
+            "correo_electronico",
+            "responsable_apellido",
+            "responsable_nombre",
+            "provincia",
+            "municipio",
+            "localidad",
         ]
     },
     "genero": "choice",
@@ -41,7 +48,9 @@ FILTER_FIELDS = [
     {"name": "apellido", "label": "Apellido", "type": "text"},
     {"name": "nombre", "label": "Nombre", "type": "text"},
     {
-        "name": "genero", "label": "Género", "type": "choice",
+        "name": "genero",
+        "label": "Género",
+        "type": "choice",
         "choices": [
             {"value": "F", "label": "Femenino"},
             {"value": "M", "label": "Masculino"},
@@ -51,7 +60,11 @@ FILTER_FIELDS = [
     {"name": "domicilio", "label": "Domicilio", "type": "text"},
     {"name": "barrio", "label": "Barrio", "type": "text"},
     {"name": "correo_electronico", "label": "Correo electrónico", "type": "text"},
-    {"name": "responsable_apellido", "label": "Apellido del responsable", "type": "text"},
+    {
+        "name": "responsable_apellido",
+        "label": "Apellido del responsable",
+        "type": "text",
+    },
     {"name": "responsable_nombre", "label": "Nombre del responsable", "type": "text"},
     {"name": "provincia", "label": "Provincia", "type": "text"},
     {"name": "municipio", "label": "Municipio", "type": "text"},
@@ -75,6 +88,11 @@ def get_filters_ui_config() -> Dict[str, Any]:
 
 
 __all__ = [
-    "FIELD_MAP", "FIELD_TYPES", "TEXT_OPS", "NUM_OPS", "CHOICE_OPS",
-    "FILTER_FIELDS", "get_filters_ui_config",
+    "FIELD_MAP",
+    "FIELD_TYPES",
+    "TEXT_OPS",
+    "NUM_OPS",
+    "CHOICE_OPS",
+    "FILTER_FIELDS",
+    "get_filters_ui_config",
 ]

@@ -62,9 +62,11 @@ class EncuentroService:
             return 0
 
         # Fechas de encuentros que ya tienen asistencias → no tocar
-        ids_con_asistencia = Asistencia.objects.filter(
-            encuentro__actividad_centro=actividad_centro
-        ).values_list("encuentro_id", flat=True).distinct()
+        ids_con_asistencia = (
+            Asistencia.objects.filter(encuentro__actividad_centro=actividad_centro)
+            .values_list("encuentro_id", flat=True)
+            .distinct()
+        )
 
         fechas_preservadas = set(
             Encuentro.objects.filter(
@@ -113,9 +115,7 @@ class EncuentroService:
         from VAT.models import Encuentro
 
         encuentros = []
-        numero = (
-            Encuentro.objects.filter(actividad_centro=actividad_centro).count() + 1
-        )
+        numero = Encuentro.objects.filter(actividad_centro=actividad_centro).count() + 1
         fecha = actividad_centro.fecha_inicio
 
         while fecha <= actividad_centro.fecha_fin:
@@ -141,7 +141,9 @@ class EncuentroService:
         from VAT.models import Encuentro
 
         encuentros = list(
-            Encuentro.objects.filter(actividad_centro=actividad_centro).order_by("fecha")
+            Encuentro.objects.filter(actividad_centro=actividad_centro).order_by(
+                "fecha"
+            )
         )
         for i, enc in enumerate(encuentros, start=1):
             if enc.numero_encuentro != i:

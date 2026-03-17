@@ -87,7 +87,9 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
         self.object = None
         context = super().get_context_data(**kwargs)
         query = self.request.GET.get("query") or ""
-        context["ciudadanos"] = ParticipanteService.buscar_ciudadanos_por_documento(query)
+        context["ciudadanos"] = ParticipanteService.buscar_ciudadanos_por_documento(
+            query
+        )
         context["no_resultados"] = not bool(context["ciudadanos"])
         context["centro_id"] = self.kwargs.get("centro_id")
         context["actividad_id"] = self.kwargs.get("actividad_id")
@@ -147,7 +149,8 @@ class ParticipanteActividadPromoverView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         actividad_id = kwargs.get("actividad_id")
         detail_url = reverse_lazy(
-            "vat_actividadcentro_detail", kwargs={"pk": actividad_id},
+            "vat_actividadcentro_detail",
+            kwargs={"pk": actividad_id},
         )
         return redirect(f"{detail_url}?promo_error=1")
 
@@ -156,7 +159,8 @@ class ParticipanteActividadPromoverView(LoginRequiredMixin, View):
         actividad = participante.actividad_centro
         actividad_id = kwargs["actividad_id"]
         detail_url = reverse_lazy(
-            "vat_actividadcentro_detail", kwargs={"pk": actividad_id},
+            "vat_actividadcentro_detail",
+            kwargs={"pk": actividad_id},
         )
 
         inscritos = ParticipanteService.contar_inscritos(actividad)
@@ -165,7 +169,9 @@ class ParticipanteActividadPromoverView(LoginRequiredMixin, View):
 
         siguiente = ParticipanteService.promover_lista_espera(actividad, request.user)
         if siguiente:
-            messages.success(request, "Participante promovido a inscrito correctamente.")
+            messages.success(
+                request, "Participante promovido a inscrito correctamente."
+            )
         else:
             messages.info(request, "No hay participantes en lista de espera.")
         return redirect(detail_url)

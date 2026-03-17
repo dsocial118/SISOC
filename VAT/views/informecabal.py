@@ -56,7 +56,10 @@ class InformeCabalPreviewAjaxView(LoginRequiredMixin, TemplateView):
         except ValueError as ve:
             logger.warning("ValueError en preview CABAL: %s", ve, exc_info=True)
             return JsonResponse(
-                {"ok": False, "error": "El archivo no tiene el formato esperado o está dañado."},
+                {
+                    "ok": False,
+                    "error": "El archivo no tiene el formato esperado o está dañado.",
+                },
                 status=400,
             )
         except Exception as e:
@@ -92,11 +95,18 @@ class InformeCabalProcessAjaxView(LoginRequiredMixin, TemplateView):
         except FileExistsError as dup:
             if str(dup) == "DUPLICATE_NAME":
                 return JsonResponse({"ok": False, "duplicate_name": True}, status=409)
-            return JsonResponse({"ok": False, "error": "Archivo duplicado."}, status=409)
-        except ValueError as ve:
-            logger.warning("ValueError al procesar CABAL (process): %s", ve, exc_info=True)
             return JsonResponse(
-                {"ok": False, "error": "El archivo no tiene el formato esperado o está dañado."},
+                {"ok": False, "error": "Archivo duplicado."}, status=409
+            )
+        except ValueError as ve:
+            logger.warning(
+                "ValueError al procesar CABAL (process): %s", ve, exc_info=True
+            )
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "error": "El archivo no tiene el formato esperado o está dañado.",
+                },
                 status=400,
             )
         except Exception as e:
@@ -146,15 +156,24 @@ class InformeCabalReprocessCenterAjaxView(LoginRequiredMixin, View):
             return JsonResponse({"ok": True, **res})
         except ReprocessError as e:
             logger.warning(
-                "ReprocessError al reprocesar CABAL (codigo=%s): %s", codigo, e, exc_info=True,
+                "ReprocessError al reprocesar CABAL (codigo=%s): %s",
+                codigo,
+                e,
+                exc_info=True,
             )
             return JsonResponse(
-                {"ok": False, "error": "No se pudo reprocesar el centro. Revise los datos e intente nuevamente."},
+                {
+                    "ok": False,
+                    "error": "No se pudo reprocesar el centro. Revise los datos e intente nuevamente.",
+                },
                 status=400,
             )
         except Exception as e:
             logger.exception(
-                "Error inesperado al reprocesar CABAL (codigo=%s): %s", codigo, e, exc_info=True,
+                "Error inesperado al reprocesar CABAL (codigo=%s): %s",
+                codigo,
+                e,
+                exc_info=True,
             )
             return JsonResponse(
                 {"ok": False, "error": "Error inesperado al reprocesar el centro."},

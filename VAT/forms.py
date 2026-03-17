@@ -181,8 +181,6 @@ class ActividadCentroForm(forms.ModelForm):
             self.fields["actividad"].queryset = Actividad.objects.none()
 
 
-
-
 class ParticipanteActividadForm(forms.ModelForm):
     nombre = forms.CharField(max_length=255, label="Nombre")
     apellido = forms.CharField(max_length=255, label="Apellido")

@@ -7,17 +7,31 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
 from VAT.models import (
-    Centro, Categoria, Actividad, ActividadCentro,
-    ParticipanteActividad, Beneficiario, Responsable,
-    BeneficiarioResponsable, CabalArchivo, InformeCabalRegistro,
+    Centro,
+    Categoria,
+    Actividad,
+    ActividadCentro,
+    ParticipanteActividad,
+    Beneficiario,
+    Responsable,
+    BeneficiarioResponsable,
+    CabalArchivo,
+    InformeCabalRegistro,
 )
 from VAT.serializers import (
-    CentroSerializer, CategoriaSerializer, ActividadSerializer,
-    ActividadCentroSerializer, ParticipanteActividadSerializer,
-    BeneficiarioSerializer, ResponsableSerializer,
-    BeneficiarioResponsableSerializer, CabalArchivoSerializer,
-    InformeCabalRegistroSerializer, ProvinciaSerializer,
-    MunicipioSerializer, LocalidadSerializer,
+    CentroSerializer,
+    CategoriaSerializer,
+    ActividadSerializer,
+    ActividadCentroSerializer,
+    ParticipanteActividadSerializer,
+    BeneficiarioSerializer,
+    ResponsableSerializer,
+    BeneficiarioResponsableSerializer,
+    CabalArchivoSerializer,
+    InformeCabalRegistroSerializer,
+    ProvinciaSerializer,
+    MunicipioSerializer,
+    LocalidadSerializer,
 )
 from core.api_auth import HasAPIKey
 from core.models import Provincia, Municipio, Localidad
@@ -100,7 +114,9 @@ class CategoriaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 @extend_schema(tags=["VAT - Actividades por Centro"])
 class ActividadCentroViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     queryset = (
-        ActividadCentro.objects.select_related("centro", "actividad", "actividad__categoria")
+        ActividadCentro.objects.select_related(
+            "centro", "actividad", "actividad__categoria"
+        )
         .prefetch_related("dias", "sexoact")
         .order_by("id")
     )
@@ -121,7 +137,9 @@ class ActividadCentroViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     def por_centro(self, request):
         centro_id = request.query_params.get("centro_id")
         if not centro_id:
-            return Response({"error": "centro_id es requerido"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "centro_id es requerido"}, status=status.HTTP_400_BAD_REQUEST
+            )
         actividades = self.queryset.filter(centro_id=centro_id)
         estado = request.query_params.get("estado")
         if estado:
@@ -158,11 +176,15 @@ class ParticipanteActividadViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 error_msg = format_serializer_errors(serializer)
-                return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": error_msg}, status=status.HTTP_400_BAD_REQUEST
+                )
         except Exception:
             logger.exception("Error al inscribir participante")
             return Response(
-                {"error": "Ocurrió un error interno. Por favor, inténtelo de nuevo más tarde."},
+                {
+                    "error": "Ocurrió un error interno. Por favor, inténtelo de nuevo más tarde."
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -171,7 +193,9 @@ class ParticipanteActividadViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet
         participante = self.get_object()
         nuevo_estado = request.data.get("estado")
         if nuevo_estado not in dict(ParticipanteActividad.ESTADO_INSCRIPCION):
-            return Response({"error": "Estado inválido"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Estado inválido"}, status=status.HTTP_400_BAD_REQUEST
+            )
         participante.estado = nuevo_estado
         participante.save()
         serializer = self.get_serializer(participante)
@@ -200,7 +224,10 @@ class BeneficiarioViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     def por_responsable(self, request):
         responsable_id = request.query_params.get("responsable_id")
         if not responsable_id:
-            return Response({"error": "responsable_id es requerido"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "responsable_id es requerido"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         beneficiarios = self.get_queryset().filter(responsable_id=responsable_id)
         serializer = self.get_serializer(beneficiarios, many=True)
         return Response(serializer.data)
@@ -234,7 +261,9 @@ class BeneficiarioResponsableViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewS
 
 @extend_schema(tags=["VAT - Informes CABAL"])
 class InformeCabalRegistroViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = InformeCabalRegistro.objects.select_related("archivo", "centro").order_by("id")
+    queryset = InformeCabalRegistro.objects.select_related(
+        "archivo", "centro"
+    ).order_by("id")
     serializer_class = InformeCabalRegistroSerializer
     permission_classes = [HasAPIKey]
 
@@ -255,7 +284,9 @@ class InformeCabalRegistroViewSet(viewsets.ReadOnlyModelViewSet):
     def por_centro(self, request):
         centro_id = request.query_params.get("centro_id")
         if not centro_id:
-            return Response({"error": "centro_id es requerido"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "centro_id es requerido"}, status=status.HTTP_400_BAD_REQUEST
+            )
         registros = self.get_queryset().filter(centro_id=centro_id)
         serializer = self.get_serializer(registros, many=True)
         return Response(serializer.data)
@@ -295,7 +326,9 @@ class MunicipioViewSet(viewsets.ReadOnlyModelViewSet):
 
 @extend_schema(tags=["VAT - Ubicación"])
 class LocalidadViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Localidad.objects.select_related("municipio__provincia").order_by("nombre")
+    queryset = Localidad.objects.select_related("municipio__provincia").order_by(
+        "nombre"
+    )
     serializer_class = LocalidadSerializer
     permission_classes = [HasAPIKey]
 

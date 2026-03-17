@@ -36,7 +36,9 @@ router.register(
 router.register(
     r"cabal-registros", InformeCabalRegistroViewSet, basename="vat-api-cabal-registro"
 )
-router.register(r"cabal-archivos", CabalArchivoViewSet, basename="vat-api-cabal-archivo")
+router.register(
+    r"cabal-archivos", CabalArchivoViewSet, basename="vat-api-cabal-archivo"
+)
 
 router.register(r"provincias", ProvinciaViewSet, basename="vat-api-provincia")
 router.register(r"municipios", MunicipioViewSet, basename="vat-api-municipio")

@@ -1,5 +1,9 @@
 from django.views.generic import (
-    ListView, DetailView, CreateView, UpdateView, DeleteView,
+    ListView,
+    DetailView,
+    CreateView,
+    UpdateView,
+    DeleteView,
 )
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
@@ -13,8 +17,13 @@ from django.http import Http404
 from django.utils import timezone
 
 from VAT.models import (
-    CabalArchivo, Categoria, Centro, ActividadCentro,
-    Encuentro, InformeCabalRegistro, ParticipanteActividad,
+    CabalArchivo,
+    Categoria,
+    Centro,
+    ActividadCentro,
+    Encuentro,
+    InformeCabalRegistro,
+    ParticipanteActividad,
 )
 from VAT.services.centro_filter_config import (
     FIELD_MAP as CENTRO_FILTER_MAP,
@@ -57,9 +66,7 @@ class CentroListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        base_qs = Centro.objects.select_related("referente").order_by(
-            "nombre"
-        )
+        base_qs = Centro.objects.select_related("referente").order_by("nombre")
 
         user = self.request.user
         busq = self.request.GET.get("busqueda", "").strip()
@@ -72,9 +79,7 @@ class CentroListView(LoginRequiredMixin, ListView):
             return Centro.objects.none()
 
         if busq:
-            base_qs = base_qs.filter(
-                Q(nombre__icontains=busq)
-            )
+            base_qs = base_qs.filter(Q(nombre__icontains=busq))
 
         return BOOL_ADVANCED_FILTER.filter_queryset(base_qs, self.request.GET)
 
@@ -308,9 +313,18 @@ class InformeCabalArchivoPorCentroDetailView(LoginRequiredMixin, DetailView):
                 archivo=self.object, centro_id=centro_id
             )
             .only(
-                "id", "nro_comercio", "razon_social", "importe", "fecha_trx",
-                "moneda_origen", "importe_pesos", "motivo_rechazo",
-                "desc_motivo_rechazo", "no_coincidente", "fila_numero", "centro_id",
+                "id",
+                "nro_comercio",
+                "razon_social",
+                "importe",
+                "fecha_trx",
+                "moneda_origen",
+                "importe_pesos",
+                "motivo_rechazo",
+                "desc_motivo_rechazo",
+                "no_coincidente",
+                "fila_numero",
+                "centro_id",
             )
             .order_by("fila_numero")
         )
@@ -373,7 +387,9 @@ def centros_ajax(request):
         }
 
         html = render_to_string(
-            "vat/partials/centros_rows.html", context, request=request,
+            "vat/partials/centros_rows.html",
+            context,
+            request=request,
         )
 
         pagination_html = render_to_string(

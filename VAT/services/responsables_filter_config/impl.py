@@ -29,10 +29,20 @@ FIELD_TYPES: Dict[str, str] = {
     **{
         key: "text"
         for key in [
-            "apellido", "nombre", "vinculo_parental", "correo_electronico",
-            "barrio", "calle", "provincia", "municipio", "localidad",
-            "prefijo_celular", "numero_celular",
-            "prefijo_telefono_fijo", "numero_telefono_fijo", "monoblock",
+            "apellido",
+            "nombre",
+            "vinculo_parental",
+            "correo_electronico",
+            "barrio",
+            "calle",
+            "provincia",
+            "municipio",
+            "localidad",
+            "prefijo_celular",
+            "numero_celular",
+            "prefijo_telefono_fijo",
+            "numero_telefono_fijo",
+            "monoblock",
         ]
     },
     "genero": "choice",
@@ -50,7 +60,9 @@ FILTER_FIELDS = [
     {"name": "apellido", "label": "Apellido", "type": "text"},
     {"name": "nombre", "label": "Nombre", "type": "text"},
     {
-        "name": "genero", "label": "Género", "type": "choice",
+        "name": "genero",
+        "label": "Género",
+        "type": "choice",
         "choices": [
             {"value": "F", "label": "Femenino"},
             {"value": "M", "label": "Masculino"},
@@ -73,7 +85,11 @@ FILTER_FIELDS = [
     {"name": "cuil", "label": "CUIL", "type": "number"},
     {"name": "codigo_postal", "label": "Código postal", "type": "number"},
     {"name": "altura", "label": "Altura", "type": "number"},
-    {"name": "cantidad_beneficiarios", "label": "Cantidad de beneficiarios", "type": "number"},
+    {
+        "name": "cantidad_beneficiarios",
+        "label": "Cantidad de beneficiarios",
+        "type": "number",
+    },
 ]
 
 
@@ -89,6 +105,11 @@ def get_filters_ui_config() -> Dict[str, Any]:
 
 
 __all__ = [
-    "FIELD_MAP", "FIELD_TYPES", "TEXT_OPS", "NUM_OPS", "CHOICE_OPS",
-    "FILTER_FIELDS", "get_filters_ui_config",
+    "FIELD_MAP",
+    "FIELD_TYPES",
+    "TEXT_OPS",
+    "NUM_OPS",
+    "CHOICE_OPS",
+    "FILTER_FIELDS",
+    "get_filters_ui_config",
 ]

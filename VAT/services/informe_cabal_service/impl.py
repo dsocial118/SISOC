@@ -11,9 +11,20 @@ from VAT.models import Centro, CabalArchivo, InformeCabalRegistro
 logger = logging.getLogger("django")
 
 EXPECTED_HEADERS = [
-    "NroTarjeta", "NroAuto", "MTI", "NroComercio", "RazonSocial",
-    "Importe", "FechaTRX", "MonedaOrigen", "ImporteMonOrigen",
-    "ImportePesos", "CantCuotas", "MotivoRechazo", "Desc_MotivoRechazo", "Disponibles",
+    "NroTarjeta",
+    "NroAuto",
+    "MTI",
+    "NroComercio",
+    "RazonSocial",
+    "Importe",
+    "FechaTRX",
+    "MonedaOrigen",
+    "ImporteMonOrigen",
+    "ImportePesos",
+    "CantCuotas",
+    "MotivoRechazo",
+    "Desc_MotivoRechazo",
+    "Disponibles",
 ]
 
 
@@ -103,7 +114,9 @@ def read_excel_preview(
 
 @transaction.atomic
 def persist_file_and_rows(
-    file: UploadedFile, user, force_proceed: bool = False,
+    file: UploadedFile,
+    user,
+    force_proceed: bool = False,
 ) -> Tuple[CabalArchivo, int, int, List[int]]:
 
     nombre = file.name

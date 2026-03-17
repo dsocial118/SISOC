@@ -69,11 +69,18 @@ class APIClient:
             data = response.json()
         except Exception as exc:
             logger.error(f"Error decodificar JSON RENAPER DNI {dni}: {str(exc)}")
-            return {"success": False, "error": f"No se pudo decodificar JSON: {str(exc)}"}
+            return {
+                "success": False,
+                "error": f"No se pudo decodificar JSON: {str(exc)}",
+            }
 
         if not data.get("isSuccess", False):
             logger.error(f"No se encontró coincidencia RENAPER DNI {dni}")
-            return {"success": False, "error": "No se encontró coincidencia.", "raw_response": data}
+            return {
+                "success": False,
+                "error": "No se encontró coincidencia.",
+                "raw_response": data,
+            }
 
         return {"success": True, "data": data["result"]}
 
