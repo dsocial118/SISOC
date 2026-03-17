@@ -925,7 +925,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnConfirm = document.getElementById('btn-confirm');
   if (btnConfirm) {
     btnConfirm.addEventListener('click', async () => {
-      // Verificar si el botón está deshabilitado
       if (btnConfirm.disabled) {
         showAlert('warning', 'No se puede confirmar el envío mientras haya registros con errores pendientes.');
         return;
@@ -935,6 +934,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnConfirm.disabled = true;
       btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Enviando…';
 
+      let shouldReload = false;
       try {
         if (!window.CONFIRM_URL) throw new Error('No se configuró CONFIRM_URL.');
 
@@ -964,12 +964,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         showAlert('success', data.message || 'Envío confirmado.');
+        shouldReload = true;
       } catch (err) {
         console.error('Confirmar envío:', err);
         showAlert('danger', 'No se pudo confirmar el envío. ', err.message);
       } finally {
         btnConfirm.disabled = false;
         btnConfirm.innerHTML = original;
+      }
+
+      if (shouldReload) {
         window.location.reload();
       }
     });
