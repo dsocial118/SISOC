@@ -91,6 +91,9 @@ LEGACY_ALIAS_TO_PERMISSION_CODES: dict[str, tuple[str, ...]] = {
     # Centro de Familia
     "ReferenteCentro": ("centrodefamilia.view_centro",),
     "CDF SSE": ("centrodefamilia.view_centro",),
+    # VAT - Centro Formación Profesional
+    "ReferenteCentroVAT": ("VAT.view_centro",),
+    "VAT SSE": ("VAT.view_centro",),
     "Dashboard Centrodefamilia": ("dashboard.view_dashboard",),
     "Dashboard Comedor": ("dashboard.view_dashboard",),
     # Centro de Infancia
@@ -210,6 +213,8 @@ GROUP_BOOTSTRAP_PERMISSION_ALIASES: dict[str, tuple[str, ...]] = {
     "Coordinador general": ("Coordinador general", "Comedores Ver"),
     "ReferenteCentro": ("ReferenteCentro", "CDF SSE"),
     "Dashboard Centrodefamilia": ("Dashboard Centrodefamilia", "CDF SSE"),
+    "ReferenteCentroVAT": ("ReferenteCentroVAT",),
+    "VAT SSE": ("VAT SSE",),
 }
 
 
@@ -219,6 +224,7 @@ SIDEBAR_MODULE_PERMISSIONS: dict[str, tuple[str, ...]] = {
     "ciudadanos": ("ciudadanos.view_ciudadano",),
     "centro_infancia": ("centrodeinfancia.view_centrodeinfancia",),
     "centro_familia": ("centrodefamilia.view_centro",),
+    "vat": ("VAT.view_centro",),
     "celiaquia": ("celiaquia.view_expediente",),
 }
 

@@ -34,7 +34,6 @@ class CentroForm(forms.ModelForm):
     class Meta:
         model = Centro
         fields = [
-            "tipo",
             "nombre",
             "codigo",
             "organizacion_asociada",
@@ -54,42 +53,18 @@ class CentroForm(forms.ModelForm):
             "telefono_referente",
             "correo_referente",
             "referente",
-            "faro_asociado",
             "foto",
             "activo",
         ]
 
     def __init__(self, *args, **kwargs):
-        from_faro = kwargs.pop("from_faro", False)
         super().__init__(*args, **kwargs)
 
-        if from_faro:
-            self.fields["tipo"].initial = "adherido"
-            self.fields["tipo"].disabled = True
-            self.fields["tipo"].widget = forms.HiddenInput()
-            self.fields["faro_asociado"].disabled = True
-
         self.fields["referente"].queryset = User.objects.filter(
-            groups__name="ReferenteCentro"
+            groups__name="ReferenteCentroVAT"
         ).only("id", "username", "first_name", "last_name")
 
-        self.fields["faro_asociado"].queryset = Centro.objects.filter(
-            tipo="faro", activo=True
-        ).only("id", "nombre")
         self.fields["organizacion_asociada"].empty_label = "Seleccionar organización..."
-
-    def clean(self):
-        cleaned_data = super().clean()
-        tipo = cleaned_data.get("tipo")
-        faro_asociado = cleaned_data.get("faro_asociado")
-
-        if tipo == "adherido" and not faro_asociado:
-            raise ValidationError(
-                "Debe asociar un Centro FARO activo si el centro es ADHERIDO."
-            )
-        if tipo == "faro" and faro_asociado:
-            raise ValidationError("Un Centro FARO no puede tener un FARO asociado.")
-        return cleaned_data
 
 
 class ActividadCentroForm(forms.ModelForm):
@@ -133,6 +108,17 @@ class ActividadCentroForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": "form-control"}),
     )
 
+    fecha_inicio = forms.DateField(
+        label="Fecha de inicio",
+        required=False,
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    fecha_fin = forms.DateField(
+        label="Fecha de fin",
+        required=False,
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+
     class Meta:
         model = ActividadCentro
         fields = [
@@ -143,6 +129,8 @@ class ActividadCentroForm(forms.ModelForm):
             "dias",
             "horariosdesde",
             "horarioshasta",
+            "fecha_inicio",
+            "fecha_fin",
             "precio",
             "estado",
         ]
@@ -152,6 +140,16 @@ class ActividadCentroForm(forms.ModelForm):
             "precio": forms.NumberInput(attrs={"class": "form-control"}),
             "estado": forms.Select(attrs={"class": "form-control"}),
         }
+
+    def clean(self):
+        cleaned = super().clean()
+        fecha_inicio = cleaned.get("fecha_inicio")
+        fecha_fin = cleaned.get("fecha_fin")
+        if fecha_inicio and fecha_fin and fecha_fin < fecha_inicio:
+            raise forms.ValidationError(
+                "La fecha de fin no puede ser anterior a la fecha de inicio."
+            )
+        return cleaned
 
     def __init__(self, *args, **kwargs):
         self.centro = kwargs.pop("centro", None)
@@ -182,18 +180,7 @@ class ActividadCentroForm(forms.ModelForm):
         else:
             self.fields["actividad"].queryset = Actividad.objects.none()
 
-        if self.centro and self.centro.tipo == "faro":
-            self.fields["precio"].widget = forms.HiddenInput()
-            self.fields["precio"].required = False
 
-    def clean(self):
-        cleaned_data = super().clean()
-        precio = cleaned_data.get("precio")
-        if self.centro and self.centro.tipo == "faro" and precio:
-            raise ValidationError(
-                "Un centro de tipo FARO no debe tener un precio asignado."
-            )
-        return cleaned_data
 
 
 class ParticipanteActividadForm(forms.ModelForm):

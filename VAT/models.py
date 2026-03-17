@@ -9,26 +9,14 @@ from organizaciones.models import Organizacion
 
 
 class Centro(SoftDeleteModelMixin, models.Model):
-    TIPO_CHOICES = [
-        ("faro", "faro"),
-        ("adherido", "Adherido"),
-    ]
     nombre = models.CharField(max_length=200)
     referente = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
-        limit_choices_to={"groups__name": "ReferenteCentro"},
+        limit_choices_to={"groups__name": "ReferenteCentroVAT"},
         related_name="vat_centros",
         null=True,
         blank=False,
-    )
-    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
-    faro_asociado = models.ForeignKey(
-        "self",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        limit_choices_to={"tipo": "faro", "activo": True},
     )
     codigo = models.CharField(max_length=20, unique=True)
     foto = models.ImageField(upload_to="vat_centros/", blank=True, null=True)
@@ -164,6 +152,12 @@ class ActividadCentro(SoftDeleteModelMixin, models.Model):
         default="planificada",
         verbose_name="Estado",
     )
+    fecha_inicio = models.DateField(
+        null=True, blank=True, verbose_name="Fecha de inicio"
+    )
+    fecha_fin = models.DateField(
+        null=True, blank=True, verbose_name="Fecha de fin"
+    )
 
     def __str__(self):
         return f"{self.actividad.nombre} en {self.centro.nombre}"
@@ -264,6 +258,97 @@ class ParticipanteActividadHistorial(models.Model):
         verbose_name = "Historial de Inscripción"
         verbose_name_plural = "Historial de Inscripciones"
         ordering = ["-fecha_cambio"]
+
+
+class Encuentro(models.Model):
+    ESTADO_CHOICES = [
+        ("programado", "Programado"),
+        ("realizado", "Realizado"),
+        ("cancelado", "Cancelado"),
+    ]
+
+    actividad_centro = models.ForeignKey(
+        ActividadCentro,
+        on_delete=models.CASCADE,
+        related_name="encuentros",
+        verbose_name="Actividad del Centro",
+    )
+    numero_encuentro = models.PositiveIntegerField(verbose_name="Número de encuentro")
+    fecha = models.DateField(verbose_name="Fecha")
+    hora_inicio = models.TimeField(verbose_name="Hora de inicio")
+    hora_fin = models.TimeField(null=True, blank=True, verbose_name="Hora de fin")
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default="programado",
+        verbose_name="Estado",
+    )
+    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+
+    def __str__(self):
+        return (
+            f"Encuentro #{self.numero_encuentro} — "
+            f"{self.actividad_centro} ({self.fecha})"
+        )
+
+    class Meta:
+        verbose_name = "Encuentro"
+        verbose_name_plural = "Encuentros"
+        ordering = ["fecha", "hora_inicio"]
+        unique_together = ("actividad_centro", "fecha")
+
+
+class Asistencia(models.Model):
+    ESTADO_CHOICES = [
+        ("presente", "Presente"),
+        ("ausente", "Ausente"),
+        ("justificado", "Justificado"),
+    ]
+
+    encuentro = models.ForeignKey(
+        Encuentro,
+        on_delete=models.CASCADE,
+        related_name="asistencias",
+        verbose_name="Encuentro",
+    )
+    participante = models.ForeignKey(
+        ParticipanteActividad,
+        on_delete=models.CASCADE,
+        related_name="asistencias",
+        verbose_name="Participante",
+    )
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default="ausente",
+        verbose_name="Estado de asistencia",
+    )
+    hora_registro = models.DateTimeField(
+        auto_now_add=True, verbose_name="Hora de registro"
+    )
+    registrado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="vat_asistencias_registradas",
+        verbose_name="Registrado por",
+    )
+    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+
+    def __str__(self):
+        return (
+            f"{self.participante.ciudadano} — "
+            f"Encuentro #{self.encuentro.numero_encuentro}: {self.estado}"
+        )
+
+    class Meta:
+        verbose_name = "Asistencia"
+        verbose_name_plural = "Asistencias"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["encuentro", "participante"],
+                name="vat_unique_asistencia_encuentro_participante",
+            )
+        ]
 
 
 # ——— MÓDULO INFORME CABAL ———

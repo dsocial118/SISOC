@@ -36,6 +36,8 @@ from VAT.views.participante import (
     ParticipanteActividadPromoverView,
 )
 
+from .views.encuentro import RegistrarAsistenciaView
+
 from .views.beneficiarios import (
     BeneficiariosListView,
     BeneficiariosDetailView,
@@ -146,6 +148,14 @@ urlpatterns = [
             ParticipanteActividadPromoverView.as_view()
         ),
         name="vat_participanteactividad_promover",
+    ),
+    # Encuentros / Asistencia
+    path(
+        "vat/encuentros/<int:pk>/asistencia/",
+        permissions_any_required(["VAT.view_centro"])(
+            RegistrarAsistenciaView.as_view()
+        ),
+        name="vat_encuentro_asistencia",
     ),
     # Informe CABAL
     path(

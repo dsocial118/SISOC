@@ -184,6 +184,11 @@ class UserGroups:
 
     _SEED_COMUNICADOS = COMUNICADOS_TODOS_PERMISOS
 
+    _SEED_VAT = (
+        "ReferenteCentroVAT",
+        "VAT SSE",
+    )
+
     CREATE_GROUPS_SEED = (
         *_SEED_CORE,
         *_SEED_CENTRO_INFANCIA,
@@ -191,6 +196,7 @@ class UserGroups:
         *_SEED_DATACALLE,
         *_SEED_CELIAQUIA,
         *_SEED_COMUNICADOS,
+        *_SEED_VAT,
     )
 
     # =========================================================================

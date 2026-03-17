@@ -55,7 +55,7 @@ class CentroSerializer(serializers.ModelSerializer):
     class Meta:
         model = Centro
         fields = [
-            "id", "nombre", "referente", "referente_nombre", "tipo", "codigo",
+            "id", "nombre", "referente", "referente_nombre", "codigo",
             "activo", "provincia", "provincia_nombre", "municipio", "municipio_nombre",
             "localidad", "localidad_nombre", "domicilio_actividad",
             "telefono", "celular", "correo", "nombre_referente",

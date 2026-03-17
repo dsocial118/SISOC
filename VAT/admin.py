@@ -4,8 +4,8 @@ from .models import Centro, Actividad, ParticipanteActividad, Categoria
 
 @admin.register(Centro)
 class CentroAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "tipo", "activo", "faro_asociado")
-    list_filter = ("tipo", "activo")
+    list_display = ("nombre", "activo")
+    list_filter = ("activo",)
     search_fields = ("nombre",)
 
 

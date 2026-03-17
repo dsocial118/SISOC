@@ -10,9 +10,11 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 
+from django.utils import timezone
+
 from VAT.models import (
     CabalArchivo, Categoria, Centro, ActividadCentro,
-    InformeCabalRegistro, ParticipanteActividad,
+    Encuentro, InformeCabalRegistro, ParticipanteActividad,
 )
 from VAT.services.centro_filter_config import (
     FIELD_MAP as CENTRO_FILTER_MAP,
@@ -41,7 +43,7 @@ BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
 
 
 ROLE_VAT_SSE_PERMISSION = "auth.role_vat_sse"
-ROLE_REFERENTE_CENTRO_PERMISSION = "auth.role_referentecentro"
+ROLE_REFERENTE_CENTRO_PERMISSION = "auth.role_referentecentrovat"
 
 
 def _has_permission(user, permission_code):
@@ -55,7 +57,7 @@ class CentroListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        base_qs = Centro.objects.select_related("faro_asociado", "referente").order_by(
+        base_qs = Centro.objects.select_related("referente").order_by(
             "nombre"
         )
 
@@ -71,7 +73,7 @@ class CentroListView(LoginRequiredMixin, ListView):
 
         if busq:
             base_qs = base_qs.filter(
-                Q(nombre__icontains=busq) | Q(tipo__icontains=busq)
+                Q(nombre__icontains=busq)
             )
 
         return BOOL_ADVANCED_FILTER.filter_queryset(base_qs, self.request.GET)
@@ -97,7 +99,6 @@ class CentroListView(LoginRequiredMixin, ListView):
 
         ctx["table_headers"] = [
             {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
-            {"title": "Tipo", "sortable": True, "sort_key": "tipo"},
             {"title": "Dirección", "sortable": True, "sort_key": "calle"},
             {"title": "Teléfono", "sortable": True, "sort_key": "telefono"},
             {"title": "Estado", "sortable": True, "sort_key": "activo"},
@@ -131,13 +132,8 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         obj = super().get_object(queryset)
         user = self.request.user
         es_ref = obj.referente_id == user.id
-        es_adherido = (
-            obj.tipo == "adherido"
-            and obj.faro_asociado
-            and obj.faro_asociado.referente_id == user.id
-        )
         es_vat_sse = _has_permission(user, ROLE_VAT_SSE_PERMISSION)
-        if not (es_ref or es_adherido or user.is_superuser or es_vat_sse):
+        if not (es_ref or user.is_superuser or es_vat_sse):
             raise PermissionDenied
         return obj
 
@@ -178,35 +174,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         ctx["total_actividades"] = qs_acts.count()
         ctx["total_recaudado"] = sum((act.ganancia or 0) for act in ctx["actividades"])
 
-        search_otras = self.request.GET.get("search_actividades", "").strip().lower()
-        otras = (
-            ActividadCentro.objects.exclude(centro=centro)
-            .select_related("actividad", "actividad__categoria", "centro")
-            .order_by("centro__nombre", "actividad__nombre", "id")
-        )
-        if search_otras:
-            otras = otras.filter(
-                Q(actividad__nombre__icontains=search_otras)
-                | Q(actividad__categoria__nombre__icontains=search_otras)
-                | Q(estado__icontains=search_otras)
-                | Q(centro__nombre__icontains=search_otras)
-            ).order_by("centro__nombre", "actividad__nombre", "id")
-
-        ctx["actividades_paginados"] = Paginator(otras, 5).get_page(
-            self.request.GET.get("page_act")
-        )
-
-        if centro.tipo == "faro":
-            adheridos = Centro.objects.filter(
-                faro_asociado=centro, activo=True
-            ).order_by("nombre")
-        else:
-            adheridos = Centro.objects.none()
-        ctx["centros_adheridos_paginados"] = Paginator(adheridos, 5).get_page(
-            self.request.GET.get("page")
-        )
-        ctx["centros_adheridos_total"] = adheridos.count()
-
         total_part = sum(a.inscritos for a in qs_acts)
         qs_inscritos = ParticipanteActividad.objects.filter(
             estado="inscrito", actividad_centro__centro=centro
@@ -218,22 +185,45 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             estado="lista_espera", actividad_centro__centro=centro
         ).count()
 
+        # Próximo encuentro por actividad (sin N+1)
+        today = timezone.now().date()
+        proximos_list = list(
+            Encuentro.objects.filter(
+                actividad_centro__centro=centro,
+                estado="programado",
+                fecha__gte=today,
+            )
+            .order_by("actividad_centro_id", "fecha")
+            .values("actividad_centro_id", "id", "fecha", "numero_encuentro")
+        )
+        proximos_map = {}
+        for enc in proximos_list:
+            proximos_map.setdefault(enc["actividad_centro_id"], enc)
+
+        # Enriquecer cada actividad con su próximo encuentro
+        for act in ctx["actividades"]:
+            act.proximo_encuentro = proximos_map.get(act.id)
+
+        total_encuentros_programados = Encuentro.objects.filter(
+            actividad_centro__centro=centro, estado="programado"
+        ).count()
+
+        inscriptos_count = qs_inscritos.count()
         ctx["metricas"] = {
-            "centros_faro": ctx["centros_adheridos_total"],
-            "categorias": Categoria.objects.count(),
             "actividades": ctx["total_actividades"],
-            "interacciones": total_part,
-            "inscriptos": qs_inscritos.count(),
-            "hombres": hombres,
-            "mujeres": mujeres,
-            "mixtas": mixtas,
-        }
-        ctx["asistentes"] = {
-            "total": total_part,
-            "hombres": hombres,
-            "mujeres": mujeres,
+            "inscriptos": inscriptos_count,
             "espera": espera,
+            "encuentros_proximos": total_encuentros_programados,
+            "recaudacion": ctx["total_recaudado"],
+            "hombres": hombres,
+            "mujeres": mujeres,
         }
+
+        estado_counts = {"en_curso": 0, "planificada": 0, "finalizada": 0}
+        for act in ctx["actividades"]:
+            key = act.estado if act.estado in estado_counts else "finalizada"
+            estado_counts[key] += 1
+        ctx["estado_counts"] = estado_counts
 
         ctx["archivos_cabal_centro"] = (
             CabalArchivo.objects.filter(registros__centro=centro)
@@ -251,21 +241,12 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy("vat_centro_list")
 
     def get_initial(self):
-        initial = super().get_initial()
-        faro_id = self.request.GET.get("faro")
-        if faro_id:
-            initial["tipo"] = "adherido"
-            initial["faro_asociado"] = faro_id
-        return initial
+        return super().get_initial()
 
     def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["from_faro"] = bool(self.request.GET.get("faro"))
-        return kwargs
+        return super().get_form_kwargs()
 
     def form_valid(self, form):
-        if form.cleaned_data.get("tipo") == "adherido":
-            form.instance.faro_asociado_id = self.request.GET.get("faro")
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
 
@@ -356,7 +337,7 @@ def centros_ajax(request):
         page = request.GET.get("page", 1)
         user = request.user
 
-        qs = Centro.objects.select_related("faro_asociado", "referente")
+        qs = Centro.objects.select_related("referente")
 
         if user.is_superuser:
             pass
@@ -369,7 +350,7 @@ def centros_ajax(request):
 
         busq = query.strip()
         if busq:
-            qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
+            qs = qs.filter(Q(nombre__icontains=busq))
 
         qs = qs.order_by("nombre")
 
@@ -384,7 +365,6 @@ def centros_ajax(request):
             "can_add": can_add,
             "table_headers": [
                 {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
-                {"title": "Tipo", "sortable": True, "sort_key": "tipo"},
                 {"title": "Dirección", "sortable": True, "sort_key": "calle"},
                 {"title": "Teléfono", "sortable": True, "sort_key": "telefono"},
                 {"title": "Estado", "sortable": True, "sort_key": "activo"},

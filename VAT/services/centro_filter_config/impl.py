@@ -4,8 +4,6 @@ from typing import Any, Dict
 
 FIELD_MAP: Dict[str, str] = {
     "nombre": "nombre",
-    "tipo": "tipo",
-    "faro_asociado": "faro_asociado__nombre",
     "codigo": "codigo",
     "organizacion_asociada": "organizacion_asociada__nombre",
     "provincia": "provincia__nombre",
@@ -31,8 +29,6 @@ FIELD_TYPES: Dict[str, str] = {
         key: "text"
         for key in [
             "nombre",
-            "tipo",
-            "faro_asociado",
             "organizacion_asociada",
             "provincia",
             "municipio",
@@ -70,8 +66,6 @@ BOOL_OPS = ["eq", "ne"]
 
 FILTER_FIELDS = [
     {"name": "nombre", "label": "Nombre", "type": "text"},
-    {"name": "tipo", "label": "Tipo", "type": "text"},
-    {"name": "faro_asociado", "label": "Faro asociado", "type": "text"},
     {"name": "codigo", "label": "Código", "type": "text"},
     {"name": "organizacion_asociada", "label": "Organización asociada", "type": "text"},
     {"name": "provincia", "label": "Provincia", "type": "text"},

@@ -1,34 +1,153 @@
-﻿{% extends "includes/main.html" %}
+{% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
 {% load static %}
-{% block title %}Nueva Actividad{% endblock %}
+{% block title %}{{ page_title|default:"Actividad" }}{% endblock %}
 {% block head %}
-    <link rel="stylesheet"
-          href="{% static 'custom/css/duplasSelect2.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/duplasSelect2.min.css' %}" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
 {% endblock %}
 {% block breadcrumb %}
-    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_centro_list' %}">VAT</a>
+        </li>
+        {% if centro_id %}
+            <li class="breadcrumb-item">
+                <a href="{% url 'vat_centro_detail' centro_id %}">Centro</a>
+            </li>
+        {% endif %}
+        <li class="breadcrumb-item active">{{ page_title|default:"Actividad" }}</li>
+    </ol>
 {% endblock %}
 {% block content %}
     {% include 'components/alert_message.html' with show_django_messages=True %}
-    <div class="container">
-        {% include 'components/form_card.html' with title=page_title form=form cancel_url=cancel_url submit_text=submit_text %}
-    </div>
+    <form method="post" id="actividadcentro-form" novalidate>
+        {% csrf_token %}
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">{{ page_title|default:"Actividad" }}</h2>
+            <div>
+                <a href="{% if centro_id %}{% url 'vat_centro_detail' centro_id %}{% else %}{% url 'vat_centro_list' %}{% endif %}"
+                   class="btn btn-secondary mr-2">
+                    <i class="fas fa-arrow-left mr-1"></i>Volver
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-1"></i>Guardar
+                </button>
+            </div>
+        </div>
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <!-- SECCIÓN 1: Actividad -->
+        <div class="card bg-dark text-white mb-3">
+            <div class="card-header bg-panel1 d-flex justify-content-between align-items-center"
+                 style="cursor:pointer"
+                 data-toggle="collapse"
+                 data-target="#sec-actividad"
+                 aria-expanded="true">
+                <span><i class="fas fa-running mr-2"></i><strong>1. Actividad</strong></span>
+                <i class="fas fa-chevron-up toggle-icon"></i>
+            </div>
+            <div id="sec-actividad" class="collapse show">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">{{ form.categoria|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.actividad|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.cantidad_personas|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.precio|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.estado|as_crispy_field }}</div>
+                        <div class="col-md-12">{{ form.sexoact|as_crispy_field }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: Horario y Fechas -->
+        <div class="card bg-dark text-white mb-4">
+            <div class="card-header bg-panel2 d-flex justify-content-between align-items-center"
+                 style="cursor:pointer"
+                 data-toggle="collapse"
+                 data-target="#sec-horario"
+                 aria-expanded="true">
+                <span><i class="fas fa-calendar-alt mr-2"></i><strong>2. Horario y Fechas</strong></span>
+                <i class="fas fa-chevron-up toggle-icon"></i>
+            </div>
+            <div id="sec-horario" class="collapse show">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-12">{{ form.dias|as_crispy_field }}</div>
+                        <div class="col-md-3">{{ form.horariosdesde|as_crispy_field }}</div>
+                        <div class="col-md-3">{{ form.horarioshasta|as_crispy_field }}</div>
+                        <div class="col-md-3">{{ form.fecha_inicio|as_crispy_field }}</div>
+                        <div class="col-md-3">{{ form.fecha_fin|as_crispy_field }}</div>
+                    </div>
+                    <div class="alert alert-info mt-2 mb-0" style="background:#1e2a3a;border-color:#3d4f63;color:#9ca3af;">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Al guardar, se generarán automáticamente los encuentros para cada día configurado entre la fecha de inicio y fin.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones pie -->
+        <div class="d-flex justify-content-end mb-4">
+            <a href="{% if centro_id %}{% url 'vat_centro_detail' centro_id %}{% else %}{% url 'vat_centro_list' %}{% endif %}"
+               class="btn btn-secondary mr-2">
+                <i class="fas fa-times mr-1"></i>Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save mr-1"></i>Guardar
+            </button>
+        </div>
+    </form>
 {% endblock %}
 {% block customJS %}
-    <script src="{% static 'custom/js/centro_familia_categoria.js' %}"></script>
-    <!-- CSS -->
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-    <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script nonce="{{ request.csp_nonce }}">
-  flatpickr(".timepicker", {
-    enableTime: true,
-    noCalendar: true,
-    dateFormat: "H:i",
-    time_24hr: true
-  });
+        document.addEventListener("DOMContentLoaded", function () {
+            var categoriaSelect = document.getElementById("id_categoria");
+            var actividadSelect = document.getElementById("id_actividad");
+            var ajaxUrl = "{% url 'vat_ajax_cargar_actividades' %}";
+
+            categoriaSelect.addEventListener("change", function () {
+                var categoriaId = this.value;
+                actividadSelect.innerHTML = '<option value="">Cargando...</option>';
+                fetch(ajaxUrl + "?categoria_id=" + categoriaId)
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        actividadSelect.innerHTML = '<option value="">Seleccione una actividad</option>';
+                        data.forEach(function (item) {
+                            var opt = document.createElement("option");
+                            opt.value = item.id;
+                            opt.textContent = item.nombre;
+                            actividadSelect.appendChild(opt);
+                        });
+                    });
+            });
+        });
+    </script>
+    <script nonce="{{ request.csp_nonce }}">
+        flatpickr(".timepicker", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i",
+            time_24hr: true
+        });
+        // Toggle chevron
+        document.querySelectorAll('[data-toggle="collapse"]').forEach(function (header) {
+            var target = document.querySelector(header.getAttribute('data-target'));
+            var icon = header.querySelector('.toggle-icon');
+            if (target) {
+                target.addEventListener('show.bs.collapse', function () {
+                    icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                });
+                target.addEventListener('hide.bs.collapse', function () {
+                    icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+                });
+            }
+        });
     </script>
 {% endblock %}
-
