@@ -394,6 +394,27 @@
                     </ul>
                 </li>
             {% endif %}
+            <!-- VAT -->
+            {% if request.user|has_perm_code:"VAT.view_centro" %}
+                <li class="nav-item {% if 'vat/' in pagina_actual %}menu-open{% endif %}">
+                    <a href="#"
+                       class="nav-link nav-dot {% if 'vat/' in pagina_actual %}active{% endif %} ms-2">
+                        <p>
+                            INET
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="{% url 'vat_centro_list' %}"
+                               class="nav-link {% if 'vat/centros/' in pagina_actual %}active{% endif %} ms-4">
+                                <i class="nav-icon bi bi-arrow-return-right"></i>
+                                <p>Centro Formacion Profesional</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            {% endif %}
             <!-- CELIAQUÍA -->
             {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user.is_superuser %}
                 <li class="nav-item">

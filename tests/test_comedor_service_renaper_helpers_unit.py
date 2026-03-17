@@ -825,7 +825,7 @@ def test_get_nomina_detail_calcula_resumen_y_porcentajes(mocker):
         return_value=SimpleNamespace(get_page=lambda _page: page_obj),
     )
 
-    out = module.ComedorService.get_nomina_detail(comedor_pk=99, page=2, per_page=25)
+    out = module.ComedorService.get_nomina_detail(99, page=2, per_page=25)
 
     assert out[0] is page_obj
     assert out[1:6] == (3, 4, 1, 2, 10)

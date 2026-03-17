@@ -8,7 +8,7 @@ from rest_framework import status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from core.models import Dia
+from core.models import Dia, Sexo
 
 from pwa.api_serializers import (
     ActividadEspacioPWACreateUpdateSerializer,
@@ -56,7 +56,6 @@ from users.api_permissions import IsPWARepresentativeForComedor
 from comedores.models import Nomina
 from comedores.services.comedor_service.impl import ComedorService
 from ciudadanos.models import Ciudadano
-from core.models import Sexo
 
 
 class PwaHealthViewSet(viewsets.ViewSet):
@@ -378,7 +377,7 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         comedor_id = self.kwargs["comedor_id"]
         return (
             Nomina.objects.filter(
-                comedor_id=comedor_id,
+                admision__comedor_id=comedor_id,
                 deleted_at__isnull=True,
                 estado=Nomina.ESTADO_ACTIVO,
             )
@@ -386,9 +385,7 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
             .prefetch_related(
                 Prefetch(
                     "inscripciones_actividad_pwa",
-                    queryset=InscriptoActividadEspacioPWA.objects.filter(
-                        activo=True
-                    )
+                    queryset=InscriptoActividadEspacioPWA.objects.filter(activo=True)
                     .select_related(
                         "actividad_espacio",
                         "actividad_espacio__catalogo_actividad",
@@ -516,7 +513,9 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
                 {"detail": "Registro de nómina no encontrado."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        serializer = NominaEspacioPWACreateUpdateSerializer(data=request.data, partial=True)
+        serializer = NominaEspacioPWACreateUpdateSerializer(
+            data=request.data, partial=True
+        )
         serializer.is_valid(raise_exception=True)
         try:
             nomina = update_nomina_persona(
@@ -549,6 +548,83 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         serializer = SexoSerializer(Sexo.objects.order_by("id"), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @staticmethod
+    def _renaper_unavailable_message():
+        return (
+            "No se pudo conectar con RENAPER en este momento. "
+            "Probá nuevamente en unos minutos."
+        )
+
+    @staticmethod
+    def _serialize_ciudadano_local(ciudadano, dni):
+        sexo_local = (
+            getattr(ciudadano.sexo, "sexo", "")
+            if getattr(ciudadano, "sexo", None)
+            else ""
+        )
+        fecha_local = (
+            ciudadano.fecha_nacimiento.isoformat()
+            if getattr(ciudadano, "fecha_nacimiento", None)
+            else None
+        )
+        return {
+            "nombre": ciudadano.nombre or "",
+            "apellido": ciudadano.apellido or "",
+            "documento": str(ciudadano.documento or dni),
+            "fecha_nacimiento": fecha_local,
+            "sexo": sexo_local,
+        }
+
+    @classmethod
+    def _normalize_renaper_error_message(cls, message):
+        normalized_message = str(
+            message or "No se pudieron obtener datos desde RENAPER."
+        )
+        lowered = normalized_message.lower()
+        if (
+            "timed out" in lowered
+            or "connectionpool" in lowered
+            or "max retries exceeded" in lowered
+        ):
+            return cls._renaper_unavailable_message()
+        return normalized_message
+
+    @staticmethod
+    def _resolve_sexo_label(sexo_value):
+        sexo_label = ""
+        if not sexo_value:
+            return sexo_label
+        if hasattr(sexo_value, "sexo"):
+            sexo_label = getattr(sexo_value, "sexo", "") or ""
+        elif isinstance(sexo_value, str):
+            sexo_normalizado = sexo_value.strip().upper()
+            if sexo_normalizado in ("M", "MASCULINO"):
+                sexo_label = "Masculino"
+            elif sexo_normalizado in ("F", "FEMENINO"):
+                sexo_label = "Femenino"
+            elif sexo_normalizado in ("X", "NO BINARIO", "NB"):
+                sexo_label = "X"
+            else:
+                sexo_label = sexo_value.strip()
+        else:
+            sexo_obj = Sexo.objects.filter(pk=sexo_value).first()
+            sexo_label = getattr(sexo_obj, "sexo", "") if sexo_obj else ""
+        return sexo_label
+
+    @classmethod
+    def _serialize_renaper_data(cls, data, dni):
+        fecha_nacimiento = data.get("fecha_nacimiento")
+        if fecha_nacimiento and hasattr(fecha_nacimiento, "isoformat"):
+            fecha_nacimiento = fecha_nacimiento.isoformat()
+
+        return {
+            "nombre": data.get("nombre") or "",
+            "apellido": data.get("apellido") or "",
+            "documento": str(data.get("documento") or dni),
+            "fecha_nacimiento": fecha_nacimiento,
+            "sexo": cls._resolve_sexo_label(data.get("sexo")),
+        }
+
     def preview_dni(self, request, comedor_id=None):
         serializer = NominaRenaperPreviewSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -560,24 +636,8 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
             deleted_at__isnull=True,
         ).first()
         if ciudadano_local:
-            sexo_local = (
-                getattr(ciudadano_local.sexo, "sexo", "")
-                if getattr(ciudadano_local, "sexo", None)
-                else ""
-            )
-            fecha_local = (
-                ciudadano_local.fecha_nacimiento.isoformat()
-                if getattr(ciudadano_local, "fecha_nacimiento", None)
-                else None
-            )
             return Response(
-                {
-                    "nombre": ciudadano_local.nombre or "",
-                    "apellido": ciudadano_local.apellido or "",
-                    "documento": str(ciudadano_local.documento or dni),
-                    "fecha_nacimiento": fecha_local,
-                    "sexo": sexo_local,
-                },
+                self._serialize_ciudadano_local(ciudadano_local, dni),
                 status=status.HTTP_200_OK,
             )
 
@@ -585,65 +645,21 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
             renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(dni)
         except Exception:
             return Response(
-                {
-                    "detail": (
-                        "No se pudo conectar con RENAPER en este momento. "
-                        "Probá nuevamente en unos minutos."
-                    )
-                },
+                {"detail": self._renaper_unavailable_message()},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not renaper_result.get("success"):
-            message = str(
-                renaper_result.get(
-                    "message", "No se pudieron obtener datos desde RENAPER."
-                )
+            message = self._normalize_renaper_error_message(
+                renaper_result.get("message")
             )
-            if (
-                "timed out" in message.lower()
-                or "connectionpool" in message.lower()
-                or "max retries exceeded" in message.lower()
-            ):
-                message = (
-                    "No se pudo conectar con RENAPER en este momento. "
-                    "Probá nuevamente en unos minutos."
-                )
             return Response(
                 {"detail": message},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         data = renaper_result.get("data") or {}
-        sexo_value = data.get("sexo")
-        sexo_label = ""
-        if sexo_value:
-            if hasattr(sexo_value, "sexo"):
-                sexo_label = getattr(sexo_value, "sexo", "") or ""
-            elif isinstance(sexo_value, str):
-                sexo_normalizado = sexo_value.strip().upper()
-                if sexo_normalizado in ("M", "MASCULINO"):
-                    sexo_label = "Masculino"
-                elif sexo_normalizado in ("F", "FEMENINO"):
-                    sexo_label = "Femenino"
-                elif sexo_normalizado in ("X", "NO BINARIO", "NB"):
-                    sexo_label = "X"
-                else:
-                    sexo_label = sexo_value.strip()
-            else:
-                sexo_obj = Sexo.objects.filter(pk=sexo_value).first()
-                sexo_label = getattr(sexo_obj, "sexo", "") if sexo_obj else ""
-        fecha_nacimiento = data.get("fecha_nacimiento")
-        if fecha_nacimiento and hasattr(fecha_nacimiento, "isoformat"):
-            fecha_nacimiento = fecha_nacimiento.isoformat()
-
         return Response(
-            {
-                "nombre": data.get("nombre") or "",
-                "apellido": data.get("apellido") or "",
-                "documento": str(data.get("documento") or dni),
-                "fecha_nacimiento": fecha_nacimiento,
-                "sexo": sexo_label or "",
-            },
+            self._serialize_renaper_data(data, dni),
             status=status.HTTP_200_OK,
         )

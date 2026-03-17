@@ -6,7 +6,12 @@ from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
-from comunicados.models import Comunicado, EstadoComunicado, SubtipoComunicado, TipoComunicado
+from comunicados.models import (
+    Comunicado,
+    EstadoComunicado,
+    SubtipoComunicado,
+    TipoComunicado,
+)
 from comedores.models import Comedor
 from core.models import Provincia
 from pwa.models import AuditoriaOperacionPWA, LecturaMensajePWA
@@ -16,8 +21,12 @@ from users.models import AccesoComedorPWA
 @pytest.fixture
 def espacios(db):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
-    espacio_1 = Comedor.objects.create(nombre="Espacio Mensajes Uno", provincia=provincia)
-    espacio_2 = Comedor.objects.create(nombre="Espacio Mensajes Dos", provincia=provincia)
+    espacio_1 = Comedor.objects.create(
+        nombre="Espacio Mensajes Uno", provincia=provincia
+    )
+    espacio_2 = Comedor.objects.create(
+        nombre="Espacio Mensajes Dos", provincia=provincia
+    )
     return espacio_1, espacio_2
 
 
@@ -44,7 +53,9 @@ def _auth_client_for_user(user):
     return client
 
 
-def _create_comunicado(*, creador, titulo, para_todos_comedores=False, comedor=None, **overrides):
+def _create_comunicado(
+    *, creador, titulo, para_todos_comedores=False, comedor=None, **overrides
+):
     comunicado = Comunicado.objects.create(
         titulo=titulo,
         cuerpo=overrides.pop("cuerpo", "Contenido del mensaje"),
@@ -74,9 +85,15 @@ def test_list_mensajes_por_espacio_filtra_por_scope_y_estado(espacios):
     )
     client = _auth_client_for_user(representante)
 
-    _create_comunicado(creador=representante, titulo="Solo espacio 1", comedor=espacio_1)
-    _create_comunicado(creador=representante, titulo="Para todos", para_todos_comedores=True)
-    _create_comunicado(creador=representante, titulo="Solo espacio 2", comedor=espacio_2)
+    _create_comunicado(
+        creador=representante, titulo="Solo espacio 1", comedor=espacio_1
+    )
+    _create_comunicado(
+        creador=representante, titulo="Para todos", para_todos_comedores=True
+    )
+    _create_comunicado(
+        creador=representante, titulo="Solo espacio 2", comedor=espacio_2
+    )
     _create_comunicado(
         creador=representante,
         titulo="Archivado",
@@ -207,11 +224,14 @@ def test_marcar_mensaje_como_visto_es_idempotente(espacios):
 
     assert first_response.status_code == 200
     assert second_response.status_code == 200
-    assert LecturaMensajePWA.objects.filter(
-        comunicado=mensaje,
-        comedor=espacio_1,
-        user=representante,
-    ).count() == 1
+    assert (
+        LecturaMensajePWA.objects.filter(
+            comunicado=mensaje,
+            comedor=espacio_1,
+            user=representante,
+        ).count()
+        == 1
+    )
     assert AuditoriaOperacionPWA.objects.filter(entidad="mensaje_lectura").count() == 1
 
 
@@ -237,7 +257,9 @@ def test_detalle_y_listado_reflejan_estado_visto(espacios):
         fecha_visto=timezone.now(),
     )
 
-    detail_response = client.get(f"/api/pwa/espacios/{espacio_1.id}/mensajes/{mensaje.id}/")
+    detail_response = client.get(
+        f"/api/pwa/espacios/{espacio_1.id}/mensajes/{mensaje.id}/"
+    )
     list_response = client.get(f"/api/pwa/espacios/{espacio_1.id}/mensajes/")
 
     assert detail_response.status_code == 200

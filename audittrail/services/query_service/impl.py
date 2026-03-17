@@ -98,16 +98,26 @@ def get_keyword_terms(keyword: str | None):
     return [term for term in str(keyword).strip().split() if term]
 
 
-def _safe_changes_field_lookup():
+def _available_changes_field_lookups(*, prefer_text: bool = False):
     """
-    Devuelve el field lookup preferido para búsquedas de texto simples en cambios.
+    Devuelve los campos disponibles para búsquedas en cambios.
+
+    Por defecto prioriza `changes` (JSON estructurado) y usa `changes_text`
+    como complemento. En rutas de texto puro se puede invertir el orden.
     """
     field_names = {field.name for field in LogEntry._meta.get_fields()}
-    if "changes_text" in field_names:
-        return "changes_text"
-    if "changes" in field_names:
-        return "changes"
-    return None
+    ordered = (
+        ("changes_text", "changes") if prefer_text else ("changes", "changes_text")
+    )
+    return [field_name for field_name in ordered if field_name in field_names]
+
+
+def _safe_changes_field_lookup():
+    """
+    Devuelve el primer lookup disponible para compatibilidad.
+    """
+    lookups = _available_changes_field_lookups()
+    return lookups[0] if lookups else None
 
 
 def _logentry_has_field(field_name: str) -> bool:
@@ -144,27 +154,32 @@ def apply_field_name_filter(qs, field_name: str | None):
     if not variants:
         return qs
 
-    field_lookup = _safe_changes_field_lookup()
-    if field_lookup is None:
+    field_lookups = _available_changes_field_lookups()
+    if not field_lookups:
         return qs
 
-    changes_field = LogEntry._meta.get_field(field_lookup)
-    internal_type = getattr(changes_field, "get_internal_type", lambda: "")()
+    has_key_query = Q()
+    text_query = Q()
+    supports_has_key = False
 
-    if internal_type == "JSONField":
+    for field_lookup in field_lookups:
+        changes_field = LogEntry._meta.get_field(field_lookup)
+        internal_type = getattr(changes_field, "get_internal_type", lambda: "")()
+        if internal_type == "JSONField":
+            supports_has_key = True
+            for variant in variants:
+                has_key_query |= Q(**{f"{field_lookup}__has_key": variant})
+        for variant in variants:
+            text_query |= Q(**{f"{field_lookup}__icontains": variant})
+
+    if supports_has_key:
         # MySQL y PostgreSQL soportan `has_key`; si no, cae al fallback textual.
         try:
-            query = Q()
-            for variant in variants:
-                query |= Q(**{f"{field_lookup}__has_key": variant})
-            return qs.filter(query)
+            return qs.filter(has_key_query | text_query)
         except Exception:  # noqa: BLE001
             pass
 
-    query = Q()
-    for variant in variants:
-        query |= Q(**{f"{field_lookup}__icontains": variant})
-    return qs.filter(query)
+    return qs.filter(text_query)
 
 
 def apply_origin_filter(qs, origin: str | None):
@@ -236,8 +251,7 @@ def _mysql_can_use_fulltext(qs):
     """
     MySQL 8.0+ con columna `changes_text` presente.
     """
-    field_lookup = _safe_changes_field_lookup()
-    if field_lookup != "changes_text":
+    if "changes_text" not in _available_changes_field_lookups(prefer_text=True):
         return False
 
     try:
@@ -287,8 +301,8 @@ def apply_optimized_keyword_filter(qs, keyword: str | None):
     Aplica búsqueda por keyword priorizando FULLTEXT en MySQL 8 (changes_text).
     Fallback a `icontains` AND si no aplica.
     """
-    terms = get_keyword_terms(keyword)
-    if not terms:
+    terms_query = _build_keyword_terms_query(keyword)
+    if terms_query is None:
         return qs
 
     if _mysql_can_use_fulltext(qs):
@@ -298,9 +312,70 @@ def apply_optimized_keyword_filter(qs, keyword: str | None):
             sql = f"MATCH({table_name}.changes_text) AGAINST (%s IN BOOLEAN MODE)"
             return qs.annotate(
                 _audittrail_changes_rank=RawSQL(sql, [boolean_query])
-            ).filter(_audittrail_changes_rank__gt=0)
+            ).filter(Q(_audittrail_changes_rank__gt=0) | terms_query)
 
-    return apply_keyword_filter(qs, keyword)
+    return qs.filter(terms_query)
+
+
+def _normalize_text_filter(value: str | None) -> str:
+    return " ".join(str(value or "").strip().split())
+
+
+def apply_model_filter(qs, model_value: str | None):
+    """
+    Filtro por modelo, soportando formato `app.model` o términos parciales.
+    """
+    normalized = _normalize_text_filter(model_value)
+    if not normalized:
+        return qs
+
+    if "." in normalized:
+        app_label, model_name = normalized.split(".", 1)
+        app_label = app_label.strip()
+        model_name = model_name.strip()
+        if app_label and model_name:
+            return qs.filter(
+                content_type__app_label__iexact=app_label,
+                content_type__model__iexact=model_name,
+            )
+
+    return qs.filter(
+        Q(content_type__app_label__icontains=normalized)
+        | Q(content_type__model__icontains=normalized)
+    )
+
+
+def apply_object_pk_filter(qs, object_pk):
+    """
+    Filtro por PK de instancia, normalizando espacios.
+    """
+    normalized = _normalize_text_filter(object_pk)
+    if not normalized:
+        return qs
+    return qs.filter(object_pk=str(normalized))
+
+
+def apply_actor_filter(qs, actor: str | None):
+    """
+    Filtro por actor considerando relación viva y snapshots persistidos.
+
+    Usa términos AND para soportar búsquedas por nombre/apellido compuestos.
+    """
+    terms = get_keyword_terms(_normalize_text_filter(actor))
+    if not terms:
+        return qs
+
+    for term in terms:
+        qs = qs.filter(
+            Q(actor__username__icontains=term)
+            | Q(actor__email__icontains=term)
+            | Q(actor__first_name__icontains=term)
+            | Q(actor__last_name__icontains=term)
+            | Q(audittrail_meta__actor_username_snapshot__icontains=term)
+            | Q(audittrail_meta__actor_full_name_snapshot__icontains=term)
+            | Q(audittrail_meta__actor_display_snapshot__icontains=term)
+        )
+    return qs
 
 
 def apply_filters(qs, cleaned_data: dict):
@@ -309,25 +384,9 @@ def apply_filters(qs, cleaned_data: dict):
     """
     data = cleaned_data or {}
 
-    model_value = data.get("model")
-    if model_value:
-        qs = qs.filter(
-            Q(content_type__app_label__icontains=model_value)
-            | Q(content_type__model__icontains=model_value)
-        )
-
-    object_pk = data.get("object_pk")
-    if object_pk:
-        qs = qs.filter(object_pk=str(object_pk))
-
-    actor = data.get("actor")
-    if actor:
-        qs = qs.filter(
-            Q(actor__username__icontains=actor)
-            | Q(actor__email__icontains=actor)
-            | Q(actor__first_name__icontains=actor)
-            | Q(actor__last_name__icontains=actor)
-        )
+    qs = apply_model_filter(qs, data.get("model"))
+    qs = apply_object_pk_filter(qs, data.get("object_pk"))
+    qs = apply_actor_filter(qs, data.get("actor"))
 
     field_name = data.get("field_name")
     if field_name:
@@ -342,7 +401,7 @@ def apply_filters(qs, cleaned_data: dict):
         qs = apply_batch_key_filter(qs, batch_key)
 
     action = data.get("action")
-    if action != "":
+    if action not in (None, ""):
         qs = qs.filter(action=action)
 
     start_date = data.get("start_date")
@@ -362,10 +421,31 @@ def apply_keyword_filter(qs, keyword: str | None):
     """
     Filtro AND por palabras en `changes`.
     """
-    field_lookup = _safe_changes_field_lookup() or "changes"
-    for term in get_keyword_terms(keyword):
-        qs = qs.filter(**{f"{field_lookup}__icontains": term})
-    return qs
+    terms_query = _build_keyword_terms_query(keyword)
+    if terms_query is None:
+        return qs
+    return qs.filter(terms_query)
+
+
+def _build_keyword_terms_query(keyword: str | None):
+    """
+    Construye un Q con semántica AND por término y OR por campo de changes.
+    """
+    terms = get_keyword_terms(keyword)
+    if not terms:
+        return None
+
+    field_lookups = _available_changes_field_lookups()
+    if not field_lookups:
+        return None
+
+    query = Q()
+    for term in terms:
+        term_query = Q()
+        for field_lookup in field_lookups:
+            term_query |= Q(**{f"{field_lookup}__icontains": term})
+        query &= term_query
+    return query
 
 
 def validate_export_request(cleaned_data: dict):

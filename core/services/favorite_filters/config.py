@@ -37,7 +37,26 @@ from centrodefamilia.services.responsables_filter_config import (
     NUM_OPS as RESPONSABLES_OPS_NUMERO,
     TEXT_OPS as RESPONSABLES_OPS_TEXTO,
 )
+from VAT.services.beneficiarios_filter_config import (
+    CHOICE_OPS as VAT_BENEFICIARIOS_OPS_ELECCION,
+    FIELD_TYPES as VAT_BENEFICIARIOS_TIPOS_CAMPOS,
+    NUM_OPS as VAT_BENEFICIARIOS_OPS_NUMERO,
+    TEXT_OPS as VAT_BENEFICIARIOS_OPS_TEXTO,
+)
+from VAT.services.centro_filter_config import (
+    BOOL_OPS as VAT_CENTROS_OPS_BOOLEANO,
+    FIELD_TYPES as VAT_CENTROS_TIPOS_CAMPOS,
+    NUM_OPS as VAT_CENTROS_OPS_NUMERO,
+    TEXT_OPS as VAT_CENTROS_OPS_TEXTO,
+)
+from VAT.services.responsables_filter_config import (
+    CHOICE_OPS as VAT_RESPONSABLES_OPS_ELECCION,
+    FIELD_TYPES as VAT_RESPONSABLES_TIPOS_CAMPOS,
+    NUM_OPS as VAT_RESPONSABLES_OPS_NUMERO,
+    TEXT_OPS as VAT_RESPONSABLES_OPS_TEXTO,
+)
 from comedores.services.filter_config import (
+    BOOL_OPS as COMEDORES_OPS_BOOLEANO,
     CHOICE_OPS as COMEDORES_OPS_ELECCION,
     FIELD_TYPES as COMEDORES_TIPOS_CAMPOS,
     NUM_OPS as COMEDORES_OPS_NUMERO,
@@ -68,6 +87,9 @@ class SeccionesFiltrosFavoritos:
     CDF_CENTROS = "centrodefamilia_centros"
     CDF_BENEFICIARIOS = "centrodefamilia_beneficiarios"
     CDF_RESPONSABLES = "centrodefamilia_responsables"
+    VAT_CENTROS = "vat_centros"
+    VAT_BENEFICIARIOS = "vat_beneficiarios"
+    VAT_RESPONSABLES = "vat_responsables"
 
 
 @dataclass(frozen=True)
@@ -83,6 +105,7 @@ CONFIGURACIONES_POR_SECCION = {
             "text": COMEDORES_OPS_TEXTO,
             "number": COMEDORES_OPS_NUMERO,
             "choice": COMEDORES_OPS_ELECCION,
+            "boolean": COMEDORES_OPS_BOOLEANO,
         },
     ),
     SeccionesFiltrosFavoritos.USUARIOS: ConfiguracionFiltrosSeccion(
@@ -139,6 +162,30 @@ CONFIGURACIONES_POR_SECCION = {
             "text": RESPONSABLES_OPS_TEXTO,
             "number": RESPONSABLES_OPS_NUMERO,
             "choice": RESPONSABLES_OPS_ELECCION,
+        },
+    ),
+    SeccionesFiltrosFavoritos.VAT_CENTROS: ConfiguracionFiltrosSeccion(
+        tipos_campos=VAT_CENTROS_TIPOS_CAMPOS,
+        operadores_permitidos={
+            "text": VAT_CENTROS_OPS_TEXTO,
+            "number": VAT_CENTROS_OPS_NUMERO,
+            "boolean": VAT_CENTROS_OPS_BOOLEANO,
+        },
+    ),
+    SeccionesFiltrosFavoritos.VAT_BENEFICIARIOS: ConfiguracionFiltrosSeccion(
+        tipos_campos=VAT_BENEFICIARIOS_TIPOS_CAMPOS,
+        operadores_permitidos={
+            "text": VAT_BENEFICIARIOS_OPS_TEXTO,
+            "number": VAT_BENEFICIARIOS_OPS_NUMERO,
+            "choice": VAT_BENEFICIARIOS_OPS_ELECCION,
+        },
+    ),
+    SeccionesFiltrosFavoritos.VAT_RESPONSABLES: ConfiguracionFiltrosSeccion(
+        tipos_campos=VAT_RESPONSABLES_TIPOS_CAMPOS,
+        operadores_permitidos={
+            "text": VAT_RESPONSABLES_OPS_TEXTO,
+            "number": VAT_RESPONSABLES_OPS_NUMERO,
+            "choice": VAT_RESPONSABLES_OPS_ELECCION,
         },
     ),
 }

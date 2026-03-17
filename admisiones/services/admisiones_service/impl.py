@@ -1753,7 +1753,11 @@ class AdmisionService:
         # Determinar grupo del usuario
         es_tecnico, es_abogado = AdmisionService._resolver_roles_para_botones(user)
 
-        AdmisionService._append_botones_generales_admision(botones, admision)
+        AdmisionService._append_botones_generales_admision(
+            botones,
+            admision,
+            es_tecnico,
+        )
         AdmisionService._append_botones_tecnico_admision(
             botones,
             admision,
@@ -1809,8 +1813,12 @@ class AdmisionService:
         )
 
     @staticmethod
-    def _append_botones_generales_admision(botones, admision):
-        if admision.numero_disposicion and not admision.enviado_acompaniamiento:
+    def _append_botones_generales_admision(botones, admision, es_tecnico):
+        if (
+            es_tecnico
+            and admision.numero_disposicion
+            and not admision.enviado_acompaniamiento
+        ):
             botones.append("comenzar_acompaniamiento")
 
         if admision.estado_legales == "A Rectificar":

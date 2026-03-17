@@ -366,10 +366,20 @@ class _ListChain:
 
 
 def _groups_user(is_superuser=False, allowed=False):
+    allowed_codes = {
+        "comedores.view_comedor",
+        "admisiones.view_admision",
+        "acompanamientos.view_informacionrelevante",
+    }
     groups = SimpleNamespace(
         filter=lambda **kwargs: SimpleNamespace(exists=lambda: allowed)
     )
-    return SimpleNamespace(is_superuser=is_superuser, groups=groups)
+    return SimpleNamespace(
+        is_authenticated=True,
+        is_superuser=is_superuser,
+        groups=groups,
+        has_perm=lambda code: allowed and code in allowed_codes,
+    )
 
 
 def test_admision_detail_get_context_data_builds_full_context(mocker):
@@ -855,9 +865,11 @@ def test_informe_tecnico_detail_context_muestra_revision_tecnico(mocker):
     view = module.InformeTecnicoDetailView()
     view.request = _Req(
         user=SimpleNamespace(
+            is_authenticated=True,
             groups=SimpleNamespace(
                 filter=lambda **kwargs: SimpleNamespace(exists=lambda: True)
-            )
+            ),
+            has_perm=lambda code: code == "admisiones.view_admision",
         )
     )
     view.object = SimpleNamespace(estado="Docx generado")

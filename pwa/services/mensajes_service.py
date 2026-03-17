@@ -3,7 +3,12 @@ from django.db.models import Prefetch, Q
 from django.http import Http404
 from django.utils import timezone
 
-from comunicados.models import Comunicado, EstadoComunicado, SubtipoComunicado, TipoComunicado
+from comunicados.models import (
+    Comunicado,
+    EstadoComunicado,
+    SubtipoComunicado,
+    TipoComunicado,
+)
 from pwa.models import LecturaMensajePWA
 from pwa.services.auditoria_operacion_service import registrar_evento_operacion
 from users.services_pwa import get_accessible_comedor_ids
@@ -22,8 +27,7 @@ def _visible_messages_queryset(*, comedor_id: int):
             estado=EstadoComunicado.PUBLICADO,
         )
         .filter(
-            Q(fecha_vencimiento__isnull=True)
-            | Q(fecha_vencimiento__gt=timezone.now())
+            Q(fecha_vencimiento__isnull=True) | Q(fecha_vencimiento__gt=timezone.now())
         )
         .filter(Q(para_todos_comedores=True) | Q(comedores__id=comedor_id))
         .distinct()

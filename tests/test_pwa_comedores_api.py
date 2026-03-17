@@ -274,8 +274,10 @@ def test_nomina_scope_is_filtered_by_pwa_access(comedores):
     )
     client = _token_client(representante)
 
-    nomina_asignada = Nomina.objects.create(comedor=comedor_1)
-    nomina_fuera_scope = Nomina.objects.create(comedor=comedor_2)
+    admision_1 = Admision.objects.create(comedor=comedor_1)
+    admision_2 = Admision.objects.create(comedor=comedor_2)
+    nomina_asignada = Nomina.objects.create(admision=admision_1)
+    nomina_fuera_scope = Nomina.objects.create(admision=admision_2)
 
     ok_response = client.patch(
         f"/api/comedores/nomina/{nomina_asignada.id}/",

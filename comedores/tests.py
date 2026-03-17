@@ -4,17 +4,20 @@ from unittest import mock
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
-from django.test import RequestFactory, override_settings
+from django.test import Client, RequestFactory, override_settings
 from django.urls import reverse
 from django.utils.html import escape
 
-from comedores.models import Comedor, HistorialValidacion
+from admisiones.models.admisiones import Admision
+from ciudadanos.models import Ciudadano
+from comedores.models import Comedor, HistorialValidacion, Nomina
 from comedores.services.comedor_service import ComedorService
 from comedores.services.validacion_service import ValidacionService
-from comedores.views import ComedorDetailView
+from comedores.views import ComedorDetailView, NominaImportarView
 
 
 # Tests for ComedorDetailView (HTML)
@@ -38,11 +41,12 @@ def test_comedor_detail_view_get_context(client_logged_fixture, comedor_fixture)
         "imagenes",
         "comedor_categoria",
         "rendicion_cuentas_final_activo",
-        "GESTIONAR_API_KEY",
-        "GESTIONAR_API_CREAR_COMEDOR",
         "admision",
     ]:
         assert key in response.context
+
+    assert "GESTIONAR_API_KEY" not in response.context
+    assert "GESTIONAR_API_CREAR_COMEDOR" not in response.context
 
 
 @pytest.mark.django_db
@@ -240,10 +244,15 @@ def test_relevamiento_create_edit_ajax_editar(
         "relevamientos.service.RelevamientoService.update_territorial",
         mock.Mock(return_value=relevamiento_mock),
     )
+    monkeypatch.setattr(
+        "comedores.views.relevamientos.get_object_or_404",
+        mock.Mock(return_value=relevamiento_mock),
+    )
 
     url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
     data = {
         "territorial_editar": "1",
+        "relevamiento_id": "1000",
     }
     response = client_logged_fixture.post(
         url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
@@ -323,3 +332,343 @@ def test_borrar_foto_legajo_elimina_archivo_y_campo(tmp_path, monkeypatch):
 
         assert not comedor.foto_legajo
         assert not fs.exists(ruta)
+
+
+# ---------------------------------------------------------------------------
+# Fixtures para tests de nómina
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def client_nomina_fixture(db):
+    """Cliente autenticado con permisos de nómina."""
+    user_model = get_user_model()
+    user = user_model.objects.create_user(username="nomina_user", password="testpass")
+    for group_name in [
+        "Comedores Nomina Ver",
+        "Comedores Nomina Crear",
+        "Comedores Nomina Editar",
+        "Comedores Nomina Borrar",
+    ]:
+        group, _ = Group.objects.get_or_create(name=group_name)
+        user.groups.add(group)
+    client = Client()
+    client.login(username="nomina_user", password="testpass")
+    return client
+
+
+@pytest.fixture
+def admision_fixture(db):
+    """Comedor + Admisión activa mínima para tests de nómina."""
+    comedor = Comedor.objects.create(nombre="Comedor Test Nómina")
+    admision = Admision.objects.create(comedor=comedor)
+    return admision
+
+
+@pytest.fixture
+def ciudadano_fixture(db):
+    """Ciudadano mínimo para tests de nómina."""
+    from datetime import date
+
+    return Ciudadano.objects.create(
+        nombre="Juan",
+        apellido="Test",
+        fecha_nacimiento=date(1990, 1, 1),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Tests de servicios
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_agregar_ciudadano_a_nomina_caso_feliz(admision_fixture, ciudadano_fixture):
+    """Agrega un ciudadano a la nómina de una admisión correctamente."""
+    ok, _msg = ComedorService.agregar_ciudadano_a_nomina(
+        admision_id=admision_fixture.pk,
+        ciudadano_id=ciudadano_fixture.pk,
+        user=mock.Mock(),
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    assert ok is True
+    assert Nomina.objects.filter(
+        admision=admision_fixture, ciudadano=ciudadano_fixture
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_agregar_ciudadano_ya_en_nomina(admision_fixture, ciudadano_fixture):
+    """Retorna False si el ciudadano ya está en la nómina de esa admisión."""
+    Nomina.objects.create(
+        admision=admision_fixture,
+        ciudadano=ciudadano_fixture,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+        admision_id=admision_fixture.pk,
+        ciudadano_id=ciudadano_fixture.pk,
+        user=mock.Mock(),
+    )
+
+    assert ok is False
+    assert "ya está en la nómina" in msg
+
+
+@pytest.mark.django_db
+def test_importar_nomina_ultimo_convenio_caso_feliz(ciudadano_fixture):
+    """Copia los registros de nómina de la admisión anterior a la actual."""
+    comedor = Comedor.objects.create(nombre="Comedor Importar")
+    admision_anterior = Admision.objects.create(comedor=comedor)
+    admision_actual = Admision.objects.create(comedor=comedor)
+    Nomina.objects.create(
+        admision=admision_anterior,
+        ciudadano=ciudadano_fixture,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    ok, _msg, cantidad = ComedorService.importar_nomina_ultimo_convenio(
+        admision_id=admision_actual.pk,
+        comedor_id=comedor.pk,
+    )
+
+    assert ok is True
+    assert cantidad == 1
+    assert Nomina.objects.filter(
+        admision=admision_actual, ciudadano=ciudadano_fixture
+    ).exists()
+    # El registro importado queda en PENDIENTE
+    nomina_importada = Nomina.objects.get(admision=admision_actual)
+    assert nomina_importada.estado == Nomina.ESTADO_PENDIENTE
+
+
+@pytest.mark.django_db
+def test_importar_nomina_sin_convenio_anterior_con_nomina():
+    """Retorna False si no hay admisión anterior con nómina."""
+    comedor = Comedor.objects.create(nombre="Comedor Sin Anterior")
+    admision_actual = Admision.objects.create(comedor=comedor)
+
+    ok, _msg, cantidad = ComedorService.importar_nomina_ultimo_convenio(
+        admision_id=admision_actual.pk,
+        comedor_id=comedor.pk,
+    )
+
+    assert ok is False
+    assert cantidad == 0
+
+
+@pytest.mark.django_db
+def test_importar_nomina_evita_duplicados(ciudadano_fixture):
+    """No duplica personas que ya están en la nómina destino."""
+    comedor = Comedor.objects.create(nombre="Comedor Duplicados")
+    admision_anterior = Admision.objects.create(comedor=comedor)
+    admision_actual = Admision.objects.create(comedor=comedor)
+    # El ciudadano está en ambas admisiones
+    Nomina.objects.create(
+        admision=admision_anterior,
+        ciudadano=ciudadano_fixture,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+    Nomina.objects.create(
+        admision=admision_actual,
+        ciudadano=ciudadano_fixture,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    ok, _msg, cantidad = ComedorService.importar_nomina_ultimo_convenio(
+        admision_id=admision_actual.pk,
+        comedor_id=comedor.pk,
+    )
+
+    assert ok is True
+    assert cantidad == 0  # nada nuevo importado
+    assert Nomina.objects.filter(admision=admision_actual).count() == 1
+
+
+@pytest.mark.django_db
+def test_importar_nomina_toma_admision_anterior_y_no_una_posterior():
+    """Importa desde la admisión anterior real, no desde una más nueva."""
+    from datetime import date
+
+    comedor = Comedor.objects.create(nombre="Comedor Orden")
+    admision_vieja = Admision.objects.create(comedor=comedor)
+    admision_destino = Admision.objects.create(comedor=comedor)
+    admision_mas_nueva = Admision.objects.create(comedor=comedor)
+
+    ciudadano_viejo = Ciudadano.objects.create(
+        nombre="Ana",
+        apellido="Vieja",
+        fecha_nacimiento=date(1990, 1, 1),
+    )
+    ciudadano_nuevo = Ciudadano.objects.create(
+        nombre="Beto",
+        apellido="Nuevo",
+        fecha_nacimiento=date(1991, 1, 1),
+    )
+    Nomina.objects.create(admision=admision_vieja, ciudadano=ciudadano_viejo)
+    Nomina.objects.create(admision=admision_mas_nueva, ciudadano=ciudadano_nuevo)
+
+    ok, _msg, cantidad = ComedorService.importar_nomina_ultimo_convenio(
+        admision_id=admision_destino.pk,
+        comedor_id=comedor.pk,
+    )
+
+    assert ok is True
+    assert cantidad == 1
+    assert Nomina.objects.filter(
+        admision=admision_destino, ciudadano=ciudadano_viejo
+    ).exists()
+    assert not Nomina.objects.filter(
+        admision=admision_destino, ciudadano=ciudadano_nuevo
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_importar_nomina_falla_si_admision_no_corresponde_al_comedor():
+    """Retorna error si la admisión destino no pertenece al comedor recibido."""
+    comedor_a = Comedor.objects.create(nombre="Comedor A")
+    comedor_b = Comedor.objects.create(nombre="Comedor B")
+    admision_b = Admision.objects.create(comedor=comedor_b)
+
+    ok, msg, cantidad = ComedorService.importar_nomina_ultimo_convenio(
+        admision_id=admision_b.pk,
+        comedor_id=comedor_a.pk,
+    )
+
+    assert ok is False
+    assert "no corresponde al comedor" in msg
+    assert cantidad == 0
+
+
+# ---------------------------------------------------------------------------
+# Tests de vistas
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_nomina_detail_view_responde_ok(client_nomina_fixture, admision_fixture):
+    """NominaDetailView responde 200 y tiene las claves de contexto esperadas."""
+    comedor = admision_fixture.comedor
+    url = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_fixture.pk},
+    )
+    response = client_nomina_fixture.get(url)
+
+    assert response.status_code == 200
+    for key in ["nomina", "cantidad_nomina", "object", "admision_pk"]:
+        assert key in response.context
+
+
+@pytest.mark.django_db
+def test_nomina_detail_view_filtra_por_dni_en_toda_la_nomina(
+    client_nomina_fixture, admision_fixture
+):
+    """El filtro por DNI debe aplicarse antes de paginar, no solo sobre la página actual."""
+    from datetime import date
+
+    ciudadano_objetivo = Ciudadano.objects.create(
+        nombre="Persona",
+        apellido="Objetivo",
+        documento=12345678,
+        fecha_nacimiento=date(1990, 1, 1),
+    )
+    Nomina.objects.create(
+        admision=admision_fixture,
+        ciudadano=ciudadano_objetivo,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    # Crea 100 registros más nuevos para forzar que el objetivo quede fuera de la página 1.
+    for idx in range(100):
+        ciudadano = Ciudadano.objects.create(
+            nombre=f"Persona{idx}",
+            apellido=f"Apellido{idx}",
+            documento=30000000 + idx,
+            fecha_nacimiento=date(1990, 1, 1),
+        )
+        Nomina.objects.create(
+            admision=admision_fixture,
+            ciudadano=ciudadano,
+            estado=Nomina.ESTADO_ACTIVO,
+        )
+
+    comedor = admision_fixture.comedor
+    url = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_fixture.pk},
+    )
+
+    response_sin_filtro = client_nomina_fixture.get(url, {"page": 1})
+    assert response_sin_filtro.status_code == 200
+    assert "12345678" not in response_sin_filtro.content.decode()
+
+    response_filtrada = client_nomina_fixture.get(url, {"page": 1, "dni": "12345678"})
+    assert response_filtrada.status_code == 200
+    assert "12345678" in response_filtrada.content.decode()
+    assert response_filtrada.context["nomina"].paginator.count == 1
+
+
+@pytest.mark.django_db
+def test_nomina_detail_view_404_si_admision_no_corresponde(client_nomina_fixture):
+    """Retorna 404 si la admisión no pertenece al comedor de la URL."""
+    comedor_a = Comedor.objects.create(nombre="Comedor A")
+    comedor_b = Comedor.objects.create(nombre="Comedor B")
+    admision_b = Admision.objects.create(comedor=comedor_b)
+
+    url = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor_a.pk, "admision_pk": admision_b.pk},
+    )
+    response = client_nomina_fixture.get(url)
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_nomina_importar_view_redirige(
+    client_nomina_fixture, admision_fixture, ciudadano_fixture
+):
+    """POST a NominaImportarView redirige a nomina_ver."""
+    comedor = admision_fixture.comedor
+    admision_nueva = Admision.objects.create(comedor=comedor)
+    # Hay nómina en la admisión anterior para poder importar
+    Nomina.objects.create(
+        admision=admision_fixture,
+        ciudadano=ciudadano_fixture,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    url = reverse(
+        "nomina_importar",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_nueva.pk},
+    )
+    response = client_nomina_fixture.post(url)
+
+    assert response.status_code == 302
+    expected_redirect = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_nueva.pk},
+    )
+    assert expected_redirect in response.url
+
+
+@pytest.mark.django_db
+def test_nomina_importar_view_404_si_admision_no_corresponde(client_nomina_fixture):
+    """Retorna 404 si la admisión no corresponde al comedor en la URL."""
+    comedor_a = Comedor.objects.create(nombre="Comedor A")
+    comedor_b = Comedor.objects.create(nombre="Comedor B")
+    admision_b = Admision.objects.create(comedor=comedor_b)
+
+    url = reverse(
+        "nomina_importar",
+        kwargs={"pk": comedor_a.pk, "admision_pk": admision_b.pk},
+    )
+    response = client_nomina_fixture.post(url)
+    assert response.status_code == 404
+
+
+def test_comedores_views_exporta_nomina_importar_view():
+    """`comedores.views` expone NominaImportarView para imports de URLs."""
+    assert NominaImportarView.__name__ == "NominaImportarView"

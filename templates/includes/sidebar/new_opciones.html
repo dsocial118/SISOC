@@ -150,6 +150,15 @@
                     </a>
                 </li>
             {% endif %}
+            {% if request.user|has_perm_code:"VAT.view_centro" %}
+                <li class="nav-item">
+                    <a href="{% url 'vat_centro_list' %}"
+                       class="nav-link {% if 'vat/' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon fas fa-sitemap"></i>
+                        <p>INET</p>
+                    </a>
+                </li>
+            {% endif %}
         </ul>
     </li>
 {% endwith %}

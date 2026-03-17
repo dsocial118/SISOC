@@ -85,7 +85,7 @@ def _user_provincia(user):
 
 
 def _tecnicos_queryset():
-    return User.objects.filter(
+    qs = User.objects.filter(
         Q(
             user_permissions__content_type__app_label="auth",
             user_permissions__codename="role_tecnicoceliaquia",
@@ -94,7 +94,11 @@ def _tecnicos_queryset():
             groups__permissions__content_type__app_label="auth",
             groups__permissions__codename="role_tecnicoceliaquia",
         )
-    ).distinct()
+    )
+    distinct = getattr(qs, "distinct", None)
+    if callable(distinct):
+        return distinct()
+    return qs
 
 
 def _parse_limit(value, default=None, max_cap=5000):

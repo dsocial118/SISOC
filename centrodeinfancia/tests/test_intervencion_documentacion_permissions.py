@@ -31,6 +31,17 @@ class _UserStub:
         self.is_superuser = is_superuser
         self.groups = _GroupsManager(in_group)
 
+    def has_perm(self, perm, obj=None):
+        del obj
+        if self.is_superuser:
+            return True
+        if perm in {
+            "centrodeinfancia.change_intervencioncentroinfancia",
+            "centrodeinfancia.delete_intervencioncentroinfancia",
+        }:
+            return self.groups.filter(name="any").exists()
+        return False
+
 
 def _callback(name):
     for pattern in urlpatterns:

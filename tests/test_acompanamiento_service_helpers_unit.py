@@ -127,13 +127,19 @@ def test_preparar_datos_tabla_comedores_and_permisos():
     assert rows_empty[0]["cells"][1]["content"] == "-"
 
     user_super = SimpleNamespace(
-        is_superuser=True, groups=SimpleNamespace(filter=lambda **_k: None)
+        is_superuser=True,
+        is_authenticated=True,
+        groups=SimpleNamespace(filter=lambda **_k: None),
+        has_perm=lambda *_a, **_k: True,
     )
     assert AcompanamientoService.verificar_permisos_tecnico_comedor(user_super) is True
 
     group_filter = lambda **_kwargs: SimpleNamespace(exists=lambda: True)
     user_group = SimpleNamespace(
-        is_superuser=False, groups=SimpleNamespace(filter=group_filter)
+        is_superuser=False,
+        is_authenticated=True,
+        groups=SimpleNamespace(filter=group_filter),
+        has_perm=lambda *_a, **_k: True,
     )
     assert AcompanamientoService.verificar_permisos_tecnico_comedor(user_group) is True
 

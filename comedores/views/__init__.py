@@ -10,6 +10,7 @@ from .nomina import (
     NominaCreateView,
     NominaDeleteView,
     NominaDetailView,
+    NominaImportarView,
     nomina_editar_ajax,
 )
 from .observacion import (
@@ -31,6 +32,7 @@ __all__ = [
     "NominaCreateView",
     "NominaDeleteView",
     "NominaDetailView",
+    "NominaImportarView",
     "ObservacionCreateView",
     "ObservacionDeleteView",
     "ObservacionDetailView",

@@ -11,7 +11,28 @@ from centrodeinfancia.models import (
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     ObservacionCentroInfancia,
+    Trabajador,
 )
+from centrodeinfancia.forms_formulario_cdi import (
+    FormularioCDIForm,
+    build_fixed_initial_rows,
+    build_articulation_formset_class,
+    build_room_distribution_formset_class,
+    build_waitlist_formset_class,
+)
+
+__all__ = [
+    "CentroDeInfanciaForm",
+    "NominaCentroInfanciaForm",
+    "NominaCentroInfanciaCreateForm",
+    "IntervencionCentroInfanciaForm",
+    "TrabajadorForm",
+    "FormularioCDIForm",
+    "build_fixed_initial_rows",
+    "build_articulation_formset_class",
+    "build_room_distribution_formset_class",
+    "build_waitlist_formset_class",
+]
 
 
 class CentroDeInfanciaForm(forms.ModelForm):
@@ -169,6 +190,18 @@ class NominaCentroInfanciaCreateForm(forms.ModelForm):
         widgets = {
             "observaciones": forms.Textarea(attrs={"rows": 3}),
         }
+
+
+class TrabajadorForm(forms.ModelForm):
+    class Meta:
+        model = Trabajador
+        fields = ["nombre", "apellido", "telefono", "rol"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in ["nombre", "apellido", "telefono"]:
+            self.fields[field_name].widget.attrs["class"] = "form-control"
+        self.fields["rol"].widget.attrs["class"] = "form-select"
 
 
 class IntervencionCentroInfanciaForm(forms.ModelForm):

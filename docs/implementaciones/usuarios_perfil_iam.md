@@ -51,6 +51,7 @@ Compatibilidad:
 
 ### Sincronización de permisos por grupo
 
+- `users/bootstrap/groups_seed.py`
 - `users/services_group_permissions.py`
 - `users/management/commands/create_groups.py`
 - `users/management/commands/sync_group_permissions_from_registry.py`
@@ -134,7 +135,7 @@ Toda nueva feature debe depender de **permisos Django** (`app_label.codename`), 
    - Evitar `request.user.groups...` para control de acceso.
 
 4. **Compatibilidad de grupos existentes**
-   - Agregar permisos canónicos al mapeo bootstrap por grupo.
+   - Agregar grupos y permisos canónicos a la semilla bootstrap declarativa.
    - Si impacta producción, agregar data migration o usar sync command.
 
 5. **Testing mínimo**

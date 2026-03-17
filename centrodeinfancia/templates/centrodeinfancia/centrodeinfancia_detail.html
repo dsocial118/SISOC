@@ -149,6 +149,10 @@
                     <button type="button"
                             class="accordion-header h5 accordion-header--responsables">Referente</button>
                     <div class="accordion-content">
+                        <div class="mb-3">
+                            <h4 class="mb-0">Referente</h4>
+                            <small class="text-muted">Persona de referencia asociada al centro de infancia.</small>
+                        </div>
                         {% with nombre=centro.nombre_referente|default:"" apellido=centro.apellido_referente|default:"" %}
                             <p class="mb-2">
                                 <i class="bi bi-person me-2"></i><strong>Referente:</strong>
@@ -167,6 +171,82 @@
                         <p class="mb-0">
                             <i class="bi bi-phone me-2"></i><strong>Teléfono:</strong> {{ centro.telefono_referente|default:"-" }}
                         </p>
+                    </div>
+                </div>
+
+                <div class="accordion-panel">
+                    <button type="button"
+                            class="accordion-header h5 accordion-header--trabajadores">Trabajadores</button>
+                    <div class="accordion-content">
+                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                            <div>
+                                <h4 class="mb-0">Trabajadores</h4>
+                                <small class="text-muted">Personal asociado al centro de infancia.</small>
+                            </div>
+                            {% if puede_editar_trabajadores %}
+                                <button type="button"
+                                        class="btn btn-sm btn-primary"
+                                        id="abrirTrabajadorCrearBtn"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalTrabajador">
+                                    Agregar trabajador
+                                </button>
+                            {% endif %}
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Apellido y nombre</th>
+                                        <th>Rol</th>
+                                        <th>Teléfono</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for trabajador in trabajadores %}
+                                        <tr>
+                                            <td>{{ trabajador.apellido }}, {{ trabajador.nombre }}</td>
+                                            <td>{{ trabajador.get_rol_display }}</td>
+                                            <td>{{ trabajador.telefono|default:"-" }}</td>
+                                            <td>
+                                                <div class="d-flex gap-2 flex-wrap">
+                                                    {% if puede_editar_trabajadores %}
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-warning trabajador-editar-btn"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#modalTrabajador"
+                                                                data-edit-url="{% url 'centrodeinfancia_trabajador_editar' centro.id trabajador.id %}"
+                                                                data-nombre="{{ trabajador.nombre }}"
+                                                                data-apellido="{{ trabajador.apellido }}"
+                                                                data-telefono="{{ trabajador.telefono|default:'' }}"
+                                                                data-rol="{{ trabajador.rol }}">
+                                                            Editar
+                                                        </button>
+                                                    {% endif %}
+                                                    {% if puede_eliminar_trabajadores %}
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-danger trabajador-eliminar-btn"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#modalEliminarTrabajador"
+                                                                data-delete-url="{% url 'centrodeinfancia_trabajador_eliminar' centro.id trabajador.id %}"
+                                                                data-full-name="{{ trabajador.apellido }}, {{ trabajador.nombre }}">
+                                                            Eliminar
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">
+                                                No hay trabajadores asociados a este centro.
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -214,6 +294,62 @@
                         </div>
                     </div>
                 </div>
+
+                {% if request.user|has_perm_code:'centrodeinfancia.view_formulariocdi' %}
+                    <div class="accordion-panel">
+                        <button type="button"
+                                class="accordion-header h5 accordion-header--formularios">Formularios</button>
+                        <div class="accordion-content">
+                            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                                <div>
+                                    <h4 class="mb-0">Formularios</h4>
+                                    <small class="text-muted">Últimas 3 instancias del formulario del centro.</small>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'centrodeinfancia_formulario_listado' centro.id %}"
+                                       class="btn btn-sm btn-outline-primary">Ver todos</a>
+                                    {% if request.user|has_perm_code:'centrodeinfancia.add_formulariocdi' %}
+                                        <a href="{% url 'centrodeinfancia_formulario_crear' centro.id %}"
+                                           class="btn btn-sm btn-primary">Nuevo formulario</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Fecha relevamiento</th>
+                                            <th>Quien responde</th>
+                                            <th>Actualizado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in formularios_recent %}
+                                            <tr>
+                                                <td>{{ item.id }}</td>
+                                                <td>{{ item.survey_date|date:"d/m/Y"|default:"-" }}</td>
+                                                <td>{{ item.respondent_full_name|default:"-" }}</td>
+                                                <td>{{ item.updated_at|date:"d/m/Y H:i" }}</td>
+                                                <td class="d-flex gap-2">
+                                                    <a href="{{ item.detail_url }}" class="btn btn-sm btn-primary">Ver</a>
+                                                    {% if request.user|has_perm_code:'centrodeinfancia.change_formulariocdi' %}
+                                                        <a href="{{ item.edit_url }}" class="btn btn-sm btn-warning">Editar</a>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted py-4">Todavía no hay formularios cargados para este centro.</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
 
@@ -353,6 +489,103 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                             <button type="submit" class="btn btn-primary">Guardar intervención</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade"
+             id="modalTrabajador"
+             tabindex="-1"
+             aria-labelledby="modalTrabajadorLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post"
+                          action="{{ trabajador_form_action }}"
+                          id="trabajadorModalForm"
+                          data-default-action="{% url 'centrodeinfancia_trabajador_crear' centro.id %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalTrabajadorLabel">
+                                {% if trabajador_modal_mode == "edit" %}
+                                    Editar trabajador
+                                {% else %}
+                                    Agregar trabajador
+                                {% endif %}
+                            </h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            {% if trabajador_form.non_field_errors %}
+                                <div class="alert alert-danger" role="alert">
+                                    {{ trabajador_form.non_field_errors }}
+                                </div>
+                            {% endif %}
+                            <div class="mb-3">
+                                <label for="{{ trabajador_form.nombre.id_for_label }}" class="form-label">{{ trabajador_form.nombre.label }}</label>
+                                {{ trabajador_form.nombre }}
+                                {{ trabajador_form.nombre.errors }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="{{ trabajador_form.apellido.id_for_label }}" class="form-label">{{ trabajador_form.apellido.label }}</label>
+                                {{ trabajador_form.apellido }}
+                                {{ trabajador_form.apellido.errors }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="{{ trabajador_form.telefono.id_for_label }}" class="form-label">{{ trabajador_form.telefono.label }}</label>
+                                {{ trabajador_form.telefono }}
+                                {{ trabajador_form.telefono.errors }}
+                            </div>
+                            <div class="mb-0">
+                                <label for="{{ trabajador_form.rol.id_for_label }}" class="form-label">{{ trabajador_form.rol.label }}</label>
+                                {{ trabajador_form.rol }}
+                                {{ trabajador_form.rol.errors }}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="trabajadorModalSubmitBtn">
+                                {% if trabajador_modal_mode == "edit" %}
+                                    Guardar cambios
+                                {% else %}
+                                    Guardar trabajador
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade"
+             id="modalEliminarTrabajador"
+             tabindex="-1"
+             aria-labelledby="modalEliminarTrabajadorLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post" id="trabajadorDeleteForm">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalEliminarTrabajadorLabel">Confirmar eliminación</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-0">
+                                ¿Está seguro de eliminar a <strong id="trabajadorDeleteName">este trabajador</strong>?
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
                         </div>
                     </form>
                 </div>
@@ -630,6 +863,82 @@
 
             const fechaInput = document.getElementById("id_fecha");
             const fechaError = document.getElementById("fecha-error-intervencion");
+            const trabajadorModalElement = document.getElementById("modalTrabajador");
+            const trabajadorModalForm = document.getElementById("trabajadorModalForm");
+            const trabajadorModalTitle = document.getElementById("modalTrabajadorLabel");
+            const trabajadorSubmitBtn = document.getElementById("trabajadorModalSubmitBtn");
+            const abrirTrabajadorCrearBtn = document.getElementById("abrirTrabajadorCrearBtn");
+            const trabajadorDeleteForm = document.getElementById("trabajadorDeleteForm");
+            const trabajadorDeleteName = document.getElementById("trabajadorDeleteName");
+
+            function configurarModalCrearTrabajador() {
+                if (!trabajadorModalForm || !trabajadorModalTitle || !trabajadorSubmitBtn) {
+                    return;
+                }
+                trabajadorModalForm.action = trabajadorModalForm.dataset.defaultAction;
+                trabajadorModalTitle.textContent = "Agregar trabajador";
+                trabajadorSubmitBtn.textContent = "Guardar trabajador";
+                const nombreInput = document.getElementById("id_nombre");
+                const apellidoInput = document.getElementById("id_apellido");
+                const telefonoInput = document.getElementById("id_telefono");
+                const rolInput = document.getElementById("id_rol");
+                if (nombreInput) {
+                    nombreInput.value = "";
+                }
+                if (apellidoInput) {
+                    apellidoInput.value = "";
+                }
+                if (telefonoInput) {
+                    telefonoInput.value = "";
+                }
+                if (rolInput) {
+                    rolInput.value = "";
+                }
+            }
+
+            if (abrirTrabajadorCrearBtn) {
+                abrirTrabajadorCrearBtn.addEventListener("click", function() {
+                    configurarModalCrearTrabajador();
+                });
+            }
+
+            document.querySelectorAll(".trabajador-editar-btn").forEach(function(button) {
+                button.addEventListener("click", function() {
+                    if (!trabajadorModalForm || !trabajadorModalTitle || !trabajadorSubmitBtn) {
+                        return;
+                    }
+                    trabajadorModalForm.action = this.dataset.editUrl;
+                    trabajadorModalTitle.textContent = "Editar trabajador";
+                    trabajadorSubmitBtn.textContent = "Guardar cambios";
+                    const nombreInput = document.getElementById("id_nombre");
+                    const apellidoInput = document.getElementById("id_apellido");
+                    const telefonoInput = document.getElementById("id_telefono");
+                    const rolInput = document.getElementById("id_rol");
+                    if (nombreInput) {
+                        nombreInput.value = this.dataset.nombre || "";
+                    }
+                    if (apellidoInput) {
+                        apellidoInput.value = this.dataset.apellido || "";
+                    }
+                    if (telefonoInput) {
+                        telefonoInput.value = this.dataset.telefono || "";
+                    }
+                    if (rolInput) {
+                        rolInput.value = this.dataset.rol || "";
+                    }
+                });
+            });
+
+            document.querySelectorAll(".trabajador-eliminar-btn").forEach(function(button) {
+                button.addEventListener("click", function() {
+                    if (trabajadorDeleteForm) {
+                        trabajadorDeleteForm.action = this.dataset.deleteUrl;
+                    }
+                    if (trabajadorDeleteName) {
+                        trabajadorDeleteName.textContent = this.dataset.fullName || "este trabajador";
+                    }
+                });
+            });
 
             function validarFecha() {
                 if (!fechaInput) {
@@ -683,6 +992,15 @@
                         event.stopPropagation();
                     }
                 });
+            }
+
+            if ({{ trabajador_modal_open|yesno:"true,false" }}) {
+                const trabajadorModal = trabajadorModalElement
+                    ? new bootstrap.Modal(trabajadorModalElement)
+                    : null;
+                if (trabajadorModal) {
+                    trabajadorModal.show();
+                }
             }
         });
     </script>
