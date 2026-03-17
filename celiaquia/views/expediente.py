@@ -230,10 +230,19 @@ class ExpedienteListView(ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
+        is_admin = _is_admin(user)
+        is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        is_tecnico = _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+
         ctx["tecnicos"] = []
-        if _is_admin(user) or _user_has_permission(
-            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
-        ):
+        ctx["is_admin_celiaquia"] = is_admin
+        ctx["is_coord_celiaquia"] = is_coord
+        ctx["is_tecnico_celiaquia"] = is_tecnico
+        ctx["is_provincial_celiaquia"] = _is_provincial(user)
+        ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
+        ctx["show_tecnico_column_celiaquia"] = is_admin or is_coord or is_tecnico
+
+        if is_admin or is_coord:
             ctx["tecnicos"] = _tecnicos_queryset().order_by("last_name", "first_name")
         return ctx
 
