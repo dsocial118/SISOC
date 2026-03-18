@@ -636,8 +636,11 @@ class ExpedienteDetailView(DetailView):
             if responsable.ciudadano_id not in agregados:
                 agregar_con_descendientes(responsable)
 
-        # Agregar hijos sin responsable al final
-        legajos_enriquecidos.extend(hijos_sin_responsable)
+        # Agregar hijos sin responsable al final evitando duplicados.
+        for legajo in hijos_sin_responsable:
+            if legajo.ciudadano_id not in agregados:
+                legajos_enriquecidos.append(legajo)
+                agregados.add(legajo.ciudadano_id)
 
         # Agregar legajos huérfanos: tienen responsable_id pero ese responsable
         # no está en el expediente (fue eliminado o nunca se importó).
