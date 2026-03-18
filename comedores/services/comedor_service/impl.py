@@ -97,7 +97,7 @@ def _aggregate_nomina_resumen(qs_nomina_age):
         cantidad_nomina_m=Count("id", filter=Q(ciudadano__sexo__sexo="Masculino")),
         cantidad_nomina_f=Count("id", filter=Q(ciudadano__sexo__sexo="Femenino")),
         cantidad_nomina_x=Count("id", filter=Q(ciudadano__sexo__sexo="X")),
-        espera=Count("id", filter=Q(estado=Nomina.ESTADO_PENDIENTE)),
+        espera=Count("id", filter=Q(estado=Nomina.ESTADO_ESPERA)),
         cantidad_total=Count("id"),
         rango_ninos=Count("id", filter=Q(edad__lte=13, estado=Nomina.ESTADO_ACTIVO)),
         rango_adolescentes=Count(
@@ -214,7 +214,7 @@ def _crear_nomina_registro(admision_id, ciudadano, estado=None, observaciones=No
     return Nomina.objects.create(
         ciudadano=ciudadano,
         admision_id=admision_id,
-        estado=estado or Nomina.ESTADO_PENDIENTE,
+        estado=estado or Nomina.ESTADO_ACTIVO,
         observaciones=observaciones,
     )
 
@@ -1386,7 +1386,7 @@ class ComedorService:
             Nomina(
                 admision_id=admision_id,
                 ciudadano_id=nomina.ciudadano_id,
-                estado=Nomina.ESTADO_PENDIENTE,
+                estado=Nomina.ESTADO_ACTIVO,
             )
             for nomina in nominas_origen
             if nomina.ciudadano_id not in ya_en_destino
