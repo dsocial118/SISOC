@@ -456,13 +456,13 @@ class AuditComedorPrograma(models.Model):
 
 
 class Nomina(SoftDeleteModelMixin, models.Model):
-    ESTADO_PENDIENTE = "pendiente"
     ESTADO_ACTIVO = "activo"
+    ESTADO_ESPERA = "espera"
     ESTADO_BAJA = "baja"
 
     ESTADO_CHOICES = [
         (ESTADO_ACTIVO, "Activo"),
-        (ESTADO_PENDIENTE, "Pendiente"),
+        (ESTADO_ESPERA, "En espera"),
         (ESTADO_BAJA, "Baja"),
     ]
 
@@ -484,7 +484,7 @@ class Nomina(SoftDeleteModelMixin, models.Model):
     estado = models.CharField(
         max_length=20,
         choices=ESTADO_CHOICES,
-        default=ESTADO_PENDIENTE,
+        default=ESTADO_ACTIVO,
     )
     observaciones = models.TextField(blank=True, null=True)
 
