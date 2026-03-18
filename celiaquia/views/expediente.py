@@ -61,7 +61,10 @@ def _user_has_permission(user, permission_code: str) -> bool:
 
 
 def _is_admin(user) -> bool:
-    return bool(getattr(user, "is_authenticated", False) and getattr(user, "is_superuser", False))
+    return bool(
+        getattr(user, "is_authenticated", False)
+        and getattr(user, "is_superuser", False)
+    )
 
 
 def _user_in_group(user, group_name) -> bool:
