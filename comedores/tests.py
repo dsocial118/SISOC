@@ -439,9 +439,9 @@ def test_importar_nomina_ultimo_convenio_caso_feliz(ciudadano_fixture):
     assert Nomina.objects.filter(
         admision=admision_actual, ciudadano=ciudadano_fixture
     ).exists()
-    # El registro importado queda en PENDIENTE
+    # El registro importado queda en ACTIVO
     nomina_importada = Nomina.objects.get(admision=admision_actual)
-    assert nomina_importada.estado == Nomina.ESTADO_PENDIENTE
+    assert nomina_importada.estado == Nomina.ESTADO_ACTIVO
 
 
 @pytest.mark.django_db
