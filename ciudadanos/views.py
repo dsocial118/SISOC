@@ -202,7 +202,9 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
             nominas = (
                 Nomina.objects.filter(ciudadano=ciudadano)
                 .select_related(
-                    "comedor__provincia", "comedor__municipio", "comedor__tipocomedor"
+                    "admision__comedor__provincia",
+                    "admision__comedor__municipio",
+                    "admision__comedor__tipocomedor",
                 )
                 .order_by("-fecha")
             )
