@@ -1132,10 +1132,10 @@
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
                                                     margin-top: 0.25rem">
-                                            <a href="{% url 'comedor_detalle' nomina_actual.comedor.id %}"
+                                            <a href="{% url 'comedor_detalle' nomina_actual.admision.comedor.id %}"
                                                style="color: #F5A623;
                                                       text-decoration: underline">
-                                                {{ nomina_actual.comedor.nombre }}
+                                                {{ nomina_actual.admision.comedor.nombre }}
                                             </a>
                                         </div>
                                     </div>
@@ -1144,7 +1144,7 @@
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
                                                     margin-top: 0.25rem">
-                                            {{ nomina_actual.comedor.tipocomedor.nombre|default:"-" }}
+                                            {{ nomina_actual.admision.comedor.tipocomedor.nombre|default:"-" }}
                                         </div>
                                     </div>
                                     <div>
@@ -1152,7 +1152,7 @@
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
                                                     margin-top: 0.25rem">
-                                            {{ nomina_actual.comedor.provincia.nombre|default:"-" }}
+                                            {{ nomina_actual.admision.comedor.provincia.nombre|default:"-" }}
                                         </div>
                                     </div>
                                     <div>
@@ -1160,7 +1160,7 @@
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
                                                     margin-top: 0.25rem">
-                                            {{ nomina_actual.comedor.municipio.nombre|default:"-" }}
+                                            {{ nomina_actual.admision.comedor.municipio.nombre|default:"-" }}
                                         </div>
                                     </div>
                                     <div>
@@ -1170,8 +1170,8 @@
                                                     margin-top: 0.25rem">
                                             {% if nomina_actual.estado == 'activo' %}
                                                 <span class="badge" style="background: var(--green);">Activo</span>
-                                            {% elif nomina_actual.estado == 'pendiente' %}
-                                                <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Pendiente</span>
+                                            {% elif nomina_actual.estado == 'espera' %}
+                                                <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En espera</span>
                                             {% else %}
                                                 <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
                                             {% endif %}
@@ -1184,7 +1184,7 @@
                                                     margin-top: 0.25rem">{{ nomina_actual.fecha|date:"d/m/Y" }}</div>
                                     </div>
                                 </div>
-                                {% if nominas_comedor.count > 1 %}
+                                {% if nominas_comedor|length > 1 %}
                                     <h6 style="margin-top: 1.5rem;
                                                margin-bottom: 1rem;
                                                border-top: 1px solid rgba(255,255,255,0.1);
@@ -1201,17 +1201,17 @@
                                             {% for nomina in nominas_comedor %}
                                                 <tr>
                                                     <td>
-                                                        <a href="{% url 'comedor_detalle' nomina.comedor.id %}"
+                                                        <a href="{% url 'comedor_detalle' nomina.admision.comedor.id %}"
                                                            style="color: #F5A623;
                                                                   text-decoration: underline">
-                                                            {{ nomina.comedor.nombre }}
+                                                            {{ nomina.admision.comedor.nombre }}
                                                         </a>
                                                     </td>
                                                     <td>
                                                         {% if nomina.estado == 'activo' %}
                                                             <span class="badge" style="background: var(--green);">Activo</span>
-                                                        {% elif nomina.estado == 'pendiente' %}
-                                                            <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Pendiente</span>
+                                                        {% elif nomina.estado == 'espera' %}
+                                                            <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En espera</span>
                                                         {% else %}
                                                             <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
                                                         {% endif %}
