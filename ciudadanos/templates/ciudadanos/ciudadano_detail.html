@@ -1123,6 +1123,7 @@
                                 {% endif %}
                             </h5>
                             {% if nomina_actual %}
+                                {% with comedor_actual=nomina_actual.admision.comedor %}
                                 <div style="display: grid;
                                             grid-template-columns: 1fr 1fr;
                                             gap: 1rem;
@@ -1132,11 +1133,15 @@
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
                                                     margin-top: 0.25rem">
-                                            <a href="{% url 'comedor_detalle' nomina_actual.comedor.id %}"
-                                               style="color: #F5A623;
-                                                      text-decoration: underline">
-                                                {{ nomina_actual.comedor.nombre }}
-                                            </a>
+                                            {% if comedor_actual and comedor_actual.id %}
+                                                <a href="{% url 'comedor_detalle' comedor_actual.id %}"
+                                                   style="color: #F5A623;
+                                                          text-decoration: underline">
+                                                    {{ comedor_actual.nombre }}
+                                                </a>
+                                            {% else %}
+                                                -
+                                            {% endif %}
                                         </div>
                                     </div>
                                     <div>
@@ -1144,7 +1149,7 @@
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
                                                     margin-top: 0.25rem">
-                                            {{ nomina_actual.comedor.tipocomedor.nombre|default:"-" }}
+                                            {{ comedor_actual.tipocomedor.nombre|default:"-" }}
                                         </div>
                                     </div>
                                     <div>
@@ -1152,7 +1157,7 @@
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
                                                     margin-top: 0.25rem">
-                                            {{ nomina_actual.comedor.provincia.nombre|default:"-" }}
+                                            {{ comedor_actual.provincia.nombre|default:"-" }}
                                         </div>
                                     </div>
                                     <div>
@@ -1160,7 +1165,7 @@
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
                                                     margin-top: 0.25rem">
-                                            {{ nomina_actual.comedor.municipio.nombre|default:"-" }}
+                                            {{ comedor_actual.municipio.nombre|default:"-" }}
                                         </div>
                                     </div>
                                     <div>
@@ -1184,6 +1189,7 @@
                                                     margin-top: 0.25rem">{{ nomina_actual.fecha|date:"d/m/Y" }}</div>
                                     </div>
                                 </div>
+                                {% endwith %}
                                 {% if nominas_comedor.count > 1 %}
                                     <h6 style="margin-top: 1.5rem;
                                                margin-bottom: 1rem;
@@ -1201,11 +1207,17 @@
                                             {% for nomina in nominas_comedor %}
                                                 <tr>
                                                     <td>
-                                                        <a href="{% url 'comedor_detalle' nomina.comedor.id %}"
-                                                           style="color: #F5A623;
-                                                                  text-decoration: underline">
-                                                            {{ nomina.comedor.nombre }}
-                                                        </a>
+                                                        {% with comedor=nomina.admision.comedor %}
+                                                            {% if comedor and comedor.id %}
+                                                                <a href="{% url 'comedor_detalle' comedor.id %}"
+                                                                   style="color: #F5A623;
+                                                                          text-decoration: underline">
+                                                                    {{ comedor.nombre }}
+                                                                </a>
+                                                            {% else %}
+                                                                -
+                                                            {% endif %}
+                                                        {% endwith %}
                                                     </td>
                                                     <td>
                                                         {% if nomina.estado == 'activo' %}
@@ -1974,12 +1986,12 @@ function cambiarMes(direccion) {
 
 function actualizarGrafico() {
     document.getElementById('mes-actual').textContent = mesActual + ' ' + mesesNombres[mesActual] + ' ' + anioActual;
-    
+
     const ctx = document.getElementById('historialChart').getContext('2d');
     if (window.historialChartInstance) {
         window.historialChartInstance.destroy();
     }
-    
+
     window.historialChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -2047,7 +2059,7 @@ function actualizarGrafico() {
 
 document.addEventListener('DOMContentLoaded', function() {
     actualizarGrafico();
-    
+
     {% if ciudadano.latitud and ciudadano.longitud %}
     const mapElement = document.getElementById('map');
     if (mapElement) {
@@ -2061,7 +2073,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fullscreenControl: false,
             streetViewControl: false
         });
-        
+
         new google.maps.Marker({
             position: {
                 lat: {{ ciudadano.latitud }},

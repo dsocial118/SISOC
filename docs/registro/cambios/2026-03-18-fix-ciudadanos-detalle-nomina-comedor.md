@@ -9,7 +9,10 @@ La causa raíz era una query desactualizada en `CiudadanosDetailView.get_comedor
 ## Cambio aplicado
 
 - Se corrigió el `select_related` de `Nomina` para navegar por `admision__comedor__...`.
+- Se corrigió el template de detalle de ciudadano para usar `nomina.admision.comedor` en lugar de `nomina.comedor`.
+- Se agregaron guardas en el template antes de construir `comedor_detalle`, evitando `NoReverseMatch` cuando falta comedor.
 - Se endureció el test unitario de `ciudadanos.views` para que falle si se reintroduce el acceso legacy por `comedor__...`.
+- Se agregó regresión de template para evitar volver a las referencias legacy `nomina.comedor`.
 
 ## Motivo
 
