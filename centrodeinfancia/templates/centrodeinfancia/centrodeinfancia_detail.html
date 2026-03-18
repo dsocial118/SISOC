@@ -489,6 +489,7 @@
             </div>
         </div>
 
+        {% if puede_editar_trabajadores %}
         <div class="modal fade"
              id="modalTrabajador"
              tabindex="-1"
@@ -587,6 +588,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
         <div class="modal fade"
              id="modalObservacion"
@@ -859,6 +861,7 @@
 
             const fechaInput = document.getElementById("id_fecha");
             const fechaError = document.getElementById("fecha-error-intervencion");
+            {% if puede_editar_trabajadores %}
             const trabajadorModalElement = document.getElementById("modalTrabajador");
             const trabajadorModalForm = document.getElementById("trabajadorModalForm");
             const trabajadorModalTitle = document.getElementById("modalTrabajadorLabel");
@@ -935,6 +938,7 @@
                     }
                 });
             });
+            {% endif %}
 
             function validarFecha() {
                 if (!fechaInput) {
@@ -990,6 +994,7 @@
                 });
             }
 
+            {% if puede_editar_trabajadores %}
             if ({{ trabajador_modal_open|yesno:"true,false" }}) {
                 const trabajadorModal = trabajadorModalElement
                     ? new bootstrap.Modal(trabajadorModalElement)
@@ -998,6 +1003,7 @@
                     trabajadorModal.show();
                 }
             }
+            {% endif %}
         });
     </script>
 {% endblock %}
