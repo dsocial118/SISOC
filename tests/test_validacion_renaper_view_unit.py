@@ -291,7 +291,7 @@ def test_formatear_datos_renaper_usa_provincia_api_cuando_no_hay_pk():
 
     out = module._formatear_datos_renaper(datos, "F", documento_consulta="12345678")
 
-    assert out["documento"] == 12345678
+    assert out["documento"] == "12345678"
     assert out["provincia"] == "Buenos Aires"
     assert out["ciudad"] == "La Plata"
     assert out["piso_departamento"] == "1A"
