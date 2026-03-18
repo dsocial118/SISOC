@@ -85,6 +85,11 @@ def get_tracked_model_definitions():
             excluded_fields=("creado", "modificado"),
         ),
         TrackedModelDefinition(
+            label="Nómina",
+            model_getter=_model_getter("comedores.models.Nomina"),
+            excluded_fields=("fecha",),
+        ),
+        TrackedModelDefinition(
             label="Organización",
             model_getter=_model_getter("organizaciones.models.Organizacion"),
             excluded_fields=("fecha_creacion",),

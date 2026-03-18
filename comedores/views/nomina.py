@@ -83,6 +83,7 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "object": admision.comedor,
                 "admision_pk": admision.pk,
                 "dni_query": dni_query,
+                "estados": Nomina.ESTADO_CHOICES,
             }
         )
         return context
@@ -274,6 +275,32 @@ class NominaDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
             "nomina_ver",
             kwargs={"pk": self.kwargs["pk"], "admision_pk": self.kwargs["admision_pk"]},
         )
+
+
+@login_required
+def nomina_cambiar_estado(request, pk):
+    """Cambia sólo el estado de un registro de nómina vía AJAX (POST)."""
+    if request.method != "POST":
+        return JsonResponse(
+            {"success": False, "error": "Método no permitido."}, status=405
+        )
+
+    scoped_comedores = ComedorService.get_scoped_comedor_queryset(request.user)
+    nomina = get_object_or_404(
+        Nomina.objects.select_related("admision__comedor").filter(
+            admision__comedor__in=scoped_comedores
+        ),
+        pk=pk,
+    )
+
+    nuevo_estado = request.POST.get("estado", "").strip()
+    estados_validos = {v for v, _ in Nomina.ESTADO_CHOICES}
+    if nuevo_estado not in estados_validos:
+        return JsonResponse({"success": False, "error": "Estado inválido."}, status=400)
+
+    nomina.estado = nuevo_estado
+    nomina.save(update_fields=["estado"])
+    return JsonResponse({"success": True, "estado": nuevo_estado})
 
 
 class NominaImportarView(LoginRequiredMixin, View):

@@ -1175,8 +1175,8 @@
                                                     margin-top: 0.25rem">
                                             {% if nomina_actual.estado == 'activo' %}
                                                 <span class="badge" style="background: var(--green);">Activo</span>
-                                            {% elif nomina_actual.estado == 'pendiente' %}
-                                                <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Pendiente</span>
+                                            {% elif nomina_actual.estado == 'espera' %}
+                                                <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En espera</span>
                                             {% else %}
                                                 <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
                                             {% endif %}
@@ -1190,7 +1190,7 @@
                                     </div>
                                 </div>
                                 {% endwith %}
-                                {% if nominas_comedor.count > 1 %}
+                                {% if nominas_comedor|length > 1 %}
                                     <h6 style="margin-top: 1.5rem;
                                                margin-bottom: 1rem;
                                                border-top: 1px solid rgba(255,255,255,0.1);
@@ -1222,8 +1222,8 @@
                                                     <td>
                                                         {% if nomina.estado == 'activo' %}
                                                             <span class="badge" style="background: var(--green);">Activo</span>
-                                                        {% elif nomina.estado == 'pendiente' %}
-                                                            <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Pendiente</span>
+                                                        {% elif nomina.estado == 'espera' %}
+                                                            <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En espera</span>
                                                         {% else %}
                                                             <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
                                                         {% endif %}

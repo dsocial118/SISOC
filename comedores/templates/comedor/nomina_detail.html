@@ -289,13 +289,22 @@
                             <td>{{ e.ciudadano.documento|default:"-" }}</td>
                             <td>{{ e.ciudadano.sexo.sexo|default:"-" }}</td>
                             <td>
-                                {% if e.estado == "activo" %}
-                                    <span class="nomina-badge activo">Activo</span>
-                                {% elif e.estado == "pendiente" %}
-                                    <span class="nomina-badge espera">Pendiente</span>
-                                {% else %}
-                                    <span class="nomina-badge inactivo">Baja</span>
-                                {% endif %}
+                                <div class="dropdown">
+                                    <button class="nomina-btn nomina-estado-btn nomina-estado-{{ e.estado }} dropdown-toggle"
+                                            type="button"
+                                            data-bs-toggle="dropdown"
+                                            data-cambiar-url="{% url 'nomina_cambiar_estado' e.id %}"
+                                            aria-expanded="false">{{ e.get_estado_display }}</button>
+                                    <ul class="dropdown-menu dropdown-menu-dark">
+                                        {% for val, lbl in estados %}
+                                            <li>
+                                                <a class="dropdown-item nomina-estado-opcion {% if e.estado == val %}active{% endif %}"
+                                                   href="#"
+                                                   data-estado="{{ val }}">{{ lbl }}</a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
                             </td>
                             <td>
                                 <div class="nomina-action-buttons">
@@ -398,5 +407,6 @@
     </div>
 {% endblock %}
 {% block customJS %}
+    {% csrf_token %}
     <script src="{% static 'custom/js/nomina_detail.js' %}"></script>
 {% endblock %}
