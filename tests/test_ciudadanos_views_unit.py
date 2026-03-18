@@ -213,13 +213,18 @@ def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
 
     mocker.patch("builtins.__import__", side_effect=orig_import)
     nom_qs = _ExpedientesList([SimpleNamespace(id=7)])
+
+    def _select_related_nomina(*args, **kwargs):
+        assert args == (
+            "admision__comedor__provincia",
+            "admision__comedor__municipio",
+            "admision__comedor__tipocomedor",
+        )
+        return SimpleNamespace(order_by=lambda *x, **y: nom_qs)
+
     mocker.patch(
         "comedores.models.Nomina.objects.filter",
-        return_value=SimpleNamespace(
-            select_related=lambda *a, **k: SimpleNamespace(
-                order_by=lambda *x, **y: nom_qs
-            )
-        ),
+        return_value=SimpleNamespace(select_related=_select_related_nomina),
     )
     comedor_ok = module.CiudadanosDetailView().get_comedor_context(ciudadano)
     assert comedor_ok["nomina_actual"].id == 7

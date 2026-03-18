@@ -6,7 +6,12 @@ from django.dispatch import receiver
 
 from config.middlewares.threadlocals import get_current_user
 from core.soft_delete.signals import post_restore
-from .models import EstadoCupo, Expediente, ExpedienteEstadoHistorial, ExpedienteCiudadano
+from .models import (
+    EstadoCupo,
+    Expediente,
+    ExpedienteEstadoHistorial,
+    ExpedienteCiudadano,
+)
 from .services.comentarios_service import ComentariosService
 
 logger = logging.getLogger("django")
@@ -98,7 +103,9 @@ def resolver_conflictos_ciudadanos_tras_restauracion(sender, instance, user, **k
     el Expediente fue eliminado y restaurado después de que ese ciudadano fue
     importado en otro expediente.
     """
-    from celiaquia.services.importacion_service.impl import ESTADOS_PRE_CUPO  # pylint: disable=import-outside-toplevel
+    from celiaquia.services.importacion_service.impl import (
+        ESTADOS_PRE_CUPO,
+    )  # pylint: disable=import-outside-toplevel
 
     legajos_restaurados = ExpedienteCiudadano.objects.filter(expediente=instance)
     ciudadanos_ids = list(legajos_restaurados.values_list("ciudadano_id", flat=True))

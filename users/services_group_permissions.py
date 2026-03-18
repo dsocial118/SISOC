@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Iterable
 
 from django.contrib.auth.models import Group, Permission
+from django.contrib.contenttypes.models import ContentType
 
 from core.permissions.registry import (
     permission_codes_for_bootstrap_group,
@@ -24,7 +25,27 @@ def _permissions_from_codes(permission_codes: Iterable[str]) -> list[Permission]
         )
         if permission:
             permissions.append(permission)
+            continue
+
+        role_permission = _ensure_role_permission_exists(app_label, codename)
+        if role_permission:
+            permissions.append(role_permission)
     return permissions
+
+
+def _ensure_role_permission_exists(app_label: str, codename: str) -> Permission | None:
+    if app_label != "auth" or not codename.startswith("role_"):
+        return None
+
+    content_type = ContentType.objects.get_for_model(Group)
+    name_suffix = codename[len("role_") :].replace("_", " ").strip()
+    defaults = {"name": name_suffix.title() or codename}
+    permission, _ = Permission.objects.get_or_create(
+        content_type=content_type,
+        codename=codename,
+        defaults=defaults,
+    )
+    return permission
 
 
 def sync_permissions_for_group(group: Group) -> None:

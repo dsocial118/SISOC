@@ -30,7 +30,8 @@
                     <span class="mx-2">·</span>
                     <i class="fas fa-calendar-day mr-1"></i>{{ encuentro.fecha|date:"l d/m/Y" }}
                     <span class="mx-2">·</span>
-                    <i class="fas fa-clock mr-1"></i>{{ encuentro.hora_inicio|time:"H:i" }}{% if encuentro.hora_fin %} — {{ encuentro.hora_fin|time:"H:i" }}{% endif %}
+                    <i class="fas fa-clock mr-1"></i>{{ encuentro.hora_inicio|time:"H:i" }}
+                    {% if encuentro.hora_fin %}— {{ encuentro.hora_fin|time:"H:i" }}{% endif %}
                     <span class="mx-2">·</span>
                     {{ encuentro.actividad_centro.actividad.nombre }}
                 </p>
@@ -72,10 +73,14 @@
             <div class="card-header bg-secondary d-flex justify-content-between align-items-center">
                 <span><i class="fas fa-clipboard-check mr-2"></i>Participantes ({{ participantes_con_estado|length }})</span>
                 <div>
-                    <button type="button" class="btn btn-sm btn-outline-success mr-1" id="btn-todos-presente">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-success mr-1"
+                            id="btn-todos-presente">
                         <i class="fas fa-check mr-1"></i>Todos presentes
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" id="btn-todos-ausente">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            id="btn-todos-ausente">
                         <i class="fas fa-times mr-1"></i>Todos ausentes
                     </button>
                 </div>
@@ -100,26 +105,27 @@
                                         </td>
                                         <td>{{ item.participante.ciudadano.documento }}</td>
                                         <td class="text-center">
-                                            <div class="btn-group btn-group-toggle asistencia-grupo" data-toggle="buttons">
+                                            <div class="btn-group btn-group-toggle asistencia-grupo"
+                                                 data-toggle="buttons">
                                                 <label class="btn btn-sm btn-outline-success {% if item.estado == 'presente' %}active{% endif %}">
                                                     <input type="radio"
                                                            name="estado_{{ item.participante.id }}"
                                                            value="presente"
-                                                           {% if item.estado == 'presente' %}checked{% endif %}>
+                                                           {% if item.estado == 'presente' %}checked{% endif %} />
                                                     <i class="fas fa-check mr-1"></i>Presente
                                                 </label>
                                                 <label class="btn btn-sm btn-outline-danger {% if item.estado == 'ausente' %}active{% endif %}">
                                                     <input type="radio"
                                                            name="estado_{{ item.participante.id }}"
                                                            value="ausente"
-                                                           {% if item.estado == 'ausente' %}checked{% endif %}>
+                                                           {% if item.estado == 'ausente' %}checked{% endif %} />
                                                     <i class="fas fa-times mr-1"></i>Ausente
                                                 </label>
                                                 <label class="btn btn-sm btn-outline-warning {% if item.estado == 'justificado' %}active{% endif %}">
                                                     <input type="radio"
                                                            name="estado_{{ item.participante.id }}"
                                                            value="justificado"
-                                                           {% if item.estado == 'justificado' %}checked{% endif %}>
+                                                           {% if item.estado == 'justificado' %}checked{% endif %} />
                                                     <i class="fas fa-exclamation mr-1"></i>Justif.
                                                 </label>
                                             </div>
@@ -130,7 +136,9 @@
                                                    class="form-control form-control-sm"
                                                    value="{{ item.observaciones }}"
                                                    placeholder="Opcional"
-                                                   style="background:#1e2a3a;color:#e5e7eb;border-color:#3d4f63;">
+                                                   style="background:#1e2a3a;
+                                                          color:#e5e7eb;
+                                                          border-color:#3d4f63" />
                                         </td>
                                     </tr>
                                 {% endfor %}

@@ -1354,19 +1354,30 @@ def _leer_bytes_archivo_importacion(archivo_excel):
     return archivo_excel.read()
 
 
+def _expediente_id(expediente):
+    if expediente is None:
+        return None
+    for attr in ("pk", "id"):
+        value = getattr(expediente, attr, None)
+        if value is not None:
+            return value
+    return expediente
+
+
 def _precargar_conflictos_y_existentes_importacion(expediente):
     # Usar all_objects para incluir legajos soft-deleted: si un ciudadano fue eliminado
     # lógicamente de este expediente, su fila aún existe en BD y el unique_together
     # bloquearía un bulk_create duplicado.
+    expediente_id = _expediente_id(expediente)
     existentes_ids = set(
-        ExpedienteCiudadano.all_objects.filter(expediente=expediente).values_list(
+        ExpedienteCiudadano.all_objects.filter(expediente_id=expediente_id).values_list(
             "ciudadano_id", flat=True
         )
     )
 
     conflictos_qs = (
         ExpedienteCiudadano.objects.select_related("expediente", "expediente__estado")
-        .exclude(expediente=expediente)
+        .exclude(expediente_id=expediente_id)
         .filter(
             Q(estado_cupo=EstadoCupo.DENTRO)
             | Q(expediente__estado__nombre__in=ESTADOS_PRE_CUPO)
