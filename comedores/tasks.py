@@ -22,13 +22,13 @@ def _is_gestionar_integration_enabled() -> bool:
     return bool(getattr(settings, "GESTIONAR_INTEGRATION_ENABLED", False))
 
 
-def build_comedor_payload(comedor):
+def build_comedor_payload(comedor, action="Add"):
 
     def fk(obj, attr, sub="nombre"):
         return getattr(getattr(obj, attr, None), sub, "") or ""
 
     return {
-        "Action": "Add",
+        "Action": action,
         "Properties": {"Locale": "es-ES"},
         "Rows": [
             {
@@ -121,20 +121,59 @@ class AsyncSendComedorToGestionar(threading.Thread):
         if not _is_gestionar_integration_enabled():
             return
         close_old_connections()
-        headers = {"applicationAccessKey": os.getenv("GESTIONAR_API_KEY")}
-        url = os.getenv("GESTIONAR_API_CREAR_COMEDOR")
         try:
-            r = requests.post(url, json=self.payload, headers=headers, timeout=TIMEOUT)
-            r.raise_for_status()
-            data = r.json()
-            logger.info(
-                f"COMEDOR {data['Rows'][0]['ComedorID']} sincronizado con exito"
+            headers = {"applicationAccessKey": os.getenv("GESTIONAR_API_KEY")}
+            url = os.getenv("GESTIONAR_API_CREAR_COMEDOR")
+            payload = dict(self.payload or {})
+            payload.setdefault("Action", "Add")
+            try:
+                r = requests.post(url, json=payload, headers=headers, timeout=TIMEOUT)
+                r.raise_for_status()
+            except requests.HTTPError as exc:
+                status_code = getattr(exc.response, "status_code", None)
+                if status_code == 400 and payload.get("Action") == "Add":
+                    logger.warning(
+                        "GESTIONAR rechazó alta de COMEDOR (400). Se reintenta como Update."
+                    )
+                    payload_update = dict(payload)
+                    payload_update["Action"] = "Update"
+                    try:
+                        r = requests.post(
+                            url,
+                            json=payload_update,
+                            headers=headers,
+                            timeout=TIMEOUT,
+                        )
+                        r.raise_for_status()
+                    except Exception:
+                        logger.exception(
+                            "Error al sincronizar COMEDOR con GESTIONAR",
+                            extra={"body": payload_update},
+                        )
+                        return
+                else:
+                    logger.exception(
+                        "Error al sincronizar COMEDOR con GESTIONAR",
+                        extra={"body": payload},
+                    )
+                    return
+            except Exception:
+                logger.exception(
+                    "Error al sincronizar COMEDOR con GESTIONAR",
+                    extra={"body": payload},
+                )
+                return
+            try:
+                data = r.json()
+            except ValueError:
+                data = {}
+
+            comedor_id = (
+                ((data.get("Rows") or [{}])[0].get("ComedorID"))
+                or ((payload.get("Rows") or [{}])[0].get("ComedorID"))
+                or "desconocido"
             )
-        except Exception:
-            logger.exception(
-                "Error al sincronizar COMEDOR con GESTIONAR",
-                extra={"body": self.payload},
-            )
+            logger.info("COMEDOR %s sincronizado con exito", comedor_id)
         finally:
             close_old_connections()
 

@@ -59,7 +59,9 @@ def update_comedor_in_gestionar(sender, instance, **kwargs):
     if not changed:
         return
 
-    payload = build_comedor_payload(instance)  # usa los NEW values de la instancia
+    payload = build_comedor_payload(
+        instance, action="Update"
+    )  # usa los NEW values de la instancia
     AsyncSendComedorToGestionar(payload).start()
 
 
