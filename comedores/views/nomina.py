@@ -281,7 +281,9 @@ class NominaDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
 def nomina_cambiar_estado(request, pk):
     """Cambia sólo el estado de un registro de nómina vía AJAX (POST)."""
     if request.method != "POST":
-        return JsonResponse({"success": False, "error": "Método no permitido."}, status=405)
+        return JsonResponse(
+            {"success": False, "error": "Método no permitido."}, status=405
+        )
 
     scoped_comedores = ComedorService.get_scoped_comedor_queryset(request.user)
     nomina = get_object_or_404(
