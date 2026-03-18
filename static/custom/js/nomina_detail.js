@@ -80,6 +80,38 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   });
 
+  // Dropdown inline de estado por fila
+  document.querySelectorAll(".nomina-estado-select").forEach(function(select) {
+    select.addEventListener("change", function() {
+      const url = this.dataset.cambiarUrl;
+      const nuevoEstado = this.value;
+      const csrfInput = document.querySelector("[name=csrfmiddlewaretoken]");
+      const token = csrfInput ? csrfInput.value : "";
+
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          "X-CSRFToken": token,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ estado: nuevoEstado }).toString(),
+      })
+        .then(function(response) {
+          if (!response.ok) throw new Error("Error al cambiar el estado.");
+          return response.json();
+        })
+        .then(function(data) {
+          if (!data.success) {
+            alert("No se pudo cambiar el estado: " + (data.error || "error desconocido"));
+          }
+        })
+        .catch(function(err) {
+          alert(err.message || "Ocurrió un error al cambiar el estado.");
+        });
+    });
+  });
+
   if (!modalForm) {
     return;
   }
