@@ -535,6 +535,72 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        UserGroups.COMUNICADO_CREAR,
+        (
+            "auth.role_comunicado_crear",
+            "comunicados.add_comunicado",
+        ),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.COMUNICADO_EDITAR,
+        (
+            "auth.role_comunicado_editar",
+            "comunicados.change_comunicado",
+        ),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.COMUNICADO_PUBLICAR,
+        ("auth.role_comunicado_publicar",),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.COMUNICADO_ARCHIVAR,
+        ("auth.role_comunicado_archivar",),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.COMUNICADO_INTERNO_CREAR,
+        (
+            "auth.role_comunicado_interno_crear",
+            "comunicados.add_comunicado",
+        ),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.COMUNICADO_INTERNO_EDITAR,
+        (
+            "auth.role_comunicado_interno_editar",
+            "comunicados.change_comunicado",
+        ),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.COMUNICADO_INTERNO_PUBLICAR,
+        ("auth.role_comunicado_interno_publicar",),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.COMUNICADO_INTERNO_ARCHIVAR,
+        ("auth.role_comunicado_interno_archivar",),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.COMUNICADO_COMEDORES_CREAR,
+        (
+            "auth.role_comunicado_comedores_crear",
+            "comunicados.add_comunicado",
+        ),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.COMUNICADO_COMEDORES_EDITAR,
+        (
+            "auth.role_comunicado_comedores_editar",
+            "comunicados.change_comunicado",
+        ),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.COMUNICADO_COMEDORES_PUBLICAR,
+        ("auth.role_comunicado_comedores_publicar",),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.COMUNICADO_COMEDORES_ARCHIVAR,
+        ("auth.role_comunicado_comedores_archivar",),
+    ),
+    BootstrapGroupSeed(
         UserGroups.ADMIN,
         (
             "acompanamientos.view_informacionrelevante",
