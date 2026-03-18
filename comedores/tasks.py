@@ -131,16 +131,20 @@ class AsyncSendComedorToGestionar(threading.Thread):
                 r.raise_for_status()
             except requests.HTTPError as exc:
                 status_code = getattr(exc.response, "status_code", None)
-                if status_code == 400 and payload.get("Action") == "Add":
+                action = payload.get("Action")
+                if status_code == 400 and action in {"Add", "Update"}:
+                    retry_action = "Update" if action == "Add" else "Add"
                     logger.warning(
-                        "GESTIONAR rechazó alta de COMEDOR (400). Se reintenta como Update."
+                        "GESTIONAR rechazó sync de COMEDOR (400) con Action=%s. Se reintenta con Action=%s.",
+                        action,
+                        retry_action,
                     )
-                    payload_update = dict(payload)
-                    payload_update["Action"] = "Update"
+                    payload_retry = dict(payload)
+                    payload_retry["Action"] = retry_action
                     try:
                         r = requests.post(
                             url,
-                            json=payload_update,
+                            json=payload_retry,
                             headers=headers,
                             timeout=TIMEOUT,
                         )
@@ -148,7 +152,7 @@ class AsyncSendComedorToGestionar(threading.Thread):
                     except Exception:
                         logger.exception(
                             "Error al sincronizar COMEDOR con GESTIONAR",
-                            extra={"body": payload_update},
+                            extra={"body": payload_retry},
                         )
                         return
                 else:

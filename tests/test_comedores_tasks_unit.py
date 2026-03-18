@@ -101,3 +101,38 @@ def test_async_send_comedor_run_retries_as_update_on_400(mocker):
     assert post.call_args_list[0].kwargs["json"]["Action"] == "Add"
     assert post.call_args_list[1].kwargs["json"]["Action"] == "Update"
     logger_exception.assert_not_called()
+
+
+def test_async_send_comedor_run_retries_as_add_on_400_when_update_fails(mocker):
+    class _ResponseMock:
+        def __init__(self, status_code, json_data=None):
+            self.status_code = status_code
+            self._json_data = json_data or {}
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise requests.HTTPError("boom", response=self)
+
+        def json(self):
+            return self._json_data
+
+    mocker.patch("comedores.tasks.settings.GESTIONAR_INTEGRATION_ENABLED", True)
+    mocker.patch("comedores.tasks.close_old_connections")
+    post = mocker.patch(
+        "comedores.tasks.requests.post",
+        side_effect=[
+            _ResponseMock(400),
+            _ResponseMock(200, {"Rows": [{"ComedorID": 101}]}),
+        ],
+    )
+    logger_exception = mocker.patch("comedores.tasks.logger.exception")
+
+    thread = module.AsyncSendComedorToGestionar(
+        payload={"Action": "Update", "Rows": [{"ComedorID": 101}]}
+    )
+    thread.run()
+
+    assert post.call_count == 2
+    assert post.call_args_list[0].kwargs["json"]["Action"] == "Update"
+    assert post.call_args_list[1].kwargs["json"]["Action"] == "Add"
+    logger_exception.assert_not_called()
