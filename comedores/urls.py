@@ -17,6 +17,7 @@ from comedores.views import (
     AsignarDuplaListView,
     relevamiento_crear_editar_ajax,
     nomina_editar_ajax,
+    nomina_cambiar_estado,
     validar_comedor,
 )
 from comedores.views.export import ComedorExportView
@@ -201,6 +202,11 @@ urlpatterns = [
         "comedores/editar-nomina/<int:pk>/",
         permissions_any_required(["comedores.change_nomina"])(nomina_editar_ajax),
         name="nomina_editar_ajax",
+    ),
+    path(
+        "comedores/nomina/<int:pk>/cambiar-estado/",
+        permissions_any_required(["comedores.change_nomina"])(nomina_cambiar_estado),
+        name="nomina_cambiar_estado",
     ),
     path(
         "comedores/<int:pk>/admision/<int:admision_pk>/nomina/crear/",
