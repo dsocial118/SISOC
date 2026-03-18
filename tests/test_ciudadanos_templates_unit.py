@@ -12,3 +12,17 @@ def test_ciudadano_detail_template_incluye_accion_eliminar():
     content = template_path.read_text(encoding="utf-8")
 
     assert "ciudadanos_eliminar" in content
+
+
+def test_ciudadano_detail_template_usa_admision_comedor_con_guardas():
+    repo_root = Path(__file__).resolve().parents[1]
+    template_path = (
+        repo_root / "ciudadanos" / "templates" / "ciudadanos" / "ciudadano_detail.html"
+    )
+
+    content = template_path.read_text(encoding="utf-8")
+
+    assert "nomina_actual.admision.comedor" in content
+    assert "nomina.admision.comedor" in content
+    assert "nomina_actual.comedor.id" not in content
+    assert "nomina.comedor.id" not in content
