@@ -37,10 +37,12 @@
             <a href="{% url 'vat_centro_list' %}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left mr-1"></i>Volver
             </a>
-            <a href="{% url 'vat_centro_update' centro.id %}" class="btn btn-outline-warning">
+            <a href="{% url 'vat_centro_update' centro.id %}"
+               class="btn btn-outline-warning">
                 <i class="fas fa-edit mr-1"></i>Editar
             </a>
-            <a href="{% url 'vat_actividadcentro_create' centro_id=centro.id %}" class="btn btn-outline-success">
+            <a href="{% url 'vat_actividadcentro_create' centro_id=centro.id %}"
+               class="btn btn-outline-success">
                 <i class="fas fa-plus mr-1"></i>Nueva Actividad
             </a>
         </div>
@@ -60,7 +62,8 @@
                                         width="100%"
                                         height="100%"
                                         frameborder="0"
-                                        style="border:0;border-radius:8px"
+                                        style="border:0;
+                                               border-radius:8px"
                                         allowfullscreen></iframe>
                             {% else %}
                                 <div class="h-100 d-flex align-items-center justify-content-center text-muted">Sin mapa disponible</div>
@@ -72,11 +75,21 @@
                             <div class="section-title">Ubicación</div>
                             <hr class="section-divider" />
                             <ul class="no-bullets">
-                                <li><i class="fas fa-road me-2 text-info"></i>{{ centro.calle }} {{ centro.numero }}</li>
-                                <li><i class="fas fa-globe-americas me-2 text-info"></i>{{ centro.localidad }}, {{ centro.provincia }}</li>
-                                <li><i class="fas fa-map-pin me-2 text-info"></i>{{ centro.domicilio_actividad }}</li>
-                                <li><i class="fas fa-phone me-2 text-info"></i>{{ centro.telefono }}</li>
-                                <li><i class="fas fa-mobile-alt me-2 text-info"></i>{{ centro.celular }}</li>
+                                <li>
+                                    <i class="fas fa-road me-2 text-info"></i>{{ centro.calle }} {{ centro.numero }}
+                                </li>
+                                <li>
+                                    <i class="fas fa-globe-americas me-2 text-info"></i>{{ centro.localidad }}, {{ centro.provincia }}
+                                </li>
+                                <li>
+                                    <i class="fas fa-map-pin me-2 text-info"></i>{{ centro.domicilio_actividad }}
+                                </li>
+                                <li>
+                                    <i class="fas fa-phone me-2 text-info"></i>{{ centro.telefono }}
+                                </li>
+                                <li>
+                                    <i class="fas fa-mobile-alt me-2 text-info"></i>{{ centro.celular }}
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -92,15 +105,24 @@
                 <div class="row g-3 px-3">
                     <div class="col-sm-6 d-flex">
                         <i class="fas fa-barcode me-2 text-info mt-1"></i>
-                        <div><div class="fw-bold">Código</div><div>{{ centro.codigo }}</div></div>
+                        <div>
+                            <div class="fw-bold">Código</div>
+                            <div>{{ centro.codigo }}</div>
+                        </div>
                     </div>
                     <div class="col-sm-6 d-flex">
                         <i class="fas fa-city me-2 text-info mt-1"></i>
-                        <div><div class="fw-bold">Municipio</div><div>{{ centro.municipio }}</div></div>
+                        <div>
+                            <div class="fw-bold">Municipio</div>
+                            <div>{{ centro.municipio }}</div>
+                        </div>
                     </div>
                     <div class="col-sm-6 d-flex">
                         <i class="fas fa-building me-2 text-info mt-1"></i>
-                        <div><div class="fw-bold">Organización</div><div>{{ centro.organizacion_asociada|default:"—" }}</div></div>
+                        <div>
+                            <div class="fw-bold">Organización</div>
+                            <div>{{ centro.organizacion_asociada|default:"—" }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -114,18 +136,27 @@
                 <div class="row g-3 px-3">
                     <div class="col-sm-6 d-flex">
                         <i class="fas fa-envelope me-2 text-info mt-1"></i>
-                        <div><div class="fw-bold">Correo</div><div>{{ centro.correo }}</div></div>
+                        <div>
+                            <div class="fw-bold">Correo</div>
+                            <div>{{ centro.correo }}</div>
+                        </div>
                     </div>
                     {% if centro.sitio_web %}
                         <div class="col-sm-6 d-flex">
                             <i class="fas fa-globe me-2 text-info mt-1"></i>
-                            <div><div class="fw-bold">Sitio web</div><div>{{ centro.sitio_web }}</div></div>
+                            <div>
+                                <div class="fw-bold">Sitio web</div>
+                                <div>{{ centro.sitio_web }}</div>
+                            </div>
                         </div>
                     {% endif %}
                     {% if centro.link_redes %}
                         <div class="col-sm-6 d-flex">
                             <i class="fas fa-share-alt me-2 text-info mt-1"></i>
-                            <div><div class="fw-bold">Redes</div><div>{{ centro.link_redes }}</div></div>
+                            <div>
+                                <div class="fw-bold">Redes</div>
+                                <div>{{ centro.link_redes }}</div>
+                            </div>
                         </div>
                     {% endif %}
                 </div>
@@ -140,15 +171,24 @@
                 <div class="row g-3 px-3">
                     <div class="col-sm-6 d-flex">
                         <i class="fas fa-user-tie me-2 text-info mt-1"></i>
-                        <div><div class="fw-bold">Responsable</div><div>{{ centro.nombre_referente }} {{ centro.apellido_referente }}</div></div>
+                        <div>
+                            <div class="fw-bold">Responsable</div>
+                            <div>{{ centro.nombre_referente }} {{ centro.apellido_referente }}</div>
+                        </div>
                     </div>
                     <div class="col-sm-6 d-flex">
                         <i class="fas fa-phone me-2 text-info mt-1"></i>
-                        <div><div class="fw-bold">Teléfono</div><div>{{ centro.telefono_referente }}</div></div>
+                        <div>
+                            <div class="fw-bold">Teléfono</div>
+                            <div>{{ centro.telefono_referente }}</div>
+                        </div>
                     </div>
                     <div class="col-sm-6 d-flex">
                         <i class="fas fa-envelope me-2 text-info mt-1"></i>
-                        <div><div class="fw-bold">Correo</div><div>{{ centro.correo_referente }}</div></div>
+                        <div>
+                            <div class="fw-bold">Correo</div>
+                            <div>{{ centro.correo_referente }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -192,7 +232,8 @@
                 <div class="card-header bg-secondary">
                     <i class="fas fa-chart-pie mr-2"></i>Inscriptos por género
                 </div>
-                <div class="card-body d-flex align-items-center justify-content-center" style="min-height:210px;">
+                <div class="card-body d-flex align-items-center justify-content-center"
+                     style="min-height:210px">
                     {% if metricas.inscriptos > 0 %}
                         <canvas id="chartGenero"></canvas>
                     {% else %}
@@ -207,7 +248,8 @@
                 <div class="card-header bg-secondary">
                     <i class="fas fa-chart-pie mr-2"></i>Estado de actividades
                 </div>
-                <div class="card-body d-flex align-items-center justify-content-center" style="min-height:210px;">
+                <div class="card-body d-flex align-items-center justify-content-center"
+                     style="min-height:210px">
                     {% if metricas.actividades > 0 %}
                         <canvas id="chartEstado"></canvas>
                     {% else %}
@@ -236,7 +278,9 @@
     <!-- 6) TABLA DE ACTIVIDADES -->
     <div id="actividades-container" class="card bg-dark text-white mb-4">
         <div class="card-header bg-secondary d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-chalkboard-teacher mr-2"></i>Actividades del Centro</h5>
+            <h5 class="mb-0">
+                <i class="fas fa-chalkboard-teacher mr-2"></i>Actividades del Centro
+            </h5>
             <input id="searchActividades"
                    value="{{ search_actividades_curso_val }}"
                    class="form-control form-control-sm bg-dark text-white border-secondary"
@@ -272,8 +316,9 @@
                                 <td>
                                     <div>
                                         {% for dia in act.dias.all %}
-                                            {{ dia.nombre }}{% if not forloop.last %}, {% endif %}
-                                        {% empty %}<span class="text-muted">—</span>
+                                            {{ dia.nombre }}
+                                            {% if not forloop.last %},{% endif %}
+                                            {% empty %}<span class="text-muted">—</span>
                                         {% endfor %}
                                     </div>
                                     <small class="text-muted">{{ act.horariosdesde }} — {{ act.horarioshasta }}</small>
@@ -305,15 +350,18 @@
                                 </td>
                                 <td class="text-end">
                                     <a href="{% url 'vat_actividadcentro_detail' pk=act.id %}"
-                                       class="btn btn-sm btn-outline-info" title="Ver detalle">
+                                       class="btn btn-sm btn-outline-info"
+                                       title="Ver detalle">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     <a href="{% url 'vat_actividadcentro_edit' pk=act.id %}"
-                                       class="btn btn-sm btn-outline-warning" title="Editar">
+                                       class="btn btn-sm btn-outline-warning"
+                                       title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <a href="{% url 'vat_participanteactividad_create' centro_id=centro.id actividad_id=act.id %}"
-                                       class="btn btn-sm btn-outline-success" title="Inscribir participante">
+                                       class="btn btn-sm btn-outline-success"
+                                       title="Inscribir participante">
                                         <i class="fas fa-user-plus"></i>
                                     </a>
                                 </td>
@@ -322,7 +370,8 @@
                             <tr>
                                 <td colspan="7" class="text-center text-muted py-4">
                                     No hay actividades registradas.
-                                    <a href="{% url 'vat_actividadcentro_create' centro_id=centro.id %}" class="text-info ml-2">Agregar una</a>
+                                    <a href="{% url 'vat_actividadcentro_create' centro_id=centro.id %}"
+                                       class="text-info ml-2">Agregar una</a>
                                 </td>
                             </tr>
                         {% endfor %}

@@ -61,7 +61,28 @@ def _user_has_permission(user, permission_code: str) -> bool:
 
 
 def _is_admin(user) -> bool:
-    return user.is_authenticated and user.is_superuser
+    return bool(
+        getattr(user, "is_authenticated", False)
+        and getattr(user, "is_superuser", False)
+    )
+
+
+def _user_in_group(user, group_name) -> bool:
+    """Indica si el usuario pertenece al grupo solicitado."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    groups = getattr(user, "groups", None)
+    if not groups:
+        return False
+    filter_fn = getattr(groups, "filter", None)
+    if not callable(filter_fn) or not group_name:
+        return False
+
+    try:
+        exists_fn = getattr(filter_fn(name=group_name), "exists", None)
+        return bool(exists_fn() if callable(exists_fn) else False)
+    except Exception:
+        return False
 
 
 def _is_ajax(request) -> bool:

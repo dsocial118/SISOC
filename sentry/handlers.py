@@ -1,6 +1,9 @@
 import logging
 
-import sentry_sdk  # pylint: disable=import-error
+try:
+    import sentry_sdk  # pylint: disable=import-error
+except ImportError:  # pragma: no cover - best effort logging
+    sentry_sdk = None
 
 
 class SentryEventHandler(logging.Handler):
@@ -25,6 +28,9 @@ class SentryEventHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         if record.levelno < self.level:
+            return
+
+        if sentry_sdk is None:  # pragma: no cover - siloed environments
             return
 
         try:

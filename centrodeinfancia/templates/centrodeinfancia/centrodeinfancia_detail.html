@@ -188,9 +188,7 @@
                                         class="btn btn-sm btn-primary"
                                         id="abrirTrabajadorCrearBtn"
                                         data-bs-toggle="modal"
-                                        data-bs-target="#modalTrabajador">
-                                    Agregar trabajador
-                                </button>
+                                        data-bs-target="#modalTrabajador">Agregar trabajador</button>
                             {% endif %}
                         </div>
                         <div class="table-responsive">
@@ -220,9 +218,7 @@
                                                                 data-nombre="{{ trabajador.nombre }}"
                                                                 data-apellido="{{ trabajador.apellido }}"
                                                                 data-telefono="{{ trabajador.telefono|default:'' }}"
-                                                                data-rol="{{ trabajador.rol }}">
-                                                            Editar
-                                                        </button>
+                                                                data-rol="{{ trabajador.rol }}">Editar</button>
                                                     {% endif %}
                                                     {% if puede_eliminar_trabajadores %}
                                                         <button type="button"
@@ -239,9 +235,7 @@
                                         </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted py-4">
-                                                No hay trabajadores asociados a este centro.
-                                            </td>
+                                            <td colspan="4" class="text-center text-muted py-4">No hay trabajadores asociados a este centro.</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -495,102 +489,106 @@
             </div>
         </div>
 
-        <div class="modal fade"
-             id="modalTrabajador"
-             tabindex="-1"
-             aria-labelledby="modalTrabajadorLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <form method="post"
-                          action="{{ trabajador_form_action }}"
-                          id="trabajadorModalForm"
-                          data-default-action="{% url 'centrodeinfancia_trabajador_crear' centro.id %}">
-                        {% csrf_token %}
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalTrabajadorLabel">
-                                {% if trabajador_modal_mode == "edit" %}
-                                    Editar trabajador
-                                {% else %}
-                                    Agregar trabajador
+        {% if puede_editar_trabajadores %}
+            <div class="modal fade"
+                 id="modalTrabajador"
+                 tabindex="-1"
+                 aria-labelledby="modalTrabajadorLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form method="post"
+                              action="{{ trabajador_form_action }}"
+                              id="trabajadorModalForm"
+                              data-default-action="{% url 'centrodeinfancia_trabajador_crear' centro.id %}">
+                            {% csrf_token %}
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalTrabajadorLabel">
+                                    {% if trabajador_modal_mode == "edit" %}
+                                        Editar trabajador
+                                    {% else %}
+                                        Agregar trabajador
+                                    {% endif %}
+                                </h5>
+                                <button type="button"
+                                        class="btn-close"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body">
+                                {% if trabajador_form.non_field_errors %}
+                                    <div class="alert alert-danger" role="alert">{{ trabajador_form.non_field_errors }}</div>
                                 {% endif %}
-                            </h5>
-                            <button type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Cerrar"></button>
-                        </div>
-                        <div class="modal-body">
-                            {% if trabajador_form.non_field_errors %}
-                                <div class="alert alert-danger" role="alert">
-                                    {{ trabajador_form.non_field_errors }}
+                                <div class="mb-3">
+                                    <label for="{{ trabajador_form.nombre.id_for_label }}" class="form-label">{{ trabajador_form.nombre.label }}</label>
+                                    {{ trabajador_form.nombre }}
+                                    {{ trabajador_form.nombre.errors }}
                                 </div>
-                            {% endif %}
-                            <div class="mb-3">
-                                <label for="{{ trabajador_form.nombre.id_for_label }}" class="form-label">{{ trabajador_form.nombre.label }}</label>
-                                {{ trabajador_form.nombre }}
-                                {{ trabajador_form.nombre.errors }}
+                                <div class="mb-3">
+                                    <label for="{{ trabajador_form.apellido.id_for_label }}" class="form-label">
+                                        {{ trabajador_form.apellido.label }}
+                                    </label>
+                                    {{ trabajador_form.apellido }}
+                                    {{ trabajador_form.apellido.errors }}
+                                </div>
+                                <div class="mb-3">
+                                    <label for="{{ trabajador_form.telefono.id_for_label }}" class="form-label">
+                                        {{ trabajador_form.telefono.label }}
+                                    </label>
+                                    {{ trabajador_form.telefono }}
+                                    {{ trabajador_form.telefono.errors }}
+                                </div>
+                                <div class="mb-0">
+                                    <label for="{{ trabajador_form.rol.id_for_label }}" class="form-label">{{ trabajador_form.rol.label }}</label>
+                                    {{ trabajador_form.rol }}
+                                    {{ trabajador_form.rol.errors }}
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="{{ trabajador_form.apellido.id_for_label }}" class="form-label">{{ trabajador_form.apellido.label }}</label>
-                                {{ trabajador_form.apellido }}
-                                {{ trabajador_form.apellido.errors }}
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary" id="trabajadorModalSubmitBtn">
+                                    {% if trabajador_modal_mode == "edit" %}
+                                        Guardar cambios
+                                    {% else %}
+                                        Guardar trabajador
+                                    {% endif %}
+                                </button>
                             </div>
-                            <div class="mb-3">
-                                <label for="{{ trabajador_form.telefono.id_for_label }}" class="form-label">{{ trabajador_form.telefono.label }}</label>
-                                {{ trabajador_form.telefono }}
-                                {{ trabajador_form.telefono.errors }}
-                            </div>
-                            <div class="mb-0">
-                                <label for="{{ trabajador_form.rol.id_for_label }}" class="form-label">{{ trabajador_form.rol.label }}</label>
-                                {{ trabajador_form.rol }}
-                                {{ trabajador_form.rol.errors }}
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary" id="trabajadorModalSubmitBtn">
-                                {% if trabajador_modal_mode == "edit" %}
-                                    Guardar cambios
-                                {% else %}
-                                    Guardar trabajador
-                                {% endif %}
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="modal fade"
-             id="modalEliminarTrabajador"
-             tabindex="-1"
-             aria-labelledby="modalEliminarTrabajadorLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <form method="post" id="trabajadorDeleteForm">
-                        {% csrf_token %}
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalEliminarTrabajadorLabel">Confirmar eliminación</h5>
-                            <button type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Cerrar"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p class="mb-0">
-                                ¿Está seguro de eliminar a <strong id="trabajadorDeleteName">este trabajador</strong>?
-                            </p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-danger">Eliminar</button>
-                        </div>
-                    </form>
+            <div class="modal fade"
+                 id="modalEliminarTrabajador"
+                 tabindex="-1"
+                 aria-labelledby="modalEliminarTrabajadorLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form method="post" id="trabajadorDeleteForm">
+                            {% csrf_token %}
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalEliminarTrabajadorLabel">Confirmar eliminación</h5>
+                                <button type="button"
+                                        class="btn-close"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="mb-0">
+                                    ¿Está seguro de eliminar a <strong id="trabajadorDeleteName">este trabajador</strong>?
+                                </p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
 
         <div class="modal fade"
              id="modalObservacion"
@@ -863,6 +861,7 @@
 
             const fechaInput = document.getElementById("id_fecha");
             const fechaError = document.getElementById("fecha-error-intervencion");
+            {% if puede_editar_trabajadores %}
             const trabajadorModalElement = document.getElementById("modalTrabajador");
             const trabajadorModalForm = document.getElementById("trabajadorModalForm");
             const trabajadorModalTitle = document.getElementById("modalTrabajadorLabel");
@@ -939,6 +938,7 @@
                     }
                 });
             });
+            {% endif %}
 
             function validarFecha() {
                 if (!fechaInput) {
@@ -994,6 +994,7 @@
                 });
             }
 
+            {% if puede_editar_trabajadores %}
             if ({{ trabajador_modal_open|yesno:"true,false" }}) {
                 const trabajadorModal = trabajadorModalElement
                     ? new bootstrap.Modal(trabajadorModalElement)
@@ -1002,6 +1003,7 @@
                     trabajadorModal.show();
                 }
             }
+            {% endif %}
         });
     </script>
 {% endblock %}

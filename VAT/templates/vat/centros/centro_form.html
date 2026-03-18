@@ -6,11 +6,15 @@
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
 {% endblock %}
 {% block content %}
     {% include 'components/alert_message.html' with show_django_messages=True %}
-    <form method="post" enctype="multipart/form-data" id="centro-form" novalidate>
+    <form method="post"
+          enctype="multipart/form-data"
+          id="centro-form"
+          novalidate>
         {% csrf_token %}
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -24,9 +28,7 @@
                 </button>
             </div>
         </div>
-        {% if form.non_field_errors %}
-            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-        {% endif %}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
 
         <!-- SECCIÓN 1: Información Básica -->
         <div class="card bg-dark text-white mb-3">

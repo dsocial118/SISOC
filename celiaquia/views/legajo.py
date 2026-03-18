@@ -470,6 +470,7 @@ class LegajoEliminarView(View):
                 else:
                     # Hard delete solo si no soporta soft delete
                     from celiaquia.models import CupoMovimiento, PagoNomina
+
                     CupoMovimiento.objects.filter(legajo=legajo).delete()
                     PagoNomina.objects.filter(legajo=legajo).delete()
                     legajo.delete()
