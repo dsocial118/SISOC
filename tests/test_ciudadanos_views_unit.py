@@ -224,9 +224,7 @@ def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
 
     mocker.patch(
         "comedores.models.Nomina.objects.filter",
-        return_value=SimpleNamespace(
-            select_related=_select_related_nomina
-        ),
+        return_value=SimpleNamespace(select_related=_select_related_nomina),
     )
     comedor_ok = module.CiudadanosDetailView().get_comedor_context(ciudadano)
     assert comedor_ok["nomina_actual"].id == 7

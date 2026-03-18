@@ -26,7 +26,9 @@
                                     <td>{{ p.ciudadano.documento }}</td>
                                     <td>{{ p.fecha_registro|date:"d/m/Y H:i" }}</td>
                                     <td>
-                                        <form method="post" action="{% url 'vat_participanteactividad_promover' centro_id=centro_id actividad_id=actividad_id pk=p.pk %}" style="display:inline;">
+                                        <form method="post"
+                                              action="{% url 'vat_participanteactividad_promover' centro_id=centro_id actividad_id=actividad_id pk=p.pk %}"
+                                              style="display:inline">
                                             {% csrf_token %}
                                             <button type="submit" class="btn btn-sm btn-success">Promover</button>
                                         </form>
@@ -41,7 +43,8 @@
             </div>
         </div>
         <div class="mt-3">
-            <a href="{% url 'vat_actividadcentro_detail' pk=actividad_id %}" class="btn btn-secondary">Volver</a>
+            <a href="{% url 'vat_actividadcentro_detail' pk=actividad_id %}"
+               class="btn btn-secondary">Volver</a>
         </div>
     </div>
 {% endblock %}

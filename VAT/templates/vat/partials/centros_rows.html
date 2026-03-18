@@ -1,4 +1,5 @@
-﻿{% load static %}
+﻿
+{% load static %}
 {% for centro in centros %}
     <tr>
         <td data-nombre="{{ centro.nombre }}">
@@ -51,4 +52,3 @@
         <td colspan="5" class="text-center">No se encontraron centros.</td>
     </tr>
 {% endfor %}
-

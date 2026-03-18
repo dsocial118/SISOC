@@ -43,10 +43,12 @@
     <!-- 2) BOTONES -->
     <div class="mb-4 d-flex justify-content-end">
         <div class="btn-group btn-group-sm" role="group">
-            <a href="{% url 'vat_centro_detail' actividad.centro.id %}" class="btn btn-outline-secondary">
+            <a href="{% url 'vat_centro_detail' actividad.centro.id %}"
+               class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left mr-1"></i>Volver
             </a>
-            <a href="{% url 'vat_actividadcentro_edit' pk=actividad.id %}" class="btn btn-outline-warning">
+            <a href="{% url 'vat_actividadcentro_edit' pk=actividad.id %}"
+               class="btn btn-outline-warning">
                 <i class="fas fa-edit mr-1"></i>Editar
             </a>
             <a href="{% url 'vat_participanteactividad_create' centro_id=actividad.centro.id actividad_id=actividad.id %}"
@@ -105,9 +107,7 @@
                         <span><i class="fas fa-calendar-alt mr-2 text-info"></i>Días</span>
                         <span>
                             {% if actividad.dias.exists %}
-                                {% for dia in actividad.dias.all %}
-                                    <span class="badge badge-secondary">{{ dia.nombre }}</span>
-                                {% endfor %}
+                                {% for dia in actividad.dias.all %}<span class="badge badge-secondary">{{ dia.nombre }}</span>{% endfor %}
                             {% else %}
                                 <span class="text-muted">—</span>
                             {% endif %}
@@ -131,7 +131,10 @@
                         <span><i class="fas fa-venus-mars mr-2 text-info"></i>Dirigido a</span>
                         <span>
                             {% if actividad.sexoact.exists %}
-                                {% for s in actividad.sexoact.all %}{{ s.sexo }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                {% for s in actividad.sexoact.all %}
+                                    {{ s.sexo }}
+                                    {% if not forloop.last %},{% endif %}
+                                {% endfor %}
                             {% else %}
                                 Todos
                             {% endif %}
@@ -139,7 +142,13 @@
                     </li>
                     <li class="list-group-item d-flex justify-content-between bg-navy text-white">
                         <span><i class="fas fa-tag mr-2 text-info"></i>Precio</span>
-                        <span>{% if actividad.precio %}${{ actividad.precio }}{% else %}<span class="text-muted">Gratuita</span>{% endif %}</span>
+                        <span>
+                            {% if actividad.precio %}
+                                ${{ actividad.precio }}
+                            {% else %}
+                                <span class="text-muted">Gratuita</span>
+                            {% endif %}
+                        </span>
                     </li>
                 </ul>
             </div>
@@ -169,7 +178,10 @@
                                     <tr>
                                         <td>{{ item.encuentro.numero_encuentro }}</td>
                                         <td>{{ item.encuentro.fecha|date:"D d/m/Y" }}</td>
-                                        <td>{{ item.encuentro.hora_inicio|time:"H:i" }}{% if item.encuentro.hora_fin %} — {{ item.encuentro.hora_fin|time:"H:i" }}{% endif %}</td>
+                                        <td>
+                                            {{ item.encuentro.hora_inicio|time:"H:i" }}
+                                            {% if item.encuentro.hora_fin %}— {{ item.encuentro.hora_fin|time:"H:i" }}{% endif %}
+                                        </td>
                                         <td class="text-center">
                                             {% if item.encuentro.estado == 'programado' %}
                                                 <span class="badge badge-secondary">Programado</span>
@@ -309,7 +321,10 @@
 
     <!-- Modal error de promoción -->
     {% if promo_error %}
-        <div class="modal fade" id="promoErrorModal" tabindex="-1" aria-hidden="true">
+        <div class="modal fade"
+             id="promoErrorModal"
+             tabindex="-1"
+             aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-sm">
                 <div class="modal-content bg-dark text-white">
                     <div class="modal-header bg-warning">
@@ -318,7 +333,9 @@
                     </div>
                     <div class="modal-body">No hay cupo disponible para promover a este participante.</div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                data-bs-dismiss="modal">Cerrar</button>
                     </div>
                 </div>
             </div>

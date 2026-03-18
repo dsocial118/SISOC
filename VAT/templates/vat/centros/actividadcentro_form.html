@@ -3,9 +3,12 @@
 {% load static %}
 {% block title %}{{ page_title|default:"Actividad" }}{% endblock %}
 {% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/duplasSelect2.min.css' %}" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/duplasSelect2.min.css' %}" />
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
 {% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
@@ -37,9 +40,7 @@
                 </button>
             </div>
         </div>
-        {% if form.non_field_errors %}
-            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-        {% endif %}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
 
         <!-- SECCIÓN 1: Actividad -->
         <div class="card bg-dark text-white mb-3">
@@ -84,7 +85,10 @@
                         <div class="col-md-3">{{ form.fecha_inicio|as_crispy_field }}</div>
                         <div class="col-md-3">{{ form.fecha_fin|as_crispy_field }}</div>
                     </div>
-                    <div class="alert alert-info mt-2 mb-0" style="background:#1e2a3a;border-color:#3d4f63;color:#9ca3af;">
+                    <div class="alert alert-info mt-2 mb-0"
+                         style="background:#1e2a3a;
+                                border-color:#3d4f63;
+                                color:#9ca3af">
                         <i class="fas fa-info-circle mr-2"></i>
                         Al guardar, se generarán automáticamente los encuentros para cada día configurado entre la fecha de inicio y fin.
                     </div>

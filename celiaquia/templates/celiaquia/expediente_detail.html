@@ -472,9 +472,7 @@
                                                         <div class="small muted">Observación (subsanación):</div>
                                                         <div class="mt-1">
                                                             {% if leg.subsanacion_motivo %}
-                                                                <div class="p-2 rounded"
-                                                                     style="background:rgba(255,255,255,.04);
-                                                                            border:1px solid rgba(255,255,255,.08)">
+                                                                <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08)">
                                                                     <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
                                                                 </div>
                                                             {% else %}
@@ -686,9 +684,7 @@
                                         <div class="small muted">Comentario enviado a provincia:</div>
                                         <div class="mt-1">
                                             {% if leg.subsanacion_motivo %}
-                                                <div class="p-2 rounded"
-                                                     style="background:rgba(255,255,255,.04);
-                                                            border:1px solid rgba(255,255,255,.08)">
+                                                <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08)">
                                                     <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
                                                 </div>
                                             {% else %}
@@ -777,33 +773,31 @@
                                              role="toolbar"
                                              aria-label="Acciones del legajo">
                                             {% with estado=leg.revision_tecnico %}
-                                                            <div class="btn-group btn-group-sm me-2" role="group">
-                                                                <button type="button"
-                                                                        class="btn btn-info btn-validar-renaper"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-bs-toggle="modal"
-                                                                        data-bs-target="#modalValidarRenaper">
-                                                                    Validar Renaper
-                                                                </button>
-                                                            </div>
-                                                            <div class="btn-group btn-group-sm" role="group">
-                                                                <button type="button"
-                                                                        class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-accion="APROBAR">Aprobar</button>
-                                                                <button type="button"
-                                                                        class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-bs-toggle="modal"
-                                                                        data-bs-target="#modalSubsanar">
-                                                                    Subsanar
-                                                                </button>
-                                                                <button type="button"
-                                                                        class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-accion="RECHAZAR">Rechazar</button>
-                                                            </div>
-                                                        {% endwith %}
+                                                <div class="btn-group btn-group-sm me-2" role="group">
+                                                    <button type="button"
+                                                            class="btn btn-info btn-validar-renaper"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalValidarRenaper">
+                                                        Validar Renaper
+                                                    </button>
+                                                </div>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button"
+                                                            class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-accion="APROBAR">Aprobar</button>
+                                                    <button type="button"
+                                                            class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalSubsanar">Subsanar</button>
+                                                    <button type="button"
+                                                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-accion="RECHAZAR">Rechazar</button>
+                                                </div>
+                                            {% endwith %}
                                         </div>
                                     </div>
                                 {% endif %}
@@ -1165,7 +1159,10 @@
                 <input type="hidden" id="subsanar-legajo-id" name="legajo_id" value="" />
                 <div class="mb-3">
                     <label for="subsanar-tipo" class="form-label">Tipo de subsanación *</label>
-                    <select id="subsanar-tipo" name="tipo_subsanacion" class="form-select" required>
+                    <select id="subsanar-tipo"
+                            name="tipo_subsanacion"
+                            class="form-select"
+                            required>
                         <option value="">Seleccionar...</option>
                         <option value="DOCUMENTACION">Documentación</option>
                         <option value="DATOS_PERSONALES">Datos personales</option>
@@ -1507,7 +1504,13 @@
                                     <td>{{ h.fecha|date:"d/m/Y H:i" }}</td>
                                     <td>{{ h.estado_anterior.display_name }}</td>
                                     <td>{{ h.estado_nuevo.display_name }}</td>
-                                    <td>{% if h.usuario %}{{ h.usuario.get_full_name|default:h.usuario.username }}{% else %}-{% endif %}</td>
+                                    <td>
+                                        {% if h.usuario %}
+                                            {{ h.usuario.get_full_name|default:h.usuario.username }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
                                     <td>{{ h.observaciones|default:"-" }}</td>
                                 </tr>
                             {% empty %}

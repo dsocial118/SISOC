@@ -140,17 +140,16 @@ def _build_trabajadores_context(
     centro,
     form=None,
     *,
-    modal_open=False,
-    modal_mode="create",
-    modal_action=None,
+    modal=None,
 ):
     form = form or TrabajadorForm()
+    modal = modal or {}
     return {
         "trabajadores": centro.trabajadores.order_by("apellido", "nombre"),
         "trabajador_form": form,
-        "trabajador_modal_open": modal_open,
-        "trabajador_modal_mode": modal_mode,
-        "trabajador_form_action": modal_action
+        "trabajador_modal_open": modal.get("open", False),
+        "trabajador_modal_mode": modal.get("mode", "create"),
+        "trabajador_form_action": modal.get("action")
         or reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk}),
         "puede_editar_trabajadores": request.user.has_perm(
             "centrodeinfancia.change_centrodeinfancia"
@@ -574,9 +573,11 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
                 self.request,
                 self.centro,
                 form=form,
-                modal_open=True,
-                modal_mode="create",
-                modal_action=self.request.path,
+                modal={
+                    "open": True,
+                    "mode": "create",
+                    "action": self.request.path,
+                },
             )
         )
         return render(
@@ -616,9 +617,11 @@ class TrabajadorCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
                 self.request,
                 centro,
                 form=form,
-                modal_open=True,
-                modal_mode="edit",
-                modal_action=self.request.path,
+                modal={
+                    "open": True,
+                    "mode": "edit",
+                    "action": self.request.path,
+                },
             )
         )
         return render(
