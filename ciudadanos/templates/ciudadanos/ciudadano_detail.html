@@ -1986,12 +1986,12 @@ function cambiarMes(direccion) {
 
 function actualizarGrafico() {
     document.getElementById('mes-actual').textContent = mesActual + ' ' + mesesNombres[mesActual] + ' ' + anioActual;
-    
+
     const ctx = document.getElementById('historialChart').getContext('2d');
     if (window.historialChartInstance) {
         window.historialChartInstance.destroy();
     }
-    
+
     window.historialChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -2059,7 +2059,7 @@ function actualizarGrafico() {
 
 document.addEventListener('DOMContentLoaded', function() {
     actualizarGrafico();
-    
+
     {% if ciudadano.latitud and ciudadano.longitud %}
     const mapElement = document.getElementById('map');
     if (mapElement) {
@@ -2073,7 +2073,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fullscreenControl: false,
             streetViewControl: false
         });
-        
+
         new google.maps.Marker({
             position: {
                 lat: {{ ciudadano.latitud }},
