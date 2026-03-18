@@ -289,13 +289,22 @@
                             <td>{{ e.ciudadano.documento|default:"-" }}</td>
                             <td>{{ e.ciudadano.sexo.sexo|default:"-" }}</td>
                             <td>
-                                <select class="nomina-estado-select"
-                                        data-nomina-id="{{ e.id }}"
-                                        data-cambiar-url="{% url 'nomina_cambiar_estado' e.id %}">
-                                    {% for val, label in estados %}
-                                        <option value="{{ val }}" {% if e.estado == val %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
+                                <div class="dropdown">
+                                    <button class="nomina-btn nomina-estado-btn nomina-estado-{{ e.estado }} dropdown-toggle"
+                                            type="button"
+                                            data-bs-toggle="dropdown"
+                                            data-cambiar-url="{% url 'nomina_cambiar_estado' e.id %}"
+                                            aria-expanded="false">{{ e.get_estado_display }}</button>
+                                    <ul class="dropdown-menu dropdown-menu-dark">
+                                        {% for val, lbl in estados %}
+                                            <li>
+                                                <a class="dropdown-item nomina-estado-opcion {% if e.estado == val %}active{% endif %}"
+                                                   href="#"
+                                                   data-estado="{{ val }}">{{ lbl }}</a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
                             </td>
                             <td>
                                 <div class="nomina-action-buttons">

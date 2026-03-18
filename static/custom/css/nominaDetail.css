@@ -327,6 +327,45 @@
     color: #ffffff;
 }
 
+/* Botón de estado inline */
+.nomina-estado-btn {
+    min-width: 110px;
+    justify-content: space-between;
+}
+
+.nomina-estado-btn.nomina-estado-activo {
+    background: #27ae60;
+    color: #ffffff;
+}
+
+.nomina-estado-btn.nomina-estado-activo:hover,
+.nomina-estado-btn.nomina-estado-activo:focus {
+    background: #1e8449;
+    color: #ffffff;
+}
+
+.nomina-estado-btn.nomina-estado-espera {
+    background: #f39c12;
+    color: #ffffff;
+}
+
+.nomina-estado-btn.nomina-estado-espera:hover,
+.nomina-estado-btn.nomina-estado-espera:focus {
+    background: #d68910;
+    color: #ffffff;
+}
+
+.nomina-estado-btn.nomina-estado-baja {
+    background: #7f8c8d;
+    color: #ffffff;
+}
+
+.nomina-estado-btn.nomina-estado-baja:hover,
+.nomina-estado-btn.nomina-estado-baja:focus {
+    background: #616a6b;
+    color: #ffffff;
+}
+
 /* Dropdown de Acciones */
 .nomina-actions-dropdown {
     position: relative;
