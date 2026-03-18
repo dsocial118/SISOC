@@ -103,6 +103,7 @@ class CentroListView(LoginRequiredMixin, ListView):
 
         ctx["table_headers"] = [
             {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
+            {"title": "Tipo", "sortable": True, "sort_key": "tipo"},
             {"title": "Dirección", "sortable": True, "sort_key": "calle"},
             {"title": "Teléfono", "sortable": True, "sort_key": "telefono"},
             {"title": "Estado", "sortable": True, "sort_key": "activo"},
@@ -250,7 +251,27 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     template_name = "centros/centro_form.html"
     success_url = reverse_lazy("centro_list")
 
+    def get_initial(self):
+        initial = super().get_initial()
+        faro_id = self.request.GET.get("faro")
+        if faro_id:
+            initial["tipo"] = "adherido"
+            initial["faro_asociado"] = faro_id
+        return initial
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["from_faro"] = bool(self.request.GET.get("faro"))
+        return kwargs
+
     def form_valid(self, form):
+        faro_id = self.request.GET.get("faro")
+        if (
+            faro_id
+            and form.cleaned_data.get("tipo") == "adherido"
+            and not form.instance.faro_asociado_id
+        ):
+            form.instance.faro_asociado_id = faro_id
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
 
@@ -379,6 +400,7 @@ def centros_ajax(request):
             "can_add": can_add,
             "table_headers": [
                 {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
+                {"title": "Tipo", "sortable": True, "sort_key": "tipo"},
                 {"title": "Dirección", "sortable": True, "sort_key": "calle"},
                 {"title": "Teléfono", "sortable": True, "sort_key": "telefono"},
                 {"title": "Estado", "sortable": True, "sort_key": "activo"},

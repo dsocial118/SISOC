@@ -21,7 +21,9 @@ def test_api_client_no_log_error_when_no_match(mocker):
     client = module.APIClient()
     client.session = session
     mocker.patch.object(client, "get_token", return_value="token")
-    log_error = mocker.patch("centrodefamilia.services.consulta_renaper.impl.logger.error")
+    log_error = mocker.patch(
+        "centrodefamilia.services.consulta_renaper.impl.logger.error"
+    )
 
     out = client.consultar_ciudadano("13163071", "M")
 

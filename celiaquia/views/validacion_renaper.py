@@ -188,9 +188,7 @@ def _resolver_provincia_renaper(datos_renaper):
 
 def _formatear_datos_renaper(datos_renaper, sexo_renaper, documento_consulta=None):
     documento_renaper = (
-        datos_renaper.get("dni")
-        or datos_renaper.get("documento")
-        or documento_consulta
+        datos_renaper.get("dni") or datos_renaper.get("documento") or documento_consulta
     )
 
     datos_renaper_formateados = {
