@@ -2,7 +2,6 @@ from functools import wraps
 
 from django.core.exceptions import PermissionDenied
 
-from core.permissions.registry import resolve_permission_codes
 from iam.services import user_has_permission_code
 
 
@@ -16,8 +15,9 @@ def _has_any_permissions(user, permission_codes):
     if getattr(user, "is_superuser", False):
         return True
 
-    resolved = resolve_permission_codes(permission_codes)
-    return any(user_has_permission_code(user, code) for code in resolved)
+    return any(
+        user_has_permission_code(user, code) for code in (permission_codes or [])
+    )
 
 
 def _has_all_permissions(user, permission_codes):
@@ -26,10 +26,10 @@ def _has_all_permissions(user, permission_codes):
     if getattr(user, "is_superuser", False):
         return True
 
-    resolved = resolve_permission_codes(permission_codes)
-    if not resolved:
+    requested = list(permission_codes or [])
+    if not requested:
         return False
-    return all(user_has_permission_code(user, code) for code in resolved)
+    return all(user_has_permission_code(user, code) for code in requested)
 
 
 def permissions_any_required(permission_codes):

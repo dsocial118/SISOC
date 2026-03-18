@@ -1,0 +1,186 @@
+from django.urls import path
+from core.decorators import permissions_any_required
+
+from VAT.views.centro import (
+    CentroCreateView,
+    CentroDeleteView,
+    CentroDetailView,
+    CentroListView,
+    CentroUpdateView,
+    centros_ajax,
+)
+
+from VAT.views.actividad import (
+    ActividadCentroCreateView,
+    ActividadCentroDetailView,
+    ActividadCentroListView,
+    ActividadCentroUpdateView,
+    ActividadCreateView,
+    cargar_actividades_por_categoria,
+)
+
+from VAT.views.participante import (
+    ParticipanteActividadCreateView,
+    ParticipanteActividadDeleteView,
+    ParticipanteActividadListEsperaView,
+    ParticipanteActividadPromoverView,
+)
+
+from .views.encuentro import RegistrarAsistenciaView
+
+from .views.beneficiarios import (
+    BeneficiariosListView,
+    BeneficiariosDetailView,
+    ResponsableListView,
+    ResponsableDetailView,
+    BeneficiariosCreateView,
+    BuscarCUILView,
+    BuscarResponsableView,
+)
+
+urlpatterns = [
+    path(
+        "vat/centros/",
+        permissions_any_required(["VAT.view_centro"])(CentroListView.as_view()),
+        name="vat_centro_list",
+    ),
+    path(
+        "vat/centros/ajax/",
+        permissions_any_required(["VAT.view_centro"])(centros_ajax),
+        name="vat_centros_ajax",
+    ),
+    path(
+        "vat/centros/nuevo/",
+        permissions_any_required(["VAT.view_centro"])(CentroCreateView.as_view()),
+        name="vat_centro_create",
+    ),
+    path(
+        "vat/centros/<int:pk>/editar/",
+        permissions_any_required(["VAT.view_centro"])(CentroUpdateView.as_view()),
+        name="vat_centro_update",
+    ),
+    path(
+        "vat/centros/<int:pk>/",
+        permissions_any_required(["VAT.view_centro"])(CentroDetailView.as_view()),
+        name="vat_centro_detail",
+    ),
+    path(
+        "vat/centros/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.view_centro"])(CentroDeleteView.as_view()),
+        name="vat_centro_delete",
+    ),
+    path(
+        "vat/actividades/",
+        permissions_any_required(["VAT.view_centro"])(
+            ActividadCentroListView.as_view()
+        ),
+        name="vat_actividadcentro_list",
+    ),
+    path(
+        "vat/centros/<int:centro_id>/actividades/nueva/",
+        permissions_any_required(["VAT.view_centro"])(
+            ActividadCentroCreateView.as_view()
+        ),
+        name="vat_actividadcentro_create",
+    ),
+    path(
+        "vat/centros/actividades/<int:pk>/detalle/",
+        permissions_any_required(["VAT.view_centro"])(
+            ActividadCentroDetailView.as_view()
+        ),
+        name="vat_actividadcentro_detail",
+    ),
+    path(
+        "vat/centros/<int:centro_id>/actividades/<int:actividad_id>/participantes/crear/",
+        permissions_any_required(["VAT.view_centro"])(
+            ParticipanteActividadCreateView.as_view()
+        ),
+        name="vat_participanteactividad_create",
+    ),
+    path(
+        "vat/centros/actividades/<int:pk>/editar/",
+        permissions_any_required(["VAT.view_centro"])(
+            ActividadCentroUpdateView.as_view()
+        ),
+        name="vat_actividadcentro_edit",
+    ),
+    path(
+        "vat/ajax/actividades/",
+        permissions_any_required(["VAT.view_centro"])(cargar_actividades_por_categoria),
+        name="vat_ajax_cargar_actividades",
+    ),
+    path(
+        "vat/centros/<int:centro_id>/actividades/<int:actividad_id>/participantes/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.view_centro"])(
+            ParticipanteActividadDeleteView.as_view()
+        ),
+        name="vat_participanteactividad_delete",
+    ),
+    path(
+        "vat/centros/<int:centro_id>/actividades/<int:actividad_id>/lista-espera/",
+        permissions_any_required(["VAT.view_centro"])(
+            ParticipanteActividadListEsperaView.as_view()
+        ),
+        name="vat_actividadcentro_lista_espera",
+    ),
+    path(
+        "vat/centros/<int:centro_id>/actividades/<int:actividad_id>/lista-espera/<int:pk>/promover/",
+        permissions_any_required(["VAT.view_centro"])(
+            ParticipanteActividadPromoverView.as_view()
+        ),
+        name="vat_participanteactividad_promover",
+    ),
+    # Encuentros / Asistencia
+    path(
+        "vat/encuentros/<int:pk>/asistencia/",
+        permissions_any_required(["VAT.view_centro"])(
+            RegistrarAsistenciaView.as_view()
+        ),
+        name="vat_encuentro_asistencia",
+    ),
+    path(
+        "vat/actividades/nueva/",
+        permissions_any_required(["VAT.view_centro"])(ActividadCreateView.as_view()),
+        name="vat_actividad_create_sola",
+    ),
+    # Beneficiarios
+    path(
+        "vat/beneficiarios/beneficiarios/",
+        permissions_any_required(["VAT.view_centro"])(BeneficiariosListView.as_view()),
+        name="vat_beneficiarios_list",
+    ),
+    path(
+        "vat/beneficiarios/beneficiarios/<int:pk>/",
+        permissions_any_required(["VAT.view_centro"])(
+            BeneficiariosDetailView.as_view()
+        ),
+        name="vat_beneficiarios_detail",
+    ),
+    path(
+        "vat/beneficiarios/nuevo/",
+        permissions_any_required(["VAT.view_centro"])(
+            BeneficiariosCreateView.as_view()
+        ),
+        name="vat_beneficiarios_crear",
+    ),
+    path(
+        "vat/beneficiarios/responsables/",
+        permissions_any_required(["VAT.view_centro"])(ResponsableListView.as_view()),
+        name="vat_responsables_list",
+    ),
+    path(
+        "vat/beneficiarios/responsables/<int:pk>/",
+        permissions_any_required(["VAT.view_centro"])(ResponsableDetailView.as_view()),
+        name="vat_responsables_detail",
+    ),
+    path(
+        "vat/beneficiarios/buscar-cuil/",
+        permissions_any_required(["VAT.view_centro"])(BuscarCUILView.as_view()),
+        name="vat_buscar_cuil",
+    ),
+    path(
+        "vat/beneficiarios/buscar-responsable/",
+        permissions_any_required(["VAT.view_centro"])(BuscarResponsableView.as_view()),
+        name="vat_buscar_responsable",
+    ),
+]

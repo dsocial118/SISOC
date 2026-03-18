@@ -10,9 +10,14 @@ from django.utils import timezone
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 
 from comedores.forms.observacion_form import ObservacionForm
-from comedores.models import Comedor, Observacion
+from comedores.models import Observacion
+from comedores.services.comedor_service import ComedorService
 from core.security import safe_redirect
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+
+
+def _get_comedor_scoped_or_404(comedor_pk, user):
+    return ComedorService.get_scoped_comedor_or_404(comedor_pk, user)
 
 
 class ObservacionCreateView(LoginRequiredMixin, CreateView):
@@ -23,19 +28,18 @@ class ObservacionCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-
-        context.update(
-            {
-                "comedor": Comedor.objects.values("id", "nombre").get(
-                    pk=self.kwargs["comedor_pk"]
-                )
-            }
+        comedor = _get_comedor_scoped_or_404(
+            self.kwargs["comedor_pk"], self.request.user
         )
+
+        context.update({"comedor": {"id": comedor.id, "nombre": comedor.nombre}})
 
         return context
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
-        form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
+        form.instance.comedor_id = _get_comedor_scoped_or_404(
+            self.kwargs["comedor_pk"], self.request.user
+        ).id
         usuario = self.request.user
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha_visita = timezone.now()
@@ -55,8 +59,10 @@ class ObservacionDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "observacion"
 
     def get_object(self, queryset=None) -> Model:
+        scoped_comedores = ComedorService.get_scoped_comedor_queryset(self.request.user)
         return (
             Observacion.objects.prefetch_related("comedor")
+            .filter(comedor__in=scoped_comedores)
             .values(
                 "id",
                 "fecha_visita",
@@ -74,6 +80,10 @@ class ObservacionUpdateView(LoginRequiredMixin, UpdateView):
     form_class = ObservacionForm
     template_name = "observacion/observacion_form.html"
     context_object_name = "observacion"
+
+    def get_queryset(self):
+        scoped_comedores = ComedorService.get_scoped_comedor_queryset(self.request.user)
+        return super().get_queryset().filter(comedor__in=scoped_comedores)
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -102,6 +112,10 @@ class ObservacionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, Delet
     template_name = "observacion/observacion_confirm_delete.html"
     context_object_name = "observacion"
     success_message = "Observación dada de baja correctamente."
+
+    def get_queryset(self):
+        scoped_comedores = ComedorService.get_scoped_comedor_queryset(self.request.user)
+        return super().get_queryset().filter(comedor__in=scoped_comedores)
 
     def get_success_url(self):
         comedor = self.object.comedor

@@ -61,7 +61,28 @@ def _user_has_permission(user, permission_code: str) -> bool:
 
 
 def _is_admin(user) -> bool:
-    return user.is_authenticated and user.is_superuser
+    return bool(
+        getattr(user, "is_authenticated", False)
+        and getattr(user, "is_superuser", False)
+    )
+
+
+def _user_in_group(user, group_name) -> bool:
+    """Indica si el usuario pertenece al grupo solicitado."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    groups = getattr(user, "groups", None)
+    if not groups:
+        return False
+    filter_fn = getattr(groups, "filter", None)
+    if not callable(filter_fn) or not group_name:
+        return False
+
+    try:
+        exists_fn = getattr(filter_fn(name=group_name), "exists", None)
+        return bool(exists_fn() if callable(exists_fn) else False)
+    except Exception:
+        return False
 
 
 def _is_ajax(request) -> bool:
@@ -85,7 +106,7 @@ def _user_provincia(user):
 
 
 def _tecnicos_queryset():
-    return User.objects.filter(
+    qs = User.objects.filter(
         Q(
             user_permissions__content_type__app_label="auth",
             user_permissions__codename="role_tecnicoceliaquia",
@@ -94,7 +115,11 @@ def _tecnicos_queryset():
             groups__permissions__content_type__app_label="auth",
             groups__permissions__codename="role_tecnicoceliaquia",
         )
-    ).distinct()
+    )
+    distinct = getattr(qs, "distinct", None)
+    if callable(distinct):
+        return distinct()
+    return qs
 
 
 def _parse_limit(value, default=None, max_cap=5000):
@@ -226,10 +251,19 @@ class ExpedienteListView(ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
+        is_admin = _is_admin(user)
+        is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        is_tecnico = _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+
         ctx["tecnicos"] = []
-        if _is_admin(user) or _user_has_permission(
-            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
-        ):
+        ctx["is_admin_celiaquia"] = is_admin
+        ctx["is_coord_celiaquia"] = is_coord
+        ctx["is_tecnico_celiaquia"] = is_tecnico
+        ctx["is_provincial_celiaquia"] = _is_provincial(user)
+        ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
+        ctx["show_tecnico_column_celiaquia"] = is_admin or is_coord or is_tecnico
+
+        if is_admin or is_coord:
             ctx["tecnicos"] = _tecnicos_queryset().order_by("last_name", "first_name")
         return ctx
 
@@ -450,6 +484,13 @@ class ExpedienteDetailView(DetailView):
         ctx = super().get_context_data(**kwargs)
         expediente = self.object
         user = self.request.user
+        is_admin = _is_admin(user)
+        is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        is_tecnico = _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+        ctx["is_tecnico_celiaquia"] = is_tecnico
+        ctx["is_coord_celiaquia"] = is_coord
+        ctx["is_provincial_celiaquia"] = _is_provincial(user)
+        ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
 
         preview = preview_error = None
         preview_limit_actual = None
@@ -595,8 +636,20 @@ class ExpedienteDetailView(DetailView):
             if responsable.ciudadano_id not in agregados:
                 agregar_con_descendientes(responsable)
 
-        # Agregar hijos sin responsable al final
-        legajos_enriquecidos.extend(hijos_sin_responsable)
+        # Agregar hijos sin responsable al final evitando duplicados.
+        for legajo in hijos_sin_responsable:
+            if legajo.ciudadano_id not in agregados:
+                legajos_enriquecidos.append(legajo)
+                agregados.add(legajo.ciudadano_id)
+
+        # Agregar legajos huérfanos: tienen responsable_id pero ese responsable
+        # no está en el expediente (fue eliminado o nunca se importó).
+        # Sin este paso quedan invisibles en la vista pero siguen existiendo en BD,
+        # lo que provoca errores en la validación de confirm_envío.
+        for legajo in legajos_list:
+            if legajo.ciudadano_id not in agregados:
+                legajos_enriquecidos.append(legajo)
+                agregados.add(legajo.ciudadano_id)
 
         faltantes_list = LegajoService.faltantes_archivos(expediente)
         # Obtener estructura familiar completa
@@ -1707,7 +1760,7 @@ class EliminarRegistroErroneoView(View):
 class ExpedienteDeleteView(View):
     def delete(self, request, pk):
         user = request.user
-        if not _is_admin(user):
+        if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )

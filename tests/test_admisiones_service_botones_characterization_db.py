@@ -216,10 +216,29 @@ def test_get_botones_disponibles_sin_roles_no_expone_acciones_tecnicas_ni_abogad
         user=user,
     )
 
-    assert botones == [
-        "comenzar_acompaniamiento",
-        "rectificar_documentacion",
-    ]
+    assert botones == ["rectificar_documentacion"]
+
+
+def test_get_botones_disponibles_abogado_no_ve_comenzar_acompanamiento():
+    abogado = _create_user_with_group(
+        "abogado_sin_acompanamiento",
+        UserGroups.ABOGADO_DUPLA,
+    )
+    admision = _admision(
+        numero_disposicion="DI-3",
+        enviado_acompaniamiento=False,
+        estado_legales="A Rectificar",
+    )
+
+    botones = module.AdmisionService._get_botones_disponibles(
+        admision,
+        informe_tecnico=None,
+        mostrar_informe_complementario=False,
+        user=abogado,
+    )
+
+    assert "comenzar_acompaniamiento" not in botones
+    assert botones == ["rectificar_documentacion"]
 
 
 def test_permiso_helpers_dupla_con_datos_reales():

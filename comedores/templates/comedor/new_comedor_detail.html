@@ -1163,14 +1163,32 @@
             <div class="card bg-card">
                 <div class="card-header py-1 d-flex align-items-center justify-content-between">
                     <h4 class="fw-bold my-1">Nómina</h4>
-                    <a href="{% url 'nomina_ver' pk=comedor.id %}"
-                       class="text-white fs-5 ms-auto"
-                       title="Ver nómina"
-                       aria-label="Ver nómina">
-                        <i class="bi bi-box-arrow-up-right"></i>
-                    </a>
+                    {% if selected_admision_id %}
+                        <a href="{% url 'nomina_ver' pk=comedor.id admision_pk=selected_admision_id %}"
+                           class="btn btn-success btn-sm ms-auto">
+                            <i class="bi bi-people-fill me-1"></i>Ver nómina
+                        </a>
+                    {% endif %}
                 </div>
                 <div class="card-body">
+                    {% if selected_admision_id and nomina_total == 0 %}
+                        <div class="alert alert-warning py-1 px-2 mb-2 small">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Nómina pendiente de presentación.
+                        </div>
+                    {% endif %}
+                    {% if selected_admision_id %}
+                        <form method="post"
+                              action="{% url 'nomina_importar' pk=comedor.id admision_pk=selected_admision_id %}"
+                              class="mb-2">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline-light w-100"
+                                    title="Importar nómina del convenio anterior">
+                                <i class="bi bi-clipboard-plus me-1"></i>Importar del convenio anterior
+                            </button>
+                        </form>
+                    {% endif %}
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-amarillo px-3 py-2 rounded-3 mb-2">
                             <div class="d-flex align-items-center justify-content-center bg-amarillo-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
@@ -1739,11 +1757,7 @@
     });
     </script>
 
-    <script nonce="{{ request.csp_nonce }}">
-    const comedorId = "{{ comedor.id }}"
-    const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
-    const GESTIONAR_API_CREAR_COMEDOR = "{{ GESTIONAR_API_CREAR_COMEDOR }}";
-    </script>
+    <script nonce="{{ request.csp_nonce }}">const comedorId = "{{ comedor.id }}";</script>
     <script src="{% static 'custom/js/comedordetail.js' %}"></script>
     <script src="{% static 'custom/js/newcomedor.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

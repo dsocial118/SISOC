@@ -1,0 +1,386 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags static %}
+
+{% block title %}
+    {% if is_edit %}
+        Editar
+    {% else %}
+        Nuevo
+    {% endif %}
+    Formulario CDI
+{% endblock %}
+{% block titulo-pagina %}
+    {% if is_edit %}
+        Editar
+    {% else %}
+        Nuevo
+    {% endif %}
+    Formulario CDI
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between mb-3">
+            <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
+               class="btn btn-secondary">Volver al CDI</a>
+            <a href="{% url 'centrodeinfancia_formulario_listado' centro.id %}"
+               class="btn btn-outline-secondary">Ver formularios</a>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3 class="mb-1">{{ centro.nombre }}</h3>
+                <p class="text-muted mb-0">
+                    Formulario vinculado al centro #{{ centro.id }} ({{ centro.cdi_code|default:"Sin codigo" }})
+                </p>
+            </div>
+        </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.errors or room_formset.errors or room_formset.non_form_errors or waitlist_formset.errors or waitlist_formset.non_form_errors or articulation_formset.errors or articulation_formset.non_form_errors %}
+                <div class="alert alert-danger">
+                    No se pudo guardar el formulario. Revisá los campos marcados.
+                    {% if form.non_field_errors %}<div class="mt-2">{{ form.non_field_errors }}</div>{% endif %}
+                </div>
+            {% endif %}
+
+            {% for section in section_fields %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <strong>{{ section.title }}</strong>
+                    </div>
+                    <div class="card-body">
+                        {% for row in section.rows %}
+                            <div class="row">
+                                {% for field in row %}
+                                    <div class="{{ field.col_class }} mb-3 form-field-wrapper"
+                                         data-field-name="{{ field.name }}">
+                                        {{ field.bound_field|as_crispy_field }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>Organizacion de salas</strong>
+                </div>
+                <div class="card-body">
+                    {{ room_formset.management_form }}
+                    {% if room_formset.non_form_errors %}
+                        <div class="alert alert-danger">{{ room_formset.non_form_errors }}</div>
+                    {% endif %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Grupo etario</th>
+                                    <th>Salas</th>
+                                    <th>Superficie m2</th>
+                                    <th>Niñas y niños</th>
+                                    <th>Personal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row_form in room_formset.forms %}
+                                    <tr>
+                                        <td>
+                                            {{ row_form.age_group }}
+                                            {{ row_form.row_label }}
+                                        </td>
+                                        <td>
+                                            {{ row_form.room_count }}
+                                            {% for error in row_form.room_count.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                        </td>
+                                        <td>
+                                            {{ row_form.exclusive_area_m2 }}
+                                            {% for error in row_form.exclusive_area_m2.errors %}
+                                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            {{ row_form.children_count }}
+                                            {% for error in row_form.children_count.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                        </td>
+                                        <td>
+                                            {{ row_form.staff_count }}
+                                            {% for error in row_form.staff_count.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>Demanda insatisfecha por sala</strong>
+                </div>
+                <div class="card-body">
+                    {{ waitlist_formset.management_form }}
+                    {% if waitlist_formset.non_form_errors %}
+                        <div class="alert alert-danger">{{ waitlist_formset.non_form_errors }}</div>
+                    {% endif %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Grupo etario</th>
+                                    <th>Lista de espera</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row_form in waitlist_formset.forms %}
+                                    <tr>
+                                        <td>
+                                            {{ row_form.age_group }}
+                                            {{ row_form.row_label }}
+                                        </td>
+                                        <td>
+                                            {{ row_form.waitlist_count }}
+                                            {% for error in row_form.waitlist_count.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>Articulaciones institucionales</strong>
+                </div>
+                <div class="card-body">
+                    {{ articulation_formset.management_form }}
+                    {% if articulation_formset.non_form_errors %}
+                        <div class="alert alert-danger">{{ articulation_formset.non_form_errors }}</div>
+                    {% endif %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Institucion</th>
+                                    <th>Frecuencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row_form in articulation_formset.forms %}
+                                    <tr>
+                                        <td>
+                                            {{ row_form.institution_type }}
+                                            {{ row_form.row_label }}
+                                        </td>
+                                        <td>
+                                            {{ row_form.frequency }}
+                                            {% for error in row_form.frequency.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end mb-4">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+                {% if is_edit %}
+                    <a href="{% url 'centrodeinfancia_formulario_detalle' centro.id form.instance.pk %}"
+                       class="btn btn-secondary">Cancelar</a>
+                {% else %}
+                    <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
+                       class="btn btn-secondary">Cancelar</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
+    <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("DOMContentLoaded", function() {
+            const wrappers = Array.from(document.querySelectorAll("[data-field-name]"));
+            const showWhen = {
+                workday_type_other: function() {
+                    return document.getElementById("id_workday_type")?.value === "other";
+                },
+                management_mode_other: function() {
+                    return document.getElementById("id_management_mode")?.value === "otra";
+                },
+                tenure_mode_other: function() {
+                    return document.getElementById("id_tenure_mode")?.value === "otra";
+                },
+                cooking_fuel: function() {
+                    return document.getElementById("id_has_kitchen_space")?.value === "si";
+                },
+                has_outdoor_playground: function() {
+                    return document.getElementById("id_has_outdoor_space")?.value === "si";
+                },
+                meals_provided_other: function() {
+                    return Array.from(document.querySelectorAll("input[name='meals_provided']:checked")).some(function(input) {
+                        return input.value === "otra";
+                    });
+                },
+                menu_preparation_quality: function() {
+                    return !Array.from(document.querySelectorAll("input[name='meals_provided']:checked")).some(function(input) {
+                        return input.value === "ninguna";
+                    });
+                },
+                menu_periodic_evaluation: function() {
+                    return !Array.from(document.querySelectorAll("input[name='meals_provided']:checked")).some(function(input) {
+                        return input.value === "ninguna";
+                    });
+                },
+                food_handling_training_coverage: function() {
+                    return !Array.from(document.querySelectorAll("input[name='meals_provided']:checked")).some(function(input) {
+                        return input.value === "ninguna";
+                    });
+                },
+            };
+
+            function refreshVisibility() {
+                wrappers.forEach(function(wrapper) {
+                    const fieldName = wrapper.dataset.fieldName;
+                    const resolver = showWhen[fieldName];
+                    if (!resolver) {
+                        wrapper.querySelectorAll("input, select, textarea").forEach(function(element) {
+                            element.disabled = false;
+                        });
+                        wrapper.classList.remove("d-none");
+                        return;
+                    }
+                    const isVisible = resolver();
+                    wrapper.classList.toggle("d-none", !isVisible);
+                    wrapper.querySelectorAll("input, select, textarea").forEach(function(element) {
+                        if (element.type === "hidden") {
+                            return;
+                        }
+                        element.disabled = !isVisible;
+                        if (isVisible) {
+                            return;
+                        }
+                        if (element.type === "checkbox" || element.type === "radio") {
+                            element.checked = false;
+                            return;
+                        }
+                        element.value = "";
+                    });
+                });
+            }
+
+            function replaceOptions(selectEl, items, placeholder, selectedValue) {
+                if (!selectEl) {
+                    return;
+                }
+                selectEl.innerHTML = "";
+                const emptyOption = document.createElement("option");
+                emptyOption.value = "";
+                emptyOption.textContent = placeholder || "---------";
+                selectEl.appendChild(emptyOption);
+
+                items.forEach(function(item) {
+                    const option = document.createElement("option");
+                    option.value = item.id;
+                    option.textContent = item.nombre || "";
+                    selectEl.appendChild(option);
+                });
+
+                if (selectedValue) {
+                    selectEl.value = String(selectedValue);
+                }
+            }
+
+            async function fetchOptions(url) {
+                const response = await fetch(url, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    credentials: "same-origin",
+                });
+                if (!response.ok) {
+                    throw new Error("No se pudieron cargar opciones");
+                }
+                return response.json();
+            }
+
+            function setupGeoCascade(config) {
+                const provincia = document.querySelector(config.provincia);
+                const municipio = document.querySelector(config.municipio);
+                const localidad = document.querySelector(config.localidad);
+                if (!provincia || !municipio || !localidad) {
+                    return;
+                }
+
+                async function loadMunicipios(selectedMunicipio, selectedLocalidad) {
+                    if (!provincia.value) {
+                        replaceOptions(municipio, [], "Seleccione un municipio", "");
+                        replaceOptions(localidad, [], "Seleccione una localidad", "");
+                        return;
+                    }
+                    const municipios = await fetchOptions(
+                        `${ajaxLoadMunicipiosUrl}?provincia_id=${encodeURIComponent(provincia.value)}`
+                    );
+                    replaceOptions(
+                        municipio,
+                        municipios,
+                        "Seleccione un municipio",
+                        selectedMunicipio || ""
+                    );
+                    await loadLocalidades(selectedLocalidad);
+                }
+
+                async function loadLocalidades(selectedLocalidad) {
+                    if (!municipio.value) {
+                        replaceOptions(localidad, [], "Seleccione una localidad", "");
+                        return;
+                    }
+                    const localidades = await fetchOptions(
+                        `${ajaxLoadLocalidadesUrl}?municipio_id=${encodeURIComponent(municipio.value)}`
+                    );
+                    replaceOptions(
+                        localidad,
+                        localidades,
+                        "Seleccione una localidad",
+                        selectedLocalidad || ""
+                    );
+                }
+
+                provincia.addEventListener("change", function() {
+                    loadMunicipios("", "");
+                });
+                municipio.addEventListener("change", function() {
+                    loadLocalidades("");
+                });
+
+                if (provincia.value) {
+                    loadMunicipios(municipio.value, localidad.value);
+                }
+            }
+
+            document.addEventListener("change", refreshVisibility);
+            refreshVisibility();
+            setupGeoCascade({
+                provincia: "#id_cdi_province",
+                municipio: "#id_cdi_municipality",
+                localidad: "#id_cdi_locality",
+            });
+            setupGeoCascade({
+                provincia: "#id_org_province",
+                municipio: "#id_org_municipality",
+                localidad: "#id_org_locality",
+            });
+        });
+    </script>
+{% endblock %}

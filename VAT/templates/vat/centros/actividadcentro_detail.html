@@ -1,0 +1,409 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}{{ actividad.actividad.nombre }} — {{ actividad.centro.nombre }}{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_centro_list' %}">VAT</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_centro_detail' actividad.centro.id %}">{{ actividad.centro.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">{{ actividad.actividad.nombre }}</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
+    {% include 'components/alert_message.html' with show_django_messages=True %}
+
+    <!-- 1) HEADER -->
+    <div class="card mb-3 page-header">
+        <div class="card-body d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <div class="header-bar mb-2"></div>
+                <h1 class="header-title mb-1">{{ actividad.actividad.nombre }}</h1>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-building mr-1"></i>{{ actividad.centro.nombre }}
+                    <span class="mx-2">·</span>
+                    <i class="fas fa-layer-group mr-1"></i>{{ actividad.actividad.categoria.nombre }}
+                </p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                {% if actividad.estado == 'en_curso' %}
+                    <span class="badge badge-success px-3 py-2" style="font-size:.9rem;">En curso</span>
+                {% elif actividad.estado == 'planificada' %}
+                    <span class="badge badge-warning px-3 py-2" style="font-size:.9rem;">Planificada</span>
+                {% else %}
+                    <span class="badge badge-secondary px-3 py-2" style="font-size:.9rem;">Finalizada</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 2) BOTONES -->
+    <div class="mb-4 d-flex justify-content-end">
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="{% url 'vat_centro_detail' actividad.centro.id %}"
+               class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left mr-1"></i>Volver
+            </a>
+            <a href="{% url 'vat_actividadcentro_edit' pk=actividad.id %}"
+               class="btn btn-outline-warning">
+                <i class="fas fa-edit mr-1"></i>Editar
+            </a>
+            <a href="{% url 'vat_participanteactividad_create' centro_id=actividad.centro.id actividad_id=actividad.id %}"
+               class="btn btn-outline-success">
+                <i class="fas fa-user-plus mr-1"></i>Agregar Participante
+            </a>
+        </div>
+    </div>
+
+    <!-- 3) MÉTRICAS -->
+    <div class="d-flex gap-3 mb-4 flex-wrap">
+        <div class="flex-fill card bg-navy text-white text-center p-3">
+            <i class="fas fa-users fa-2x mb-2 text-success"></i>
+            <div class="small text-muted">Inscriptos</div>
+            <strong class="h4 mb-0">{{ participantes|length }}</strong>
+            {% if actividad.cantidad_personas > 0 %}
+                {% widthratio participantes|length actividad.cantidad_personas 100 as pct_cupo %}
+                <div class="progress mt-2" style="height:5px;background:#3d4f63;">
+                    <div class="progress-bar {% if pct_cupo >= 90 %}bg-danger{% elif pct_cupo >= 60 %}bg-warning{% else %}bg-success{% endif %}"
+                         style="width:{{ pct_cupo }}%"></div>
+                </div>
+                <small class="text-muted" style="font-size:.7rem;">{{ pct_cupo }}% del cupo</small>
+            {% endif %}
+        </div>
+        <div class="flex-fill card bg-navy text-white text-center p-3">
+            <i class="fas fa-user-clock fa-2x mb-2 text-warning"></i>
+            <div class="small text-muted">En espera</div>
+            <strong class="h4 mb-0">{{ lista_espera|length }}</strong>
+        </div>
+        <div class="flex-fill card bg-navy text-white text-center p-3">
+            <i class="fas fa-calendar-check fa-2x mb-2 text-info"></i>
+            <div class="small text-muted">Encuentros</div>
+            <strong class="h4 mb-0">{{ encuentros|length }}</strong>
+        </div>
+        <div class="flex-fill card bg-navy text-white text-center p-3">
+            <i class="fas fa-dollar-sign fa-2x mb-2 text-warning"></i>
+            <div class="small text-muted">Recaudación estimada</div>
+            <strong class="h4 mb-0">${{ precio_total }}</strong>
+        </div>
+        <div class="flex-fill card bg-navy text-white text-center p-3">
+            <i class="fas fa-user-friends fa-2x mb-2 text-primary"></i>
+            <div class="small text-muted">Cupo total</div>
+            <strong class="h4 mb-0">{{ actividad.cantidad_personas }}</strong>
+        </div>
+    </div>
+
+    <!-- 4) INFO + HORARIOS (lateral) -->
+    <div class="row gx-3 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-header bg-secondary">
+                    <i class="fas fa-info-circle mr-2"></i>Detalles
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between bg-navy text-white">
+                        <span><i class="fas fa-calendar-alt mr-2 text-info"></i>Días</span>
+                        <span>
+                            {% if actividad.dias.exists %}
+                                {% for dia in actividad.dias.all %}<span class="badge badge-secondary">{{ dia.nombre }}</span>{% endfor %}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between bg-navy text-white">
+                        <span><i class="fas fa-clock mr-2 text-info"></i>Horario</span>
+                        <span>{{ actividad.horariosdesde }} — {{ actividad.horarioshasta }}</span>
+                    </li>
+                    {% if actividad.fecha_inicio %}
+                        <li class="list-group-item d-flex justify-content-between bg-navy text-white">
+                            <span><i class="fas fa-play-circle mr-2 text-success"></i>Inicio</span>
+                            <span>{{ actividad.fecha_inicio|date:"d/m/Y" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between bg-navy text-white">
+                            <span><i class="fas fa-stop-circle mr-2 text-danger"></i>Fin</span>
+                            <span>{{ actividad.fecha_fin|date:"d/m/Y" }}</span>
+                        </li>
+                    {% endif %}
+                    <li class="list-group-item d-flex justify-content-between bg-navy text-white">
+                        <span><i class="fas fa-venus-mars mr-2 text-info"></i>Dirigido a</span>
+                        <span>
+                            {% if actividad.sexoact.exists %}
+                                {% for s in actividad.sexoact.all %}
+                                    {{ s.sexo }}
+                                    {% if not forloop.last %},{% endif %}
+                                {% endfor %}
+                            {% else %}
+                                Todos
+                            {% endif %}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between bg-navy text-white">
+                        <span><i class="fas fa-tag mr-2 text-info"></i>Precio</span>
+                        <span>
+                            {% if actividad.precio %}
+                                ${{ actividad.precio }}
+                            {% else %}
+                                <span class="text-muted">Gratuita</span>
+                            {% endif %}
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 5) ENCUENTROS -->
+        <div class="col-md-8">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-header bg-secondary d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-clipboard-list mr-2"></i>Encuentros ({{ encuentros|length }})</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Fecha</th>
+                                    <th>Horario</th>
+                                    <th class="text-center">Estado</th>
+                                    <th class="text-center">Asistencia</th>
+                                    <th class="text-end">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in encuentros %}
+                                    <tr>
+                                        <td>{{ item.encuentro.numero_encuentro }}</td>
+                                        <td>{{ item.encuentro.fecha|date:"D d/m/Y" }}</td>
+                                        <td>
+                                            {{ item.encuentro.hora_inicio|time:"H:i" }}
+                                            {% if item.encuentro.hora_fin %}— {{ item.encuentro.hora_fin|time:"H:i" }}{% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if item.encuentro.estado == 'programado' %}
+                                                <span class="badge badge-secondary">Programado</span>
+                                            {% elif item.encuentro.estado == 'realizado' %}
+                                                <span class="badge badge-success">Realizado</span>
+                                            {% else %}
+                                                <span class="badge badge-danger">Cancelado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if item.encuentro.estado == 'realizado' %}
+                                                <span class="badge badge-info">{{ item.presentes }}/{{ item.total }}</span>
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            {% if item.encuentro.estado != 'cancelado' %}
+                                                <a href="{% url 'vat_encuentro_asistencia' pk=item.encuentro.id %}"
+                                                   class="btn btn-sm {% if item.encuentro.estado == 'realizado' %}btn-outline-info{% else %}btn-outline-success{% endif %}">
+                                                    {% if item.encuentro.estado == 'realizado' %}
+                                                        <i class="fas fa-edit"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-clipboard-check"></i>
+                                                    {% endif %}
+                                                </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-3">
+                                            Sin encuentros. Configurá las fechas en la actividad para generarlos.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6) NÓMINA + LISTA DE ESPERA -->
+    <div class="row gx-3 mb-4">
+        <!-- Inscriptos -->
+        <div class="col-md-8">
+            <div class="card bg-dark text-white">
+                <div class="card-header bg-secondary">
+                    <i class="fas fa-users mr-2"></i>Nómina de Participantes
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Participante</th>
+                                    <th>DNI</th>
+                                    <th>Género</th>
+                                    <th>Alta</th>
+                                    <th class="text-end">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in participantes %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'ciudadanos_ver' p.ciudadano.id %}"
+                                               class="text-info text-decoration-none">
+                                                {{ p.ciudadano.apellido }}, {{ p.ciudadano.nombre }}
+                                            </a>
+                                        </td>
+                                        <td>{{ p.ciudadano.documento }}</td>
+                                        <td>{{ p.ciudadano.sexo.sexo }}</td>
+                                        <td>{{ p.fecha_registro|date:"d/m/Y" }}</td>
+                                        <td class="text-end">
+                                            <a href="{% url 'vat_participanteactividad_delete' centro_id=actividad.centro.id actividad_id=actividad.id pk=p.id %}"
+                                               class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-user-minus"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-3">No hay participantes inscritos.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de espera -->
+        <div class="col-md-4">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-header bg-secondary">
+                    <i class="fas fa-hourglass-half mr-2"></i>Lista de Espera
+                    <span class="badge badge-warning ml-2">{{ lista_espera|length }}</span>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for p in lista_espera %}
+                        <li class="list-group-item bg-navy text-white d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="font-weight-bold">{{ p.ciudadano.apellido }}, {{ p.ciudadano.nombre }}</div>
+                                <small class="text-muted">{{ p.fecha_registro|date:"d/m/Y" }}</small>
+                            </div>
+                            <form method="post"
+                                  action="{% url 'vat_participanteactividad_promover' centro_id=actividad.centro.id actividad_id=actividad.id pk=p.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Promover">
+                                    <i class="fas fa-arrow-up"></i>
+                                </button>
+                            </form>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item bg-navy text-muted text-center py-3">Sin participantes en espera.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7) TENDENCIA DE ASISTENCIA -->
+    {% if encuentros %}
+        <div class="card bg-dark text-white mb-4">
+            <div class="card-header bg-secondary">
+                <i class="fas fa-chart-line mr-2"></i>Tendencia de asistencia por encuentro
+            </div>
+            <div class="card-body">
+                <canvas id="chartAsistencia" style="max-height:220px;"></canvas>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Modal error de promoción -->
+    {% if promo_error %}
+        <div class="modal fade"
+             id="promoErrorModal"
+             tabindex="-1"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content bg-dark text-white">
+                    <div class="modal-header bg-warning">
+                        <h5 class="modal-title text-dark">Cupo Máximo Alcanzado</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">No hay cupo disponible para promover a este participante.</div>
+                    <div class="modal-footer">
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script nonce="{{ request.csp_nonce }}">
+            document.addEventListener('DOMContentLoaded', function () {
+                new bootstrap.Modal(document.getElementById('promoErrorModal')).show();
+            });
+        </script>
+    {% endif %}
+{% endblock %}
+{% block customJS %}
+    {% if encuentros %}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+        <script nonce="{{ request.csp_nonce }}">
+            Chart.defaults.color = '#9ca3af';
+            const gridColor = '#3d4f63';
+
+            const labels = [{% for item in encuentros %}"#{{ item.encuentro.numero_encuentro }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+            const presentes = [{% for item in encuentros %}{% if item.encuentro.estado == 'realizado' %}{{ item.presentes }}{% else %}null{% endif %}{% if not forloop.last %},{% endif %}{% endfor %}];
+            const inscriptos = [{% for item in encuentros %}{{ item.total }}{% if not forloop.last %},{% endif %}{% endfor %}];
+
+            new Chart(document.getElementById('chartAsistencia'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Presentes',
+                            data: presentes,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40,167,69,0.12)',
+                            fill: true,
+                            tension: 0.3,
+                            spanGaps: true,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#28a745',
+                        },
+                        {
+                            label: 'Inscriptos totales',
+                            data: inscriptos,
+                            borderColor: '#17a2b8',
+                            backgroundColor: 'transparent',
+                            borderDash: [6, 4],
+                            tension: 0,
+                            pointRadius: 0,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { ticks: { color: '#9ca3af' }, grid: { color: gridColor } },
+                        y: { beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: gridColor } }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    if (ctx.parsed.y === null) return ctx.dataset.label + ': pendiente';
+                                    return ctx.dataset.label + ': ' + ctx.parsed.y;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
+    {% endif %}
+{% endblock %}

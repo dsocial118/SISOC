@@ -16,9 +16,7 @@
         {% elif doc.estado == "Pendiente" %}
             <span class="badge bg-secondary">Pendiente</span>
         {% elif doc.estado == "A Validar Abogado" %}
-            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
-                <span class="badge bg-primary">A Validar Abogado</span>
-            {% elif request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" and doc.archivo_id %}
+            {% if request.user|has_perm_code:"auth.role_abogado_dupla" and doc.archivo_id %}
                 <select class="form-control form-control-sm mb-2 border border-2 border-primary"
                         data-call-change="actualizarEstado"
                         data-call-pass-this="true"
@@ -32,6 +30,8 @@
                     <option value="Aceptado">Aceptado</option>
                     <option value="Rectificar">Rectificar</option>
                 </select>
+            {% elif request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                <span class="badge bg-primary">A Validar Abogado</span>
             {% else %}
                 {{ doc.estado }}
             {% endif %}

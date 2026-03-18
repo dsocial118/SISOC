@@ -1,0 +1,17 @@
+title = "SISOC gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Valores dummy/históricos permitidos temporalmente en archivos controlados"
+paths = [
+  '''^static/admin/''',
+  '''^\.env\.example$''',
+  '''^\.github/workflows/tests\.yml$''',
+]
+regexes = [
+  '''ci-secret-key''',
+  '''root1-password2''',
+  '''test-secret-key''',
+]

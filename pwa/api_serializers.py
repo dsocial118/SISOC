@@ -1,8 +1,9 @@
 import re
 
 from django.core.exceptions import ObjectDoesNotExist
-from comunicados.models import Comunicado, ComunicadoAdjunto
 from rest_framework import serializers
+
+from comunicados.models import Comunicado, ComunicadoAdjunto
 from comedores.models import Nomina
 from core.models import Dia, Sexo
 
@@ -11,7 +12,6 @@ from pwa.models import (
     CatalogoActividadPWA,
     ColaboradorEspacioPWA,
     InscriptoActividadEspacioPWA,
-    NominaEspacioPWA,
 )
 
 DNI_REGEX = re.compile(r"^\d{7,8}$")
@@ -113,9 +113,15 @@ class CatalogoActividadPWASerializer(serializers.ModelSerializer):
 
 
 class ActividadEspacioPWAListSerializer(serializers.ModelSerializer):
-    categoria = serializers.CharField(source="catalogo_actividad.categoria", read_only=True)
-    actividad = serializers.CharField(source="catalogo_actividad.actividad", read_only=True)
-    dia_actividad_nombre = serializers.CharField(source="dia_actividad.nombre", read_only=True)
+    categoria = serializers.CharField(
+        source="catalogo_actividad.categoria", read_only=True
+    )
+    actividad = serializers.CharField(
+        source="catalogo_actividad.actividad", read_only=True
+    )
+    dia_actividad_nombre = serializers.CharField(
+        source="dia_actividad.nombre", read_only=True
+    )
     cantidad_inscriptos = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -163,7 +169,9 @@ class ActividadEspacioPWACreateUpdateSerializer(serializers.ModelSerializer):
 
     def validate_catalogo_actividad(self, value):
         if value and not value.activo:
-            raise serializers.ValidationError("La actividad seleccionada no esta disponible.")
+            raise serializers.ValidationError(
+                "La actividad seleccionada no esta disponible."
+            )
         return value
 
     def validate_horario_actividad(self, value):
@@ -293,8 +301,12 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
     def get_badges(self, obj):
         profile = self._get_profile(obj)
         badges = []
-        asistencia_alimentaria = True if profile is None else bool(profile.asistencia_alimentaria)
-        asistencia_actividades = False if profile is None else bool(profile.asistencia_actividades)
+        asistencia_alimentaria = (
+            True if profile is None else bool(profile.asistencia_alimentaria)
+        )
+        asistencia_actividades = (
+            False if profile is None else bool(profile.asistencia_actividades)
+        )
         if asistencia_alimentaria:
             badges.append("Alimentación")
         if asistencia_actividades:
@@ -303,7 +315,9 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
 
     def get_actividades(self, obj):
         items = []
-        inscripciones_activas = getattr(obj, "inscripciones_actividad_pwa_activas", None)
+        inscripciones_activas = getattr(
+            obj, "inscripciones_actividad_pwa_activas", None
+        )
         if inscripciones_activas is None:
             inscripciones_activas = obj.inscripciones_actividad_pwa.filter(activo=True)
         for inscripto in inscripciones_activas:
@@ -341,7 +355,9 @@ class NominaEspacioPWACreateUpdateSerializer(serializers.Serializer):
     sexo_id = serializers.IntegerField(required=False, allow_null=True)
     fecha_nacimiento = serializers.DateField(required=False)
     es_indocumentado = serializers.BooleanField(required=False, default=False)
-    identificador_interno = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    identificador_interno = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
     asistencia_alimentaria = serializers.BooleanField(required=False, default=False)
     asistencia_actividades = serializers.BooleanField(required=False, default=False)
     actividad_ids = serializers.ListField(
@@ -349,7 +365,9 @@ class NominaEspacioPWACreateUpdateSerializer(serializers.Serializer):
         required=False,
         allow_empty=True,
     )
-    observaciones = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    observaciones = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
     estado = serializers.ChoiceField(choices=Nomina.ESTADO_CHOICES, required=False)
 
     def validate_dni(self, value):
@@ -371,6 +389,16 @@ class NominaEspacioPWACreateUpdateSerializer(serializers.Serializer):
                     )
         return attrs
 
+    def create(self, validated_data):
+        raise NotImplementedError(
+            "NominaEspacioPWACreateUpdateSerializer no implementa create()."
+        )
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError(
+            "NominaEspacioPWACreateUpdateSerializer no implementa update()."
+        )
+
 
 class NominaRenaperPreviewSerializer(serializers.Serializer):
     dni = serializers.CharField(required=True, allow_blank=False)
@@ -382,6 +410,16 @@ class NominaRenaperPreviewSerializer(serializers.Serializer):
                 "Formato de DNI inválido. Debe contener 7 u 8 dígitos."
             )
         return dni
+
+    def create(self, validated_data):
+        raise NotImplementedError(
+            "NominaRenaperPreviewSerializer no implementa create()."
+        )
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError(
+            "NominaRenaperPreviewSerializer no implementa update()."
+        )
 
 
 class MensajeAdjuntoPWASerializer(serializers.ModelSerializer):

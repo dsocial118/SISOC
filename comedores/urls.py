@@ -13,9 +13,11 @@ from comedores.views import (
     NominaDetailView,
     NominaCreateView,
     NominaDeleteView,
+    NominaImportarView,
     AsignarDuplaListView,
     relevamiento_crear_editar_ajax,
     nomina_editar_ajax,
+    nomina_cambiar_estado,
     validar_comedor,
 )
 from comedores.views.export import ComedorExportView
@@ -192,7 +194,7 @@ urlpatterns = [
         name="intervencion_detalle",
     ),
     path(
-        "comedores/<int:pk>/nomina/",
+        "comedores/<int:pk>/admision/<int:admision_pk>/nomina/",
         permissions_any_required(["comedores.view_nomina"])(NominaDetailView.as_view()),
         name="nomina_ver",
     ),
@@ -202,16 +204,28 @@ urlpatterns = [
         name="nomina_editar_ajax",
     ),
     path(
-        "comedores/<int:pk>/nomina/crear/",
+        "comedores/nomina/<int:pk>/cambiar-estado/",
+        permissions_any_required(["comedores.change_nomina"])(nomina_cambiar_estado),
+        name="nomina_cambiar_estado",
+    ),
+    path(
+        "comedores/<int:pk>/admision/<int:admision_pk>/nomina/crear/",
         permissions_any_required(["comedores.add_nomina"])(NominaCreateView.as_view()),
         name="nomina_crear",
     ),
     path(
-        "comedores/<int:pk>/nomina/<int:pk2>/eliminar/",
+        "comedores/<int:pk>/admision/<int:admision_pk>/nomina/<int:pk2>/eliminar/",
         permissions_any_required(["comedores.delete_nomina"])(
             NominaDeleteView.as_view()
         ),
         name="nomina_borrar",
+    ),
+    path(
+        "comedores/<int:pk>/admision/<int:admision_pk>/nomina/importar/",
+        permissions_any_required(["comedores.add_nomina"])(
+            NominaImportarView.as_view()
+        ),
+        name="nomina_importar",
     ),
     path(
         "comedores/ajax/<int:pk>/relevamiento/",

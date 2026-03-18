@@ -1,0 +1,58 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Formularios CDI{% endblock %}
+{% block titulo-pagina %}Formularios CDI{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between mb-3">
+            <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
+               class="btn btn-secondary">Volver al CDI</a>
+            <a href="{% url 'centrodeinfancia_formulario_crear' centro.id %}"
+               class="btn btn-primary">Nuevo formulario</a>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h3 class="mb-1">{{ centro.nombre }}</h3>
+                <p class="text-muted mb-0">Listado completo de formularios vinculados al centro.</p>
+            </div>
+        </div>
+
+        <div class="table-responsive mt-3">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha relevamiento</th>
+                        <th>Quien responde</th>
+                        <th>Creado</th>
+                        <th>Actualizado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in summary_items %}
+                        <tr>
+                            <td>{{ item.id }}</td>
+                            <td>{{ item.survey_date|date:"d/m/Y"|default:"-" }}</td>
+                            <td>{{ item.respondent_full_name|default:"-" }}</td>
+                            <td>{{ item.created_at|date:"d/m/Y H:i" }}</td>
+                            <td>{{ item.updated_at|date:"d/m/Y H:i" }}</td>
+                            <td class="d-flex gap-2">
+                                <a href="{{ item.detail_url }}" class="btn btn-sm btn-primary">Ver</a>
+                                <a href="{{ item.edit_url }}" class="btn btn-sm btn-warning">Editar</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">Todavia no hay formularios cargados para este centro.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj page_range=page_range %}
+    </div>
+{% endblock %}

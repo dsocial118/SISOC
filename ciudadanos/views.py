@@ -199,10 +199,12 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
             return {"nominas_comedor": []}
 
         try:
-            nominas = (
+            nominas = list(
                 Nomina.objects.filter(ciudadano=ciudadano)
                 .select_related(
-                    "comedor__provincia", "comedor__municipio", "comedor__tipocomedor"
+                    "admision__comedor__provincia",
+                    "admision__comedor__municipio",
+                    "admision__comedor__tipocomedor",
                 )
                 .order_by("-fecha")
             )
@@ -212,7 +214,7 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
             )
             return {"nominas_comedor": []}
         contexto = {"nominas_comedor": nominas}
-        nomina_actual = nominas.first()
+        nomina_actual = nominas[0] if nominas else None
         if nomina_actual:
             contexto["nomina_actual"] = nomina_actual
         return contexto

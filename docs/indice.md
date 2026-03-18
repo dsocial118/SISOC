@@ -6,6 +6,7 @@
 - `docs/contexto/dominio.md`: modelo del dominio central y relaciones clave entre entidades.
 - `docs/contexto/arquitectura.md`: resumen de la arquitectura técnica (apps, servicios, dependencias).
 - `docs/contexto/aplicaciones.md`: inventario y notas por aplicaciones del sistema.
+- `docs/contexto/features/`: contexto incremental generado por PR para continuidad entre agentes y revisión.
 - `docs/contexto/documentacion_base_datos_celiaquia.md`: detalles específicos de la base de datos de Celiaquía.
 
 ### 2. Configuración y operación
@@ -43,6 +44,8 @@
 - `docs/registro/README.md`: reglas para registrar cambios y decisiones importantes en `docs/`.
 - `docs/registro/cambios/`: historial de cambios importantes.
 - `docs/registro/decisiones/`: decisiones relevantes (ADR livianas).
+- `docs/registro/prs/`: documentación automática por pull request.
+- `docs/registro/releases/pending/`: release notes preliminares usadas para reconstruir `CHANGELOG.md` en PRs a `main`.
 
 ### 7. Testing y QA
 - `docs/testing/usuarios_test.md`: usuarios de prueba y alcance de testing manual.

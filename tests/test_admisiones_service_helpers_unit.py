@@ -562,11 +562,19 @@ def test_permiso_helpers_y_botones_disponibles():
     """Verifica permisos técnicos/dupla y cálculo de botones en estados clave."""
     user = SimpleNamespace(
         id=9,
+        is_authenticated=True,
         groups=SimpleNamespace(
             filter=lambda **k: SimpleNamespace(
                 exists=lambda: k.get("name") == "Tecnico Comedor"
             )
         ),
+        has_perm=lambda perm, obj=None: perm
+        in {
+            "comedores.view_comedor",
+            "admisiones.view_admision",
+            "acompanamientos.view_informacionrelevante",
+            "auth.role_tecnico_comedor",
+        },
     )
     comedor = SimpleNamespace(
         dupla=SimpleNamespace(

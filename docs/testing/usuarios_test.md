@@ -14,8 +14,8 @@ python manage.py create_groups
 ```
 
 Comportamiento:
-- Crea (si no existen) los grupos listados en `core.constants.UserGroups.CREATE_GROUPS_SEED`.
-- Para cada grupo, sincroniza permisos desde el registro IAM (`core/permissions/registry.py`).
+- Crea (si no existen) los grupos listados en `users/bootstrap/groups_seed.py`.
+- Para cada grupo, sincroniza permisos desde la semilla declarativa bootstrap.
 - No elimina grupos ni permisos existentes.
 
 ## Comando: sync_group_permissions_from_registry
@@ -30,7 +30,7 @@ Comportamiento:
 - Recorre los grupos existentes y asigna los permisos configurados en el registro IAM.
 - Se recomienda ejecutarlo luego de `migrate` en staging/producción para mantener compatibilidad con grupos históricos.
 
-La lista completa de grupos se mantiene en `core/constants.py`.
+La lista completa de grupos bootstrap y sus permisos canónicos se mantiene en `users/bootstrap/groups_seed.py`.
 
 ## Comando: create_test_users
 

@@ -237,14 +237,23 @@
 
         <!-- Barra de búsqueda y acciones -->
         <div class="nomina-actions-bar">
-            <div class="nomina-search-box">
+            <form method="get" class="nomina-search-box">
                 <i class="fas fa-search nomina-search-icon"></i>
                 <input type="text"
                        class="nomina-search-input"
+                       name="dni"
                        id="nominaSearch"
-                       placeholder="Buscar observación" />
-            </div>
-            <a href="{% url 'nomina_crear' object.id %}" class="nomina-add-btn">
+                       value="{{ dni_query }}"
+                       inputmode="numeric"
+                       placeholder="Buscar por DNI" />
+                <button type="submit" class="btn btn-sm btn-light ms-2">Buscar</button>
+                {% if dni_query %}
+                    <a href="{% url 'nomina_ver' object.id admision_pk %}"
+                       class="btn btn-sm btn-outline-light ms-1">Limpiar</a>
+                {% endif %}
+            </form>
+            <a href="{% url 'nomina_crear' object.id admision_pk %}"
+               class="nomina-add-btn">
                 <i class="fas fa-plus"></i>
                 <span>Agregar persona</span>
             </a>
@@ -280,13 +289,22 @@
                             <td>{{ e.ciudadano.documento|default:"-" }}</td>
                             <td>{{ e.ciudadano.sexo.sexo|default:"-" }}</td>
                             <td>
-                                {% if e.estado == "activo" %}
-                                    <span class="nomina-badge activo">Activo</span>
-                                {% elif e.estado == "pendiente" %}
-                                    <span class="nomina-badge espera">Pendiente</span>
-                                {% else %}
-                                    <span class="nomina-badge inactivo">Baja</span>
-                                {% endif %}
+                                <div class="dropdown">
+                                    <button class="nomina-btn nomina-estado-btn nomina-estado-{{ e.estado }} dropdown-toggle"
+                                            type="button"
+                                            data-bs-toggle="dropdown"
+                                            data-cambiar-url="{% url 'nomina_cambiar_estado' e.id %}"
+                                            aria-expanded="false">{{ e.get_estado_display }}</button>
+                                    <ul class="dropdown-menu dropdown-menu-dark">
+                                        {% for val, lbl in estados %}
+                                            <li>
+                                                <a class="dropdown-item nomina-estado-opcion {% if e.estado == val %}active{% endif %}"
+                                                   href="#"
+                                                   data-estado="{{ val }}">{{ lbl }}</a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
                             </td>
                             <td>
                                 <div class="nomina-action-buttons">
@@ -307,7 +325,7 @@
                                             </a>
                                         </li>
                                     </ul>
-                                    <a href="{% url 'nomina_borrar' object.id e.id %}"
+                                    <a href="{% url 'nomina_borrar' object.id admision_pk e.id %}"
                                        class="nomina-btn nomina-btn-delete"
                                        data-confirm-click="¿Está seguro de eliminar este registro?">
                                         <i class="fas fa-trash-alt"></i> Borrar
@@ -332,7 +350,7 @@
                 </span>
                 <div class="nomina-pagination-buttons">
                     {% if nomina.has_previous %}
-                        <a href="?page={{ nomina.previous_page_number }}"
+                        <a href="?page={{ nomina.previous_page_number }}{% if dni_query %}&dni={{ dni_query|urlencode }}{% endif %}"
                            class="nomina-page-btn">
                             <i class="fas fa-chevron-left"></i>
                         </a>
@@ -345,7 +363,8 @@
                     <span class="nomina-page-number">{{ nomina.number }} de {{ nomina.paginator.num_pages }}</span>
 
                     {% if nomina.has_next %}
-                        <a href="?page={{ nomina.next_page_number }}" class="nomina-page-btn">
+                        <a href="?page={{ nomina.next_page_number }}{% if dni_query %}&dni={{ dni_query|urlencode }}{% endif %}"
+                           class="nomina-page-btn">
                             <i class="fas fa-chevron-right"></i>
                         </a>
                     {% else %}
@@ -388,5 +407,6 @@
     </div>
 {% endblock %}
 {% block customJS %}
+    {% csrf_token %}
     <script src="{% static 'custom/js/nomina_detail.js' %}"></script>
 {% endblock %}

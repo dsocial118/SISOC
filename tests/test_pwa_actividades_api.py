@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
+from admisiones.models.admisiones import Admision
 from ciudadanos.models import Ciudadano
 from comedores.models import Comedor, Nomina
 from core.models import Dia, Provincia, Sexo
@@ -25,6 +26,11 @@ def comedor(db):
 @pytest.fixture
 def dia():
     return Dia.objects.create(nombre="Lunes")
+
+
+@pytest.fixture
+def admision(comedor):
+    return Admision.objects.create(comedor=comedor, activa=True)
 
 
 def _create_representante(*, comedor, username="rep_act", password="testpass123"):
@@ -113,7 +119,7 @@ def test_create_update_delete_actividad_ok(comedor, dia):
 
 
 @pytest.mark.django_db
-def test_delete_actividad_impacta_inscriptos(comedor, dia):
+def test_delete_actividad_impacta_inscriptos(comedor, dia, admision):
     representante = _create_representante(comedor=comedor, username="rep_act_2")
     client = _auth_client_for_user(representante)
     catalogo = CatalogoActividadPWA.objects.filter(activo=True).first()
@@ -135,7 +141,7 @@ def test_delete_actividad_impacta_inscriptos(comedor, dia):
         sexo=sexo,
     )
     nomina = Nomina.objects.create(
-        comedor=comedor,
+        admision=admision,
         ciudadano=ciudadano,
         estado=Nomina.ESTADO_ACTIVO,
     )
@@ -163,7 +169,7 @@ def test_delete_actividad_impacta_inscriptos(comedor, dia):
 
 
 @pytest.mark.django_db
-def test_list_actividades_e_inscriptos_ok(comedor, dia):
+def test_list_actividades_e_inscriptos_ok(comedor, dia, admision):
     representante = _create_representante(comedor=comedor, username="rep_act_3")
     client = _auth_client_for_user(representante)
     catalogo = CatalogoActividadPWA.objects.filter(activo=True).first()
@@ -184,7 +190,7 @@ def test_list_actividades_e_inscriptos_ok(comedor, dia):
         sexo=sexo,
     )
     nomina = Nomina.objects.create(
-        comedor=comedor,
+        admision=admision,
         ciudadano=ciudadano,
         estado=Nomina.ESTADO_ACTIVO,
     )

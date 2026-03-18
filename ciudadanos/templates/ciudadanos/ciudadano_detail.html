@@ -1123,68 +1123,76 @@
                                 {% endif %}
                             </h5>
                             {% if nomina_actual %}
-                                <div style="display: grid;
-                                            grid-template-columns: 1fr 1fr;
-                                            gap: 1rem;
-                                            margin-bottom: 1.5rem">
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Comedor</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">
-                                            <a href="{% url 'comedor_detalle' nomina_actual.comedor.id %}"
-                                               style="color: #F5A623;
-                                                      text-decoration: underline">
-                                                {{ nomina_actual.comedor.nombre }}
-                                            </a>
+                                {% with comedor_actual=nomina_actual.admision.comedor %}
+                                    <div style="display: grid;
+                                                grid-template-columns: 1fr 1fr;
+                                                gap: 1rem;
+                                                margin-bottom: 1.5rem">
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);">Comedor</small>
+                                            <div style="font-size: 0.95rem;
+                                                        color: rgba(255,255,255,0.95);
+                                                        margin-top: 0.25rem">
+                                                {% if comedor_actual and comedor_actual.id %}
+                                                    <a href="{% url 'comedor_detalle' comedor_actual.id %}"
+                                                       style="color: #F5A623;
+                                                              text-decoration: underline">
+                                                        {{ comedor_actual.nombre }}
+                                                    </a>
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);">Tipo</small>
+                                            <div style="font-size: 0.95rem;
+                                                        color: rgba(255,255,255,0.95);
+                                                        margin-top: 0.25rem">
+                                                {{ comedor_actual.tipocomedor.nombre|default:"-" }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);">Provincia</small>
+                                            <div style="font-size: 0.95rem;
+                                                        color: rgba(255,255,255,0.95);
+                                                        margin-top: 0.25rem">
+                                                {{ comedor_actual.provincia.nombre|default:"-" }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);">Municipio</small>
+                                            <div style="font-size: 0.95rem;
+                                                        color: rgba(255,255,255,0.95);
+                                                        margin-top: 0.25rem">
+                                                {{ comedor_actual.municipio.nombre|default:"-" }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);">Estado</small>
+                                            <div style="font-size: 0.95rem;
+                                                        color: rgba(255,255,255,0.95);
+                                                        margin-top: 0.25rem">
+                                                {% if nomina_actual.estado == 'activo' %}
+                                                    <span class="badge" style="background: var(--green);">Activo</span>
+                                                {% elif nomina_actual.estado == 'espera' %}
+                                                    <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En espera</span>
+                                                {% else %}
+                                                    <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);">Fecha Registro</small>
+                                            <div style="font-size: 0.95rem;
+                                                        color: rgba(255,255,255,0.95);
+                                                        margin-top: 0.25rem">
+                                                {{ nomina_actual.fecha|date:"d/m/Y" }}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Tipo</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">
-                                            {{ nomina_actual.comedor.tipocomedor.nombre|default:"-" }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Provincia</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">
-                                            {{ nomina_actual.comedor.provincia.nombre|default:"-" }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Municipio</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">
-                                            {{ nomina_actual.comedor.municipio.nombre|default:"-" }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Estado</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">
-                                            {% if nomina_actual.estado == 'activo' %}
-                                                <span class="badge" style="background: var(--green);">Activo</span>
-                                            {% elif nomina_actual.estado == 'pendiente' %}
-                                                <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Pendiente</span>
-                                            {% else %}
-                                                <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Fecha Registro</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">{{ nomina_actual.fecha|date:"d/m/Y" }}</div>
-                                    </div>
-                                </div>
-                                {% if nominas_comedor.count > 1 %}
+                                {% endwith %}
+                                {% if nominas_comedor|length > 1 %}
                                     <h6 style="margin-top: 1.5rem;
                                                margin-bottom: 1rem;
                                                border-top: 1px solid rgba(255,255,255,0.1);
@@ -1201,17 +1209,23 @@
                                             {% for nomina in nominas_comedor %}
                                                 <tr>
                                                     <td>
-                                                        <a href="{% url 'comedor_detalle' nomina.comedor.id %}"
-                                                           style="color: #F5A623;
-                                                                  text-decoration: underline">
-                                                            {{ nomina.comedor.nombre }}
-                                                        </a>
+                                                        {% with comedor=nomina.admision.comedor %}
+                                                            {% if comedor and comedor.id %}
+                                                                <a href="{% url 'comedor_detalle' comedor.id %}"
+                                                                   style="color: #F5A623;
+                                                                          text-decoration: underline">
+                                                                    {{ comedor.nombre }}
+                                                                </a>
+                                                            {% else %}
+                                                                -
+                                                            {% endif %}
+                                                        {% endwith %}
                                                     </td>
                                                     <td>
                                                         {% if nomina.estado == 'activo' %}
                                                             <span class="badge" style="background: var(--green);">Activo</span>
-                                                        {% elif nomina.estado == 'pendiente' %}
-                                                            <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Pendiente</span>
+                                                        {% elif nomina.estado == 'espera' %}
+                                                            <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En espera</span>
                                                         {% else %}
                                                             <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
                                                         {% endif %}
@@ -1974,12 +1988,12 @@ function cambiarMes(direccion) {
 
 function actualizarGrafico() {
     document.getElementById('mes-actual').textContent = mesActual + ' ' + mesesNombres[mesActual] + ' ' + anioActual;
-    
+
     const ctx = document.getElementById('historialChart').getContext('2d');
     if (window.historialChartInstance) {
         window.historialChartInstance.destroy();
     }
-    
+
     window.historialChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -2047,7 +2061,7 @@ function actualizarGrafico() {
 
 document.addEventListener('DOMContentLoaded', function() {
     actualizarGrafico();
-    
+
     {% if ciudadano.latitud and ciudadano.longitud %}
     const mapElement = document.getElementById('map');
     if (mapElement) {
@@ -2061,7 +2075,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fullscreenControl: false,
             streetViewControl: false
         });
-        
+
         new google.maps.Marker({
             position: {
                 lat: {{ ciudadano.latitud }},
