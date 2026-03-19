@@ -12,6 +12,13 @@ logger = logging.getLogger("django")
 
 class CiudadanoService:
     @staticmethod
+    def _normalizar_texto_opcional(raw):
+        if raw in (None, ""):
+            return None
+        value = str(raw).strip()
+        return value or None
+
+    @staticmethod
     def _to_date(value):
         if value in (None, ""):
             return None
@@ -137,13 +144,17 @@ class CiudadanoService:
         )
         if datos.get("nacionalidad") not in (None, "") and nacionalidad is None:
             raise ValidationError(f"Nacionalidad invalida: {datos.get('nacionalidad')}")
-        calle = (datos.get("calle") or "").strip()
-        altura = datos.get("altura")
-        codigo_postal = datos.get("codigo_postal")
-        telefono = datos.get("telefono")
-        email = (datos.get("email") or "").strip()
-        barrio = (datos.get("barrio") or "").strip()
-        piso_departamento = (datos.get("piso_departamento") or "").strip()
+        calle = CiudadanoService._normalizar_texto_opcional(datos.get("calle"))
+        altura = CiudadanoService._normalizar_texto_opcional(datos.get("altura"))
+        codigo_postal = CiudadanoService._normalizar_texto_opcional(
+            datos.get("codigo_postal")
+        )
+        telefono = CiudadanoService._normalizar_texto_opcional(datos.get("telefono"))
+        email = CiudadanoService._normalizar_texto_opcional(datos.get("email"))
+        barrio = CiudadanoService._normalizar_texto_opcional(datos.get("barrio"))
+        piso_departamento = CiudadanoService._normalizar_texto_opcional(
+            datos.get("piso_departamento")
+        )
 
         ciudadano = Ciudadano.objects.filter(
             tipo_documento=tipo_documento, documento=documento
@@ -223,30 +234,26 @@ class CiudadanoService:
             if not ciudadano.localidad_id and localidad:
                 ciudadano.localidad = localidad
                 updates.append("localidad")
-            if not ciudadano.calle and calle:
-                ciudadano.calle = calle
-                updates.append("calle")
-            if ciudadano.altura in (None, "") and altura not in (None, ""):
-                ciudadano.altura = altura
-                updates.append("altura")
-            if not ciudadano.barrio and barrio:
-                ciudadano.barrio = barrio
-                updates.append("barrio")
-            if not ciudadano.piso_departamento and piso_departamento:
-                ciudadano.piso_departamento = piso_departamento
-                updates.append("piso_departamento")
-            if ciudadano.codigo_postal in (None, "") and codigo_postal not in (
-                None,
-                "",
-            ):
-                ciudadano.codigo_postal = codigo_postal
-                updates.append("codigo_postal")
-            if not ciudadano.telefono and telefono:
-                ciudadano.telefono = telefono
-                updates.append("telefono")
-            if not ciudadano.email and email:
-                ciudadano.email = email
-                updates.append("email")
+            for field_name, raw_value in {
+                "calle": calle,
+                "altura": altura,
+                "barrio": barrio,
+                "piso_departamento": piso_departamento,
+                "codigo_postal": codigo_postal,
+                "telefono": telefono,
+                "email": email,
+            }.items():
+                normalized_value = CiudadanoService._normalizar_texto_opcional(
+                    raw_value
+                )
+                current_value = getattr(ciudadano, field_name)
+                if current_value in (None, ""):
+                    if normalized_value is not None:
+                        setattr(ciudadano, field_name, normalized_value)
+                        updates.append(field_name)
+                    elif current_value == "":
+                        setattr(ciudadano, field_name, None)
+                        updates.append(field_name)
             if updates:
                 ciudadano.save(update_fields=updates)
                 logger.debug("Ciudadano %s actualizado (%s)", ciudadano.pk, updates)
