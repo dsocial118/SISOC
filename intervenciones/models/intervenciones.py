@@ -72,6 +72,28 @@ class SubIntervencion(models.Model):
         verbose_name="Tipo de Intervención asociada",
     )
 
+    @classmethod
+    def para_tipo(cls, tipo_intervencion_id=None, include_ids=None):
+        include_ids = [pk for pk in (include_ids or []) if pk]
+        queryset = cls.objects.order_by("nombre")
+
+        if tipo_intervencion_id:
+            queryset = queryset.filter(tipo_intervencion_id=tipo_intervencion_id)
+        else:
+            queryset = queryset.none()
+
+        queryset = queryset.exclude(nombre="")
+        if include_ids:
+            queryset = cls.objects.filter(
+                Q(pk__in=include_ids)
+                | (
+                    Q(tipo_intervencion_id=tipo_intervencion_id)
+                    & ~Q(nombre="")
+                )
+            ).order_by("nombre")
+
+        return queryset.distinct()
+
     def __str__(self):
         return f"{self.nombre}"
 

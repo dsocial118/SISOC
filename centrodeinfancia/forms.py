@@ -3,7 +3,11 @@ from django import forms
 from ciudadanos.models import Ciudadano
 from core.models import Localidad, Municipio, Provincia
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
-from intervenciones.models.intervenciones import TipoDestinatario, TipoIntervencion
+from intervenciones.models.intervenciones import (
+    SubIntervencion,
+    TipoDestinatario,
+    TipoIntervencion,
+)
 from organizaciones.models import Organizacion
 from users.models import Profile
 from centrodeinfancia.models import (
@@ -205,14 +209,31 @@ class TrabajadorForm(forms.ModelForm):
 
 
 class IntervencionCentroInfanciaForm(forms.ModelForm):
+    @staticmethod
+    def _parse_selected_id(raw_value):
+        return int(raw_value) if raw_value and str(raw_value).isdigit() else None
+
     def __init__(self, *args, **kwargs):
         destinatario_fijo_nombre = kwargs.pop("destinatario_fijo_nombre", None)
         hide_destinatario = kwargs.pop("hide_destinatario", False)
         super().__init__(*args, **kwargs)
         selected_tipo_id = getattr(self.instance, "tipo_intervencion_id", None)
+        if self.is_bound:
+            selected_tipo_id = self._parse_selected_id(
+                self.data.get(self.add_prefix("tipo_intervencion"))
+            )
+        selected_subtipo_id = getattr(self.instance, "subintervencion_id", None)
+        if self.is_bound:
+            selected_subtipo_id = self._parse_selected_id(
+                self.data.get(self.add_prefix("subintervencion"))
+            )
         self.fields["tipo_intervencion"].queryset = TipoIntervencion.para_programas(
             *PROGRAMA_ALIASES_CENTRO_INFANCIA,
             include_ids=[selected_tipo_id] if selected_tipo_id else None,
+        )
+        self.fields["subintervencion"].queryset = SubIntervencion.para_tipo(
+            selected_tipo_id,
+            include_ids=[selected_subtipo_id] if selected_subtipo_id else None,
         )
 
         self.destinatario_fijo_instance = None

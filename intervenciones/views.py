@@ -34,9 +34,7 @@ def sub_estados_intervenciones_ajax(request):
     """
     tipo_intervencion_id = request.GET.get("id")
     if tipo_intervencion_id:
-        sub_estados = SubIntervencion.objects.filter(
-            tipo_intervencion_id=tipo_intervencion_id
-        )
+        sub_estados = SubIntervencion.para_tipo(tipo_intervencion_id)
     else:
         sub_estados = SubIntervencion.objects.none()
 
