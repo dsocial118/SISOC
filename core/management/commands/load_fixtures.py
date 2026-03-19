@@ -5,6 +5,8 @@ from django.apps import apps
 from django.core import serializers
 from django.db import transaction
 
+from intervenciones.services_catalogo import sync_catalogo_intervenciones
+
 
 class Command(BaseCommand):
     help = "Carga fixtures sin borrar: actualiza por PK si existe, crea si no. Nunca borra."
@@ -19,6 +21,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.force = options["force"]
         self.load_fixtures()
+        self.sync_post_load_catalogs()
 
     def get_models_from_fixture(self, fixture_path):
         try:
@@ -137,3 +140,12 @@ class Command(BaseCommand):
         for fx in fixtures:
             if self.should_load_fixture(fx):
                 self.upsert_fixture(fx)
+
+    def sync_post_load_catalogs(self):
+        resumen = sync_catalogo_intervenciones()
+        self.stdout.write(
+            "✅ Catálogo de intervenciones sincronizado: "
+            f"tipos={resumen['tipos_sincronizados']}, "
+            f"subtipos={resumen['subtipos_sincronizados']}, "
+            f"subtipos_vacios_eliminados={resumen['subtipos_vacios_eliminados']}"
+        )
