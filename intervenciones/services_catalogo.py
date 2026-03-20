@@ -12,7 +12,7 @@ FIXTURE_CATALOGO_PATH = Path(
 
 
 def _load_catalogo_fixture(path=FIXTURE_CATALOGO_PATH):
-    data = json.loads(path.read_text())
+    data = json.loads(path.read_text(encoding="utf-8"))
     tipos = {}
     subtipos = []
 
