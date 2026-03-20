@@ -1,17 +1,15 @@
 from django.db import transaction
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
+
+from admisiones.models.admisiones import Admision
 from comedores.models import (
+    AuditComedorPrograma,
+    Comedor,
+    Nomina,
     Observacion,
     Referente,
-    Comedor,
-    AuditComedorPrograma,
-    Nomina,
 )
-from admisiones.models.admisiones import Admision
-
-# Programas que no requieren admisión para cargar nómina (Abordaje comunitario)
-_PROGRAMAS_SIN_ADMISION = {3, 4}
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
 from comedores.tasks import (
     AsyncRemoveComedorToGestionar,
@@ -22,14 +20,17 @@ from comedores.tasks import (
     build_observacion_payload,
     build_referente_payload,
 )
+from config.middlewares.threadlocals import get_current_user
+from core.soft_delete.signals import post_soft_delete
 from relevamientos.models import Relevamiento
 from rendicioncuentasfinal.models import (
     DocumentoRendicionFinal,
     RendicionCuentasFinal,
     TipoDocumentoRendicionFinal,
 )
-from config.middlewares.threadlocals import get_current_user
-from core.soft_delete.signals import post_soft_delete
+
+# Programas que no requieren admisión para cargar nómina (Abordaje comunitario)
+_PROGRAMAS_SIN_ADMISION = {3, 4}
 
 
 @receiver(post_save, sender=Comedor)
