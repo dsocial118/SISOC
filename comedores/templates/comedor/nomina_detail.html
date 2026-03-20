@@ -260,169 +260,169 @@
             {% if admision_pk %}
                 <a href="{% url 'nomina_crear' object.id admision_pk %}"
                    class="nomina-add-btn">
-            {% else %}
-                <a href="{% url 'nomina_directa_crear' object.id %}"
-                   class="nomina-add-btn">
-            {% endif %}
-                <i class="fas fa-plus"></i>
-                <span>Agregar persona</span>
-            </a>
-        </div>
+                {% else %}
+                    <a href="{% url 'nomina_directa_crear' object.id %}"
+                       class="nomina-add-btn">
+                    {% endif %}
+                    <i class="fas fa-plus"></i>
+                    <span>Agregar persona</span>
+                </a>
+            </div>
 
-        <!-- Tabla -->
-        <div class="nomina-table-container">
-            <table class="nomina-table">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Nombre</th>
-                        <th>Apellido</th>
-                        <th>CUIT</th>
-                        <th>Género</th>
-                        <th>Estado</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for e in nomina %}
-                        <tr class="nomina-table-row">
-                            <td>
-                                <i class="far fa-calendar-alt" style="margin-right: 5px; color: #7f8c8d"></i>
-                                {{ e.fecha|date:"d/m/Y" }}
-                            </td>
-                            <td>{{ e.ciudadano.nombre }}</td>
-                            <td>
-                                <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}"
-                                   style="color: #3498db;
-                                          text-decoration: none">{{ e.ciudadano.apellido }}</a>
-                            </td>
-                            <td>{{ e.ciudadano.documento|default:"-" }}</td>
-                            <td>{{ e.ciudadano.sexo.sexo|default:"-" }}</td>
-                            <td>
-                                <div class="dropdown">
-                                    <button class="nomina-btn nomina-estado-btn nomina-estado-{{ e.estado }} dropdown-toggle"
-                                            type="button"
-                                            data-bs-toggle="dropdown"
-                                            data-cambiar-url="{% url 'nomina_cambiar_estado' e.id %}"
-                                            aria-expanded="false">{{ e.get_estado_display }}</button>
-                                    <ul class="dropdown-menu dropdown-menu-dark">
-                                        {% for val, lbl in estados %}
-                                            <li>
-                                                <a class="dropdown-item nomina-estado-opcion {% if e.estado == val %}active{% endif %}"
-                                                   href="#"
-                                                   data-estado="{{ val }}">{{ lbl }}</a>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="nomina-action-buttons">
-                                    <button class="nomina-btn nomina-btn-actions dropdown-toggle"
-                                            type="button"
-                                            data-bs-toggle="dropdown"
-                                            aria-expanded="false">Acciones</button>
-                                    <ul class="dropdown-menu dropdown-menu-dark">
-                                        <li>
-                                            <a class="dropdown-item editar-nomina" href="#" data-id="{{ e.id }}">
-                                                <i class="fas fa-edit"></i> Editar
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item"
-                                               href="{% url 'ciudadanos_ver' e.ciudadano.id %}">
-                                                <i class="fas fa-eye"></i> Ver detalles
-                                            </a>
-                                        </li>
-                                    </ul>
-                                    {% if admision_pk %}
-                                        <a href="{% url 'nomina_borrar' object.id admision_pk e.id %}"
-                                           class="nomina-btn nomina-btn-delete"
-                                           data-confirm-click="¿Está seguro de eliminar este registro?">
-                                    {% else %}
-                                        <a href="{% url 'nomina_directa_borrar' object.id e.id %}"
-                                           class="nomina-btn nomina-btn-delete"
-                                           data-confirm-click="¿Está seguro de eliminar este registro?">
-                                    {% endif %}
-                                        <i class="fas fa-trash-alt"></i> Borrar
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    {% empty %}
+            <!-- Tabla -->
+            <div class="nomina-table-container">
+                <table class="nomina-table">
+                    <thead>
                         <tr>
-                            <td colspan="7" class="nomina-empty-message">No hay registros en la nómina.</td>
+                            <th>Fecha</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>CUIT</th>
+                            <th>Género</th>
+                            <th>Estado</th>
+                            <th></th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        {% for e in nomina %}
+                            <tr class="nomina-table-row">
+                                <td>
+                                    <i class="far fa-calendar-alt" style="margin-right: 5px; color: #7f8c8d"></i>
+                                    {{ e.fecha|date:"d/m/Y" }}
+                                </td>
+                                <td>{{ e.ciudadano.nombre }}</td>
+                                <td>
+                                    <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}"
+                                       style="color: #3498db;
+                                              text-decoration: none">{{ e.ciudadano.apellido }}</a>
+                                </td>
+                                <td>{{ e.ciudadano.documento|default:"-" }}</td>
+                                <td>{{ e.ciudadano.sexo.sexo|default:"-" }}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="nomina-btn nomina-estado-btn nomina-estado-{{ e.estado }} dropdown-toggle"
+                                                type="button"
+                                                data-bs-toggle="dropdown"
+                                                data-cambiar-url="{% url 'nomina_cambiar_estado' e.id %}"
+                                                aria-expanded="false">{{ e.get_estado_display }}</button>
+                                        <ul class="dropdown-menu dropdown-menu-dark">
+                                            {% for val, lbl in estados %}
+                                                <li>
+                                                    <a class="dropdown-item nomina-estado-opcion {% if e.estado == val %}active{% endif %}"
+                                                       href="#"
+                                                       data-estado="{{ val }}">{{ lbl }}</a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="nomina-action-buttons">
+                                        <button class="nomina-btn nomina-btn-actions dropdown-toggle"
+                                                type="button"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false">Acciones</button>
+                                        <ul class="dropdown-menu dropdown-menu-dark">
+                                            <li>
+                                                <a class="dropdown-item editar-nomina" href="#" data-id="{{ e.id }}">
+                                                    <i class="fas fa-edit"></i> Editar
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item"
+                                                   href="{% url 'ciudadanos_ver' e.ciudadano.id %}">
+                                                    <i class="fas fa-eye"></i> Ver detalles
+                                                </a>
+                                            </li>
+                                        </ul>
+                                        {% if admision_pk %}
+                                            <a href="{% url 'nomina_borrar' object.id admision_pk e.id %}"
+                                               class="nomina-btn nomina-btn-delete"
+                                               data-confirm-click="¿Está seguro de eliminar este registro?">
+                                            {% else %}
+                                                <a href="{% url 'nomina_directa_borrar' object.id e.id %}"
+                                                   class="nomina-btn nomina-btn-delete"
+                                                   data-confirm-click="¿Está seguro de eliminar este registro?">
+                                                {% endif %}
+                                                <i class="fas fa-trash-alt"></i> Borrar
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7" class="nomina-empty-message">No hay registros en la nómina.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
-        <!-- Paginación -->
-        {% if nomina.has_other_pages %}
-            <div class="nomina-pagination">
-                <span class="nomina-pagination-info">
-                    Mostrando {{ nomina.start_index }}-{{ nomina.end_index }} de {{ nomina.paginator.count }}
-                </span>
-                <div class="nomina-pagination-buttons">
-                    {% if nomina.has_previous %}
-                        <a href="?page={{ nomina.previous_page_number }}{% if dni_query %}&dni={{ dni_query|urlencode }}{% endif %}"
-                           class="nomina-page-btn">
-                            <i class="fas fa-chevron-left"></i>
-                        </a>
-                    {% else %}
-                        <button class="nomina-page-btn" disabled>
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                    {% endif %}
+                <!-- Paginación -->
+                {% if nomina.has_other_pages %}
+                    <div class="nomina-pagination">
+                        <span class="nomina-pagination-info">
+                            Mostrando {{ nomina.start_index }}-{{ nomina.end_index }} de {{ nomina.paginator.count }}
+                        </span>
+                        <div class="nomina-pagination-buttons">
+                            {% if nomina.has_previous %}
+                                <a href="?page={{ nomina.previous_page_number }}{% if dni_query %}&dni={{ dni_query|urlencode }}{% endif %}"
+                                   class="nomina-page-btn">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            {% else %}
+                                <button class="nomina-page-btn" disabled>
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                            {% endif %}
 
-                    <span class="nomina-page-number">{{ nomina.number }} de {{ nomina.paginator.num_pages }}</span>
+                            <span class="nomina-page-number">{{ nomina.number }} de {{ nomina.paginator.num_pages }}</span>
 
-                    {% if nomina.has_next %}
-                        <a href="?page={{ nomina.next_page_number }}{% if dni_query %}&dni={{ dni_query|urlencode }}{% endif %}"
-                           class="nomina-page-btn">
-                            <i class="fas fa-chevron-right"></i>
-                        </a>
-                    {% else %}
-                        <button class="nomina-page-btn" disabled>
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    {% endif %}
+                            {% if nomina.has_next %}
+                                <a href="?page={{ nomina.next_page_number }}{% if dni_query %}&dni={{ dni_query|urlencode }}{% endif %}"
+                                   class="nomina-page-btn">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            {% else %}
+                                <button class="nomina-page-btn" disabled>
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Modal Editar -->
+            <div class="modal fade"
+                 id="editarNominaModal"
+                 tabindex="-1"
+                 aria-labelledby="editarNominaLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form id="editarNominaForm" method="post">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="editarNominaLabel">Editar Nómina</h5>
+                                <button type="button"
+                                        class="btn-close"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- Aquí se va a cargar el form con AJAX -->
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                                <button type="button"
+                                        class="btn btn-sm btn-secondary"
+                                        data-bs-dismiss="modal">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-        {% endif %}
-    </div>
-    <!-- Modal Editar -->
-    <div class="modal fade"
-         id="editarNominaModal"
-         tabindex="-1"
-         aria-labelledby="editarNominaLabel"
-         aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="editarNominaForm" method="post">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editarNominaLabel">Editar Nómina</h5>
-                        <button type="button"
-                                class="btn-close"
-                                data-bs-dismiss="modal"
-                                aria-label="Cerrar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- Aquí se va a cargar el form con AJAX -->
-                    </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
-                        <button type="button"
-                                class="btn btn-sm btn-secondary"
-                                data-bs-dismiss="modal">Cancelar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-{% endblock %}
-{% block customJS %}
-    {% csrf_token %}
-    <script src="{% static 'custom/js/nomina_detail.js' %}"></script>
-{% endblock %}
+        {% endblock %}
+        {% block customJS %}
+            {% csrf_token %}
+            <script src="{% static 'custom/js/nomina_detail.js' %}"></script>
+        {% endblock %}
