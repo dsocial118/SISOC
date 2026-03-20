@@ -683,7 +683,11 @@ import io
 from django.core.management import call_command
 
 from comedores.models import Programas
-from comedores.views import NominaDirectaDetailView, NominaDirectaCreateView, NominaDirectaDeleteView
+from comedores.views import (
+    NominaDirectaDetailView,
+    NominaDirectaCreateView,
+    NominaDirectaDeleteView,
+)
 
 
 def _programa(pk, nombre):
@@ -745,11 +749,17 @@ def test_get_nomina_detail_by_comedor_solo_devuelve_nominas_directas(ciudadano_f
     admision = Admision.objects.create(comedor=comedor)
 
     # Nómina directa del comedor (debe aparecer)
-    Nomina.objects.create(comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO)
+    Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
     # Nómina vía admisión del mismo comedor (no debe aparecer)
-    Nomina.objects.create(admision=admision, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO)
+    Nomina.objects.create(
+        admision=admision, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
     # Nómina directa de otro comedor (no debe aparecer)
-    Nomina.objects.create(comedor=comedor_otro, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO)
+    Nomina.objects.create(
+        comedor=comedor_otro, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
 
     _, *_, total, _ = ComedorService.get_nomina_detail_by_comedor(comedor.pk)
 
@@ -766,7 +776,9 @@ def test_signal_asigna_nominas_directas_al_crear_admision_prog3(ciudadano_fixtur
     """Al crear admisión en comedor prog 3, las nóminas directas pasan a esa admisión."""
     prog = _programa(3, "Abordaje comunitario - Línea Secos")
     comedor = Comedor.objects.create(nombre="Comedor Signal P3", programa=prog)
-    Nomina.objects.create(comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO)
+    Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
 
     admision = Admision.objects.create(comedor=comedor)
 
@@ -780,7 +792,9 @@ def test_signal_asigna_nominas_directas_al_crear_admision_prog4(ciudadano_fixtur
     """Al crear admisión en comedor prog 4, las nóminas directas pasan a esa admisión."""
     prog = _programa(4, "Abordaje comunitario - Línea Tradicional")
     comedor = Comedor.objects.create(nombre="Comedor Signal P4", programa=prog)
-    Nomina.objects.create(comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO)
+    Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
 
     admision = Admision.objects.create(comedor=comedor)
 
@@ -855,9 +869,13 @@ def test_nomina_directa_detail_view_muestra_solo_nominas_directas(
     comedor = Comedor.objects.create(nombre="Comedor Vista P4", programa=prog)
     admision = Admision.objects.create(comedor=comedor)
     # Nómina directa (debe aparecer)
-    Nomina.objects.create(comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO)
+    Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
     # Nómina vía admisión (no debe aparecer)
-    Nomina.objects.create(admision=admision, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO)
+    Nomina.objects.create(
+        admision=admision, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
 
     url = reverse("nomina_directa_ver", kwargs={"pk": comedor.pk})
     response = client_nomina_fixture.get(url)
@@ -875,7 +893,9 @@ def test_nomina_directa_detail_view_404_comedor_inexistente(client_nomina_fixtur
 
 
 @pytest.mark.django_db
-def test_nomina_editar_ajax_funciona_con_nomina_directa(client_nomina_fixture, ciudadano_fixture):
+def test_nomina_editar_ajax_funciona_con_nomina_directa(
+    client_nomina_fixture, ciudadano_fixture
+):
     """nomina_editar_ajax acepta nóminas directas (comedor FK, sin admision)."""
     prog = _programa(3, "Abordaje comunitario - Línea Secos")
     comedor = Comedor.objects.create(nombre="Comedor Ajax", programa=prog)
@@ -917,17 +937,19 @@ def _csv_content(rows):
     """Genera contenido CSV con el header del backup real (9 columnas)."""
     header = "id,ciudadano_id,comedor_id,fecha,estado,observaciones,deleted_at,deleted_by_id,admision_id_sugerida"
     lines = [header] + [
-        ",".join([
-            str(r["id"]),
-            str(r["ciudadano_id"]),
-            str(r["comedor_id"]),
-            "2025-12-16 11:37:56",
-            "activo",
-            "",  # observaciones
-            "",  # deleted_at
-            "",  # deleted_by_id
-            str(r.get("admision_id_sugerida", "")),
-        ])
+        ",".join(
+            [
+                str(r["id"]),
+                str(r["ciudadano_id"]),
+                str(r["comedor_id"]),
+                "2025-12-16 11:37:56",
+                "activo",
+                "",  # observaciones
+                "",  # deleted_at
+                "",  # deleted_by_id
+                str(r.get("admision_id_sugerida", "")),
+            ]
+        )
         for r in rows
     ]
     return "\n".join(lines)
@@ -938,10 +960,22 @@ def test_recuperar_nominas_csv_asigna_comedor_prog34(tmp_path, ciudadano_fixture
     """Para prog 3/4, asigna comedor_id y deja admision=null."""
     prog = _programa(3, "Abordaje comunitario - Línea Secos")
     comedor = Comedor.objects.create(nombre="Comedor CSV P3", programa=prog)
-    nomina = Nomina.objects.create(ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO)
+    nomina = Nomina.objects.create(
+        ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
 
     csv_file = tmp_path / "backup.csv"
-    csv_file.write_text(_csv_content([{"id": nomina.pk, "ciudadano_id": ciudadano_fixture.pk, "comedor_id": comedor.pk}]))
+    csv_file.write_text(
+        _csv_content(
+            [
+                {
+                    "id": nomina.pk,
+                    "ciudadano_id": ciudadano_fixture.pk,
+                    "comedor_id": comedor.pk,
+                }
+            ]
+        )
+    )
 
     call_command("recuperar_nominas_csv", str(csv_file))
 
@@ -956,15 +990,23 @@ def test_recuperar_nominas_csv_asigna_admision_prog2(tmp_path, ciudadano_fixture
     prog = _programa(2, "Alimentar comunidad")
     comedor = Comedor.objects.create(nombre="Comedor CSV P2", programa=prog)
     admision = Admision.objects.create(comedor=comedor)
-    nomina = Nomina.objects.create(ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO)
+    nomina = Nomina.objects.create(
+        ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
 
     csv_file = tmp_path / "backup.csv"
-    csv_file.write_text(_csv_content([{
-        "id": nomina.pk,
-        "ciudadano_id": ciudadano_fixture.pk,
-        "comedor_id": comedor.pk,
-        "admision_id_sugerida": admision.pk,
-    }]))
+    csv_file.write_text(
+        _csv_content(
+            [
+                {
+                    "id": nomina.pk,
+                    "ciudadano_id": ciudadano_fixture.pk,
+                    "comedor_id": comedor.pk,
+                    "admision_id_sugerida": admision.pk,
+                }
+            ]
+        )
+    )
 
     call_command("recuperar_nominas_csv", str(csv_file))
 
@@ -978,10 +1020,22 @@ def test_recuperar_nominas_csv_dry_run_no_modifica(tmp_path, ciudadano_fixture):
     """Con --dry-run, no se aplica ningún cambio a la BD."""
     prog = _programa(3, "Abordaje comunitario - Línea Secos")
     comedor = Comedor.objects.create(nombre="Comedor DryRun", programa=prog)
-    nomina = Nomina.objects.create(ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO)
+    nomina = Nomina.objects.create(
+        ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
 
     csv_file = tmp_path / "backup.csv"
-    csv_file.write_text(_csv_content([{"id": nomina.pk, "ciudadano_id": ciudadano_fixture.pk, "comedor_id": comedor.pk}]))
+    csv_file.write_text(
+        _csv_content(
+            [
+                {
+                    "id": nomina.pk,
+                    "ciudadano_id": ciudadano_fixture.pk,
+                    "comedor_id": comedor.pk,
+                }
+            ]
+        )
+    )
 
     call_command("recuperar_nominas_csv", str(csv_file), "--dry-run")
 
@@ -992,10 +1046,22 @@ def test_recuperar_nominas_csv_dry_run_no_modifica(tmp_path, ciudadano_fixture):
 @pytest.mark.django_db
 def test_recuperar_nominas_csv_omite_comedor_no_encontrado(tmp_path, ciudadano_fixture):
     """Si el comedor_id del CSV no existe en la BD, la nómina queda sin cambios."""
-    nomina = Nomina.objects.create(ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO)
+    nomina = Nomina.objects.create(
+        ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
 
     csv_file = tmp_path / "backup.csv"
-    csv_file.write_text(_csv_content([{"id": nomina.pk, "ciudadano_id": ciudadano_fixture.pk, "comedor_id": 99999}]))
+    csv_file.write_text(
+        _csv_content(
+            [
+                {
+                    "id": nomina.pk,
+                    "ciudadano_id": ciudadano_fixture.pk,
+                    "comedor_id": 99999,
+                }
+            ]
+        )
+    )
 
     call_command("recuperar_nominas_csv", str(csv_file))
 
@@ -1017,7 +1083,17 @@ def test_recuperar_nominas_csv_incluye_soft_deleted(tmp_path, ciudadano_fixture)
     )
 
     csv_file = tmp_path / "backup.csv"
-    csv_file.write_text(_csv_content([{"id": nomina.pk, "ciudadano_id": ciudadano_fixture.pk, "comedor_id": comedor.pk}]))
+    csv_file.write_text(
+        _csv_content(
+            [
+                {
+                    "id": nomina.pk,
+                    "ciudadano_id": ciudadano_fixture.pk,
+                    "comedor_id": comedor.pk,
+                }
+            ]
+        )
+    )
 
     call_command("recuperar_nominas_csv", str(csv_file))
 

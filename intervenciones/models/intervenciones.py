@@ -86,10 +86,7 @@ class SubIntervencion(models.Model):
         if include_ids:
             queryset = cls.objects.filter(
                 Q(pk__in=include_ids)
-                | (
-                    Q(tipo_intervencion_id=tipo_intervencion_id)
-                    & ~Q(nombre="")
-                )
+                | (Q(tipo_intervencion_id=tipo_intervencion_id) & ~Q(nombre=""))
             ).order_by("nombre")
 
         return queryset.distinct()

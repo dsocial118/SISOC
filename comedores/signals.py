@@ -1,7 +1,13 @@
 from django.db import transaction
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
-from comedores.models import Observacion, Referente, Comedor, AuditComedorPrograma, Nomina
+from comedores.models import (
+    Observacion,
+    Referente,
+    Comedor,
+    AuditComedorPrograma,
+    Nomina,
+)
 from admisiones.models.admisiones import Admision
 
 # Programas que no requieren admisión para cargar nómina (Abordaje comunitario)

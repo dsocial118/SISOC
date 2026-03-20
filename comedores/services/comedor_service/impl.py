@@ -208,13 +208,17 @@ def _validar_dni_para_renaper_response(dni):
 
 def _nomina_ya_contiene_ciudadano(ciudadano, admision_id=None, comedor_id=None):
     if admision_id:
-        return Nomina.objects.filter(ciudadano=ciudadano, admision_id=admision_id).exists()
+        return Nomina.objects.filter(
+            ciudadano=ciudadano, admision_id=admision_id
+        ).exists()
     return Nomina.objects.filter(
         ciudadano=ciudadano, comedor_id=comedor_id, admision__isnull=True
     ).exists()
 
 
-def _crear_nomina_registro(ciudadano, estado=None, observaciones=None, admision_id=None, comedor_id=None):
+def _crear_nomina_registro(
+    ciudadano, estado=None, observaciones=None, admision_id=None, comedor_id=None
+):
     return Nomina.objects.create(
         ciudadano=ciudadano,
         admision_id=admision_id,
@@ -1334,12 +1338,18 @@ class ComedorService:
 
     @staticmethod
     def agregar_ciudadano_a_nomina(
-        ciudadano_id, user, estado=None, observaciones=None,
-        admision_id=None, comedor_id=None,
+        ciudadano_id,
+        user,
+        estado=None,
+        observaciones=None,
+        admision_id=None,
+        comedor_id=None,
     ):
         ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
 
-        if _nomina_ya_contiene_ciudadano(ciudadano, admision_id=admision_id, comedor_id=comedor_id):
+        if _nomina_ya_contiene_ciudadano(
+            ciudadano, admision_id=admision_id, comedor_id=comedor_id
+        ):
             return False, "Esta persona ya está en la nómina."
 
         try:
@@ -1359,8 +1369,12 @@ class ComedorService:
     @staticmethod
     @transaction.atomic
     def crear_ciudadano_y_agregar_a_nomina(
-        ciudadano_data, user, estado, observaciones,
-        admision_id=None, comedor_id=None,
+        ciudadano_data,
+        user,
+        estado,
+        observaciones,
+        admision_id=None,
+        comedor_id=None,
     ):
         """
         Crea un ciudadano nuevo y lo agrega a la nómina con estado y observaciones.

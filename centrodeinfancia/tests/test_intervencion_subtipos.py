@@ -60,6 +60,4 @@ def test_ajax_subtipos_filtra_por_tipo_y_excluye_nombres_vacios(django_user_mode
     )
 
     assert response.status_code == 200
-    assert json.loads(response.content) == [
-        {"id": subtipo_valido.id, "text": "Visita"}
-    ]
+    assert json.loads(response.content) == [{"id": subtipo_valido.id, "text": "Visita"}]

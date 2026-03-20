@@ -432,7 +432,8 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 "ciudadanos": ciudadanos,
                 "no_resultados": bool(query) and not ciudadanos,
                 "form_ciudadano": form_ciudadano,
-                "form_nomina_extra": kwargs.get("form_nomina_extra") or NominaExtraForm(),
+                "form_nomina_extra": kwargs.get("form_nomina_extra")
+                or NominaExtraForm(),
                 "estados": Nomina.ESTADO_CHOICES,
                 "renaper_precarga": renaper_precarga,
             }
@@ -448,7 +449,9 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
         if ciudadano_id:
             form_nomina_extra = NominaExtraForm(request.POST)
             if not form_nomina_extra.is_valid():
-                messages.error(request, "Datos inválidos para agregar ciudadano a la nómina.")
+                messages.error(
+                    request, "Datos inválidos para agregar ciudadano a la nómina."
+                )
                 context = self.get_context_data(form_nomina_extra=form_nomina_extra)
                 return self.render_to_response(context)
 
@@ -500,7 +503,9 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
             return self.render_to_response(context)
 
 
-class NominaDirectaDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+class NominaDirectaDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     """Baja de un registro de nómina directa (prog 3/4)."""
 
     model = Nomina
