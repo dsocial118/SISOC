@@ -248,12 +248,22 @@
                        placeholder="Buscar por DNI" />
                 <button type="submit" class="btn btn-sm btn-light ms-2">Buscar</button>
                 {% if dni_query %}
-                    <a href="{% url 'nomina_ver' object.id admision_pk %}"
-                       class="btn btn-sm btn-outline-light ms-1">Limpiar</a>
+                    {% if admision_pk %}
+                        <a href="{% url 'nomina_ver' object.id admision_pk %}"
+                           class="btn btn-sm btn-outline-light ms-1">Limpiar</a>
+                    {% else %}
+                        <a href="{% url 'nomina_directa_ver' object.id %}"
+                           class="btn btn-sm btn-outline-light ms-1">Limpiar</a>
+                    {% endif %}
                 {% endif %}
             </form>
-            <a href="{% url 'nomina_crear' object.id admision_pk %}"
-               class="nomina-add-btn">
+            {% if admision_pk %}
+                <a href="{% url 'nomina_crear' object.id admision_pk %}"
+                   class="nomina-add-btn">
+            {% else %}
+                <a href="{% url 'nomina_directa_crear' object.id %}"
+                   class="nomina-add-btn">
+            {% endif %}
                 <i class="fas fa-plus"></i>
                 <span>Agregar persona</span>
             </a>
@@ -325,9 +335,15 @@
                                             </a>
                                         </li>
                                     </ul>
-                                    <a href="{% url 'nomina_borrar' object.id admision_pk e.id %}"
-                                       class="nomina-btn nomina-btn-delete"
-                                       data-confirm-click="¿Está seguro de eliminar este registro?">
+                                    {% if admision_pk %}
+                                        <a href="{% url 'nomina_borrar' object.id admision_pk e.id %}"
+                                           class="nomina-btn nomina-btn-delete"
+                                           data-confirm-click="¿Está seguro de eliminar este registro?">
+                                    {% else %}
+                                        <a href="{% url 'nomina_directa_borrar' object.id e.id %}"
+                                           class="nomina-btn nomina-btn-delete"
+                                           data-confirm-click="¿Está seguro de eliminar este registro?">
+                                    {% endif %}
                                         <i class="fas fa-trash-alt"></i> Borrar
                                     </a>
                                 </div>
