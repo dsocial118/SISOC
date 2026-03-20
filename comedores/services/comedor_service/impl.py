@@ -206,14 +206,19 @@ def _validar_dni_para_renaper_response(dni):
     return dni_str, None
 
 
-def _nomina_ya_contiene_ciudadano(admision_id, ciudadano):
-    return Nomina.objects.filter(ciudadano=ciudadano, admision_id=admision_id).exists()
+def _nomina_ya_contiene_ciudadano(ciudadano, admision_id=None, comedor_id=None):
+    if admision_id:
+        return Nomina.objects.filter(ciudadano=ciudadano, admision_id=admision_id).exists()
+    return Nomina.objects.filter(
+        ciudadano=ciudadano, comedor_id=comedor_id, admision__isnull=True
+    ).exists()
 
 
-def _crear_nomina_registro(admision_id, ciudadano, estado=None, observaciones=None):
+def _crear_nomina_registro(ciudadano, estado=None, observaciones=None, admision_id=None, comedor_id=None):
     return Nomina.objects.create(
         ciudadano=ciudadano,
         admision_id=admision_id,
+        comedor_id=comedor_id,
         estado=estado or Nomina.ESTADO_ACTIVO,
         observaciones=observaciones,
     )
@@ -853,6 +858,31 @@ class ComedorService:
         )
 
     @staticmethod
+    def get_nomina_detail_by_comedor(comedor_pk, page=1, per_page=100, dni_query=""):
+        """
+        Variante de get_nomina_detail para prog 3/4: nóminas asociadas
+        directamente al comedor (admision=null, comedor_id=comedor_pk).
+        """
+        qs_nomina = Nomina.objects.filter(
+            comedor_id=comedor_pk, admision__isnull=True
+        ).select_related("ciudadano__sexo")
+        age_expr = TimestampDiffYears(F("ciudadano__fecha_nacimiento"), Now())
+        qs_nomina_age = qs_nomina.annotate(edad=age_expr)
+        resumen = _aggregate_nomina_resumen(qs_nomina_age)
+        rangos_resumen = _build_nomina_rangos_resumen(resumen)
+        qs_nomina_filtrada = _apply_nomina_dni_filter(qs_nomina, dni_query)
+        page_obj = _build_nomina_page(qs_nomina_filtrada, page, per_page)
+        return (
+            page_obj,
+            resumen["cantidad_nomina_m"],
+            resumen["cantidad_nomina_f"],
+            resumen["cantidad_nomina_x"],
+            resumen["espera"],
+            resumen["cantidad_total"],
+            rangos_resumen,
+        )
+
+    @staticmethod
     def post_comedor_relevamiento(request, comedor):
         action = _resolve_relevamiento_post_action(request)
         if not action:
@@ -1304,18 +1334,20 @@ class ComedorService:
 
     @staticmethod
     def agregar_ciudadano_a_nomina(
-        admision_id, ciudadano_id, user, estado=None, observaciones=None
+        ciudadano_id, user, estado=None, observaciones=None,
+        admision_id=None, comedor_id=None,
     ):
         ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
 
-        if _nomina_ya_contiene_ciudadano(admision_id, ciudadano):
+        if _nomina_ya_contiene_ciudadano(ciudadano, admision_id=admision_id, comedor_id=comedor_id):
             return False, "Esta persona ya está en la nómina."
 
         try:
             with transaction.atomic():
                 _crear_nomina_registro(
-                    admision_id=admision_id,
                     ciudadano=ciudadano,
+                    admision_id=admision_id,
+                    comedor_id=comedor_id,
                     estado=estado,
                     observaciones=observaciones,
                 )
@@ -1327,7 +1359,8 @@ class ComedorService:
     @staticmethod
     @transaction.atomic
     def crear_ciudadano_y_agregar_a_nomina(
-        ciudadano_data, admision_id, user, estado, observaciones
+        ciudadano_data, user, estado, observaciones,
+        admision_id=None, comedor_id=None,
     ):
         """
         Crea un ciudadano nuevo y lo agrega a la nómina con estado y observaciones.
@@ -1336,11 +1369,12 @@ class ComedorService:
         ciudadano = Ciudadano.objects.create(**ciudadano_data)
 
         ok, msg = ComedorService.agregar_ciudadano_a_nomina(
-            admision_id=admision_id,
             ciudadano_id=ciudadano.id,
             user=user,
             estado=estado,
             observaciones=observaciones,
+            admision_id=admision_id,
+            comedor_id=comedor_id,
         )
         if not ok:
             ciudadano.delete()
