@@ -1,7 +1,11 @@
 from django.db import transaction
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
-from comedores.models import Observacion, Referente, Comedor, AuditComedorPrograma
+from comedores.models import Observacion, Referente, Comedor, AuditComedorPrograma, Nomina
+from admisiones.models.admisiones import Admision
+
+# Programas que no requieren admisión para cargar nómina (Abordaje comunitario)
+_PROGRAMAS_SIN_ADMISION = {3, 4}
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
 from comedores.tasks import (
     AsyncRemoveComedorToGestionar,
@@ -95,3 +99,23 @@ def crear_documentos_por_defecto(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Relevamiento)
 def clasificacion_relevamiento(sender, instance, **kwargs):
     ClasificacionComedorService.create_clasificacion_relevamiento(instance)
+
+
+@receiver(post_save, sender=Admision)
+def asignar_nominas_directas_a_admision(sender, instance, created, **kwargs):
+    """
+    Al crear una admisión para un comedor de programa 3/4, asigna las nóminas
+    directas del comedor (comedor_id set, admision=null) a esa admisión.
+
+    Esto permite que al incorporar un convenio en un comedor previamente sin
+    admisión, las nóminas ya cargadas queden asociadas al nuevo convenio.
+    """
+    if not created:
+        return
+    comedor = instance.comedor
+    if not comedor or comedor.programa_id not in _PROGRAMAS_SIN_ADMISION:
+        return
+    Nomina.objects.filter(
+        comedor=comedor,
+        admision__isnull=True,
+    ).update(admision=instance, comedor=None)
