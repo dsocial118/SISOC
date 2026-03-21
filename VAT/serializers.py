@@ -6,9 +6,6 @@ from VAT.models import (
     ActividadCentro,
     ParticipanteActividad,
     ParticipanteActividadHistorial,
-    Beneficiario,
-    Responsable,
-    BeneficiarioResponsable,
 )
 from core.models import Provincia, Municipio, Localidad
 
@@ -90,89 +87,6 @@ class CentroSerializer(serializers.ModelSerializer):
             "nombre_referente",
             "apellido_referente",
             "categorias_actividades",
-        ]
-
-
-class ResponsableSerializer(serializers.ModelSerializer):
-    provincia_nombre = serializers.CharField(source="provincia.nombre", read_only=True)
-    municipio_nombre = serializers.CharField(source="municipio.nombre", read_only=True)
-    localidad_nombre = serializers.CharField(source="localidad.nombre", read_only=True)
-
-    class Meta:
-        model = Responsable
-        fields = [
-            "id",
-            "vinculo_parental",
-            "cuil",
-            "dni",
-            "apellido",
-            "nombre",
-            "genero",
-            "fecha_nacimiento",
-            "provincia",
-            "provincia_nombre",
-            "municipio",
-            "municipio_nombre",
-            "localidad",
-            "localidad_nombre",
-            "calle",
-            "altura",
-            "correo_electronico",
-            "numero_celular",
-        ]
-
-
-class BeneficiarioSerializer(serializers.ModelSerializer):
-    responsable_nombre = serializers.CharField(
-        source="responsable.get_full_name", read_only=True
-    )
-    provincia_nombre = serializers.CharField(source="provincia.nombre", read_only=True)
-    municipio_nombre = serializers.CharField(source="municipio.nombre", read_only=True)
-    localidad_nombre = serializers.CharField(source="localidad.nombre", read_only=True)
-
-    class Meta:
-        model = Beneficiario
-        fields = [
-            "id",
-            "cuil",
-            "dni",
-            "apellido",
-            "nombre",
-            "genero",
-            "fecha_nacimiento",
-            "domicilio",
-            "provincia",
-            "provincia_nombre",
-            "municipio",
-            "municipio_nombre",
-            "localidad",
-            "localidad_nombre",
-            "nivel_educativo_actual",
-            "maximo_nivel_educativo",
-            "responsable",
-            "responsable_nombre",
-            "actividad_preferida",
-            "actividades_extracurriculares",
-        ]
-
-
-class BeneficiarioResponsableSerializer(serializers.ModelSerializer):
-    beneficiario_nombre = serializers.CharField(
-        source="beneficiario.get_full_name", read_only=True
-    )
-    responsable_nombre = serializers.CharField(
-        source="responsable.get_full_name", read_only=True
-    )
-
-    class Meta:
-        model = BeneficiarioResponsable
-        fields = [
-            "id",
-            "beneficiario",
-            "beneficiario_nombre",
-            "responsable",
-            "responsable_nombre",
-            "vinculo_parental",
         ]
 
 

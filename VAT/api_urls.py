@@ -6,9 +6,6 @@ from VAT.api_views import (
     CategoriaViewSet,
     ActividadCentroViewSet,
     ParticipanteActividadViewSet,
-    BeneficiarioViewSet,
-    ResponsableViewSet,
-    BeneficiarioResponsableViewSet,
     ProvinciaViewSet,
     MunicipioViewSet,
     LocalidadViewSet,
@@ -23,13 +20,6 @@ router.register(
 )
 router.register(
     r"participantes", ParticipanteActividadViewSet, basename="vat-api-participante"
-)
-router.register(r"beneficiarios", BeneficiarioViewSet, basename="vat-api-beneficiario")
-router.register(r"responsables", ResponsableViewSet, basename="vat-api-responsable")
-router.register(
-    r"beneficiario-responsable",
-    BeneficiarioResponsableViewSet,
-    basename="vat-api-beneficiario-responsable",
 )
 router.register(r"provincias", ProvinciaViewSet, basename="vat-api-provincia")
 router.register(r"municipios", MunicipioViewSet, basename="vat-api-municipio")

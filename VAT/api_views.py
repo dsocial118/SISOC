@@ -11,9 +11,6 @@ from VAT.models import (
     Actividad,
     ActividadCentro,
     ParticipanteActividad,
-    Beneficiario,
-    Responsable,
-    BeneficiarioResponsable,
 )
 from VAT.serializers import (
     CentroSerializer,
@@ -21,9 +18,6 @@ from VAT.serializers import (
     ActividadSerializer,
     ActividadCentroSerializer,
     ParticipanteActividadSerializer,
-    BeneficiarioSerializer,
-    ResponsableSerializer,
-    BeneficiarioResponsableSerializer,
     ProvinciaSerializer,
     MunicipioSerializer,
     LocalidadSerializer,
@@ -195,63 +189,6 @@ class ParticipanteActividadViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet
         participante.save()
         serializer = self.get_serializer(participante)
         return Response(serializer.data)
-
-
-@extend_schema(tags=["VAT - Beneficiarios"])
-class BeneficiarioViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = Beneficiario.objects.select_related(
-        "responsable", "provincia", "municipio", "localidad"
-    ).prefetch_related("actividades_detalle")
-    serializer_class = BeneficiarioSerializer
-    permission_classes = [HasAPIKey]
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        responsable_id = self.request.query_params.get("responsable_id")
-        dni = self.request.query_params.get("dni")
-        if responsable_id:
-            queryset = queryset.filter(responsable_id=responsable_id)
-        if dni:
-            queryset = queryset.filter(dni=dni)
-        return queryset
-
-    @action(detail=False, methods=["get"])
-    def por_responsable(self, request):
-        responsable_id = request.query_params.get("responsable_id")
-        if not responsable_id:
-            return Response(
-                {"error": "responsable_id es requerido"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        beneficiarios = self.get_queryset().filter(responsable_id=responsable_id)
-        serializer = self.get_serializer(beneficiarios, many=True)
-        return Response(serializer.data)
-
-
-@extend_schema(tags=["VAT - Responsables"])
-class ResponsableViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = Responsable.objects.select_related("provincia", "municipio", "localidad")
-    serializer_class = ResponsableSerializer
-    permission_classes = [HasAPIKey]
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        dni = self.request.query_params.get("dni")
-        cuil = self.request.query_params.get("cuil")
-        if dni:
-            queryset = queryset.filter(dni=dni)
-        if cuil:
-            queryset = queryset.filter(cuil=cuil)
-        return queryset
-
-
-@extend_schema(tags=["VAT - Vínculos"])
-class BeneficiarioResponsableViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = BeneficiarioResponsable.objects.select_related(
-        "beneficiario", "responsable"
-    ).order_by("id")
-    serializer_class = BeneficiarioResponsableSerializer
-    permission_classes = [HasAPIKey]
 
 
 @extend_schema(tags=["VAT - Ubicación"])

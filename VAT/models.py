@@ -362,11 +362,6 @@ class Asistencia(models.Model):
             )
         ]
 
-
-# ——— MODELOS DE BENEFICIARIOS ———
-
-
-class Responsable(SoftDeleteModelMixin, models.Model):
     GENERO_CHOICES = [
         ("F", "Femenino"),
         ("M", "Masculino"),
