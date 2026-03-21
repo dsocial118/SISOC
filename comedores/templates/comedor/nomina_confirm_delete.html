@@ -15,6 +15,10 @@
 ;
 {% load crispy_forms_tags %}
 {% block content %}
-    {% url 'nomina_ver' view.kwargs.pk view.kwargs.admision_pk as nomina_cancel_url %}
+    {% if view.kwargs.admision_pk %}
+        {% url 'nomina_ver' view.kwargs.pk view.kwargs.admision_pk as nomina_cancel_url %}
+    {% else %}
+        {% url 'nomina_directa_ver' view.kwargs.pk as nomina_cancel_url %}
+    {% endif %}
     {% include 'components/delete_confirm.html' with object_name=object cancel_url_full=nomina_cancel_url confirm_text='Dar de baja' %}
 {% endblock content %}

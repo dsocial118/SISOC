@@ -893,6 +893,43 @@ def test_nomina_directa_detail_view_404_comedor_inexistente(client_nomina_fixtur
 
 
 @pytest.mark.django_db
+def test_nomina_directa_detail_view_404_para_programa_con_admision(
+    client_nomina_fixture,
+):
+    """La nómina directa solo aplica a programas 3/4."""
+    prog = _programa(2, "Alimentar comunidad")
+    comedor = Comedor.objects.create(nombre="Comedor Vista P2", programa=prog)
+
+    url = reverse("nomina_directa_ver", kwargs={"pk": comedor.pk})
+    response = client_nomina_fixture.get(url)
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_nomina_directa_delete_view_muestra_cancelacion_directa(
+    client_nomina_fixture, ciudadano_fixture
+):
+    """La confirmación de baja directa debe volver a la nómina directa."""
+    prog = _programa(3, "Abordaje comunitario - Línea Secos")
+    comedor = Comedor.objects.create(nombre="Comedor Borrado", programa=prog)
+    nomina = Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    url = reverse(
+        "nomina_directa_borrar", kwargs={"pk": comedor.pk, "pk2": nomina.pk}
+    )
+    response = client_nomina_fixture.get(url)
+
+    assert response.status_code == 200
+    assert (
+        reverse("nomina_directa_ver", kwargs={"pk": comedor.pk})
+        in response.content.decode()
+    )
+
+
+@pytest.mark.django_db
 def test_nomina_editar_ajax_funciona_con_nomina_directa(
     client_nomina_fixture, ciudadano_fixture
 ):

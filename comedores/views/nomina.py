@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import Http404
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -35,6 +36,14 @@ def _get_nomina_scoped_or_404(pk, user):
 
 def _get_comedor_scoped_or_404(comedor_pk, user):
     return ComedorService.get_scoped_comedor_or_404(comedor_pk, user)
+
+
+def _get_comedor_directo_or_404(comedor_pk, user):
+    """Obtiene un comedor habilitado para nómina directa (programa 3/4)."""
+    comedor = _get_comedor_scoped_or_404(comedor_pk, user)
+    if comedor.programa_id not in _PROGRAMAS_SIN_ADMISION:
+        raise Http404("La nómina directa solo aplica a programas 3/4.")
+    return comedor
 
 
 def _get_admision_del_comedor_or_404(comedor_pk, admision_pk, user):
@@ -343,7 +352,7 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        comedor = _get_comedor_scoped_or_404(self.kwargs["pk"], self.request.user)
+        comedor = _get_comedor_directo_or_404(self.kwargs["pk"], self.request.user)
         page = int(self.request.GET.get("page", 1))
         dni_query = (self.request.GET.get("dni") or "").strip()
 
@@ -386,7 +395,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        comedor = _get_comedor_scoped_or_404(self.kwargs["pk"], self.request.user)
+        comedor = _get_comedor_directo_or_404(self.kwargs["pk"], self.request.user)
         context["object"] = comedor
         context["admision_pk"] = None
 
@@ -442,7 +451,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
 
     def post(self, request, *args, **kwargs):
         self.object = None
-        comedor = _get_comedor_scoped_or_404(self.kwargs["pk"], request.user)
+        comedor = _get_comedor_directo_or_404(self.kwargs["pk"], request.user)
         comedor_id = comedor.pk
         ciudadano_id = request.POST.get("ciudadano_id")
 
@@ -515,11 +524,12 @@ class NominaDirectaDeleteView(
 
     def get_queryset(self):
         scoped_comedores = ComedorService.get_scoped_comedor_queryset(self.request.user)
+        comedor = _get_comedor_directo_or_404(self.kwargs["pk"], self.request.user)
         return (
             super()
             .get_queryset()
             .filter(
-                comedor_id=self.kwargs["pk"],
+                comedor_id=comedor.pk,
                 comedor__in=scoped_comedores,
                 admision__isnull=True,
             )
