@@ -6,11 +6,13 @@ from django.db.models import Q
 from intervenciones.models.intervenciones import SubIntervencion, TipoIntervencion
 
 
-FIXTURE_CATALOGO_PATH = Path("intervenciones/fixtures/subintervencion_tipointervencion.json")
+FIXTURE_CATALOGO_PATH = Path(
+    "intervenciones/fixtures/subintervencion_tipointervencion.json"
+)
 
 
 def _load_catalogo_fixture(path=FIXTURE_CATALOGO_PATH):
-    data = json.loads(path.read_text())
+    data = json.loads(path.read_text(encoding="utf-8"))
     tipos = {}
     subtipos = []
 
@@ -62,9 +64,13 @@ def sync_catalogo_intervenciones(path=FIXTURE_CATALOGO_PATH):
 
     for tipo_nombre, definition in catalogo.items():
         programa = definition["programa"]
-        tipo = TipoIntervencion.objects.filter(nombre=tipo_nombre).order_by("id").first()
+        tipo = (
+            TipoIntervencion.objects.filter(nombre=tipo_nombre).order_by("id").first()
+        )
         if tipo is None:
-            tipo = TipoIntervencion.objects.create(nombre=tipo_nombre, programa=programa)
+            tipo = TipoIntervencion.objects.create(
+                nombre=tipo_nombre, programa=programa
+            )
             tipos_sincronizados += 1
         elif tipo.programa != programa:
             tipo.programa = programa

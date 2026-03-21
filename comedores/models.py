@@ -473,6 +473,14 @@ class Nomina(SoftDeleteModelMixin, models.Model):
         blank=True,
         related_name="nominas",
     )
+    comedor = models.ForeignKey(
+        "Comedor",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nominas_directas",
+        verbose_name="Comedor (acceso directo)",
+    )
     ciudadano = models.ForeignKey(
         Ciudadano,
         on_delete=models.CASCADE,
@@ -494,13 +502,14 @@ class Nomina(SoftDeleteModelMixin, models.Model):
         verbose_name_plural = "Nominas"
 
     def __str__(self):
-        comedor = (
-            self.admision.comedor.nombre
-            if self.admision and self.admision.comedor
-            else "Comedor sin nombre"
-        )
+        if self.admision and self.admision.comedor:
+            comedor_nombre = self.admision.comedor.nombre
+        elif self.comedor:
+            comedor_nombre = self.comedor.nombre
+        else:
+            comedor_nombre = "Comedor sin nombre"
         ciudadano = str(self.ciudadano) if self.ciudadano else "Ciudadano no asignado"
-        return f"{ciudadano} en {comedor} ({self.get_estado_display()})"
+        return f"{ciudadano} en {comedor_nombre} ({self.get_estado_display()})"
 
 
 class ImagenComedor(models.Model):

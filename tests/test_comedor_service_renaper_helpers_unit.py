@@ -297,7 +297,9 @@ def test_agregar_nomina_and_crear_y_agregar(mocker):
         "comedores.services.comedor_service.impl.Nomina.objects.filter",
         return_value=SimpleNamespace(exists=lambda: True),
     )
-    ok, _msg = module.ComedorService.agregar_ciudadano_a_nomina(1, 1, user="u")
+    ok, _msg = module.ComedorService.agregar_ciudadano_a_nomina(
+        ciudadano_id=1, user="u"
+    )
     assert ok is False
 
     mocker.patch(
@@ -309,7 +311,9 @@ def test_agregar_nomina_and_crear_y_agregar(mocker):
         return_value=nullcontext(),
     )
     mocker.patch("comedores.services.comedor_service.impl.Nomina.objects.create")
-    ok2, _msg2 = module.ComedorService.agregar_ciudadano_a_nomina(1, 1, user="u")
+    ok2, _msg2 = module.ComedorService.agregar_ciudadano_a_nomina(
+        ciudadano_id=1, user="u"
+    )
     assert ok2 is True
 
     c = SimpleNamespace(id=9, delete=mocker.Mock())
