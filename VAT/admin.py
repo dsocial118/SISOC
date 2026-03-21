@@ -1,5 +1,16 @@
 from django.contrib import admin
-from .models import Centro, Actividad, ParticipanteActividad, Categoria, ModalidadInstitucional
+from .models import (
+    Centro,
+    Actividad,
+    ParticipanteActividad,
+    Categoria,
+    ModalidadInstitucional,
+    Sector,
+    Subsector,
+    TituloReferencia,
+    ModalidadCursada,
+    PlanVersionCurricular,
+)
 
 
 @admin.register(Centro)
@@ -73,3 +84,68 @@ class ModalidadInstitucionalAdmin(admin.ModelAdmin):
     list_filter = ("activo", "fecha_creacion")
     search_fields = ("nombre",)
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
+
+
+@admin.register(Sector)
+class SectorAdmin(admin.ModelAdmin):
+    list_display = ("nombre",)
+    search_fields = ("nombre",)
+    inlines = []
+
+
+class SubsectorInline(admin.TabularInline):
+    model = Subsector
+    extra = 1
+
+
+@admin.register(Subsector)
+class SubsectorAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "sector")
+    list_filter = ("sector",)
+    search_fields = ("nombre",)
+
+
+@admin.register(TituloReferencia)
+class TituloReferenciaAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "sector", "subsector", "activo")
+    list_filter = ("sector", "subsector", "activo")
+    search_fields = ("nombre", "codigo_referencia")
+    fieldsets = (
+        ("Información General", {
+            "fields": ("nombre", "codigo_referencia", "descripcion")
+        }),
+        ("Clasificación", {
+            "fields": ("sector", "subsector")
+        }),
+        ("Estado", {
+            "fields": ("activo",)
+        }),
+    )
+
+
+@admin.register(ModalidadCursada)
+class ModalidadCursadaAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "activo")
+    list_filter = ("activo",)
+    search_fields = ("nombre",)
+
+
+@admin.register(PlanVersionCurricular)
+class PlanVersionCurricularAdmin(admin.ModelAdmin):
+    list_display = ("titulo_referencia", "modalidad_cursada", "version", "activo")
+    list_filter = ("titulo_referencia", "modalidad_cursada", "activo")
+    search_fields = ("titulo_referencia__nombre", "version")
+    fieldsets = (
+        ("Información General", {
+            "fields": ("titulo_referencia", "modalidad_cursada", "version")
+        }),
+        ("Normativa y Horas", {
+            "fields": ("normativa", "horas_reloj")
+        }),
+        ("Niveles y Frecuencia", {
+            "fields": ("nivel_requerido", "nivel_certifica", "frecuencia")
+        }),
+        ("Estado", {
+            "fields": ("activo",)
+        }),
+    )

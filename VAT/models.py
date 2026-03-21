@@ -399,3 +399,145 @@ class ModalidadInstitucional(models.Model):
         ordering = ["nombre"]
 
 
+class Sector(SoftDeleteModelMixin, models.Model):
+    nombre = models.CharField(max_length=100, verbose_name="Nombre del sector")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Sector"
+        verbose_name_plural = "Sectores"
+        ordering = ["nombre"]
+        indexes = [
+            GinIndex(
+                fields=["nombre"],
+                name="vat_sector_nombre_trgm",
+                opclasses=["gin_trgm_ops"],
+            ),
+        ]
+
+
+class Subsector(SoftDeleteModelMixin, models.Model):
+    sector = models.ForeignKey(
+        Sector,
+        on_delete=models.CASCADE,
+        related_name="subsectores",
+        verbose_name="Sector",
+    )
+    nombre = models.CharField(max_length=100, verbose_name="Nombre del subsector")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+
+    def __str__(self):
+        return f"{self.nombre} ({self.sector.nombre})"
+
+    class Meta:
+        verbose_name = "Subsector"
+        verbose_name_plural = "Subsectores"
+        ordering = ["sector", "nombre"]
+        unique_together = ("sector", "nombre")
+        indexes = [
+            GinIndex(
+                fields=["nombre"],
+                name="vat_subsector_nombre_trgm",
+                opclasses=["gin_trgm_ops"],
+            ),
+        ]
+
+
+class TituloReferencia(SoftDeleteModelMixin, models.Model):
+    sector = models.ForeignKey(
+        Sector,
+        on_delete=models.PROTECT,
+        related_name="titulos",
+        verbose_name="Sector",
+    )
+    subsector = models.ForeignKey(
+        Subsector,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="titulos",
+        verbose_name="Subsector",
+    )
+    codigo_referencia = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name="Código de Referencia"
+    )
+    nombre = models.CharField(max_length=200, verbose_name="Nombre del título")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    activo = models.BooleanField(default=True, verbose_name="Activo")
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Título de Referencia"
+        verbose_name_plural = "Títulos de Referencia"
+        ordering = ["nombre"]
+        indexes = [
+            GinIndex(
+                fields=["nombre"],
+                name="vat_titloreferencia_nombre_trgm",
+                opclasses=["gin_trgm_ops"],
+            ),
+        ]
+
+
+class ModalidadCursada(models.Model):
+    nombre = models.CharField(max_length=100, verbose_name="Nombre de la modalidad")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    activo = models.BooleanField(default=True, verbose_name="Activo")
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Modalidad de Cursado"
+        verbose_name_plural = "Modalidades de Cursado"
+        ordering = ["nombre"]
+
+
+class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
+    titulo_referencia = models.ForeignKey(
+        TituloReferencia,
+        on_delete=models.PROTECT,
+        related_name="planes",
+        verbose_name="Título de Referencia",
+    )
+    modalidad_cursada = models.ForeignKey(
+        ModalidadCursada,
+        on_delete=models.PROTECT,
+        related_name="planes",
+        verbose_name="Modalidad de Cursado",
+    )
+    normativa = models.CharField(
+        max_length=200, blank=True, null=True, verbose_name="Normativa"
+    )
+    version = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name="Versión"
+    )
+    horas_reloj = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Horas Reloj"
+    )
+    nivel_requerido = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Nivel Requerido"
+    )
+    nivel_certifica = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Nivel que Certifica"
+    )
+    frecuencia = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Frecuencia"
+    )
+    activo = models.BooleanField(default=True, verbose_name="Activo")
+
+    def __str__(self):
+        return f"{self.titulo_referencia.nombre} - {self.modalidad_cursada.nombre}"
+
+    class Meta:
+        verbose_name = "Plan / Versión Curricular"
+        verbose_name_plural = "Planes / Versiones Curriculares"
+        ordering = ["titulo_referencia", "modalidad_cursada"]
+        unique_together = ("titulo_referencia", "modalidad_cursada", "version")
+
+

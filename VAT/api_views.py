@@ -12,6 +12,11 @@ from VAT.models import (
     ActividadCentro,
     ParticipanteActividad,
     ModalidadInstitucional,
+    Sector,
+    Subsector,
+    TituloReferencia,
+    ModalidadCursada,
+    PlanVersionCurricular,
 )
 from VAT.serializers import (
     CentroSerializer,
@@ -23,6 +28,11 @@ from VAT.serializers import (
     MunicipioSerializer,
     LocalidadSerializer,
     ModalidadInstitucionalSerializer,
+    SectorSerializer,
+    SubsectorSerializer,
+    TituloReferenciaSerializer,
+    ModalidadCursadaSerializer,
+    PlanVersionCurricularSerializer,
 )
 from core.api_auth import HasAPIKey
 from core.models import Provincia, Municipio, Localidad
@@ -242,6 +252,83 @@ class ModalidadInstitucionalViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         activo = self.request.query_params.get("activo")
+        if activo is not None:
+            queryset = queryset.filter(activo=activo.lower() == "true")
+        return queryset
+
+
+@extend_schema(tags=["VAT - Catálogos Académicos"])
+class SectorViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+    queryset = Sector.objects.all().order_by("nombre")
+    serializer_class = SectorSerializer
+    permission_classes = [HasAPIKey]
+
+
+@extend_schema(tags=["VAT - Catálogos Académicos"])
+class SubsectorViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+    queryset = Subsector.objects.select_related("sector").order_by("sector", "nombre")
+    serializer_class = SubsectorSerializer
+    permission_classes = [HasAPIKey]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        sector_id = self.request.query_params.get("sector_id")
+        if sector_id:
+            queryset = queryset.filter(sector_id=sector_id)
+        return queryset
+
+
+@extend_schema(tags=["VAT - Catálogos Académicos"])
+class TituloReferenciaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+    queryset = TituloReferencia.objects.select_related("sector", "subsector").order_by("nombre")
+    serializer_class = TituloReferenciaSerializer
+    permission_classes = [HasAPIKey]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        sector_id = self.request.query_params.get("sector_id")
+        subsector_id = self.request.query_params.get("subsector_id")
+        activo = self.request.query_params.get("activo")
+        if sector_id:
+            queryset = queryset.filter(sector_id=sector_id)
+        if subsector_id:
+            queryset = queryset.filter(subsector_id=subsector_id)
+        if activo is not None:
+            queryset = queryset.filter(activo=activo.lower() == "true")
+        return queryset
+
+
+@extend_schema(tags=["VAT - Catálogos Académicos"])
+class ModalidadCursadaViewSet(viewsets.ModelViewSet):
+    queryset = ModalidadCursada.objects.all().order_by("nombre")
+    serializer_class = ModalidadCursadaSerializer
+    permission_classes = [HasAPIKey]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        activo = self.request.query_params.get("activo")
+        if activo is not None:
+            queryset = queryset.filter(activo=activo.lower() == "true")
+        return queryset
+
+
+@extend_schema(tags=["VAT - Catálogos Académicos"])
+class PlanVersionCurricularViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+    queryset = PlanVersionCurricular.objects.select_related(
+        "titulo_referencia", "modalidad_cursada"
+    ).order_by("titulo_referencia", "modalidad_cursada")
+    serializer_class = PlanVersionCurricularSerializer
+    permission_classes = [HasAPIKey]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        titulo_referencia_id = self.request.query_params.get("titulo_referencia_id")
+        modalidad_cursada_id = self.request.query_params.get("modalidad_cursada_id")
+        activo = self.request.query_params.get("activo")
+        if titulo_referencia_id:
+            queryset = queryset.filter(titulo_referencia_id=titulo_referencia_id)
+        if modalidad_cursada_id:
+            queryset = queryset.filter(modalidad_cursada_id=modalidad_cursada_id)
         if activo is not None:
             queryset = queryset.filter(activo=activo.lower() == "true")
         return queryset

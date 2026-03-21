@@ -10,6 +10,11 @@ from VAT.api_views import (
     MunicipioViewSet,
     LocalidadViewSet,
     ModalidadInstitucionalViewSet,
+    SectorViewSet,
+    SubsectorViewSet,
+    TituloReferenciaViewSet,
+    ModalidadCursadaViewSet,
+    PlanVersionCurricularViewSet,
 )
 
 router = DefaultRouter()
@@ -29,6 +34,15 @@ router.register(
     r"modalidades-institucionales",
     ModalidadInstitucionalViewSet,
     basename="vat-api-modalidad-institucional",
+)
+router.register(r"sectores", SectorViewSet, basename="vat-api-sector")
+router.register(r"subsectores", SubsectorViewSet, basename="vat-api-subsector")
+router.register(r"titulos-referencia", TituloReferenciaViewSet, basename="vat-api-titulo-referencia")
+router.register(r"modalidades-cursadas", ModalidadCursadaViewSet, basename="vat-api-modalidad-cursada")
+router.register(
+    r"planes-curriculares",
+    PlanVersionCurricularViewSet,
+    basename="vat-api-plan-curricular",
 )
 
 urlpatterns = [

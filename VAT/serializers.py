@@ -7,6 +7,11 @@ from VAT.models import (
     ParticipanteActividad,
     ParticipanteActividadHistorial,
     ModalidadInstitucional,
+    Sector,
+    Subsector,
+    TituloReferencia,
+    ModalidadCursada,
+    PlanVersionCurricular,
 )
 from core.models import Provincia, Municipio, Localidad
 
@@ -171,3 +176,68 @@ class ModalidadInstitucionalSerializer(serializers.ModelSerializer):
         model = ModalidadInstitucional
         fields = ["id", "nombre", "descripcion", "activo", "fecha_creacion", "fecha_modificacion"]
         read_only_fields = ["fecha_creacion", "fecha_modificacion"]
+
+
+class SectorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sector
+        fields = ["id", "nombre", "descripcion"]
+
+
+class SubsectorSerializer(serializers.ModelSerializer):
+    sector_nombre = serializers.CharField(source="sector.nombre", read_only=True)
+
+    class Meta:
+        model = Subsector
+        fields = ["id", "sector", "sector_nombre", "nombre", "descripcion"]
+
+
+class TituloReferenciaSerializer(serializers.ModelSerializer):
+    sector_nombre = serializers.CharField(source="sector.nombre", read_only=True)
+    subsector_nombre = serializers.CharField(source="subsector.nombre", read_only=True)
+
+    class Meta:
+        model = TituloReferencia
+        fields = [
+            "id",
+            "sector",
+            "sector_nombre",
+            "subsector",
+            "subsector_nombre",
+            "codigo_referencia",
+            "nombre",
+            "descripcion",
+            "activo",
+        ]
+
+
+class ModalidadCursadaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ModalidadCursada
+        fields = ["id", "nombre", "descripcion", "activo"]
+
+
+class PlanVersionCurricularSerializer(serializers.ModelSerializer):
+    titulo_referencia_nombre = serializers.CharField(
+        source="titulo_referencia.nombre", read_only=True
+    )
+    modalidad_cursada_nombre = serializers.CharField(
+        source="modalidad_cursada.nombre", read_only=True
+    )
+
+    class Meta:
+        model = PlanVersionCurricular
+        fields = [
+            "id",
+            "titulo_referencia",
+            "titulo_referencia_nombre",
+            "modalidad_cursada",
+            "modalidad_cursada_nombre",
+            "normativa",
+            "version",
+            "horas_reloj",
+            "nivel_requerido",
+            "nivel_certifica",
+            "frecuencia",
+            "activo",
+        ]
