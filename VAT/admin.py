@@ -4,9 +4,29 @@ from .models import Centro, Actividad, ParticipanteActividad, Categoria, Modalid
 
 @admin.register(Centro)
 class CentroAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "activo")
-    list_filter = ("activo",)
+    list_display = ("nombre", "modalidad_institucional", "tipo_gestion", "activo")
+    list_filter = ("activo", "modalidad_institucional", "tipo_gestion")
     search_fields = ("nombre",)
+    fieldsets = (
+        ("Información General", {
+            "fields": ("nombre", "codigo", "organizacion_asociada", "referente")
+        }),
+        ("Ubicación", {
+            "fields": ("provincia", "municipio", "localidad", "calle", "numero", "domicilio_actividad")
+        }),
+        ("Contacto", {
+            "fields": ("telefono", "celular", "correo", "sitio_web", "link_redes")
+        }),
+        ("Responsable", {
+            "fields": ("nombre_referente", "apellido_referente", "telefono_referente", "correo_referente")
+        }),
+        ("Información DER v4", {
+            "fields": ("modalidad_institucional", "tipo_gestion", "clase_institucion", "situacion", "fecha_alta")
+        }),
+        ("Estado", {
+            "fields": ("foto", "activo")
+        }),
+    )
 
 
 @admin.register(Categoria)

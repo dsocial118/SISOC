@@ -54,6 +54,11 @@ class CentroForm(forms.ModelForm):
             "referente",
             "foto",
             "activo",
+            "modalidad_institucional",
+            "tipo_gestion",
+            "clase_institucion",
+            "situacion",
+            "fecha_alta",
         ]
 
     def __init__(self, *args, **kwargs):

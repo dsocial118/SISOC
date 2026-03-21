@@ -74,6 +74,26 @@ class Centro(SoftDeleteModelMixin, models.Model):
     correo_referente = models.EmailField(
         max_length=100, verbose_name="Correo del responsable"
     )
+    modalidad_institucional = models.ForeignKey(
+        "ModalidadInstitucional",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="vat_centros",
+        verbose_name="Modalidad Institucional",
+    )
+    tipo_gestion = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="Tipo de Gestión"
+    )
+    clase_institucion = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="Clase de Institución"
+    )
+    situacion = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="Situación"
+    )
+    fecha_alta = models.DateField(
+        null=True, blank=True, verbose_name="Fecha de Alta"
+    )
 
     def __str__(self):
         return self.nombre
