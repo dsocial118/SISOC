@@ -672,3 +672,474 @@ def test_nomina_importar_view_404_si_admision_no_corresponde(client_nomina_fixtu
 def test_comedores_views_exporta_nomina_importar_view():
     """`comedores.views` expone NominaImportarView para imports de URLs."""
     assert NominaImportarView.__name__ == "NominaImportarView"
+
+
+# ---------------------------------------------------------------------------
+# Tests — nómina directa (programas 3/4, sin admisión)
+# ---------------------------------------------------------------------------
+
+import csv
+import io
+from django.core.management import call_command
+
+from comedores.models import Programas
+from comedores.views import (
+    NominaDirectaDetailView,
+    NominaDirectaCreateView,
+    NominaDirectaDeleteView,
+)
+
+
+def _programa(pk, nombre):
+    """Crea (o recupera) un Programas con ID exacto."""
+    prog, _ = Programas.objects.get_or_create(id=pk, defaults={"nombre": nombre})
+    return prog
+
+
+# ---------------------------------------------------------------------------
+# Service — agregar ciudadano a nómina directa (prog 3/4)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_agregar_ciudadano_a_nomina_directa_caso_feliz(ciudadano_fixture):
+    """Agrega ciudadano a nómina directa de un comedor 3/4 (sin admisión)."""
+    prog = _programa(3, "Abordaje comunitario - Línea Secos")
+    comedor = Comedor.objects.create(nombre="Comedor Prog 3", programa=prog)
+
+    ok, _msg = ComedorService.agregar_ciudadano_a_nomina(
+        ciudadano_id=ciudadano_fixture.pk,
+        user=mock.Mock(),
+        comedor_id=comedor.pk,
+    )
+
+    assert ok is True
+    assert Nomina.objects.filter(
+        comedor=comedor, ciudadano=ciudadano_fixture, admision__isnull=True
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_agregar_ciudadano_ya_en_nomina_directa(ciudadano_fixture):
+    """Retorna False si el ciudadano ya está en la nómina directa del comedor."""
+    prog = _programa(4, "Abordaje comunitario - Línea Tradicional")
+    comedor = Comedor.objects.create(nombre="Comedor Prog 4", programa=prog)
+    Nomina.objects.create(
+        comedor=comedor,
+        ciudadano=ciudadano_fixture,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+        ciudadano_id=ciudadano_fixture.pk,
+        user=mock.Mock(),
+        comedor_id=comedor.pk,
+    )
+
+    assert ok is False
+    assert "ya está en la nómina" in msg
+
+
+@pytest.mark.django_db
+def test_get_nomina_detail_by_comedor_solo_devuelve_nominas_directas(ciudadano_fixture):
+    """get_nomina_detail_by_comedor solo incluye nóminas con admision=null del comedor."""
+    prog = _programa(3, "Abordaje comunitario - Línea Secos")
+    comedor = Comedor.objects.create(nombre="Comedor Detail", programa=prog)
+    comedor_otro = Comedor.objects.create(nombre="Comedor Otro", programa=prog)
+    admision = Admision.objects.create(comedor=comedor)
+
+    # Nómina directa del comedor (debe aparecer)
+    Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+    # Nómina vía admisión del mismo comedor (no debe aparecer)
+    Nomina.objects.create(
+        admision=admision, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+    # Nómina directa de otro comedor (no debe aparecer)
+    Nomina.objects.create(
+        comedor=comedor_otro, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    _, *_, total, _ = ComedorService.get_nomina_detail_by_comedor(comedor.pk)
+
+    assert total == 1
+
+
+# ---------------------------------------------------------------------------
+# Signal — asignar nóminas directas al crear admisión en comedor 3/4
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_signal_asigna_nominas_directas_al_crear_admision_prog3(ciudadano_fixture):
+    """Al crear admisión en comedor prog 3, las nóminas directas pasan a esa admisión."""
+    prog = _programa(3, "Abordaje comunitario - Línea Secos")
+    comedor = Comedor.objects.create(nombre="Comedor Signal P3", programa=prog)
+    Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    admision = Admision.objects.create(comedor=comedor)
+
+    nomina = Nomina.objects.get(ciudadano=ciudadano_fixture)
+    assert nomina.admision_id == admision.pk
+    assert nomina.comedor_id is None
+
+
+@pytest.mark.django_db
+def test_signal_asigna_nominas_directas_al_crear_admision_prog4(ciudadano_fixture):
+    """Al crear admisión en comedor prog 4, las nóminas directas pasan a esa admisión."""
+    prog = _programa(4, "Abordaje comunitario - Línea Tradicional")
+    comedor = Comedor.objects.create(nombre="Comedor Signal P4", programa=prog)
+    Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    admision = Admision.objects.create(comedor=comedor)
+
+    nomina = Nomina.objects.get(ciudadano=ciudadano_fixture)
+    assert nomina.admision_id == admision.pk
+    assert nomina.comedor_id is None
+
+
+@pytest.mark.django_db
+def test_signal_no_asigna_nominas_si_programa_2(ciudadano_fixture):
+    """Al crear admisión en comedor prog 2, las nóminas directas NO se tocan."""
+    prog = _programa(2, "Alimentar comunidad")
+    comedor = Comedor.objects.create(nombre="Comedor Signal P2", programa=prog)
+    nomina = Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    Admision.objects.create(comedor=comedor)
+
+    nomina.refresh_from_db()
+    assert nomina.admision_id is None
+    assert nomina.comedor_id == comedor.pk
+
+
+@pytest.mark.django_db
+def test_signal_no_asigna_en_update_de_admision(ciudadano_fixture):
+    """El signal solo corre al crear admisión, no al actualizarla."""
+    prog = _programa(3, "Abordaje comunitario - Línea Secos")
+    comedor = Comedor.objects.create(nombre="Comedor Signal Update", programa=prog)
+    admision = Admision.objects.create(comedor=comedor)
+
+    # Nómina directa creada DESPUÉS de la admisión
+    nomina = Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    # Update de admisión no debe disparar el signal
+    admision.save()
+
+    nomina.refresh_from_db()
+    assert nomina.comedor_id == comedor.pk  # sigue sin asignarse
+    assert nomina.admision_id is None
+
+
+# ---------------------------------------------------------------------------
+# Vistas — NominaDirecta* (prog 3/4)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_nomina_directa_detail_view_responde_ok(client_nomina_fixture):
+    """NominaDirectaDetailView responde 200 con contexto correcto."""
+    prog = _programa(3, "Abordaje comunitario - Línea Secos")
+    comedor = Comedor.objects.create(nombre="Comedor Vista P3", programa=prog)
+
+    url = reverse("nomina_directa_ver", kwargs={"pk": comedor.pk})
+    response = client_nomina_fixture.get(url)
+
+    assert response.status_code == 200
+    for key in ["nomina", "cantidad_nomina", "object", "admision_pk"]:
+        assert key in response.context
+    assert response.context["admision_pk"] is None
+    assert response.context["object"].pk == comedor.pk
+
+
+@pytest.mark.django_db
+def test_nomina_directa_detail_view_muestra_solo_nominas_directas(
+    client_nomina_fixture, ciudadano_fixture
+):
+    """NominaDirectaDetailView muestra solo nóminas directas del comedor (admision=null)."""
+    prog = _programa(4, "Abordaje comunitario - Línea Tradicional")
+    comedor = Comedor.objects.create(nombre="Comedor Vista P4", programa=prog)
+    admision = Admision.objects.create(comedor=comedor)
+    # Nómina directa (debe aparecer)
+    Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+    # Nómina vía admisión (no debe aparecer)
+    Nomina.objects.create(
+        admision=admision, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    url = reverse("nomina_directa_ver", kwargs={"pk": comedor.pk})
+    response = client_nomina_fixture.get(url)
+
+    assert response.status_code == 200
+    assert response.context["cantidad_nomina"] == 1
+
+
+@pytest.mark.django_db
+def test_nomina_directa_detail_view_404_comedor_inexistente(client_nomina_fixture):
+    """Retorna 404 si el comedor no existe."""
+    url = reverse("nomina_directa_ver", kwargs={"pk": 99999})
+    response = client_nomina_fixture.get(url)
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_nomina_directa_detail_view_404_para_programa_con_admision(
+    client_nomina_fixture,
+):
+    """La nómina directa solo aplica a programas 3/4."""
+    prog = _programa(2, "Alimentar comunidad")
+    comedor = Comedor.objects.create(nombre="Comedor Vista P2", programa=prog)
+
+    url = reverse("nomina_directa_ver", kwargs={"pk": comedor.pk})
+    response = client_nomina_fixture.get(url)
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_nomina_directa_delete_view_muestra_cancelacion_directa(
+    client_nomina_fixture, ciudadano_fixture
+):
+    """La confirmación de baja directa debe volver a la nómina directa."""
+    prog = _programa(3, "Abordaje comunitario - Línea Secos")
+    comedor = Comedor.objects.create(nombre="Comedor Borrado", programa=prog)
+    nomina = Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    url = reverse(
+        "nomina_directa_borrar", kwargs={"pk": comedor.pk, "pk2": nomina.pk}
+    )
+    response = client_nomina_fixture.get(url)
+
+    assert response.status_code == 200
+    assert (
+        reverse("nomina_directa_ver", kwargs={"pk": comedor.pk})
+        in response.content.decode()
+    )
+
+
+@pytest.mark.django_db
+def test_nomina_editar_ajax_funciona_con_nomina_directa(
+    client_nomina_fixture, ciudadano_fixture
+):
+    """nomina_editar_ajax acepta nóminas directas (comedor FK, sin admision)."""
+    prog = _programa(3, "Abordaje comunitario - Línea Secos")
+    comedor = Comedor.objects.create(nombre="Comedor Ajax", programa=prog)
+    nomina = Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    url = reverse("nomina_editar_ajax", kwargs={"pk": nomina.pk})
+    response = client_nomina_fixture.get(url)
+
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_nomina_cambiar_estado_funciona_con_nomina_directa(
+    client_nomina_fixture, ciudadano_fixture
+):
+    """nomina_cambiar_estado acepta nóminas directas y cambia el estado."""
+    prog = _programa(4, "Abordaje comunitario - Línea Tradicional")
+    comedor = Comedor.objects.create(nombre="Comedor Estado", programa=prog)
+    nomina = Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    url = reverse("nomina_cambiar_estado", kwargs={"pk": nomina.pk})
+    response = client_nomina_fixture.post(url, {"estado": Nomina.ESTADO_ESPERA})
+
+    assert response.status_code == 200
+    nomina.refresh_from_db()
+    assert nomina.estado == Nomina.ESTADO_ESPERA
+
+
+# ---------------------------------------------------------------------------
+# Management command — recuperar_nominas_csv
+# ---------------------------------------------------------------------------
+
+
+def _csv_content(rows):
+    """Genera contenido CSV con el header del backup real (9 columnas)."""
+    header = "id,ciudadano_id,comedor_id,fecha,estado,observaciones,deleted_at,deleted_by_id,admision_id_sugerida"
+    lines = [header] + [
+        ",".join(
+            [
+                str(r["id"]),
+                str(r["ciudadano_id"]),
+                str(r["comedor_id"]),
+                "2025-12-16 11:37:56",
+                "activo",
+                "",  # observaciones
+                "",  # deleted_at
+                "",  # deleted_by_id
+                str(r.get("admision_id_sugerida", "")),
+            ]
+        )
+        for r in rows
+    ]
+    return "\n".join(lines)
+
+
+@pytest.mark.django_db
+def test_recuperar_nominas_csv_asigna_comedor_prog34(tmp_path, ciudadano_fixture):
+    """Para prog 3/4, asigna comedor_id y deja admision=null."""
+    prog = _programa(3, "Abordaje comunitario - Línea Secos")
+    comedor = Comedor.objects.create(nombre="Comedor CSV P3", programa=prog)
+    nomina = Nomina.objects.create(
+        ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    csv_file = tmp_path / "backup.csv"
+    csv_file.write_text(
+        _csv_content(
+            [
+                {
+                    "id": nomina.pk,
+                    "ciudadano_id": ciudadano_fixture.pk,
+                    "comedor_id": comedor.pk,
+                }
+            ]
+        )
+    )
+
+    call_command("recuperar_nominas_csv", str(csv_file))
+
+    nomina.refresh_from_db()
+    assert nomina.comedor_id == comedor.pk
+    assert nomina.admision_id is None
+
+
+@pytest.mark.django_db
+def test_recuperar_nominas_csv_asigna_admision_prog2(tmp_path, ciudadano_fixture):
+    """Para prog 2, asigna comedor_id y admision_id desde admision_id_sugerida."""
+    prog = _programa(2, "Alimentar comunidad")
+    comedor = Comedor.objects.create(nombre="Comedor CSV P2", programa=prog)
+    admision = Admision.objects.create(comedor=comedor)
+    nomina = Nomina.objects.create(
+        ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    csv_file = tmp_path / "backup.csv"
+    csv_file.write_text(
+        _csv_content(
+            [
+                {
+                    "id": nomina.pk,
+                    "ciudadano_id": ciudadano_fixture.pk,
+                    "comedor_id": comedor.pk,
+                    "admision_id_sugerida": admision.pk,
+                }
+            ]
+        )
+    )
+
+    call_command("recuperar_nominas_csv", str(csv_file))
+
+    nomina.refresh_from_db()
+    assert nomina.comedor_id == comedor.pk
+    assert nomina.admision_id == admision.pk
+
+
+@pytest.mark.django_db
+def test_recuperar_nominas_csv_dry_run_no_modifica(tmp_path, ciudadano_fixture):
+    """Con --dry-run, no se aplica ningún cambio a la BD."""
+    prog = _programa(3, "Abordaje comunitario - Línea Secos")
+    comedor = Comedor.objects.create(nombre="Comedor DryRun", programa=prog)
+    nomina = Nomina.objects.create(
+        ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    csv_file = tmp_path / "backup.csv"
+    csv_file.write_text(
+        _csv_content(
+            [
+                {
+                    "id": nomina.pk,
+                    "ciudadano_id": ciudadano_fixture.pk,
+                    "comedor_id": comedor.pk,
+                }
+            ]
+        )
+    )
+
+    call_command("recuperar_nominas_csv", str(csv_file), "--dry-run")
+
+    nomina.refresh_from_db()
+    assert nomina.comedor_id is None  # sin cambios
+
+
+@pytest.mark.django_db
+def test_recuperar_nominas_csv_omite_comedor_no_encontrado(tmp_path, ciudadano_fixture):
+    """Si el comedor_id del CSV no existe en la BD, la nómina queda sin cambios."""
+    nomina = Nomina.objects.create(
+        ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    csv_file = tmp_path / "backup.csv"
+    csv_file.write_text(
+        _csv_content(
+            [
+                {
+                    "id": nomina.pk,
+                    "ciudadano_id": ciudadano_fixture.pk,
+                    "comedor_id": 99999,
+                }
+            ]
+        )
+    )
+
+    call_command("recuperar_nominas_csv", str(csv_file))
+
+    nomina.refresh_from_db()
+    assert nomina.comedor_id is None
+
+
+@pytest.mark.django_db
+def test_recuperar_nominas_csv_incluye_soft_deleted(tmp_path, ciudadano_fixture):
+    """El command procesa también las nóminas soft-deleted (all_objects)."""
+    from django.utils import timezone
+
+    prog = _programa(3, "Abordaje comunitario - Línea Secos")
+    comedor = Comedor.objects.create(nombre="Comedor SoftDel", programa=prog)
+    nomina = Nomina.objects.create(
+        ciudadano=ciudadano_fixture,
+        estado=Nomina.ESTADO_BAJA,
+        deleted_at=timezone.now(),
+    )
+
+    csv_file = tmp_path / "backup.csv"
+    csv_file.write_text(
+        _csv_content(
+            [
+                {
+                    "id": nomina.pk,
+                    "ciudadano_id": ciudadano_fixture.pk,
+                    "comedor_id": comedor.pk,
+                }
+            ]
+        )
+    )
+
+    call_command("recuperar_nominas_csv", str(csv_file))
+
+    nomina_actualizada = Nomina.all_objects.get(pk=nomina.pk)
+    assert nomina_actualizada.comedor_id == comedor.pk
+
+
+def test_comedores_views_exporta_vistas_directas():
+    """comedores.views expone las tres vistas de nómina directa."""
+    assert NominaDirectaDetailView.__name__ == "NominaDirectaDetailView"
+    assert NominaDirectaCreateView.__name__ == "NominaDirectaCreateView"
+    assert NominaDirectaDeleteView.__name__ == "NominaDirectaDeleteView"

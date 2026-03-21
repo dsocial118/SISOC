@@ -49,14 +49,17 @@ def test_upsert_fixture_reintenta_fk_hijo_antes_de_padre(tmp_path):
 def test_handle_sincroniza_catalogo_cdi_despues_de_cargar():
     command = Command()
 
-    with patch.object(command, "load_fixtures") as load_mock, patch(
-        "core.management.commands.load_fixtures.sync_catalogo_intervenciones",
-        return_value={
-            "tipos_sincronizados": 1,
-            "subtipos_sincronizados": 2,
-            "subtipos_vacios_eliminados": 3,
-        },
-    ) as sync_mock:
+    with (
+        patch.object(command, "load_fixtures") as load_mock,
+        patch(
+            "core.management.commands.load_fixtures.sync_catalogo_intervenciones",
+            return_value={
+                "tipos_sincronizados": 1,
+                "subtipos_sincronizados": 2,
+                "subtipos_vacios_eliminados": 3,
+            },
+        ) as sync_mock,
+    ):
         command.handle(force=False)
 
     load_mock.assert_called_once_with()

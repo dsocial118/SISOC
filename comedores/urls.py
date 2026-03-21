@@ -13,6 +13,9 @@ from comedores.views import (
     NominaDetailView,
     NominaCreateView,
     NominaDeleteView,
+    NominaDirectaCreateView,
+    NominaDirectaDeleteView,
+    NominaDirectaDetailView,
     NominaImportarView,
     AsignarDuplaListView,
     relevamiento_crear_editar_ajax,
@@ -226,6 +229,28 @@ urlpatterns = [
             NominaImportarView.as_view()
         ),
         name="nomina_importar",
+    ),
+    # Nómina directa — programas 3/4 (Abordaje comunitario, sin admisión)
+    path(
+        "comedores/<int:pk>/nomina/",
+        permissions_any_required(["comedores.view_nomina"])(
+            NominaDirectaDetailView.as_view()
+        ),
+        name="nomina_directa_ver",
+    ),
+    path(
+        "comedores/<int:pk>/nomina/crear/",
+        permissions_any_required(["comedores.add_nomina"])(
+            NominaDirectaCreateView.as_view()
+        ),
+        name="nomina_directa_crear",
+    ),
+    path(
+        "comedores/<int:pk>/nomina/<int:pk2>/eliminar/",
+        permissions_any_required(["comedores.delete_nomina"])(
+            NominaDirectaDeleteView.as_view()
+        ),
+        name="nomina_directa_borrar",
     ),
     path(
         "comedores/ajax/<int:pk>/relevamiento/",
