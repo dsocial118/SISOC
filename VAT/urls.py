@@ -36,6 +36,24 @@ from VAT.views.modalidad_institucional import (
     ModalidadInstitucionalDeleteView,
 )
 
+from VAT.views.catalogo import (
+    SectorListView,
+    SectorCreateView,
+    SectorDetailView,
+    SectorUpdateView,
+    SectorDeleteView,
+    TituloReferenciaListView,
+    TituloReferenciaCreateView,
+    TituloReferenciaDetailView,
+    TituloReferenciaUpdateView,
+    TituloReferenciaDeleteView,
+    PlanVersionCurricularListView,
+    PlanVersionCurricularCreateView,
+    PlanVersionCurricularDetailView,
+    PlanVersionCurricularUpdateView,
+    PlanVersionCurricularDeleteView,
+)
+
 
 urlpatterns = [
     path(
@@ -177,6 +195,84 @@ urlpatterns = [
             ModalidadInstitucionalDeleteView.as_view()
         ),
         name="vat_modalidad_institucional_delete",
+    ),
+    # Catálogos Académicos - Sectores
+    path(
+        "vat/catalogos/sectores/",
+        permissions_any_required(["VAT.view_sector"])(SectorListView.as_view()),
+        name="vat_sector_list",
+    ),
+    path(
+        "vat/catalogos/sectores/nuevo/",
+        permissions_any_required(["VAT.add_sector"])(SectorCreateView.as_view()),
+        name="vat_sector_create",
+    ),
+    path(
+        "vat/catalogos/sectores/<int:pk>/",
+        permissions_any_required(["VAT.view_sector"])(SectorDetailView.as_view()),
+        name="vat_sector_detail",
+    ),
+    path(
+        "vat/catalogos/sectores/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_sector"])(SectorUpdateView.as_view()),
+        name="vat_sector_update",
+    ),
+    path(
+        "vat/catalogos/sectores/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_sector"])(SectorDeleteView.as_view()),
+        name="vat_sector_delete",
+    ),
+    # Catálogos Académicos - Títulos de Referencia
+    path(
+        "vat/catalogos/titulos-referencia/",
+        permissions_any_required(["VAT.view_tituloreferencia"])(TituloReferenciaListView.as_view()),
+        name="vat_titulorreferencia_list",
+    ),
+    path(
+        "vat/catalogos/titulos-referencia/nuevo/",
+        permissions_any_required(["VAT.add_tituloreferencia"])(TituloReferenciaCreateView.as_view()),
+        name="vat_titulorreferencia_create",
+    ),
+    path(
+        "vat/catalogos/titulos-referencia/<int:pk>/",
+        permissions_any_required(["VAT.view_tituloreferencia"])(TituloReferenciaDetailView.as_view()),
+        name="vat_titulorreferencia_detail",
+    ),
+    path(
+        "vat/catalogos/titulos-referencia/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_tituloreferencia"])(TituloReferenciaUpdateView.as_view()),
+        name="vat_titulorreferencia_update",
+    ),
+    path(
+        "vat/catalogos/titulos-referencia/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_tituloreferencia"])(TituloReferenciaDeleteView.as_view()),
+        name="vat_titulorreferencia_delete",
+    ),
+    # Catálogos Académicos - Planes Curriculares
+    path(
+        "vat/catalogos/planes-curriculares/",
+        permissions_any_required(["VAT.view_planversioncurricular"])(PlanVersionCurricularListView.as_view()),
+        name="vat_planversioncurricular_list",
+    ),
+    path(
+        "vat/catalogos/planes-curriculares/nuevo/",
+        permissions_any_required(["VAT.add_planversioncurricular"])(PlanVersionCurricularCreateView.as_view()),
+        name="vat_planversioncurricular_create",
+    ),
+    path(
+        "vat/catalogos/planes-curriculares/<int:pk>/",
+        permissions_any_required(["VAT.view_planversioncurricular"])(PlanVersionCurricularDetailView.as_view()),
+        name="vat_planversioncurricular_detail",
+    ),
+    path(
+        "vat/catalogos/planes-curriculares/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_planversioncurricular"])(PlanVersionCurricularUpdateView.as_view()),
+        name="vat_planversioncurricular_update",
+    ),
+    path(
+        "vat/catalogos/planes-curriculares/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_planversioncurricular"])(PlanVersionCurricularDeleteView.as_view()),
+        name="vat_planversioncurricular_delete",
     ),
 
 ]

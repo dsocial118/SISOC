@@ -12,6 +12,11 @@ from VAT.models import (
     Categoria,
     Actividad,
     ModalidadInstitucional,
+    Sector,
+    Subsector,
+    TituloReferencia,
+    ModalidadCursada,
+    PlanVersionCurricular,
 )
 from VAT.services.participante import (
     ParticipanteService,
@@ -298,3 +303,171 @@ class ModalidadInstitucionalForm(forms.ModelForm):
     class Meta:
         model = ModalidadInstitucional
         fields = ["nombre", "descripcion", "activo"]
+
+
+class SectorForm(forms.ModelForm):
+    nombre = forms.CharField(
+        label="Nombre del Sector",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    descripcion = forms.CharField(
+        label="Descripción",
+        required=False,
+        widget=forms.Textarea(
+            attrs={"class": "form-control", "rows": 4}
+        ),
+    )
+
+    class Meta:
+        model = Sector
+        fields = ["nombre", "descripcion"]
+
+
+class SubsectorForm(forms.ModelForm):
+    sector = forms.ModelChoiceField(
+        queryset=Sector.objects.all(),
+        label="Sector",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    nombre = forms.CharField(
+        label="Nombre del Subsector",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    descripcion = forms.CharField(
+        label="Descripción",
+        required=False,
+        widget=forms.Textarea(
+            attrs={"class": "form-control", "rows": 4}
+        ),
+    )
+
+    class Meta:
+        model = Subsector
+        fields = ["sector", "nombre", "descripcion"]
+
+
+class TituloReferenciaForm(forms.ModelForm):
+    sector = forms.ModelChoiceField(
+        queryset=Sector.objects.all(),
+        label="Sector",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    subsector = forms.ModelChoiceField(
+        queryset=Subsector.objects.all(),
+        label="Subsector",
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    nombre = forms.CharField(
+        label="Nombre del Título",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    codigo_referencia = forms.CharField(
+        label="Código de Referencia",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    descripcion = forms.CharField(
+        label="Descripción",
+        required=False,
+        widget=forms.Textarea(
+            attrs={"class": "form-control", "rows": 4}
+        ),
+    )
+    activo = forms.BooleanField(
+        label="Activo",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    class Meta:
+        model = TituloReferencia
+        fields = ["sector", "subsector", "nombre", "codigo_referencia", "descripcion", "activo"]
+
+
+class ModalidadCursadaForm(forms.ModelForm):
+    nombre = forms.CharField(
+        label="Nombre de la Modalidad",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    descripcion = forms.CharField(
+        label="Descripción",
+        required=False,
+        widget=forms.Textarea(
+            attrs={"class": "form-control", "rows": 4}
+        ),
+    )
+    activo = forms.BooleanField(
+        label="Activo",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    class Meta:
+        model = ModalidadCursada
+        fields = ["nombre", "descripcion", "activo"]
+
+
+class PlanVersionCurricularForm(forms.ModelForm):
+    titulo_referencia = forms.ModelChoiceField(
+        queryset=TituloReferencia.objects.all(),
+        label="Título de Referencia",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    modalidad_cursada = forms.ModelChoiceField(
+        queryset=ModalidadCursada.objects.all(),
+        label="Modalidad de Cursado",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    version = forms.CharField(
+        label="Versión",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    normativa = forms.CharField(
+        label="Normativa",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    horas_reloj = forms.IntegerField(
+        label="Horas Reloj",
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    nivel_requerido = forms.CharField(
+        label="Nivel Requerido",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    nivel_certifica = forms.CharField(
+        label="Nivel que Certifica",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    frecuencia = forms.CharField(
+        label="Frecuencia",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    activo = forms.BooleanField(
+        label="Activo",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    class Meta:
+        model = PlanVersionCurricular
+        fields = [
+            "titulo_referencia",
+            "modalidad_cursada",
+            "version",
+            "normativa",
+            "horas_reloj",
+            "nivel_requerido",
+            "nivel_certifica",
+            "frecuencia",
+            "activo",
+        ]

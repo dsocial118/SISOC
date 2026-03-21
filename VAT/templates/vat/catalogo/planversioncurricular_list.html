@@ -1,0 +1,61 @@
+{% extends "includes/main.html" %}
+{% block title %}VAT - Planes Curriculares{% endblock %}
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item"><a href="{% url 'vat_centro_list' %}">VAT</a></li>
+    <li class="breadcrumb-item active">Planes Curriculares</li>
+</ol>
+{% endblock %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title">Planes Curriculares</h3>
+                <div class="card-tools">
+                    <a href="{% url 'vat_planversioncurricular_create' %}" class="btn btn-sm btn-success">
+                        <i class="fas fa-plus"></i> Agregar
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if planes %}
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Modalidad</th>
+                            <th>Versión</th>
+                            <th>Horas</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plan in planes %}
+                        <tr>
+                            <td><a href="{% url 'vat_planversioncurricular_detail' plan.id %}">{{ plan.titulo_referencia.nombre }}</a></td>
+                            <td>{{ plan.modalidad_cursada.nombre }}</td>
+                            <td>{{ plan.version|default:"-" }}</td>
+                            <td>{{ plan.horas_reloj|default:"-" }}</td>
+                            <td>{% if plan.activo %}<span class="badge badge-success">Activo</span>{% else %}<span class="badge badge-danger">Inactivo</span>{% endif %}</td>
+                            <td>
+                                <a href="{% url 'vat_planversioncurricular_detail' plan.id %}" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i></a>
+                                <a href="{% url 'vat_planversioncurricular_update' plan.id %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                                <form method="post" action="{% url 'vat_planversioncurricular_delete' plan.id %}" style="display:inline;" onsubmit="return confirm('¿Está seguro?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted">No hay planes registrados.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
