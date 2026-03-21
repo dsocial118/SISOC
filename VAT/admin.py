@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Centro, Actividad, ParticipanteActividad, Categoria
+from .models import Centro, Actividad, ParticipanteActividad, Categoria, ModalidadInstitucional
 
 
 @admin.register(Centro)
@@ -45,3 +45,11 @@ class ParticipanteActividadAdmin(admin.ModelAdmin):
     list_display = ("actividad_centro", "ciudadano", "fecha_registro")
     search_fields = ("ciudadano__apellido", "ciudadano__nombre", "ciudadano__documento")
     list_filter = ("actividad_centro__centro",)
+
+
+@admin.register(ModalidadInstitucional)
+class ModalidadInstitucionalAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "activo", "fecha_creacion")
+    list_filter = ("activo", "fecha_creacion")
+    search_fields = ("nombre",)
+    readonly_fields = ("fecha_creacion", "fecha_modificacion")

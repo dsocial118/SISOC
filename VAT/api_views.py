@@ -11,6 +11,7 @@ from VAT.models import (
     Actividad,
     ActividadCentro,
     ParticipanteActividad,
+    ModalidadInstitucional,
 )
 from VAT.serializers import (
     CentroSerializer,
@@ -21,6 +22,7 @@ from VAT.serializers import (
     ProvinciaSerializer,
     MunicipioSerializer,
     LocalidadSerializer,
+    ModalidadInstitucionalSerializer,
 )
 from core.api_auth import HasAPIKey
 from core.models import Provincia, Municipio, Localidad
@@ -228,4 +230,18 @@ class LocalidadViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(municipio_id=municipio_id)
         elif provincia_id:
             queryset = queryset.filter(municipio__provincia_id=provincia_id)
+        return queryset
+
+
+@extend_schema(tags=["VAT - Modalidades Institucionales"])
+class ModalidadInstitucionalViewSet(viewsets.ModelViewSet):
+    queryset = ModalidadInstitucional.objects.all().order_by("nombre")
+    serializer_class = ModalidadInstitucionalSerializer
+    permission_classes = [HasAPIKey]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        activo = self.request.query_params.get("activo")
+        if activo is not None:
+            queryset = queryset.filter(activo=activo.lower() == "true")
         return queryset

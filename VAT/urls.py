@@ -28,6 +28,14 @@ from VAT.views.participante import (
 
 from .views.encuentro import RegistrarAsistenciaView
 
+from VAT.views.modalidad_institucional import (
+    ModalidadInstitucionalListView,
+    ModalidadInstitucionalCreateView,
+    ModalidadInstitucionalDetailView,
+    ModalidadInstitucionalUpdateView,
+    ModalidadInstitucionalDeleteView,
+)
+
 
 urlpatterns = [
     path(
@@ -133,6 +141,42 @@ urlpatterns = [
         "vat/actividades/nueva/",
         permissions_any_required(["VAT.view_centro"])(ActividadCreateView.as_view()),
         name="vat_actividad_create_sola",
+    ),
+    # Modalidades Institucionales
+    path(
+        "vat/modalidades-institucionales/",
+        permissions_any_required(["VAT.view_modalidadinstitucional"])(
+            ModalidadInstitucionalListView.as_view()
+        ),
+        name="vat_modalidad_institucional_list",
+    ),
+    path(
+        "vat/modalidades-institucionales/nueva/",
+        permissions_any_required(["VAT.add_modalidadinstitucional"])(
+            ModalidadInstitucionalCreateView.as_view()
+        ),
+        name="vat_modalidad_institucional_create",
+    ),
+    path(
+        "vat/modalidades-institucionales/<int:pk>/",
+        permissions_any_required(["VAT.view_modalidadinstitucional"])(
+            ModalidadInstitucionalDetailView.as_view()
+        ),
+        name="vat_modalidad_institucional_detail",
+    ),
+    path(
+        "vat/modalidades-institucionales/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_modalidadinstitucional"])(
+            ModalidadInstitucionalUpdateView.as_view()
+        ),
+        name="vat_modalidad_institucional_update",
+    ),
+    path(
+        "vat/modalidades-institucionales/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_modalidadinstitucional"])(
+            ModalidadInstitucionalDeleteView.as_view()
+        ),
+        name="vat_modalidad_institucional_delete",
     ),
 
 ]

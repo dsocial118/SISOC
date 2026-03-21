@@ -9,6 +9,7 @@ from VAT.api_views import (
     ProvinciaViewSet,
     MunicipioViewSet,
     LocalidadViewSet,
+    ModalidadInstitucionalViewSet,
 )
 
 router = DefaultRouter()
@@ -24,6 +25,11 @@ router.register(
 router.register(r"provincias", ProvinciaViewSet, basename="vat-api-provincia")
 router.register(r"municipios", MunicipioViewSet, basename="vat-api-municipio")
 router.register(r"localidades", LocalidadViewSet, basename="vat-api-localidad")
+router.register(
+    r"modalidades-institucionales",
+    ModalidadInstitucionalViewSet,
+    basename="vat-api-modalidad-institucional",
+)
 
 urlpatterns = [
     path("", include(router.urls)),

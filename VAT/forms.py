@@ -11,6 +11,7 @@ from VAT.models import (
     ParticipanteActividad,
     Categoria,
     Actividad,
+    ModalidadInstitucional,
 )
 from VAT.services.participante import (
     ParticipanteService,
@@ -259,3 +260,36 @@ class ActividadForm(forms.ModelForm):
     class Meta:
         model = Actividad
         fields = ["categoria", "nombre"]
+
+
+class ModalidadInstitucionalForm(forms.ModelForm):
+    nombre = forms.CharField(
+        label="Nombre de la Modalidad",
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Ej. Presencial, Virtual, Semipresencial",
+            }
+        ),
+    )
+    descripcion = forms.CharField(
+        label="Descripción",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Descripción detallada de la modalidad",
+                "rows": 4,
+            }
+        ),
+    )
+    activo = forms.BooleanField(
+        label="Activo",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    class Meta:
+        model = ModalidadInstitucional
+        fields = ["nombre", "descripcion", "activo"]

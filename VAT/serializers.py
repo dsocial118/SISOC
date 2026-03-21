@@ -6,6 +6,7 @@ from VAT.models import (
     ActividadCentro,
     ParticipanteActividad,
     ParticipanteActividadHistorial,
+    ModalidadInstitucional,
 )
 from core.models import Provincia, Municipio, Localidad
 
@@ -154,3 +155,10 @@ class LocalidadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Localidad
         fields = ["id", "nombre", "municipio", "municipio_nombre", "provincia_nombre"]
+
+
+class ModalidadInstitucionalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ModalidadInstitucional
+        fields = ["id", "nombre", "descripcion", "activo", "fecha_creacion", "fecha_modificacion"]
+        read_only_fields = ["fecha_creacion", "fecha_modificacion"]
