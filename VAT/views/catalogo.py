@@ -19,6 +19,63 @@ from VAT.forms import (
 )
 
 
+# ============ MODALIDAD CURSADA ============
+
+class ModalidadCursadaListView(LoginRequiredMixin, ListView):
+    model = ModalidadCursada
+    template_name = "vat/catalogo/modalidadcursada_list.html"
+    context_object_name = "modalidades"
+    paginate_by = 50
+
+    def get_queryset(self):
+        return super().get_queryset().order_by("nombre")
+
+
+class ModalidadCursadaCreateView(LoginRequiredMixin, CreateView):
+    model = ModalidadCursada
+    form_class = ModalidadCursadaForm
+    template_name = "vat/catalogo/modalidadcursada_form.html"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Modalidad de cursado creada correctamente.")
+        return response
+
+    def get_success_url(self):
+        return reverse("vat_modalidadcursada_detail", kwargs={"pk": self.object.pk})
+
+
+class ModalidadCursadaDetailView(LoginRequiredMixin, DetailView):
+    model = ModalidadCursada
+    template_name = "vat/catalogo/modalidadcursada_detail.html"
+    context_object_name = "modalidad"
+
+
+class ModalidadCursadaUpdateView(LoginRequiredMixin, UpdateView):
+    model = ModalidadCursada
+    form_class = ModalidadCursadaForm
+    template_name = "vat/catalogo/modalidadcursada_form.html"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Modalidad de cursado actualizada correctamente.")
+        return response
+
+    def get_success_url(self):
+        return reverse("vat_modalidadcursada_detail", kwargs={"pk": self.object.pk})
+
+
+class ModalidadCursadaDeleteView(LoginRequiredMixin, DeleteView):
+    model = ModalidadCursada
+    template_name = "vat/catalogo/modalidadcursada_confirm_delete.html"
+    context_object_name = "modalidad"
+    success_url = reverse_lazy("vat_modalidadcursada_list")
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Modalidad de cursado eliminada correctamente.")
+        return super().delete(request, *args, **kwargs)
+
+
 # ============ SECTOR ============
 
 class SectorListView(LoginRequiredMixin, ListView):
@@ -73,10 +130,135 @@ class SectorUpdateView(LoginRequiredMixin, UpdateView):
 class SectorDeleteView(LoginRequiredMixin, DeleteView):
     model = Sector
     template_name = "vat/catalogo/sector_confirm_delete.html"
+    context_object_name = "sector"
     success_url = reverse_lazy("vat_sector_list")
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, "Sector eliminado correctamente.")
+        return super().delete(request, *args, **kwargs)
+
+
+# ============ SUBSECTOR ============
+
+class SubsectorListView(LoginRequiredMixin, ListView):
+    model = Subsector
+    template_name = "vat/catalogo/subsector_list.html"
+    context_object_name = "subsectores"
+    paginate_by = 50
+
+    def get_queryset(self):
+        queryset = super().get_queryset().select_related("sector").order_by("sector__nombre", "nombre")
+        sector_id = self.request.GET.get("sector")
+        if sector_id:
+            queryset = queryset.filter(sector_id=sector_id)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["sectores"] = Sector.objects.all().order_by("nombre")
+        context["sector_filter"] = self.request.GET.get("sector")
+        return context
+
+
+class SubsectorCreateView(LoginRequiredMixin, CreateView):
+    model = Subsector
+    form_class = SubsectorForm
+    template_name = "vat/catalogo/subsector_form.html"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Subsector creado correctamente.")
+        return response
+
+    def get_success_url(self):
+        return reverse("vat_subsector_detail", kwargs={"pk": self.object.pk})
+
+
+class SubsectorDetailView(LoginRequiredMixin, DetailView):
+    model = Subsector
+    template_name = "vat/catalogo/subsector_detail.html"
+    context_object_name = "subsector"
+
+
+class SubsectorUpdateView(LoginRequiredMixin, UpdateView):
+    model = Subsector
+    form_class = SubsectorForm
+    template_name = "vat/catalogo/subsector_form.html"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Subsector actualizado correctamente.")
+        return response
+
+    def get_success_url(self):
+        return reverse("vat_subsector_detail", kwargs={"pk": self.object.pk})
+
+
+class SubsectorDeleteView(LoginRequiredMixin, DeleteView):
+    model = Subsector
+    template_name = "vat/catalogo/subsector_confirm_delete.html"
+    context_object_name = "subsector"
+    success_url = reverse_lazy("vat_subsector_list")
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Subsector eliminado correctamente.")
+        return super().delete(request, *args, **kwargs)
+
+
+# ============ MODALIDAD CURSADA ============
+
+class ModalidadCursadaListView(LoginRequiredMixin, ListView):
+    model = ModalidadCursada
+    template_name = "vat/catalogo/modalidadcursada_list.html"
+    context_object_name = "modalidades"
+    paginate_by = 50
+
+    def get_queryset(self):
+        return super().get_queryset().order_by("nombre")
+
+
+class ModalidadCursadaCreateView(LoginRequiredMixin, CreateView):
+    model = ModalidadCursada
+    form_class = ModalidadCursadaForm
+    template_name = "vat/catalogo/modalidadcursada_form.html"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Modalidad de cursado creada correctamente.")
+        return response
+
+    def get_success_url(self):
+        return reverse("vat_modalidadcursada_detail", kwargs={"pk": self.object.pk})
+
+
+class ModalidadCursadaDetailView(LoginRequiredMixin, DetailView):
+    model = ModalidadCursada
+    template_name = "vat/catalogo/modalidadcursada_detail.html"
+    context_object_name = "modalidad"
+
+
+class ModalidadCursadaUpdateView(LoginRequiredMixin, UpdateView):
+    model = ModalidadCursada
+    form_class = ModalidadCursadaForm
+    template_name = "vat/catalogo/modalidadcursada_form.html"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Modalidad de cursado actualizada correctamente.")
+        return response
+
+    def get_success_url(self):
+        return reverse("vat_modalidadcursada_detail", kwargs={"pk": self.object.pk})
+
+
+class ModalidadCursadaDeleteView(LoginRequiredMixin, DeleteView):
+    model = ModalidadCursada
+    template_name = "vat/catalogo/modalidadcursada_confirm_delete.html"
+    context_object_name = "modalidad"
+    success_url = reverse_lazy("vat_modalidadcursada_list")
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Modalidad de cursado eliminada correctamente.")
         return super().delete(request, *args, **kwargs)
 
 
@@ -150,6 +332,7 @@ class TituloReferenciaUpdateView(LoginRequiredMixin, UpdateView):
 class TituloReferenciaDeleteView(LoginRequiredMixin, DeleteView):
     model = TituloReferencia
     template_name = "vat/catalogo/titulorreferencia_confirm_delete.html"
+    context_object_name = "tituloreferencia"
     success_url = reverse_lazy("vat_titulorreferencia_list")
 
     def delete(self, request, *args, **kwargs):
@@ -224,6 +407,7 @@ class PlanVersionCurricularUpdateView(LoginRequiredMixin, UpdateView):
 class PlanVersionCurricularDeleteView(LoginRequiredMixin, DeleteView):
     model = PlanVersionCurricular
     template_name = "vat/catalogo/planversioncurricular_confirm_delete.html"
+    context_object_name = "planversioncurricular"
     success_url = reverse_lazy("vat_planversioncurricular_list")
 
     def delete(self, request, *args, **kwargs):

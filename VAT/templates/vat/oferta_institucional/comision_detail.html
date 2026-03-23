@@ -1,0 +1,191 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}{{ comision }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <a href="{% url 'vat_comision_list' %}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+                <div>
+                    <h1 class="h2 mb-0" style="color: #1f3a93;"><i class="bi-people me-2"></i>Comisión</h1>
+                    <small class="text-muted">{{ comision }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Código de Comisión</label><br><p class="mb-0">{{ comision.codigo_comision }}</p></div>
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Nombre</label><br><p class="mb-0">{{ comision.nombre }}</p></div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Oferta</label><br><p class="mb-0">{{ comision.oferta }}</p></div>
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Ubicación</label><br><p class="mb-0">{{ comision.ubicacion|default:"—" }}</p></div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Fecha Inicio</label><br><p class="mb-0">{{ comision.fecha_inicio|date:"d/m/Y" }}</p></div>
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Fecha Fin</label><br><p class="mb-0">{{ comision.fecha_fin|date:"d/m/Y" }}</p></div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Cupo Total</label><br><p class="mb-0">{{ comision.cupo }}</p></div>
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Estado</label><br><span class="badge bg-info bg-opacity-10 text-info">{{ comision.get_estado_display }}</span></div>
+                    </div>
+
+                    {% if comision.observaciones %}
+                    <hr class="my-4">
+                    <div class="row"><div class="col-md-12">
+                        <label class="form-label small fw-600 text-muted">Observaciones</label>
+                        <p class="mb-0">{{ comision.observaciones }}</p>
+                    </div></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-calendar-week me-2" style="color: #1f3a93;"></i>Horarios</h5>
+                    {% if perms.VAT.add_comisionhorario %}
+                    <a href="{% url 'vat_comision_horario_create' %}?comision={{ comision.id }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>Agregar Horario
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if horarios %}
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Día</th>
+                                <th>Desde</th>
+                                <th>Hasta</th>
+                                <th>Aula/Espacio</th>
+                                <th>Vigente</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for horario in horarios %}
+                            <tr>
+                                <td>{{ horario.dia_semana }}</td>
+                                <td>{{ horario.hora_desde|time:"H:i" }}</td>
+                                <td>{{ horario.hora_hasta|time:"H:i" }}</td>
+                                <td>{{ horario.aula_espacio|default:"—" }}</td>
+                                <td>
+                                    {% if horario.vigente %}
+                                    <span class="badge bg-success">Sí</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if perms.VAT.change_comisionhorario %}
+                                    <a href="{% url 'vat_comision_horario_update' horario.pk %}" class="btn btn-xs btn-warning btn-sm py-0 px-1"><i class="bi bi-pencil"></i></a>
+                                    {% endif %}
+                                    {% if perms.VAT.delete_comisionhorario %}
+                                    <a href="{% url 'vat_comision_horario_delete' horario.pk %}" class="btn btn-xs btn-danger btn-sm py-0 px-1"><i class="bi bi-trash"></i></a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted small p-3 mb-0">Sin horarios cargados.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2" style="color: #1f3a93;"></i>Auditoría</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="small text-muted">
+                        <dl>
+                            <dt>Creado</dt><dd>{{ comision.fecha_creacion|date:"d/m/Y H:i" }}</dd>
+                            <dt>Modificado</dt><dd>{{ comision.fecha_modificacion|date:"d/m/Y H:i" }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sesiones generadas -->
+        <div class="col-12 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check me-2" style="color: #1f3a93;"></i>Sesiones ({{ sesiones|length }})</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if sesiones %}
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Fecha</th>
+                                <th>Día</th>
+                                <th>Desde</th>
+                                <th>Hasta</th>
+                                <th>Aula</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sesion in sesiones %}
+                            <tr>
+                                <td class="text-muted">{{ sesion.numero_sesion }}</td>
+                                <td>{{ sesion.fecha|date:"d/m/Y" }}</td>
+                                <td>{{ sesion.horario.dia_semana }}</td>
+                                <td>{{ sesion.horario.hora_desde|time:"H:i" }}</td>
+                                <td>{{ sesion.horario.hora_hasta|time:"H:i" }}</td>
+                                <td>{{ sesion.horario.aula_espacio|default:"—" }}</td>
+                                <td>
+                                    <span class="badge {% if sesion.estado == 'programada' %}bg-info{% elif sesion.estado == 'realizada' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ sesion.get_estado_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted small p-3 mb-0">No hay sesiones generadas. Agregá un horario para generarlas automáticamente.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4 bg-primary bg-opacity-10">
+                <div class="card-body">
+                    <h6 class="card-title fw-600" style="color: #1f3a93;"><i class="bi bi-lightning me-2"></i>Acciones</h6>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'vat_comision_update' comision.id %}" class="btn btn-primary"><i class="bi bi-pencil me-2"></i>Editar</a>
+                        <a href="{% url 'vat_comision_delete' comision.id %}" class="btn btn-danger"><i class="bi bi-trash me-2"></i>Eliminar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body">
+                    <h6 class="card-title fw-600" style="color: #1f3a93;"><i class="bi bi-info-circle me-2"></i>Registro</h6>
+                    <div class="small text-muted"><dl><dt>ID</dt><dd>#{{ comision.id }}</dd></dl></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>.fw-600 { font-weight: 600 !important; }</style>
+{% endblock %}

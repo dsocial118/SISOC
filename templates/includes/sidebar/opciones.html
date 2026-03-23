@@ -105,6 +105,12 @@
                         <p>Monto de Prestaciones</p>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{% url 'programa_listar' %}"
+                       class="nav-link nav-dot ms-2 {% if 'programas/' in pagina_actual %}active{% endif %}">
+                        <p>Programas</p>
+                    </a>
+                </li>
                 {% if perms.auditlog.view_logentry %}
                     <li class="nav-item">
                         <a href="{% url 'audittrail:log_list' %}"
@@ -394,7 +400,7 @@
                     </ul>
                 </li>
             {% endif %}
-            <!-- VAT -->
+            <!-- VAT / INET -->
             {% if request.user|has_perm_code:"VAT.view_centro" %}
                 <li class="nav-item {% if 'vat/' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
@@ -405,13 +411,190 @@
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
+                        <!-- Centros -->
                         <li class="nav-item">
                             <a href="{% url 'vat_centro_list' %}"
                                class="nav-link {% if 'vat/centros/' in pagina_actual %}active{% endif %} ms-4">
                                 <i class="nav-icon bi bi-arrow-return-right"></i>
-                                <p>Centro Formacion Profesional</p>
+                                <p>Centros de Formación</p>
                             </a>
                         </li>
+                        <!-- Inscripciones -->
+                        {% if request.user|has_perm_code:"VAT.view_inscripcion" %}
+                            <li class="nav-item">
+                                <a href="{% url 'vat_inscripcion_list' %}"
+                                   class="nav-link {% if 'vat/inscripciones/' in pagina_actual %}active{% endif %} ms-4">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Inscripciones</p>
+                                </a>
+                            </li>
+                        {% endif %}
+                        <!-- Evaluaciones -->
+                        {% if request.user|has_perm_code:"VAT.view_evaluacion" %}
+                            <li class="nav-item">
+                                <a href="{% url 'vat_evaluacion_list' %}"
+                                   class="nav-link {% if 'vat/evaluaciones/' in pagina_actual %}active{% endif %} ms-4">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Evaluaciones</p>
+                                </a>
+                            </li>
+                        {% endif %}
+                        <!-- Resultados de Evaluación -->
+                        {% if request.user|has_perm_code:"VAT.view_resultadoevaluacion" %}
+                            <li class="nav-item">
+                                <a href="{% url 'vat_resultado_evaluacion_list' %}"
+                                   class="nav-link {% if 'vat/resultados-evaluacion/' in pagina_actual %}active{% endif %} ms-4">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Resultados de Evaluación</p>
+                                </a>
+                            </li>
+                        {% endif %}
+                        <!-- Oferta Educativa (subgrupo) -->
+                        {% if request.user|has_perm_code:"VAT.view_ofertainstitucional" or request.user|has_perm_code:"VAT.view_comision" or request.user|has_perm_code:"VAT.view_inscripcionoferta" %}
+                            <li class="nav-item ms-4 {% if 'vat/ofertas' in pagina_actual or 'vat/comisiones' in pagina_actual or 'vat/inscripciones-oferta' in pagina_actual %}menu-open{% endif %}">
+                                <a href="#" class="nav-link">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>
+                                        Oferta Educativa
+                                        <i class="nav-arrow bi bi-chevron-right"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    {% if request.user|has_perm_code:"VAT.view_ofertainstitucional" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_oferta_institucional_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/ofertas-institucionales/' in pagina_actual %}active{% endif %}">
+                                                <p>Ofertas Institucionales</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_comision" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_comision_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/comisiones/' in pagina_actual %}active{% endif %}">
+                                                <p>Comisiones</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_inscripcionoferta" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_inscripcion_oferta_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/inscripciones-oferta/' in pagina_actual %}active{% endif %}">
+                                                <p>Inscripciones a Oferta</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </li>
+                        {% endif %}
+                        <!-- Datos Institución (subgrupo) -->
+                        {% if request.user|has_perm_code:"VAT.view_institucioncontacto" or request.user|has_perm_code:"VAT.view_autoridadinstitucional" or request.user|has_perm_code:"VAT.view_institucionidentificadorhist" or request.user|has_perm_code:"VAT.view_institucionubicacion" %}
+                            <li class="nav-item ms-4 {% if 'vat/institucion/' in pagina_actual %}menu-open{% endif %}">
+                                <a href="#" class="nav-link">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>
+                                        Datos Institución
+                                        <i class="nav-arrow bi bi-chevron-right"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    {% if request.user|has_perm_code:"VAT.view_institucioncontacto" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_institucion_contacto_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/institucion/contactos/' in pagina_actual %}active{% endif %}">
+                                                <p>Contactos</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_autoridadinstitucional" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_autoridad_institucional_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/institucion/autoridades/' in pagina_actual %}active{% endif %}">
+                                                <p>Autoridades</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_institucionidentificadorhist" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_institucion_identificador_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/institucion/identificadores/' in pagina_actual %}active{% endif %}">
+                                                <p>Identificadores</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_institucionubicacion" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_institucion_ubicacion_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/institucion/ubicaciones/' in pagina_actual %}active{% endif %}">
+                                                <p>Ubicaciones</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </li>
+                        {% endif %}
+                        <!-- Catálogos (subgrupo) -->
+                        {% if request.user|has_perm_code:"VAT.view_modalidadinstitucional" or request.user|has_perm_code:"VAT.view_sector" or request.user|has_perm_code:"VAT.view_subsector" or request.user|has_perm_code:"VAT.view_modalidadcursada" or request.user|has_perm_code:"VAT.view_tituloreferencia" or request.user|has_perm_code:"VAT.view_planversioncurricular" %}
+                            <li class="nav-item ms-4 {% if 'vat/modalidades-institucionales/' in pagina_actual or 'vat/catalogos/' in pagina_actual %}menu-open{% endif %}">
+                                <a href="#" class="nav-link">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>
+                                        Catálogos
+                                        <i class="nav-arrow bi bi-chevron-right"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    {% if request.user|has_perm_code:"VAT.view_modalidadinstitucional" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_modalidad_institucional_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/modalidades-institucionales/' in pagina_actual %}active{% endif %}">
+                                                <p>Modalidades Institucionales</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_sector" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_sector_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/catalogos/sectores/' in pagina_actual %}active{% endif %}">
+                                                <p>Sectores</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_subsector" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_subsector_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/catalogos/subsectores/' in pagina_actual %}active{% endif %}">
+                                                <p>Subsectores</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_modalidadcursada" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_modalidadcursada_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/catalogos/modalidades-cursado/' in pagina_actual %}active{% endif %}">
+                                                <p>Modalidades de Cursado</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_tituloreferencia" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_titulorreferencia_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/catalogos/titulos-referencia/' in pagina_actual %}active{% endif %}">
+                                                <p>Títulos de Referencia</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_planversioncurricular" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_planversioncurricular_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/catalogos/planes-curriculares/' in pagina_actual %}active{% endif %}">
+                                                <p>Planes Curriculares</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </li>
+                        {% endif %}
                     </ul>
                 </li>
             {% endif %}

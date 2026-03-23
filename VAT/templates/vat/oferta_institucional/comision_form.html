@@ -1,0 +1,136 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}{% if form.instance.id %}Editar{% else %}Nueva{% endif %} Comisión{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <a href="{% url 'vat_comision_list' %}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+                <div>
+                    <h1 class="h2 mb-0" style="color: #1f3a93;">
+                        {% if form.instance.id %}<i class="bi bi-pencil-square me-2"></i>Editar Comisión
+                        {% else %}<i class="bi bi-plus-circle me-2"></i>Nueva Comisión{% endif %}
+                    </h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información General</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.oferta.id_for_label }}" class="form-label fw-600">{{ form.oferta.label }} <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi-book" style="color: #1f3a93;"></i></span>
+                                    {{ form.oferta }}
+                                </div>
+                                {% if form.oferta.errors %}<div class="text-danger small mt-1">{{ form.oferta.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.ubicacion.id_for_label }}" class="form-label fw-600">{{ form.ubicacion.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi-geo-alt" style="color: #1f3a93;"></i></span>
+                                    {{ form.ubicacion }}
+                                </div>
+                                {% if form.ubicacion.errors %}<div class="text-danger small mt-1">{{ form.ubicacion.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.codigo_comision.id_for_label }}" class="form-label fw-600">{{ form.codigo_comision.label }} <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi-upc-scan" style="color: #1f3a93;"></i></span>
+                                    {{ form.codigo_comision }}
+                                </div>
+                                {% if form.codigo_comision.errors %}<div class="text-danger small mt-1">{{ form.codigo_comision.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.nombre.id_for_label }}" class="form-label fw-600">{{ form.nombre.label }} <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi-type" style="color: #1f3a93;"></i></span>
+                                    {{ form.nombre }}
+                                </div>
+                                {% if form.nombre.errors %}<div class="text-danger small mt-1">{{ form.nombre.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.fecha_inicio.id_for_label }}" class="form-label fw-600">{{ form.fecha_inicio.label }} <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi-calendar-plus" style="color: #1f3a93;"></i></span>
+                                    {{ form.fecha_inicio }}
+                                </div>
+                                {% if form.fecha_inicio.errors %}<div class="text-danger small mt-1">{{ form.fecha_inicio.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.fecha_fin.id_for_label }}" class="form-label fw-600">{{ form.fecha_fin.label }} <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi-calendar-minus" style="color: #1f3a93;"></i></span>
+                                    {{ form.fecha_fin }}
+                                </div>
+                                {% if form.fecha_fin.errors %}<div class="text-danger small mt-1">{{ form.fecha_fin.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.cupo.id_for_label }}" class="form-label fw-600">{{ form.cupo.label }} <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi-people" style="color: #1f3a93;"></i></span>
+                                    {{ form.cupo }}
+                                </div>
+                                {% if form.cupo.errors %}<div class="text-danger small mt-1">{{ form.cupo.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.estado.id_for_label }}" class="form-label fw-600">{{ form.estado.label }} <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi-flag" style="color: #1f3a93;"></i></span>
+                                    {{ form.estado }}
+                                </div>
+                                {% if form.estado.errors %}<div class="text-danger small mt-1">{{ form.estado.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <label for="{{ form.observaciones.id_for_label }}" class="form-label fw-600">{{ form.observaciones.label }}</label>
+                                {{ form.observaciones }}
+                                {% if form.observaciones.errors %}<div class="text-danger small mt-1">{{ form.observaciones.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'vat_comision_list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-2"></i>Cancelar</a>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>{% if form.instance.id %}Actualizar{% else %}Crear{% endif %}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body">
+                    <h6 class="card-title fw-600" style="color: #1f3a93;"><i class="bi bi-info-circle me-2"></i>Información</h6>
+                    <div class="small text-muted"><p>Grupo de estudiantes para una oferta educativa.</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .form-control, .form-select { border: 1px solid #e0e0e0; border-radius: 0.5rem; padding: 0.75rem 1rem; }
+    .form-control:focus, .form-select:focus { border-color: #1f3a93; box-shadow: 0 0 0 0.2rem rgba(31, 58, 147, 0.15); }
+    .input-group-text { border: 1px solid #e0e0e0 !important; }
+    .fw-600 { font-weight: 600 !important; }
+</style>
+{% endblock %}

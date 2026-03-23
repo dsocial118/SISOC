@@ -1,0 +1,105 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}VAT - Subsectores{% endblock %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item">
+        <a href="{% url 'vat_centro_list' %}">VAT</a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{% url 'vat_sector_list' %}">Sectores</a>
+    </li>
+    <li class="breadcrumb-item active">Subsectores</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title">Subsectores</h3>
+                <div class="card-tools">
+                    <a href="{% url 'vat_subsector_create' %}" class="btn btn-sm btn-success">
+                        <i class="fas fa-plus"></i> Agregar
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="get" class="mb-3">
+                    <div class="form-row align-items-end">
+                        <div class="col-md-4">
+                            <label>Filtrar por Sector</label>
+                            <select name="sector" class="form-control form-control-sm">
+                                <option value="">Todos</option>
+                                {% for s in sectores %}
+                                <option value="{{ s.id }}" {% if sector_filter == s.id|stringformat:"s" %}selected{% endif %}>{{ s.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-sm btn-secondary">Filtrar</button>
+                            <a href="{% url 'vat_subsector_list' %}" class="btn btn-sm btn-outline-secondary">Limpiar</a>
+                        </div>
+                    </div>
+                </form>
+                {% if subsectores %}
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Sector</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subsector in subsectores %}
+                        <tr>
+                            <td>{{ subsector.sector.nombre }}</td>
+                            <td>
+                                <a href="{% url 'vat_subsector_detail' subsector.id %}">
+                                    {{ subsector.nombre }}
+                                </a>
+                            </td>
+                            <td>{{ subsector.descripcion|truncatewords:10|default:"-" }}</td>
+                            <td>
+                                <a href="{% url 'vat_subsector_detail' subsector.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'vat_subsector_update' subsector.id %}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'vat_subsector_delete' subsector.id %}" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if is_paginated %}
+                <nav>
+                    <ul class="pagination pagination-sm">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page=1{% if sector_filter %}&sector={{ sector_filter }}{% endif %}">Primera</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if sector_filter %}&sector={{ sector_filter }}{% endif %}">Anterior</a></li>
+                        {% endif %}
+                        <li class="page-item disabled"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+                        {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if sector_filter %}&sector={{ sector_filter }}{% endif %}">Siguiente</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if sector_filter %}&sector={{ sector_filter }}{% endif %}">Última</a></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <p class="text-muted">No hay subsectores registrados.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

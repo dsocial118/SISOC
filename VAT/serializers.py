@@ -1,59 +1,32 @@
 from rest_framework import serializers
 from VAT.models import (
     Centro,
-    Categoria,
-    Actividad,
-    ActividadCentro,
-    ParticipanteActividad,
-    ParticipanteActividadHistorial,
     ModalidadInstitucional,
     Sector,
     Subsector,
     TituloReferencia,
     ModalidadCursada,
     PlanVersionCurricular,
+    InscripcionOferta,
+    Voucher,
+    VoucherRecarga,
+    VoucherUso,
+    # Fase 2
+    InstitucionContacto,
+    AutoridadInstitucional,
+    InstitucionIdentificadorHist,
+    InstitucionUbicacion,
+    # Fase 4
+    OfertaInstitucional,
+    Comision,
+    ComisionHorario,
+    # Fase 5
+    Inscripcion,
+    # Fase 7
+    Evaluacion,
+    ResultadoEvaluacion,
 )
 from core.models import Provincia, Municipio, Localidad
-
-
-class CategoriaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Categoria
-        fields = ["id", "nombre"]
-
-
-class ActividadSerializer(serializers.ModelSerializer):
-    categoria_nombre = serializers.CharField(source="categoria.nombre", read_only=True)
-
-    class Meta:
-        model = Actividad
-        fields = ["id", "nombre", "categoria", "categoria_nombre"]
-
-
-class ActividadCentroSerializer(serializers.ModelSerializer):
-    actividad_nombre = serializers.CharField(source="actividad.nombre", read_only=True)
-    centro_nombre = serializers.CharField(source="centro.nombre", read_only=True)
-    dias_nombres = serializers.SerializerMethodField()
-
-    def get_dias_nombres(self, obj: ActividadCentro) -> list[str]:
-        return [dia.nombre for dia in obj.dias.all()]
-
-    class Meta:
-        model = ActividadCentro
-        fields = [
-            "id",
-            "centro",
-            "centro_nombre",
-            "actividad",
-            "actividad_nombre",
-            "cantidad_personas",
-            "dias",
-            "dias_nombres",
-            "horariosdesde",
-            "horarioshasta",
-            "precio",
-            "estado",
-        ]
 
 
 class CentroSerializer(serializers.ModelSerializer):
@@ -66,14 +39,6 @@ class CentroSerializer(serializers.ModelSerializer):
     modalidad_institucional_nombre = serializers.CharField(
         source="modalidad_institucional.nombre", read_only=True
     )
-    categorias_actividades = serializers.SerializerMethodField()
-
-    def get_categorias_actividades(self, obj):
-        categorias = Categoria.objects.filter(
-            actividad__actividadcentro__centro=obj
-        ).distinct()
-        return CategoriaSerializer(categorias, many=True).data
-
     class Meta:
         model = Centro
         fields = [
@@ -101,48 +66,6 @@ class CentroSerializer(serializers.ModelSerializer):
             "clase_institucion",
             "situacion",
             "fecha_alta",
-            "categorias_actividades",
-        ]
-
-
-class ParticipanteActividadHistorialSerializer(serializers.ModelSerializer):
-    usuario_nombre = serializers.CharField(
-        source="usuario.get_full_name", read_only=True
-    )
-
-    class Meta:
-        model = ParticipanteActividadHistorial
-        fields = [
-            "id",
-            "estado_anterior",
-            "estado_nuevo",
-            "fecha_cambio",
-            "usuario",
-            "usuario_nombre",
-        ]
-
-
-class ParticipanteActividadSerializer(serializers.ModelSerializer):
-    ciudadano_nombre = serializers.CharField(
-        source="ciudadano.get_full_name", read_only=True
-    )
-    actividad_nombre = serializers.CharField(
-        source="actividad_centro.actividad.nombre", read_only=True
-    )
-    historial = ParticipanteActividadHistorialSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = ParticipanteActividad
-        fields = [
-            "id",
-            "actividad_centro",
-            "actividad_nombre",
-            "ciudadano",
-            "ciudadano_nombre",
-            "estado",
-            "fecha_registro",
-            "fecha_modificacion",
-            "historial",
         ]
 
 
@@ -240,4 +163,369 @@ class PlanVersionCurricularSerializer(serializers.ModelSerializer):
             "nivel_certifica",
             "frecuencia",
             "activo",
+        ]
+
+
+class InscripcionOfertaSerializer(serializers.ModelSerializer):
+    ciudadano_nombre = serializers.CharField(
+        source="ciudadano.get_full_name", read_only=True
+    )
+    oferta_nombre = serializers.CharField(
+        source="oferta.nombre", read_only=True
+    )
+
+    class Meta:
+        model = InscripcionOferta
+        fields = [
+            "id",
+            "oferta",
+            "oferta_nombre",
+            "ciudadano",
+            "ciudadano_nombre",
+            "estado",
+            "fecha_inscripcion",
+            "fecha_modificacion",
+        ]
+
+
+class VoucherRecargaSerializer(serializers.ModelSerializer):
+    autorizado_por_nombre = serializers.CharField(
+        source="autorizado_por.get_full_name", read_only=True
+    )
+
+    class Meta:
+        model = VoucherRecarga
+        fields = [
+            "id",
+            "voucher",
+            "cantidad",
+            "motivo",
+            "fecha_recarga",
+            "autorizado_por",
+            "autorizado_por_nombre",
+        ]
+        read_only_fields = ["fecha_recarga", "autorizado_por"]
+
+
+class VoucherUsoSerializer(serializers.ModelSerializer):
+    oferta_nombre = serializers.CharField(
+        source="inscripcion_oferta.oferta.plan_curricular.titulo_referencia.nombre",
+        read_only=True,
+    )
+
+    class Meta:
+        model = VoucherUso
+        fields = [
+            "id",
+            "voucher",
+            "inscripcion_oferta",
+            "oferta_nombre",
+            "cantidad_usada",
+            "fecha_uso",
+        ]
+        read_only_fields = ["fecha_uso"]
+
+
+class VoucherSerializer(serializers.ModelSerializer):
+    ciudadano_nombre = serializers.CharField(
+        source="ciudadano.get_full_name", read_only=True
+    )
+    programa_nombre = serializers.CharField(
+        source="programa.nombre", read_only=True
+    )
+    recargas = VoucherRecargaSerializer(many=True, read_only=True)
+    usos = VoucherUsoSerializer(many=True, read_only=True)
+    dias_para_vencimiento = serializers.SerializerMethodField()
+
+    def get_dias_para_vencimiento(self, obj):
+        from datetime import date
+        delta = obj.fecha_vencimiento - date.today()
+        return delta.days
+
+    class Meta:
+        model = Voucher
+        fields = [
+            "id",
+            "ciudadano",
+            "ciudadano_nombre",
+            "programa",
+            "programa_nombre",
+            "cantidad_inicial",
+            "cantidad_usada",
+            "cantidad_disponible",
+            "estado",
+            "fecha_asignacion",
+            "fecha_vencimiento",
+            "dias_para_vencimiento",
+            "recargas",
+            "usos",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+        read_only_fields = [
+            "cantidad_usada",
+            "cantidad_disponible",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+# ============================================================================
+# FASE 2: INSTITUCIÓN - CONTACTOS E IDENTIFICADORES
+# ============================================================================
+
+
+class InstitucionContactoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InstitucionContacto
+        fields = [
+            "id",
+            "centro",
+            "tipo",
+            "valor",
+            "es_principal",
+            "observaciones",
+            "vigencia_desde",
+            "vigencia_hasta",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class AutoridadInstitucionalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AutoridadInstitucional
+        fields = [
+            "id",
+            "centro",
+            "nombre_completo",
+            "dni",
+            "cargo",
+            "email",
+            "telefono",
+            "es_actual",
+            "vigencia_desde",
+            "vigencia_hasta",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class InstitucionIdentificadorHistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InstitucionIdentificadorHist
+        fields = [
+            "id",
+            "centro",
+            "tipo_identificador",
+            "valor_identificador",
+            "rol_institucional",
+            "es_actual",
+            "vigencia_desde",
+            "vigencia_hasta",
+            "motivo",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class InstitucionUbicacionSerializer(serializers.ModelSerializer):
+    localidad_nombre = serializers.CharField(
+        source="localidad.nombre", read_only=True
+    )
+
+    class Meta:
+        model = InstitucionUbicacion
+        fields = [
+            "id",
+            "centro",
+            "localidad",
+            "localidad_nombre",
+            "rol_ubicacion",
+            "domicilio",
+            "es_principal",
+            "latitud",
+            "longitud",
+            "observaciones",
+            "vigencia_desde",
+            "vigencia_hasta",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+# ============================================================================
+# FASE 4: OFERTA INSTITUCIONAL - COMISIONES
+# ============================================================================
+
+
+class ComisionHorarioSerializer(serializers.ModelSerializer):
+    dia_nombre = serializers.CharField(source="dia_semana.nombre", read_only=True)
+
+    class Meta:
+        model = ComisionHorario
+        fields = [
+            "id",
+            "comision",
+            "dia_semana",
+            "dia_nombre",
+            "hora_desde",
+            "hora_hasta",
+            "aula_espacio",
+            "vigente",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class ComisionSerializer(serializers.ModelSerializer):
+    horarios = ComisionHorarioSerializer(many=True, read_only=True)
+    oferta_nombre = serializers.CharField(
+        source="oferta.plan_curricular.titulo_referencia.nombre",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Comision
+        fields = [
+            "id",
+            "oferta",
+            "oferta_nombre",
+            "ubicacion",
+            "codigo_comision",
+            "nombre",
+            "fecha_inicio",
+            "fecha_fin",
+            "cupo",
+            "estado",
+            "horarios",
+            "observaciones",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class OfertaInstitucionalSerializer(serializers.ModelSerializer):
+    centro_nombre = serializers.CharField(source="centro.nombre", read_only=True)
+    plan_nombre = serializers.CharField(
+        source="plan_curricular.titulo_referencia.nombre", read_only=True
+    )
+    programa_nombre = serializers.CharField(
+        source="programa.nombre", read_only=True
+    )
+    comisiones = ComisionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = OfertaInstitucional
+        fields = [
+            "id",
+            "centro",
+            "centro_nombre",
+            "plan_curricular",
+            "plan_nombre",
+            "programa",
+            "programa_nombre",
+            "nombre_local",
+            "ciclo_lectivo",
+            "plan_externo_id",
+            "estado",
+            "aprobacion_jurisdiccion",
+            "aprobacion_inet",
+            "fecha_publicacion",
+            "comisiones",
+            "observaciones",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+# ============================================================================
+# FASE 5: INSCRIPCIÓN
+# ============================================================================
+
+
+class InscripcionSerializer(serializers.ModelSerializer):
+    ciudadano_nombre = serializers.CharField(
+        source="ciudadano.get_full_name", read_only=True
+    )
+    comision_codigo = serializers.CharField(
+        source="comision.codigo_comision", read_only=True
+    )
+    programa_nombre = serializers.CharField(
+        source="programa.nombre", read_only=True
+    )
+
+    class Meta:
+        model = Inscripcion
+        fields = [
+            "id",
+            "ciudadano",
+            "ciudadano_nombre",
+            "comision",
+            "comision_codigo",
+            "programa",
+            "programa_nombre",
+            "estado",
+            "origen_canal",
+            "fecha_inscripcion",
+            "fecha_validacion_presencial",
+            "observaciones",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+# ============================================================================
+# FASE 7: EVALUACIONES
+# ============================================================================
+
+
+class ResultadoEvaluacionSerializer(serializers.ModelSerializer):
+    persona_nombre = serializers.CharField(
+        source="inscripcion.ciudadano.get_full_name", read_only=True
+    )
+    registrado_por_nombre = serializers.CharField(
+        source="registrado_por.get_full_name", read_only=True
+    )
+
+    class Meta:
+        model = ResultadoEvaluacion
+        fields = [
+            "id",
+            "evaluacion",
+            "inscripcion",
+            "persona_nombre",
+            "calificacion",
+            "aprobo",
+            "observaciones",
+            "registrado_por",
+            "registrado_por_nombre",
+            "fecha_registro",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class EvaluacionSerializer(serializers.ModelSerializer):
+    comision_codigo = serializers.CharField(
+        source="comision.codigo_comision", read_only=True
+    )
+    resultados = ResultadoEvaluacionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Evaluacion
+        fields = [
+            "id",
+            "comision",
+            "comision_codigo",
+            "tipo",
+            "nombre",
+            "descripcion",
+            "fecha",
+            "es_final",
+            "ponderacion",
+            "observaciones",
+            "resultados",
+            "fecha_creacion",
+            "fecha_modificacion",
         ]

@@ -1,28 +1,27 @@
 from django import forms
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
-from django.db import IntegrityError
-
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Sexo
+from core.models import Localidad, Programa
 from VAT.models import (
     Centro,
-    ActividadCentro,
-    ParticipanteActividad,
-    Categoria,
-    Actividad,
     ModalidadInstitucional,
     Sector,
     Subsector,
     TituloReferencia,
     ModalidadCursada,
     PlanVersionCurricular,
-)
-from VAT.services.participante import (
-    ParticipanteService,
-    AlreadyRegistered,
-    CupoExcedido,
-    SexoNoPermitido,
+    InscripcionOferta,
+    InstitucionContacto,
+    AutoridadInstitucional,
+    InstitucionIdentificadorHist,
+    InstitucionUbicacion,
+    OfertaInstitucional,
+    Comision,
+    ComisionHorario,
+    Inscripcion,
+    Evaluacion,
+    ResultadoEvaluacion,
 )
 from VAT.services.form_service import (
     setup_location_fields,
@@ -74,202 +73,6 @@ class CentroForm(forms.ModelForm):
         ).only("id", "username", "first_name", "last_name")
 
         self.fields["organizacion_asociada"].empty_label = "Seleccionar organización..."
-
-
-class ActividadCentroForm(forms.ModelForm):
-    sexoact = forms.ModelMultipleChoiceField(
-        queryset=Sexo.objects.all(),
-        required=False,
-        label="Actividad dirigida a...",
-        widget=forms.SelectMultiple(attrs={"class": "select2 w-100", "multiple": True}),
-    )
-    dias = forms.ModelMultipleChoiceField(
-        queryset=Dia.objects.all(),
-        required=False,
-        label="Días",
-        widget=forms.SelectMultiple(attrs={"class": "select2 w-100", "multiple": True}),
-    )
-    horariosdesde = forms.TimeField(
-        label="Hora Desde",
-        widget=forms.TimeInput(
-            attrs={
-                "class": "form-control timepicker",
-                "placeholder": "Seleccione una hora",
-            }
-        ),
-        required=True,
-    )
-    horarioshasta = forms.TimeField(
-        label="Hora Hasta",
-        widget=forms.TimeInput(
-            attrs={
-                "class": "form-control timepicker",
-                "placeholder": "Seleccione una hora",
-            }
-        ),
-        required=True,
-    )
-    categoria = forms.ModelChoiceField(
-        queryset=Categoria.objects.all(),
-        required=False,
-        label="Categoría",
-        empty_label="Seleccione una categoría",
-        widget=forms.Select(attrs={"class": "form-control"}),
-    )
-
-    fecha_inicio = forms.DateField(
-        label="Fecha de inicio",
-        required=False,
-        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-    )
-    fecha_fin = forms.DateField(
-        label="Fecha de fin",
-        required=False,
-        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-    )
-
-    class Meta:
-        model = ActividadCentro
-        fields = [
-            "categoria",
-            "actividad",
-            "cantidad_personas",
-            "sexoact",
-            "dias",
-            "horariosdesde",
-            "horarioshasta",
-            "fecha_inicio",
-            "fecha_fin",
-            "precio",
-            "estado",
-        ]
-        exclude = ["centro"]
-        widgets = {
-            "cantidad_personas": forms.NumberInput(attrs={"class": "form-control"}),
-            "precio": forms.NumberInput(attrs={"class": "form-control"}),
-            "estado": forms.Select(attrs={"class": "form-control"}),
-        }
-
-    def clean(self):
-        cleaned = super().clean()
-        fecha_inicio = cleaned.get("fecha_inicio")
-        fecha_fin = cleaned.get("fecha_fin")
-        if fecha_inicio and fecha_fin and fecha_fin < fecha_inicio:
-            raise forms.ValidationError(
-                "La fecha de fin no puede ser anterior a la fecha de inicio."
-            )
-        return cleaned
-
-    def __init__(self, *args, **kwargs):
-        self.centro = kwargs.pop("centro", None)
-        super().__init__(*args, **kwargs)
-
-        if self.data:
-            cat_id = self.data.get("categoria")
-            self.fields["actividad"].queryset = (
-                Actividad.objects.filter(categoria_id=cat_id)
-                if cat_id
-                else Actividad.objects.none()
-            )
-        elif self.instance and self.instance.pk:
-            actividad = self.instance.actividad
-            cat_id = actividad.categoria_id if actividad else None
-            self.initial.update(
-                {
-                    "categoria": cat_id,
-                    "actividad": self.instance.actividad_id,
-                    "dias": [d.pk for d in self.instance.dias.all()],
-                }
-            )
-            self.fields["actividad"].queryset = (
-                Actividad.objects.filter(categoria_id=cat_id)
-                if cat_id
-                else Actividad.objects.none()
-            )
-        else:
-            self.fields["actividad"].queryset = Actividad.objects.none()
-
-
-class ParticipanteActividadForm(forms.ModelForm):
-    nombre = forms.CharField(max_length=255, label="Nombre")
-    apellido = forms.CharField(max_length=255, label="Apellido")
-    fecha_nacimiento = forms.DateField(
-        label="Fecha de Nacimiento", widget=forms.DateInput(attrs={"type": "date"})
-    )
-    tipo_documento = forms.ChoiceField(
-        choices=Ciudadano.DOCUMENTO_CHOICES, label="Tipo de Documento"
-    )
-    dni = forms.IntegerField(label="Documento")
-    genero = forms.ModelChoiceField(queryset=Sexo.objects.all(), label="Sexo")
-
-    class Meta:
-        model = ParticipanteActividad
-        fields = []
-
-    def __init__(self, *args, **kwargs):
-        self.actividad_id = kwargs.pop("actividad_id")
-        self.usuario = kwargs.pop("usuario")
-        super().__init__(*args, **kwargs)
-
-    def clean(self):
-        cleaned = super().clean()
-        documento = cleaned.get("dni")
-        if ParticipanteActividad.objects.filter(
-            actividad_centro_id=self.actividad_id,
-            ciudadano__documento=documento,
-            estado__in=["inscrito", "lista_espera"],
-        ).exists():
-            raise ValidationError("El ciudadano ya está inscrito o en lista de espera.")
-        return cleaned
-
-    def save(self, commit=True):
-        datos = {
-            "nombre": self.cleaned_data["nombre"],
-            "apellido": self.cleaned_data["apellido"],
-            "dni": self.cleaned_data["dni"],
-            "fecha_nacimiento": self.cleaned_data["fecha_nacimiento"],
-            "tipo_documento": self.cleaned_data["tipo_documento"],
-            "genero": self.cleaned_data["genero"],
-        }
-        try:
-            _, participante = ParticipanteService.procesar_creacion(
-                usuario=self.usuario,
-                actividad_id=self.actividad_id,
-                datos=datos,
-                ciudadano_id=None,
-            )
-        except IntegrityError as e:
-            raise ValidationError(
-                "El ciudadano ya está inscrito o en lista de espera."
-            ) from e
-        except (AlreadyRegistered, SexoNoPermitido) as e:
-            raise ValidationError(str(e)) from e
-        except CupoExcedido as e:
-            raise ValidationError(
-                str(e) + " Se agregará a lista de espera si lo desea."
-            ) from e
-        return participante
-
-
-class ActividadForm(forms.ModelForm):
-    nombre = forms.CharField(
-        label="Nombre de la Actividad",
-        widget=forms.TextInput(
-            attrs={
-                "class": "form-control form-control-sm",
-                "placeholder": "Ej. Taller de oficio",
-            }
-        ),
-    )
-    categoria = forms.ModelChoiceField(
-        label="Categoría",
-        queryset=Categoria.objects.all(),
-        widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
-    )
-
-    class Meta:
-        model = Actividad
-        fields = ["categoria", "nombre"]
 
 
 class ModalidadInstitucionalForm(forms.ModelForm):
@@ -436,20 +239,44 @@ class PlanVersionCurricularForm(forms.ModelForm):
         required=False,
         widget=forms.NumberInput(attrs={"class": "form-control"}),
     )
-    nivel_requerido = forms.CharField(
+    nivel_requerido = forms.ChoiceField(
         label="Nivel Requerido",
         required=False,
-        widget=forms.TextInput(attrs={"class": "form-control"}),
+        choices=[
+            ("", "---------"),
+            ("sin_requisito", "Sin requisito"),
+            ("primario_incompleto", "Primario incompleto"),
+            ("primario_completo", "Primario completo"),
+            ("secundario_incompleto", "Secundario incompleto"),
+            ("secundario_completo", "Secundario completo"),
+        ],
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
-    nivel_certifica = forms.CharField(
+    nivel_certifica = forms.ChoiceField(
         label="Nivel que Certifica",
         required=False,
-        widget=forms.TextInput(attrs={"class": "form-control"}),
+        choices=[
+            ("", "---------"),
+            ("nivel_1", "Certificado Nivel I"),
+            ("nivel_2", "Certificado Nivel II"),
+            ("nivel_3", "Certificado Nivel III"),
+            ("titulo_tecnico", "Título Técnico"),
+        ],
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
-    frecuencia = forms.CharField(
+    frecuencia = forms.ChoiceField(
         label="Frecuencia",
         required=False,
-        widget=forms.TextInput(attrs={"class": "form-control"}),
+        choices=[
+            ("", "---------"),
+            ("1_vez", "1 vez por semana"),
+            ("2_veces", "2 veces por semana"),
+            ("3_veces", "3 veces por semana"),
+            ("4_veces", "4 veces por semana"),
+            ("5_veces", "5 veces por semana"),
+            ("intensivo", "Intensivo"),
+        ],
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
     activo = forms.BooleanField(
         label="Activo",
@@ -471,3 +298,514 @@ class PlanVersionCurricularForm(forms.ModelForm):
             "frecuencia",
             "activo",
         ]
+
+
+class InscripcionOfertaForm(forms.ModelForm):
+    oferta = forms.ModelChoiceField(
+        queryset=Comision.objects.filter(estado__in=["planificada", "activa"]),
+        label="Comisión",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    ciudadano = forms.ModelChoiceField(
+        queryset=Ciudadano.objects.all(),
+        label="Ciudadano",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    estado = forms.ChoiceField(
+        label="Estado",
+        choices=InscripcionOferta.ESTADO_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
+    class Meta:
+        model = InscripcionOferta
+        fields = ["oferta", "ciudadano", "estado"]
+
+
+# ============================================================================
+# PHASE 2 - INSTITUCIÓN FORMS
+# ============================================================================
+
+class InstitucionContactoForm(forms.ModelForm):
+    centro = forms.ModelChoiceField(
+        queryset=Centro.objects.all(),
+        label="Centro",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    tipo = forms.ChoiceField(
+        label="Tipo de Contacto",
+        choices=InstitucionContacto.TIPO_CONTACTO_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    valor = forms.CharField(
+        label="Valor",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    es_principal = forms.BooleanField(
+        label="Es Principal",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    observaciones = forms.CharField(
+        label="Observaciones",
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    )
+    vigencia_hasta = forms.DateField(
+        label="Vigencia Hasta",
+        required=False,
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+
+    class Meta:
+        model = InstitucionContacto
+        fields = ["centro", "tipo", "valor", "es_principal", "observaciones", "vigencia_hasta"]
+
+
+class AutoridadInstitucionalForm(forms.ModelForm):
+    centro = forms.ModelChoiceField(
+        queryset=Centro.objects.all(),
+        label="Centro",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    nombre_completo = forms.CharField(
+        label="Nombre Completo",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    dni = forms.CharField(
+        label="DNI",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    CARGO_CHOICES = [
+        ("", "---------"),
+        ("Director/a", "Director/a"),
+        ("Vicedirector/a", "Vicedirector/a"),
+        ("Coordinador/a Pedagógico/a", "Coordinador/a Pedagógico/a"),
+        ("Coordinador/a Técnico/a", "Coordinador/a Técnico/a"),
+        ("Secretario/a", "Secretario/a"),
+        ("Pro-Secretario/a", "Pro-Secretario/a"),
+        ("Representante Legal", "Representante Legal"),
+        ("otro", "Otro"),
+    ]
+
+    cargo = forms.ChoiceField(
+        label="Cargo",
+        choices=CARGO_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control", "id": "id_cargo"}),
+    )
+    cargo_otro = forms.CharField(
+        label="Especificar cargo",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Descripción del cargo"}),
+    )
+    email = forms.EmailField(
+        label="Email",
+        required=False,
+        widget=forms.EmailInput(attrs={"class": "form-control"}),
+    )
+    telefono = forms.CharField(
+        label="Teléfono",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    es_actual = forms.BooleanField(
+        label="Es la Autoridad Actual",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    vigencia_hasta = forms.DateField(
+        label="Vigencia Hasta",
+        required=False,
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Si el valor guardado no está en las opciones, es un "otro" personalizado
+        instance = kwargs.get("instance")
+        if instance and instance.cargo:
+            valores_conocidos = [c[0] for c in self.CARGO_CHOICES if c[0]]
+            if instance.cargo not in valores_conocidos:
+                self.fields["cargo"].initial = "otro"
+                self.fields["cargo_otro"].initial = instance.cargo
+
+    def clean(self):
+        cleaned_data = super().clean()
+        cargo = cleaned_data.get("cargo")
+        cargo_otro = cleaned_data.get("cargo_otro", "").strip()
+        if cargo == "otro":
+            if not cargo_otro:
+                self.add_error("cargo_otro", "Debe especificar el cargo.")
+            else:
+                cleaned_data["cargo"] = cargo_otro
+        return cleaned_data
+
+    class Meta:
+        model = AutoridadInstitucional
+        fields = ["centro", "nombre_completo", "dni", "cargo", "email", "telefono", "es_actual", "vigencia_hasta"]
+
+
+class InstitucionIdentificadorHistForm(forms.ModelForm):
+    centro = forms.ModelChoiceField(
+        queryset=Centro.objects.all(),
+        label="Centro",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    tipo_identificador = forms.ChoiceField(
+        label="Tipo de Identificador",
+        choices=InstitucionIdentificadorHist.TIPO_IDENTIFICADOR_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    valor_identificador = forms.CharField(
+        label="Valor del Identificador",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    rol_institucional = forms.ChoiceField(
+        label="Rol Institucional",
+        choices=[("", "---")] + list(InstitucionIdentificadorHist.ROL_INSTITUCIONAL_CHOICES),
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    es_actual = forms.BooleanField(
+        label="Es Actual",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    vigencia_hasta = forms.DateField(
+        label="Vigencia Hasta",
+        required=False,
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    motivo = forms.CharField(
+        label="Motivo del Cambio",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+
+    class Meta:
+        model = InstitucionIdentificadorHist
+        fields = ["centro", "tipo_identificador", "valor_identificador", "rol_institucional", "es_actual", "vigencia_hasta", "motivo"]
+
+
+class InstitucionUbicacionForm(forms.ModelForm):
+    centro = forms.ModelChoiceField(
+        queryset=Centro.objects.all(),
+        label="Centro",
+        widget=forms.Select(attrs={"class": "form-control", "id": "id_centro_ubicacion"}),
+    )
+    localidad = forms.ModelChoiceField(
+        queryset=Localidad.objects.none(),
+        label="Localidad",
+        widget=forms.Select(attrs={"class": "form-control", "id": "id_localidad_ubicacion"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # En edición: pre-filtrar localidades por el municipio del centro guardado
+        centro = None
+        if self.instance and self.instance.pk and self.instance.centro_id:
+            centro = self.instance.centro
+        elif "centro" in self.data:
+            try:
+                from VAT.models import Centro as CentroModel
+                centro = CentroModel.objects.select_related("municipio", "provincia").get(pk=self.data["centro"])
+            except (CentroModel.DoesNotExist, ValueError):
+                pass
+        if centro:
+            qs = Localidad.objects.order_by("nombre")
+            if centro.municipio_id:
+                qs = qs.filter(municipio_id=centro.municipio_id)
+            elif centro.provincia_id:
+                qs = qs.filter(municipio__provincia_id=centro.provincia_id)
+            self.fields["localidad"].queryset = qs
+    rol_ubicacion = forms.ChoiceField(
+        label="Rol de Ubicación",
+        choices=InstitucionUbicacion.ROL_UBICACION_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    domicilio = forms.CharField(
+        label="Domicilio",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    es_principal = forms.BooleanField(
+        label="Es Principal",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    observaciones = forms.CharField(
+        label="Observaciones",
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    )
+
+    class Meta:
+        model = InstitucionUbicacion
+        fields = ["centro", "localidad", "rol_ubicacion", "domicilio", "es_principal", "observaciones"]
+
+
+# ============================================================================
+# PHASE 4 - OFERTA INSTITUCIONAL FORMS
+# ============================================================================
+
+class OfertaInstitucionalForm(forms.ModelForm):
+    centro = forms.ModelChoiceField(
+        queryset=Centro.objects.all(),
+        label="Centro",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    plan_curricular = forms.ModelChoiceField(
+        queryset=PlanVersionCurricular.objects.all(),
+        label="Plan Curricular",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    programa = forms.ModelChoiceField(
+        queryset=Programa.objects.all(),
+        label="Programa",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    nombre_local = forms.CharField(
+        label="Nombre Local",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    ciclo_lectivo = forms.IntegerField(
+        label="Ciclo Lectivo",
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    estado = forms.ChoiceField(
+        label="Estado de Oferta",
+        choices=OfertaInstitucional.ESTADO_OFERTA_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    aprobacion_jurisdiccion = forms.BooleanField(
+        label="Aprobación de Jurisdicción",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    aprobacion_inet = forms.BooleanField(
+        label="Aprobación INET",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    fecha_publicacion = forms.DateField(
+        label="Fecha de Publicación",
+        required=False,
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    observaciones = forms.CharField(
+        label="Observaciones",
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    )
+
+    class Meta:
+        model = OfertaInstitucional
+        fields = ["centro", "plan_curricular", "programa", "nombre_local", "ciclo_lectivo", "estado", "aprobacion_jurisdiccion", "aprobacion_inet", "fecha_publicacion", "observaciones"]
+
+
+class ComisionForm(forms.ModelForm):
+    oferta = forms.ModelChoiceField(
+        queryset=OfertaInstitucional.objects.all(),
+        label="Oferta Institucional",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    ubicacion = forms.ModelChoiceField(
+        queryset=InstitucionUbicacion.objects.all(),
+        label="Ubicación",
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    codigo_comision = forms.CharField(
+        label="Código de Comisión",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    nombre = forms.CharField(
+        label="Nombre",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    fecha_inicio = forms.DateField(
+        label="Fecha de Inicio",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    fecha_fin = forms.DateField(
+        label="Fecha de Fin",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    cupo = forms.IntegerField(
+        label="Cupo Total",
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    estado = forms.ChoiceField(
+        label="Estado",
+        choices=Comision.ESTADO_COMISION_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    observaciones = forms.CharField(
+        label="Observaciones",
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    )
+
+    class Meta:
+        model = Comision
+        fields = ["oferta", "ubicacion", "codigo_comision", "nombre", "fecha_inicio", "fecha_fin", "cupo", "estado", "observaciones"]
+
+
+class ComisionHorarioForm(forms.ModelForm):
+    comision = forms.ModelChoiceField(
+        queryset=Comision.objects.all(),
+        label="Comisión",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    dia_semana = forms.ModelChoiceField(
+        queryset=Dia.objects.all(),
+        label="Día de la Semana",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    hora_desde = forms.TimeField(
+        label="Hora Desde",
+        widget=forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
+    )
+    hora_hasta = forms.TimeField(
+        label="Hora Hasta",
+        widget=forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
+    )
+    aula_espacio = forms.CharField(
+        label="Aula/Espacio",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    vigente = forms.BooleanField(
+        label="Vigente",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    class Meta:
+        model = ComisionHorario
+        fields = ["comision", "dia_semana", "hora_desde", "hora_hasta", "aula_espacio", "vigente"]
+
+
+# ============================================================================
+# PHASE 5 - INSCRIPCIÓN FORMS
+# ============================================================================
+
+class InscripcionForm(forms.ModelForm):
+    ciudadano = forms.ModelChoiceField(
+        queryset=Ciudadano.objects.all(),
+        label="Ciudadano",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    comision = forms.ModelChoiceField(
+        queryset=Comision.objects.all(),
+        label="Comisión",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    programa = forms.ModelChoiceField(
+        queryset=Programa.objects.all(),
+        label="Programa",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    estado = forms.ChoiceField(
+        label="Estado",
+        choices=Inscripcion.ESTADO_INSCRIPCION_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    origen_canal = forms.ChoiceField(
+        label="Origen del Canal",
+        choices=Inscripcion.ORIGEN_CANAL_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    observaciones = forms.CharField(
+        label="Observaciones",
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    )
+
+    class Meta:
+        model = Inscripcion
+        fields = ["ciudadano", "comision", "programa", "estado", "origen_canal", "observaciones"]
+
+
+# ============================================================================
+# PHASE 7 - EVALUACIÓN FORMS
+# ============================================================================
+
+class EvaluacionForm(forms.ModelForm):
+    comision = forms.ModelChoiceField(
+        queryset=Comision.objects.all(),
+        label="Comisión",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    tipo = forms.ChoiceField(
+        label="Tipo de Evaluación",
+        choices=Evaluacion.TIPO_EVALUACION_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    nombre = forms.CharField(
+        label="Nombre de la Evaluación",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    descripcion = forms.CharField(
+        label="Descripción",
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    )
+    fecha = forms.DateField(
+        label="Fecha de la Evaluación",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    es_final = forms.BooleanField(
+        label="Es Evaluación Final",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    ponderacion = forms.DecimalField(
+        label="Ponderación (%)",
+        widget=forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+    )
+    observaciones = forms.CharField(
+        label="Observaciones",
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    )
+
+    class Meta:
+        model = Evaluacion
+        fields = ["comision", "tipo", "nombre", "descripcion", "fecha", "es_final", "ponderacion", "observaciones"]
+
+
+class ResultadoEvaluacionForm(forms.ModelForm):
+    evaluacion = forms.ModelChoiceField(
+        queryset=Evaluacion.objects.all(),
+        label="Evaluación",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    inscripcion = forms.ModelChoiceField(
+        queryset=Inscripcion.objects.all(),
+        label="Inscripción",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    calificacion = forms.DecimalField(
+        label="Calificación",
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+    )
+    aprobo = forms.NullBooleanField(
+        label="¿Aprobó?",
+        required=False,
+        widget=forms.Select(
+            choices=[(None, "---"), (True, "Sí"), (False, "No")],
+            attrs={"class": "form-control"}
+        ),
+    )
+    observaciones = forms.CharField(
+        label="Observaciones",
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    )
+
+    class Meta:
+        model = ResultadoEvaluacion
+        fields = ["evaluacion", "inscripcion", "calificacion", "aprobo", "observaciones"]

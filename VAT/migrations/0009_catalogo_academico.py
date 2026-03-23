@@ -1,6 +1,5 @@
 from django.db import migrations, models
 import django.db.models.deletion
-import django.contrib.postgres.indexes
 
 
 class Migration(migrations.Migration):
@@ -294,26 +293,23 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="subsector",
-            index=django.contrib.postgres.indexes.GinIndex(
+            index=models.Index(
                 fields=["nombre"],
-                name="vat_subsector_nombre_trgm",
-                opclasses=["gin_trgm_ops"],
+                name="vat_subsector_nombre_idx",
             ),
         ),
         migrations.AddIndex(
-            model_name="titulor eferencia",
-            index=django.contrib.postgres.indexes.GinIndex(
+            model_name="tituloreferencia",
+            index=models.Index(
                 fields=["nombre"],
-                name="vat_titloreferencia_nombre_trgm",
-                opclasses=["gin_trgm_ops"],
+                name="vat_titref_nombre_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="sector",
-            index=django.contrib.postgres.indexes.GinIndex(
+            index=models.Index(
                 fields=["nombre"],
-                name="vat_sector_nombre_trgm",
-                opclasses=["gin_trgm_ops"],
+                name="vat_sector_nombre_idx",
             ),
         ),
     ]

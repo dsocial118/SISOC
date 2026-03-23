@@ -81,6 +81,7 @@ class ModalidadInstitucionalUpdateView(LoginRequiredMixin, UpdateView):
 class ModalidadInstitucionalDeleteView(LoginRequiredMixin, DeleteView):
     model = ModalidadInstitucional
     template_name = "vat/modalidad_institucional/confirm_delete.html"
+    context_object_name = "modalidad"
     success_url = reverse_lazy("vat_modalidad_institucional_list")
 
     def delete(self, request, *args, **kwargs):

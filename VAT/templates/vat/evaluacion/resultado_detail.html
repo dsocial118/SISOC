@@ -1,0 +1,92 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}{{ resultado }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <a href="{% url 'vat_resultado_evaluacion_list' %}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+                <div>
+                    <h1 class="h2 mb-0" style="color: #1f3a93;"><i class="bi-journal-check me-2"></i>Resultado</h1>
+                    <small class="text-muted">{{ resultado }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Evaluación</label><br><p class="mb-0">{{ resultado.evaluacion.nombre }}</p></div>
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Tipo</label><br><span class="badge bg-info bg-opacity-10 text-info">{{ resultado.evaluacion.get_tipo_display }}</span></div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Persona</label><br><p class="mb-0">{{ resultado.inscripcion.ciudadano.get_full_name }}</p></div>
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Comisión</label><br><p class="mb-0">{{ resultado.evaluacion.comision.codigo_comision }}</p></div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Calificación</label><br><p class="mb-0">{{ resultado.calificacion|default:"—" }}</p></div>
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Aprobó</label><br>{% if resultado.aprobo is None %}<span class="badge bg-light text-muted">—</span>{% elif resultado.aprobo %}<span class="badge bg-success">Sí</span>{% else %}<span class="badge bg-danger">No</span>{% endif %}</div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Fecha Registro</label><br><p class="mb-0">{{ resultado.fecha_registro|date:"d/m/Y H:i" }}</p></div>
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Registrado por</label><br><p class="mb-0">{{ resultado.registrado_por }}</p></div>
+                    </div>
+
+                    {% if resultado.observaciones %}
+                    <hr class="my-4">
+                    <div class="row"><div class="col-md-12">
+                        <label class="form-label small fw-600 text-muted">Observaciones</label>
+                        <p class="mb-0">{{ resultado.observaciones }}</p>
+                    </div></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2" style="color: #1f3a93;"></i>Auditoría</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="small text-muted">
+                        <dl>
+                            <dt>Creado</dt><dd>{{ resultado.fecha_creacion|date:"d/m/Y H:i" }}</dd>
+                            <dt>Modificado</dt><dd>{{ resultado.fecha_modificacion|date:"d/m/Y H:i" }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4 bg-primary bg-opacity-10">
+                <div class="card-body">
+                    <h6 class="card-title fw-600" style="color: #1f3a93;"><i class="bi bi-lightning me-2"></i>Acciones</h6>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'vat_resultado_evaluacion_update' resultado.id %}" class="btn btn-primary"><i class="bi bi-pencil me-2"></i>Editar</a>
+                        <a href="{% url 'vat_resultado_evaluacion_delete' resultado.id %}" class="btn btn-danger"><i class="bi bi-trash me-2"></i>Eliminar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body">
+                    <h6 class="card-title fw-600" style="color: #1f3a93;"><i class="bi bi-info-circle me-2"></i>Registro</h6>
+                    <div class="small text-muted"><dl><dt>ID</dt><dd>#{{ resultado.id }}</dd></dl></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>.fw-600 { font-weight: 600 !important; }</style>
+{% endblock %}

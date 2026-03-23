@@ -1,0 +1,52 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Programas{% endblock %}
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item active">Programas</li>
+</ol>
+{% endblock %}
+{% block content %}
+<div class="action-bar mb-3">
+    <a href="{% url 'programa_crear' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Agregar
+    </a>
+</div>
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Organismo</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for programa in programas %}
+                        <tr>
+                            <td>{{ programa.nombre }}</td>
+                            <td>{{ programa.organismo|default:"-" }}</td>
+                            <td>{% if programa.estado %}<span class="badge badge-success">Activo</span>{% else %}<span class="badge badge-secondary">Inactivo</span>{% endif %}</td>
+                            <td>
+                                <a href="{% url 'programa_detalle' programa.pk %}" class="btn btn-sm btn-info">Ver</a>
+                                <a href="{% url 'programa_editar' programa.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                                <a href="{% url 'programa_eliminar' programa.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No hay programas registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj %}
+{% endblock %}

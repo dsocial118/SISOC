@@ -10,24 +10,6 @@ from VAT.views.centro import (
     centros_ajax,
 )
 
-from VAT.views.actividad import (
-    ActividadCentroCreateView,
-    ActividadCentroDetailView,
-    ActividadCentroListView,
-    ActividadCentroUpdateView,
-    ActividadCreateView,
-    cargar_actividades_por_categoria,
-)
-
-from VAT.views.participante import (
-    ParticipanteActividadCreateView,
-    ParticipanteActividadDeleteView,
-    ParticipanteActividadListEsperaView,
-    ParticipanteActividadPromoverView,
-)
-
-from .views.encuentro import RegistrarAsistenciaView
-
 from VAT.views.modalidad_institucional import (
     ModalidadInstitucionalListView,
     ModalidadInstitucionalCreateView,
@@ -42,6 +24,16 @@ from VAT.views.catalogo import (
     SectorDetailView,
     SectorUpdateView,
     SectorDeleteView,
+    SubsectorListView,
+    SubsectorCreateView,
+    SubsectorDetailView,
+    SubsectorUpdateView,
+    SubsectorDeleteView,
+    ModalidadCursadaListView,
+    ModalidadCursadaCreateView,
+    ModalidadCursadaDetailView,
+    ModalidadCursadaUpdateView,
+    ModalidadCursadaDeleteView,
     TituloReferenciaListView,
     TituloReferenciaCreateView,
     TituloReferenciaDetailView,
@@ -52,6 +44,77 @@ from VAT.views.catalogo import (
     PlanVersionCurricularDetailView,
     PlanVersionCurricularUpdateView,
     PlanVersionCurricularDeleteView,
+)
+
+from VAT.views.oferta import (
+    InscripcionOfertaListView,
+    InscripcionOfertaCreateView,
+    InscripcionOfertaDetailView,
+    InscripcionOfertaUpdateView,
+    InscripcionOfertaDeleteView,
+)
+
+from VAT.views.institucion import (
+    InstitucionContactoListView,
+    InstitucionContactoCreateView,
+    InstitucionContactoDetailView,
+    InstitucionContactoUpdateView,
+    InstitucionContactoDeleteView,
+    AutoridadInstitucionalListView,
+    AutoridadInstitucionalCreateView,
+    AutoridadInstitucionalDetailView,
+    AutoridadInstitucionalUpdateView,
+    AutoridadInstitucionalDeleteView,
+    InstitucionIdentificadorHistListView,
+    InstitucionIdentificadorHistCreateView,
+    InstitucionIdentificadorHistDetailView,
+    InstitucionIdentificadorHistUpdateView,
+    InstitucionIdentificadorHistDeleteView,
+    InstitucionUbicacionListView,
+    InstitucionUbicacionCreateView,
+    InstitucionUbicacionDetailView,
+    InstitucionUbicacionUpdateView,
+    InstitucionUbicacionDeleteView,
+    localidades_por_centro,
+)
+
+from VAT.views.oferta_institucional import (
+    OfertaInstitucionalListView,
+    OfertaInstitucionalCreateView,
+    OfertaInstitucionalDetailView,
+    OfertaInstitucionalUpdateView,
+    OfertaInstitucionalDeleteView,
+    ComisionListView,
+    ComisionCreateView,
+    ComisionDetailView,
+    ComisionUpdateView,
+    ComisionDeleteView,
+    ComisionHorarioListView,
+    ComisionHorarioCreateView,
+    ComisionHorarioDetailView,
+    ComisionHorarioUpdateView,
+    ComisionHorarioDeleteView,
+)
+
+from VAT.views.persona import (
+    InscripcionListView,
+    InscripcionCreateView,
+    InscripcionDetailView,
+    InscripcionUpdateView,
+    InscripcionDeleteView,
+)
+
+from VAT.views.evaluacion import (
+    EvaluacionListView,
+    EvaluacionCreateView,
+    EvaluacionDetailView,
+    EvaluacionUpdateView,
+    EvaluacionDeleteView,
+    ResultadoEvaluacionListView,
+    ResultadoEvaluacionCreateView,
+    ResultadoEvaluacionDetailView,
+    ResultadoEvaluacionUpdateView,
+    ResultadoEvaluacionDeleteView,
 )
 
 
@@ -85,80 +148,6 @@ urlpatterns = [
         "vat/centros/<int:pk>/eliminar/",
         permissions_any_required(["VAT.view_centro"])(CentroDeleteView.as_view()),
         name="vat_centro_delete",
-    ),
-    path(
-        "vat/actividades/",
-        permissions_any_required(["VAT.view_centro"])(
-            ActividadCentroListView.as_view()
-        ),
-        name="vat_actividadcentro_list",
-    ),
-    path(
-        "vat/centros/<int:centro_id>/actividades/nueva/",
-        permissions_any_required(["VAT.view_centro"])(
-            ActividadCentroCreateView.as_view()
-        ),
-        name="vat_actividadcentro_create",
-    ),
-    path(
-        "vat/centros/actividades/<int:pk>/detalle/",
-        permissions_any_required(["VAT.view_centro"])(
-            ActividadCentroDetailView.as_view()
-        ),
-        name="vat_actividadcentro_detail",
-    ),
-    path(
-        "vat/centros/<int:centro_id>/actividades/<int:actividad_id>/participantes/crear/",
-        permissions_any_required(["VAT.view_centro"])(
-            ParticipanteActividadCreateView.as_view()
-        ),
-        name="vat_participanteactividad_create",
-    ),
-    path(
-        "vat/centros/actividades/<int:pk>/editar/",
-        permissions_any_required(["VAT.view_centro"])(
-            ActividadCentroUpdateView.as_view()
-        ),
-        name="vat_actividadcentro_edit",
-    ),
-    path(
-        "vat/ajax/actividades/",
-        permissions_any_required(["VAT.view_centro"])(cargar_actividades_por_categoria),
-        name="vat_ajax_cargar_actividades",
-    ),
-    path(
-        "vat/centros/<int:centro_id>/actividades/<int:actividad_id>/participantes/<int:pk>/eliminar/",
-        permissions_any_required(["VAT.view_centro"])(
-            ParticipanteActividadDeleteView.as_view()
-        ),
-        name="vat_participanteactividad_delete",
-    ),
-    path(
-        "vat/centros/<int:centro_id>/actividades/<int:actividad_id>/lista-espera/",
-        permissions_any_required(["VAT.view_centro"])(
-            ParticipanteActividadListEsperaView.as_view()
-        ),
-        name="vat_actividadcentro_lista_espera",
-    ),
-    path(
-        "vat/centros/<int:centro_id>/actividades/<int:actividad_id>/lista-espera/<int:pk>/promover/",
-        permissions_any_required(["VAT.view_centro"])(
-            ParticipanteActividadPromoverView.as_view()
-        ),
-        name="vat_participanteactividad_promover",
-    ),
-    # Encuentros / Asistencia
-    path(
-        "vat/encuentros/<int:pk>/asistencia/",
-        permissions_any_required(["VAT.view_centro"])(
-            RegistrarAsistenciaView.as_view()
-        ),
-        name="vat_encuentro_asistencia",
-    ),
-    path(
-        "vat/actividades/nueva/",
-        permissions_any_required(["VAT.view_centro"])(ActividadCreateView.as_view()),
-        name="vat_actividad_create_sola",
     ),
     # Modalidades Institucionales
     path(
@@ -222,6 +211,84 @@ urlpatterns = [
         permissions_any_required(["VAT.delete_sector"])(SectorDeleteView.as_view()),
         name="vat_sector_delete",
     ),
+    # Catálogos Académicos - Subsectores
+    path(
+        "vat/catalogos/subsectores/",
+        permissions_any_required(["VAT.view_subsector"])(SubsectorListView.as_view()),
+        name="vat_subsector_list",
+    ),
+    path(
+        "vat/catalogos/subsectores/nuevo/",
+        permissions_any_required(["VAT.add_subsector"])(SubsectorCreateView.as_view()),
+        name="vat_subsector_create",
+    ),
+    path(
+        "vat/catalogos/subsectores/<int:pk>/",
+        permissions_any_required(["VAT.view_subsector"])(SubsectorDetailView.as_view()),
+        name="vat_subsector_detail",
+    ),
+    path(
+        "vat/catalogos/subsectores/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_subsector"])(SubsectorUpdateView.as_view()),
+        name="vat_subsector_update",
+    ),
+    path(
+        "vat/catalogos/subsectores/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_subsector"])(SubsectorDeleteView.as_view()),
+        name="vat_subsector_delete",
+    ),
+    # Catálogos Académicos - Modalidades de Cursado
+    path(
+        "vat/catalogos/modalidades-cursado/",
+        permissions_any_required(["VAT.view_modalidadcursada"])(ModalidadCursadaListView.as_view()),
+        name="vat_modalidadcursada_list",
+    ),
+    path(
+        "vat/catalogos/modalidades-cursado/nueva/",
+        permissions_any_required(["VAT.add_modalidadcursada"])(ModalidadCursadaCreateView.as_view()),
+        name="vat_modalidadcursada_create",
+    ),
+    path(
+        "vat/catalogos/modalidades-cursado/<int:pk>/",
+        permissions_any_required(["VAT.view_modalidadcursada"])(ModalidadCursadaDetailView.as_view()),
+        name="vat_modalidadcursada_detail",
+    ),
+    path(
+        "vat/catalogos/modalidades-cursado/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_modalidadcursada"])(ModalidadCursadaUpdateView.as_view()),
+        name="vat_modalidadcursada_update",
+    ),
+    path(
+        "vat/catalogos/modalidades-cursado/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_modalidadcursada"])(ModalidadCursadaDeleteView.as_view()),
+        name="vat_modalidadcursada_delete",
+    ),
+    # Catálogos Académicos - Modalidades de Cursado
+    path(
+        "vat/catalogos/modalidades-cursado/",
+        permissions_any_required(["VAT.view_modalidadcursada"])(ModalidadCursadaListView.as_view()),
+        name="vat_modalidadcursada_list",
+    ),
+    path(
+        "vat/catalogos/modalidades-cursado/nueva/",
+        permissions_any_required(["VAT.add_modalidadcursada"])(ModalidadCursadaCreateView.as_view()),
+        name="vat_modalidadcursada_create",
+    ),
+    path(
+        "vat/catalogos/modalidades-cursado/<int:pk>/",
+        permissions_any_required(["VAT.view_modalidadcursada"])(ModalidadCursadaDetailView.as_view()),
+        name="vat_modalidadcursada_detail",
+    ),
+    path(
+        "vat/catalogos/modalidades-cursado/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_modalidadcursada"])(ModalidadCursadaUpdateView.as_view()),
+        name="vat_modalidadcursada_update",
+    ),
+    path(
+        "vat/catalogos/modalidades-cursado/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_modalidadcursada"])(ModalidadCursadaDeleteView.as_view()),
+        name="vat_modalidadcursada_delete",
+    ),
     # Catálogos Académicos - Títulos de Referencia
     path(
         "vat/catalogos/titulos-referencia/",
@@ -273,6 +340,297 @@ urlpatterns = [
         "vat/catalogos/planes-curriculares/<int:pk>/eliminar/",
         permissions_any_required(["VAT.delete_planversioncurricular"])(PlanVersionCurricularDeleteView.as_view()),
         name="vat_planversioncurricular_delete",
+    ),
+    # Inscripciones a Oferta
+    path(
+        "vat/inscripciones-oferta/",
+        permissions_any_required(["VAT.view_inscripcionoferta"])(InscripcionOfertaListView.as_view()),
+        name="vat_inscripcion_oferta_list",
+    ),
+    path(
+        "vat/inscripciones-oferta/nueva/",
+        permissions_any_required(["VAT.add_inscripcionoferta"])(InscripcionOfertaCreateView.as_view()),
+        name="vat_inscripcion_oferta_create",
+    ),
+    path(
+        "vat/inscripciones-oferta/<int:pk>/",
+        permissions_any_required(["VAT.view_inscripcionoferta"])(InscripcionOfertaDetailView.as_view()),
+        name="vat_inscripcion_oferta_detail",
+    ),
+    path(
+        "vat/inscripciones-oferta/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_inscripcionoferta"])(InscripcionOfertaUpdateView.as_view()),
+        name="vat_inscripcion_oferta_update",
+    ),
+    path(
+        "vat/inscripciones-oferta/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_inscripcionoferta"])(InscripcionOfertaDeleteView.as_view()),
+        name="vat_inscripcion_oferta_delete",
+    ),
+    # Institución - Contactos
+    path(
+        "vat/institucion/contactos/",
+        permissions_any_required(["VAT.view_institucioncontacto"])(InstitucionContactoListView.as_view()),
+        name="vat_institucion_contacto_list",
+    ),
+    path(
+        "vat/institucion/contactos/nuevo/",
+        permissions_any_required(["VAT.add_institucioncontacto"])(InstitucionContactoCreateView.as_view()),
+        name="vat_institucion_contacto_create",
+    ),
+    path(
+        "vat/institucion/contactos/<int:pk>/",
+        permissions_any_required(["VAT.view_institucioncontacto"])(InstitucionContactoDetailView.as_view()),
+        name="vat_institucion_contacto_detail",
+    ),
+    path(
+        "vat/institucion/contactos/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_institucioncontacto"])(InstitucionContactoUpdateView.as_view()),
+        name="vat_institucion_contacto_update",
+    ),
+    path(
+        "vat/institucion/contactos/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_institucioncontacto"])(InstitucionContactoDeleteView.as_view()),
+        name="vat_institucion_contacto_delete",
+    ),
+    # Institución - Autoridades
+    path(
+        "vat/institucion/autoridades/",
+        permissions_any_required(["VAT.view_autoridadinstitucional"])(AutoridadInstitucionalListView.as_view()),
+        name="vat_autoridad_institucional_list",
+    ),
+    path(
+        "vat/institucion/autoridades/nuevo/",
+        permissions_any_required(["VAT.add_autoridadinstitucional"])(AutoridadInstitucionalCreateView.as_view()),
+        name="vat_autoridad_institucional_create",
+    ),
+    path(
+        "vat/institucion/autoridades/<int:pk>/",
+        permissions_any_required(["VAT.view_autoridadinstitucional"])(AutoridadInstitucionalDetailView.as_view()),
+        name="vat_autoridad_institucional_detail",
+    ),
+    path(
+        "vat/institucion/autoridades/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_autoridadinstitucional"])(AutoridadInstitucionalUpdateView.as_view()),
+        name="vat_autoridad_institucional_update",
+    ),
+    path(
+        "vat/institucion/autoridades/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_autoridadinstitucional"])(AutoridadInstitucionalDeleteView.as_view()),
+        name="vat_autoridad_institucional_delete",
+    ),
+    # Institución - Identificadores
+    path(
+        "vat/institucion/identificadores/",
+        permissions_any_required(["VAT.view_institucionidentificadorhist"])(InstitucionIdentificadorHistListView.as_view()),
+        name="vat_institucion_identificador_list",
+    ),
+    path(
+        "vat/institucion/identificadores/nuevo/",
+        permissions_any_required(["VAT.add_institucionidentificadorhist"])(InstitucionIdentificadorHistCreateView.as_view()),
+        name="vat_institucion_identificador_create",
+    ),
+    path(
+        "vat/institucion/identificadores/<int:pk>/",
+        permissions_any_required(["VAT.view_institucionidentificadorhist"])(InstitucionIdentificadorHistDetailView.as_view()),
+        name="vat_institucion_identificador_detail",
+    ),
+    path(
+        "vat/institucion/identificadores/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_institucionidentificadorhist"])(InstitucionIdentificadorHistUpdateView.as_view()),
+        name="vat_institucion_identificador_update",
+    ),
+    path(
+        "vat/institucion/identificadores/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_institucionidentificadorhist"])(InstitucionIdentificadorHistDeleteView.as_view()),
+        name="vat_institucion_identificador_delete",
+    ),
+    # Institución - Ubicaciones
+    path(
+        "vat/institucion/ubicaciones/",
+        permissions_any_required(["VAT.view_institucionubicacion"])(InstitucionUbicacionListView.as_view()),
+        name="vat_institucion_ubicacion_list",
+    ),
+    path(
+        "vat/institucion/ubicaciones/nuevo/",
+        permissions_any_required(["VAT.add_institucionubicacion"])(InstitucionUbicacionCreateView.as_view()),
+        name="vat_institucion_ubicacion_create",
+    ),
+    path(
+        "vat/institucion/ubicaciones/<int:pk>/",
+        permissions_any_required(["VAT.view_institucionubicacion"])(InstitucionUbicacionDetailView.as_view()),
+        name="vat_institucion_ubicacion_detail",
+    ),
+    path(
+        "vat/institucion/ubicaciones/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_institucionubicacion"])(InstitucionUbicacionUpdateView.as_view()),
+        name="vat_institucion_ubicacion_update",
+    ),
+    path(
+        "vat/institucion/ubicaciones/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_institucionubicacion"])(InstitucionUbicacionDeleteView.as_view()),
+        name="vat_institucion_ubicacion_delete",
+    ),
+    path(
+        "vat/ajax/localidades-por-centro/",
+        permissions_any_required(["VAT.view_institucionubicacion"])(localidades_por_centro),
+        name="vat_ajax_localidades_por_centro",
+    ),
+    # Oferta Institucional
+    path(
+        "vat/ofertas-institucionales/",
+        permissions_any_required(["VAT.view_ofertainstitucional"])(OfertaInstitucionalListView.as_view()),
+        name="vat_oferta_institucional_list",
+    ),
+    path(
+        "vat/ofertas-institucionales/nueva/",
+        permissions_any_required(["VAT.add_ofertainstitucional"])(OfertaInstitucionalCreateView.as_view()),
+        name="vat_oferta_institucional_create",
+    ),
+    path(
+        "vat/ofertas-institucionales/<int:pk>/",
+        permissions_any_required(["VAT.view_ofertainstitucional"])(OfertaInstitucionalDetailView.as_view()),
+        name="vat_oferta_institucional_detail",
+    ),
+    path(
+        "vat/ofertas-institucionales/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_ofertainstitucional"])(OfertaInstitucionalUpdateView.as_view()),
+        name="vat_oferta_institucional_update",
+    ),
+    path(
+        "vat/ofertas-institucionales/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_ofertainstitucional"])(OfertaInstitucionalDeleteView.as_view()),
+        name="vat_oferta_institucional_delete",
+    ),
+    # Comisiones
+    path(
+        "vat/comisiones/",
+        permissions_any_required(["VAT.view_comision"])(ComisionListView.as_view()),
+        name="vat_comision_list",
+    ),
+    path(
+        "vat/comisiones/nueva/",
+        permissions_any_required(["VAT.add_comision"])(ComisionCreateView.as_view()),
+        name="vat_comision_create",
+    ),
+    path(
+        "vat/comisiones/<int:pk>/",
+        permissions_any_required(["VAT.view_comision"])(ComisionDetailView.as_view()),
+        name="vat_comision_detail",
+    ),
+    path(
+        "vat/comisiones/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_comision"])(ComisionUpdateView.as_view()),
+        name="vat_comision_update",
+    ),
+    path(
+        "vat/comisiones/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_comision"])(ComisionDeleteView.as_view()),
+        name="vat_comision_delete",
+    ),
+    # Horarios de Comisión
+    path(
+        "vat/comisiones/horarios/",
+        permissions_any_required(["VAT.view_comisionhorario"])(ComisionHorarioListView.as_view()),
+        name="vat_comision_horario_list",
+    ),
+    path(
+        "vat/comisiones/horarios/nuevo/",
+        permissions_any_required(["VAT.add_comisionhorario"])(ComisionHorarioCreateView.as_view()),
+        name="vat_comision_horario_create",
+    ),
+    path(
+        "vat/comisiones/horarios/<int:pk>/",
+        permissions_any_required(["VAT.view_comisionhorario"])(ComisionHorarioDetailView.as_view()),
+        name="vat_comision_horario_detail",
+    ),
+    path(
+        "vat/comisiones/horarios/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_comisionhorario"])(ComisionHorarioUpdateView.as_view()),
+        name="vat_comision_horario_update",
+    ),
+    path(
+        "vat/comisiones/horarios/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_comisionhorario"])(ComisionHorarioDeleteView.as_view()),
+        name="vat_comision_horario_delete",
+    ),
+    # Inscripciones (Fase 5)
+    path(
+        "vat/inscripciones/",
+        permissions_any_required(["VAT.view_inscripcion"])(InscripcionListView.as_view()),
+        name="vat_inscripcion_list",
+    ),
+    path(
+        "vat/inscripciones/nueva/",
+        permissions_any_required(["VAT.add_inscripcion"])(InscripcionCreateView.as_view()),
+        name="vat_inscripcion_create",
+    ),
+    path(
+        "vat/inscripciones/<int:pk>/",
+        permissions_any_required(["VAT.view_inscripcion"])(InscripcionDetailView.as_view()),
+        name="vat_inscripcion_detail",
+    ),
+    path(
+        "vat/inscripciones/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_inscripcion"])(InscripcionUpdateView.as_view()),
+        name="vat_inscripcion_update",
+    ),
+    path(
+        "vat/inscripciones/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_inscripcion"])(InscripcionDeleteView.as_view()),
+        name="vat_inscripcion_delete",
+    ),
+    # Evaluaciones
+    path(
+        "vat/evaluaciones/",
+        permissions_any_required(["VAT.view_evaluacion"])(EvaluacionListView.as_view()),
+        name="vat_evaluacion_list",
+    ),
+    path(
+        "vat/evaluaciones/nueva/",
+        permissions_any_required(["VAT.add_evaluacion"])(EvaluacionCreateView.as_view()),
+        name="vat_evaluacion_create",
+    ),
+    path(
+        "vat/evaluaciones/<int:pk>/",
+        permissions_any_required(["VAT.view_evaluacion"])(EvaluacionDetailView.as_view()),
+        name="vat_evaluacion_detail",
+    ),
+    path(
+        "vat/evaluaciones/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_evaluacion"])(EvaluacionUpdateView.as_view()),
+        name="vat_evaluacion_update",
+    ),
+    path(
+        "vat/evaluaciones/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_evaluacion"])(EvaluacionDeleteView.as_view()),
+        name="vat_evaluacion_delete",
+    ),
+    # Resultados de Evaluación
+    path(
+        "vat/resultados-evaluacion/",
+        permissions_any_required(["VAT.view_resultadoevaluacion"])(ResultadoEvaluacionListView.as_view()),
+        name="vat_resultado_evaluacion_list",
+    ),
+    path(
+        "vat/resultados-evaluacion/nuevo/",
+        permissions_any_required(["VAT.add_resultadoevaluacion"])(ResultadoEvaluacionCreateView.as_view()),
+        name="vat_resultado_evaluacion_create",
+    ),
+    path(
+        "vat/resultados-evaluacion/<int:pk>/",
+        permissions_any_required(["VAT.view_resultadoevaluacion"])(ResultadoEvaluacionDetailView.as_view()),
+        name="vat_resultado_evaluacion_detail",
+    ),
+    path(
+        "vat/resultados-evaluacion/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_resultadoevaluacion"])(ResultadoEvaluacionUpdateView.as_view()),
+        name="vat_resultado_evaluacion_update",
+    ),
+    path(
+        "vat/resultados-evaluacion/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_resultadoevaluacion"])(ResultadoEvaluacionDeleteView.as_view()),
+        name="vat_resultado_evaluacion_delete",
     ),
 
 ]

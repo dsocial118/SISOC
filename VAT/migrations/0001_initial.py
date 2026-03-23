@@ -2,7 +2,6 @@
 
 import core.soft_delete.base
 from django.conf import settings
-import django.contrib.postgres.indexes
 from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
@@ -1142,10 +1141,9 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="participanteactividad",
-            index=django.contrib.postgres.indexes.GinIndex(
+            index=models.Index(
                 fields=["estado"],
-                name="vat_part_estado_trgm",
-                opclasses=["gin_trgm_ops"],
+                name="vat_part_estado_idx",
             ),
         ),
         migrations.AlterUniqueTogether(
@@ -1170,18 +1168,16 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="centro",
-            index=django.contrib.postgres.indexes.GinIndex(
+            index=models.Index(
                 fields=["nombre"],
-                name="vat_centro_nombre_trgm",
-                opclasses=["gin_trgm_ops"],
+                name="vat_centro_nombre_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="categoria",
-            index=django.contrib.postgres.indexes.GinIndex(
+            index=models.Index(
                 fields=["nombre"],
-                name="vat_categoria_nombre_trgm",
-                opclasses=["gin_trgm_ops"],
+                name="vat_categ_nombre_idx",
             ),
         ),
         migrations.AddIndex(
@@ -1204,18 +1200,16 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="actividadcentro",
-            index=django.contrib.postgres.indexes.GinIndex(
+            index=models.Index(
                 fields=["estado"],
-                name="vat_actcentro_estado_trgm",
-                opclasses=["gin_trgm_ops"],
+                name="vat_actcentro_estado_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="actividad",
-            index=django.contrib.postgres.indexes.GinIndex(
+            index=models.Index(
                 fields=["nombre"],
-                name="vat_actividad_nombre_trgm",
-                opclasses=["gin_trgm_ops"],
+                name="vat_actividad_nombre_idx",
             ),
         ),
     ]
