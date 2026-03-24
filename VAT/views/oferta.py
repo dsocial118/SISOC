@@ -5,8 +5,9 @@ from django.views.generic import ListView, CreateView, DetailView, UpdateView, D
 from django.contrib import messages
 from django.db.models import Q
 
-from VAT.models import InscripcionOferta
+from VAT.models import InscripcionOferta, Voucher
 from VAT.forms import InscripcionOfertaForm
+from VAT.services.voucher_service.impl import VoucherService
 
 logger = logging.getLogger("django")
 
@@ -55,8 +56,49 @@ class InscripcionOfertaCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.inscrito_por = self.request.user
-        messages.success(self.request, "Inscripción creada exitosamente.")
-        return super().form_valid(form)
+        response = super().form_valid(form)
+
+        inscripcion = self.object
+        comision = inscripcion.oferta
+        oferta = comision.oferta  # OfertaInstitucional
+
+        if oferta.usa_voucher:
+            voucher = (
+                Voucher.objects.filter(
+                    ciudadano=inscripcion.ciudadano,
+                    programa=oferta.programa,
+                    estado="activo",
+                )
+                .order_by("fecha_vencimiento")
+                .first()
+            )
+
+            if not voucher:
+                inscripcion.delete()
+                messages.error(
+                    self.request,
+                    f"{inscripcion.ciudadano} no tiene voucher activo para el programa {oferta.programa}. No se realizó la inscripción.",
+                )
+                return self.form_invalid(form)
+
+            ok, msg = VoucherService.usar_voucher(
+                voucher=voucher,
+                inscripcion_oferta=inscripcion,
+                cantidad=1,
+            )
+            if not ok:
+                inscripcion.delete()
+                messages.error(self.request, f"No se pudo usar el voucher: {msg}")
+                return self.form_invalid(form)
+
+            messages.success(
+                self.request,
+                f"Inscripción creada. Se descontó 1 crédito del voucher de {inscripcion.ciudadano} ({voucher.cantidad_disponible} restantes).",
+            )
+        else:
+            messages.success(self.request, "Inscripción creada exitosamente.")
+
+        return response
 
     def form_invalid(self, form):
         messages.error(self.request, "Error al crear la inscripción.")

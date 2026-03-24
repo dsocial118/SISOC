@@ -63,7 +63,7 @@
                                             <td class="py-3">{{ oferta.plan_curricular }}</td>
                                             <td class="py-3">{{ oferta.ciclo_lectivo }}</td>
                                             <td class="py-3"><span class="badge bg-info bg-opacity-10 text-info">{{ oferta.get_estado_display }}</span></td>
-                                            <td class="py-3"><span class="badge bg-{{ oferta.aprobacion_jurisdiccion|yesno:'success,secondary' }} me-1" title="Jurisdicción">J</span><span class="badge bg-{{ oferta.aprobacion_inet|yesno:'success,secondary' }}" title="INET">I</span></td>
+                                            <td class="py-3">{% if oferta.usa_voucher %}<span class="badge bg-success" title="Requiere voucher"><i class="bi bi-ticket-perforated"></i></span>{% else %}<span class="badge bg-secondary" title="Sin voucher">—</span>{% endif %}</td>
                                             <td class="py-3 text-center">
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     <a href="{% url 'vat_oferta_institucional_detail' oferta.id %}" class="btn btn-outline-info" title="Ver"><i class="bi bi-eye"></i></a>

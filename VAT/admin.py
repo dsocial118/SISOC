@@ -337,8 +337,8 @@ class ComisionInline(admin.TabularInline):
 
 @admin.register(OfertaInstitucional)
 class OfertaInstitucionalAdmin(admin.ModelAdmin):
-    list_display = ("centro", "plan_curricular", "ciclo_lectivo", "estado", "aprobacion_inet")
-    list_filter = ("estado", "centro", "ciclo_lectivo", "aprobacion_inet")
+    list_display = ("centro", "plan_curricular", "ciclo_lectivo", "estado", "usa_voucher")
+    list_filter = ("estado", "centro", "ciclo_lectivo", "usa_voucher")
     search_fields = ("centro__nombre", "plan_curricular__titulo_referencia__nombre")
     inlines = [ComisionInline]
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
@@ -349,8 +349,8 @@ class OfertaInstitucionalAdmin(admin.ModelAdmin):
         ("Detalles", {
             "fields": ("nombre_local", "ciclo_lectivo", "plan_externo_id")
         }),
-        ("Aprobaciones", {
-            "fields": ("estado", "aprobacion_jurisdiccion", "aprobacion_inet", "fecha_publicacion")
+        ("Estado y Voucher", {
+            "fields": ("estado", "usa_voucher", "fecha_publicacion")
         }),
         ("Auditoría", {
             "fields": ("observaciones", "fecha_creacion", "fecha_modificacion"),

@@ -81,11 +81,17 @@ class OfertaInstitucionalDetailView(LoginRequiredMixin, DetailView):
     template_name = "vat/oferta_institucional/oferta_detail.html"
     context_object_name = "oferta"
 
+    def get_queryset(self):
+        return OfertaInstitucional.objects.select_related(
+            "centro", "plan_curricular__titulo_referencia", "programa"
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        oferta = self.get_object()
-        context["comisiones"] = Comision.objects.filter(oferta=oferta).prefetch_related("horarios")
-        context["total_comisiones"] = context["comisiones"].count()
+        # self.object ya está cargado por DetailView, no genera query extra
+        comisiones = list(self.object.comisiones.prefetch_related("horarios"))
+        context["comisiones"] = comisiones
+        context["total_comisiones"] = len(comisiones)
         return context
 
 
@@ -143,7 +149,6 @@ class ComisionCreateView(LoginRequiredMixin, CreateView):
     model = Comision
     form_class = ComisionForm
     template_name = "vat/oferta_institucional/comision_form.html"
-    success_url = reverse_lazy("vat_comision_list")
 
     def get_initial(self):
         initial = super().get_initial()
@@ -155,6 +160,9 @@ class ComisionCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         messages.success(self.request, "Comisión creada exitosamente.")
         return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("vat_comision_detail", kwargs={"pk": self.object.pk})
 
 
 class ComisionDetailView(LoginRequiredMixin, DetailView):

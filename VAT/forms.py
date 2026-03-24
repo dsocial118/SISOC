@@ -578,15 +578,11 @@ class OfertaInstitucionalForm(forms.ModelForm):
         choices=OfertaInstitucional.ESTADO_OFERTA_CHOICES,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
-    aprobacion_jurisdiccion = forms.BooleanField(
-        label="Aprobación de Jurisdicción",
+    usa_voucher = forms.BooleanField(
+        label="Usa Voucher",
         required=False,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
-    )
-    aprobacion_inet = forms.BooleanField(
-        label="Aprobación INET",
-        required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        help_text="Al inscribirse, se valida y descuenta un crédito del voucher del ciudadano.",
     )
     fecha_publicacion = forms.DateField(
         label="Fecha de Publicación",
@@ -601,7 +597,7 @@ class OfertaInstitucionalForm(forms.ModelForm):
 
     class Meta:
         model = OfertaInstitucional
-        fields = ["centro", "plan_curricular", "programa", "nombre_local", "ciclo_lectivo", "estado", "aprobacion_jurisdiccion", "aprobacion_inet", "fecha_publicacion", "observaciones"]
+        fields = ["centro", "plan_curricular", "programa", "nombre_local", "ciclo_lectivo", "estado", "usa_voucher", "fecha_publicacion", "observaciones"]
 
 
 class ComisionForm(forms.ModelForm):

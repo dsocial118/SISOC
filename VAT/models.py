@@ -888,11 +888,10 @@ class OfertaInstitucional(SoftDeleteModelMixin, models.Model):
         verbose_name="Estado de Oferta",
     )
 
-    aprobacion_jurisdiccion = models.BooleanField(
-        default=False, verbose_name="Aprobación de Jurisdicción"
-    )
-    aprobacion_inet = models.BooleanField(
-        default=False, verbose_name="Aprobación INET"
+    usa_voucher = models.BooleanField(
+        default=False,
+        verbose_name="Usa Voucher",
+        help_text="Si está activo, al inscribirse un ciudadano se valida y descuenta un crédito de su voucher.",
     )
     fecha_publicacion = models.DateField(
         blank=True, null=True, verbose_name="Fecha de Publicación"

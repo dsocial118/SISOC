@@ -42,7 +42,7 @@ class VoucherListView(LoginRequiredMixin, ListView):
         from core.models import Programa
         ctx = super().get_context_data(**kwargs)
         ctx["estado_choices"] = Voucher.ESTADO_CHOICES
-        ctx["programas"] = Programa.objects.all()
+        ctx["programas"] = Programa.objects.only("id", "nombre")
         ctx["q"] = self.request.GET.get("q", "")
         ctx["estado_sel"] = self.request.GET.get("estado", "")
         ctx["programa_sel"] = self.request.GET.get("programa", "")
