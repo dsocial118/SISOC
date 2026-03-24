@@ -94,6 +94,8 @@ from VAT.views.oferta_institucional import (
     ComisionHorarioDetailView,
     ComisionHorarioUpdateView,
     ComisionHorarioDeleteView,
+    InscripcionCambiarEstadoView,
+    AsistenciaSesionView,
 )
 
 from VAT.views.voucher import (
@@ -569,6 +571,22 @@ urlpatterns = [
         "vat/comisiones/horarios/<int:pk>/eliminar/",
         permissions_any_required(["VAT.delete_comisionhorario"])(ComisionHorarioDeleteView.as_view()),
         name="vat_comision_horario_delete",
+    ),
+    # Asistencia a sesión
+    path(
+        "vat/comisiones/sesiones/<int:sesion_pk>/asistencia/",
+        permissions_any_required(["VAT.add_asistenciasesion", "VAT.change_asistenciasesion"])(
+            AsistenciaSesionView.as_view()
+        ),
+        name="vat_asistencia_sesion",
+    ),
+    # Cambiar estado de inscripción desde el detalle de comisión
+    path(
+        "vat/inscripciones/<int:pk>/cambiar-estado/",
+        permissions_any_required(["VAT.change_inscripcion"])(
+            InscripcionCambiarEstadoView.as_view()
+        ),
+        name="vat_inscripcion_cambiar_estado",
     ),
     # Inscripciones (Fase 5)
     path(

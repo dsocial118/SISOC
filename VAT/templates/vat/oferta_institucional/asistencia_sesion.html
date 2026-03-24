@@ -1,0 +1,91 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Asistencia — Sesión #{{ sesion.numero_sesion }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <a href="{% url 'vat_comision_detail' sesion.comision_id %}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+                <div>
+                    <h1 class="h2 mb-0" style="color: #1f3a93;"><i class="bi bi-check2-square me-2"></i>Tomar Asistencia</h1>
+                    <small class="text-muted">
+                        Sesión #{{ sesion.numero_sesion }} — {{ sesion.fecha|date:"d/m/Y" }}
+                        ({{ sesion.horario.dia_semana }} {{ sesion.horario.hora_desde|time:"H:i" }}–{{ sesion.horario.hora_hasta|time:"H:i" }})
+                        · {{ sesion.comision }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if ya_tomada %}
+    <div class="alert alert-info d-flex align-items-center gap-2 mb-4">
+        <i class="bi bi-info-circle-fill"></i>
+        Esta sesión ya tiene asistencia registrada. Podés modificarla y guardar nuevamente.
+    </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light border-bottom">
+            <h5 class="mb-0"><i class="bi bi-people me-2" style="color: #1f3a93;"></i>Inscriptos activos ({{ filas|length }})</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if filas %}
+            <form method="post">
+                {% csrf_token %}
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ciudadano</th>
+                            <th class="text-center" style="width:120px">Presente</th>
+                            <th>Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fila in filas %}
+                        <tr>
+                            <td>{{ fila.inscripcion.ciudadano.nombre_completo }}</td>
+                            <td class="text-center">
+                                <div class="form-check form-switch d-flex justify-content-center">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="presente_{{ fila.inscripcion.pk }}"
+                                           id="pres_{{ fila.inscripcion.pk }}"
+                                           value="1"
+                                           {% if fila.presente %}checked{% endif %}>
+                                </div>
+                            </td>
+                            <td>
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       name="obs_{{ fila.inscripcion.pk }}"
+                                       value="{{ fila.observaciones|default:'' }}"
+                                       placeholder="Opcional">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="d-flex justify-content-end gap-2 p-3 border-top">
+                    <a href="{% url 'vat_comision_detail' sesion.comision_id %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg me-1"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i>Guardar Asistencia
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            <p class="text-muted small p-3 mb-0">
+                No hay inscriptos aceptados en esta comisión.
+                Aceptá inscripciones desde el detalle de la comisión para poder tomar asistencia.
+            </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<style>.fw-600 { font-weight: 600 !important; }</style>
+{% endblock %}

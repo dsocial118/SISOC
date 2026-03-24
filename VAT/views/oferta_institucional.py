@@ -1,15 +1,21 @@
 import logging
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
+from django.views import View
+from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView, TemplateView
 from django.contrib import messages
 from django.db.models import Q, Count
+from django.utils import timezone
 
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from VAT.models import (
     OfertaInstitucional,
     Comision,
     ComisionHorario,
+    Inscripcion,
+    SesionComision,
+    AsistenciaSesion,
 )
 from VAT.forms import (
     OfertaInstitucionalForm,
@@ -170,13 +176,126 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
     template_name = "vat/oferta_institucional/comision_detail.html"
     context_object_name = "comision"
 
+    def get_queryset(self):
+        return Comision.objects.select_related("oferta__centro", "oferta__plan_curricular__titulo_referencia")
+
     def get_context_data(self, **kwargs):
-        from VAT.models import SesionComision
         context = super().get_context_data(**kwargs)
-        comision = self.get_object()
-        context["horarios"] = ComisionHorario.objects.filter(comision=comision).select_related("dia_semana")
-        context["sesiones"] = SesionComision.objects.filter(comision=comision).select_related("horario__dia_semana").order_by("fecha", "horario__hora_desde")
+        comision = self.object
+        context["horarios"] = list(
+            ComisionHorario.objects.filter(comision=comision).select_related("dia_semana")
+        )
+        context["sesiones"] = list(
+            SesionComision.objects.filter(comision=comision)
+            .select_related("horario__dia_semana")
+            .order_by("fecha", "horario__hora_desde")
+        )
+        context["inscripciones"] = list(
+            Inscripcion.objects.filter(comision=comision)
+            .select_related("ciudadano", "programa")
+            .order_by("estado", "fecha_inscripcion")
+        )
+        context["estado_choices"] = Inscripcion.ESTADO_INSCRIPCION_CHOICES
         return context
+
+
+class InscripcionCambiarEstadoView(LoginRequiredMixin, View):
+    """Cambia el estado de una Inscripcion. POST: {estado: <nuevo_estado>}."""
+
+    def post(self, request, pk):
+        inscripcion = get_object_or_404(Inscripcion, pk=pk)
+        nuevo_estado = request.POST.get("estado")
+        estados_validos = dict(Inscripcion.ESTADO_INSCRIPCION_CHOICES)
+        if nuevo_estado not in estados_validos:
+            messages.error(request, "Estado no válido.")
+        else:
+            inscripcion.estado = nuevo_estado
+            update_fields = ["estado"]
+            if nuevo_estado == "validada_presencial":
+                inscripcion.fecha_validacion_presencial = timezone.now()
+                update_fields.append("fecha_validacion_presencial")
+            inscripcion.save(update_fields=update_fields)
+            messages.success(
+                request,
+                f"Inscripción de {inscripcion.ciudadano.nombre_completo} "
+                f"actualizada a '{estados_validos[nuevo_estado]}'.",
+            )
+        return redirect("vat_comision_detail", pk=inscripcion.comision_id)
+
+
+class AsistenciaSesionView(LoginRequiredMixin, TemplateView):
+    """
+    GET: muestra tabla de inscriptos aceptados para tomar asistencia en una sesión.
+    POST: guarda/actualiza los registros de AsistenciaSesion.
+    """
+
+    template_name = "vat/oferta_institucional/asistencia_sesion.html"
+
+    def get_sesion(self, sesion_pk):
+        return get_object_or_404(
+            SesionComision.objects.select_related(
+                "comision__oferta__centro",
+                "horario__dia_semana",
+            ),
+            pk=sesion_pk,
+        )
+
+    def _inscripciones_activas(self, comision):
+        return list(
+            Inscripcion.objects.filter(
+                comision=comision,
+                estado__in=["inscripta", "validada_presencial"],
+            ).select_related("ciudadano")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        sesion = self.get_sesion(self.kwargs["sesion_pk"])
+        inscripciones = self._inscripciones_activas(sesion.comision)
+        asistencias_existentes = {
+            a.inscripcion_id: a
+            for a in AsistenciaSesion.objects.filter(
+                sesion=sesion,
+                inscripcion__in=[i.pk for i in inscripciones],
+            )
+        }
+        filas = []
+        for insc in inscripciones:
+            asist = asistencias_existentes.get(insc.pk)
+            filas.append({
+                "inscripcion": insc,
+                "presente": asist.presente if asist else None,
+                "observaciones": asist.observaciones if asist else "",
+            })
+        context["sesion"] = sesion
+        context["filas"] = filas
+        context["ya_tomada"] = bool(asistencias_existentes)
+        return context
+
+    def get(self, request, *args, **kwargs):
+        return self.render_to_response(self.get_context_data())
+
+    def post(self, request, *args, **kwargs):
+        sesion = self.get_sesion(self.kwargs["sesion_pk"])
+        inscripciones = self._inscripciones_activas(sesion.comision)
+        for insc in inscripciones:
+            presente = request.POST.get(f"presente_{insc.pk}") == "1"
+            obs = request.POST.get(f"obs_{insc.pk}", "").strip()
+            AsistenciaSesion.objects.update_or_create(
+                sesion=sesion,
+                inscripcion=insc,
+                defaults={
+                    "presente": presente,
+                    "observaciones": obs or None,
+                    "registrado_por": request.user,
+                },
+            )
+        # Marcar sesión como realizada si estaba programada
+        if sesion.estado == "programada":
+            sesion.estado = "realizada"
+            sesion.save(update_fields=["estado"])
+        messages.success(request, "Asistencia registrada exitosamente.")
+        return redirect("vat_comision_detail", pk=sesion.comision_id)
 
 
 class ComisionUpdateView(LoginRequiredMixin, UpdateView):

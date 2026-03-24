@@ -22,6 +22,8 @@ from VAT.models import (
     ComisionHorario,
     # Fase 5
     Inscripcion,
+    # Fase 6
+    AsistenciaSesion,
     # Fase 7
     Evaluacion,
     ResultadoEvaluacion,
@@ -429,6 +431,7 @@ class OfertaInstitucionalSerializer(serializers.ModelSerializer):
             "ciclo_lectivo",
             "plan_externo_id",
             "estado",
+            "costo",
             "usa_voucher",
             "fecha_publicacion",
             "comisiones",

@@ -83,12 +83,23 @@
                             </div>
                         </div>
                         <div class="row mb-4">
-                            <div class="col-md-4">
-                                <div class="form-check form-switch">
-                                    {{ form.usa_voucher }}
-                                    <label class="form-check-label fw-600" for="{{ form.usa_voucher.id_for_label }}">{{ form.usa_voucher.label }}</label>
+                            <div class="col-md-3 d-flex align-items-center pt-3">
+                                <div>
+                                    <div class="form-check form-switch">
+                                        {{ form.usa_voucher }}
+                                        <label class="form-check-label fw-600" for="{{ form.usa_voucher.id_for_label }}">{{ form.usa_voucher.label }}</label>
+                                    </div>
+                                    {% if form.usa_voucher.help_text %}<div class="form-text text-muted">{{ form.usa_voucher.help_text }}</div>{% endif %}
                                 </div>
-                                {% if form.usa_voucher.help_text %}<div class="form-text text-muted">{{ form.usa_voucher.help_text }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-3" id="campo-costo" style="display:none">
+                                <label for="{{ form.costo.id_for_label }}" class="form-label fw-600">{{ form.costo.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0">$</span>
+                                    {{ form.costo }}
+                                </div>
+                                {% if form.costo.help_text %}<div class="form-text text-muted">{{ form.costo.help_text }}</div>{% endif %}
+                                {% if form.costo.errors %}<div class="text-danger small mt-1">{{ form.costo.errors.0 }}</div>{% endif %}
                             </div>
                             <div class="col-md-4">
                                 <label for="{{ form.fecha_publicacion.id_for_label }}" class="form-label fw-600">{{ form.fecha_publicacion.label }}</label>
@@ -132,4 +143,20 @@
     .input-group-text { border: 1px solid #e0e0e0 !important; }
     .fw-600 { font-weight: 600 !important; }
 </style>
+<script>
+(function () {
+    const toggle = document.getElementById('{{ form.usa_voucher.id_for_label }}');
+    const campoCosto = document.getElementById('campo-costo');
+
+    function actualizarCosto() {
+        campoCosto.style.display = toggle.checked ? 'block' : 'none';
+        if (!toggle.checked) {
+            campoCosto.querySelector('input').value = '0';
+        }
+    }
+
+    toggle.addEventListener('change', actualizarCosto);
+    actualizarCosto();  // estado inicial al cargar
+})();
+</script>
 {% endblock %}

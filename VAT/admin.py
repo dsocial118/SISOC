@@ -23,6 +23,8 @@ from .models import (
     ComisionHorario,
     # Fase 5
     Inscripcion,
+    # Fase 6
+    AsistenciaSesion,
     # Fase 7
     Evaluacion,
     ResultadoEvaluacion,
@@ -350,7 +352,7 @@ class OfertaInstitucionalAdmin(admin.ModelAdmin):
             "fields": ("nombre_local", "ciclo_lectivo", "plan_externo_id")
         }),
         ("Estado y Voucher", {
-            "fields": ("estado", "usa_voucher", "fecha_publicacion")
+            "fields": ("estado", "costo", "usa_voucher", "fecha_publicacion")
         }),
         ("Auditoría", {
             "fields": ("observaciones", "fecha_creacion", "fecha_modificacion"),
@@ -420,6 +422,23 @@ class InscripcionAdmin(admin.ModelAdmin):
             "classes": ("collapse",)
         }),
     )
+
+
+# ============================================================================
+# FASE 6: ASISTENCIA
+# ============================================================================
+
+
+@admin.register(AsistenciaSesion)
+class AsistenciaSesionAdmin(admin.ModelAdmin):
+    list_display = ("sesion", "inscripcion", "presente", "registrado_por", "fecha_registro")
+    list_filter = ("presente", "sesion__comision", "fecha_registro")
+    search_fields = (
+        "inscripcion__ciudadano__nombre",
+        "inscripcion__ciudadano__apellido",
+        "sesion__comision__codigo_comision",
+    )
+    readonly_fields = ("fecha_registro",)
 
 
 # ============================================================================

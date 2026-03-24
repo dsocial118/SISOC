@@ -578,6 +578,14 @@ class OfertaInstitucionalForm(forms.ModelForm):
         choices=OfertaInstitucional.ESTADO_OFERTA_CHOICES,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
+    costo = forms.DecimalField(
+        label="Costo ($)",
+        min_value=0,
+        initial=0,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+        help_text="Dejar en 0 si el curso es gratuito.",
+    )
     usa_voucher = forms.BooleanField(
         label="Usa Voucher",
         required=False,
@@ -597,7 +605,7 @@ class OfertaInstitucionalForm(forms.ModelForm):
 
     class Meta:
         model = OfertaInstitucional
-        fields = ["centro", "plan_curricular", "programa", "nombre_local", "ciclo_lectivo", "estado", "usa_voucher", "fecha_publicacion", "observaciones"]
+        fields = ["centro", "plan_curricular", "programa", "nombre_local", "ciclo_lectivo", "estado", "costo", "usa_voucher", "fecha_publicacion", "observaciones"]
 
 
 class ComisionForm(forms.ModelForm):

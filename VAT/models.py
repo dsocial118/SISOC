@@ -888,6 +888,13 @@ class OfertaInstitucional(SoftDeleteModelMixin, models.Model):
         verbose_name="Estado de Oferta",
     )
 
+    costo = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Costo",
+        help_text="Costo del curso en pesos. 0 = gratuito.",
+    )
     usa_voucher = models.BooleanField(
         default=False,
         verbose_name="Usa Voucher",
@@ -1182,6 +1189,52 @@ class Inscripcion(SoftDeleteModelMixin, models.Model):
                 fields=["ciudadano", "estado"],
                 name="vat_insc_ciu_est_idx",
             ),
+        ]
+
+
+# ============================================================================
+# FASE 6: ASISTENCIA
+# ============================================================================
+
+
+class AsistenciaSesion(models.Model):
+    """
+    Registro de asistencia de un inscripto a una sesión concreta de la comisión.
+    Se crea una fila por cada (sesion, inscripcion); presente=True indica asistió.
+    """
+
+    sesion = models.ForeignKey(
+        SesionComision,
+        on_delete=models.CASCADE,
+        related_name="asistencias",
+        verbose_name="Sesión",
+    )
+    inscripcion = models.ForeignKey(
+        "Inscripcion",
+        on_delete=models.CASCADE,
+        related_name="asistencias",
+        verbose_name="Inscripción",
+    )
+    presente = models.BooleanField(default=False, verbose_name="Presente")
+    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+    registrado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="asistencias_registradas",
+        verbose_name="Registrado por",
+    )
+    fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
+
+    def __str__(self):
+        estado = "Presente" if self.presente else "Ausente"
+        return f"{self.inscripcion.ciudadano.nombre_completo} — {self.sesion} [{estado}]"
+
+    class Meta:
+        verbose_name = "Asistencia a Sesión"
+        verbose_name_plural = "Asistencias a Sesiones"
+        unique_together = ("sesion", "inscripcion")
+        indexes = [
+            models.Index(fields=["sesion", "presente"], name="vat_asist_ses_pres_idx"),
         ]
 
 
