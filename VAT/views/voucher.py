@@ -154,17 +154,28 @@ class VoucherAsignacionMasivaView(LoginRequiredMixin, View):
         ya_tenia = []
         errores = []
 
+        # Batch: una query para todos los ciudadanos y otra para los que ya tienen voucher activo
+        ciudadanos_map = {
+            c.documento: c
+            for c in Ciudadano.objects.filter(documento__in=dnis)
+        }
+        con_voucher_activo = set(
+            Voucher.objects.filter(
+                ciudadano__documento__in=dnis,
+                programa_id=programa_id,
+                estado="activo",
+            ).values_list("ciudadano__documento", flat=True)
+        )
+
         for dni in dnis:
+            ciudadano = ciudadanos_map.get(dni)
+            if not ciudadano:
+                no_encontrados.append(dni)
+                continue
+            if dni in con_voucher_activo:
+                ya_tenia.append(dni)
+                continue
             try:
-                ciudadano = Ciudadano.objects.get(documento=dni)
-                # Verificar si ya tiene voucher activo para este programa
-                if Voucher.objects.filter(
-                    ciudadano=ciudadano,
-                    programa_id=programa_id,
-                    estado="activo",
-                ).exists():
-                    ya_tenia.append(dni)
-                    continue
                 VoucherService.crear_voucher(
                     ciudadano_id=ciudadano.id,
                     programa_id=programa_id,
@@ -173,8 +184,6 @@ class VoucherAsignacionMasivaView(LoginRequiredMixin, View):
                     usuario=request.user,
                 )
                 creados.append(dni)
-            except Ciudadano.DoesNotExist:
-                no_encontrados.append(dni)
             except Exception as e:
                 logger.exception(f"Error creando voucher masivo para DNI {dni}: {e}")
                 errores.append(dni)

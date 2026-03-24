@@ -973,6 +973,11 @@ class Comision(SoftDeleteModelMixin, models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.cupo is not None and self.cupo == 0:
+            raise ValidationError({"cupo": "El cupo debe ser mayor a 0."})
+
     def __str__(self):
         return f"{self.codigo_comision} - {self.nombre}"
 

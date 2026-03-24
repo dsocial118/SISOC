@@ -1,5 +1,5 @@
 import logging
-from datetime import date
+from datetime import date, timedelta
 from django.db import transaction
 from django.contrib.auth.models import User
 from VAT.models import Voucher, VoucherRecarga, VoucherUso, VoucherLog, InscripcionOferta
@@ -20,26 +20,26 @@ class VoucherService:
         parametria=None,
     ) -> Voucher:
         """Create a new voucher for a citizen."""
-        voucher = Voucher.objects.create(
-            ciudadano_id=ciudadano_id,
-            programa_id=programa_id,
-            cantidad_inicial=cantidad,
-            cantidad_usada=0,
-            cantidad_disponible=cantidad,
-            fecha_vencimiento=fecha_vencimiento,
-            estado="activo",
-            parametria=parametria,
-            asignado_por=usuario,
-        )
+        with transaction.atomic():
+            voucher = Voucher.objects.create(
+                ciudadano_id=ciudadano_id,
+                programa_id=programa_id,
+                cantidad_inicial=cantidad,
+                cantidad_usada=0,
+                cantidad_disponible=cantidad,
+                fecha_vencimiento=fecha_vencimiento,
+                estado="activo",
+                parametria=parametria,
+                asignado_por=usuario,
+            )
 
-        # Log the creation
-        VoucherLog.objects.create(
-            voucher=voucher,
-            tipo_evento="asignacion",
-            cantidad_afectada=cantidad,
-            usuario=usuario,
-            detalles={"razon": "Creación inicial de voucher"},
-        )
+            VoucherLog.objects.create(
+                voucher=voucher,
+                tipo_evento="asignacion",
+                cantidad_afectada=cantidad,
+                usuario=usuario,
+                detalles={"razon": "Creación inicial de voucher"},
+            )
 
         logger.info(f"Voucher {voucher.id} creado para {voucher.ciudadano}")
         return voucher
@@ -69,8 +69,8 @@ class VoucherService:
                 voucher.cantidad_disponible += cantidad
                 update_fields = ["cantidad_disponible", "estado", "fecha_modificacion"]
 
-            # Reactivar si estaba agotado
-            if voucher.estado == "agotado":
+            # Reactivar si estaba agotado o vencido
+            if voucher.estado in ("agotado", "vencido"):
                 voucher.estado = "activo"
 
             voucher.save(update_fields=update_fields)
@@ -102,7 +102,9 @@ class VoucherService:
         cantidad: int,
     ) -> tuple[bool, str]:
         """Use voucher credits for an offering enrollment."""
-        # Validate voucher
+        # Actualizar estado de vencimiento antes de validar (evita usar vouchers expirados con estado stale)
+        VoucherService.validar_vencimiento(voucher)
+
         if voucher.estado == "cancelado":
             return False, "El voucher ha sido cancelado."
 
@@ -184,25 +186,29 @@ class VoucherService:
             return True, "Voucher cancelado"
 
         if date.today() > voucher.fecha_vencimiento:
-            if voucher.estado != "vencido":
-                voucher.estado = "vencido"
-                voucher.save(update_fields=["estado", "fecha_modificacion"])
+            with transaction.atomic():
+                # Re-fetch con lock para evitar race condition entre procesos concurrentes
+                locked = Voucher.objects.select_for_update().get(pk=voucher.pk)
+                if locked.estado != "vencido":
+                    locked.estado = "vencido"
+                    locked.save(update_fields=["estado", "fecha_modificacion"])
+                    # Sincronizar el objeto recibido para que el caller vea el estado actualizado
+                    voucher.estado = "vencido"
 
-                # Log expiration
-                try:
-                    admin_user = User.objects.filter(is_staff=True).first()
-                    if admin_user:
-                        VoucherLog.objects.create(
-                            voucher=voucher,
-                            tipo_evento="vencimiento",
-                            cantidad_afectada=0,
-                            usuario=admin_user,
-                            detalles={"fecha_vencimiento": str(voucher.fecha_vencimiento)},
-                        )
-                except Exception as e:
-                    logger.warning(f"Error logging voucher expiration: {e}")
+                    try:
+                        admin_user = User.objects.filter(is_staff=True).first()
+                        if admin_user:
+                            VoucherLog.objects.create(
+                                voucher=locked,
+                                tipo_evento="vencimiento",
+                                cantidad_afectada=0,
+                                usuario=admin_user,
+                                detalles={"fecha_vencimiento": str(locked.fecha_vencimiento)},
+                            )
+                    except Exception as e:
+                        logger.warning(f"Error logging voucher expiration: {e}")
 
-                logger.info(f"Voucher {voucher.id} expirado")
+                    logger.info(f"Voucher {locked.id} expirado")
 
             return False, "Voucher vencido"
 
@@ -251,12 +257,7 @@ class VoucherService:
     def obtener_vouchers_por_vencer(dias: int = 7):
         """Get vouchers expiring in the next N days."""
         desde = date.today()
-        hasta = date(
-            desde.year
-            + (desde.month + dias) // 13,
-            ((desde.month + dias - 1) % 12) + 1,
-            desde.day,
-        )
+        hasta = desde + timedelta(days=dias)
 
         return Voucher.objects.filter(
             fecha_vencimiento__range=[desde, hasta],
@@ -269,15 +270,11 @@ class VoucherService:
         Process automatic reload of vouchers.
         Used by management command and cron jobs.
         """
-        from django.contrib.auth.models import User
-        from datetime import timedelta
-
         # Get system user for logging
-        try:
-            sistema_user = User.objects.filter(username="sistema").first()
-            if not sistema_user:
-                sistema_user = User.objects.filter(is_superuser=True).first()
-        except User.DoesNotExist:
+        sistema_user = User.objects.filter(username="sistema").first()
+        if not sistema_user:
+            sistema_user = User.objects.filter(is_superuser=True).first()
+        if not sistema_user:
             logger.error("No system user found for automatic reload")
             return {"success": False, "reloaded": 0, "error": "No system user"}
 
@@ -294,7 +291,7 @@ class VoucherService:
         errors = []
 
         with transaction.atomic():
-            for voucher in query:
+            for voucher in query.select_for_update():
                 try:
                     VoucherService.recargar_voucher(
                         voucher=voucher,

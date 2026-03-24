@@ -861,6 +861,13 @@ class VoucherParametriaForm(forms.ModelForm):
         initial="suma",
     )
 
+    def clean_fecha_vencimiento(self):
+        from datetime import date
+        fecha = self.cleaned_data.get("fecha_vencimiento")
+        if fecha and fecha <= date.today():
+            raise forms.ValidationError("La fecha de vencimiento debe ser posterior a hoy.")
+        return fecha
+
     class Meta:
         from VAT.models import VoucherParametria
         model = VoucherParametria
@@ -886,6 +893,13 @@ class VoucherForm(forms.ModelForm):
         label="Fecha de vencimiento",
         widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
     )
+
+    def clean_fecha_vencimiento(self):
+        from datetime import date
+        fecha = self.cleaned_data.get("fecha_vencimiento")
+        if fecha and fecha <= date.today():
+            raise forms.ValidationError("La fecha de vencimiento debe ser posterior a hoy.")
+        return fecha
 
     class Meta:
         from VAT.models import Voucher

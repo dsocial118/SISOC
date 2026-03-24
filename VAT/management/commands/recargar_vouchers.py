@@ -98,10 +98,8 @@ class Command(BaseCommand):
                 self.stdout.write(f"  → {por_vencer.count()} vouchers a marcar como vencidos")
                 continue
 
-            # Marcar vencidos primero
+            # Marcar vencidos primero (validar_vencimiento maneja el save y el log)
             for v in por_vencer:
-                v.estado = "vencido"
-                v.save(update_fields=["estado", "fecha_modificacion"])
                 VoucherService.validar_vencimiento(v)
                 total_venc += 1
                 self.stdout.write(

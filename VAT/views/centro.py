@@ -8,7 +8,7 @@ from django.views.generic import (
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.http import JsonResponse
@@ -121,23 +121,27 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         centro = self.object
-        ctx["autoridades"] = centro.autoridades.filter(es_actual=True)
-        ctx["identificadores"] = centro.identificadores_hist.filter(es_actual=True)
-        ctx["contactos"] = centro.contactos_adicionales.all()
+
+        # Evaluar listas una sola vez para reutilizar en los counts
+        ctx["autoridades"] = list(centro.autoridades.filter(es_actual=True))
+        ctx["identificadores"] = list(centro.identificadores_hist.filter(es_actual=True))
+        ctx["contactos"] = list(centro.contactos_adicionales.all())
         ctx["ubicaciones"] = centro.ubicaciones.select_related("localidad").all()
-        ctx["ofertas"] = (
+
+        # annotate para evitar N+1 al contar comisiones por oferta
+        ctx["ofertas"] = list(
             centro.ofertas_institucionales
             .select_related("plan_curricular__titulo_referencia", "programa")
-            .prefetch_related("comisiones")
+            .annotate(comisiones_count=Count("comisiones"))
             .order_by("-ciclo_lectivo")
         )
-        ctx["count_ofertas"] = centro.ofertas_institucionales.count()
-        ctx["count_comisiones"] = sum(
-            o.comisiones.count() for o in ctx["ofertas"]
-        )
-        ctx["count_autoridades"] = centro.autoridades.filter(es_actual=True).count()
-        ctx["count_identificadores"] = centro.identificadores_hist.filter(es_actual=True).count()
-        ctx["count_contactos"] = centro.contactos_adicionales.count()
+
+        # Todos los counts desde datos ya cargados, sin queries adicionales
+        ctx["count_ofertas"] = len(ctx["ofertas"])
+        ctx["count_comisiones"] = sum(o.comisiones_count for o in ctx["ofertas"])
+        ctx["count_autoridades"] = len(ctx["autoridades"])
+        ctx["count_identificadores"] = len(ctx["identificadores"])
+        ctx["count_contactos"] = len(ctx["contactos"])
         return ctx
 
 

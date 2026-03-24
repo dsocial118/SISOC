@@ -1,6 +1,8 @@
 import logging
 import re
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
+from django.db.models import Sum
 from django.views.generic import ListView, CreateView, DetailView, View
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
@@ -55,17 +57,18 @@ def _asignar_desde_parametria(ciudadano, parametria, usuario):
     reiniciar = parametria.renovacion_tipo == "reinicia"
 
     if voucher_previo:
-        ok, _ = VoucherService.recargar_voucher(
-            voucher=voucher_previo,
-            cantidad=cantidad,
-            motivo="automatica",
-            usuario=usuario,
-            reiniciar=reiniciar,
-        )
-        # Actualizar vencimiento y parametria al reasignar
-        voucher_previo.fecha_vencimiento = parametria.fecha_vencimiento
-        voucher_previo.parametria = parametria
-        voucher_previo.save(update_fields=["fecha_vencimiento", "parametria", "fecha_modificacion"])
+        with transaction.atomic():
+            ok, _ = VoucherService.recargar_voucher(
+                voucher=voucher_previo,
+                cantidad=cantidad,
+                motivo="automatica",
+                usuario=usuario,
+                reiniciar=reiniciar,
+            )
+            # Actualizar vencimiento y parametria en el mismo atomic para evitar estado inconsistente
+            voucher_previo.fecha_vencimiento = parametria.fecha_vencimiento
+            voucher_previo.parametria = parametria
+            voucher_previo.save(update_fields=["fecha_vencimiento", "parametria", "fecha_modificacion"])
         return _REACTIVADO if ok else _ERROR
 
     # No existe ninguno → crear
@@ -114,7 +117,6 @@ class VoucherParametriaDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "parametria"
 
     def get_context_data(self, **kwargs):
-        from django.db.models import Sum
         ctx = super().get_context_data(**kwargs)
         parametria = self.object
         qs = parametria.vouchers.select_related("ciudadano", "programa")
