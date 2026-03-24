@@ -235,98 +235,136 @@
 </div>
 
 <!-- MÉTRICAS -->
+{% if total %}
 <div class="row g-3 mt-1">
-    <div class="col-12">
-        <div class="card">
+
+    <!-- Uso de créditos -->
+    <div class="col-md-4">
+        <div class="card h-100">
             <div class="card-header">
                 <h3 class="card-title mb-0 fs-6 fw-semibold">
-                    <i class="bi bi-bar-chart-line me-2 text-primary"></i>Métricas
+                    <i class="bi bi-lightning-charge me-2 text-primary"></i>Uso de créditos
                 </h3>
             </div>
-            <div class="card-body">
-                {% if total %}
-                <div class="row g-4">
-
-                    <!-- Uso de créditos -->
-                    <div class="col-md-4">
-                        <div class="small fw-semibold text-uppercase text-muted mb-2" style="letter-spacing:.05em;font-size:.72rem">Uso de créditos</div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="small text-muted">{{ creditos_usados }} usados</span>
-                            <span class="small text-muted">{{ creditos_emitidos }} emitidos</span>
-                        </div>
-                        <div class="progress mb-1" style="height:10px;border-radius:5px;">
-                            <div class="progress-bar bg-primary" style="width:{{ pct_uso }}%"></div>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span class="small fw-bold text-primary">{{ pct_uso }}% usado</span>
-                            <span class="small text-muted">{{ creditos_disponibles }} disponibles</span>
-                        </div>
+            <div class="card-body d-flex flex-column justify-content-between gap-3">
+                <div class="row g-2 text-center">
+                    <div class="col-6">
+                        <div class="fs-3 fw-bold text-primary">{{ creditos_usados }}</div>
+                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Usados</div>
                     </div>
-
-                    <!-- Distribución por estado -->
-                    <div class="col-md-4">
-                        <div class="small fw-semibold text-uppercase text-muted mb-2" style="letter-spacing:.05em;font-size:.72rem">Distribución por estado</div>
-                        <div class="d-flex flex-column gap-2">
-                            <div>
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="small"><span class="badge bg-success me-1" style="font-size:.55rem">●</span>Activos</span>
-                                    <span class="small fw-bold">{{ activos }} <span class="text-muted fw-normal">({{ pct_activos }}%)</span></span>
-                                </div>
-                                <div class="progress" style="height:4px;">
-                                    <div class="progress-bar bg-success" style="width:{{ pct_activos }}%"></div>
-                                </div>
-                            </div>
-                            {% if agotados %}
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="small"><span class="badge bg-warning text-dark me-1" style="font-size:.55rem">●</span>Agotados</span>
-                                <span class="small fw-bold">{{ agotados }}</span>
-                            </div>
-                            {% endif %}
-                            {% if vencidos %}
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="small"><span class="badge bg-danger me-1" style="font-size:.55rem">●</span>Vencidos</span>
-                                <span class="small fw-bold">{{ vencidos }}</span>
-                            </div>
-                            {% endif %}
-                            {% if cancelados %}
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="small"><span class="badge bg-secondary me-1" style="font-size:.55rem">●</span>Cancelados</span>
-                                <span class="small fw-bold">{{ cancelados }}</span>
-                            </div>
-                            {% endif %}
-                        </div>
+                    <div class="col-6">
+                        <div class="fs-3 fw-bold">{{ creditos_emitidos }}</div>
+                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Emitidos</div>
                     </div>
-
-                    <!-- Últimas asignaciones -->
-                    <div class="col-md-4">
-                        <div class="small fw-semibold text-uppercase text-muted mb-2" style="letter-spacing:.05em;font-size:.72rem">Últimas asignaciones</div>
-                        {% for v in ultimas %}
-                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                            <div>
-                                <div class="small fw-semibold">{{ v.ciudadano.nombre_completo }}</div>
-                                <div class="small text-muted font-monospace">{{ v.ciudadano.documento }}</div>
-                            </div>
-                            <div class="text-end">
-                                <span class="badge rounded-pill {% if v.estado == 'activo' %}bg-success{% elif v.estado == 'vencido' %}bg-danger{% elif v.estado == 'agotado' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                                    {{ v.get_estado_display }}
-                                </span>
-                                <div class="small text-muted mt-1">{{ v.fecha_asignacion|date:"d/m/Y" }}</div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-
                 </div>
-                {% else %}
-                <div class="empty-state">
-                    <i class="bi bi-bar-chart-line"></i>
-                    <p>Sin datos todavía. Asigná vouchers para ver métricas.</p>
+                <div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small fw-bold text-primary">{{ pct_uso }}% usado</span>
+                        <span class="small text-muted">{{ creditos_disponibles }} disponibles</span>
+                    </div>
+                    <div class="progress" style="height:10px;border-radius:5px;">
+                        <div class="progress-bar bg-primary" style="width:{{ pct_uso }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribución por estado -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="card-title mb-0 fs-6 fw-semibold">
+                    <i class="bi bi-pie-chart me-2 text-primary"></i>Distribución por estado
+                </h3>
+            </div>
+            <div class="card-body d-flex flex-column gap-3">
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span><span class="badge bg-success me-1" style="font-size:.55rem">●</span>Activos</span>
+                        <span class="fw-bold">{{ activos }} <span class="text-muted fw-normal small">({{ pct_activos }}%)</span></span>
+                    </div>
+                    <div class="progress" style="height:6px;border-radius:3px;">
+                        <div class="progress-bar bg-success" style="width:{{ pct_activos }}%"></div>
+                    </div>
+                </div>
+                {% if agotados %}
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span><span class="badge bg-warning text-dark me-1" style="font-size:.55rem">●</span>Agotados</span>
+                        <span class="fw-bold">{{ agotados }} <span class="text-muted fw-normal small">({% widthratio agotados total 100 %}%)</span></span>
+                    </div>
+                    <div class="progress" style="height:6px;border-radius:3px;">
+                        <div class="progress-bar bg-warning" style="width:{% widthratio agotados total 100 %}%"></div>
+                    </div>
+                </div>
+                {% endif %}
+                {% if vencidos %}
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span><span class="badge bg-danger me-1" style="font-size:.55rem">●</span>Vencidos</span>
+                        <span class="fw-bold">{{ vencidos }} <span class="text-muted fw-normal small">({% widthratio vencidos total 100 %}%)</span></span>
+                    </div>
+                    <div class="progress" style="height:6px;border-radius:3px;">
+                        <div class="progress-bar bg-danger" style="width:{% widthratio vencidos total 100 %}%"></div>
+                    </div>
+                </div>
+                {% endif %}
+                {% if cancelados %}
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span><span class="badge bg-secondary me-1" style="font-size:.55rem">●</span>Cancelados</span>
+                        <span class="fw-bold">{{ cancelados }} <span class="text-muted fw-normal small">({% widthratio cancelados total 100 %}%)</span></span>
+                    </div>
+                    <div class="progress" style="height:6px;border-radius:3px;">
+                        <div class="progress-bar bg-secondary" style="width:{% widthratio cancelados total 100 %}%"></div>
+                    </div>
                 </div>
                 {% endif %}
             </div>
         </div>
     </div>
+
+    <!-- Últimas asignaciones -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="card-title mb-0 fs-6 fw-semibold">
+                    <i class="bi bi-clock-history me-2 text-primary"></i>Últimas asignaciones
+                </h3>
+            </div>
+            <div class="card-body p-0">
+                {% for v in ultimas %}
+                <div class="d-flex justify-content-between align-items-center px-3 py-3 {% if not forloop.last %}border-bottom{% endif %}">
+                    <div>
+                        <div class="fw-semibold">{{ v.ciudadano.nombre_completo }}</div>
+                        <div class="text-muted small font-monospace">{{ v.ciudadano.documento }}</div>
+                        <div class="text-muted small mt-1">{{ v.fecha_asignacion|date:"d/m/Y" }}</div>
+                    </div>
+                    <span class="badge rounded-pill {% if v.estado == 'activo' %}bg-success{% elif v.estado == 'vencido' %}bg-danger{% elif v.estado == 'agotado' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                        {{ v.get_estado_display }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
 </div>
+{% else %}
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="empty-state">
+                    <i class="bi bi-bar-chart-line"></i>
+                    <p>Sin datos todavía. Asigná vouchers para ver métricas.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <script>
 function switchTab(btn, tabId) {
