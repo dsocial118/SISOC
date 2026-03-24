@@ -23,7 +23,7 @@
                 <strong>Esta acción no se puede deshacer.</strong><br>
                 <p class="mb-0 mt-2">Se eliminará:</p>
                 <ul class="mb-0">
-                    <li>Ciudadano: <strong>{{ inscripcion.ciudadano.get_full_name }}</strong></li>
+                    <li>Ciudadano: <strong>{{ inscripcion.ciudadano.nombre_completo }}</strong></li>
                     <li>Oferta: <strong>{{ inscripcion.oferta.plan_curricular.titulo_referencia.nombre }}</strong></li>
                     <li>Estado actual: <strong>{{ inscripcion.get_estado_display }}</strong></li>
                 </ul>

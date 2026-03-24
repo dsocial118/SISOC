@@ -127,6 +127,13 @@
                         </a>
                     </li>
                 {% endif %}
+                <li class="nav-item">
+                    <a href="{% url 'vat_voucher_parametria_list' %}"
+                       class="nav-link nav-dot ms-2 {% if 'vat/vouchers/' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-ticket-perforated"></i>
+                        <p>Parametrías de Voucher</p>
+                    </a>
+                </li>
             </ul>
         </li>
     {% endif %}

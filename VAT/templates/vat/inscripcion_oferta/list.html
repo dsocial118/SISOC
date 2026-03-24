@@ -63,7 +63,7 @@
                 <tbody>
                     {% for inscripcion in inscripciones %}
                     <tr>
-                        <td>{{ inscripcion.ciudadano.get_full_name }}</td>
+                        <td>{{ inscripcion.ciudadano.nombre_completo }}</td>
                         <td>{{ inscripcion.ciudadano.documento }}</td>
                         <td>{{ inscripcion.oferta.plan_curricular.titulo_referencia.nombre }}</td>
                         <td>{{ inscripcion.oferta.centro.nombre }}</td>

@@ -319,6 +319,62 @@ class InscripcionOferta(SoftDeleteModelMixin, models.Model):
 # ============================================================================
 
 
+class VoucherParametria(models.Model):
+    """
+    Plantilla de voucher: define los parámetros base (programa, créditos,
+    vencimiento) que luego se usan para asignar vouchers a ciudadanos.
+    """
+
+    nombre = models.CharField(max_length=200, verbose_name="Nombre")
+    descripcion = models.TextField(blank=True, verbose_name="Descripción")
+    programa = models.ForeignKey(
+        Programa,
+        on_delete=models.PROTECT,
+        related_name="vat_voucher_parametrias",
+        verbose_name="Programa",
+    )
+    cantidad_inicial = models.PositiveIntegerField(
+        verbose_name="Créditos por ciudadano"
+    )
+    fecha_vencimiento = models.DateField(verbose_name="Fecha de vencimiento")
+    RENOVACION_TIPO_CHOICES = [
+        ("suma", "Sumar al saldo existente"),
+        ("reinicia", "Reiniciar al valor configurado"),
+    ]
+
+    renovacion_mensual = models.BooleanField(
+        default=False, verbose_name="Renovación mensual"
+    )
+    cantidad_renovacion = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Créditos en cada renovación",
+        help_text="Si está vacío se usa la cantidad inicial.",
+    )
+    renovacion_tipo = models.CharField(
+        max_length=10,
+        choices=RENOVACION_TIPO_CHOICES,
+        default="suma",
+        verbose_name="Tipo de renovación",
+    )
+    activa = models.BooleanField(default=True, verbose_name="Activa")
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="vat_voucher_parametrias_creadas",
+        verbose_name="Creado por",
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.programa})"
+
+    class Meta:
+        verbose_name = "Parametría de Voucher"
+        verbose_name_plural = "Parametrías de Voucher"
+        ordering = ["-fecha_creacion"]
+
+
 class Voucher(SoftDeleteModelMixin, models.Model):
     """
     Representa una asignación de crédito de formación a un ciudadano.
@@ -332,6 +388,14 @@ class Voucher(SoftDeleteModelMixin, models.Model):
         ("cancelado", "Cancelado"),
     ]
 
+    parametria = models.ForeignKey(
+        VoucherParametria,
+        on_delete=models.PROTECT,
+        related_name="vouchers",
+        verbose_name="Parametría",
+        null=True,
+        blank=True,
+    )
     ciudadano = models.ForeignKey(
         Ciudadano,
         on_delete=models.CASCADE,
@@ -365,6 +429,15 @@ class Voucher(SoftDeleteModelMixin, models.Model):
         choices=ESTADO_CHOICES,
         default="activo",
         verbose_name="Estado",
+    )
+
+    asignado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="vat_vouchers_asignados",
+        verbose_name="Asignado por",
+        null=True,
+        blank=True,
     )
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -1089,7 +1162,7 @@ class Inscripcion(SoftDeleteModelMixin, models.Model):
     fecha_modificacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.ciudadano.get_full_name()} - {self.comision.codigo_comision} [{self.estado}]"
+        return f"{self.ciudadano.nombre_completo} - {self.comision.codigo_comision} [{self.estado}]"
 
     class Meta:
         verbose_name = "Inscripción"
@@ -1223,7 +1296,7 @@ class ResultadoEvaluacion(SoftDeleteModelMixin, models.Model):
     fecha_modificacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.inscripcion.ciudadano.get_full_name()} - {self.evaluacion.nombre}: {self.calificacion}"
+        return f"{self.inscripcion.ciudadano.nombre_completo} - {self.evaluacion.nombre}: {self.calificacion}"
 
     class Meta:
         verbose_name = "Resultado de Evaluación"

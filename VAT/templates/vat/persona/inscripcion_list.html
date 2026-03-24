@@ -60,7 +60,7 @@
                                 <tbody>
                                     {% for inscripcion in object_list %}
                                     <tr class="border-bottom">
-                                            <td class="ps-4 py-3"><span class="fw-500">{{ inscripcion.ciudadano.get_full_name }}</span></td>
+                                            <td class="ps-4 py-3"><span class="fw-500">{{ inscripcion.ciudadano.nombre_completo }}</span></td>
                                             <td class="py-3">{{ inscripcion.comision.codigo_comision }}</td>
                                             <td class="py-3">{{ inscripcion.programa }}</td>
                                             <td class="py-3"><span class="badge bg-info bg-opacity-10 text-info">{{ inscripcion.get_estado_display }}</span></td>

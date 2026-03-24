@@ -809,3 +809,138 @@ class ResultadoEvaluacionForm(forms.ModelForm):
     class Meta:
         model = ResultadoEvaluacion
         fields = ["evaluacion", "inscripcion", "calificacion", "aprobo", "observaciones"]
+
+
+# ============================================================================
+# VOUCHER FORMS
+# ============================================================================
+
+
+class VoucherParametriaForm(forms.ModelForm):
+    nombre = forms.CharField(
+        label="Nombre",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    descripcion = forms.CharField(
+        label="Descripción",
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+    )
+    programa = forms.ModelChoiceField(
+        queryset=Programa.objects.all(),
+        label="Programa",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    cantidad_inicial = forms.IntegerField(
+        label="Créditos por ciudadano",
+        min_value=1,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    fecha_vencimiento = forms.DateField(
+        label="Fecha de vencimiento",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+
+    renovacion_mensual = forms.BooleanField(
+        label="Renovación mensual",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        help_text="Si está activo, los créditos se renuevan automáticamente cada mes.",
+    )
+    cantidad_renovacion = forms.IntegerField(
+        label="Créditos en cada renovación",
+        required=False,
+        min_value=1,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+        help_text="Dejar vacío para usar la cantidad inicial.",
+    )
+    renovacion_tipo = forms.ChoiceField(
+        label="Tipo de renovación",
+        choices=[("suma", "Sumar al saldo existente"), ("reinicia", "Reiniciar al valor configurado")],
+        widget=forms.RadioSelect(),
+        initial="suma",
+    )
+
+    class Meta:
+        from VAT.models import VoucherParametria
+        model = VoucherParametria
+        fields = ["nombre", "descripcion", "programa", "cantidad_inicial", "fecha_vencimiento", "renovacion_mensual", "cantidad_renovacion", "renovacion_tipo"]
+
+class VoucherForm(forms.ModelForm):
+    ciudadano = forms.ModelChoiceField(
+        queryset=Ciudadano.objects.all(),
+        label="Ciudadano",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    programa = forms.ModelChoiceField(
+        queryset=Programa.objects.all(),
+        label="Programa",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    cantidad_inicial = forms.IntegerField(
+        label="Cantidad de créditos",
+        min_value=1,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    fecha_vencimiento = forms.DateField(
+        label="Fecha de vencimiento",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+
+    class Meta:
+        from VAT.models import Voucher
+        model = Voucher
+        fields = ["ciudadano", "programa", "cantidad_inicial", "fecha_vencimiento"]
+
+
+class VoucherRecargaForm(forms.Form):
+    cantidad = forms.IntegerField(
+        label="Cantidad a recargar",
+        min_value=1,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    motivo = forms.ChoiceField(
+        label="Motivo",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from VAT.models import VoucherRecarga
+        self.fields["motivo"].choices = VoucherRecarga.MOTIVO_CHOICES
+
+
+class VoucherAsignacionMasivaForm(forms.Form):
+    programa = forms.ModelChoiceField(
+        queryset=Programa.objects.all(),
+        label="Programa",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    cantidad_inicial = forms.IntegerField(
+        label="Cantidad de créditos por ciudadano",
+        min_value=1,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    fecha_vencimiento = forms.DateField(
+        label="Fecha de vencimiento",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    dnis = forms.CharField(
+        label="DNIs",
+        help_text="Ingresá los DNIs separados por comas, espacios o saltos de línea.",
+        widget=forms.Textarea(attrs={
+            "class": "form-control",
+            "rows": 5,
+            "placeholder": "Ej: 12345678, 23456789, 34567890",
+        }),
+    )
+
+    def clean_dnis(self):
+        raw = self.cleaned_data["dnis"]
+        import re
+        dnis = [d.strip() for d in re.split(r"[\s,;]+", raw) if d.strip()]
+        if not dnis:
+            raise forms.ValidationError("Ingresá al menos un DNI.")
+        if len(dnis) > 500:
+            raise forms.ValidationError("No se pueden asignar más de 500 vouchers a la vez.")
+        return dnis

@@ -17,6 +17,7 @@ class VoucherService:
         cantidad: int,
         fecha_vencimiento: date,
         usuario: User,
+        parametria=None,
     ) -> Voucher:
         """Create a new voucher for a citizen."""
         voucher = Voucher.objects.create(
@@ -27,6 +28,8 @@ class VoucherService:
             cantidad_disponible=cantidad,
             fecha_vencimiento=fecha_vencimiento,
             estado="activo",
+            parametria=parametria,
+            asignado_por=usuario,
         )
 
         # Log the creation
@@ -47,14 +50,30 @@ class VoucherService:
         cantidad: int,
         motivo: str,
         usuario: User,
+        reiniciar: bool = False,
     ) -> tuple[bool, str]:
-        """Reload credits to a voucher."""
+        """
+        Reload credits to a voucher.
+        reiniciar=True: sets cantidad_disponible to `cantidad` and cantidad_usada to 0.
+        reiniciar=False (default): adds `cantidad` to existing balance.
+        """
         if voucher.estado == "cancelado":
             return False, "No se puede recargar un voucher cancelado."
 
         with transaction.atomic():
-            voucher.cantidad_disponible += cantidad
-            voucher.save(update_fields=["cantidad_disponible", "fecha_modificacion"])
+            if reiniciar:
+                voucher.cantidad_disponible = cantidad
+                voucher.cantidad_usada = 0
+                update_fields = ["cantidad_disponible", "cantidad_usada", "estado", "fecha_modificacion"]
+            else:
+                voucher.cantidad_disponible += cantidad
+                update_fields = ["cantidad_disponible", "estado", "fecha_modificacion"]
+
+            # Reactivar si estaba agotado
+            if voucher.estado == "agotado":
+                voucher.estado = "activo"
+
+            voucher.save(update_fields=update_fields)
 
             VoucherRecarga.objects.create(
                 voucher=voucher,
@@ -68,13 +87,13 @@ class VoucherService:
                 tipo_evento="recarga",
                 cantidad_afectada=cantidad,
                 usuario=usuario,
-                detalles={"motivo": motivo},
+                detalles={"motivo": motivo, "reiniciado": reiniciar},
             )
 
         logger.info(
-            f"Voucher {voucher.id} recargado con {cantidad} créditos ({motivo})"
+            f"Voucher {voucher.id} {'reiniciado' if reiniciar else 'recargado'} con {cantidad} créditos ({motivo})"
         )
-        return True, f"Voucher recargado exitosamente con {cantidad} créditos."
+        return True, f"Voucher {'reiniciado' if reiniciar else 'recargado'} con {cantidad} créditos."
 
     @staticmethod
     def usar_voucher(

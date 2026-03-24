@@ -22,7 +22,12 @@
       "Bash(ls docker-compose*.yml)",
       "Bash(ls compose*.yml)",
       "Bash(.venv/Scripts/python manage.py makemigrations VAT --name=remove_actividades)",
-      "Bash(xargs basename:*)"
+      "Bash(xargs basename:*)",
+      "Bash(source .venv/Scripts/activate)",
+      "Bash(source venv/Scripts/activate)",
+      "Read(//c/Users/mkdir/AppData/Local/Programs/**)",
+      "Bash(py -3.12 -m django --version)",
+      "Bash(docker-compose ps:*)"
     ]
   }
 }

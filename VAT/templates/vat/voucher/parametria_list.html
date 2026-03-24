@@ -1,0 +1,62 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Parametrías de Voucher{% endblock %}
+{% block titulo-pagina %}Parametrías de Voucher{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+
+<div class="d-print-none mb-3 d-flex justify-content-between align-items-center">
+    <span class="text-muted small">Configuraciones base para asignación de vouchers</span>
+    {% if perms.VAT.add_voucher %}
+    <a href="{% url 'vat_voucher_parametria_create' %}" class="btn btn-sm btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Nueva parametría
+    </a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Programa</th>
+                    <th class="text-end">Créditos</th>
+                    <th>Vencimiento</th>
+                    <th>Estado</th>
+                    <th>Vouchers</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in parametrias %}
+                <tr>
+                    <td class="fw-semibold">{{ p.nombre }}</td>
+                    <td>{{ p.programa }}</td>
+                    <td class="text-end">{{ p.cantidad_inicial }}</td>
+                    <td>{{ p.fecha_vencimiento|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if p.activa %}
+                        <span class="badge bg-success">Activa</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactiva</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted small">{{ p.vouchers.count }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'vat_voucher_parametria_detail' p.pk %}" class="btn btn-sm btn-outline-primary py-0 px-2">Ver</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">No hay parametrías registradas.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if is_paginated %}
+{% include 'components/pagination.html' with page_obj=page_obj %}
+{% endif %}
+
+{% endblock %}

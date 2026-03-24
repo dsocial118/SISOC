@@ -1,0 +1,104 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Vouchers VAT{% endblock %}
+{% block titulo-pagina %}Vouchers{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+
+<!-- ACCIONES -->
+<div class="d-print-none mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex gap-2">
+        {% if perms.VAT.add_voucher %}
+        <a href="{% url 'vat_voucher_create' %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-person-plus me-1"></i>Asignar voucher
+        </a>
+        <a href="{% url 'vat_voucher_masivo' %}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-people me-1"></i>Asignación masiva
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- FILTROS -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Buscar por nombre o DNI...">
+            </div>
+            <div class="col-md-3">
+                <select name="estado" class="form-select form-select-sm">
+                    <option value="">Todos los estados</option>
+                    {% for val, label in estado_choices %}
+                    <option value="{{ val }}" {% if estado_sel == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="programa" class="form-select form-select-sm">
+                    <option value="">Todos los programas</option>
+                    {% for p in programas %}
+                    <option value="{{ p.id }}" {% if programa_sel == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-sm btn-secondary w-100">Filtrar</button>
+                <a href="{% url 'vat_voucher_list' %}" class="btn btn-sm btn-outline-secondary">×</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- TABLA -->
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Ciudadano</th>
+                    <th>DNI</th>
+                    <th>Programa</th>
+                    <th>Créditos</th>
+                    <th>Vencimiento</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vouchers %}
+                <tr>
+                    <td>{{ v.ciudadano.nombre_completo }}</td>
+                    <td class="text-muted">{{ v.ciudadano.documento }}</td>
+                    <td>{{ v.programa }}</td>
+                    <td>
+                        <span class="fw-bold">{{ v.cantidad_disponible }}</span>
+                        <span class="text-muted small">/ {{ v.cantidad_inicial }}</span>
+                        <div class="progress mt-1" style="height:4px;width:80px;">
+                            <div class="progress-bar {% if v.cantidad_disponible == 0 %}bg-danger{% elif v.cantidad_disponible < v.cantidad_inicial|divisibleby:2 %}bg-warning{% else %}bg-success{% endif %}"
+                                 style="width:{% widthratio v.cantidad_disponible v.cantidad_inicial 100 %}%"></div>
+                        </div>
+                    </td>
+                    <td class="{% if v.estado == 'vencido' %}text-danger{% endif %}">{{ v.fecha_vencimiento|date:"d/m/Y" }}</td>
+                    <td>
+                        <span class="badge {% if v.estado == 'activo' %}bg-success{% elif v.estado == 'vencido' %}bg-danger{% elif v.estado == 'agotado' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ v.get_estado_display }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'vat_voucher_detail' v.pk %}" class="btn btn-sm btn-outline-primary py-0 px-2">Ver</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">No hay vouchers registrados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if is_paginated %}
+{% include 'components/pagination.html' with page_obj=page_obj %}
+{% endif %}
+
+{% endblock %}

@@ -168,7 +168,7 @@ class PlanVersionCurricularSerializer(serializers.ModelSerializer):
 
 class InscripcionOfertaSerializer(serializers.ModelSerializer):
     ciudadano_nombre = serializers.CharField(
-        source="ciudadano.get_full_name", read_only=True
+        source="ciudadano.nombre_completo", read_only=True
     )
     oferta_nombre = serializers.CharField(
         source="oferta.nombre", read_only=True
@@ -228,7 +228,7 @@ class VoucherUsoSerializer(serializers.ModelSerializer):
 
 class VoucherSerializer(serializers.ModelSerializer):
     ciudadano_nombre = serializers.CharField(
-        source="ciudadano.get_full_name", read_only=True
+        source="ciudadano.nombre_completo", read_only=True
     )
     programa_nombre = serializers.CharField(
         source="programa.nombre", read_only=True
@@ -446,7 +446,7 @@ class OfertaInstitucionalSerializer(serializers.ModelSerializer):
 
 class InscripcionSerializer(serializers.ModelSerializer):
     ciudadano_nombre = serializers.CharField(
-        source="ciudadano.get_full_name", read_only=True
+        source="ciudadano.nombre_completo", read_only=True
     )
     comision_codigo = serializers.CharField(
         source="comision.codigo_comision", read_only=True
@@ -482,7 +482,7 @@ class InscripcionSerializer(serializers.ModelSerializer):
 
 class ResultadoEvaluacionSerializer(serializers.ModelSerializer):
     persona_nombre = serializers.CharField(
-        source="inscripcion.ciudadano.get_full_name", read_only=True
+        source="inscripcion.ciudadano.nombre_completo", read_only=True
     )
     registrado_por_nombre = serializers.CharField(
         source="registrado_por.get_full_name", read_only=True

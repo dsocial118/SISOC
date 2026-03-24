@@ -96,6 +96,22 @@ from VAT.views.oferta_institucional import (
     ComisionHorarioDeleteView,
 )
 
+from VAT.views.voucher import (
+    VoucherListView,
+    VoucherDetailView,
+    VoucherCreateView,
+    VoucherRecargaView,
+    VoucherCancelView,
+    VoucherAsignacionMasivaView,
+)
+from VAT.views.voucher_parametria import (
+    VoucherParametriaListView,
+    VoucherParametriaCreateView,
+    VoucherParametriaDetailView,
+    VoucherParametriaAsignarView,
+    VoucherParametriaAsignarMasivoView,
+)
+
 from VAT.views.persona import (
     InscripcionListView,
     InscripcionCreateView,
@@ -631,6 +647,63 @@ urlpatterns = [
         "vat/resultados-evaluacion/<int:pk>/eliminar/",
         permissions_any_required(["VAT.delete_resultadoevaluacion"])(ResultadoEvaluacionDeleteView.as_view()),
         name="vat_resultado_evaluacion_delete",
+    ),
+    # Parametrías de Voucher
+    path(
+        "vat/vouchers/parametrias/",
+        permissions_any_required(["VAT.view_voucher"])(VoucherParametriaListView.as_view()),
+        name="vat_voucher_parametria_list",
+    ),
+    path(
+        "vat/vouchers/parametrias/nueva/",
+        permissions_any_required(["VAT.add_voucher"])(VoucherParametriaCreateView.as_view()),
+        name="vat_voucher_parametria_create",
+    ),
+    path(
+        "vat/vouchers/parametrias/<int:pk>/",
+        permissions_any_required(["VAT.view_voucher"])(VoucherParametriaDetailView.as_view()),
+        name="vat_voucher_parametria_detail",
+    ),
+    path(
+        "vat/vouchers/parametrias/<int:pk>/asignar/",
+        permissions_any_required(["VAT.add_voucher"])(VoucherParametriaAsignarView.as_view()),
+        name="vat_voucher_parametria_asignar",
+    ),
+    path(
+        "vat/vouchers/parametrias/<int:pk>/asignar-masivo/",
+        permissions_any_required(["VAT.add_voucher"])(VoucherParametriaAsignarMasivoView.as_view()),
+        name="vat_voucher_parametria_asignar_masivo",
+    ),
+    # Vouchers
+    path(
+        "vat/vouchers/",
+        permissions_any_required(["VAT.view_voucher"])(VoucherListView.as_view()),
+        name="vat_voucher_list",
+    ),
+    path(
+        "vat/vouchers/asignar/",
+        permissions_any_required(["VAT.add_voucher"])(VoucherCreateView.as_view()),
+        name="vat_voucher_create",
+    ),
+    path(
+        "vat/vouchers/asignar-masivo/",
+        permissions_any_required(["VAT.add_voucher"])(VoucherAsignacionMasivaView.as_view()),
+        name="vat_voucher_masivo",
+    ),
+    path(
+        "vat/vouchers/<int:pk>/",
+        permissions_any_required(["VAT.view_voucher"])(VoucherDetailView.as_view()),
+        name="vat_voucher_detail",
+    ),
+    path(
+        "vat/vouchers/<int:pk>/recargar/",
+        permissions_any_required(["VAT.change_voucher"])(VoucherRecargaView.as_view()),
+        name="vat_voucher_recargar",
+    ),
+    path(
+        "vat/vouchers/<int:pk>/cancelar/",
+        permissions_any_required(["VAT.change_voucher"])(VoucherCancelView.as_view()),
+        name="vat_voucher_cancelar",
     ),
 
 ]

@@ -1,218 +1,164 @@
 """
-Management command for automatic voucher reload.
+Management command para renovación mensual de vouchers según parametrías.
 
-Usage:
-    python manage.py recargar_vouchers --check
-    python manage.py recargar_vouchers --execute
-    python manage.py recargar_vouchers --programa=1 --cantidad=50
-    python manage.py recargar_vouchers --test
+Uso:
+    python manage.py recargar_vouchers --check    # muestra qué se procesaría
+    python manage.py recargar_vouchers --execute  # ejecuta la renovación
 
-To set up with cron:
-    # Run every 1st of the month at 00:00 (midnight)
-    0 0 1 * * cd /path/to/backoffice && python manage.py recargar_vouchers --execute
+Cron (día 1 de cada mes a las 00:30):
+    30 0 1 * * cd /sisoc && python manage.py recargar_vouchers --execute
 """
 
 import logging
-from datetime import date, timedelta
+from datetime import date
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
-from django.conf import settings
+from django.contrib.auth.models import User
 
-from VAT.models import Voucher
-from VAT.services.voucher_service import VoucherService
+from VAT.models import VoucherParametria, Voucher
+from VAT.services.voucher_service.impl import VoucherService
 
 logger = logging.getLogger("django")
 
 
 class Command(BaseCommand):
-    help = "Reload voucher credits automatically (intended for cron execution)"
+    help = "Renovación mensual de vouchers según las parametrías configuradas."
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--check",
             action="store_true",
-            help="Check what would be reloaded without making changes",
+            help="Muestra qué se procesaría sin hacer cambios.",
         )
         parser.add_argument(
             "--execute",
             action="store_true",
-            help="Execute the reload process",
+            help="Ejecuta la renovación.",
         )
         parser.add_argument(
-            "--programa",
+            "--parametria",
             type=int,
-            help="Limit reload to a specific programa (ID)",
-        )
-        parser.add_argument(
-            "--cantidad",
-            type=int,
-            default=50,
-            help="Amount of credits to reload (default: 50)",
-        )
-        parser.add_argument(
-            "--test",
-            action="store_true",
-            help="Test mode: show what would happen",
+            help="Limitar a una parametría específica (ID).",
         )
 
     def handle(self, *args, **options):
-        check_mode = options.get("check")
-        execute_mode = options.get("execute")
-        test_mode = options.get("test")
-        programa_id = options.get("programa")
-        cantidad = options.get("cantidad")
+        check = options["check"]
+        execute = options["execute"]
 
-        if test_mode:
-            check_mode = True
-
-        if not check_mode and not execute_mode:
-            self.stdout.write(
-                self.style.WARNING(
-                    "Warning: Please use --check or --execute. Use --test for a dry run."
-                )
-            )
+        if not check and not execute:
+            self.stdout.write(self.style.WARNING("Usá --check o --execute."))
             return
 
-        # Get configuration
-        voucher_config = getattr(settings, "VOUCHER_CONFIG", {})
-        enabled = voucher_config.get("ENABLED", True)
-        cantidad_config = voucher_config.get("CANTIDAD_RECARGA", 50)
+        hoy = date.today()
+        sistema = self._get_system_user()
 
-        if not enabled:
-            self.stdout.write(
-                self.style.WARNING("VOUCHER_CONFIG['ENABLED'] is False. Skipping.")
-            )
+        # Parametrías activas con renovación mensual habilitada
+        qs = VoucherParametria.objects.filter(renovacion_mensual=True, activa=True).select_related("programa")
+        if options["parametria"]:
+            qs = qs.filter(pk=options["parametria"])
+
+        if not qs.exists():
+            self.stdout.write(self.style.WARNING("No hay parametrías con renovación mensual activa."))
             return
 
-        # Use configured amount if not overridden
-        if cantidad == 50 and "cantidad" not in options:  # default value
-            cantidad = cantidad_config
+        self._separador()
+        self.stdout.write(f"Renovación mensual de vouchers — {hoy}")
+        self.stdout.write(f"Modo: {'VERIFICACIÓN' if check else 'EJECUCIÓN'}")
+        self._separador()
 
-        # Build query
-        query = Voucher.objects.filter(
-            estado__in=["activo", "agotado"],
-            fecha_vencimiento__gte=date.today(),
-        ).select_related("ciudadano", "programa")
+        total_ok = 0
+        total_err = 0
+        total_venc = 0  # expirados marcados
 
-        if programa_id:
-            query = query.filter(programa_id=programa_id)
+        for parametria in qs:
+            cantidad = parametria.cantidad_renovacion or parametria.cantidad_inicial
+            reiniciar = parametria.renovacion_tipo == "reinicia"
+            accion_label = "Reiniciar" if reiniciar else "Sumar"
 
-        count = query.count()
-
-        self.stdout.write(
-            f"\n{'='*70}"
-        )
-        self.stdout.write(f"Voucher Reload Report")
-        self.stdout.write(f"{'='*70}")
-        self.stdout.write(f"Mode: {'CHECK' if check_mode else 'EXECUTE'}")
-        self.stdout.write(f"Amount per voucher: {cantidad} credits")
-        if programa_id:
-            self.stdout.write(f"Filtered by programa: {programa_id}")
-        self.stdout.write(f"Vouchers to process: {count}")
-        self.stdout.write(f"{'='*70}\n")
-
-        if count == 0:
             self.stdout.write(
-                self.style.WARNING("No vouchers found matching criteria.")
+                f"\n[{parametria.nombre}] programa={parametria.programa} "
+                f"| {accion_label} {cantidad} créditos"
+                f"| vence {parametria.fecha_vencimiento}"
             )
-            return
 
-        # Process vouchers
-        success_count = 0
-        error_count = 0
-        errors = []
+            # Vouchers vinculados a esta parametría que están activos o agotados
+            vouchers = Voucher.objects.filter(
+                parametria=parametria,
+                estado__in=["activo", "agotado"],
+            ).select_related("ciudadano")
 
-        if check_mode and not execute_mode:
-            # Just show what would be reloaded
-            self.stdout.write(self.style.SUCCESS("Vouchers that would be reloaded:\n"))
-            for voucher in query[:20]:  # Show first 20
+            # También marcar como vencidos los que correspondan
+            por_vencer = Voucher.objects.filter(
+                parametria=parametria,
+                estado__in=["activo", "agotado"],
+                fecha_vencimiento__lt=hoy,
+            )
+
+            if check:
+                self.stdout.write(f"  → {vouchers.count()} vouchers para renovar")
+                self.stdout.write(f"  → {por_vencer.count()} vouchers a marcar como vencidos")
+                continue
+
+            # Marcar vencidos primero
+            for v in por_vencer:
+                v.estado = "vencido"
+                v.save(update_fields=["estado", "fecha_modificacion"])
+                VoucherService.validar_vencimiento(v)
+                total_venc += 1
                 self.stdout.write(
-                    f"  - {voucher.ciudadano.get_full_name()} "
-                    f"({voucher.programa}): "
-                    f"+{cantidad} credits"
+                    self.style.WARNING(f"  ⚠ Vencido: {v.ciudadano.nombre_completo}")
                 )
-            if count > 20:
-                self.stdout.write(f"\n  ... and {count - 20} more")
-            self.stdout.write("")
 
-        else:
-            # Execute the reload
-            with transaction.atomic():
-                for voucher in query:
-                    try:
-                        success, msg = VoucherService.recargar_voucher(
-                            voucher=voucher,
-                            cantidad=cantidad,
-                            motivo="automatica",
-                            usuario=self._get_system_user(),
-                        )
-                        if success:
-                            success_count += 1
-                            self.stdout.write(
-                                self.style.SUCCESS(
-                                    f"✓ {voucher.ciudadano.get_full_name()}: {msg}"
-                                )
-                            )
-                        else:
-                            error_count += 1
-                            errors.append(msg)
-                            self.stdout.write(
-                                self.style.ERROR(
-                                    f"✗ {voucher.ciudadano.get_full_name()}: {msg}"
-                                )
-                            )
-                    except Exception as e:
-                        error_count += 1
-                        error_msg = str(e)
-                        errors.append(error_msg)
-                        logger.exception(f"Error reloading voucher {voucher.id}")
+            # Renovar los vigentes
+            vigentes = Voucher.objects.filter(
+                parametria=parametria,
+                estado__in=["activo", "agotado"],
+                fecha_vencimiento__gte=hoy,
+            ).select_related("ciudadano")
+
+            for voucher in vigentes:
+                try:
+                    ok, msg = VoucherService.recargar_voucher(
+                        voucher=voucher,
+                        cantidad=cantidad,
+                        motivo="automatica",
+                        usuario=sistema,
+                        reiniciar=reiniciar,
+                    )
+                    if ok:
+                        total_ok += 1
                         self.stdout.write(
-                            self.style.ERROR(
-                                f"✗ {voucher.ciudadano.get_full_name()}: ERROR - {error_msg}"
-                            )
+                            self.style.SUCCESS(f"  ✓ {voucher.ciudadano.nombre_completo}: {msg}")
                         )
+                    else:
+                        total_err += 1
+                        self.stdout.write(
+                            self.style.ERROR(f"  ✗ {voucher.ciudadano.nombre_completo}: {msg}")
+                        )
+                except Exception as e:
+                    total_err += 1
+                    logger.exception(f"Error renovando voucher {voucher.id}")
+                    self.stdout.write(
+                        self.style.ERROR(f"  ✗ {voucher.ciudadano.nombre_completo}: ERROR — {e}")
+                    )
 
-        # Summary
-        self.stdout.write(f"\n{'='*70}")
-        self.stdout.write("Summary:")
-        self.stdout.write(self.style.SUCCESS(f"  Successful: {success_count}"))
-        if error_count > 0:
-            self.stdout.write(self.style.ERROR(f"  Errors: {error_count}"))
-        self.stdout.write(f"  Total processed: {success_count + error_count}")
-        self.stdout.write(f"{'='*70}\n")
-
-        if errors and error_count <= 10:
-            self.stdout.write(self.style.WARNING("Error details:"))
-            for error in errors:
-                self.stdout.write(f"  - {error}")
-            self.stdout.write("")
-
-        if test_mode:
-            self.stdout.write(
-                self.style.WARNING(
-                    "TEST MODE: No changes were made. Run with --execute to apply."
-                )
+        self._separador()
+        if not check:
+            self.stdout.write(f"Renovados: {total_ok}  |  Vencidos marcados: {total_venc}  |  Errores: {total_err}")
+            logger.info(
+                f"recargar_vouchers: ok={total_ok} vencidos={total_venc} errores={total_err}"
             )
+            if total_err:
+                raise CommandError(f"Renovación completada con {total_err} errores.")
 
-        # Log to file
-        logger.info(
-            f"Voucher reload: {success_count} successful, {error_count} errors "
-            f"(programa_id={programa_id}, cantidad={cantidad})"
-        )
-
-        if error_count > 0:
-            raise CommandError(f"Reload completed with {error_count} errors.")
+    def _separador(self):
+        self.stdout.write("=" * 60)
 
     @staticmethod
     def _get_system_user():
-        """Get or create the sistema user for logging."""
-        from django.contrib.auth.models import User
-
         try:
-            user = User.objects.get(username="sistema")
+            return User.objects.get(username="sistema")
         except User.DoesNotExist:
-            # Try to get any admin user
-            user = User.objects.filter(is_staff=True).first()
+            user = User.objects.filter(is_superuser=True).first()
             if not user:
-                raise CommandError("No system or admin user found to log reload.")
-        return user
+                raise CommandError("No se encontró usuario sistema o superusuario.")
+            return user
