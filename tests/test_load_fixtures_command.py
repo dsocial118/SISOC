@@ -1,6 +1,7 @@
 """Tests de regresión para el comando load_fixtures."""
 
 import json
+from argparse import ArgumentParser
 
 import pytest
 from django.apps import apps
@@ -64,3 +65,12 @@ def test_handle_sincroniza_catalogo_cdi_despues_de_cargar():
 
     load_mock.assert_called_once_with()
     sync_mock.assert_called_once_with()
+
+
+def test_add_arguments_reconoce_overwrite():
+    parser = ArgumentParser()
+    Command().add_arguments(parser)
+
+    options = parser.parse_args(["--overwrite"])
+
+    assert options.force is True

@@ -14,8 +14,13 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--force",
+            "--overwrite",
+            dest="force",
             action="store_true",
-            help="Ignora chequeos de vacíos y carga igual (sin borrar nada).",
+            help=(
+                "Ignora chequeos de vacíos y reaplica el fixture sobre registros "
+                "existentes (sin borrar nada)."
+            ),
         )
 
     def handle(self, *args, **options):
@@ -53,9 +58,11 @@ class Command(BaseCommand):
         return any(self.model_is_empty(m) for m in models)
 
     def upsert_fixture(self, fixture_path):
-        """
-        Deserializa y guarda: si PK existe → UPDATE; si no → INSERT.
-        M2M y FKs los maneja el Deserializer. Nunca borra.
+        """Deserializa y guarda: si PK existe actualiza, si no inserta.
+
+        Este es el mecanismo oficial para "pisar" fixtures sin borrar datos:
+        con ``--force`` o ``--overwrite`` vuelve a persistir el JSON sobre la
+        base existente.
         """
         try:
             with open(fixture_path, "r", encoding="utf-8") as f:

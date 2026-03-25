@@ -27,9 +27,7 @@ from collections import defaultdict
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from comedores.models import Comedor, Nomina
-
-PROGRAMAS_SIN_ADMISION = {3, 4}
+from comedores.models import Comedor, Nomina, Programas
 
 
 class Command(BaseCommand):
@@ -89,6 +87,18 @@ class Command(BaseCommand):
             id__in=list(nominas_por_comedor.keys())
         ).values("id", "programa_id", "nombre")
         comedor_data = {c["id"]: c for c in comedores_qs}
+        # El catálogo de programas define si el comedor usa o no admisión para
+        # su nómina. Si el programa no está en la tabla, se mantiene el flujo
+        # histórico por compatibilidad.
+        programa_ids = {
+            data["programa_id"] for data in comedor_data.values() if data["programa_id"]
+        }
+        programa_flags = {
+            item["id"]: item["usa_admision_para_nomina"]
+            for item in Programas.objects.filter(id__in=programa_ids).values(
+                "id", "usa_admision_para_nomina"
+            )
+        }
 
         comedores_no_encontrados = set(nominas_por_comedor) - set(comedor_data)
         if comedores_no_encontrados:
@@ -110,7 +120,7 @@ class Command(BaseCommand):
                     continue
 
                 programa_id = comedor_data[comedor_id]["programa_id"]
-                usa_admision = programa_id not in PROGRAMAS_SIN_ADMISION
+                usa_admision = programa_flags.get(programa_id, True)
 
                 nomina_ids = [n[0] for n in nominas]
                 admision_map = {n[0]: n[1] for n in nominas}

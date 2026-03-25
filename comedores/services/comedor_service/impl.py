@@ -37,6 +37,7 @@ from comedores.models import (
     Referente,
 )
 from comedores.utils import (
+    comedor_usa_admision_para_nomina,
     get_object_by_filter,
     get_id_by_nombre,
     normalize_field,
@@ -533,6 +534,13 @@ def _safe_redirect_comedor_detalle(request, comedor_id):
 
 
 def _validar_creacion_admision_desde_comedor(request, comedor, tipo_admision):
+    if not comedor_usa_admision_para_nomina(comedor):
+        messages.error(
+            request,
+            "Este comedor usa nómina directa y no admite admisiones.",
+        )
+        return _redirect_comedor_detalle(comedor.pk)
+
     if not tipo_admision:
         messages.error(request, "Debe seleccionar un tipo de admisión.")
         return _redirect_comedor_detalle(comedor.pk)
@@ -1346,6 +1354,14 @@ class ComedorService:
         comedor_id=None,
     ):
         ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
+
+        if comedor_id is not None and admision_id is None:
+            comedor = get_object_or_404(Comedor, pk=comedor_id)
+            if comedor_usa_admision_para_nomina(comedor):
+                return (
+                    False,
+                    "Este comedor usa nómina por admisión y no admite alta directa en la nómina.",
+                )
 
         if _nomina_ya_contiene_ciudadano(
             ciudadano, admision_id=admision_id, comedor_id=comedor_id

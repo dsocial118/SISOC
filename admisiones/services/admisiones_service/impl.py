@@ -35,6 +35,7 @@ from admisiones.services.admisiones_filter_config import (
     DATE_OPS as ADMISION_DATE_OPS,
     CHOICE_OPS as ADMISION_CHOICE_OPS,
 )
+from comedores.utils import comedor_usa_admision_para_nomina
 
 from django.db.models import Q
 import logging
@@ -1387,6 +1388,12 @@ class AdmisionService:
             from comedores.models import Comedor
 
             comedor = get_object_or_404(Comedor, id=comedor_id)
+            if not comedor_usa_admision_para_nomina(comedor):
+                logger.warning(
+                    "Se intentó crear una admisión en un comedor con nómina directa",
+                    extra={"comedor_id": comedor_id},
+                )
+                return None
             tipo_convenio = get_object_or_404(TipoConvenio, id=tipo_convenio_id)
             estado_inicial = EstadoAdmision.objects.first()
 
