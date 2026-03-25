@@ -1387,7 +1387,9 @@ class AdmisionService:
         try:
             from comedores.models import Comedor
 
-            comedor = get_object_or_404(Comedor, id=comedor_id)
+            comedor = get_object_or_404(
+                Comedor.objects.select_related("programa"), id=comedor_id
+            )
             if not comedor_usa_admision_para_nomina(comedor):
                 logger.warning(
                     "Se intentó crear una admisión en un comedor con nómina directa",
