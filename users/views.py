@@ -104,6 +104,18 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
         messages.success(request, "Usuario desactivado correctamente.")
         return HttpResponseRedirect(self.success_url)
 
+class UserActiveView(AdminRequiredMixin, DeleteView):
+    model = User
+    template_name = "user/user_confirm_active.html"
+    success_url = reverse_lazy("usuarios")
+    required_permissions = ("auth.delete_user",)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.is_active = True
+        self.object.save(update_fields=["is_active"])
+        messages.success(request, "Usuario activado correctamente.")
+        return HttpResponseRedirect(self.success_url)
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class GroupListView(AdminRequiredMixin, ListView):

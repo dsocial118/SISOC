@@ -69,10 +69,16 @@ class UsuariosService:
                     "icon": "edit",
                 },
                 {
-                    "label": "Eliminar",
+                    "label": "Activar",
+                    "url_name": "usuario_activar",
+                    "type": "activar",
+                    "icon": "check-circle",
+                },
+                {
+                    "label": "Desactivar",
                     "url_name": "usuario_borrar",
-                    "type": "eliminar",
-                    "icon": "trash-alt",
+                    "type": "desactivar",
+                    "icon": "times-circle",
                 },
             ],
             "breadcrumb_items": [
