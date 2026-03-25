@@ -42,9 +42,7 @@ __all__ = [
 
 class CentroDeInfanciaForm(forms.ModelForm):
     SOLO_DIGITOS_ERROR = "Ingrese solo números (sin espacios ni signos)."
-    TELEFONO_FORMATO_ERROR = (
-        "Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones."
-    )
+    TELEFONO_FORMATO_ERROR = "Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones."
     TELEFONO_REGEX = RegexValidator(
         regex=r"^\d+(?:-\d+)*$",
         message=TELEFONO_FORMATO_ERROR,
@@ -90,6 +88,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
             attrs["inputmode"] = "tel"
             # Patrón alineado con TELEFONO_REGEX/validación backend: dígitos con grupos separados por guiones
             attrs["pattern"] = r"\d+(?:-\d+)*"
+
     def _clean_solo_digitos(self, field_name):
         value = (self.cleaned_data.get(field_name) or "").strip()
         if not value:
