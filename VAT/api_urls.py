@@ -24,6 +24,12 @@ from VAT.api_views import (
     EvaluacionViewSet,
     ResultadoEvaluacionViewSet,
 )
+from VAT.api_web_views import (
+    VatWebCentroViewSet,
+    VatWebCursoViewSet,
+    VatWebInscripcionViewSet,
+    VatWebTituloViewSet,
+)
 
 router = DefaultRouter()
 router.register(r"centros", CentroViewSet, basename="vat-api-centro")
@@ -107,6 +113,15 @@ router.register(
     r"resultado-evaluaciones",
     ResultadoEvaluacionViewSet,
     basename="vat-api-resultado-evaluacion",
+)
+
+router.register(r"web/centros", VatWebCentroViewSet, basename="vat-web-centro")
+router.register(r"web/titulos", VatWebTituloViewSet, basename="vat-web-titulo")
+router.register(r"web/cursos", VatWebCursoViewSet, basename="vat-web-curso")
+router.register(
+    r"web/inscripciones",
+    VatWebInscripcionViewSet,
+    basename="vat-web-inscripcion",
 )
 
 urlpatterns = [

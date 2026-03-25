@@ -1,18 +1,17 @@
 import logging
-from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction
 from django.db.models import Q
+from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from ciudadanos.models import Ciudadano
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from VAT.forms import InscripcionForm
-from VAT.models import Inscripcion, Voucher
-from VAT.services.voucher_service.impl import VoucherService
+from VAT.models import Inscripcion
+from VAT.services.inscripcion_service import InscripcionService
 
 logger = logging.getLogger("django")
 
@@ -77,66 +76,31 @@ class InscripcionCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         try:
-            with transaction.atomic():
-                response = super().form_valid(form)
-                oferta = self.object.comision.oferta
-
-                if self.object.programa_id != oferta.programa_id:
-                    raise ValueError(
-                        "La inscripción debe usar el mismo programa de la oferta institucional."
-                    )
-
-                if not oferta.usa_voucher:
-                    messages.success(self.request, "Inscripción creada exitosamente.")
-                    return response
-
-                voucher = (
-                    Voucher.objects.filter(
-                        ciudadano=self.object.ciudadano,
-                        programa=oferta.programa,
-                        estado="activo",
-                    )
-                    .order_by("fecha_vencimiento")
-                    .first()
-                )
-                if not voucher:
-                    raise ValueError(
-                        f"{self.object.ciudadano} no tiene voucher activo para el programa {oferta.programa}."
-                    )
-
-                cantidad_debito = int(Decimal(oferta.costo or 0))
-                ok, msg = VoucherService.debitar_voucher(
-                    voucher=voucher,
-                    cantidad=cantidad_debito,
-                    usuario=self.request.user,
-                    detalles={
-                        "inscripcion_id": self.object.id,
-                        "comision_id": self.object.comision_id,
-                        "comision": str(self.object.comision),
-                        "origen": "inscripcion_comision",
-                    },
-                )
-                if not ok:
-                    raise ValueError(msg)
-
-                if cantidad_debito > 0:
-                    messages.success(
-                        self.request,
-                        f"Inscripción creada. Se descontaron {cantidad_debito} créditos del voucher de {self.object.ciudadano} ({voucher.cantidad_disponible} restantes).",
-                    )
-                else:
-                    messages.success(
-                        self.request,
-                        "Inscripción creada exitosamente. La oferta no tiene costo para descontar del voucher.",
-                    )
-
-                return response
+            data = form.cleaned_data
+            self.object = InscripcionService.crear_inscripcion(
+                ciudadano=data["ciudadano"],
+                comision=data["comision"],
+                programa=data["programa"],
+                estado=data["estado"],
+                origen_canal=data["origen_canal"],
+                observaciones=data.get("observaciones", ""),
+                usuario=self.request.user,
+            )
         except ValueError as exc:
             messages.error(self.request, str(exc))
             return self.form_invalid(form)
 
-    def form_invalid(self, form):
-        return super().form_invalid(form)
+        cantidad_debito = getattr(self.object, "_voucher_debito", 0)
+        if cantidad_debito > 0:
+            saldo = getattr(self.object, "_voucher_saldo", 0)
+            messages.success(
+                self.request,
+                f"Inscripción creada. Se descontaron {cantidad_debito} créditos del voucher de {self.object.ciudadano} ({saldo} restantes).",
+            )
+        else:
+            messages.success(self.request, "Inscripción creada exitosamente.")
+
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class InscripcionDetailView(LoginRequiredMixin, DetailView):

@@ -865,6 +865,16 @@ class VoucherParametriaForm(forms.ModelForm):
         initial="suma",
     )
 
+    inscripcion_unica_activa = forms.BooleanField(
+        label="Inscripción única activa",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        help_text=(
+            "Si está activado, el ciudadano solo puede tener una inscripción activa "
+            "a la vez. Debe completar o abandonar el curso actual antes de inscribirse en otro."
+        ),
+    )
+
     def clean_fecha_vencimiento(self):
         from datetime import date
         fecha = self.cleaned_data.get("fecha_vencimiento")
@@ -875,7 +885,7 @@ class VoucherParametriaForm(forms.ModelForm):
     class Meta:
         from VAT.models import VoucherParametria
         model = VoucherParametria
-        fields = ["nombre", "descripcion", "programa", "cantidad_inicial", "fecha_vencimiento", "renovacion_mensual", "cantidad_renovacion", "renovacion_tipo"]
+        fields = ["nombre", "descripcion", "programa", "cantidad_inicial", "fecha_vencimiento", "renovacion_mensual", "cantidad_renovacion", "renovacion_tipo", "inscripcion_unica_activa"]
 
 class VoucherForm(forms.ModelForm):
     ciudadano = forms.ModelChoiceField(

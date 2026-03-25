@@ -357,6 +357,15 @@ class VoucherParametria(models.Model):
         default="suma",
         verbose_name="Tipo de renovación",
     )
+    inscripcion_unica_activa = models.BooleanField(
+        default=False,
+        verbose_name="Inscripción única activa",
+        help_text=(
+            "Si está activado, el ciudadano solo puede tener una inscripción "
+            "activa a la vez en comisiones de este programa. Debe completar o "
+            "abandonar la inscripción actual antes de inscribirse en otra."
+        ),
+    )
     activa = models.BooleanField(default=True, verbose_name="Activa")
     creado_por = models.ForeignKey(
         User,
