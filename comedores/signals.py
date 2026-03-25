@@ -30,6 +30,7 @@ from rendicioncuentasfinal.models import (
     TipoDocumentoRendicionFinal,
 )
 
+
 @receiver(post_save, sender=Comedor)
 def send_comedor_to_gestionar(sender, instance, created, **kwargs):
     if created:

@@ -939,9 +939,7 @@ def test_nomina_directa_delete_view_muestra_cancelacion_directa(
         comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
     )
 
-    url = reverse(
-        "nomina_directa_borrar", kwargs={"pk": comedor.pk, "pk2": nomina.pk}
-    )
+    url = reverse("nomina_directa_borrar", kwargs={"pk": comedor.pk, "pk2": nomina.pk})
     response = client_nomina_fixture.get(url)
 
     assert response.status_code == 200
@@ -1030,7 +1028,9 @@ def test_flujo_integrado_comedor_sin_admision_muestra_y_abre_nomina_directa(
 
     assert detalle_response.status_code == 200
     assert detalle_response.context["selected_admision_id"] is None
-    assert detalle_response.context["comedor"].programa.usa_admision_para_nomina is False
+    assert (
+        detalle_response.context["comedor"].programa.usa_admision_para_nomina is False
+    )
     assert detalle_response.context["nomina_total"] == 1
 
     nomina_directa_url = reverse("nomina_directa_ver", kwargs={"pk": comedor.pk})

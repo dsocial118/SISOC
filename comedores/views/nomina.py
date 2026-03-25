@@ -19,6 +19,7 @@ from comedores.services.comedor_service import ComedorService
 from comedores.utils import comedor_usa_admision_para_nomina
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
+
 def _get_nomina_scoped_or_404(pk, user):
     """Obtiene una Nomina scoped al usuario, soportando tanto prog 2 (admision) como 3/4 (comedor)."""
     scoped_comedores = ComedorService.get_scoped_comedor_queryset(user)

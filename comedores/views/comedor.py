@@ -555,9 +555,7 @@ def _build_admisiones_y_nomina_context(comedor_obj):
                 nomina_espera,
                 nomina_total,
                 nomina_rangos,
-            ) = ComedorService.get_nomina_detail(
-                admision_activa_id, page=1, per_page=1
-            )
+            ) = ComedorService.get_nomina_detail(admision_activa_id, page=1, per_page=1)
         else:
             nomina_hombres = nomina_mujeres = nomina_espera = nomina_total = 0
             nomina_rangos = {}
