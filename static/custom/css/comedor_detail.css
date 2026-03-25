@@ -61,7 +61,7 @@
 }
 :root[data-bs-theme="light"] .sidebar-wrapper {
     background-color: #f4f6f9 !important;
-    color: #2e2e2e m !important;
+    color: #2e2e2e !important;
 }
 .sidebar-user-panel {
   font-size: 0.95rem;
