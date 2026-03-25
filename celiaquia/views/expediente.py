@@ -40,6 +40,13 @@ from celiaquia.services.expediente_service import (
 )
 from celiaquia.services.importacion_service import (
     ImportacionService,
+    IMPORTACION_EDITABLE_FIELDS,
+    _agregar_sexo_responsable_payload_importacion,
+    _aplicar_domicilio_responsable_payload_importacion,
+    _build_normalizar_sexo_importacion,
+    _cargar_sexos_cache,
+    _resolver_localidad_responsable_payload_importacion,
+    validar_campos_obligatorios_importacion,
     validar_edad_responsable,
 )
 from celiaquia.services.cruce_service import CruceService
@@ -96,6 +103,62 @@ def _is_provincial(user) -> bool:
         return bool(user.profile.es_usuario_provincial and user.profile.provincia_id)
     except ObjectDoesNotExist:
         return False
+
+
+def _normalizar_datos_registro_erroneo(payload):
+    datos_normalizados = {}
+    for field in IMPORTACION_EDITABLE_FIELDS:
+        if field not in payload:
+            continue
+        value = payload.get(field)
+        if isinstance(value, str):
+            value = value.strip()
+        datos_normalizados[field] = value
+    return datos_normalizados
+
+
+def _limpiar_datos_registro_erroneo(payload):
+    return {k: v for k, v in payload.items() if v not in (None, "")}
+
+
+def _validar_datos_registro_erroneo(payload):
+    validar_campos_obligatorios_importacion(payload)
+
+    for field_name in ("telefono", "telefono_responsable"):
+        telefono = str(payload.get(field_name, "")).strip()
+        if telefono and len(telefono) < 8:
+            raise ValidationError(f"{field_name} debe tener al menos 8 digitos")
+
+
+def _build_datos_responsable_reproceso(
+    datos, provincia_id, fila_excel, normalizar_sexo
+):
+    datos_resp = {
+        "apellido": datos.get("apellido_responsable"),
+        "nombre": datos.get("nombre_responsable"),
+        "documento": datos.get("documento_responsable"),
+        "fecha_nacimiento": datos.get("fecha_nacimiento_responsable"),
+        "telefono": datos.get("telefono_responsable"),
+        "email": datos.get("email_responsable"),
+        "provincia": provincia_id,
+    }
+    _agregar_sexo_responsable_payload_importacion(
+        responsable_payload=datos_resp,
+        payload=datos,
+        normalizar_sexo=normalizar_sexo,
+    )
+    _aplicar_domicilio_responsable_payload_importacion(datos_resp, datos)
+    _resolver_localidad_responsable_payload_importacion(
+        responsable_payload=datos_resp,
+        payload=datos,
+        provincia_usuario_id=provincia_id,
+        offset=fila_excel,
+        add_warning=lambda *_args, **_kwargs: None,
+    )
+    datos_resp["fecha_nacimiento"] = CiudadanoService._to_date(
+        datos_resp.get("fecha_nacimiento")
+    )
+    return _limpiar_datos_registro_erroneo(datos_resp)
 
 
 def _user_provincia(user):
@@ -1361,12 +1424,17 @@ class ActualizarRegistroErroneoView(View):
             datos_actualizados = json.loads(request.body)
             # Limpiar valores vacíos
             datos_limpios = {k: v for k, v in datos_actualizados.items() if v}
+            datos_normalizados = _normalizar_datos_registro_erroneo(datos_actualizados)
+            _validar_datos_registro_erroneo(datos_normalizados)
+            datos_limpios = _limpiar_datos_registro_erroneo(datos_normalizados)
             registro.datos_raw = datos_limpios
             registro.save(update_fields=["datos_raw"])
 
             return JsonResponse(
                 {"success": True, "message": "Registro actualizado correctamente."}
             )
+        except ValidationError as exc:
+            return JsonResponse({"success": False, "error": str(exc)}, status=400)
         except Exception as e:
             logger.error("Error actualizando registro erróneo: %s", e, exc_info=True)
             return JsonResponse(
@@ -1427,51 +1495,20 @@ class ReprocesarRegistrosErroneosView(View):
                 status=400,
             )
 
+        normalizar_sexo = _build_normalizar_sexo_importacion(_cargar_sexos_cache())
+
         for registro in registros:
             try:
                 datos = registro.datos_raw.copy()
-                campos_obligatorios = [
-                    "apellido",
-                    "nombre",
-                    "documento",
-                    "fecha_nacimiento",
-                    "sexo",
-                    "nacionalidad",
-                    "municipio",
-                    "localidad",
-                ]
-                campos_faltantes = [c for c in campos_obligatorios if not datos.get(c)]
-                if campos_faltantes:
-                    raise ValidationError(
-                        f"Faltan campos obligatorios: {', '.join(campos_faltantes)}"
-                    )
+                _validar_datos_registro_erroneo(datos)
                 telefono = str(datos.get("telefono", "")).strip()
                 if telefono and len(telefono) < 8:
                     raise ValidationError("Telefono debe tener al menos 8 digitos")
                 # Agregar provincia del usuario
                 datos["provincia"] = provincia_id
-
-                # Convertir fecha de DD/MM/YYYY a objeto date si es necesario
-                if "fecha_nacimiento" in datos and isinstance(
-                    datos["fecha_nacimiento"], str
-                ):
-                    from datetime import datetime
-
-                    try:
-                        # Intentar formato DD/MM/YYYY
-                        fecha_obj = datetime.strptime(
-                            datos["fecha_nacimiento"], "%d/%m/%Y"
-                        ).date()
-                        datos["fecha_nacimiento"] = fecha_obj
-                    except ValueError:
-                        try:
-                            # Intentar formato YYYY-MM-DD
-                            fecha_obj = datetime.strptime(
-                                datos["fecha_nacimiento"], "%Y-%m-%d"
-                            ).date()
-                            datos["fecha_nacimiento"] = fecha_obj
-                        except ValueError:
-                            pass
+                datos["fecha_nacimiento"] = CiudadanoService._to_date(
+                    datos.get("fecha_nacimiento")
+                )
 
                 # Intentar crear el ciudadano y legajo
                 ciudadano = CiudadanoService.get_or_create_ciudadano(
@@ -1532,19 +1569,12 @@ class ReprocesarRegistrosErroneosView(View):
 
                     if tiene_responsable and not es_mismo_documento:
                         try:
-                            # Crear responsable SOLO si es diferente al beneficiario
-                            datos_resp = {
-                                "apellido": datos.get("apellido_responsable"),
-                                "nombre": datos.get("nombre_responsable"),
-                                "documento": datos.get("documento_responsable"),
-                                "fecha_nacimiento": datos.get(
-                                    "fecha_nacimiento_responsable"
-                                ),
-                                "sexo": datos.get("sexo_responsable"),
-                                "telefono": datos.get("telefono_responsable"),
-                                "email": datos.get("email_responsable"),
-                                "provincia": provincia_id,
-                            }
+                            datos_resp = _build_datos_responsable_reproceso(
+                                datos=datos,
+                                provincia_id=provincia_id,
+                                fila_excel=registro.fila_excel,
+                                normalizar_sexo=normalizar_sexo,
+                            )
 
                             # Limpiar valores None
                             datos_resp = {k: v for k, v in datos_resp.items() if v}
@@ -1626,6 +1656,7 @@ class ReprocesarRegistrosErroneosView(View):
                                 registro.fila_excel,
                                 e,
                             )
+                            raise
 
                     # Marcar como procesado y limpiar error anterior
                     registro.procesado = True

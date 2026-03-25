@@ -301,6 +301,24 @@ def test_importacion_helpers_payload_row_and_defaults_validation():
     assert payload["telefono"] is None
     assert payload["otro"] is None
     assert warnings == [(2, "telefono", "valor numerico vacio")]
+    payload.update(
+        {
+            "sexo": "M",
+            "nacionalidad": "Argentina",
+            "municipio": "1",
+            "localidad": "2",
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+            "apellido_responsable": "Gomez",
+            "nombre_responsable": "Laura",
+            "documento_responsable": "20123456789",
+            "fecha_nacimiento_responsable": "1980-01-01",
+            "sexo_responsable": "F",
+            "domicilio_responsable": "Calle Resp 123",
+            "localidad_responsable": "Centro",
+        }
+    )
 
     module._aplicar_defaults_y_validar_payload_importacion(
         payload, provincia_usuario_id=7
