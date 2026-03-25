@@ -110,6 +110,43 @@ def test_render_changelog_reemplaza_bloque_auto_generado_de_misma_release(tmp_pa
     assert "# Versión SISOC 04.03.2026" in changelog
 
 
+def test_fetch_changed_files_consulta_endpoint_de_pulls_sin_codificar_la_barra(
+    monkeypatch,
+):
+    """Usa la ruta `/repos/{owner}/{repo}` que espera la API de GitHub."""
+
+    requested_urls: list[str] = []
+
+    def fake_github_api_get_json(url: str, token: str):
+        requested_urls.append(url)
+        return [{"filename": "core/views.py"}]
+
+    monkeypatch.setattr(
+        pr_doc_automation,
+        "github_api_get_json",
+        fake_github_api_get_json,
+    )
+
+    pr = pr_doc_automation.PullRequestData(
+        number=15,
+        title="Nueva automatizacion para PR",
+        body="",
+        html_url="https://example.test/pr/15",
+        base_ref="development",
+        head_ref="feature/pr-docs",
+        author="tester",
+        updated_at="2026-03-13T12:00:00Z",
+        repo_full_name="org/repo",
+    )
+
+    changed_files = pr_doc_automation.fetch_changed_files(pr, token="fake-token")
+
+    assert changed_files == ["core/views.py"]
+    assert requested_urls == [
+        "https://api.github.com/repos/org/repo/pulls/15/files?per_page=100&page=1"
+    ]
+
+
 def test_sync_pr_artifacts_genera_docs_y_changelog_para_pr_a_main(
     tmp_path, monkeypatch
 ):
