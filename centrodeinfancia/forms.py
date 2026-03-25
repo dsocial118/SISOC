@@ -76,11 +76,20 @@ class CentroDeInfanciaForm(forms.ModelForm):
         self._aplicar_atributos_numericos()
 
     def _aplicar_atributos_numericos(self):
-        for field_name in ["numero", "telefono", "telefono_referente"]:
+        # Campos estrictamente numéricos
+        for field_name in ["numero"]:
             attrs = self.fields[field_name].widget.attrs
             attrs["inputmode"] = "numeric"
             attrs["pattern"] = r"\d*"
 
+        # Campos de teléfono: permitir guiones y usar inputmode="tel"
+        for field_name in ["telefono", "telefono_referente"]:
+            if field_name not in self.fields:
+                continue
+            attrs = self.fields[field_name].widget.attrs
+            attrs["inputmode"] = "tel"
+            # Patrón alineado con TELEFONO_REGEX/validación backend: dígitos con grupos separados por guiones
+            attrs["pattern"] = r"\d+(?:-\d+)*"
     def _clean_solo_digitos(self, field_name):
         value = (self.cleaned_data.get(field_name) or "").strip()
         if not value:
