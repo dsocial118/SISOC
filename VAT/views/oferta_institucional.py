@@ -43,7 +43,7 @@ class OfertaInstitucionalListView(LoginRequiredMixin, ListView):
 
         centro_id = self.request.GET.get("centro_id")
         estado = self.request.GET.get("estado")
-        buscar = self.request.GET.get("q")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
 
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
@@ -134,14 +134,18 @@ class ComisionListView(LoginRequiredMixin, ListView):
 
         oferta_id = self.request.GET.get("oferta_id")
         estado = self.request.GET.get("estado")
-        buscar = self.request.GET.get("q")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
 
         if oferta_id:
             queryset = queryset.filter(oferta_id=oferta_id)
         if estado:
             queryset = queryset.filter(estado=estado)
         if buscar:
-            queryset = queryset.filter(Q(codigo_comision__icontains=buscar) | Q(nombre__icontains=buscar))
+            queryset = queryset.filter(
+                Q(codigo_comision__icontains=buscar)
+                | Q(nombre__icontains=buscar)
+                | Q(oferta__nombre__icontains=buscar)
+            )
 
         return queryset
 

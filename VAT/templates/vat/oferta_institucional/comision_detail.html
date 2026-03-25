@@ -234,32 +234,54 @@
 
 {# ── HERO ───────────────────────────────────────────────────────── #}
 <div class="ci-hero">
-    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+    {# ── Fila superior: back + título + editar ── #}
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
         <div class="d-flex align-items-center gap-3">
             <a href="{% url 'vat_comision_list' %}" class="ci-back"><i class="bi bi-arrow-left"></i></a>
             <div>
-                <div class="d-flex align-items-center gap-2 mb-1">
-                    <span class="ci-code-badge">{{ comision.codigo_comision }}</span>
-                    <span class="ci-state-badge">{{ comision.get_estado_display }}</span>
-                </div>
-                <div class="ci-hero-title">{{ comision.nombre|default:comision.codigo_comision }}</div>
-                <div class="ci-hero-sub"><i class="bi bi-book me-1"></i>{{ comision.oferta }}</div>
+                <div class="ci-hero-title" style="margin-top:0;">{{ comision.nombre|default:comision.codigo_comision }}</div>
+                <div class="ci-hero-sub" style="opacity:.75;font-size:.88rem;"><i class="bi bi-book me-1"></i>{{ comision.oferta }}</div>
             </div>
         </div>
-        {% if perms.VAT.change_comision %}
-        <a href="{% url 'vat_comision_update' comision.id %}" class="ci-edit-btn"><i class="bi bi-pencil me-1"></i>Editar</a>
-        {% endif %}
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="ci-code-badge">{{ comision.codigo_comision }}</span>
+            <span class="ci-state-badge">{{ comision.get_estado_display }}</span>
+            {% if perms.VAT.change_comision %}
+            <a href="{% url 'vat_comision_update' comision.id %}" class="ci-edit-btn"><i class="bi bi-pencil me-1"></i>Editar</a>
+            {% endif %}
+        </div>
     </div>
-    <div class="ci-stats">
-        <div class="ci-stat"><span class="ci-stat-val">{{ comision.cupo }}</span><span class="ci-stat-lbl">Cupo</span></div>
-        <div class="ci-stat-sep"></div>
-        <div class="ci-stat"><span class="ci-stat-val">{{ inscripciones|length }}</span><span class="ci-stat-lbl">Inscriptos</span></div>
-        <div class="ci-stat-sep"></div>
-        <div class="ci-stat"><span class="ci-stat-val">{{ sesiones|length }}</span><span class="ci-stat-lbl">Sesiones</span></div>
-        <div class="ci-stat-sep"></div>
-        <div class="ci-stat"><span class="ci-stat-val">{{ horarios|length }}</span><span class="ci-stat-lbl">Horarios</span></div>
-        {% if comision.fecha_inicio %}<div class="ci-stat-sep"></div><div class="ci-stat"><span class="ci-stat-val">{{ comision.fecha_inicio|date:"d/m/Y" }}</span><span class="ci-stat-lbl">Inicio</span></div>{% endif %}
-        {% if comision.fecha_fin %}<div class="ci-stat-sep"></div><div class="ci-stat"><span class="ci-stat-val">{{ comision.fecha_fin|date:"d/m/Y" }}</span><span class="ci-stat-lbl">Fin</span></div>{% endif %}
+
+    {# ── Fila inferior: stats distribuidos ── #}
+    <div style="background:rgba(255,255,255,.08);border-radius:8px;padding:.85rem 1.15rem;display:flex;flex-wrap:wrap;gap:0;">
+        <div style="flex:1;min-width:80px;padding:.25rem .5rem;">
+            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Cupo</span>
+            <span class="ci-stat-val" style="font-size:1.15rem;">{{ comision.cupo }}</span>
+        </div>
+        <div style="flex:1;min-width:90px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);">
+            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Inscriptos</span>
+            <span class="ci-stat-val" style="font-size:1.15rem;">{{ inscripciones|length }}</span>
+        </div>
+        <div style="flex:1;min-width:80px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);">
+            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Sesiones</span>
+            <span class="ci-stat-val" style="font-size:1.15rem;">{{ sesiones|length }}</span>
+        </div>
+        <div style="flex:1;min-width:80px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);">
+            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Horarios</span>
+            <span class="ci-stat-val" style="font-size:1.15rem;">{{ horarios|length }}</span>
+        </div>
+        {% if comision.fecha_inicio %}
+        <div style="flex:1;min-width:100px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);">
+            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Inicio</span>
+            <span class="ci-stat-val"><i class="bi bi-calendar3 me-1" style="font-size:.8rem;opacity:.6;"></i>{{ comision.fecha_inicio|date:"d/m/Y" }}</span>
+        </div>
+        {% endif %}
+        {% if comision.fecha_fin %}
+        <div style="flex:1;min-width:100px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);">
+            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Fin</span>
+            <span class="ci-stat-val"><i class="bi bi-calendar3 me-1" style="font-size:.8rem;opacity:.6;"></i>{{ comision.fecha_fin|date:"d/m/Y" }}</span>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -270,17 +292,17 @@
     <div class="col-xl-8">
 
         {# TAB BAR #}
-        <div class="ci-tabbar">
-            <button class="ci-tab active" data-bs-toggle="tab" data-bs-target="#ci-info" type="button">
+        <div class="ci-tabbar" role="tablist">
+            <button class="ci-tab active" data-bs-toggle="tab" data-bs-target="#ci-info" type="button" role="tab" aria-selected="true">
                 <i class="bi bi-info-circle"></i>Información
             </button>
-            <button class="ci-tab" data-bs-toggle="tab" data-bs-target="#ci-inscriptos" type="button">
+            <button class="ci-tab" data-bs-toggle="tab" data-bs-target="#ci-inscriptos" type="button" role="tab" aria-selected="false">
                 <i class="bi bi-people"></i>Inscriptos{% if inscripciones %}<span class="ci-cnt">{{ inscripciones|length }}</span>{% endif %}
             </button>
-            <button class="ci-tab" data-bs-toggle="tab" data-bs-target="#ci-sesiones" type="button">
+            <button class="ci-tab" data-bs-toggle="tab" data-bs-target="#ci-sesiones" type="button" role="tab" aria-selected="false">
                 <i class="bi bi-calendar-check"></i>Sesiones{% if sesiones %}<span class="ci-cnt">{{ sesiones|length }}</span>{% endif %}
             </button>
-            <button class="ci-tab" data-bs-toggle="tab" data-bs-target="#ci-horarios" type="button">
+            <button class="ci-tab" data-bs-toggle="tab" data-bs-target="#ci-horarios" type="button" role="tab" aria-selected="false">
                 <i class="bi bi-clock"></i>Horarios{% if horarios %}<span class="ci-cnt">{{ horarios|length }}</span>{% endif %}
             </button>
         </div>
@@ -288,7 +310,7 @@
         <div class="tab-content">
 
             {# INFO #}
-            <div class="tab-pane fade show active" id="ci-info">
+            <div class="tab-pane fade show active" id="ci-info" role="tabpanel">
                 <div class="ci-panel">
                     <div class="ci-info-grid">
                         <div class="ci-info-item"><span class="ci-lbl">Código</span><span class="ci-val" style="font-family:monospace;">{{ comision.codigo_comision }}</span></div>
@@ -315,7 +337,7 @@
             </div>
 
             {# INSCRIPTOS #}
-            <div class="tab-pane fade" id="ci-inscriptos">
+            <div class="tab-pane fade" id="ci-inscriptos" role="tabpanel">
                 <div class="ci-panel">
                     <div class="ci-sec-head">
                         <span class="ci-sec-title"><i class="bi bi-people me-2"></i>Inscriptos</span>
@@ -334,6 +356,10 @@
                         <div class="d-flex align-items-center gap-2 flex-shrink-0">
                             <span style="font-size:.7rem;color:var(--bs-secondary-color);white-space:nowrap;">{{ insc.fecha_inscripcion|date:"d/m/Y" }}</span>
                             <span class="ci-pill {% if insc.estado == 'inscripta' %}ci-pill-green{% elif insc.estado == 'pre_inscripta' %}ci-pill-yellow{% elif insc.estado == 'validada_presencial' %}ci-pill-blue{% elif insc.estado == 'completada' %}ci-pill-teal{% elif insc.estado == 'abandonada' %}ci-pill-gray{% elif insc.estado == 'rechazada' %}ci-pill-red{% else %}ci-pill-gray{% endif %}">{{ insc.get_estado_display }}</span>
+                            {% if perms.VAT.change_inscripcion and insc.estado == 'pre_inscripta' %}
+                            <form method="post" action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}" class="d-inline">{% csrf_token %}<input type="hidden" name="estado" value="inscripta"><button type="submit" class="ci-pill ci-pill-green border-0 cursor-pointer" style="cursor:pointer;font-size:.69rem;" title="Aceptar inscripción"><i class="bi bi-check-lg me-1"></i>Aceptar</button></form>
+                            <form method="post" action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}" class="d-inline">{% csrf_token %}<input type="hidden" name="estado" value="rechazada"><button type="submit" class="ci-pill ci-pill-red border-0" style="cursor:pointer;font-size:.69rem;" title="Rechazar inscripción"><i class="bi bi-x-lg me-1"></i>Rechazar</button></form>
+                            {% endif %}
                             {% if perms.VAT.change_inscripcion %}
                             <div class="dropdown">
                                 <button class="ci-dots dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
@@ -354,7 +380,7 @@
             </div>
 
             {# SESIONES #}
-            <div class="tab-pane fade" id="ci-sesiones">
+            <div class="tab-pane fade" id="ci-sesiones" role="tabpanel">
                 <div class="ci-panel">
                     <div class="ci-sec-head">
                         <span class="ci-sec-title"><i class="bi bi-calendar-check me-2"></i>Sesiones</span>
@@ -381,7 +407,7 @@
             </div>
 
             {# HORARIOS #}
-            <div class="tab-pane fade" id="ci-horarios">
+            <div class="tab-pane fade" id="ci-horarios" role="tabpanel">
                 <div class="ci-panel">
                     <div class="ci-sec-head">
                         <span class="ci-sec-title"><i class="bi bi-clock me-2"></i>Horarios</span>

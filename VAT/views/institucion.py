@@ -39,7 +39,7 @@ class InstitucionContactoListView(LoginRequiredMixin, ListView):
         queryset = InstitucionContacto.objects.select_related("centro").order_by("centro", "tipo")
         centro_id = self.request.GET.get("centro_id")
         tipo = self.request.GET.get("tipo")
-        buscar = self.request.GET.get("q")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
 
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
@@ -106,7 +106,7 @@ class AutoridadInstitucionalListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = AutoridadInstitucional.objects.select_related("centro").order_by("-es_actual", "centro")
         centro_id = self.request.GET.get("centro_id")
-        buscar = self.request.GET.get("q")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
 
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
@@ -172,7 +172,7 @@ class InstitucionIdentificadorHistListView(LoginRequiredMixin, ListView):
         queryset = InstitucionIdentificadorHist.objects.select_related("centro").order_by("-es_actual", "centro")
         centro_id = self.request.GET.get("centro_id")
         tipo = self.request.GET.get("tipo_identificador")
-        buscar = self.request.GET.get("q")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
 
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
@@ -240,7 +240,7 @@ class InstitucionUbicacionListView(LoginRequiredMixin, ListView):
         queryset = InstitucionUbicacion.objects.select_related("centro", "localidad").order_by("-es_principal", "centro")
         centro_id = self.request.GET.get("centro_id")
         rol = self.request.GET.get("rol_ubicacion")
-        buscar = self.request.GET.get("q")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
 
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)

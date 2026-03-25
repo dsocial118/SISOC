@@ -25,7 +25,7 @@ class VoucherListView(LoginRequiredMixin, ListView):
         qs = Voucher.objects.select_related("ciudadano", "programa").order_by("-fecha_asignacion")
         estado = self.request.GET.get("estado")
         programa = self.request.GET.get("programa")
-        buscar = self.request.GET.get("q")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
         if estado:
             qs = qs.filter(estado=estado)
         if programa:

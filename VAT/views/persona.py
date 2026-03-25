@@ -1,18 +1,18 @@
 import logging
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
-from django.contrib import messages
-from django.db.models import Q
+from decimal import Decimal
 
-from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
+from django.db.models import Q
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+
 from ciudadanos.models import Ciudadano
-from VAT.models import (
-    Inscripcion,
-)
-from VAT.forms import (
-    InscripcionForm,
-)
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from VAT.forms import InscripcionForm
+from VAT.models import Inscripcion, Voucher
+from VAT.services.voucher_service.impl import VoucherService
 
 logger = logging.getLogger("django")
 
@@ -20,6 +20,7 @@ logger = logging.getLogger("django")
 # ============================================================================
 # INSCRIPCIÓN VIEWS
 # ============================================================================
+
 
 class InscripcionListView(LoginRequiredMixin, ListView):
     model = Inscripcion
@@ -35,7 +36,7 @@ class InscripcionListView(LoginRequiredMixin, ListView):
         ciudadano_id = self.request.GET.get("ciudadano_id")
         comision_id = self.request.GET.get("comision_id")
         estado = self.request.GET.get("estado")
-        buscar = self.request.GET.get("q")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
 
         if ciudadano_id:
             queryset = queryset.filter(ciudadano_id=ciudadano_id)
@@ -67,13 +68,75 @@ class InscripcionCreateView(LoginRequiredMixin, CreateView):
     def get_initial(self):
         initial = super().get_initial()
         ciudadano_id = self.request.GET.get("ciudadano")
+        comision_id = self.request.GET.get("comision")
         if ciudadano_id:
             initial["ciudadano"] = ciudadano_id
+        if comision_id:
+            initial["comision"] = comision_id
         return initial
 
     def form_valid(self, form):
-        messages.success(self.request, "Inscripción creada exitosamente.")
-        return super().form_valid(form)
+        try:
+            with transaction.atomic():
+                response = super().form_valid(form)
+                oferta = self.object.comision.oferta
+
+                if self.object.programa_id != oferta.programa_id:
+                    raise ValueError(
+                        "La inscripción debe usar el mismo programa de la oferta institucional."
+                    )
+
+                if not oferta.usa_voucher:
+                    messages.success(self.request, "Inscripción creada exitosamente.")
+                    return response
+
+                voucher = (
+                    Voucher.objects.filter(
+                        ciudadano=self.object.ciudadano,
+                        programa=oferta.programa,
+                        estado="activo",
+                    )
+                    .order_by("fecha_vencimiento")
+                    .first()
+                )
+                if not voucher:
+                    raise ValueError(
+                        f"{self.object.ciudadano} no tiene voucher activo para el programa {oferta.programa}."
+                    )
+
+                cantidad_debito = int(Decimal(oferta.costo or 0))
+                ok, msg = VoucherService.debitar_voucher(
+                    voucher=voucher,
+                    cantidad=cantidad_debito,
+                    usuario=self.request.user,
+                    detalles={
+                        "inscripcion_id": self.object.id,
+                        "comision_id": self.object.comision_id,
+                        "comision": str(self.object.comision),
+                        "origen": "inscripcion_comision",
+                    },
+                )
+                if not ok:
+                    raise ValueError(msg)
+
+                if cantidad_debito > 0:
+                    messages.success(
+                        self.request,
+                        f"Inscripción creada. Se descontaron {cantidad_debito} créditos del voucher de {self.object.ciudadano} ({voucher.cantidad_disponible} restantes).",
+                    )
+                else:
+                    messages.success(
+                        self.request,
+                        "Inscripción creada exitosamente. La oferta no tiene costo para descontar del voucher.",
+                    )
+
+                return response
+        except ValueError as exc:
+            messages.error(self.request, str(exc))
+            return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        return super().form_invalid(form)
 
 
 class InscripcionDetailView(LoginRequiredMixin, DetailView):

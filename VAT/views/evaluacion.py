@@ -33,7 +33,7 @@ class EvaluacionListView(LoginRequiredMixin, ListView):
 
         comision_id = self.request.GET.get("comision_id")
         tipo = self.request.GET.get("tipo")
-        buscar = self.request.GET.get("q")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
 
         if comision_id:
             queryset = queryset.filter(comision_id=comision_id)
@@ -116,7 +116,7 @@ class ResultadoEvaluacionListView(LoginRequiredMixin, ListView):
         evaluacion_id = self.request.GET.get("evaluacion_id")
         inscripcion_id = self.request.GET.get("inscripcion_id")
         calificacion = self.request.GET.get("calificacion")
-        buscar = self.request.GET.get("q")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
 
         if evaluacion_id:
             queryset = queryset.filter(evaluacion_id=evaluacion_id)

@@ -25,7 +25,7 @@ class InscripcionOfertaListView(LoginRequiredMixin, ListView):
 
         oferta_id = self.request.GET.get("oferta_id")
         estado = self.request.GET.get("estado")
-        buscar = self.request.GET.get("q")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
 
         if oferta_id:
             queryset = queryset.filter(oferta_id=oferta_id)

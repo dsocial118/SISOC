@@ -1,14 +1,76 @@
 import logging
 from datetime import date, timedelta
-from django.db import transaction
+
 from django.contrib.auth.models import User
-from VAT.models import Voucher, VoucherRecarga, VoucherUso, VoucherLog, InscripcionOferta
+from django.db import transaction
+
+from VAT.models import (
+    InscripcionOferta,
+    Voucher,
+    VoucherLog,
+    VoucherRecarga,
+    VoucherUso,
+)
 
 logger = logging.getLogger("django")
 
 
 class VoucherService:
     """Service layer for Voucher business logic."""
+
+    @staticmethod
+    def debitar_voucher(
+        voucher: Voucher,
+        cantidad: int,
+        usuario: User,
+        detalles: dict | None = None,
+    ) -> tuple[bool, str]:
+        """Debita créditos de un voucher y registra auditoría."""
+        VoucherService.validar_vencimiento(voucher)
+
+        if voucher.estado == "cancelado":
+            return False, "El voucher ha sido cancelado."
+
+        if voucher.estado == "vencido":
+            return False, "El voucher ha vencido."
+
+        if cantidad <= 0:
+            return True, f"Sin débito. Disponible: {voucher.cantidad_disponible}"
+
+        if voucher.cantidad_disponible < cantidad:
+            return (
+                False,
+                f"Créditos insuficientes. Disponible: {voucher.cantidad_disponible}",
+            )
+
+        with transaction.atomic():
+            voucher.cantidad_usada += cantidad
+            voucher.cantidad_disponible -= cantidad
+
+            if voucher.cantidad_disponible == 0:
+                voucher.estado = "agotado"
+
+            voucher.save(
+                update_fields=[
+                    "cantidad_usada",
+                    "cantidad_disponible",
+                    "estado",
+                    "fecha_modificacion",
+                ]
+            )
+
+            VoucherLog.objects.create(
+                voucher=voucher,
+                tipo_evento="uso",
+                cantidad_afectada=-cantidad,
+                usuario=usuario,
+                detalles=detalles or {},
+            )
+
+        logger.info("Voucher %s debitado con %s créditos", voucher.id, cantidad)
+        return True, (
+            f"Créditos utilizados exitosamente. Disponible: {voucher.cantidad_disponible}"
+        )
 
     @staticmethod
     def crear_voucher(
@@ -64,12 +126,20 @@ class VoucherService:
             if reiniciar:
                 voucher.cantidad_disponible = cantidad
                 voucher.cantidad_usada = 0
-                update_fields = ["cantidad_disponible", "cantidad_usada", "estado", "fecha_modificacion"]
+                update_fields = [
+                    "cantidad_disponible",
+                    "cantidad_usada",
+                    "estado",
+                    "fecha_modificacion",
+                ]
             else:
                 voucher.cantidad_disponible += cantidad
-                update_fields = ["cantidad_disponible", "estado", "fecha_modificacion"]
+                update_fields = [
+                    "cantidad_disponible",
+                    "estado",
+                    "fecha_modificacion",
+                ]
 
-            # Reactivar si estaba agotado o vencido
             if voucher.estado in ("agotado", "vencido"):
                 voucher.estado = "activo"
 
@@ -93,7 +163,10 @@ class VoucherService:
         logger.info(
             f"Voucher {voucher.id} {'reiniciado' if reiniciar else 'recargado'} con {cantidad} créditos ({motivo})"
         )
-        return True, f"Voucher {'reiniciado' if reiniciar else 'recargado'} con {cantidad} créditos."
+        return (
+            True,
+            f"Voucher {'reiniciado' if reiniciar else 'recargado'} con {cantidad} créditos.",
+        )
 
     @staticmethod
     def usar_voucher(
@@ -102,61 +175,29 @@ class VoucherService:
         cantidad: int,
     ) -> tuple[bool, str]:
         """Use voucher credits for an offering enrollment."""
-        # Actualizar estado de vencimiento antes de validar (evita usar vouchers expirados con estado stale)
-        VoucherService.validar_vencimiento(voucher)
+        ok, msg = VoucherService.debitar_voucher(
+            voucher=voucher,
+            cantidad=cantidad,
+            usuario=inscripcion_oferta.inscrito_por,
+            detalles={
+                "inscripcion_oferta_id": inscripcion_oferta.id,
+                "oferta": str(inscripcion_oferta.oferta),
+            },
+        )
+        if not ok:
+            return ok, msg
 
-        if voucher.estado == "cancelado":
-            return False, "El voucher ha sido cancelado."
-
-        if voucher.estado == "vencido":
-            return False, "El voucher ha vencido."
-
-        if voucher.cantidad_disponible < cantidad:
-            return (
-                False,
-                f"Créditos insuficientes. Disponible: {voucher.cantidad_disponible}",
-            )
-
-        # Use voucher
         with transaction.atomic():
-            voucher.cantidad_usada += cantidad
-            voucher.cantidad_disponible -= cantidad
-
-            # Update estado if exhausted
-            if voucher.cantidad_disponible == 0:
-                voucher.estado = "agotado"
-
-            voucher.save(
-                update_fields=[
-                    "cantidad_usada",
-                    "cantidad_disponible",
-                    "estado",
-                    "fecha_modificacion",
-                ]
-            )
-
             VoucherUso.objects.create(
                 voucher=voucher,
                 inscripcion_oferta=inscripcion_oferta,
                 cantidad_usada=cantidad,
             )
 
-            VoucherLog.objects.create(
-                voucher=voucher,
-                tipo_evento="uso",
-                cantidad_afectada=-cantidad,
-                usuario=inscripcion_oferta.inscrito_por,
-                detalles={
-                    "inscripcion_oferta_id": inscripcion_oferta.id,
-                    "oferta": str(inscripcion_oferta.oferta),
-                },
-            )
-
         logger.info(
-            f"Voucher {voucher.id} utilizado: {cantidad} créditos "
-            f"en {inscripcion_oferta.oferta}"
+            f"Voucher {voucher.id} utilizado: {cantidad} créditos en {inscripcion_oferta.oferta}"
         )
-        return True, f"Créditos utilizados exitosamente. Disponible: {voucher.cantidad_disponible}"
+        return True, msg
 
     @staticmethod
     def cancelar_voucher(voucher: Voucher, usuario: User) -> bool:
@@ -187,12 +228,10 @@ class VoucherService:
 
         if date.today() > voucher.fecha_vencimiento:
             with transaction.atomic():
-                # Re-fetch con lock para evitar race condition entre procesos concurrentes
                 locked = Voucher.objects.select_for_update().get(pk=voucher.pk)
                 if locked.estado != "vencido":
                     locked.estado = "vencido"
                     locked.save(update_fields=["estado", "fecha_modificacion"])
-                    # Sincronizar el objeto recibido para que el caller vea el estado actualizado
                     voucher.estado = "vencido"
 
                     try:
@@ -203,7 +242,11 @@ class VoucherService:
                                 tipo_evento="vencimiento",
                                 cantidad_afectada=0,
                                 usuario=admin_user,
-                                detalles={"fecha_vencimiento": str(locked.fecha_vencimiento)},
+                                detalles={
+                                    "fecha_vencimiento": str(
+                                        locked.fecha_vencimiento
+                                    )
+                                },
                             )
                     except Exception as e:
                         logger.warning(f"Error logging voucher expiration: {e}")
@@ -217,7 +260,7 @@ class VoucherService:
     @staticmethod
     def obtener_estado_actual(voucher: Voucher) -> dict:
         """Get current state of a voucher."""
-        valid, mensaje = VoucherService.validar_vencimiento(voucher)
+        valid, _mensaje = VoucherService.validar_vencimiento(voucher)
 
         dias_para_vencer = (voucher.fecha_vencimiento - date.today()).days
 
@@ -265,12 +308,13 @@ class VoucherService:
         ).select_related("ciudadano", "programa")
 
     @staticmethod
-    def procesar_recarga_automatica(programa_id: int = None, cantidad: int = 50) -> dict:
+    def procesar_recarga_automatica(
+        programa_id: int = None, cantidad: int = 50
+    ) -> dict:
         """
         Process automatic reload of vouchers.
         Used by management command and cron jobs.
         """
-        # Get system user for logging
         sistema_user = User.objects.filter(username="sistema").first()
         if not sistema_user:
             sistema_user = User.objects.filter(is_superuser=True).first()
@@ -278,7 +322,6 @@ class VoucherService:
             logger.error("No system user found for automatic reload")
             return {"success": False, "reloaded": 0, "error": "No system user"}
 
-        # Get vouchers to reload
         query = Voucher.objects.filter(
             estado__in=["activo", "agotado"],
             fecha_vencimiento__gte=date.today(),
