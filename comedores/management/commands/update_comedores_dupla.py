@@ -135,20 +135,17 @@ class Command(BaseCommand):
                             )
                         )
                     else:
-                        if (
-                            Admision.objects.filter(
-                                comedor=comedor,
-                                tipo="incorporacion",
-                                enviada_a_archivo=False,
-                            ).exists()
-                            == False
-                        ):
+                        if not Admision.objects.filter(
+                            comedor=comedor,
+                            tipo="incorporacion",
+                            enviada_a_archivo=False,
+                        ).exists():
                             Admision.objects.create(
                                 comedor=comedor,
                                 tipo="incorporacion",
                             )
 
-                        if Hitos.objects.filter(comedor=comedor).exists() == False:
+                        if not Hitos.objects.filter(comedor=comedor).exists():
                             Hitos.objects.create(comedor=comedor)
 
             stats["applied"] += 1
