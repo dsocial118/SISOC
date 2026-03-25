@@ -894,19 +894,19 @@ def test_signal_no_reasigna_nominas_directas_al_crear_admision_prog4(
 
 
 @pytest.mark.django_db
-def test_signal_no_asigna_nominas_si_programa_2(ciudadano_fixture):
-    """Al crear admisión en comedor prog 2, las nóminas directas NO se tocan."""
+def test_signal_asigna_nominas_a_admision_si_programa_2(ciudadano_fixture):
+    """Al crear admisión en programa 2, la nómina pasa al flujo por admisión."""
     prog = _programa(2, "Alimentar comunidad")
     comedor = Comedor.objects.create(nombre="Comedor Signal P2", programa=prog)
     nomina = Nomina.objects.create(
         comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
     )
 
-    Admision.objects.create(comedor=comedor)
+    admision = Admision.objects.create(comedor=comedor)
 
     nomina.refresh_from_db()
-    assert nomina.admision_id is None
-    assert nomina.comedor_id == comedor.pk
+    assert nomina.admision_id == admision.pk
+    assert nomina.comedor_id is None
 
 
 @pytest.mark.django_db
