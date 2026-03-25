@@ -32,6 +32,7 @@ from comedores.forms.observacion_form import ObservacionForm
 from comedores.models import Comedor, HistorialValidacion, ImagenComedor, Observacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
+from comedores.utils import comedor_usa_admision_para_nomina
 from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -536,15 +537,31 @@ def _build_imagenes_y_programa_history_context(comedor_obj):
 
 
 def _build_admisiones_y_nomina_context(comedor_obj):
-    admisiones_qs = (
-        Admision.objects.filter(comedor=comedor_obj)
-        .select_related("tipo_convenio", "estado")
-        .order_by("-id")
-    )
-    timeline_context = ComedorService.get_admision_timeline_context(admisiones_qs)
-    admision_activa = timeline_context.get("admision_activa")
-    admision_activa_id = getattr(admision_activa, "id", None)
-    if admision_activa_id:
+    if comedor_usa_admision_para_nomina(comedor_obj):
+        admisiones_qs = (
+            Admision.objects.filter(comedor=comedor_obj)
+            .select_related("tipo_convenio", "estado")
+            .order_by("-id")
+        )
+        timeline_context = ComedorService.get_admision_timeline_context(admisiones_qs)
+        admision_activa = timeline_context.get("admision_activa")
+        admision_activa_id = getattr(admision_activa, "id", None)
+        if admision_activa_id:
+            (
+                _,
+                nomina_hombres,
+                nomina_mujeres,
+                _,
+                nomina_espera,
+                nomina_total,
+                nomina_rangos,
+            ) = ComedorService.get_nomina_detail(admision_activa_id, page=1, per_page=1)
+        else:
+            nomina_hombres = nomina_mujeres = nomina_espera = nomina_total = 0
+            nomina_rangos = {}
+    else:
+        admisiones_qs = Admision.objects.none()
+        timeline_context = ComedorService.get_admision_timeline_context(admisiones_qs)
         (
             _,
             nomina_hombres,
@@ -553,10 +570,9 @@ def _build_admisiones_y_nomina_context(comedor_obj):
             nomina_espera,
             nomina_total,
             nomina_rangos,
-        ) = ComedorService.get_nomina_detail(admision_activa_id, page=1, per_page=1)
-    else:
-        nomina_hombres = nomina_mujeres = nomina_espera = nomina_total = 0
-        nomina_rangos = {}
+        ) = ComedorService.get_nomina_detail_by_comedor(
+            comedor_obj.id, page=1, per_page=1
+        )
     nomina_metrics = _build_nomina_metrics(nomina_total, nomina_rangos)
     return {
         "admisiones_qs": admisiones_qs,
@@ -565,6 +581,7 @@ def _build_admisiones_y_nomina_context(comedor_obj):
         "nomina_hombres": nomina_hombres,
         "nomina_mujeres": nomina_mujeres,
         "nomina_espera": nomina_espera,
+        "nomina_rangos": nomina_rangos,
         **nomina_metrics,
     }
 
@@ -1002,6 +1019,24 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "rendicion_cuentas_final_activo": True,  # rendiciones_mensuales >= 5, (esta validación se saca temporalmente)
             "admision": admisiones_qs,
             **admisiones_nomina_context["timeline_context"],
+            "nomina_total": admisiones_nomina_context["nomina_total"],
+            "nomina_hombres": admisiones_nomina_context["nomina_hombres"],
+            "nomina_mujeres": admisiones_nomina_context["nomina_mujeres"],
+            "nomina_espera": admisiones_nomina_context["nomina_espera"],
+            "nomina_rangos": admisiones_nomina_context["nomina_rangos"],
+            "nomina_menores": admisiones_nomina_context["nomina_menores"],
+            "nomina_pct_sin_dato": admisiones_nomina_context["nomina_pct_sin_dato"],
+            "nomina_pct_ninos": admisiones_nomina_context["nomina_pct_ninos"],
+            "nomina_pct_adolescentes": admisiones_nomina_context[
+                "nomina_pct_adolescentes"
+            ],
+            "nomina_pct_adultos": admisiones_nomina_context["nomina_pct_adultos"],
+            "nomina_pct_adultos_mayores": admisiones_nomina_context[
+                "nomina_pct_adultos_mayores"
+            ],
+            "nomina_pct_adulto_mayor_avanzado": admisiones_nomina_context[
+                "nomina_pct_adulto_mayor_avanzado"
+            ],
             **table_contexts,
         }
 
@@ -1035,9 +1070,15 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             ) = ComedorService.get_nomina_detail(
                 selected_admision_pk, page=1, per_page=1
             )
-        else:
+        elif comedor_usa_admision_para_nomina(self.object):
             nomina_m = nomina_f = nomina_espera = nomina_total = 0
             nomina_rangos = {}
+        else:
+            nomina_m = relaciones_data.get("nomina_hombres", 0)
+            nomina_f = relaciones_data.get("nomina_mujeres", 0)
+            nomina_espera = relaciones_data.get("nomina_espera", 0)
+            nomina_total = relaciones_data.get("nomina_total", 0)
+            nomina_rangos = relaciones_data.get("nomina_rangos", {})
 
         nomina_metrics = _build_nomina_metrics(nomina_total, nomina_rangos)
 

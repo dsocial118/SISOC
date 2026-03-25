@@ -248,6 +248,15 @@ def test_tecnicos_create_view_post_branches(mocker):
     mocker.patch("admisiones.views.web_views.redirect", return_value="redir")
     assert view.post(req) == "redir"
 
+    req3 = _Req(POST={"tipo_convenio": "1"}, user=_user())
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.create_admision",
+        return_value=None,
+    )
+    mocker.patch("admisiones.views.web_views.messages.error")
+    mocker.patch("admisiones.views.web_views.redirect", return_value="redir2")
+    assert view.post(req3) == "redir2"
+
     req2 = _Req(POST={}, user=_user())
     mocker.patch(
         "django.views.generic.edit.ProcessFormView.get", return_value="getresp"

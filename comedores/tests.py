@@ -692,7 +692,23 @@ from comedores.views import (
 
 def _programa(pk, nombre):
     """Crea (o recupera) un Programas con ID exacto."""
-    prog, _ = Programas.objects.get_or_create(id=pk, defaults={"nombre": nombre})
+    prog, _ = Programas.objects.get_or_create(
+        id=pk,
+        defaults={
+            "nombre": nombre,
+            "usa_admision_para_nomina": pk not in (3, 4),
+        },
+    )
+    cambios = []
+    if prog.nombre != nombre:
+        prog.nombre = nombre
+        cambios.append("nombre")
+    usa_admision_para_nomina = pk not in (3, 4)
+    if prog.usa_admision_para_nomina != usa_admision_para_nomina:
+        prog.usa_admision_para_nomina = usa_admision_para_nomina
+        cambios.append("usa_admision_para_nomina")
+    if cambios:
+        prog.save(update_fields=cambios)
     return prog
 
 
@@ -767,13 +783,15 @@ def test_get_nomina_detail_by_comedor_solo_devuelve_nominas_directas(ciudadano_f
 
 
 # ---------------------------------------------------------------------------
-# Signal — asignar nóminas directas al crear admisión en comedor 3/4
+# Signal — no debe reasignar nóminas directas en programas 3/4
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.django_db
-def test_signal_asigna_nominas_directas_al_crear_admision_prog3(ciudadano_fixture):
-    """Al crear admisión en comedor prog 3, las nóminas directas pasan a esa admisión."""
+def test_signal_no_reasigna_nominas_directas_al_crear_admision_prog3(
+    ciudadano_fixture,
+):
+    """Los programas 3/4 conservan la nómina directa aunque exista una admisión accidental."""
     prog = _programa(3, "Abordaje comunitario - Línea Secos")
     comedor = Comedor.objects.create(nombre="Comedor Signal P3", programa=prog)
     Nomina.objects.create(
@@ -783,13 +801,16 @@ def test_signal_asigna_nominas_directas_al_crear_admision_prog3(ciudadano_fixtur
     admision = Admision.objects.create(comedor=comedor)
 
     nomina = Nomina.objects.get(ciudadano=ciudadano_fixture)
-    assert nomina.admision_id == admision.pk
-    assert nomina.comedor_id is None
+    assert admision.comedor_id == comedor.pk
+    assert nomina.admision_id is None
+    assert nomina.comedor_id == comedor.pk
 
 
 @pytest.mark.django_db
-def test_signal_asigna_nominas_directas_al_crear_admision_prog4(ciudadano_fixture):
-    """Al crear admisión en comedor prog 4, las nóminas directas pasan a esa admisión."""
+def test_signal_no_reasigna_nominas_directas_al_crear_admision_prog4(
+    ciudadano_fixture,
+):
+    """Los programas 3/4 conservan la nómina directa aunque exista una admisión accidental."""
     prog = _programa(4, "Abordaje comunitario - Línea Tradicional")
     comedor = Comedor.objects.create(nombre="Comedor Signal P4", programa=prog)
     Nomina.objects.create(
@@ -799,8 +820,9 @@ def test_signal_asigna_nominas_directas_al_crear_admision_prog4(ciudadano_fixtur
     admision = Admision.objects.create(comedor=comedor)
 
     nomina = Nomina.objects.get(ciudadano=ciudadano_fixture)
-    assert nomina.admision_id == admision.pk
-    assert nomina.comedor_id is None
+    assert admision.comedor_id == comedor.pk
+    assert nomina.admision_id is None
+    assert nomina.comedor_id == comedor.pk
 
 
 @pytest.mark.django_db
@@ -917,9 +939,7 @@ def test_nomina_directa_delete_view_muestra_cancelacion_directa(
         comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
     )
 
-    url = reverse(
-        "nomina_directa_borrar", kwargs={"pk": comedor.pk, "pk2": nomina.pk}
-    )
+    url = reverse("nomina_directa_borrar", kwargs={"pk": comedor.pk, "pk2": nomina.pk})
     response = client_nomina_fixture.get(url)
 
     assert response.status_code == 200
@@ -963,6 +983,63 @@ def test_nomina_cambiar_estado_funciona_con_nomina_directa(
     assert response.status_code == 200
     nomina.refresh_from_db()
     assert nomina.estado == Nomina.ESTADO_ESPERA
+
+
+@pytest.mark.django_db
+def test_comedor_detail_view_muestra_nomina_directa_para_programa_sin_admision(
+    ciudadano_fixture,
+):
+    """El detalle del comedor debe enlazar a la nómina directa cuando no usa admisión."""
+    from django.test import RequestFactory
+
+    prog = _programa(4, "Abordaje comunitario - Línea Tradicional")
+    comedor = Comedor.objects.create(nombre="Comedor Directo", programa=prog)
+    Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    view = ComedorDetailView()
+    view.request = RequestFactory().get(f"/comedores/{comedor.pk}")
+    view.object = comedor
+
+    context = view.get_context_data()
+
+    assert context["nomina_total"] == 1
+    assert context["selected_admision_id"] is None
+
+
+@pytest.mark.django_db
+def test_flujo_integrado_comedor_sin_admision_muestra_y_abre_nomina_directa(
+    client_logged_fixture, client_nomina_fixture, ciudadano_fixture, monkeypatch
+):
+    """Cubre el flujo real: detalle del comedor + acceso a la nómina directa."""
+    prog = _programa(3, "Abordaje comunitario - Línea Secos")
+    comedor = Comedor.objects.create(nombre="Comedor Integrado", programa=prog)
+    Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+    monkeypatch.setattr(
+        "comedores.views.comedor.ComedorService.get_comedor_detail_object",
+        lambda pk, user=None: comedor,
+    )
+
+    detalle_url = reverse("comedor_detalle", kwargs={"pk": comedor.pk})
+    detalle_response = client_logged_fixture.get(detalle_url)
+
+    assert detalle_response.status_code == 200
+    assert detalle_response.context["selected_admision_id"] is None
+    assert (
+        detalle_response.context["comedor"].programa.usa_admision_para_nomina is False
+    )
+    assert detalle_response.context["nomina_total"] == 1
+
+    nomina_directa_url = reverse("nomina_directa_ver", kwargs={"pk": comedor.pk})
+    nomina_directa_response = client_nomina_fixture.get(nomina_directa_url)
+
+    assert nomina_directa_response.status_code == 200
+    assert nomina_directa_response.context["admision_pk"] is None
+    assert nomina_directa_response.context["cantidad_nomina"] == 1
+    assert nomina_directa_response.context["object"].pk == comedor.pk
 
 
 # ---------------------------------------------------------------------------
