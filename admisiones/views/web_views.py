@@ -714,7 +714,7 @@ class AdmisionesTecnicosCreateView(LoginRequiredMixin, CreateView):
             if admision is None:
                 messages.error(
                     request,
-                    "Este comedor usa nómina directa y no admite admisiones.",
+                    "No se pudo crear la admisión para este comedor. Intente nuevamente más tarde.",
                 )
                 return redirect("comedor_detalle", pk=self.kwargs["pk"])
             return redirect("admisiones_tecnicos_editar", pk=admision.pk)
