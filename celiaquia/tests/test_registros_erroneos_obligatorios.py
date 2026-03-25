@@ -1,0 +1,222 @@
+"""Regresiones para campos obligatorios en registros erróneos de Celiaquía."""
+
+from io import BytesIO
+import json
+
+import pytest
+from django.contrib.auth.models import Permission, User
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
+from openpyxl import Workbook
+
+from celiaquia.models import (
+    EstadoExpediente,
+    EstadoLegajo,
+    Expediente,
+    ExpedienteCiudadano,
+    RegistroErroneo,
+)
+from celiaquia.services.importacion_service import ImportacionService
+from core.models import Localidad, Municipio, Nacionalidad, Provincia, Sexo
+from users.models import Profile
+
+
+def _crear_usuario_provincial(username="prov"):
+    provincia = Provincia.objects.create(nombre=f"Provincia {username}")
+    user = User.objects.create_user(username=username, password="pass")
+    profile, _ = Profile.objects.get_or_create(user=user)
+    profile.es_usuario_provincial = True
+    profile.provincia = provincia
+    profile.save()
+    return user, provincia
+
+
+def _crear_contexto_expediente(user):
+    estado_expediente = EstadoExpediente.objects.create(nombre="CREADO")
+    return Expediente.objects.create(usuario_provincia=user, estado=estado_expediente)
+
+
+def _crear_archivo_excel(headers, row):
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.append(headers)
+    worksheet.append(row)
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return SimpleUploadedFile(
+        "expediente.xlsx",
+        buffer.getvalue(),
+        content_type=(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ),
+    )
+
+
+@pytest.mark.django_db
+def test_importacion_con_sexo_faltante_genera_registro_erroneo():
+    user, provincia = _crear_usuario_provincial("prov_import")
+    expediente = _crear_contexto_expediente(user)
+    EstadoLegajo.objects.create(nombre="DOCUMENTO_PENDIENTE")
+    Sexo.objects.create(sexo="Masculino")
+    Sexo.objects.create(sexo="Femenino")
+    Nacionalidad.objects.create(nacionalidad="Argentina")
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+
+    archivo = _crear_archivo_excel(
+        headers=[
+            "apellido",
+            "nombre",
+            "documento",
+            "fecha_nacimiento",
+            "sexo",
+            "nacionalidad",
+            "municipio",
+            "localidad",
+            "calle",
+            "altura",
+            "codigo_postal",
+            "telefono",
+            "email",
+            "APELLIDO_RESPONSABLE",
+            "NOMBRE_REPSONSABLE",
+            "Cuit_Responsable",
+            "FECHA_DE_NACIMIENTO_RESPONSABLE",
+            "SEXO_RESPONSABLE",
+            "DOMICILIO_RESPONSABLE",
+            "LOCALIDAD_RESPONSABLE",
+            "CELULAR_RESPONSABLE",
+            "CORREO_RESPONSABLE",
+        ],
+        row=[
+            "Perez",
+            "Ana",
+            "30123456789",
+            "01/01/2010",
+            "",
+            "Argentina",
+            municipio.pk,
+            localidad.pk,
+            "Calle 1",
+            "123",
+            "1000",
+            "",
+            "",
+            "Gomez",
+            "Laura",
+            "20123456789",
+            "01/01/1980",
+            "F",
+            "Calle Resp 123",
+            localidad.nombre,
+            "",
+            "",
+        ],
+    )
+
+    resultado = ImportacionService.importar_legajos_desde_excel(
+        expediente=expediente,
+        archivo_excel=archivo,
+        usuario=user,
+    )
+
+    assert resultado["validos"] == 0
+    assert resultado["errores"] == 1
+    assert ExpedienteCiudadano.objects.count() == 0
+
+    registro = RegistroErroneo.objects.get(expediente=expediente)
+    assert "sexo" in registro.mensaje_error.lower()
+
+
+@pytest.mark.django_db
+def test_detalle_expediente_muestra_campos_responsable_para_registros_erroneos(client):
+    user, provincia = _crear_usuario_provincial("prov_detail")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    expediente = _crear_contexto_expediente(user)
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    Nacionalidad.objects.create(nacionalidad="Argentina")
+    Sexo.objects.create(sexo="Masculino")
+    Sexo.objects.create(sexo="Femenino")
+    RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=2,
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "12345678",
+            "fecha_nacimiento": "01/01/2010",
+            "sexo": "Masculino",
+            "nacionalidad": "Argentina",
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+        },
+        mensaje_error="Faltan campos obligatorios: apellido_responsable",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert 'name="apellido_responsable"' in content
+    assert 'name="localidad_responsable"' in content
+    assert "Apellido Responsable *" in content
+
+
+@pytest.mark.django_db
+def test_actualizar_registro_erroneo_rechaza_campos_obligatorios_faltantes(client):
+    user, provincia = _crear_usuario_provincial("prov_update")
+    user.is_superuser = True
+    user.save(update_fields=["is_superuser"])
+    expediente = _crear_contexto_expediente(user)
+    registro = RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=2,
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "12345678",
+            "fecha_nacimiento": "01/01/2010",
+            "sexo": "1",
+            "nacionalidad": "1",
+            "municipio": "1",
+            "localidad": "1",
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+            "apellido_responsable": "Gomez",
+            "nombre_responsable": "Laura",
+            "documento_responsable": "20123456789",
+            "fecha_nacimiento_responsable": "01/01/1980",
+            "sexo_responsable": "2",
+            "domicilio_responsable": "Calle Resp 123",
+            "localidad_responsable": "Centro",
+        },
+        mensaje_error="Faltan campos obligatorios: sexo",
+    )
+
+    payload = dict(registro.datos_raw)
+    payload["sexo"] = ""
+
+    client.force_login(user)
+    response = client.post(
+        reverse("registro_erroneo_actualizar", args=[expediente.pk, registro.pk]),
+        data=json.dumps(payload),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert "sexo" in response.json()["error"].lower()
+
+    registro.refresh_from_db()
+    assert registro.datos_raw["sexo"] == "1"

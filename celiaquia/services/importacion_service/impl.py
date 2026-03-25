@@ -62,6 +62,7 @@ IMPORTACION_COLUMN_MAP = {
     "fecha_nacimiento": "fecha_nacimiento",
     "fecha_de_nacimiento": "fecha_nacimiento",
     "sexo": "sexo",
+    "sexo_1": "sexo_responsable",
     "nacionalidad": "nacionalidad",
     "municipio": "municipio",
     "localidad": "localidad",
@@ -100,6 +101,39 @@ IMPORTACION_COLUMN_MAP = {
     "EMAIL_RESPONSABLE": "email_responsable",
 }
 
+IMPORTACION_REQUIRED_FIELDS = (
+    "apellido",
+    "nombre",
+    "documento",
+    "fecha_nacimiento",
+    "sexo",
+    "nacionalidad",
+    "municipio",
+    "localidad",
+    "calle",
+    "altura",
+    "codigo_postal",
+    "apellido_responsable",
+    "nombre_responsable",
+    "documento_responsable",
+    "fecha_nacimiento_responsable",
+    "sexo_responsable",
+    "domicilio_responsable",
+    "localidad_responsable",
+)
+
+IMPORTACION_OPTIONAL_FIELDS = (
+    "telefono",
+    "email",
+    "telefono_responsable",
+    "email_responsable",
+)
+
+IMPORTACION_EDITABLE_FIELDS = (
+    *IMPORTACION_REQUIRED_FIELDS,
+    *IMPORTACION_OPTIONAL_FIELDS,
+)
+
 
 def validar_edad_responsable(fecha_nac_responsable, fecha_nac_beneficiario):
     """Valida edad del responsable vs beneficiario. Retorna (ok, warnings, error)."""
@@ -135,7 +169,17 @@ def _leer_excel_importacion(data: bytes) -> pd.DataFrame:
 
 def _normalizar_dataframe_importacion(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-    df.columns = [_norm_col(col) for col in df.columns]
+    normalized_cols = [_norm_col(col) for col in df.columns]
+    seen = {}
+    unique_cols = []
+    for col in normalized_cols:
+        if col in seen:
+            seen[col] += 1
+            unique_cols.append(f"{col}_{seen[col]}")
+        else:
+            seen[col] = 0
+            unique_cols.append(col)
+    df.columns = unique_cols
 
     present = [c for c in df.columns if c in IMPORTACION_COLUMN_MAP]
     df = (
@@ -516,16 +560,42 @@ def _build_payload_importacion_from_row(
     return payload
 
 
+def _valor_tiene_contenido_importacion(value):
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    return True
+
+
+def listar_campos_faltantes_importacion(
+    payload, required_fields=IMPORTACION_REQUIRED_FIELDS
+):
+    return [
+        field
+        for field in required_fields
+        if not _valor_tiene_contenido_importacion(payload.get(field))
+    ]
+
+
+def validar_campos_obligatorios_importacion(
+    payload, required_fields=IMPORTACION_REQUIRED_FIELDS
+):
+    faltantes = listar_campos_faltantes_importacion(
+        payload=payload,
+        required_fields=required_fields,
+    )
+    if faltantes:
+        raise ValidationError(f"Faltan campos obligatorios: {', '.join(faltantes)}")
+
+
 def _aplicar_defaults_y_validar_payload_importacion(payload, provincia_usuario_id):
     payload["tipo_documento"] = _get_tipo_documento(payload.get("documento", ""))
 
     if provincia_usuario_id:
         payload["provincia"] = provincia_usuario_id
 
-    required = ["apellido", "nombre", "documento", "fecha_nacimiento"]
-    for req in required:
-        if not payload.get(req):
-            raise ValidationError(f"Campo obligatorio faltante: {req}")
+    validar_campos_obligatorios_importacion(payload)
 
     doc = payload.get("documento")
     if not doc:
@@ -662,6 +732,13 @@ def _validar_contacto_payload_importacion(payload, offset, add_warning):
         raise ValidationError(f"Teléfono '{telefono}' debe tener al menos 8 dígitos")
 
 
+def _validar_campos_resueltos_payload_importacion(payload):
+    validar_campos_obligatorios_importacion(
+        payload=payload,
+        required_fields=("sexo", "nacionalidad", "municipio", "localidad"),
+    )
+
+
 def _normalizar_enriquecer_payload_importacion(
     payload,
     offset,
@@ -691,6 +768,7 @@ def _normalizar_enriquecer_payload_importacion(
         offset=offset,
         add_warning=add_warning,
     )
+    _validar_campos_resueltos_payload_importacion(payload)
 
 
 def _build_responsable_payload_importacion(
@@ -729,8 +807,11 @@ def _agregar_sexo_responsable_payload_importacion(
         return
 
     sexo_resp_id = normalizar_sexo(sexo_resp_val)
-    if sexo_resp_id:
-        responsable_payload["sexo"] = sexo_resp_id
+    if not sexo_resp_id:
+        raise ValidationError(
+            "Sexo responsable invalido. Use M/F, Masculino/Femenino, etc."
+        )
+    responsable_payload["sexo"] = sexo_resp_id
 
 
 def _es_mismo_documento_responsable_importacion(payload):
@@ -789,12 +870,18 @@ def _resolver_localidad_responsable_payload_importacion(
             if localidad_obj:
                 responsable_payload["localidad"] = localidad_obj.pk
                 responsable_payload["municipio"] = localidad_obj.municipio.pk
+                return
         except Exception as exc:  # pylint: disable=broad-exception-caught
             add_warning(
                 offset,
                 "localidad_responsable",
                 f"No se pudo procesar: {exc}",
             )
+            raise ValidationError(
+                f"Localidad responsable invalida: {localidad_resp}"
+            ) from exc
+
+        raise ValidationError(f"Localidad responsable invalida: {localidad_resp}")
 
 
 def _convertir_fecha_nacimiento_responsable_payload_importacion(
@@ -1861,7 +1948,7 @@ class ImportacionService:
             "NOMBRE_REPSONSABLE",
             "Cuit_Responsable",
             "FECHA_DE_NACIMIENTO_RESPONSABLE",
-            "SEXO",
+            "SEXO_RESPONSABLE",
             "DOMICILIO_RESPONSABLE",
             "LOCALIDAD_RESPONSABLE",
             "CELULAR_RESPONSABLE",
