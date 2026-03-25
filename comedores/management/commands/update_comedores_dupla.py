@@ -122,7 +122,7 @@ class Command(BaseCommand):
             with transaction.atomic():
                 comedor.dupla = dupla
                 comedor.estado = "Asignado a Dupla Técnica"
-                comedor.save(update_fields=["dupla"])
+                comedor.save(update_fields=["dupla", "estado"])
 
                 if options["admision"]:
                     # Los comedores con nómina directa no deben crear admisiones
