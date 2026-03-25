@@ -1,7 +1,7 @@
 # Management commands relevantes
 
 ## Core
-- `load_fixtures`: carga fixtures en modo upsert (no borra) con opción `--force`. Evidencia: core/management/commands/load_fixtures.py:8-77.
+- `load_fixtures`: carga fixtures en modo upsert (no borra) con opción `--force` o `--overwrite` para reaplicar datos existentes. Evidencia: core/management/commands/load_fixtures.py:8-77.
 - `generate_webp_images`: genera WebP para ImageFields con opciones de filtro, calidad y estadísticas. Evidencia: core/management/commands/generate_webp_images.py:1-111.
 - `debug_queries`: ejecuta depuración de queries para vistas (todas o Ciudadanos). Evidencia: core/management/commands/debug_queries.py:1-33.
 
