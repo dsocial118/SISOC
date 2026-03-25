@@ -141,7 +141,9 @@ def _build_organizacion_responsables_context(comedor_obj):
 
     firmantes = []
     for firmante in organizacion.firmantes.all():
-        rol_nombre = _normalize_responsables_value(getattr(firmante.rol, "nombre", None))
+        rol_nombre = _normalize_responsables_value(
+            getattr(firmante.rol, "nombre", None)
+        )
         firmante_data = _join_responsables_parts(firmante.nombre, firmante.cuit)
         firmante_text = (
             f"{rol_nombre}: {firmante_data}"
@@ -1035,7 +1037,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         return redirect("comedor_detalle", pk=self.object.pk)
 
     def _handle_legacy_relevamiento_post(self, request):
-        if "territorial" not in request.POST and "territorial_editar" not in request.POST:
+        if (
+            "territorial" not in request.POST
+            and "territorial_editar" not in request.POST
+        ):
             return None
 
         messages.error(

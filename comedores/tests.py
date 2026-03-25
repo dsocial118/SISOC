@@ -52,9 +52,9 @@ def test_comedor_detail_view_get_context(client_logged_fixture, comedor_fixture)
     assert "nuevo_comedor_detalle" not in body
     assert "comedores_nuevo/" not in body
     assert reverse("relevamientos", kwargs={"comedor_pk": comedor.pk}) in body
-    assert reverse(
-        "relevamiento_create_edit_ajax", kwargs={"pk": comedor.pk}
-    ) not in body
+    assert (
+        reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor.pk}) not in body
+    )
 
 
 @pytest.mark.django_db
@@ -985,9 +985,7 @@ def test_nomina_directa_delete_view_muestra_cancelacion_directa(
         comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
     )
 
-    url = reverse(
-        "nomina_directa_borrar", kwargs={"pk": comedor.pk, "pk2": nomina.pk}
-    )
+    url = reverse("nomina_directa_borrar", kwargs={"pk": comedor.pk, "pk2": nomina.pk})
     response = client_nomina_fixture.get(url)
 
     assert response.status_code == 200

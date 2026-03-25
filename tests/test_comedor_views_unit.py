@@ -831,4 +831,3 @@ def test_build_admisiones_y_nomina_context(mocker):
     assert ctx["nomina_pct_adultos"] == 40
     timeline_mock.assert_called_once_with(admisiones_qs)
     nomina_mock.assert_called_once_with(2, page=1, per_page=1)
-
