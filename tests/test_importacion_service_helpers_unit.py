@@ -933,7 +933,7 @@ def test_importar_legajos_guarda_registros_erroneos_y_sin_bulk_legajos(mocker):
     assert result["validos"] == 0
     assert result["errores"] == 1
     assert len(result["detalles_errores"]) == 1
-    assert "Campo obligatorio faltante" in result["detalles_errores"][0]["error"]
+    assert "Faltan campos obligatorios" in result["detalles_errores"][0]["error"]
     bulk_legajos.assert_not_called()
     registros_guardados.assert_called_once()
 
