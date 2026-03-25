@@ -11,7 +11,9 @@
 - Se agregó validación en `CentroDeInfanciaForm` para:
   - `numero`: solo dígitos.
   - `telefono` y `telefono_referente`: solo números, permitiendo guiones como separadores opcionales.
-- Se agregaron atributos de widget (`inputmode="numeric"` y `pattern="\d*"`) para reforzar la UX en el frontend.
+- Se agregaron atributos de widget para reforzar la UX en el frontend:
+  - `numero`: `inputmode="numeric"` y `pattern="\d*"`.
+  - `telefono` y `telefono_referente`: `inputmode="numeric"` sin `pattern`, para no bloquear guiones opcionales.
 
 ## Impacto funcional
 - El formulario rechaza valores con letras, espacios u otros signos no válidos.
