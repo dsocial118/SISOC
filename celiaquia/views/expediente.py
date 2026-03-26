@@ -99,6 +99,14 @@ def _is_provincial(user) -> bool:
         return False
 
 
+def _can_manage_registros_erroneos(user) -> bool:
+    return bool(
+        _is_admin(user)
+        or _is_provincial(user)
+        or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+    )
+
+
 def _normalizar_datos_registro_erroneo(payload):
     datos_normalizados = {}
     for field in IMPORTACION_EDITABLE_FIELDS:
@@ -117,6 +125,11 @@ def _limpiar_datos_registro_erroneo(payload):
 
 def _resolver_provincia_id_registro_erroneo(user, expediente):
     provincia = _user_provincia(user) or getattr(expediente, "provincia", None)
+    if provincia is None:
+        try:
+            provincia = expediente.usuario_provincia.profile.provincia
+        except Exception:
+            provincia = None
     for attr in ("pk", "id"):
         provincia_id = getattr(provincia, attr, None)
         if provincia_id is not None:
@@ -525,10 +538,12 @@ class ExpedienteDetailView(DetailView):
         is_admin = _is_admin(user)
         is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
         is_tecnico = _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+        can_manage_registros_erroneos = _can_manage_registros_erroneos(user)
         ctx["is_tecnico_celiaquia"] = is_tecnico
         ctx["is_coord_celiaquia"] = is_coord
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
+        ctx["can_manage_registros_erroneos"] = can_manage_registros_erroneos
 
         preview = preview_error = None
         preview_limit_actual = None
@@ -778,6 +793,11 @@ class ExpedienteDetailView(DetailView):
                 Localidad.objects.filter(municipio__provincia=prov)
                 .select_related("municipio")
                 .order_by("municipio__nombre", "nombre")
+            )
+        elif can_manage_registros_erroneos:
+            municipios = Municipio.objects.all().order_by("nombre")
+            localidades = Localidad.objects.select_related("municipio").order_by(
+                "municipio__nombre", "nombre"
             )
 
         ctx.update(
@@ -1384,7 +1404,7 @@ class ActualizarRegistroErroneoView(View):
         user = request.user
         expediente = get_object_or_404(Expediente, pk=pk)
 
-        if not (_is_admin(user) or _is_provincial(user)):
+        if not _can_manage_registros_erroneos(user):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
@@ -1441,7 +1461,7 @@ class ReprocesarRegistrosErroneosView(View):
         user = request.user
         expediente = get_object_or_404(Expediente, pk=pk)
 
-        if not (_is_admin(user) or _is_provincial(user)):
+        if not _can_manage_registros_erroneos(user):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
@@ -1641,7 +1661,7 @@ class EliminarRegistroErroneoView(View):
         user = request.user
         expediente = get_object_or_404(Expediente, pk=pk)
 
-        if not (_is_admin(user) or _is_provincial(user)):
+        if not _can_manage_registros_erroneos(user):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )

@@ -505,6 +505,8 @@ def test_importacion_helpers_responsable_enriquecimiento_y_relacion(mocker):
                 return self
             if kwargs == {"nombre__iexact": "Rosario"}:
                 return [SimpleNamespace(pk=11, municipio=SimpleNamespace(pk=22))]
+            if kwargs == {"nombre__icontains": "Rosario"}:
+                return [SimpleNamespace(pk=11, municipio=SimpleNamespace(pk=22))]
             return []
 
     mocker.patch(
@@ -558,6 +560,34 @@ def test_importacion_helpers_responsable_enriquecimiento_y_relacion(mocker):
     )
 
     assert relaciones == [{"hijo_id": 20, "responsable_id": 10, "fila": 9}]
+
+
+def test_importacion_helpers_resuelve_localidad_responsable_con_parentesis(mocker):
+    class _LocalidadesQS:
+        def filter(self, **kwargs):
+            if "municipio__provincia_id" in kwargs:
+                return self
+            if kwargs == {"nombre__iexact": "Rosario"}:
+                return [SimpleNamespace(pk=44, municipio=SimpleNamespace(pk=55))]
+            return []
+
+    mocker.patch(
+        "celiaquia.services.importacion_service.Localidad.objects.select_related",
+        return_value=_LocalidadesQS(),
+    )
+
+    responsable_payload = {}
+    payload = {"localidad_responsable": "Rosario (Municipio Rosario)"}
+    module._resolver_localidad_responsable_payload_importacion(
+        responsable_payload=responsable_payload,
+        payload=payload,
+        provincia_usuario_id=7,
+        offset=1,
+        add_warning=lambda *_args, **_kwargs: None,
+    )
+
+    assert responsable_payload["localidad"] == 44
+    assert responsable_payload["municipio"] == 55
 
 
 def test_importacion_helpers_crear_responsable_y_legajo(mocker):

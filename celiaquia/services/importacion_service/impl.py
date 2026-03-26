@@ -1017,10 +1017,13 @@ def _aplicar_domicilio_responsable_payload_importacion(responsable_payload, payl
 def _resolver_localidad_responsable_payload_importacion(
     *, responsable_payload, payload, provincia_usuario_id, offset, add_warning
 ):
+    del offset, add_warning
     localidad_resp = payload.get("localidad_responsable")
     if localidad_resp:
         try:
             localidad_resp_str = str(localidad_resp).strip()
+            if "(" in localidad_resp_str:
+                localidad_resp_str = localidad_resp_str.split("(", 1)[0].strip()
             localidades_qs = Localidad.objects.select_related("municipio").filter(
                 municipio__provincia_id=provincia_usuario_id
             )
@@ -1032,6 +1035,10 @@ def _resolver_localidad_responsable_payload_importacion(
                 coincidencias = list(
                     localidades_qs.filter(nombre__iexact=localidad_resp_str)[:2]
                 )
+                if len(coincidencias) != 1 and localidad_resp_str:
+                    coincidencias = list(
+                        localidades_qs.filter(nombre__icontains=localidad_resp_str)[:2]
+                    )
 
             if len(coincidencias) == 1:
                 localidad_obj = coincidencias[0]

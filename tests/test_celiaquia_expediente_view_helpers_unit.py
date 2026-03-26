@@ -37,6 +37,9 @@ def test_helper_functions_for_user_and_request(mocker):
 
     req = SimpleNamespace(headers={"X-Requested-With": "XMLHttpRequest"})
     assert module._is_ajax(req) is True
+    assert module._can_manage_registros_erroneos(_user_stub(coord=True)) is True
+    assert module._can_manage_registros_erroneos(_user_stub(is_admin=True)) is True
+    assert module._can_manage_registros_erroneos(_user_stub()) is False
 
 
 def test_provincial_helpers_and_parse_limit():
@@ -56,6 +59,15 @@ def test_provincial_helpers_and_parse_limit():
     assert module._parse_limit("-1", default=10) is None
     assert module._parse_limit("7", default=10, max_cap=5) == 5
     assert module._parse_limit("x", default=10) == 10
+
+
+def test_resolver_provincia_registro_erroneo_fallback_a_usuario_expediente():
+    expediente_user = SimpleNamespace(profile=SimpleNamespace(provincia=SimpleNamespace(id=33)))
+    expediente = SimpleNamespace(provincia=None, usuario_provincia=expediente_user)
+    user = SimpleNamespace(is_authenticated=True)
+
+    provincia_id = module._resolver_provincia_id_registro_erroneo(user, expediente)
+    assert provincia_id == 33
 
 
 def test_provincial_helpers_object_does_not_exist_branches(mocker):
