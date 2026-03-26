@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from functools import lru_cache
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -73,11 +74,32 @@ def _get_formulario_scoped_or_404(user, centro_id, form_pk):
 
 
 def _choice_map_for(field_name):
-    if field_name in CHOICE_FIELDS:
-        return dict(CHOICE_FIELDS[field_name])
-    if field_name in MULTI_CHOICE_FIELDS:
-        return dict(MULTI_CHOICE_FIELDS[field_name])
-    return {}
+    return _form_choice_maps().get(field_name, {})
+
+
+@lru_cache(maxsize=1)
+def _form_choice_maps():
+    form = FormularioCDIForm()
+    field_names = set(CHOICE_FIELDS) | set(MULTI_CHOICE_FIELDS)
+    choice_maps = {}
+    for field_name in field_names:
+        if field_name not in form.fields:
+            continue
+        choice_maps[field_name] = {
+            value: label
+            for value, label in form.fields[field_name].choices
+            if value not in ("", None)
+        }
+    return choice_maps
+
+
+@lru_cache(maxsize=1)
+def _form_field_labels():
+    form = FormularioCDIForm()
+    return {
+        field_name: field.label
+        for field_name, field in form.fields.items()
+    }
 
 
 def _display_value(obj, field_name):
@@ -204,7 +226,9 @@ class FormularioCDIDetailView(LoginRequiredMixin, DetailView):
             for field_name in section["fields"]:
                 items.append(
                     {
-                        "label": FIELD_LABELS.get(field_name, field_name),
+                        "label": _form_field_labels().get(
+                            field_name, FIELD_LABELS.get(field_name, field_name)
+                        ),
                         "value": _display_value(formulario, field_name),
                     }
                 )

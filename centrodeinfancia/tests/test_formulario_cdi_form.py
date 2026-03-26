@@ -128,3 +128,35 @@ def test_formulario_cdi_limpia_valores_de_campos_ocultos_por_skip_logic():
     assert form.cleaned_data["cooking_fuel"] == ""
     assert form.cleaned_data["has_outdoor_playground"] == ""
     assert form.cleaned_data["menu_preparation_quality"] == ""
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_limpia_seguridad_electrica_si_no_tiene_electricidad():
+    centro = CentroDeInfancia.objects.create(nombre="CDI Sin Electricidad")
+    form = FormularioCDIForm(
+        data={
+            "cdi_name": centro.nombre,
+            "cdi_code": centro.cdi_code,
+            "electricity_access": "sin_electricidad",
+            "electrical_safety": "cumple_y_revision_anual",
+            "source_form_version": 1,
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["electrical_safety"] == ""
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_aplica_textos_actualizados_en_labels_y_opciones():
+    form = FormularioCDIForm()
+
+    assert form.fields["survey_date"].label == "Fecha de Relevamiento"
+    assert (
+        form.fields["internet_access_quality_staff"].label
+        == "Acceso a internet: ¿El CDI tiene acceso a internet y es compartido por el personal?"
+    )
+    assert (
+        dict(form.fields["water_access"].choices)["caneria_dentro_cdi"]
+        == "Por cañería dentro del CDI"
+    )

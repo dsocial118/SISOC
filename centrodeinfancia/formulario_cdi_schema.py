@@ -49,19 +49,19 @@ WEEKDAY_OPTIONS = [
 ROOM_AGE_GROUP_OPTIONS = [
     ("lactantes", "Lactantes"),
     ("deambuladores", "Deambuladores"),
-    ("dos_anos", "Dos anos"),
-    ("tres_anos", "Tres anos"),
-    ("cuatro_anos", "Cuatro anos"),
+    ("dos_anos", "Dos años"),
+    ("tres_anos", "Tres años"),
+    ("cuatro_anos", "Cuatro Años"),
     ("multiedad", "Multiedad"),
 ]
 
 WAITLIST_AGE_GROUP_OPTIONS = [
     ("lactantes", "Lactantes"),
     ("deambuladores", "Deambuladores"),
-    ("un_ano", "Un ano"),
-    ("dos_anos", "Dos anos"),
-    ("tres_anos", "Tres anos"),
-    ("cuatro_anos", "Cuatro anos"),
+    ("un_ano", "Un año"),
+    ("dos_anos", "dos años"),
+    ("tres_anos", "tres años"),
+    ("cuatro_anos", "cuatro años"),
 ]
 
 ARTICULATION_INSTITUTION_OPTIONS = [

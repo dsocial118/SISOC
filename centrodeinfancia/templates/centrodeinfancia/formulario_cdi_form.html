@@ -68,7 +68,7 @@
 
             <div class="card mb-3">
                 <div class="card-header">
-                    <strong>Organizacion de salas</strong>
+                    <strong>Organización de Salas: ¿Cómo se distribuyen los niños y niñas en las salas dentro del CDI? Complete la siguiente tabla consignando para cada grupo existente, la cantidad de salas, la superficie exclusiva en m², la cantidad de niñas y niños que concurren y la cantidad de personal de sala disponible.</strong>
                 </div>
                 <div class="card-body">
                     {{ room_formset.management_form }}
@@ -80,10 +80,11 @@
                             <thead>
                                 <tr>
                                     <th>Grupo etario</th>
-                                    <th>Salas</th>
+                                    <th>Cantidad de Salas (A)</th>
                                     <th>Superficie m2</th>
                                     <th>Niñas y niños</th>
-                                    <th>Personal</th>
+                                    <th>Cantidad de Personal de Sala (B)</th>
+                                    <th>Cantidad de personal por sala (B/A)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -111,8 +112,17 @@
                                             {{ row_form.staff_count }}
                                             {% for error in row_form.staff_count.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                                         </td>
+                                        <td class="room-staff-ratio">-</td>
                                     </tr>
                                 {% endfor %}
+                                <tr class="table-secondary fw-semibold">
+                                    <td>Totales</td>
+                                    <td id="room-total-count">0</td>
+                                    <td id="room-total-area">0</td>
+                                    <td id="room-total-children">0</td>
+                                    <td id="room-total-staff">0</td>
+                                    <td id="room-total-ratio">-</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -217,6 +227,9 @@
             const showWhen = {
                 workday_type_other: function() {
                     return document.getElementById("id_workday_type")?.value === "other";
+                },
+                electrical_safety: function() {
+                    return document.getElementById("id_electricity_access")?.value !== "sin_electricidad";
                 },
                 management_mode_other: function() {
                     return document.getElementById("id_management_mode")?.value === "otra";
@@ -371,6 +384,73 @@
 
             document.addEventListener("change", refreshVisibility);
             refreshVisibility();
+
+            function toNumber(inputElement) {
+                if (!inputElement) {
+                    return 0;
+                }
+                const rawValue = (inputElement.value || "0").replace(",", ".");
+                const value = parseFloat(rawValue);
+                return Number.isFinite(value) ? value : 0;
+            }
+
+            function refreshRoomDistributionTotals() {
+                const roomRows = Array.from(document.querySelectorAll("tbody tr")).filter(function(row) {
+                    return row.querySelector("input[id$='-room_count']");
+                });
+
+                let totalRooms = 0;
+                let totalArea = 0;
+                let totalChildren = 0;
+                let totalStaff = 0;
+
+                roomRows.forEach(function(row) {
+                    const roomCount = toNumber(row.querySelector("input[id$='-room_count']"));
+                    const area = toNumber(row.querySelector("input[id$='-exclusive_area_m2']"));
+                    const children = toNumber(row.querySelector("input[id$='-children_count']"));
+                    const staff = toNumber(row.querySelector("input[id$='-staff_count']"));
+
+                    totalRooms += roomCount;
+                    totalArea += area;
+                    totalChildren += children;
+                    totalStaff += staff;
+
+                    const ratioCell = row.querySelector(".room-staff-ratio");
+                    if (ratioCell) {
+                        ratioCell.textContent = roomCount > 0 ? (staff / roomCount).toFixed(2) : "-";
+                    }
+                });
+
+                const setTotal = function(id, value) {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.textContent = value;
+                    }
+                };
+
+                setTotal("room-total-count", totalRooms);
+                setTotal("room-total-area", totalArea.toFixed(2));
+                setTotal("room-total-children", totalChildren);
+                setTotal("room-total-staff", totalStaff);
+                setTotal(
+                    "room-total-ratio",
+                    totalRooms > 0 ? (totalStaff / totalRooms).toFixed(2) : "-",
+                );
+            }
+
+            document.addEventListener("input", function(event) {
+                const targetId = event.target?.id || "";
+                if (
+                    targetId.includes("-room_count") ||
+                    targetId.includes("-exclusive_area_m2") ||
+                    targetId.includes("-children_count") ||
+                    targetId.includes("-staff_count")
+                ) {
+                    refreshRoomDistributionTotals();
+                }
+            });
+            refreshRoomDistributionTotals();
+
             setupGeoCascade({
                 provincia: "#id_cdi_province",
                 municipio: "#id_cdi_municipality",
