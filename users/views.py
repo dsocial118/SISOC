@@ -13,6 +13,7 @@ from django.contrib.auth.views import (
 )
 from django.db.models import Count
 from django.http import HttpResponseRedirect
+from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -82,6 +83,24 @@ class UserCreateView(AdminRequiredMixin, CreateView):
     success_url = reverse_lazy("usuarios")
     required_permissions = ("auth.add_user",)
 
+    def form_valid(self, form):  # type: ignore[override]
+        response = super().form_valid(form)
+        generated_password = getattr(form, "generated_password", None)
+        if generated_password:
+            messages.success(
+                self.request,
+                (
+                    "Usuario mobile creado correctamente. "
+                    f"Contraseña inicial generada: {generated_password}"
+                ),
+            )
+            if self.request.user.has_perm("auth.change_user"):
+                return HttpResponseRedirect(
+                    reverse("usuario_editar", kwargs={"pk": self.object.pk})
+                )
+        messages.success(self.request, "Usuario creado correctamente.")
+        return response
+
 
 class UserUpdateView(AdminRequiredMixin, UpdateView):
     model = User
@@ -89,6 +108,24 @@ class UserUpdateView(AdminRequiredMixin, UpdateView):
     template_name = "user/user_form.html"
     success_url = reverse_lazy("usuarios")
     required_permissions = ("auth.change_user",)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        profile = getattr(self.object, "profile", None)
+        context["temporary_password_visible"] = bool(
+            profile
+            and getattr(profile, "must_change_password", False)
+            and getattr(profile, "temporary_password_plaintext", None)
+        )
+        context["temporary_password_plaintext"] = (
+            getattr(profile, "temporary_password_plaintext", None) if profile else None
+        )
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Usuario actualizado correctamente.")
+        return response
 
 
 class UserDeleteView(AdminRequiredMixin, DeleteView):
@@ -168,11 +205,13 @@ class FirstLoginPasswordChangeView(LoginRequiredMixin, FormView):
             profile.must_change_password = False
             profile.password_changed_at = timezone.now()
             profile.initial_password_expires_at = None
+            profile.temporary_password_plaintext = None
             profile.save(
                 update_fields=[
                     "must_change_password",
                     "password_changed_at",
                     "initial_password_expires_at",
+                    "temporary_password_plaintext",
                 ]
             )
         update_session_auth_hash(self.request, user)
@@ -213,11 +252,13 @@ class PasswordResetConfirmCustomView(PasswordResetConfirmView):
             profile.must_change_password = False
             profile.password_changed_at = timezone.now()
             profile.initial_password_expires_at = None
+            profile.temporary_password_plaintext = None
             profile.save(
                 update_fields=[
                     "must_change_password",
                     "password_changed_at",
                     "initial_password_expires_at",
+                    "temporary_password_plaintext",
                 ]
             )
 

@@ -1,6 +1,7 @@
 """Tests for tests."""
 
 from unittest import mock
+from types import SimpleNamespace
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -14,10 +15,18 @@ from django.utils.html import escape
 
 from admisiones.models.admisiones import Admision
 from ciudadanos.models import Ciudadano
-from comedores.models import Comedor, HistorialValidacion, Nomina
+from comedores.models import (
+    ActividadColaboradorEspacio,
+    AuditColaboradorEspacio,
+    ColaboradorEspacio,
+    Comedor,
+    HistorialValidacion,
+    Nomina,
+)
 from comedores.services.comedor_service import ComedorService
 from comedores.services.validacion_service import ValidacionService
 from comedores.views import ComedorDetailView, NominaImportarView
+from core.models import Sexo
 
 
 # Tests for ComedorDetailView (HTML)
@@ -47,6 +56,497 @@ def test_comedor_detail_view_get_context(client_logged_fixture, comedor_fixture)
 
     assert "GESTIONAR_API_KEY" not in response.context
     assert "GESTIONAR_API_CREAR_COMEDOR" not in response.context
+
+
+@pytest.mark.django_db
+def test_comedor_detail_view_renderiza_card_colaboradores(
+    client_logged_fixture, comedor_fixture, monkeypatch
+):
+    client = client_logged_fixture
+    comedor = comedor_fixture
+    monkeypatch.setattr(
+        "comedores.services.comedor_service.ComedorService.get_presupuestos",
+        lambda *args, **kwargs: (10, 1, 2, 3, 4, 5),
+    )
+    comedor.colaboradores_espacio_optimized = [
+        SimpleNamespace(
+            apellido="Perez",
+            nombre="Ana",
+            dni=30111222,
+            cuil_cuit="27301112228",
+            sexo_display="Femenino",
+            get_genero_display="Mujer",
+            codigo_telefono="11",
+            numero_telefono="01144445555",
+            fecha_alta="2026-03-26",
+            fecha_baja=None,
+            actividades=SimpleNamespace(
+                all=lambda: [SimpleNamespace(nombre="Compras"), SimpleNamespace(nombre="Limpieza")]
+            ),
+        )
+    ]
+    url = reverse("comedor_detalle", kwargs={"pk": comedor.pk})
+    response = client.get(url)
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Colaboradores del espacio" in content
+    assert "Perez, Ana" in content
+    assert "27301112228" in content
+    assert "Compras" in content
+    assert "Limpieza" in content
+
+
+@pytest.mark.django_db
+def test_colaborador_espacio_crear_requiere_permiso(comedor_fixture, monkeypatch):
+    client = Client()
+    user = get_user_model().objects.create_user(
+        username="sin_permiso_colaborador",
+        password="testpass",
+    )
+    client.force_login(user)
+    monkeypatch.setattr(
+        "comedores.services.comedor_service.ComedorService.get_scoped_comedor_or_404",
+        lambda pk, user: comedor_fixture,
+    )
+
+    response = client.get(
+        reverse("colaborador_espacio_crear", kwargs={"pk": comedor_fixture.pk})
+    )
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_colaborador_espacio_crear_get_con_ciudadano_existente(
+    comedor_fixture, monkeypatch
+):
+    client = Client()
+    user = get_user_model().objects.create_superuser(
+        username="admin_colaborador_get",
+        email="admin-colab-get@example.com",
+        password="testpass",
+    )
+    client.force_login(user)
+    sexo = Sexo.objects.create(sexo="Masculino")
+    ciudadano = Ciudadano.objects.create(
+        apellido="Perez",
+        nombre="Juan",
+        fecha_nacimiento="1990-01-10",
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=30111222,
+        sexo=sexo,
+        cuil_cuit="20301112229",
+    )
+    monkeypatch.setattr(
+        "comedores.services.comedor_service.ComedorService.get_scoped_comedor_or_404",
+        lambda pk, user: comedor_fixture,
+    )
+
+    response = client.get(
+        reverse("colaborador_espacio_crear", kwargs={"pk": comedor_fixture.pk}),
+        {"query": str(ciudadano.documento)},
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Ciudadano encontrado en SISOC" in content
+    assert "Perez" in content
+    assert "20301112229" in content
+
+
+@pytest.mark.django_db
+def test_colaborador_espacio_crear_post_con_ciudadano_existente(
+    comedor_fixture, monkeypatch
+):
+    client = Client()
+    user = get_user_model().objects.create_superuser(
+        username="admin_colaborador_post",
+        email="admin-colab-post@example.com",
+        password="testpass",
+    )
+    client.force_login(user)
+    sexo = Sexo.objects.create(sexo="Femenino")
+    ciudadano = Ciudadano.objects.create(
+        apellido="Gomez",
+        nombre="Ana",
+        fecha_nacimiento="1992-05-03",
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=28999111,
+        sexo=sexo,
+        cuil_cuit="27289991116",
+    )
+    actividad = ActividadColaboradorEspacio.objects.create(
+        alias="COM",
+        nombre="Compras test",
+        orden=99,
+    )
+    monkeypatch.setattr(
+        "comedores.services.comedor_service.ComedorService.get_scoped_comedor_or_404",
+        lambda pk, user: comedor_fixture,
+    )
+
+    response = client.post(
+        reverse("colaborador_espacio_crear", kwargs={"pk": comedor_fixture.pk}),
+        {
+            "ciudadano_id": ciudadano.id,
+            "genero": ColaboradorEspacio.GeneroChoices.MUJER,
+            "codigo_telefono": "11",
+            "numero_telefono": "01155556666",
+            "fecha_alta": "2026-03-26",
+            "fecha_baja": "",
+            "actividades": [actividad.id],
+        },
+    )
+
+    assert response.status_code == 302
+    colaborador = ColaboradorEspacio.objects.get(
+        comedor=comedor_fixture,
+        ciudadano=ciudadano,
+    )
+    assert colaborador.codigo_telefono == "11"
+    assert colaborador.numero_telefono == "01155556666"
+    assert list(colaborador.actividades.values_list("nombre", flat=True)) == [
+        "Compras test"
+    ]
+
+
+@pytest.mark.django_db
+def test_colaborador_espacio_crear_post_desde_renaper(comedor_fixture, monkeypatch):
+    client = Client()
+    user = get_user_model().objects.create_superuser(
+        username="admin_colaborador_renaper",
+        email="admin-colab-renaper@example.com",
+        password="testpass",
+    )
+    client.force_login(user)
+    sexo = Sexo.objects.create(sexo="Masculino")
+    ciudadano = Ciudadano.objects.create(
+        apellido="Lopez",
+        nombre="Mario",
+        fecha_nacimiento="1988-08-08",
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=33444555,
+        sexo=sexo,
+        cuil_cuit="20334445551",
+    )
+    actividad = ActividadColaboradorEspacio.objects.create(
+        alias="MAN",
+        nombre="Mantenimiento test",
+        orden=100,
+    )
+    monkeypatch.setattr(
+        "comedores.services.comedor_service.ComedorService.get_scoped_comedor_or_404",
+        lambda pk, user: comedor_fixture,
+    )
+    monkeypatch.setattr(
+        "comedores.services.comedor_service.ComedorService.crear_ciudadano_desde_renaper",
+        lambda dni, user=None: {
+            "success": True,
+            "ciudadano": ciudadano,
+            "created": True,
+            "message": "Ciudadano creado automáticamente con datos de RENAPER.",
+        },
+    )
+
+    response = client.post(
+        reverse("colaborador_espacio_crear", kwargs={"pk": comedor_fixture.pk}),
+        {
+            "dni": "33444555",
+            "genero": ColaboradorEspacio.GeneroChoices.VARON,
+            "codigo_telefono": "221",
+            "numero_telefono": "099998887",
+            "fecha_alta": "2026-03-26",
+            "fecha_baja": "",
+            "actividades": [actividad.id],
+        },
+    )
+
+    assert response.status_code == 302
+    colaborador = ColaboradorEspacio.objects.get(
+        comedor=comedor_fixture,
+        ciudadano=ciudadano,
+    )
+    assert colaborador.genero == ColaboradorEspacio.GeneroChoices.VARON
+
+
+@pytest.mark.django_db
+def test_colaborador_espacio_editar_actualiza_datos(comedor_fixture, monkeypatch):
+    client = Client()
+    user = get_user_model().objects.create_superuser(
+        username="admin_colaborador_edit",
+        email="admin-colab-edit@example.com",
+        password="testpass",
+    )
+    client.force_login(user)
+    sexo = Sexo.objects.create(sexo="Masculino")
+    ciudadano = Ciudadano.objects.create(
+        apellido="Suarez",
+        nombre="Luis",
+        fecha_nacimiento="1991-03-03",
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=30111999,
+        sexo=sexo,
+        cuil_cuit="20301119993",
+    )
+    actividad_1 = ActividadColaboradorEspacio.objects.create(
+        alias="COM",
+        nombre="Compras edit",
+        orden=101,
+    )
+    actividad_2 = ActividadColaboradorEspacio.objects.create(
+        alias="MAN",
+        nombre="Mantenimiento edit",
+        orden=102,
+    )
+    colaborador = ColaboradorEspacio.objects.create(
+        comedor=comedor_fixture,
+        ciudadano=ciudadano,
+        genero=ColaboradorEspacio.GeneroChoices.VARON,
+        codigo_telefono="11",
+        numero_telefono="123456",
+        fecha_alta="2026-03-01",
+    )
+    colaborador.actividades.set([actividad_1])
+    monkeypatch.setattr(
+        "comedores.services.comedor_service.ComedorService.get_scoped_comedor_or_404",
+        lambda pk, user: comedor_fixture,
+    )
+
+    response = client.post(
+        reverse(
+            "colaborador_espacio_editar",
+            kwargs={"pk": comedor_fixture.pk, "pk2": colaborador.pk},
+        ),
+        {
+            "ciudadano_id": ciudadano.id,
+            "genero": ColaboradorEspacio.GeneroChoices.NO_DECLARA,
+            "codigo_telefono": "221",
+            "numero_telefono": "987654",
+            "fecha_alta": "2026-03-02",
+            "fecha_baja": "",
+            "actividades": [actividad_2.id],
+        },
+    )
+
+    assert response.status_code == 302
+    colaborador.refresh_from_db()
+    assert colaborador.genero == ColaboradorEspacio.GeneroChoices.NO_DECLARA
+    assert colaborador.codigo_telefono == "221"
+    assert colaborador.numero_telefono == "987654"
+    assert list(colaborador.actividades.values_list("nombre", flat=True)) == [
+        "Mantenimiento edit"
+    ]
+
+
+@pytest.mark.django_db
+def test_colaborador_espacio_eliminar_hace_baja_logica(comedor_fixture, monkeypatch):
+    client = Client()
+    user = get_user_model().objects.create_superuser(
+        username="admin_colaborador_delete",
+        email="admin-colab-delete@example.com",
+        password="testpass",
+    )
+    client.force_login(user)
+    sexo = Sexo.objects.create(sexo="Femenino")
+    ciudadano = Ciudadano.objects.create(
+        apellido="Diaz",
+        nombre="Laura",
+        fecha_nacimiento="1995-06-06",
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=32111999,
+        sexo=sexo,
+        cuil_cuit="27321119996",
+    )
+    colaborador = ColaboradorEspacio.objects.create(
+        comedor=comedor_fixture,
+        ciudadano=ciudadano,
+        genero=ColaboradorEspacio.GeneroChoices.MUJER,
+        fecha_alta="2026-03-01",
+    )
+    monkeypatch.setattr(
+        "comedores.services.comedor_service.ComedorService.get_scoped_comedor_or_404",
+        lambda pk, user: comedor_fixture,
+    )
+
+    response = client.post(
+        reverse(
+            "colaborador_espacio_eliminar",
+            kwargs={"pk": comedor_fixture.pk, "pk2": colaborador.pk},
+        )
+    )
+
+    assert response.status_code == 302
+    colaborador.refresh_from_db()
+    assert colaborador.fecha_baja is not None
+    assert ColaboradorEspacio.objects.filter(pk=colaborador.pk).exists()
+    audit = AuditColaboradorEspacio.objects.filter(
+        colaborador=colaborador, accion=AuditColaboradorEspacio.ACCION_DELETE
+    ).first()
+    assert audit is not None
+    assert audit.snapshot_antes["fecha_baja"] is None
+    assert audit.snapshot_despues["fecha_baja"] is not None
+
+
+@pytest.mark.django_db
+def test_colaborador_espacio_permite_reingreso_historico(comedor_fixture, monkeypatch):
+    client = Client()
+    user = get_user_model().objects.create_superuser(
+        username="admin_colaborador_reingreso",
+        email="admin-colab-reingreso@example.com",
+        password="testpass",
+    )
+    client.force_login(user)
+    sexo = Sexo.objects.create(sexo="Masculino")
+    ciudadano = Ciudadano.objects.create(
+        apellido="Martinez",
+        nombre="Raul",
+        fecha_nacimiento="1989-04-04",
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=30111888,
+        sexo=sexo,
+        cuil_cuit="20301118882",
+    )
+    actividad = ActividadColaboradorEspacio.objects.create(
+        alias="COM",
+        nombre="Compras reingreso",
+        orden=103,
+    )
+    historial = ColaboradorEspacio.objects.create(
+        comedor=comedor_fixture,
+        ciudadano=ciudadano,
+        genero=ColaboradorEspacio.GeneroChoices.VARON,
+        fecha_alta="2025-01-01",
+        fecha_baja="2025-06-01",
+    )
+    monkeypatch.setattr(
+        "comedores.services.comedor_service.ComedorService.get_scoped_comedor_or_404",
+        lambda pk, user: comedor_fixture,
+    )
+
+    response = client.post(
+        reverse("colaborador_espacio_crear", kwargs={"pk": comedor_fixture.pk}),
+        {
+            "ciudadano_id": ciudadano.id,
+            "genero": ColaboradorEspacio.GeneroChoices.VARON,
+            "codigo_telefono": "11",
+            "numero_telefono": "11112222",
+            "fecha_alta": "2026-03-26",
+            "fecha_baja": "",
+            "actividades": [actividad.id],
+        },
+    )
+
+    assert response.status_code == 302
+    assert ColaboradorEspacio.objects.filter(
+        comedor=comedor_fixture,
+        ciudadano=ciudadano,
+    ).count() == 2
+    nuevo = ColaboradorEspacio.objects.exclude(pk=historial.pk).get()
+    assert nuevo.fecha_baja is None
+    audit = AuditColaboradorEspacio.objects.filter(
+        colaborador=nuevo, accion=AuditColaboradorEspacio.ACCION_CREATE
+    ).first()
+    assert audit is not None
+    assert audit.metadata["source"] == "sisoc"
+
+
+@pytest.mark.django_db
+def test_colaborador_espacio_editar_registra_auditoria(comedor_fixture, monkeypatch):
+    client = Client()
+    user = get_user_model().objects.create_superuser(
+        username="admin_colaborador_audit_update",
+        email="admin-colab-audit-update@example.com",
+        password="testpass",
+    )
+    client.force_login(user)
+    sexo = Sexo.objects.create(sexo="Masculino")
+    ciudadano = Ciudadano.objects.create(
+        apellido="Ramos",
+        nombre="Pablo",
+        fecha_nacimiento="1991-09-09",
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=30999111,
+        sexo=sexo,
+        cuil_cuit="20309991116",
+    )
+    actividad_1 = ActividadColaboradorEspacio.objects.create(
+        alias="COM",
+        nombre="Actividad audit 1",
+        orden=104,
+    )
+    actividad_2 = ActividadColaboradorEspacio.objects.create(
+        alias="MAN",
+        nombre="Actividad audit 2",
+        orden=105,
+    )
+    colaborador = ColaboradorEspacio.objects.create(
+        comedor=comedor_fixture,
+        ciudadano=ciudadano,
+        genero=ColaboradorEspacio.GeneroChoices.VARON,
+        codigo_telefono="11",
+        numero_telefono="123123",
+        fecha_alta="2026-03-01",
+    )
+    colaborador.actividades.set([actividad_1])
+    monkeypatch.setattr(
+        "comedores.services.comedor_service.ComedorService.get_scoped_comedor_or_404",
+        lambda pk, user: comedor_fixture,
+    )
+
+    response = client.post(
+        reverse(
+            "colaborador_espacio_editar",
+            kwargs={"pk": comedor_fixture.pk, "pk2": colaborador.pk},
+        ),
+        {
+            "ciudadano_id": ciudadano.id,
+            "genero": ColaboradorEspacio.GeneroChoices.NO_DECLARA,
+            "codigo_telefono": "221",
+            "numero_telefono": "456456",
+            "fecha_alta": "2026-03-02",
+            "fecha_baja": "",
+            "actividades": [actividad_2.id],
+        },
+    )
+
+    assert response.status_code == 302
+    audit = AuditColaboradorEspacio.objects.filter(
+        colaborador=colaborador, accion=AuditColaboradorEspacio.ACCION_UPDATE
+    ).first()
+    assert audit is not None
+    assert audit.snapshot_antes["codigo_telefono"] == "11"
+    assert audit.snapshot_despues["codigo_telefono"] == "221"
+    assert audit.snapshot_antes["actividades"] == ["Actividad audit 1"]
+    assert audit.snapshot_despues["actividades"] == ["Actividad audit 2"]
+
+
+@pytest.mark.django_db
+def test_crear_ciudadano_desde_renaper_normaliza_foreign_keys(monkeypatch):
+    sexo = Sexo.objects.create(sexo="Masculino")
+    monkeypatch.setattr(
+        "comedores.services.comedor_service.impl.consultar_datos_renaper",
+        lambda dni, sexo_value: {
+            "success": True,
+            "data": {
+                "apellido": "Perez",
+                "nombre": "Juan",
+                "fecha_nacimiento": "1990-01-10",
+                "dni": dni,
+                "sexo": sexo.pk,
+                "cuil": 20301112229,
+                "tipo_documento": Ciudadano.DOCUMENTO_DNI,
+            },
+            "datos_api": {},
+        },
+    )
+
+    result = ComedorService.crear_ciudadano_desde_renaper("30111222")
+
+    assert result["success"] is True
+    assert result["created"] is True
+    assert result["ciudadano"].sexo_id == sexo.pk
+    assert result["ciudadano"].documento == 30111222
 
 
 @pytest.mark.django_db

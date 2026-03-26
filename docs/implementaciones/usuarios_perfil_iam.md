@@ -74,10 +74,42 @@ Compatibilidad:
   - `must_change_password`
   - `password_changed_at`
   - `initial_password_expires_at`
+  - `temporary_password_plaintext`
 - Middleware: `users/middleware.py` redirige a `password_change_required`.
 - Vistas/forms:
   - `FirstLoginPasswordChangeView`
   - `BackofficeAuthenticationForm`
+
+Reglas actuales para usuarios con acceso PWA creados desde web:
+
+- Si el usuario es nuevo y se crea como PWA desde el ABM web:
+  - se genera una contraseña automática;
+  - se guarda como contraseña real del usuario;
+  - el perfil queda con `must_change_password=True`;
+  - la contraseña temporal queda visible en la pantalla de edición del usuario
+    mientras no haya sido cambiada.
+- Si el usuario ya existía y luego se le habilita acceso PWA:
+  - se conserva su contraseña actual;
+  - no se genera una nueva contraseña automática;
+  - no se muestra contraseña temporal nueva.
+- Cuando el usuario cambia o resetea su contraseña:
+  - `must_change_password` pasa a `False`;
+  - se limpia `temporary_password_plaintext`.
+
+### Historial de acceso PWA
+
+- Los accesos mobile del usuario no se borran físicamente al quitar permisos.
+- `users.AccesoComedorPWA` conserva:
+  - `fecha_creacion`
+  - `fecha_baja`
+  - `activo`
+- Además se registra auditoría de movimientos en `users.AuditAccesoComedorPWA` para:
+  - alta;
+  - reactivación;
+  - baja.
+- Al desmarcar acceso mobile en edición, el formulario ignora los valores residuales
+  de organizaciones/espacios y aplica la baja lógica sin requerir limpiar esos campos
+  manualmente.
 
 ### Reset de contraseña (web + API)
 

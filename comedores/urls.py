@@ -1,6 +1,9 @@
 from django.urls import path
 from django.contrib.auth.decorators import login_required
 from comedores.views import (
+    ColaboradorEspacioCreateView,
+    ColaboradorEspacioDeleteView,
+    ColaboradorEspacioUpdateView,
     ComedorCreateView,
     ComedorDeleteView,
     ComedorDetailView,
@@ -103,6 +106,27 @@ urlpatterns = [
             ObservacionCreateView.as_view()
         ),
         name="observacion_crear",
+    ),
+    path(
+        "comedores/<int:pk>/colaboradores/crear/",
+        permissions_any_required(["comedores.add_colaboradorespacio"])(
+            ColaboradorEspacioCreateView.as_view()
+        ),
+        name="colaborador_espacio_crear",
+    ),
+    path(
+        "comedores/<int:pk>/colaboradores/<int:pk2>/editar/",
+        permissions_any_required(["comedores.change_colaboradorespacio"])(
+            ColaboradorEspacioUpdateView.as_view()
+        ),
+        name="colaborador_espacio_editar",
+    ),
+    path(
+        "comedores/<int:pk>/colaboradores/<int:pk2>/eliminar/",
+        permissions_any_required(["comedores.delete_colaboradorespacio"])(
+            ColaboradorEspacioDeleteView.as_view()
+        ),
+        name="colaborador_espacio_eliminar",
     ),
     path(
         "comedores/observacion/<int:pk>",

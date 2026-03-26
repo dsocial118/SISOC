@@ -209,10 +209,11 @@ def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
 
     mocker.patch("builtins.__import__", side_effect=fake_import2)
     comedor_ctx = module.CiudadanosDetailView().get_comedor_context(ciudadano)
-    assert comedor_ctx == {"nominas_comedor": []}
+    assert comedor_ctx == {"nominas_comedor": [], "colaboraciones_comedor": []}
 
     mocker.patch("builtins.__import__", side_effect=orig_import)
     nom_qs = _ExpedientesList([SimpleNamespace(id=7)])
+    colab_qs = _ExpedientesList([SimpleNamespace(id=9)])
 
     def _select_related_nomina(*args, **kwargs):
         assert args == (
@@ -222,12 +223,29 @@ def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
         )
         return SimpleNamespace(order_by=lambda *x, **y: nom_qs)
 
+    def _select_related_colaborador(*args, **kwargs):
+        assert args == (
+            "comedor__provincia",
+            "comedor__municipio",
+            "comedor__tipocomedor",
+        )
+        return SimpleNamespace(
+            prefetch_related=lambda *x, **y: SimpleNamespace(
+                order_by=lambda *a, **b: colab_qs
+            )
+        )
+
     mocker.patch(
         "comedores.models.Nomina.objects.filter",
         return_value=SimpleNamespace(select_related=_select_related_nomina),
     )
+    mocker.patch(
+        "comedores.models.ColaboradorEspacio.objects.filter",
+        return_value=SimpleNamespace(select_related=_select_related_colaborador),
+    )
     comedor_ok = module.CiudadanosDetailView().get_comedor_context(ciudadano)
     assert comedor_ok["nomina_actual"].id == 7
+    assert comedor_ok["colaboraciones_comedor"][0].id == 9
 
 
 def test_ciudadanos_create_and_update_form_valid_and_context(mocker):

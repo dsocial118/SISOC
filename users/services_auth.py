@@ -106,11 +106,13 @@ def confirm_password_reset(
         profile.must_change_password = False
         profile.password_changed_at = timezone.now()
         profile.initial_password_expires_at = None
+        profile.temporary_password_plaintext = None
         profile.save(
             update_fields=[
                 "must_change_password",
                 "password_changed_at",
                 "initial_password_expires_at",
+                "temporary_password_plaintext",
             ]
         )
 

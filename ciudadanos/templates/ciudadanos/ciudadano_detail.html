@@ -1963,6 +1963,52 @@
         </div>
 
 
+        {% if colaboraciones_comedor %}
+            <div class="row px-4 mt-3">
+                <div class="col-12">
+                    <div class="tabla-legajo">
+                        <h5 class="mb-3">Colaboraciones en comedores</h5>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Comedor</th>
+                                    <th>Fecha alta</th>
+                                    <th>Fecha baja</th>
+                                    <th>Actividades</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for colaboracion in colaboraciones_comedor %}
+                                    <tr>
+                                        <td>
+                                            {% if colaboracion.comedor and colaboracion.comedor.id %}
+                                                <a href="{% url 'comedor_detalle' colaboracion.comedor.id %}"
+                                                   style="color: #F5A623;
+                                                          text-decoration: underline">
+                                                    {{ colaboracion.comedor.nombre }}
+                                                </a>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ colaboracion.fecha_alta|date:"d/m/Y"|default:"-" }}</td>
+                                        <td>{{ colaboracion.fecha_baja|date:"d/m/Y"|default:"-" }}</td>
+                                        <td>
+                                            {% for actividad in colaboracion.actividades.all %}
+                                                {{ actividad.nombre }}{% if not forloop.last %}, {% endif %}
+                                            {% empty %}
+                                                -
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
