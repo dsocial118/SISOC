@@ -606,3 +606,16 @@ PROG_CDLE = 25
 PROG_PDV = 26
 PROG_MA = 30
 PROG_SL = 21
+
+# ============================================================================
+# VAT - VOUCHER SYSTEM CONFIGURATION
+# ============================================================================
+
+VOUCHER_CONFIG = {
+    "ENABLED": True,
+    "RECARGA_AUTOMATICA": True,
+    "DIA_RECARGA": 1,  # Day of month for automatic reload (1-31)
+    "CANTIDAD_RECARGA": 50,  # Credits to reload per voucher
+    "PROGRAMA_DEFECTO": "Programa VAT",
+    "DIAS_ANTES_VENCIMIENTO_NOTIFICACION": 7,  # Days before expiration to notify
+}
