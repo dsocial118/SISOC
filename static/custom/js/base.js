@@ -227,6 +227,17 @@ $.widget.bridge("uibutton", $.ui.button);
         }
 
         const sidebarMenu = $(".app-sidebar");
+        const sidebarToggleMobileButton = document.querySelector(
+            "[data-lte-toggle=\"sidebar\"].d-lg-none",
+        );
+
+        function isDesktopSidebarViewport() {
+            if (!sidebarToggleMobileButton) {
+                return window.innerWidth >= 992;
+            }
+            const styles = window.getComputedStyle(sidebarToggleMobileButton);
+            return styles.display === "none";
+        }
 
         function hideMenuOpenULs() {
             if ($("body").hasClass("sidebar-collapse")) {
@@ -266,6 +277,24 @@ $.widget.bridge("uibutton", $.ui.button);
                 $(".sidebar-menu .nav-item.menu-open>ul").css("display", "block");
             });
         }
+
+        function syncSidebarWithToggleVisibility() {
+            if (!isDesktopSidebarViewport()) {
+                return;
+            }
+
+            const body = $("body");
+            body.removeClass("sidebar-open");
+            body.removeClass("sidebar-collapse");
+            $(".app-sidebar").removeClass("show sidebar-open").css("margin-left", "");
+            $(".sidebar-overlay").remove();
+        }
+
+        window.addEventListener("resize", function() {
+            window.setTimeout(syncSidebarWithToggleVisibility, 0);
+        });
+
+        syncSidebarWithToggleVisibility();
 
         $(document).on("click", "[data-history-back]", function(event) {
             event.preventDefault();
