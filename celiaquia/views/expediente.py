@@ -1393,8 +1393,10 @@ class ActualizarRegistroErroneoView(View):
 
         try:
             datos_actualizados = json.loads(request.body)
-            # Limpiar valores vacÃ­os
             datos_normalizados = _normalizar_datos_registro_erroneo(datos_actualizados)
+            datos_limpios = _limpiar_datos_registro_erroneo(datos_normalizados)
+            registro.datos_raw = datos_limpios
+
             provincia_id = _resolver_provincia_id_registro_erroneo(user, expediente)
             if not provincia_id:
                 return JsonResponse(
@@ -1409,14 +1411,14 @@ class ActualizarRegistroErroneoView(View):
                 provincia_id=provincia_id,
                 fila_excel=registro.fila_excel,
             )
-            datos_limpios = _limpiar_datos_registro_erroneo(datos_normalizados)
-            registro.datos_raw = datos_limpios
             registro.save(update_fields=["datos_raw"])
 
             return JsonResponse(
                 {"success": True, "message": "Registro actualizado correctamente."}
             )
         except ValidationError as exc:
+            registro.mensaje_error = str(exc)
+            registro.save(update_fields=["datos_raw", "mensaje_error"])
             return JsonResponse({"success": False, "error": str(exc)}, status=400)
         except Exception as e:
             logger.error("Error actualizando registro errÃ³neo: %s", e, exc_info=True)
