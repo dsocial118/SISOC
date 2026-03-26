@@ -14,6 +14,7 @@ En el detalle de expediente de Celiaquía, cuando la importación de Excel falla
 - Se corrigió la visibilidad del botón `Reprocesar Todos` para perfiles con gestión (provincial, coordinador o admin) y se unificaron permisos de endpoints de actualización/reproceso/eliminación de registros erróneos.
 - Se agregó fallback de carga de `municipios` y `localidades` para gestión central cuando no hay provincia resoluble en el expediente (evita combos vacíos).
 - Se reemplazó `localidad_responsable` de texto libre a selector para reducir errores de validación y se robusteció el resolver para aceptar formatos como `Localidad (Municipio)`.
+- El frontend dejó de bloquear el autosave por validaciones preliminares y ahora siempre intenta persistir cambios; el backend responde `saved_partial=true` cuando guarda parcialmente pero aún hay errores de validación.
 
 ## Impacto
 - Mejora de UX en corrección de registros erróneos: se preserva y muestra más información válida durante la subsanación.
