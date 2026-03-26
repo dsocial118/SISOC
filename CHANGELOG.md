@@ -4,6 +4,7 @@
 ## Actualizaciones
 
 - [sin-area] Codex/main cherrypick juanikitro no vat. (PR #1368)
+- [sin-area] Codex/main cherrypick renaper fail fast. (PR #1370)
 <!-- AUTO-GENERATED RELEASE END: 2026-04-01 -->
 
 # Versión SISOC 18.03.2026

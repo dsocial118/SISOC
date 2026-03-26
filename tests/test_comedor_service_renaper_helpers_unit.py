@@ -226,6 +226,22 @@ def test_consultar_renaper_and_build_data(mocker):
     assert err2
 
 
+def test_consultar_renaper_por_dni_corta_reintentos_en_error_integracion(mocker):
+    consultar_mock = mocker.patch(
+        "comedores.services.comedor_service.impl.consultar_datos_renaper",
+        return_value={
+            "success": False,
+            "error": "Error inesperado: Read timed out",
+        },
+    )
+
+    out = module.ComedorService._consultar_renaper_por_dni("12345678")
+
+    assert out["success"] is False
+    assert out["error"] == "Error inesperado: Read timed out"
+    consultar_mock.assert_called_once_with("12345678", "M")
+
+
 def test_obtener_datos_ciudadano_desde_renaper_and_crear(mocker):
     bad = module.ComedorService.obtener_datos_ciudadano_desde_renaper("12")
     assert bad["success"] is False
