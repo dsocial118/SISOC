@@ -947,7 +947,7 @@
                                                         <option value="">Seleccionar...</option>
                                                         {% for sexo in sexos %}
                                                             <option value="{{ sexo.id }}"
-                                                                    {% if registro.datos_raw.sexo|stringformat:"s" == sexo.id|stringformat:"s" or registro.datos_raw.sexo|lower == sexo.sexo|lower %}selected{% endif %}>
+                                                                    {% if registro.datos_raw.sexo|stringformat:"s" == sexo.id|stringformat:"s" or registro.datos_raw.sexo|lower == sexo.sexo|lower or registro.datos_raw.sexo|upper == "M" and sexo.sexo|lower == "masculino" or registro.datos_raw.sexo|upper == "F" and sexo.sexo|lower == "femenino" %}selected{% endif %}>
                                                                 {{ sexo.sexo }}
                                                             </option>
                                                         {% endfor %}
@@ -1081,7 +1081,7 @@
                                                         <option value="">Seleccionar...</option>
                                                         {% for sexo in sexos %}
                                                             <option value="{{ sexo.id }}"
-                                                                    {% if registro.datos_raw.sexo_responsable|stringformat:"s" == sexo.id|stringformat:"s" or registro.datos_raw.sexo_responsable|lower == sexo.sexo|lower %}selected{% endif %}>
+                                                                    {% if registro.datos_raw.sexo_responsable|stringformat:"s" == sexo.id|stringformat:"s" or registro.datos_raw.sexo_responsable|lower == sexo.sexo|lower or registro.datos_raw.sexo_responsable|upper == "M" and sexo.sexo|lower == "masculino" or registro.datos_raw.sexo_responsable|upper == "F" and sexo.sexo|lower == "femenino" %}selected{% endif %}>
                                                                 {{ sexo.sexo }}
                                                             </option>
                                                         {% endfor %}
