@@ -1,0 +1,96 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Contactos de Institución{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+{% url 'vat_institucion_contacto_list' as reset_url %}
+{% include 'components/search_bar.html' with titulo="Buscar Contacto" placeholder="Buscar por centro, tipo o valor" help_text="Buscar por centro, tipo o valor" reset_url=reset_url add_url='vat_institucion_contacto_create' add_text='Agregar' query=request.GET.busqueda %}
+
+<div class="row mt-5 max-width-100">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive-lg">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-column="centro">
+                                    Centro
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                                <th>Principal</th>
+                                <th class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contacto in contactos %}
+                            <tr>
+                                <td data-centro="{{ contacto.centro.nombre }}">{{ contacto.centro.nombre }}</td>
+                                <td>{{ contacto.get_tipo_display }}</td>
+                                <td>{{ contacto.valor }}</td>
+                                <td>
+                                    {% if contacto.es_principal %}
+                                        <span class="badge-validacion validado">
+                                            <i class="fas fa-check-circle"></i> Sí
+                                        </span>
+                                    {% else %}
+                                        <span class="badge-validacion pendiente">No</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="action-buttons" role="group">
+                                        <a href="{% url 'vat_institucion_contacto_detail' contacto.id %}"
+                                           class="btn btn-primary link-handler"
+                                           title="Ver detalle">
+                                            <i class="fas fa-eye"></i>
+                                            Ver
+                                        </a>
+                                        {% if perms.VAT.change_institucioncontacto %}
+                                        <a href="{% url 'vat_institucion_contacto_update' contacto.id %}"
+                                           class="btn btn-editar link-handler"
+                                           title="Editar contacto">
+                                            <i class="fas fa-edit"></i>
+                                            Editar
+                                        </a>
+                                        {% endif %}
+                                        {% if perms.VAT.delete_institucioncontacto %}
+                                        <a href="{% url 'vat_institucion_contacto_delete' contacto.id %}"
+                                           class="btn btn-eliminar link-handler"
+                                           title="Eliminar contacto">
+                                            <i class="fas fa-trash-alt"></i>
+                                            Eliminar
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5">
+                                    <div class="no-comedores-message">
+                                        <h3>No se encontraron contactos</h3>
+                                        <p>No hay contactos registrados.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+
+{% endblock %}
+
+{% block customJS %}
+<script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}

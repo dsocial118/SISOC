@@ -25,7 +25,6 @@ from django.db.models.functions import Coalesce, Now
 from django.utils.html import format_html
 
 from relevamientos.models import Relevamiento, ClasificacionComedor
-from relevamientos.service import RelevamientoService
 from ciudadanos.models import Ciudadano
 from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models import (
@@ -38,6 +37,7 @@ from comedores.models import (
     Referente,
 )
 from comedores.utils import (
+    comedor_usa_admision_para_nomina,
     get_object_by_filter,
     get_id_by_nombre,
     normalize_field,
@@ -50,6 +50,7 @@ from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
 from duplas.models import Dupla
+from organizaciones.models import Aval, Firmante
 
 logger = logging.getLogger("django")
 
@@ -443,6 +444,14 @@ def _get_comedor_detail_prefetches():
     return (
         "expedientes_pagos",
         Prefetch(
+            "organizacion__firmantes",
+            queryset=Firmante.objects.select_related("rol").order_by("id"),
+        ),
+        Prefetch(
+            "organizacion__avales",
+            queryset=Aval.objects.order_by("id"),
+        ),
+        Prefetch(
             "imagenes",
             queryset=ImagenComedor.objects.only("imagen"),
             to_attr="imagenes_optimized",
@@ -491,6 +500,8 @@ def _build_comedor_detail_queryset():
         "localidad",
         "referente",
         "organizacion",
+        "organizacion__tipo_entidad",
+        "organizacion__subtipo_entidad",
         "programa",
         "tipocomedor",
         "dupla",
@@ -498,34 +509,6 @@ def _build_comedor_detail_queryset():
         "ultimo_estado__estado_general__estado_proceso",
         "ultimo_estado__estado_general__estado_detalle",
     ).prefetch_related(*_get_comedor_detail_prefetches())
-
-
-def _resolve_relevamiento_post_action(request):
-    if "territorial" in request.POST:
-        return "create"
-    if "territorial_editar" in request.POST:
-        return "update"
-    return None
-
-
-def _execute_relevamiento_post_action(action, request, comedor_id):
-    if action == "create":
-        return RelevamientoService.create_pendiente(request, comedor_id)
-    if action == "update":
-        return RelevamientoService.update_territorial(request)
-    return None
-
-
-def _redirect_relevamiento_detalle(relevamiento):
-    return redirect(
-        reverse(
-            "relevamiento_detalle",
-            kwargs={
-                "pk": relevamiento.pk,
-                "comedor_pk": relevamiento.comedor.pk,
-            },
-        )
-    )
 
 
 def _redirect_comedor_detalle(comedor_id):
@@ -541,6 +524,13 @@ def _safe_redirect_comedor_detalle(request, comedor_id):
 
 
 def _validar_creacion_admision_desde_comedor(request, comedor, tipo_admision):
+    if not comedor_usa_admision_para_nomina(comedor):
+        messages.error(
+            request,
+            "Este comedor usa nómina directa y no admite admisiones.",
+        )
+        return _redirect_comedor_detalle(comedor.pk)
+
     if not tipo_admision:
         messages.error(request, "Debe seleccionar un tipo de admisión.")
         return _redirect_comedor_detalle(comedor.pk)
@@ -893,27 +883,6 @@ class ComedorService:
             resumen["cantidad_total"],
             rangos_resumen,
         )
-
-    @staticmethod
-    def post_comedor_relevamiento(request, comedor):
-        action = _resolve_relevamiento_post_action(request)
-        if not action:
-            return _redirect_comedor_detalle(comedor.id)
-
-        try:
-            relevamiento = _execute_relevamiento_post_action(
-                action, request, comedor.id
-            )
-            if not relevamiento or not getattr(relevamiento, "comedor", None):
-                messages.error(
-                    request,
-                    "Error al crear o editar el relevamiento: No se pudo obtener el relevamiento o su comedor.",
-                )
-                return _redirect_comedor_detalle(comedor.id)
-            return _redirect_relevamiento_detalle(relevamiento)
-        except Exception as exc:
-            messages.error(request, f"Error al crear el relevamiento: {exc}")
-            return _redirect_comedor_detalle(comedor.id)
 
     @staticmethod
     def buscar_ciudadanos_por_documento(query, max_results=10):
@@ -1373,6 +1342,14 @@ class ComedorService:
         comedor_id=None,
     ):
         ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
+
+        if comedor_id is not None and admision_id is None:
+            comedor = get_object_or_404(Comedor, pk=comedor_id)
+            if comedor_usa_admision_para_nomina(comedor):
+                return (
+                    False,
+                    "Este comedor usa nómina por admisión y no admite alta directa en la nómina.",
+                )
 
         if _nomina_ya_contiene_ciudadano(
             ciudadano, admision_id=admision_id, comedor_id=comedor_id

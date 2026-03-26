@@ -248,6 +248,109 @@ def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
     assert comedor_ok["colaboraciones_comedor"][0].id == 9
 
 
+def test_ciudadanos_detail_vat_context_resume_por_programa(mocker):
+    ciudadano = SimpleNamespace(pk=12)
+
+    programa_a = SimpleNamespace(id=1, __str__=lambda self: "Programa A")
+    programa_b = SimpleNamespace(id=2, __str__=lambda self: "Programa B")
+
+    voucher_activo = SimpleNamespace(
+        pk=11,
+        programa=programa_a,
+        estado="activo",
+        cantidad_inicial=10,
+        cantidad_disponible=4,
+        get_estado_display=lambda: "Activo",
+    )
+    voucher_agotado = SimpleNamespace(
+        pk=12,
+        programa=programa_a,
+        estado="agotado",
+        cantidad_inicial=5,
+        cantidad_disponible=0,
+        get_estado_display=lambda: "Agotado",
+    )
+    voucher_programa_b = SimpleNamespace(
+        pk=13,
+        programa=programa_b,
+        estado="cancelado",
+        cantidad_inicial=2,
+        cantidad_disponible=0,
+        get_estado_display=lambda: "Cancelado",
+    )
+
+    inscripcion_a1 = SimpleNamespace(id=21, programa=programa_a)
+    inscripcion_a2 = SimpleNamespace(id=22, programa=programa_a)
+    inscripcion_b1 = SimpleNamespace(id=23, programa=programa_b)
+
+    inscripcion_oferta_a = SimpleNamespace(
+        pk=31,
+        oferta=SimpleNamespace(oferta=SimpleNamespace(programa=programa_a)),
+    )
+
+    asistencias = [
+        SimpleNamespace(inscripcion_id=21, presente=True),
+        SimpleNamespace(inscripcion_id=21, presente=False),
+        SimpleNamespace(inscripcion_id=22, presente=True),
+    ]
+
+    mocker.patch(
+        "VAT.models.Inscripcion.objects.filter",
+        return_value=SimpleNamespace(
+            select_related=lambda *a, **k: SimpleNamespace(
+                order_by=lambda *x, **y: [inscripcion_a1, inscripcion_a2, inscripcion_b1]
+            )
+        ),
+    )
+    mocker.patch(
+        "VAT.models.Voucher.objects.filter",
+        return_value=SimpleNamespace(
+            select_related=lambda *a, **k: SimpleNamespace(
+                order_by=lambda *x, **y: [voucher_activo, voucher_agotado, voucher_programa_b]
+            )
+        ),
+    )
+    mocker.patch(
+        "VAT.models.InscripcionOferta.objects.filter",
+        return_value=SimpleNamespace(
+            select_related=lambda *a, **k: SimpleNamespace(
+                order_by=lambda *x, **y: [inscripcion_oferta_a]
+            )
+        ),
+    )
+    mocker.patch(
+        "VAT.models.AsistenciaSesion.objects.filter",
+        return_value=SimpleNamespace(
+            select_related=lambda *a, **k: SimpleNamespace(
+                order_by=lambda *x, **y: asistencias
+            )
+        ),
+    )
+
+    context = module.CiudadanosDetailView().get_vat_context(ciudadano)
+
+    assert context["vat_creditos_totales"] == 17
+    assert context["vat_creditos_disponibles"] == 4
+    assert context["vat_voucher_activo"] is voucher_activo
+    assert len(context["vat_programas"]) == 2
+
+    programa_a_ctx = next(
+        item
+        for item in context["vat_programas"]
+        if item["programa"] is programa_a
+    )
+    assert programa_a_ctx["creditos_totales"] == 15
+    assert programa_a_ctx["creditos_actuales"] == 4
+    assert programa_a_ctx["cursos_asignados"] == 3
+    assert programa_a_ctx["asistencias_presentes"] == 2
+    assert programa_a_ctx["asistencias_registradas"] == 3
+    assert programa_a_ctx["voucher_activo"] is voucher_activo
+    assert inscripcion_a1.asistencias_presentes == 1
+    assert inscripcion_a1.asistencias_registradas == 2
+    assert inscripcion_a1.asistencia_porcentaje == 50
+    assert inscripcion_a2.asistencia_porcentaje == 100
+
+
 def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
     create_view = module.CiudadanosCreateView()
     create_view.request = SimpleNamespace(GET={"sexo": "Z"}, user=SimpleNamespace(id=1))

@@ -1,0 +1,104 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Resultados de Evaluación{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+{% url 'vat_resultado_evaluacion_list' as reset_url %}
+{% include 'components/search_bar.html' with titulo="Buscar Resultado" placeholder="Buscar por evaluación o persona" help_text="Buscar por evaluación o persona" reset_url=reset_url add_url='vat_resultado_evaluacion_create' add_text='Agregar' query=request.GET.busqueda %}
+
+<div class="row mt-5 max-width-100">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive-lg">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-column="evaluacion">
+                                    Evaluación
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th>Persona</th>
+                                <th>Calificación</th>
+                                <th>Aprobó</th>
+                                <th>Fecha</th>
+                                <th class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for resultado in resultados %}
+                            <tr>
+                                <td data-evaluacion="{{ resultado.evaluacion.nombre }}">
+                                    {{ resultado.evaluacion.nombre }}
+                                </td>
+                                <td>{{ resultado.inscripcion.ciudadano.nombre_completo }}</td>
+                                <td>{{ resultado.calificacion|default:"—" }}</td>
+                                <td>
+                                    {% if resultado.aprobo is None %}
+                                        <span class="badge-validacion pendiente">—</span>
+                                    {% elif resultado.aprobo %}
+                                        <span class="badge-validacion validado">
+                                            <i class="fas fa-check-circle"></i> Sí
+                                        </span>
+                                    {% else %}
+                                        <span class="badge-validacion no-validado">
+                                            <i class="fas fa-times-circle"></i> No
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ resultado.fecha_registro|date:"d/m/Y" }}</td>
+                                <td>
+                                    <div class="action-buttons" role="group">
+                                        <a href="{% url 'vat_resultado_evaluacion_detail' resultado.id %}"
+                                           class="btn btn-primary link-handler"
+                                           title="Ver detalle">
+                                            <i class="fas fa-eye"></i>
+                                            Ver
+                                        </a>
+                                        {% if perms.VAT.change_resultadoevaluacion %}
+                                        <a href="{% url 'vat_resultado_evaluacion_update' resultado.id %}"
+                                           class="btn btn-editar link-handler"
+                                           title="Editar resultado">
+                                            <i class="fas fa-edit"></i>
+                                            Editar
+                                        </a>
+                                        {% endif %}
+                                        {% if perms.VAT.delete_resultadoevaluacion %}
+                                        <a href="{% url 'vat_resultado_evaluacion_delete' resultado.id %}"
+                                           class="btn btn-eliminar link-handler"
+                                           title="Eliminar resultado">
+                                            <i class="fas fa-trash-alt"></i>
+                                            Eliminar
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6">
+                                    <div class="no-comedores-message">
+                                        <h3>No se encontraron resultados</h3>
+                                        <p>No hay resultados de evaluación registrados.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+
+{% endblock %}
+
+{% block customJS %}
+<script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}

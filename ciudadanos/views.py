@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 
 from django.conf import settings
 from django.contrib import messages
@@ -89,6 +90,7 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         ctx.update(self.get_celiaquia_context(ciudadano))
         ctx.update(self.get_cdf_context(ciudadano))
         ctx.update(self.get_comedor_context(ciudadano))
+        ctx.update(self.get_vat_context(ciudadano))
         return ctx
 
     def build_familia(self, ciudadano):
@@ -231,6 +233,154 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         if nomina_actual:
             contexto["nomina_actual"] = nomina_actual
         return contexto
+
+    def get_vat_context(self, ciudadano):
+        try:
+            from VAT.models import (
+                AsistenciaSesion,
+                Inscripcion,
+                InscripcionOferta,
+                Voucher,
+            )
+        except ImportError:
+            return {
+                "vat_inscripciones": [],
+                "vat_vouchers": [],
+                "vat_inscripciones_oferta": [],
+                "vat_programas": [],
+            }
+
+        try:
+            inscripciones = list(
+                Inscripcion.objects.filter(ciudadano=ciudadano)
+                .select_related(
+                    "comision__oferta__centro",
+                    "comision__oferta__plan_curricular__titulo_referencia",
+                    "programa",
+                )
+                .order_by("-fecha_inscripcion")
+            )
+            vouchers = list(
+                Voucher.objects.filter(ciudadano=ciudadano)
+                .select_related("programa")
+                .order_by("-fecha_asignacion")
+            )
+            inscripciones_oferta = list(
+                InscripcionOferta.objects.filter(ciudadano=ciudadano)
+                .select_related(
+                    "oferta__oferta__centro",
+                    "oferta__oferta__plan_curricular__titulo_referencia",
+                )
+                .order_by("-fecha_inscripcion")
+            )
+            asistencias = list(
+                AsistenciaSesion.objects.filter(inscripcion__ciudadano=ciudadano)
+                .select_related("inscripcion")
+                .order_by("-fecha_registro")
+            )
+        except Exception:
+            logger.exception(
+                "Error cargando datos VAT para ciudadano %s", ciudadano.pk
+            )
+            return {
+                "vat_inscripciones": [],
+                "vat_vouchers": [],
+                "vat_inscripciones_oferta": [],
+                "vat_programas": [],
+            }
+
+        creditos_totales = sum(v.cantidad_inicial for v in vouchers)
+        creditos_disponibles = sum(v.cantidad_disponible for v in vouchers if v.estado == "activo")
+        voucher_activo = next((v for v in vouchers if v.estado == "activo"), None)
+        asistencias_por_inscripcion = defaultdict(
+            lambda: {"presentes": 0, "registradas": 0}
+        )
+
+        for asistencia in asistencias:
+            resumen = asistencias_por_inscripcion[asistencia.inscripcion_id]
+            resumen["registradas"] += 1
+            if asistencia.presente:
+                resumen["presentes"] += 1
+
+        for inscripcion in inscripciones:
+            resumen = asistencias_por_inscripcion.get(
+                inscripcion.id, {"presentes": 0, "registradas": 0}
+            )
+            registradas = resumen["registradas"]
+            inscripcion.asistencias_presentes = resumen["presentes"]
+            inscripcion.asistencias_registradas = registradas
+            inscripcion.asistencia_porcentaje = (
+                round((resumen["presentes"] / registradas) * 100)
+                if registradas
+                else 0
+            )
+
+        programas = {}
+
+        def ensure_programa(programa):
+            if not programa:
+                return None
+            programa_id = programa.id
+            if programa_id not in programas:
+                programas[programa_id] = {
+                    "programa": programa,
+                    "vouchers": [],
+                    "voucher_activo": None,
+                    "voucher_referencia": None,
+                    "inscripciones": [],
+                    "inscripciones_oferta": [],
+                    "creditos_totales": 0,
+                    "creditos_actuales": 0,
+                    "cursos_asignados": 0,
+                    "asistencias_presentes": 0,
+                    "asistencias_registradas": 0,
+                }
+            return programas[programa_id]
+
+        for voucher in vouchers:
+            programa_ctx = ensure_programa(voucher.programa)
+            if not programa_ctx:
+                continue
+            programa_ctx["vouchers"].append(voucher)
+            programa_ctx["creditos_totales"] += voucher.cantidad_inicial
+            if voucher.estado == "activo":
+                programa_ctx["creditos_actuales"] += voucher.cantidad_disponible
+                if programa_ctx["voucher_activo"] is None:
+                    programa_ctx["voucher_activo"] = voucher
+            if programa_ctx["voucher_referencia"] is None:
+                programa_ctx["voucher_referencia"] = voucher
+
+        for inscripcion in inscripciones:
+            programa_ctx = ensure_programa(inscripcion.programa)
+            if not programa_ctx:
+                continue
+            programa_ctx["inscripciones"].append(inscripcion)
+            programa_ctx["cursos_asignados"] += 1
+            programa_ctx["asistencias_presentes"] += inscripcion.asistencias_presentes
+            programa_ctx["asistencias_registradas"] += inscripcion.asistencias_registradas
+
+        for inscripcion_oferta in inscripciones_oferta:
+            programa = getattr(getattr(inscripcion_oferta.oferta, "oferta", None), "programa", None)
+            programa_ctx = ensure_programa(programa)
+            if not programa_ctx:
+                continue
+            programa_ctx["inscripciones_oferta"].append(inscripcion_oferta)
+            programa_ctx["cursos_asignados"] += 1
+
+        vat_programas = sorted(
+            programas.values(),
+            key=lambda item: str(item["programa"]).lower(),
+        )
+
+        return {
+            "vat_inscripciones": inscripciones,
+            "vat_vouchers": vouchers,
+            "vat_inscripciones_oferta": inscripciones_oferta,
+            "vat_creditos_totales": creditos_totales,
+            "vat_creditos_disponibles": creditos_disponibles,
+            "vat_voucher_activo": voucher_activo,
+            "vat_programas": vat_programas,
+        }
 
 
 class CiudadanosCreateView(LoginRequiredMixin, CreateView):

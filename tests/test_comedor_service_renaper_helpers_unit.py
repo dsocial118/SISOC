@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from comedores.services import comedor_service as module
+from comedores.views import comedor as comedor_views_module
 
 
 class _QS(list):
@@ -512,35 +513,29 @@ def test_relevamiento_resumen_presupuestos_and_aprobadas(mocker):
     )
 
 
-def test_post_comedor_relevamiento_branches(mocker):
-    comedor = SimpleNamespace(id=22)
+def test_handle_legacy_relevamiento_post_branches(mocker):
+    view = comedor_views_module.ComedorDetailView()
+    view.object = SimpleNamespace(pk=22)
     req = SimpleNamespace(POST={"territorial": "1"})
-    mocker.patch("comedores.services.comedor_service.impl.reverse", return_value="/r/1")
-    ok_redirect = mocker.patch(
-        "comedores.services.comedor_service.impl.redirect",
+    redirect_mock = mocker.patch(
+        "comedores.views.comedor.redirect",
         side_effect=lambda *args, **kwargs: (args, kwargs),
     )
-    mocker.patch(
-        "comedores.services.comedor_service.impl.RelevamientoService.create_pendiente",
-        return_value=SimpleNamespace(pk=9, comedor=SimpleNamespace(pk=22)),
-    )
-    out = module.ComedorService.post_comedor_relevamiento(req, comedor)
-    assert out[0][0] == "/r/1"
+    msg_error = mocker.patch("comedores.views.comedor.messages.error")
+
+    out = view._handle_legacy_relevamiento_post(req)
+    assert out[0][0] == "relevamientos"
+    assert out[1]["comedor_pk"] == 22
+    msg_error.assert_called_once()
 
     req2 = SimpleNamespace(POST={"territorial_editar": "1"})
-    msg_error = mocker.patch("comedores.services.comedor_service.impl.messages.error")
-    mocker.patch(
-        "comedores.services.comedor_service.impl.RelevamientoService.update_territorial",
-        return_value=SimpleNamespace(pk=1, comedor=None),
-    )
-    out2 = module.ComedorService.post_comedor_relevamiento(req2, comedor)
-    assert out2[0][0] == "comedor_detalle"
-    assert msg_error.called
+    out2 = view._handle_legacy_relevamiento_post(req2)
+    assert out2[0][0] == "relevamientos"
+    assert out2[1]["comedor_pk"] == 22
 
     req3 = SimpleNamespace(POST={})
-    out3 = module.ComedorService.post_comedor_relevamiento(req3, comedor)
-    assert out3[0][0] == "comedor_detalle"
-    assert ok_redirect.called
+    assert view._handle_legacy_relevamiento_post(req3) is None
+    assert redirect_mock.call_count == 2
 
 
 def test_get_presupuestos_queries_finalizado_y_fallback(mocker):

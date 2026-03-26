@@ -95,6 +95,14 @@ class Referente(models.Model):
 
 class Programas(models.Model):
     nombre = models.CharField(max_length=255)
+    usa_admision_para_nomina = models.BooleanField(
+        default=True,
+        verbose_name="¿Usa admisión para nómina?",
+        help_text=(
+            "Cuando es False, la nómina del comedor se gestiona de forma directa "
+            "sin depender de admisiones."
+        ),
+    )
 
     def __str__(self):
         return str(self.nombre)

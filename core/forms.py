@@ -3,6 +3,19 @@ from django import forms
 from core.models import MontoPrestacionPrograma, Programa
 
 
+class ProgramaForm(forms.ModelForm):
+    class Meta:
+        model = Programa
+        fields = ["nombre", "estado", "observaciones", "organismo", "descripcion"]
+        widgets = {
+            "nombre": forms.TextInput(attrs={"class": "form-control"}),
+            "estado": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "observaciones": forms.TextInput(attrs={"class": "form-control"}),
+            "organismo": forms.Select(attrs={"class": "form-control"}),
+            "descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+        }
+
+
 class MontoPrestacionProgramaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

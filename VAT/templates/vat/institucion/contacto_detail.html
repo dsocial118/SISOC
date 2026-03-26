@@ -1,0 +1,150 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}{{ contacto.centro }} - {{ contacto.get_tipo_display }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <a href="{% url 'vat_institucion_contacto_list' %}" class="btn btn-light">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="h2 mb-0" style="color: #1f3a93;">
+                        <i class="bi bi-telephone me-2"></i>{{ contacto.get_tipo_display }}
+                    </h1>
+                    <small class="text-muted">{{ contacto.centro.nombre }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Content -->
+    <div class="row">
+        <!-- Main Info -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label class="form-label small fw-600 text-muted">Centro</label>
+                            <p class="h5 mb-0">{{ contacto.centro.nombre }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label class="form-label small fw-600 text-muted">Tipo</label>
+                            <p class="mb-0">
+                                <span class="badge bg-info bg-opacity-10 text-info">{{ contacto.get_tipo_display }}</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label class="form-label small fw-600 text-muted">Valor</label>
+                            <p class="h6 mb-0">{{ contacto.valor }}</p>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-600 text-muted">Principal</label>
+                            <p class="mb-0">
+                                {% if contacto.es_principal %}
+                                    <span class="badge bg-success">Sí</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-600 text-muted">Vigencia Hasta</label>
+                            <p class="h6 mb-0">{{ contacto.vigencia_hasta|date:"d/m/Y"|default:"Vigente" }}</p>
+                        </div>
+                    </div>
+
+                    {% if contacto.observaciones %}
+                    <hr class="my-4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label small fw-600 text-muted">Observaciones</label>
+                            <p class="mb-0">{{ contacto.observaciones }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history me-2" style="color: #1f3a93;"></i>Auditoría
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="small text-muted">
+                        <dl>
+                            <dt>Creado</dt>
+                            <dd>{{ contacto.fecha_creacion|date:"d/m/Y H:i" }}</dd>
+                            <dt>Modificado</dt>
+                            <dd>{{ contacto.fecha_modificacion|date:"d/m/Y H:i" }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Actions -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4 bg-primary bg-opacity-10">
+                <div class="card-body">
+                    <h6 class="card-title fw-600" style="color: #1f3a93;">
+                        <i class="bi bi-lightning me-2"></i>Acciones
+                    </h6>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'vat_institucion_contacto_update' contacto.id %}" class="btn btn-primary">
+                            <i class="bi bi-pencil me-2"></i>Editar
+                        </a>
+                        <a href="{% url 'vat_institucion_contacto_delete' contacto.id %}" class="btn btn-danger">
+                            <i class="bi bi-trash me-2"></i>Eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Card -->
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body">
+                    <h6 class="card-title fw-600" style="color: #1f3a93;">
+                        <i class="bi bi-info-circle me-2"></i>Información del Registro
+                    </h6>
+                    <div class="small text-muted">
+                        <dl>
+                            <dt>ID Contacto</dt>
+                            <dd>#{{ contacto.id }}</dd>
+                            <dt>Centro</dt>
+                            <dd>{{ contacto.centro.id }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-600 { font-weight: 600 !important; }
+</style>
+{% endblock %}

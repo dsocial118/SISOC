@@ -1,5 +1,6 @@
-from django.urls import path
 from django.contrib.auth.decorators import login_required
+from django.urls import path
+from django.views.generic.base import RedirectView
 from comedores.views import (
     ColaboradorEspacioCreateView,
     ColaboradorEspacioDeleteView,
@@ -34,9 +35,6 @@ from comedores.views_territorial import (
     sincronizar_territoriales_api,
     estadisticas_cache_territoriales,
 )
-
-# Views de prueba eliminadas
-
 from intervenciones.views import (
     sub_estados_intervenciones_ajax,
     IntervencionCreateView,
@@ -281,7 +279,6 @@ urlpatterns = [
         relevamiento_crear_editar_ajax,
         name="relevamiento_create_edit_ajax",
     ),
-    # esto es prueba de nuevo front para el comedor
     path(
         "comedores_nuevo/<int:pk>",
         permissions_any_required(
@@ -290,7 +287,13 @@ urlpatterns = [
                 "admisiones.view_admision",
                 "acompanamientos.view_informacionrelevante",
             ]
-        )(ComedorDetailView.as_view(template_name="comedor/new_comedor_detail.html")),
+        )(
+            RedirectView.as_view(
+                pattern_name="comedor_detalle",
+                permanent=True,
+                query_string=True,
+            )
+        ),
         name="nuevo_comedor_detalle",
     ),
     path(

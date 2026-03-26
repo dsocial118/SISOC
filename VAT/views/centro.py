@@ -8,18 +8,13 @@ from django.views.generic import (
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
-from django.db.models import Q, Count, F, ExpressionWrapper, IntegerField
+from django.db.models import Count, Q
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 
-from django.utils import timezone
-
 from VAT.models import (
     Centro,
-    ActividadCentro,
-    Encuentro,
-    ParticipanteActividad,
 )
 from VAT.services.centro_filter_config import (
     FIELD_MAP as CENTRO_FILTER_MAP,
@@ -106,15 +101,6 @@ class CentroListView(LoginRequiredMixin, ListView):
             {"title": "Acciones"},
         ]
 
-        if ctx["can_add"]:
-            ctx["centro_additional_buttons"] = [
-                {
-                    "url": reverse("vat_actividad_create_sola"),
-                    "label": "Agregar Actividad",
-                    "class": "btn btn-primary btn-lg text-white text-nowrap",
-                },
-            ]
-
         return ctx
 
 
@@ -132,92 +118,30 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             raise PermissionDenied
         return obj
 
-    def get_context_data(self, **kwargs):  # pylint: disable=too-many-locals
+    def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         centro = self.object
 
-        search_curso = (
-            self.request.GET.get("search_actividades_curso", "").strip().lower()
+        # Evaluar listas una sola vez para reutilizar en los counts
+        ctx["autoridades"] = list(centro.autoridades.filter(es_actual=True))
+        ctx["identificadores"] = list(centro.identificadores_hist.filter(es_actual=True))
+        ctx["contactos"] = list(centro.contactos_adicionales.all())
+        ctx["ubicaciones"] = centro.ubicaciones.select_related("localidad").all()
+
+        # annotate para evitar N+1 al contar comisiones por oferta
+        ctx["ofertas"] = list(
+            centro.ofertas_institucionales
+            .select_related("plan_curricular__titulo_referencia", "programa")
+            .annotate(comisiones_count=Count("comisiones"))
+            .order_by("-ciclo_lectivo")
         )
-        qs_acts = (
-            ActividadCentro.objects.filter(centro=centro)
-            .select_related("actividad", "actividad__categoria")
-            .annotate(
-                inscritos=Count("participanteactividad", distinct=True),
-                ganancia=ExpressionWrapper(
-                    F("precio") * F("inscritos"), output_field=IntegerField()
-                ),
-            )
-        )
-        if search_curso:
-            qs_acts = qs_acts.filter(
-                Q(actividad__nombre__icontains=search_curso)
-                | Q(actividad__categoria__nombre__icontains=search_curso)
-                | Q(estado__icontains=search_curso)
-            )
 
-        ctx["actividades"] = list(qs_acts)
-
-        page_curso = self.request.GET.get("page_actividades_curso", 1)
-        ctx["actividades_curso_paginadas"] = Paginator(
-            qs_acts.order_by("actividad__nombre", "id"), 5
-        ).get_page(page_curso)
-
-        ctx["search_actividades_curso_val"] = self.request.GET.get(
-            "search_actividades_curso", ""
-        )
-        ctx["total_actividades"] = qs_acts.count()
-        ctx["total_recaudado"] = sum((act.ganancia or 0) for act in ctx["actividades"])
-
-        qs_inscritos = ParticipanteActividad.objects.filter(
-            estado="inscrito", actividad_centro__centro=centro
-        )
-        hombres = qs_inscritos.filter(ciudadano__sexo__sexo__iexact="Masculino").count()
-        mujeres = qs_inscritos.filter(ciudadano__sexo__sexo__iexact="Femenino").count()
-        espera = ParticipanteActividad.objects.filter(
-            estado="lista_espera", actividad_centro__centro=centro
-        ).count()
-
-        # Próximo encuentro por actividad (sin N+1)
-        today = timezone.now().date()
-        proximos_list = list(
-            Encuentro.objects.filter(
-                actividad_centro__centro=centro,
-                estado="programado",
-                fecha__gte=today,
-            )
-            .order_by("actividad_centro_id", "fecha")
-            .values("actividad_centro_id", "id", "fecha", "numero_encuentro")
-        )
-        proximos_map = {}
-        for enc in proximos_list:
-            proximos_map.setdefault(enc["actividad_centro_id"], enc)
-
-        # Enriquecer cada actividad con su próximo encuentro
-        for act in ctx["actividades"]:
-            act.proximo_encuentro = proximos_map.get(act.id)
-
-        total_encuentros_programados = Encuentro.objects.filter(
-            actividad_centro__centro=centro, estado="programado"
-        ).count()
-
-        inscriptos_count = qs_inscritos.count()
-        ctx["metricas"] = {
-            "actividades": ctx["total_actividades"],
-            "inscriptos": inscriptos_count,
-            "espera": espera,
-            "encuentros_proximos": total_encuentros_programados,
-            "recaudacion": ctx["total_recaudado"],
-            "hombres": hombres,
-            "mujeres": mujeres,
-        }
-
-        estado_counts = {"en_curso": 0, "planificada": 0, "finalizada": 0}
-        for act in ctx["actividades"]:
-            key = act.estado if act.estado in estado_counts else "finalizada"
-            estado_counts[key] += 1
-        ctx["estado_counts"] = estado_counts
-
+        # Todos los counts desde datos ya cargados, sin queries adicionales
+        ctx["count_ofertas"] = len(ctx["ofertas"])
+        ctx["count_comisiones"] = sum(o.comisiones_count for o in ctx["ofertas"])
+        ctx["count_autoridades"] = len(ctx["autoridades"])
+        ctx["count_identificadores"] = len(ctx["identificadores"])
+        ctx["count_contactos"] = len(ctx["contactos"])
         return ctx
 
 

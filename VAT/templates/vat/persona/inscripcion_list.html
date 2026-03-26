@@ -1,0 +1,128 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Inscripciones{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+{% url 'vat_inscripcion_list' as reset_url %}
+{% include 'components/search_bar.html' with titulo="Buscar Inscripción" placeholder="Buscar por ciudadano, comisión o programa" help_text="Buscar por ciudadano, comisión o programa" reset_url=reset_url add_url='vat_inscripcion_create' add_text='Agregar' query=request.GET.busqueda %}
+
+<div class="row mt-5 max-width-100">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive-lg">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-column="ciudadano">
+                                    Ciudadano
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th>Comisión</th>
+                                <th>Programa</th>
+                                <th>Canal</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for insc in inscripciones %}
+                            <tr>
+                                <td data-ciudadano="{{ insc.ciudadano.nombre_completo }}">
+                                    <a href="{% url 'vat_inscripcion_detail' insc.id %}"
+                                       class="link-handler"
+                                       title="Ver detalles">{{ insc.ciudadano.nombre_completo }}</a>
+                                </td>
+                                <td>{{ insc.comision.codigo_comision }}</td>
+                                <td>{{ insc.programa }}</td>
+                                <td>{{ insc.get_origen_canal_display }}</td>
+                                <td>{{ insc.fecha_inscripcion|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if insc.estado == 'inscripta' %}
+                                        <span class="badge-validacion validado">
+                                            <i class="fas fa-check-circle"></i>
+                                            {{ insc.get_estado_display }}
+                                        </span>
+                                    {% elif insc.estado == 'pre_inscripta' %}
+                                        <span class="badge-validacion pendiente">
+                                            <i class="fas fa-clock"></i>
+                                            {{ insc.get_estado_display }}
+                                        </span>
+                                    {% elif insc.estado == 'validada_presencial' %}
+                                        <span class="badge-validacion validado">
+                                            <i class="fas fa-user-check"></i>
+                                            {{ insc.get_estado_display }}
+                                        </span>
+                                    {% elif insc.estado == 'completada' %}
+                                        <span class="badge-validacion" style="background:#4b5563;color:#e5e7eb;border-color:#6b7280;">
+                                            <i class="fas fa-flag-checkered"></i>
+                                            {{ insc.get_estado_display }}
+                                        </span>
+                                    {% elif insc.estado == 'abandonada' or insc.estado == 'rechazada' %}
+                                        <span class="badge-validacion no-validado">
+                                            <i class="fas fa-times-circle"></i>
+                                            {{ insc.get_estado_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge-validacion pendiente">
+                                            <i class="fas fa-clock"></i>
+                                            {{ insc.get_estado_display }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="action-buttons" role="group">
+                                        <a href="{% url 'vat_inscripcion_detail' insc.id %}"
+                                           class="btn btn-primary link-handler"
+                                           title="Ver detalle">
+                                            <i class="fas fa-eye"></i>
+                                            Ver
+                                        </a>
+                                        {% if perms.VAT.change_inscripcion %}
+                                        <a href="{% url 'vat_inscripcion_update' insc.id %}"
+                                           class="btn btn-editar link-handler"
+                                           title="Editar inscripción">
+                                            <i class="fas fa-edit"></i>
+                                            Editar
+                                        </a>
+                                        {% endif %}
+                                        {% if perms.VAT.delete_inscripcion %}
+                                        <a href="{% url 'vat_inscripcion_delete' insc.id %}"
+                                           class="btn btn-eliminar link-handler"
+                                           title="Eliminar inscripción">
+                                            <i class="fas fa-trash-alt"></i>
+                                            Eliminar
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7">
+                                    <div class="no-comedores-message">
+                                        <h3>No se encontraron inscripciones</h3>
+                                        <p>No hay inscripciones que coincidan con los criterios de búsqueda.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+
+{% endblock %}
+
+{% block customJS %}
+<script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}

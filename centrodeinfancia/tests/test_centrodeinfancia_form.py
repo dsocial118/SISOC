@@ -75,3 +75,68 @@ def test_form_acepta_numero_calle_opcional():
     assert "numero" in form.fields
     assert form.is_valid()
     assert form.cleaned_data["numero"] == "123"
+
+
+@pytest.mark.django_db
+def test_form_rechaza_texto_en_campos_numericos():
+    user = User.objects.create_user(
+        username="user-campos-numericos",
+        password="test1234",
+    )
+    form = CentroDeInfanciaForm(
+        data={
+            "nombre": "CDI Texto",
+            "numero": "12A",
+            "telefono": "11-ABCD-1234",
+            "telefono_referente": "abc",
+        },
+        user=user,
+        lock_provincia_from_user=False,
+    )
+
+    assert not form.is_valid()
+    assert "numero" in form.errors
+    assert "telefono" in form.errors
+    assert "telefono_referente" in form.errors
+
+
+@pytest.mark.django_db
+def test_form_acepta_telefono_como_numero_plano():
+    user = User.objects.create_user(
+        username="user-telefono-plano",
+        password="test1234",
+    )
+    form = CentroDeInfanciaForm(
+        data={
+            "nombre": "CDI Telefono",
+            "telefono": "5491140333588",
+            "telefono_referente": "1133557799",
+        },
+        user=user,
+        lock_provincia_from_user=False,
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["telefono"] == "5491140333588"
+    assert form.cleaned_data["telefono_referente"] == "1133557799"
+
+
+@pytest.mark.django_db
+def test_form_acepta_telefono_con_guiones_opcionales():
+    user = User.objects.create_user(
+        username="user-telefono-guiones",
+        password="test1234",
+    )
+    form = CentroDeInfanciaForm(
+        data={
+            "nombre": "CDI Telefono Guiones",
+            "telefono": "11-1234-1234",
+            "telefono_referente": "549-11-4033-3588",
+        },
+        user=user,
+        lock_provincia_from_user=False,
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["telefono"] == "11-1234-1234"
+    assert form.cleaned_data["telefono_referente"] == "549-11-4033-3588"

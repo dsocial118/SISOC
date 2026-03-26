@@ -1,9 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.contrib.postgres.indexes import GinIndex
 from django.utils import timezone
 from ciudadanos.models import Ciudadano
-from core.models import Dia, Localidad, Municipio, Provincia, Sexo
+from core.models import Dia, Localidad, Municipio, Provincia, Sexo, Programa
 from core.soft_delete import SoftDeleteModelMixin
 from organizaciones.models import Organizacion
 
@@ -74,42 +73,25 @@ class Centro(SoftDeleteModelMixin, models.Model):
     correo_referente = models.EmailField(
         max_length=100, verbose_name="Correo del responsable"
     )
-
-    def __str__(self):
-        return self.nombre
-
-    class Meta:
-        indexes = [
-            GinIndex(
-                fields=["nombre"],
-                name="vat_centro_nombre_trgm",
-                opclasses=["gin_trgm_ops"],
-            ),
-        ]
-
-
-class Categoria(SoftDeleteModelMixin, models.Model):
-    nombre = models.CharField(max_length=100, verbose_name="Nombre de la Categoría")
-
-    def __str__(self):
-        return self.nombre
-
-    class Meta:
-        verbose_name = "Categoría"
-        verbose_name_plural = "Categorías"
-        indexes = [
-            GinIndex(
-                fields=["nombre"],
-                name="vat_categoria_nombre_trgm",
-                opclasses=["gin_trgm_ops"],
-            ),
-        ]
-
-
-class Actividad(SoftDeleteModelMixin, models.Model):
-    nombre = models.CharField(max_length=200, verbose_name="Nombre de la Actividad")
-    categoria = models.ForeignKey(
-        Categoria, on_delete=models.CASCADE, verbose_name="Categoría"
+    modalidad_institucional = models.ForeignKey(
+        "ModalidadInstitucional",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="vat_centros",
+        verbose_name="Modalidad Institucional",
+    )
+    tipo_gestion = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="Tipo de Gestión"
+    )
+    clase_institucion = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="Clase de Institución"
+    )
+    situacion = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="Situación"
+    )
+    fecha_alta = models.DateField(
+        null=True, blank=True, verbose_name="Fecha de Alta"
     )
 
     def __str__(self):
@@ -117,522 +99,1281 @@ class Actividad(SoftDeleteModelMixin, models.Model):
 
     class Meta:
         indexes = [
-            GinIndex(
+            models.Index(
                 fields=["nombre"],
-                name="vat_actividad_nombre_trgm",
-                opclasses=["gin_trgm_ops"],
+                name="vat_centro_nombre_idx",
             ),
         ]
 
 
-class ActividadCentro(SoftDeleteModelMixin, models.Model):
+class ModalidadInstitucional(models.Model):
+    nombre = models.CharField(max_length=100, verbose_name="Nombre de la modalidad")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    activo = models.BooleanField(default=True, verbose_name="Activo")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Modalidad Institucional"
+        verbose_name_plural = "Modalidades Institucionales"
+        ordering = ["nombre"]
+
+
+class Sector(SoftDeleteModelMixin, models.Model):
+    nombre = models.CharField(max_length=100, verbose_name="Nombre del sector")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Sector"
+        verbose_name_plural = "Sectores"
+        ordering = ["nombre"]
+        indexes = [
+            models.Index(
+                fields=["nombre"],
+                name="vat_sector_nombre_idx",
+            ),
+        ]
+
+
+class Subsector(SoftDeleteModelMixin, models.Model):
+    sector = models.ForeignKey(
+        Sector,
+        on_delete=models.CASCADE,
+        related_name="subsectores",
+        verbose_name="Sector",
+    )
+    nombre = models.CharField(max_length=100, verbose_name="Nombre del subsector")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+
+    def __str__(self):
+        return f"{self.nombre} ({self.sector.nombre})"
+
+    class Meta:
+        verbose_name = "Subsector"
+        verbose_name_plural = "Subsectores"
+        ordering = ["sector", "nombre"]
+        unique_together = ("sector", "nombre")
+        indexes = [
+            models.Index(
+                fields=["nombre"],
+                name="vat_subsector_nombre_idx",
+            ),
+        ]
+
+
+class TituloReferencia(SoftDeleteModelMixin, models.Model):
+    sector = models.ForeignKey(
+        Sector,
+        on_delete=models.PROTECT,
+        related_name="titulos",
+        verbose_name="Sector",
+    )
+    subsector = models.ForeignKey(
+        Subsector,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="titulos",
+        verbose_name="Subsector",
+    )
+    codigo_referencia = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name="Código de Referencia"
+    )
+    nombre = models.CharField(max_length=200, verbose_name="Nombre del título")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    activo = models.BooleanField(default=True, verbose_name="Activo")
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Título de Referencia"
+        verbose_name_plural = "Títulos de Referencia"
+        ordering = ["nombre"]
+        indexes = [
+            models.Index(
+                fields=["nombre"],
+                name="vat_titref_nombre_idx",
+            ),
+        ]
+
+
+class ModalidadCursada(models.Model):
+    nombre = models.CharField(max_length=100, verbose_name="Nombre de la modalidad")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    activo = models.BooleanField(default=True, verbose_name="Activo")
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Modalidad de Cursado"
+        verbose_name_plural = "Modalidades de Cursado"
+        ordering = ["nombre"]
+
+
+class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
+    titulo_referencia = models.ForeignKey(
+        TituloReferencia,
+        on_delete=models.PROTECT,
+        related_name="planes",
+        verbose_name="Título de Referencia",
+    )
+    modalidad_cursada = models.ForeignKey(
+        ModalidadCursada,
+        on_delete=models.PROTECT,
+        related_name="planes",
+        verbose_name="Modalidad de Cursado",
+    )
+    normativa = models.CharField(
+        max_length=200, blank=True, null=True, verbose_name="Normativa"
+    )
+    version = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name="Versión"
+    )
+    horas_reloj = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Horas Reloj"
+    )
+    nivel_requerido = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Nivel Requerido"
+    )
+    nivel_certifica = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Nivel que Certifica"
+    )
+    frecuencia = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Frecuencia"
+    )
+    activo = models.BooleanField(default=True, verbose_name="Activo")
+
+    def __str__(self):
+        return f"{self.titulo_referencia.nombre} - {self.modalidad_cursada.nombre}"
+
+    class Meta:
+        verbose_name = "Plan / Versión Curricular"
+        verbose_name_plural = "Planes / Versiones Curriculares"
+        ordering = ["titulo_referencia", "modalidad_cursada"]
+        unique_together = ("titulo_referencia", "modalidad_cursada", "version")
+
+
+class InscripcionOferta(SoftDeleteModelMixin, models.Model):
     ESTADO_CHOICES = [
-        ("planificada", "Planificada"),
-        ("en_curso", "En curso"),
-        ("finalizada", "Finalizada"),
+        ("inscrito", "Inscrito"),
+        ("lista_espera", "Lista de Espera"),
+        ("completado", "Completado"),
+        ("abandonado", "Abandonado"),
+        ("rechazado", "Rechazado"),
     ]
-    centro = models.ForeignKey(Centro, on_delete=models.CASCADE, verbose_name="Centro")
-    actividad = models.ForeignKey(
-        Actividad, on_delete=models.CASCADE, verbose_name="Actividad"
+
+    oferta = models.ForeignKey(
+        "Comision",
+        on_delete=models.CASCADE,
+        related_name="inscripciones_oferta",
+        verbose_name="Comisión",
     )
-    cantidad_personas = models.PositiveIntegerField(
-        verbose_name="Cantidad Estimada de Participantes"
-    )
-    dias = models.ManyToManyField(
-        to=Dia,
-        related_name="vat_DiaActividad",
-        blank=True,
-    )
-    sexoact = models.ManyToManyField(
-        to=Sexo,
-        related_name="vat_sexoactividad",
-        verbose_name="Actividad Dirigida a ",
-        blank=True,
-    )
-    horariosdesde = models.TimeField()
-    horarioshasta = models.TimeField(null=True, blank=True)
-    precio = models.PositiveIntegerField(
-        verbose_name="PrecioActividad", null=True, blank=True
+    ciudadano = models.ForeignKey(
+        Ciudadano,
+        on_delete=models.PROTECT,
+        related_name="vat_inscripciones_oferta",
+        verbose_name="Ciudadano",
     )
     estado = models.CharField(
         max_length=20,
         choices=ESTADO_CHOICES,
-        default="planificada",
+        default="inscrito",
         verbose_name="Estado",
     )
-    fecha_inicio = models.DateField(
-        null=True, blank=True, verbose_name="Fecha de inicio"
+    fecha_inscripcion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+    inscrito_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="vat_inscripciones_oferta_realizadas",
+        verbose_name="Inscrito por",
     )
-    fecha_fin = models.DateField(null=True, blank=True, verbose_name="Fecha de fin")
 
     def __str__(self):
-        return f"{self.actividad.nombre} en {self.centro.nombre}"
+        return f"{self.ciudadano} - {self.oferta} [{self.estado}]"
 
     class Meta:
-        verbose_name = "Actividad del Centro"
-        verbose_name_plural = "Actividades por Centro"
+        verbose_name = "Inscripción a Comisión"
+        verbose_name_plural = "Inscripciones a Comisiones"
+        unique_together = ("oferta", "ciudadano")
+        ordering = ["-fecha_inscripcion"]
         indexes = [
-            models.Index(fields=["centro", "estado"], name="vat_actcentro_ce_idx"),
-            GinIndex(
+            models.Index(fields=["oferta", "estado"], name="vat_inscofe_ofe_est_idx"),
+            models.Index(
                 fields=["estado"],
-                name="vat_actcentro_estado_trgm",
-                opclasses=["gin_trgm_ops"],
+                name="vat_inscofe_estado_idx",
             ),
         ]
 
 
-class ParticipanteActividad(SoftDeleteModelMixin, models.Model):
-    ESTADO_INSCRIPCION = [
-        ("inscrito", "Inscrito"),
-        ("lista_espera", "Lista de Espera"),
-        ("dado_baja", "Dado de Baja"),
+# ============================================================================
+# FASE 5: SISTEMA DE VOUCHERS
+# ============================================================================
+
+
+class VoucherParametria(models.Model):
+    """
+    Plantilla de voucher: define los parámetros base (programa, créditos,
+    vencimiento) que luego se usan para asignar vouchers a ciudadanos.
+    """
+
+    nombre = models.CharField(max_length=200, verbose_name="Nombre")
+    descripcion = models.TextField(blank=True, verbose_name="Descripción")
+    programa = models.ForeignKey(
+        Programa,
+        on_delete=models.PROTECT,
+        related_name="vat_voucher_parametrias",
+        verbose_name="Programa",
+    )
+    cantidad_inicial = models.PositiveIntegerField(
+        verbose_name="Créditos por ciudadano"
+    )
+    fecha_vencimiento = models.DateField(verbose_name="Fecha de vencimiento")
+    RENOVACION_TIPO_CHOICES = [
+        ("suma", "Sumar al saldo existente"),
+        ("reinicia", "Reiniciar al valor configurado"),
     ]
 
-    actividad_centro = models.ForeignKey(
-        ActividadCentro, on_delete=models.CASCADE, verbose_name="Actividad del Centro"
+    renovacion_mensual = models.BooleanField(
+        default=False, verbose_name="Renovación mensual"
+    )
+    cantidad_renovacion = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Créditos en cada renovación",
+        help_text="Si está vacío se usa la cantidad inicial.",
+    )
+    renovacion_tipo = models.CharField(
+        max_length=10,
+        choices=RENOVACION_TIPO_CHOICES,
+        default="suma",
+        verbose_name="Tipo de renovación",
+    )
+    inscripcion_unica_activa = models.BooleanField(
+        default=False,
+        verbose_name="Inscripción única activa",
+        help_text=(
+            "Si está activado, el ciudadano solo puede tener una inscripción "
+            "activa a la vez en comisiones de este programa. Debe completar o "
+            "abandonar la inscripción actual antes de inscribirse en otra."
+        ),
+    )
+    activa = models.BooleanField(default=True, verbose_name="Activa")
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="vat_voucher_parametrias_creadas",
+        verbose_name="Creado por",
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.programa})"
+
+    class Meta:
+        verbose_name = "Parametría de Voucher"
+        verbose_name_plural = "Parametrías de Voucher"
+        ordering = ["-fecha_creacion"]
+
+
+class Voucher(SoftDeleteModelMixin, models.Model):
+    """
+    Representa una asignación de crédito de formación a un ciudadano.
+    Un voucher permite acceso a un cierto número de horas/cupos de formación.
+    """
+
+    ESTADO_CHOICES = [
+        ("activo", "Activo"),
+        ("vencido", "Vencido"),
+        ("agotado", "Agotado"),
+        ("cancelado", "Cancelado"),
+    ]
+
+    parametria = models.ForeignKey(
+        VoucherParametria,
+        on_delete=models.PROTECT,
+        related_name="vouchers",
+        verbose_name="Parametría",
+        null=True,
+        blank=True,
     )
     ciudadano = models.ForeignKey(
         Ciudadano,
         on_delete=models.CASCADE,
+        related_name="vat_vouchers",
         verbose_name="Ciudadano",
-        related_name="vat_participaciones",
     )
+    programa = models.ForeignKey(
+        Programa,
+        on_delete=models.PROTECT,
+        related_name="vat_vouchers",
+        verbose_name="Programa",
+    )
+
+    cantidad_inicial = models.PositiveIntegerField(
+        verbose_name="Cantidad Inicial"
+    )
+    cantidad_usada = models.PositiveIntegerField(
+        default=0, verbose_name="Cantidad Usada"
+    )
+    cantidad_disponible = models.PositiveIntegerField(
+        verbose_name="Cantidad Disponible"
+    )
+
+    fecha_asignacion = models.DateField(
+        auto_now_add=True, verbose_name="Fecha de Asignación"
+    )
+    fecha_vencimiento = models.DateField(verbose_name="Fecha de Vencimiento")
+
     estado = models.CharField(
         max_length=20,
-        choices=ESTADO_INSCRIPCION,
-        default="inscrito",
-        verbose_name="Estado de Inscripción",
-    )
-    fecha_registro = models.DateTimeField(
-        auto_now_add=True, verbose_name="Fecha de Registro"
-    )
-    fecha_modificacion = models.DateTimeField(
-        auto_now=True, verbose_name="Fecha de Última Modificación"
+        choices=ESTADO_CHOICES,
+        default="activo",
+        verbose_name="Estado",
     )
 
-    def __str__(self):
-        return (
-            f"{self.ciudadano.apellido}, {self.ciudadano.nombre} - "
-            f"{self.actividad_centro} [{self.estado}]"
-        )
-
-    class Meta:
-        verbose_name = "Participante"
-        verbose_name_plural = "Participantes"
-        indexes = [
-            models.Index(fields=["actividad_centro"], name="vat_part_actcentro_idx"),
-            GinIndex(
-                fields=["estado"],
-                name="vat_part_estado_trgm",
-                opclasses=["gin_trgm_ops"],
-            ),
-        ]
-        unique_together = ("actividad_centro", "ciudadano")
-
-
-class ParticipanteActividadHistorial(models.Model):
-    participante = models.ForeignKey(
-        ParticipanteActividad, on_delete=models.CASCADE, related_name="historial"
-    )
-    estado_anterior = models.CharField(
-        max_length=20,
-        choices=ParticipanteActividad.ESTADO_INSCRIPCION,
-        verbose_name="Estado Anterior",
+    asignado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="vat_vouchers_asignados",
+        verbose_name="Asignado por",
         null=True,
         blank=True,
     )
-    estado_nuevo = models.CharField(
-        max_length=20,
-        choices=ParticipanteActividad.ESTADO_INSCRIPCION,
-        verbose_name="Estado Nuevo",
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Voucher {self.ciudadano} - {self.cantidad_disponible}/{self.cantidad_inicial}"
+
+    class Meta:
+        verbose_name = "Voucher"
+        verbose_name_plural = "Vouchers"
+        ordering = ["-fecha_asignacion"]
+        indexes = [
+            models.Index(
+                fields=["ciudadano", "estado"],
+                name="vat_vouch_ciud_est_idx",
+            ),
+            models.Index(fields=["estado"], name="vat_voucher_estado_idx"),
+            models.Index(
+                fields=["fecha_vencimiento"], name="vat_voucher_vencimiento_idx"
+            ),
+        ]
+
+
+class VoucherRecarga(SoftDeleteModelMixin, models.Model):
+    """
+    Registro de cada recarga de crédito de un voucher.
+    Mantiene el historial de recargas (automáticas, manuales, ajustes).
+    """
+
+    MOTIVO_CHOICES = [
+        ("automatica", "Recarga Automática"),
+        ("manual", "Recarga Manual"),
+        ("ajuste", "Ajuste"),
+        ("compensacion", "Compensación"),
+    ]
+
+    voucher = models.ForeignKey(
+        Voucher,
+        on_delete=models.CASCADE,
+        related_name="recargas",
+        verbose_name="Voucher",
     )
-    fecha_cambio = models.DateTimeField(
-        auto_now_add=True, verbose_name="Fecha de Cambio"
+    cantidad = models.PositiveIntegerField(verbose_name="Cantidad Recargada")
+    fecha_recarga = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de Recarga"
+    )
+
+    motivo = models.CharField(
+        max_length=20,
+        choices=MOTIVO_CHOICES,
+        verbose_name="Motivo de Recarga",
+    )
+
+    autorizado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="vat_recargas_voucher",
+        verbose_name="Autorizado por",
+    )
+
+    def __str__(self):
+        return f"Recarga {self.voucher} - {self.cantidad} ({self.get_motivo_display()})"
+
+    class Meta:
+        verbose_name = "Recarga de Voucher"
+        verbose_name_plural = "Recargas de Voucher"
+        ordering = ["-fecha_recarga"]
+
+
+class VoucherUso(SoftDeleteModelMixin, models.Model):
+    """
+    Registro de uso de voucher cuando un ciudadano se inscribe a una oferta.
+    Descuenta créditos del voucher disponible.
+    """
+
+    voucher = models.ForeignKey(
+        Voucher,
+        on_delete=models.CASCADE,
+        related_name="usos",
+        verbose_name="Voucher",
+    )
+    inscripcion_oferta = models.ForeignKey(
+        InscripcionOferta,
+        on_delete=models.CASCADE,
+        related_name="vat_voucher_usos",
+        verbose_name="Inscripción a Oferta",
+    )
+    cantidad_usada = models.PositiveIntegerField(verbose_name="Cantidad Usada")
+    fecha_uso = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Uso")
+
+    def __str__(self):
+        return f"Uso {self.voucher} - {self.cantidad_usada} en {self.inscripcion_oferta.oferta}"
+
+    class Meta:
+        verbose_name = "Uso de Voucher"
+        verbose_name_plural = "Usos de Voucher"
+        ordering = ["-fecha_uso"]
+        indexes = [
+            models.Index(
+                fields=["voucher", "fecha_uso"], name="vat_vuso_vouch_fecha_idx"
+            ),
+        ]
+
+
+class VoucherLog(models.Model):
+    """
+    Log de auditoría immutable para eventos de voucher.
+    No usa soft delete - es histórico y debe ser preservado.
+    """
+
+    TIPO_EVENTO_CHOICES = [
+        ("asignacion", "Asignación"),
+        ("recarga", "Recarga"),
+        ("uso", "Uso"),
+        ("vencimiento", "Vencimiento"),
+        ("cancelacion", "Cancelación"),
+    ]
+
+    voucher = models.ForeignKey(
+        Voucher,
+        on_delete=models.CASCADE,
+        related_name="logs",
+        verbose_name="Voucher",
+    )
+
+    tipo_evento = models.CharField(
+        max_length=20,
+        choices=TIPO_EVENTO_CHOICES,
+        verbose_name="Tipo de Evento",
+    )
+
+    cantidad_afectada = models.IntegerField(verbose_name="Cantidad Afectada")
+    fecha_evento = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha del Evento"
     )
     usuario = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
-        verbose_name="Usuario que realizó el cambio",
-        related_name="vat_historial_participantes",
+        related_name="vat_logs_voucher",
+        verbose_name="Usuario",
+    )
+    detalles = models.JSONField(
+        default=dict, blank=True, verbose_name="Detalles Adicionales"
     )
 
     def __str__(self):
-        return (
-            f"{self.participante}: {self.estado_anterior or '—'} -> {self.estado_nuevo} "
-            f"en {self.fecha_cambio.strftime('%Y-%m-%d %H:%M')}"
-        )
+        return f"{self.get_tipo_evento_display()} - {self.voucher} ({self.fecha_evento})"
 
     class Meta:
-        verbose_name = "Historial de Inscripción"
-        verbose_name_plural = "Historial de Inscripciones"
-        ordering = ["-fecha_cambio"]
+        verbose_name = "Log de Voucher"
+        verbose_name_plural = "Logs de Voucher"
+        ordering = ["-fecha_evento"]
+        indexes = [
+            models.Index(
+                fields=["voucher", "fecha_evento"],
+                name="vat_vlog_vouch_fecha_idx",
+            ),
+            models.Index(
+                fields=["tipo_evento"], name="vat_vlog_tipo_evt_idx"
+            ),
+        ]
 
 
-class Encuentro(models.Model):
-    ESTADO_CHOICES = [
-        ("programado", "Programado"),
-        ("realizado", "Realizado"),
-        ("cancelado", "Cancelado"),
+# ============================================================================
+# FASE 2 (COMPLETA): INSTITUCIÓN - CONTACTOS E IDENTIFICADORES
+# ============================================================================
+
+
+class InstitucionContacto(models.Model):
+    """
+    Datos de contacto asociados a una institución (Centro).
+    Permite múltiples contactos (email, teléfono, web, etc).
+    """
+
+    TIPO_CONTACTO_CHOICES = [
+        ("email", "Email"),
+        ("telefono", "Teléfono"),
+        ("celular", "Celular"),
+        ("sitio_web", "Sitio Web"),
+        ("redes_sociales", "Redes Sociales"),
     ]
 
-    actividad_centro = models.ForeignKey(
-        ActividadCentro,
+    centro = models.ForeignKey(
+        Centro,
         on_delete=models.CASCADE,
-        related_name="encuentros",
-        verbose_name="Actividad del Centro",
+        related_name="contactos_adicionales",
+        verbose_name="Centro",
     )
-    numero_encuentro = models.PositiveIntegerField(verbose_name="Número de encuentro")
-    fecha = models.DateField(verbose_name="Fecha")
-    hora_inicio = models.TimeField(verbose_name="Hora de inicio")
-    hora_fin = models.TimeField(null=True, blank=True, verbose_name="Hora de fin")
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPO_CONTACTO_CHOICES,
+        verbose_name="Tipo de Contacto",
+    )
+    valor = models.CharField(max_length=255, verbose_name="Valor")
+    es_principal = models.BooleanField(
+        default=False, verbose_name="Es Principal"
+    )
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
+    vigencia_desde = models.DateField(
+        auto_now_add=True, verbose_name="Vigencia Desde"
+    )
+    vigencia_hasta = models.DateField(
+        blank=True, null=True, verbose_name="Vigencia Hasta"
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.centro} - {self.get_tipo_display()}: {self.valor}"
+
+    class Meta:
+        verbose_name = "Contacto de Institución"
+        verbose_name_plural = "Contactos de Institución"
+        ordering = ["-es_principal", "tipo"]
+        unique_together = ("centro", "tipo", "valor")
+
+
+class AutoridadInstitucional(models.Model):
+    """
+    Representante legal/administrativo de la institución (Centro).
+    """
+
+    centro = models.ForeignKey(
+        Centro,
+        on_delete=models.CASCADE,
+        related_name="autoridades",
+        verbose_name="Centro",
+    )
+    nombre_completo = models.CharField(
+        max_length=255, verbose_name="Nombre Completo"
+    )
+    dni = models.CharField(max_length=20, verbose_name="DNI")
+    cargo = models.CharField(max_length=100, verbose_name="Cargo")
+    email = models.EmailField(blank=True, null=True)
+    telefono = models.CharField(max_length=50, blank=True, null=True)
+    es_actual = models.BooleanField(
+        default=True, verbose_name="Es la Autoridad Actual"
+    )
+    vigencia_desde = models.DateField(
+        auto_now_add=True, verbose_name="Vigencia Desde"
+    )
+    vigencia_hasta = models.DateField(
+        blank=True, null=True, verbose_name="Vigencia Hasta"
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.centro} - {self.nombre_completo} ({self.cargo})"
+
+    class Meta:
+        verbose_name = "Autoridad de Institución"
+        verbose_name_plural = "Autoridades de Institución"
+        ordering = ["-es_actual", "-vigencia_desde"]
+
+
+class InstitucionIdentificadorHist(models.Model):
+    """
+    Registro histórico de identificadores de institución.
+    (ej: CUIE, CUE, códigos provinciales, etc)
+    """
+
+    TIPO_IDENTIFICADOR_CHOICES = [
+        ("cuie", "CUIE"),
+        ("cue", "CUE"),
+        ("codigo_provincial", "Código Provincial"),
+        ("ruc", "RUC"),
+        ("cuit", "CUIT"),
+        ("otro", "Otro"),
+    ]
+
+    ROL_INSTITUCIONAL_CHOICES = [
+        ("sede", "Sede"),
+        ("anexo", "Anexo"),
+        ("polo", "Polo"),
+        ("centro_de_formacion", "Centro de Formación"),
+    ]
+
+    centro = models.ForeignKey(
+        Centro,
+        on_delete=models.CASCADE,
+        related_name="identificadores_hist",
+        verbose_name="Centro",
+    )
+    tipo_identificador = models.CharField(
+        max_length=20,
+        choices=TIPO_IDENTIFICADOR_CHOICES,
+        verbose_name="Tipo de Identificador",
+    )
+    valor_identificador = models.CharField(
+        max_length=100, verbose_name="Valor del Identificador"
+    )
+    rol_institucional = models.CharField(
+        max_length=50,
+        choices=ROL_INSTITUCIONAL_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name="Rol Institucional",
+    )
+    es_actual = models.BooleanField(
+        default=True, verbose_name="Es Actual"
+    )
+    vigencia_desde = models.DateField(
+        auto_now_add=True, verbose_name="Vigencia Desde"
+    )
+    vigencia_hasta = models.DateField(
+        blank=True, null=True, verbose_name="Vigencia Hasta"
+    )
+    motivo = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name="Motivo del Cambio",
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.centro} - {self.get_tipo_identificador_display()}: {self.valor_identificador}"
+
+    class Meta:
+        verbose_name = "Identificador Histórico de Institución"
+        verbose_name_plural = "Identificadores Históricos de Institución"
+        ordering = ["-es_actual", "-vigencia_desde"]
+        unique_together = ("centro", "tipo_identificador", "valor_identificador")
+
+
+class InstitucionUbicacion(models.Model):
+    """
+    Vinculación entre Centro e ubicación con rol específico.
+    Permite que un centro tenga múltiples ubicaciones (sede, anexo, etc).
+    """
+
+    ROL_UBICACION_CHOICES = [
+        ("sede_principal", "Sede Principal"),
+        ("anexo", "Anexo"),
+        ("dependencia", "Dependencia"),
+        ("punto_de_atencion", "Punto de Atención"),
+    ]
+
+    centro = models.ForeignKey(
+        Centro,
+        on_delete=models.CASCADE,
+        related_name="ubicaciones",
+        verbose_name="Centro",
+    )
+    localidad = models.ForeignKey(
+        Localidad,
+        on_delete=models.PROTECT,
+        related_name="instituciones_ubicacion",
+        verbose_name="Localidad",
+    )
+    rol_ubicacion = models.CharField(
+        max_length=50,
+        choices=ROL_UBICACION_CHOICES,
+        verbose_name="Rol de Ubicación",
+    )
+    domicilio = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name="Domicilio"
+    )
+    es_principal = models.BooleanField(
+        default=False, verbose_name="Es Principal"
+    )
+    latitud = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True
+    )
+    longitud = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True
+    )
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
+    vigencia_desde = models.DateField(
+        auto_now_add=True, verbose_name="Vigencia Desde"
+    )
+    vigencia_hasta = models.DateField(
+        blank=True, null=True, verbose_name="Vigencia Hasta"
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.centro} - {self.get_rol_ubicacion_display()} ({self.localidad})"
+
+    class Meta:
+        verbose_name = "Ubicación de Institución"
+        verbose_name_plural = "Ubicaciones de Institución"
+        ordering = ["-es_principal", "rol_ubicacion"]
+        unique_together = ("centro", "localidad", "rol_ubicacion")
+
+
+# ============================================================================
+# FASE 4 (COMPLETA): OFERTA INSTITUCIONAL - COMISIONES
+# ============================================================================
+
+
+class OfertaInstitucional(SoftDeleteModelMixin, models.Model):
+    """
+    Oferta educativa de una institución basada en un plan curricular.
+    Representa la intención de ofertar una carrera/programa en un período.
+    """
+
+    ESTADO_OFERTA_CHOICES = [
+        ("planificada", "Planificada"),
+        ("aprobada", "Aprobada"),
+        ("publicada", "Publicada"),
+        ("cerrada", "Cerrada"),
+        ("cancelada", "Cancelada"),
+    ]
+
+    centro = models.ForeignKey(
+        Centro,
+        on_delete=models.CASCADE,
+        related_name="ofertas_institucionales",
+        verbose_name="Centro",
+    )
+    plan_curricular = models.ForeignKey(
+        PlanVersionCurricular,
+        on_delete=models.PROTECT,
+        related_name="ofertas_institucionales",
+        verbose_name="Plan Curricular",
+    )
+    programa = models.ForeignKey(
+        Programa,
+        on_delete=models.PROTECT,
+        related_name="ofertas_vat",
+        verbose_name="Programa",
+    )
+
+    nombre_local = models.CharField(
+        max_length=255, verbose_name="Nombre Local (si aplica)", blank=True
+    )
+    ciclo_lectivo = models.IntegerField(verbose_name="Ciclo Lectivo")
+    plan_externo_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="ID Plan Externo",
+    )
+
     estado = models.CharField(
         max_length=20,
-        choices=ESTADO_CHOICES,
-        default="programado",
+        choices=ESTADO_OFERTA_CHOICES,
+        default="planificada",
+        verbose_name="Estado de Oferta",
+    )
+
+    costo = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Costo",
+        help_text="Costo del curso en pesos. 0 = gratuito.",
+    )
+    usa_voucher = models.BooleanField(
+        default=False,
+        verbose_name="Usa Voucher",
+        help_text="Si está activo, al inscribirse un ciudadano se valida y descuenta un crédito de su voucher.",
+    )
+    fecha_publicacion = models.DateField(
+        blank=True, null=True, verbose_name="Fecha de Publicación"
+    )
+
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        nombre = self.nombre_local or self.plan_curricular.titulo_referencia.nombre
+        return f"{self.centro} - {nombre} ({self.ciclo_lectivo})"
+
+    class Meta:
+        verbose_name = "Oferta Institucional"
+        verbose_name_plural = "Ofertas Institucionales"
+        ordering = ["-ciclo_lectivo"]
+        unique_together = ("centro", "plan_curricular", "ciclo_lectivo")
+        indexes = [
+            models.Index(
+                fields=["centro", "estado"],
+                name="vat_ofeinst_ce_est_idx",
+            ),
+            models.Index(
+                fields=["estado"], name="vat_ofeinst_estado_idx"
+            ),
+        ]
+
+
+class Comision(SoftDeleteModelMixin, models.Model):
+    """
+    Comisión o grupo de estudiantes para una oferta.
+    Agrupa encuentros y estudiantes inscritos.
+    """
+
+    ESTADO_COMISION_CHOICES = [
+        ("planificada", "Planificada"),
+        ("activa", "Activa"),
+        ("cerrada", "Cerrada"),
+        ("suspendida", "Suspendida"),
+    ]
+
+    oferta = models.ForeignKey(
+        OfertaInstitucional,
+        on_delete=models.CASCADE,
+        related_name="comisiones",
+        verbose_name="Oferta Institucional",
+    )
+    ubicacion = models.ForeignKey(
+        InstitucionUbicacion,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="comisiones",
+        verbose_name="Ubicación",
+    )
+
+    codigo_comision = models.CharField(
+        max_length=50, unique=True, verbose_name="Código de Comisión"
+    )
+    nombre = models.CharField(max_length=255, verbose_name="Nombre")
+    fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
+    fecha_fin = models.DateField(verbose_name="Fecha de Fin")
+    cupo = models.PositiveIntegerField(verbose_name="Cupo Total")
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_COMISION_CHOICES,
+        default="planificada",
         verbose_name="Estado",
     )
     observaciones = models.TextField(
         blank=True, null=True, verbose_name="Observaciones"
     )
 
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.cupo is not None and self.cupo == 0:
+            raise ValidationError({"cupo": "El cupo debe ser mayor a 0."})
+
     def __str__(self):
-        return (
-            f"Encuentro #{self.numero_encuentro} — "
-            f"{self.actividad_centro} ({self.fecha})"
-        )
+        return f"{self.codigo_comision} - {self.nombre}"
 
     class Meta:
-        verbose_name = "Encuentro"
-        verbose_name_plural = "Encuentros"
-        ordering = ["fecha", "hora_inicio"]
-        unique_together = ("actividad_centro", "fecha")
+        verbose_name = "Comisión"
+        verbose_name_plural = "Comisiones"
+        ordering = ["codigo_comision"]
+        indexes = [
+            models.Index(
+                fields=["oferta", "estado"],
+                name="vat_comision_oferta_estado_idx",
+            ),
+        ]
 
 
-class Asistencia(models.Model):
+class ComisionHorario(models.Model):
+    """
+    Horario específico de una comisión.
+    Una comisión puede tener múltiples horarios (ej: clases y tutorías).
+    """
+
+    comision = models.ForeignKey(
+        Comision,
+        on_delete=models.CASCADE,
+        related_name="horarios",
+        verbose_name="Comisión",
+    )
+    dia_semana = models.ForeignKey(
+        Dia,
+        on_delete=models.PROTECT,
+        related_name="horarios_comisiones",
+        verbose_name="Día de la Semana",
+    )
+    hora_desde = models.TimeField(verbose_name="Hora Desde")
+    hora_hasta = models.TimeField(verbose_name="Hora Hasta")
+    aula_espacio = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Aula/Espacio",
+    )
+    vigente = models.BooleanField(
+        default=True, verbose_name="Vigente"
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.comision} - {self.dia_semana} {self.hora_desde}-{self.hora_hasta}"
+
+    class Meta:
+        verbose_name = "Horario de Comisión"
+        verbose_name_plural = "Horarios de Comisión"
+        ordering = ["comision", "dia_semana", "hora_desde"]
+        unique_together = (
+            "comision",
+            "dia_semana",
+            "hora_desde",
+            "hora_hasta",
+        )
+
+
+
+class SesionComision(models.Model):
+    """
+    Instancia concreta de una sesión de una comisión.
+    Se genera automáticamente a partir de los ComisionHorario y
+    el rango fecha_inicio/fecha_fin de la Comision.
+    Ejemplo: si hay un horario "Lunes 10-12" y la comisión dura un mes,
+    se crean ~4 SesionComision (una por cada lunes del período).
+    """
+
     ESTADO_CHOICES = [
-        ("presente", "Presente"),
-        ("ausente", "Ausente"),
-        ("justificado", "Justificado"),
+        ("programada", "Programada"),
+        ("realizada", "Realizada"),
+        ("cancelada", "Cancelada"),
     ]
 
-    encuentro = models.ForeignKey(
-        Encuentro,
+    comision = models.ForeignKey(
+        Comision,
         on_delete=models.CASCADE,
-        related_name="asistencias",
-        verbose_name="Encuentro",
+        related_name="sesiones",
+        verbose_name="Comisión",
     )
-    participante = models.ForeignKey(
-        ParticipanteActividad,
+    horario = models.ForeignKey(
+        ComisionHorario,
         on_delete=models.CASCADE,
-        related_name="asistencias",
-        verbose_name="Participante",
+        related_name="sesiones",
+        verbose_name="Horario",
     )
+    numero_sesion = models.PositiveIntegerField(verbose_name="Número de sesión")
+    fecha = models.DateField(verbose_name="Fecha")
     estado = models.CharField(
         max_length=20,
         choices=ESTADO_CHOICES,
-        default="ausente",
-        verbose_name="Estado de asistencia",
+        default="programada",
+        verbose_name="Estado",
     )
-    hora_registro = models.DateTimeField(
-        auto_now_add=True, verbose_name="Hora de registro"
-    )
-    registrado_por = models.ForeignKey(
-        User,
+    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Sesión #{self.numero_sesion} — {self.comision} ({self.fecha})"
+
+    class Meta:
+        verbose_name = "Sesión de Comisión"
+        verbose_name_plural = "Sesiones de Comisión"
+        ordering = ["fecha", "horario__hora_desde"]
+        unique_together = ("comision", "horario", "fecha")
+        indexes = [
+            models.Index(fields=["comision", "estado"], name="vat_sesion_comision_estado_idx"),
+        ]
+
+
+# ============================================================================
+# FASE 5: INSCRIPCIÓN
+# ============================================================================
+
+
+class Inscripcion(SoftDeleteModelMixin, models.Model):
+    """
+    Inscripción de una Persona a una Comisión.
+    Registra la relación ciudadano ↔ comisión con estado y validación.
+    """
+
+    ESTADO_INSCRIPCION_CHOICES = [
+        ("pre_inscripta", "Pre-inscripta"),
+        ("inscripta", "Inscripta"),
+        ("validada_presencial", "Validada Presencial"),
+        ("completada", "Completada"),
+        ("abandonada", "Abandonada"),
+        ("rechazada", "Rechazada"),
+    ]
+
+    ORIGEN_CANAL_CHOICES = [
+        ("front_publico", "Front Público"),
+        ("backoffice", "Backoffice"),
+        ("api", "API"),
+        ("importacion", "Importación"),
+    ]
+
+    ciudadano = models.ForeignKey(
+        Ciudadano,
         on_delete=models.PROTECT,
-        related_name="vat_asistencias_registradas",
-        verbose_name="Registrado por",
+        related_name="inscripciones_vat",
+        verbose_name="Ciudadano",
+    )
+    comision = models.ForeignKey(
+        Comision,
+        on_delete=models.CASCADE,
+        related_name="inscripciones",
+        verbose_name="Comisión",
+    )
+    programa = models.ForeignKey(
+        Programa,
+        on_delete=models.PROTECT,
+        related_name="inscripciones_vat",
+        verbose_name="Programa",
+    )
+
+    estado = models.CharField(
+        max_length=30,
+        choices=ESTADO_INSCRIPCION_CHOICES,
+        default="pre_inscripta",
+        verbose_name="Estado",
+    )
+    origen_canal = models.CharField(
+        max_length=30,
+        choices=ORIGEN_CANAL_CHOICES,
+        default="backoffice",
+        verbose_name="Origen del Canal",
+    )
+
+    fecha_inscripcion = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de Inscripción"
+    )
+    fecha_validacion_presencial = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Fecha de Validación Presencial",
     )
     observaciones = models.TextField(
         blank=True, null=True, verbose_name="Observaciones"
     )
 
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
     def __str__(self):
-        return (
-            f"{self.participante.ciudadano} — "
-            f"Encuentro #{self.encuentro.numero_encuentro}: {self.estado}"
-        )
+        return f"{self.ciudadano.nombre_completo} - {self.comision.codigo_comision} [{self.estado}]"
 
     class Meta:
-        verbose_name = "Asistencia"
-        verbose_name_plural = "Asistencias"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["encuentro", "participante"],
-                name="vat_unique_asistencia_encuentro_participante",
-            )
+        verbose_name = "Inscripción"
+        verbose_name_plural = "Inscripciones"
+        ordering = ["-fecha_inscripcion"]
+        unique_together = ("ciudadano", "comision")
+        indexes = [
+            models.Index(
+                fields=["comision", "estado"],
+                name="vat_insc_com_est_idx",
+            ),
+            models.Index(
+                fields=["ciudadano", "estado"],
+                name="vat_insc_ciu_est_idx",
+            ),
         ]
 
 
-# ——— MODELOS DE BENEFICIARIOS ———
+# ============================================================================
+# FASE 6: ASISTENCIA
+# ============================================================================
 
 
-class Responsable(SoftDeleteModelMixin, models.Model):
-    GENERO_CHOICES = [
-        ("F", "Femenino"),
-        ("M", "Masculino"),
-        ("X", "Otro/No binario"),
-    ]
+class AsistenciaSesion(models.Model):
+    """
+    Registro de asistencia de un inscripto a una sesión concreta de la comisión.
+    Se crea una fila por cada (sesion, inscripcion); presente=True indica asistió.
+    """
 
-    VINCULO_PARENTAL_CHOICES = [
-        ("Padre/Madre", "Padre/Madre"),
-        ("Tutor/Tutora", "Tutor/Tutora"),
-    ]
-
-    vinculo_parental = models.CharField(max_length=50, choices=VINCULO_PARENTAL_CHOICES)
-
-    cuil = models.BigIntegerField(unique=True)
-    dni = models.PositiveIntegerField(unique=True)
-    apellido = models.CharField(max_length=100)
-    nombre = models.CharField(max_length=100)
-    genero = models.CharField(max_length=20, choices=GENERO_CHOICES)
-    fecha_nacimiento = models.DateField()
-
-    provincia = models.ForeignKey(
-        Provincia,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="vat_responsables",
+    sesion = models.ForeignKey(
+        SesionComision,
+        on_delete=models.CASCADE,
+        related_name="asistencias",
+        verbose_name="Sesión",
     )
-    municipio = models.ForeignKey(
-        Municipio,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="vat_responsables",
+    inscripcion = models.ForeignKey(
+        "Inscripcion",
+        on_delete=models.CASCADE,
+        related_name="asistencias",
+        verbose_name="Inscripción",
     )
-    localidad = models.ForeignKey(
-        Localidad,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="vat_responsables",
-    )
-    codigo_postal = models.IntegerField(null=True, blank=True)
-
-    calle = models.CharField(max_length=150)
-    altura = models.IntegerField(null=True, blank=True)
-    piso_vivienda = models.CharField(max_length=10, null=True, blank=True)
-    departamento_vivienda = models.CharField(max_length=10, null=True, blank=True)
-    barrio = models.CharField(max_length=100, null=True, blank=True)
-    monoblock = models.CharField(max_length=100, null=True, blank=True)
-
-    prefijo_celular = models.CharField(null=True, blank=True, max_length=4)
-    numero_celular = models.CharField(null=True, blank=True, max_length=12)
-    prefijo_telefono_fijo = models.CharField(null=True, blank=True, max_length=4)
-    numero_telefono_fijo = models.CharField(null=True, blank=True, max_length=12)
-
-    correo_electronico = models.EmailField(max_length=150, null=True, blank=True)
-
-    creado_por = models.ForeignKey(
+    presente = models.BooleanField(default=False, verbose_name="Presente")
+    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+    registrado_por = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
-        related_name="vat_responsables_creados",
-        null=True,
-        blank=True,
+        related_name="asistencias_registradas",
+        verbose_name="Registrado por",
     )
-    fecha_creado = models.DateTimeField(default=timezone.now)
-    fecha_modificado = models.DateTimeField(auto_now=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
 
     def __str__(self):
-        return f"{self.apellido}, {self.nombre} ({self.cuil})"
+        estado = "Presente" if self.presente else "Ausente"
+        return f"{self.inscripcion.ciudadano.nombre_completo} — {self.sesion} [{estado}]"
 
     class Meta:
-        ordering = ["apellido", "nombre"]
-
-
-class Beneficiario(SoftDeleteModelMixin, models.Model):
-    GENERO_CHOICES = [
-        ("F", "Femenino"),
-        ("M", "Masculino"),
-        ("X", "Otro/No binario"),
-    ]
-
-    NIVEL_EDUCATIVO_ACTUAL_CHOICES = [
-        ("Jardín", "Jardín"),
-        ("Primario", "Primario"),
-        ("Secundario", "Secundario"),
-    ]
-
-    MAXIMO_NIVEL_EDUCATIVO_CHOICES = [
-        ("Sin instrucción", "Sin instrucción"),
-        ("Jardín incompleto", "Jardín incompleto"),
-        ("Jardín completo", "Jardín completo"),
-        ("Primario incompleto", "Primario incompleto"),
-        ("Primario completo", "Primario completo"),
-        ("Secundario incompleto", "Secundario incompleto"),
-        ("Secundario completo", "Secundario completo"),
-    ]
-
-    ACTIVIDAD_PREFERIDA_CHOICES = [
-        ("Deportiva", "Deportiva"),
-        ("Cultural/Artística", "Cultural/Artística"),
-        ("Educativa", "Educativa"),
-    ]
-
-    cuil = models.BigIntegerField(unique=True)
-    dni = models.PositiveIntegerField(unique=True)
-    apellido = models.CharField(max_length=100)
-    nombre = models.CharField(max_length=100)
-    genero = models.CharField(max_length=20, choices=GENERO_CHOICES)
-    fecha_nacimiento = models.DateField()
-
-    provincia_tabla = models.CharField(max_length=100, blank=True, null=True)
-    municipio_tabla = models.CharField(max_length=100, blank=True, null=True)
-    localidad_tabla = models.CharField(max_length=150, blank=True, null=True)
-
-    domicilio = models.CharField(max_length=255)
-    provincia = models.ForeignKey(
-        Provincia,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="vat_beneficiarios",
-    )
-    municipio = models.ForeignKey(
-        Municipio,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="vat_beneficiarios",
-    )
-    localidad = models.ForeignKey(
-        Localidad,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="vat_beneficiarios",
-    )
-    codigo_postal = models.IntegerField(null=True, blank=True)
-    calle = models.CharField(max_length=150)
-    altura = models.IntegerField(null=True, blank=True)
-    piso_vivienda = models.CharField(max_length=10, null=True, blank=True)
-    departamento_vivienda = models.CharField(max_length=10, null=True, blank=True)
-    barrio = models.CharField(max_length=100, null=True, blank=True)
-    monoblock = models.CharField(max_length=100, null=True, blank=True)
-
-    prefijo_celular = models.CharField(null=True, blank=True, max_length=4)
-    numero_celular = models.CharField(null=True, blank=True, max_length=12)
-    prefijo_telefono_fijo = models.CharField(null=True, blank=True, max_length=4)
-    numero_telefono_fijo = models.CharField(null=True, blank=True, max_length=12)
-    correo_electronico = models.EmailField(max_length=150, null=True, blank=True)
-
-    estado_academico = models.BooleanField(default=False)
-    nivel_educativo_actual = models.CharField(
-        max_length=20, choices=NIVEL_EDUCATIVO_ACTUAL_CHOICES, null=True, blank=True
-    )
-    maximo_nivel_educativo = models.CharField(
-        max_length=50, choices=MAXIMO_NIVEL_EDUCATIVO_CHOICES
-    )
-    institucion_academica = models.CharField(max_length=150, null=True, blank=True)
-
-    actividad_preferida = models.JSONField(default=list, blank=True)
-    actividades_extracurriculares = models.BooleanField(default=False)
-    actividades_detalle = models.ManyToManyField("Actividad", blank=True)
-
-    responsable = models.ForeignKey(
-        "Responsable", on_delete=models.PROTECT, related_name="beneficiarios"
-    )
-
-    creado_por = models.ForeignKey(
-        User,
-        on_delete=models.PROTECT,
-        related_name="vat_beneficiarios_creados",
-        null=True,
-        blank=True,
-    )
-    fecha_creado = models.DateTimeField(default=timezone.now)
-    fecha_modificado = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.apellido}, {self.nombre} ({self.cuil})"
-
-    class Meta:
-        ordering = ["apellido", "nombre"]
-
-
-class BeneficiarioResponsable(SoftDeleteModelMixin, models.Model):
-    VINCULO_PARENTAL_CHOICES = [
-        ("Padre/Madre", "Padre/Madre"),
-        ("Tutor/Tutora", "Tutor/Tutora"),
-    ]
-
-    beneficiario = models.ForeignKey(Beneficiario, on_delete=models.CASCADE)
-    responsable = models.ForeignKey(Responsable, on_delete=models.CASCADE)
-    vinculo_parental = models.CharField(max_length=50, choices=VINCULO_PARENTAL_CHOICES)
-
-    fecha_creado = models.DateTimeField(default=timezone.now)
-    fecha_modificado = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.beneficiario} - {self.responsable} ({self.vinculo_parental})"
-
-    class Meta:
-        unique_together = ["beneficiario", "responsable"]
-        verbose_name = "Vínculo Beneficiario-Responsable"
-        verbose_name_plural = "Vínculos Beneficiario-Responsable"
-
-
-class PadronBeneficiarios(models.Model):
-    cuil = models.CharField(max_length=20, db_column="CUITBenef")
-    dni = models.CharField(max_length=20, db_column="DNIBenef", primary_key=True)
-    genero = models.CharField(max_length=1, db_column="Sexo")
-    provincia_tabla = models.CharField(
-        max_length=100, db_column="Provincia", blank=True, null=True
-    )
-    municipio_tabla = models.CharField(
-        max_length=100, db_column="Municipio", blank=True, null=True
-    )
-
-    class Meta:
-        managed = False
-        db_table = "vat_padron_beneficiarios"
-
-
-class BeneficiariosResponsablesRenaper(models.Model):
-    iD_TRAMITE_PRINCIPAL = models.CharField(max_length=50, blank=True, null=True)
-    iD_TRAMITE_TARJETA_REIMPRESA = models.CharField(
-        max_length=50, blank=True, null=True
-    )
-    dni = models.CharField(max_length=20, blank=True, null=True)
-    genero = models.CharField(max_length=20, blank=True, null=True)
-    ejemplar = models.CharField(max_length=5, blank=True, null=True)
-    vencimiento = models.CharField(max_length=20, blank=True, null=True)
-    emision = models.CharField(max_length=20, blank=True, null=True)
-    apellido = models.CharField(max_length=100, blank=True, null=True)
-    nombres = models.CharField(max_length=100, blank=True, null=True)
-    fechaNacimiento = models.CharField(max_length=20, blank=True, null=True)
-    cuil = models.CharField(max_length=20, blank=True, null=True)
-    calle = models.CharField(max_length=150, blank=True, null=True)
-    numero = models.CharField(max_length=20, blank=True, null=True)
-    piso = models.CharField(max_length=10, blank=True, null=True)
-    departamento = models.CharField(max_length=10, blank=True, null=True)
-    cpostal = models.CharField(max_length=20, blank=True, null=True)
-    barrio = models.CharField(max_length=100, blank=True, null=True)
-    monoblock = models.CharField(max_length=100, blank=True, null=True)
-    ciudad = models.CharField(max_length=100, blank=True, null=True)
-    municipio = models.CharField(max_length=100, blank=True, null=True)
-    provincia = models.CharField(max_length=100, blank=True, null=True)
-    pais = models.CharField(max_length=100, blank=True, null=True)
-    codigoError = models.CharField(max_length=20, blank=True, null=True)
-    codigof = models.CharField(max_length=20, blank=True, null=True)
-    mensaf = models.CharField(max_length=255, blank=True, null=True)
-    origenf = models.CharField(max_length=100, blank=True, null=True)
-    fechaf = models.CharField(max_length=20, blank=True, null=True)
-    idciudadano = models.CharField(max_length=50, blank=True, null=True)
-    nroError = models.CharField(max_length=20, blank=True, null=True)
-    descripcionError = models.CharField(max_length=255, blank=True, null=True)
-
-    tipo = models.CharField(max_length=50, blank=True, null=True)
-    fecha_creado = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.apellido or ''}, {self.nombres or ''} ({self.cuil or ''})"
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["dni", "genero", "tipo"],
-                name="vat_unique_dni_genero_tipo",
-            )
+        verbose_name = "Asistencia a Sesión"
+        verbose_name_plural = "Asistencias a Sesiones"
+        unique_together = ("sesion", "inscripcion")
+        indexes = [
+            models.Index(fields=["sesion", "presente"], name="vat_asist_ses_pres_idx"),
         ]
+
+
+# ============================================================================
+# FASE 7: EVALUACIONES
+# ============================================================================
+
+
+class Evaluacion(models.Model):
+    """
+    Instancia de evaluación en una comisión.
+    Define qué se evalúa, cuándo y características.
+    """
+
+    TIPO_EVALUACION_CHOICES = [
+        ("parcial", "Parcial"),
+        ("final", "Final"),
+        ("integradora", "Integradora"),
+        ("recuperatorio", "Recuperatorio"),
+    ]
+
+    comision = models.ForeignKey(
+        Comision,
+        on_delete=models.CASCADE,
+        related_name="evaluaciones",
+        verbose_name="Comisión",
+    )
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPO_EVALUACION_CHOICES,
+        verbose_name="Tipo de Evaluación",
+    )
+    nombre = models.CharField(
+        max_length=255, verbose_name="Nombre de la Evaluación"
+    )
+    descripcion = models.TextField(
+        blank=True, null=True, verbose_name="Descripción"
+    )
+    fecha = models.DateField(verbose_name="Fecha de la Evaluación")
+    es_final = models.BooleanField(
+        default=False, verbose_name="Es Evaluación Final"
+    )
+    ponderacion = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=100,
+        help_text="Ponderación en la calificación final (%)",
+        verbose_name="Ponderación (%)",
+    )
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.comision.codigo_comision} - {self.nombre} ({self.get_tipo_display()})"
+
+    class Meta:
+        verbose_name = "Evaluación"
+        verbose_name_plural = "Evaluaciones"
+        ordering = ["comision", "fecha"]
+        indexes = [
+            models.Index(
+                fields=["comision", "tipo"],
+                name="vat_eval_com_tipo_idx",
+            ),
+        ]
+
+
+class ResultadoEvaluacion(SoftDeleteModelMixin, models.Model):
+    """
+    Resultado de evaluación de un inscripto.
+    Registra calificación, aprobación y observaciones.
+    """
+
+    evaluacion = models.ForeignKey(
+        Evaluacion,
+        on_delete=models.CASCADE,
+        related_name="resultados",
+        verbose_name="Evaluación",
+    )
+    inscripcion = models.ForeignKey(
+        Inscripcion,
+        on_delete=models.CASCADE,
+        related_name="resultados_evaluacion",
+        verbose_name="Inscripción",
+    )
+
+    calificacion = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name="Calificación",
+    )
+    aprobo = models.BooleanField(
+        null=True, blank=True, verbose_name="¿Aprobó?"
+    )
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
+
+    fecha_registro = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de Registro"
+    )
+    registrado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="evaluaciones_registradas",
+        verbose_name="Registrado por",
+    )
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.inscripcion.ciudadano.nombre_completo} - {self.evaluacion.nombre}: {self.calificacion}"
+
+    class Meta:
+        verbose_name = "Resultado de Evaluación"
+        verbose_name_plural = "Resultados de Evaluación"
+        ordering = ["-fecha_registro"]
+        unique_together = ("evaluacion", "inscripcion")
+        indexes = [
+            models.Index(
+                fields=["evaluacion", "aprobo"],
+                name="vat_reseval_eval_apr_idx",
+            ),
+        ]
+
+

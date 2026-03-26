@@ -35,8 +35,9 @@ from core.models import (
     Municipio,
     PreferenciaColumnas,
     MontoPrestacionPrograma,
+    Programa,
 )
-from core.forms import MontoPrestacionProgramaForm
+from core.forms import MontoPrestacionProgramaForm, ProgramaForm
 from core.services.favorite_filters import (
     TTL_CACHE_FILTROS_FAVORITOS,
     clave_cache_filtros_favoritos,
@@ -621,3 +622,60 @@ class MontoPrestacionProgramaDetailView(
         context["back_button"] = self._back_button()
         context["action_buttons"] = []
         return context
+
+
+# ============================================================================
+# PROGRAMA VIEWS
+# ============================================================================
+
+class ProgramaListView(LoginRequiredMixin, ListView):
+    model = Programa
+    template_name = "programa_list.html"
+    context_object_name = "programas"
+    paginate_by = 25
+
+    def get_queryset(self):
+        return super().get_queryset().order_by("nombre")
+
+
+class ProgramaCreateView(LoginRequiredMixin, CreateView):
+    model = Programa
+    form_class = ProgramaForm
+    template_name = "programa_form.html"
+
+    def form_valid(self, form):
+        messages.success(self.request, "Programa creado correctamente.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("programa_detalle", kwargs={"pk": self.object.pk})
+
+
+class ProgramaDetailView(LoginRequiredMixin, DetailView):
+    model = Programa
+    template_name = "programa_detail.html"
+    context_object_name = "programa"
+
+
+class ProgramaUpdateView(LoginRequiredMixin, UpdateView):
+    model = Programa
+    form_class = ProgramaForm
+    template_name = "programa_form.html"
+
+    def form_valid(self, form):
+        messages.success(self.request, "Programa actualizado correctamente.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("programa_detalle", kwargs={"pk": self.object.pk})
+
+
+class ProgramaDeleteView(LoginRequiredMixin, DeleteView):
+    model = Programa
+    template_name = "programa_confirm_delete.html"
+    context_object_name = "programa"
+    success_url = reverse_lazy("programa_listar")
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Programa eliminado correctamente.")
+        return super().delete(request, *args, **kwargs)

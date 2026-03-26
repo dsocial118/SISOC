@@ -1,0 +1,52 @@
+{% extends "includes/main.html" %}
+{% block title %}Detalle Título{% endblock %}
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item"><a href="{% url 'vat_titulorreferencia_list' %}">Títulos</a></li>
+    <li class="breadcrumb-item active">{{ titulo.nombre }}</li>
+</ol>
+{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title">{{ titulo.nombre }}</h3>
+                <div class="card-tools">
+                    <a href="{% url 'vat_titulorreferencia_update' titulo.id %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                    <form method="post" action="{% url 'vat_titulorreferencia_delete' titulo.id %}" style="display:inline;" onsubmit="return confirm('¿Está seguro?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Sector:</dt>
+                    <dd class="col-sm-9">{{ titulo.sector.nombre }}</dd>
+                    <dt class="col-sm-3">Subsector:</dt>
+                    <dd class="col-sm-9">{{ titulo.subsector.nombre|default:"-" }}</dd>
+                    <dt class="col-sm-3">Código:</dt>
+                    <dd class="col-sm-9">{{ titulo.codigo_referencia|default:"-" }}</dd>
+                    <dt class="col-sm-3">Estado:</dt>
+                    <dd class="col-sm-9">{% if titulo.activo %}<span class="badge badge-success">Activo</span>{% else %}<span class="badge badge-danger">Inactivo</span>{% endif %}</dd>
+                </dl>
+                <hr>
+                <h5>Planes Curriculares ({{ planes.count }})</h5>
+                {% if planes %}
+                <ul>
+                    {% for plan in planes %}
+                    <li>{{ plan.modalidad_cursada.nombre }} - v{{ plan.version|default:"—" }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">Sin planes</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'vat_titulorreferencia_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
