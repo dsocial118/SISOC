@@ -24,7 +24,14 @@ from VAT.services.centro_filter_config import (
     BOOL_OPS as CENTRO_BOOL_OPS,
     get_filters_ui_config as get_centro_filters_ui_config,
 )
-from VAT.forms import CentroForm
+from VAT.forms import (
+    CentroForm,
+    InstitucionContactoForm,
+    AutoridadInstitucionalForm,
+    InstitucionIdentificadorHistForm,
+    InstitucionUbicacionForm,
+    OfertaInstitucionalForm,
+)
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -142,6 +149,14 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         ctx["count_autoridades"] = len(ctx["autoridades"])
         ctx["count_identificadores"] = len(ctx["identificadores"])
         ctx["count_contactos"] = len(ctx["contactos"])
+
+        # Forms para modales
+        ctx["contacto_form"] = InstitucionContactoForm(initial={"centro": centro})
+        ctx["autoridad_form"] = AutoridadInstitucionalForm(initial={"centro": centro})
+        ctx["identificador_form"] = InstitucionIdentificadorHistForm(initial={"centro": centro})
+        ctx["ubicacion_form"] = InstitucionUbicacionForm(initial={"centro": centro})
+        ctx["oferta_form"] = OfertaInstitucionalForm(initial={"centro": centro})
+
         return ctx
 
 
