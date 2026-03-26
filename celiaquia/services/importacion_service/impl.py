@@ -720,9 +720,7 @@ def _resolver_nacionalidad_payload_importacion(payload):
 
     nacionalidad_str = str(nacionalidad_val).strip()
     if nacionalidad_str.isdigit():
-        nacionalidad_obj = Nacionalidad.objects.filter(
-            pk=int(nacionalidad_str)
-        ).first()
+        nacionalidad_obj = Nacionalidad.objects.filter(pk=int(nacionalidad_str)).first()
     else:
         nacionalidad_obj = Nacionalidad.objects.filter(
             nacionalidad__iexact=nacionalidad_str
@@ -1030,7 +1028,9 @@ def _resolver_localidad_responsable_payload_importacion(
                 municipio__provincia_id=provincia_usuario_id
             )
             if localidad_resp_str.isdigit():
-                coincidencias = list(localidades_qs.filter(pk=int(localidad_resp_str))[:2])
+                coincidencias = list(
+                    localidades_qs.filter(pk=int(localidad_resp_str))[:2]
+                )
             else:
                 coincidencias = list(
                     localidades_qs.filter(nombre__iexact=localidad_resp_str)[:2]
@@ -1806,7 +1806,9 @@ def _procesar_responsable_si_corresponde_importacion(
     relaciones_familiares,
     responsable_payload=None,
 ):
-    if responsable_payload is None and not _tiene_datos_responsable_importacion(payload):
+    if responsable_payload is None and not _tiene_datos_responsable_importacion(
+        payload
+    ):
         return None, False, False
 
     return _procesar_responsable_importacion(
