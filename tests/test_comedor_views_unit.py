@@ -175,6 +175,17 @@ def test_comedor_detail_get_object_presupuestos_and_post_paths(mocker):
     assert view.post(req2) == "redir2"
     assert success.called
 
+    req3 = _Req(user=SimpleNamespace(is_superuser=False), post={"territorial": "1"})
+    view.get_object = lambda: SimpleNamespace(pk=7)
+    view.object = SimpleNamespace(pk=7)
+    err_legacy = mocker.patch("comedores.views.comedor.messages.error")
+    redirect_legacy = mocker.patch(
+        "comedores.views.comedor.redirect", return_value="redir3"
+    )
+    assert view.post(req3) == "redir3"
+    err_legacy.assert_called_once()
+    redirect_legacy.assert_called_with("relevamientos", comedor_pk=7)
+
 
 def test_comedor_detail_helpers_nomina_chart_and_safe_cell():
     metrics = module._build_nomina_metrics(
@@ -205,6 +216,73 @@ def test_comedor_detail_helpers_nomina_chart_and_safe_cell():
 
     assert module._safe_cell_content(None) == "-"
     assert str(module._safe_cell_content("<b>x</b>")) == "&lt;b&gt;x&lt;/b&gt;"
+
+
+def test_build_organizacion_responsables_context_filtra_y_formatea():
+    class _RelatedList:
+        def __init__(self, items):
+            self._items = items
+
+        def all(self):
+            return self._items
+
+    organizacion = SimpleNamespace(
+        nombre="Org Centro",
+        cuit=20333444556,
+        tipo_entidad="Asociacion Civil",
+        subtipo_entidad=None,
+        email="org@example.com",
+        telefono=None,
+        fecha_vencimiento=datetime(2026, 5, 2, 10, 0, 0),
+        firmantes=_RelatedList(
+            [
+                SimpleNamespace(
+                    nombre="Ana Perez",
+                    cuit=27111222333,
+                    rol=SimpleNamespace(nombre="Presidenta"),
+                ),
+                SimpleNamespace(
+                    nombre="Luis Gomez",
+                    cuit=None,
+                    rol=None,
+                ),
+                SimpleNamespace(
+                    nombre="",
+                    cuit=None,
+                    rol=None,
+                ),
+            ]
+        ),
+        avales=_RelatedList(
+            [
+                SimpleNamespace(nombre="Carlos Aval", cuit=20999888777),
+                SimpleNamespace(nombre=None, cuit=None),
+            ]
+        ),
+    )
+
+    context = module._build_organizacion_responsables_context(
+        SimpleNamespace(organizacion=organizacion)
+    )
+
+    assert [item["label"] for item in context["responsables_organizacion_items"]] == [
+        "Nombre",
+        "CUIT",
+        "Tipo de entidad",
+        "Email",
+        "Fecha de vencimiento de mandatos",
+    ]
+    assert [firmante["text"] for firmante in context["responsables_firmantes"]] == [
+        "Presidenta: Ana Perez 27111222333",
+        "Luis Gomez",
+    ]
+    assert context["responsables_avales"] == [
+        {
+            "icon": "bi bi-shield-check",
+            "label": "Aval 1",
+            "value": "Carlos Aval 20999888777",
+        }
+    ]
 
 
 def test_comedor_detail_selected_admision_helpers_and_prestaciones(mocker):
@@ -342,6 +420,7 @@ def test_comedor_detail_get_relaciones_optimizadas_compone_contextos(mocker):
             "nomina_total": 10,
             "nomina_hombres": 4,
             "nomina_mujeres": 6,
+            "nomina_rangos": {},
             "nomina_menores": 2,
             "nomina_espera": 1,
             "nomina_pct_sin_dato": 0,
