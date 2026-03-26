@@ -40,3 +40,22 @@ def preload_valores_comida_cache() -> dict[str, Any]:
         valor_map = {item["tipo"].lower(): item["valor"] for item in valores_comida}
         cache.set("valores_comida_map", valor_map, settings.DEFAULT_CACHE_TIMEOUT)
     return valor_map
+
+
+def programa_usa_admision_para_nomina(programa: Any) -> bool:
+    """Indica si un programa organiza la nómina por admisión.
+
+    El nuevo booleano vive en ``Programas``. Si el objeto todavía no expone el
+    campo (fixtures viejos o mocks), se asume ``True`` para no romper el flujo
+    histórico.
+    """
+
+    if programa is None:
+        return True
+    return getattr(programa, "usa_admision_para_nomina", True)
+
+
+def comedor_usa_admision_para_nomina(comedor: Any) -> bool:
+    """Indica si el comedor usa admisión para gestionar la nómina."""
+
+    return programa_usa_admision_para_nomina(getattr(comedor, "programa", None))

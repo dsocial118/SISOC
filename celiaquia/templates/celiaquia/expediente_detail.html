@@ -1011,92 +1011,113 @@
                                                            value="{{ registro.datos_raw.email|default:'' }}" />
                                                 </div>
                                                 <div class="col-md-3">
-                                                    <label class="form-label">Calle</label>
+                                                    <label class="form-label">Calle *</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="calle"
-                                                           value="{{ registro.datos_raw.calle|default:'' }}" />
+                                                           value="{{ registro.datos_raw.calle|default:'' }}"
+                                                           required />
                                                 </div>
                                                 <div class="col-md-3">
-                                                    <label class="form-label">Altura</label>
+                                                    <label class="form-label">Altura *</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="altura"
-                                                           value="{{ registro.datos_raw.altura|default:'' }}" />
+                                                           value="{{ registro.datos_raw.altura|default:'' }}"
+                                                           required />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Código Postal *</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="codigo_postal"
+                                                           value="{{ registro.datos_raw.codigo_postal|default:'' }}"
+                                                           required />
                                                 </div>
                                             </div>
 
                                             <!-- DATOS DEL RESPONSABLE -->
-                                            {% if registro.datos_raw.apellido_responsable or registro.datos_raw.nombre_responsable or registro.datos_raw.documento_responsable %}
-                                                <hr class="my-3" />
-                                                <h6 class="text-info mt-2 mb-2">
-                                                    <i class="fas fa-user-tie"></i> Responsable
-                                                </h6>
-                                                <div class="row g-2">
-                                                    <div class="col-md-4">
-                                                        <label class="form-label">Apellido Responsable *</label>
-                                                        <input type="text"
-                                                               class="form-control"
-                                                               name="apellido_responsable"
-                                                               value="{{ registro.datos_raw.apellido_responsable|default:'' }}" />
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label">Nombre Responsable *</label>
-                                                        <input type="text"
-                                                               class="form-control"
-                                                               name="nombre_responsable"
-                                                               value="{{ registro.datos_raw.nombre_responsable|default:'' }}" />
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label">CUIT/Documento Responsable *</label>
-                                                        <input type="text"
-                                                               class="form-control"
-                                                               name="documento_responsable"
-                                                               value="{{ registro.datos_raw.documento_responsable|default:'' }}" />
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label">Fecha Nac. Responsable</label>
-                                                        <input type="text"
-                                                               class="form-control"
-                                                               name="fecha_nacimiento_responsable"
-                                                               value="{{ registro.datos_raw.fecha_nacimiento_responsable|default:'' }}"
-                                                               placeholder="DD/MM/YYYY" />
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label">Sexo Responsable</label>
-                                                        <select class="form-select" name="sexo_responsable">
-                                                            <option value="">Seleccionar...</option>
-                                                            {% for sexo in sexos %}
-                                                                <option value="{{ sexo.id }}"
-                                                                        {% if registro.datos_raw.sexo_responsable|stringformat:"s" == sexo.id|stringformat:"s" or registro.datos_raw.sexo_responsable|lower == sexo.sexo|lower %}selected{% endif %}>
-                                                                    {{ sexo.sexo }}
-                                                                </option>
-                                                            {% endfor %}
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label">Teléfono Responsable</label>
-                                                        <input type="text"
-                                                               class="form-control"
-                                                               name="telefono_responsable"
-                                                               value="{{ registro.datos_raw.telefono_responsable|default:'' }}" />
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Email Responsable</label>
-                                                        <input type="email"
-                                                               class="form-control"
-                                                               name="email_responsable"
-                                                               value="{{ registro.datos_raw.email_responsable|default:'' }}" />
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Domicilio Responsable</label>
-                                                        <input type="text"
-                                                               class="form-control"
-                                                               name="domicilio_responsable"
-                                                               value="{{ registro.datos_raw.domicilio_responsable|default:'' }}" />
-                                                    </div>
+                                            <hr class="my-3" />
+                                            <h6 class="text-info mt-2 mb-2">
+                                                <i class="fas fa-user-tie"></i> Responsable
+                                            </h6>
+                                            <div class="row g-2">
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Apellido Responsable *</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="apellido_responsable"
+                                                           value="{{ registro.datos_raw.apellido_responsable|default:'' }}"
+                                                           required />
                                                 </div>
-                                            {% endif %}
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Nombre Responsable *</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="nombre_responsable"
+                                                           value="{{ registro.datos_raw.nombre_responsable|default:'' }}"
+                                                           required />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">CUIT/Documento Responsable *</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="documento_responsable"
+                                                           value="{{ registro.datos_raw.documento_responsable|default:'' }}"
+                                                           required />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Fecha Nac. Responsable *</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="fecha_nacimiento_responsable"
+                                                           value="{{ registro.datos_raw.fecha_nacimiento_responsable|default:'' }}"
+                                                           placeholder="DD/MM/YYYY"
+                                                           required />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Sexo Responsable *</label>
+                                                    <select class="form-select" name="sexo_responsable" required>
+                                                        <option value="">Seleccionar...</option>
+                                                        {% for sexo in sexos %}
+                                                            <option value="{{ sexo.id }}"
+                                                                    {% if registro.datos_raw.sexo_responsable|stringformat:"s" == sexo.id|stringformat:"s" or registro.datos_raw.sexo_responsable|lower == sexo.sexo|lower %}selected{% endif %}>
+                                                                {{ sexo.sexo }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Teléfono Responsable</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="telefono_responsable"
+                                                           value="{{ registro.datos_raw.telefono_responsable|default:'' }}" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Email Responsable</label>
+                                                    <input type="email"
+                                                           class="form-control"
+                                                           name="email_responsable"
+                                                           value="{{ registro.datos_raw.email_responsable|default:'' }}" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Domicilio Responsable *</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="domicilio_responsable"
+                                                           value="{{ registro.datos_raw.domicilio_responsable|default:'' }}"
+                                                           required />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Localidad Responsable *</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="localidad_responsable"
+                                                           value="{{ registro.datos_raw.localidad_responsable|default:'' }}"
+                                                           required />
+                                                </div>
+                                            </div>
 
                                             <div class="alert alert-info mt-3 mb-0">
                                                 <small><strong>Nota:</strong> Los campos se guardan automáticamente al cambiar. Luego usa "Reprocesar Todos" para crear los legajos.</small>
@@ -1790,7 +1811,7 @@
           content="{% url 'legajo_editar' expediente.pk 0 %}" />
     <meta name="expediente-id" content="{{ expediente.pk }}" />
     <script src="{% static 'custom/js/expediente_detail_config.js' %}"></script>
-    <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20260310-telefono-opcional"></script>
+    <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20260325-campos-obligatorios"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
     <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>

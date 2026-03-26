@@ -626,7 +626,7 @@ def fetch_changed_files(pr: PullRequestData, token: str) -> list[str]:
 
     files: list[str] = []
     page = 1
-    encoded_repo = urllib.parse.quote(pr.repo_full_name, safe="")
+    encoded_repo = urllib.parse.quote(pr.repo_full_name, safe="/")
     while True:
         url = (
             "https://api.github.com/repos/"

@@ -3,21 +3,24 @@
     "model": "comedores.programas",
     "pk": 2,
     "fields": {
-        "nombre": "Alimentar comunidad"
+        "nombre": "Alimentar comunidad",
+        "usa_admision_para_nomina": true
     }
 },
 {
     "model": "comedores.programas",
     "pk": 3,
     "fields": {
-        "nombre": "Abordaje comunitario - Línea Secos"
+        "nombre": "Abordaje comunitario - Línea Secos",
+        "usa_admision_para_nomina": false
     }
 },
 {
     "model": "comedores.programas",
     "pk": 4,
     "fields": {
-        "nombre": "Abordaje comunitario - Línea Tradicional"
+        "nombre": "Abordaje comunitario - Línea Tradicional",
+        "usa_admision_para_nomina": false
     }
 }
 ]

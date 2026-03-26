@@ -711,6 +711,12 @@ class AdmisionesTecnicosCreateView(LoginRequiredMixin, CreateView):
             admision = AdmisionService.create_admision(
                 self.kwargs["pk"], tipo_convenio_id
             )
+            if admision is None:
+                messages.error(
+                    request,
+                    "No se pudo crear la admisión para este comedor. Intente nuevamente más tarde.",
+                )
+                return redirect("comedor_detalle", pk=self.kwargs["pk"])
             return redirect("admisiones_tecnicos_editar", pk=admision.pk)
         return self.get(request, *args, **kwargs)
 
