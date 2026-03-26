@@ -203,7 +203,10 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             required_keys=["nombre"],
         )
         context["breadcrumb_items"] = [
-            {"text": "Centro de Infancia", "url": reverse("centrodeinfancia")},
+            {
+                "text": "Centro de Desarrollo Infantil",
+                "url": reverse("centrodeinfancia"),
+            },
             {"text": "Listar", "active": True},
         ]
         context["query"] = self.request.GET.get("busqueda", "")
@@ -543,7 +546,7 @@ class CentroDeInfanciaDeleteView(
     template_name = "centrodeinfancia/centrodeinfancia_confirm_delete.html"
     context_object_name = "centro"
     success_url = reverse_lazy("centrodeinfancia")
-    success_message = "Centro de infancia dado de baja correctamente."
+    success_message = "Centro de Desarrollo Infantil dado de baja correctamente."
 
     def get_queryset(self):
         return _centros_cdi_queryset_scoped(self.request.user)

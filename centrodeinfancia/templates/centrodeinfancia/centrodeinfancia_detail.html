@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="{% static 'custom/css/nuevo_comedor.css' %}" />
 {% endblock %}
 
-{% block title %}Centro de Infancia: {{ centro.nombre }}{% endblock %}
+{% block title %}Centro de Desarrollo Infantil: {{ centro.nombre }}{% endblock %}
 
 {% block app-header %}
     <div class="row g-2 align-items-center">
@@ -67,7 +67,7 @@
                                 </h2>
                             </li>
                             <li class="list-inline-item">
-                                <button class="btn btn-sm btn-primary mb-2">Centro de Infancia</button>
+                                <button class="btn btn-sm btn-primary mb-2">Centro de Desarrollo Infantil</button>
                             </li>
                             <li class="list-inline-item">
                                 <button class="btn btn-sm btn-success mb-2">Activo</button>
@@ -151,7 +151,7 @@
                     <div class="accordion-content">
                         <div class="mb-3">
                             <h4 class="mb-0">Referente</h4>
-                            <small class="text-muted">Persona de referencia asociada al centro de infancia.</small>
+                            <small class="text-muted">Persona de referencia asociada al centro de desarrollo infantil.</small>
                         </div>
                         {% with nombre=centro.nombre_referente|default:"" apellido=centro.apellido_referente|default:"" %}
                             <p class="mb-2">
@@ -181,7 +181,7 @@
                         <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
                             <div>
                                 <h4 class="mb-0">Trabajadores</h4>
-                                <small class="text-muted">Personal asociado al centro de infancia.</small>
+                                <small class="text-muted">Personal asociado al centro de desarrollo infantil.</small>
                             </div>
                             {% if puede_editar_trabajadores %}
                                 <button type="button"

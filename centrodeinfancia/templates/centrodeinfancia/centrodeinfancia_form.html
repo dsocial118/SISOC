@@ -1,8 +1,8 @@
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
 
-{% block title %}Centro de Infancia{% endblock %}
-{% block titulo-pagina %}Centro de Infancia{% endblock %}
+{% block title %}Centro de Desarrollo Infantil{% endblock %}
+{% block titulo-pagina %}Centro de Desarrollo Infantil{% endblock %}
 
 {% block content %}
     <link rel="stylesheet"
@@ -22,7 +22,7 @@
             </div>
         </div>
 
-        <form method="post" class="w-100">
+        <form method="post" class="w-100" id="centrodesarrolloinfantil-form">
             {% csrf_token %}
 
             <div class="section-card mb-3">
@@ -33,7 +33,7 @@
                         </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Información Básica</h3>
-                            <p class="section-subtitle">Datos principales del centro de infancia</p>
+                            <p class="section-subtitle">Datos principales del centro de desarrollo infantil</p>
                         </div>
                     </div>
                 </div>
@@ -208,10 +208,86 @@
             ensurePlaceholder(municipioSelect, "Seleccione un municipio");
             ensurePlaceholder(localidadSelect, "Seleccione una localidad");
 
-            if (typeof initializeSelect2 === "function") {
-                initializeSelect2("id_organizacion", {
-                    placeholder: "Seleccione una organización",
+            function applySelect2ErrorState(selectEl, isInvalid) {
+                if (!selectEl || typeof $ === "undefined") {
+                    return;
+                }
+                const $selection = $(selectEl)
+                    .next(".select2")
+                    .find(".select2-selection");
+                $selection.toggleClass("border border-danger", isInvalid);
+            }
+
+            function validateRequiredField(field) {
+                if (!field || !field.required) {
+                    return true;
+                }
+                const value = (field.value || "").trim();
+                const isValid = value !== "";
+                field.classList.toggle("is-invalid", !isValid);
+                applySelect2ErrorState(field, !isValid);
+                return isValid;
+            }
+
+            function initOrganizacionSelect2() {
+                const organizacionSelect = document.getElementById("id_organizacion");
+                if (
+                    !organizacionSelect ||
+                    typeof $ === "undefined" ||
+                    !$.fn ||
+                    !$.fn.select2
+                ) {
+                    return;
+                }
+                const $organizacion = $(organizacionSelect);
+                if ($organizacion.data("select2")) {
+                    $organizacion.select2("destroy");
+                }
+
+                $organizacion.select2({
+                    placeholder: "Seleccione una organizacion",
                     allowClear: true,
+                    width: "100%",
+                });
+
+                $organizacion.on("select2:select select2:clear", function() {
+                    validateRequiredField(organizacionSelect);
+                });
+            }
+
+            initOrganizacionSelect2();
+
+            const formEl = document.getElementById("centrodesarrolloinfantil-form");
+            const requiredFields = formEl
+                ? Array.from(formEl.querySelectorAll("[required]"))
+                : [];
+
+            requiredFields.forEach(function(field) {
+                if (field.classList.contains("is-invalid")) {
+                    applySelect2ErrorState(field, true);
+                }
+            });
+
+            requiredFields.forEach(function(field) {
+                const eventName =
+                    field.tagName === "SELECT" ? "change" : "input";
+                field.addEventListener(eventName, function() {
+                    validateRequiredField(field);
+                });
+            });
+
+            if (formEl) {
+                formEl.addEventListener("submit", function(event) {
+                    const hasErrors = requiredFields
+                        .map(validateRequiredField)
+                        .some(function(isValid) {
+                            return !isValid;
+                        });
+
+                    if (hasErrors) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
                 });
             }
 

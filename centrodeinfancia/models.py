@@ -77,8 +77,8 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "Centro de Infancia"
-        verbose_name_plural = "Centros de Infancia"
+        verbose_name = "Centro de Desarrollo Infantil"
+        verbose_name_plural = "Centros de Desarrollo Infantil"
         ordering = ["nombre"]
 
     def __str__(self):
@@ -147,8 +147,8 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     observaciones = models.TextField(blank=True, null=True)
 
     class Meta:
-        verbose_name = "Nómina Centro de Infancia"
-        verbose_name_plural = "Nóminas Centro de Infancia"
+        verbose_name = "Nómina Centro de Desarrollo Infantil"
+        verbose_name_plural = "Nóminas Centro de Desarrollo Infantil"
         ordering = ["-fecha"]
 
     def __str__(self):
@@ -192,8 +192,8 @@ class IntervencionCentroInfancia(SoftDeleteModelMixin, models.Model):
     documentacion = models.FileField(upload_to="documentacion/", blank=True, null=True)
 
     class Meta:
-        verbose_name = "Intervención Centro de Infancia"
-        verbose_name_plural = "Intervenciones Centro de Infancia"
+        verbose_name = "Intervención Centro de Desarrollo Infantil"
+        verbose_name_plural = "Intervenciones Centro de Desarrollo Infantil"
         ordering = ["-fecha"]
 
     def __str__(self):
@@ -215,8 +215,8 @@ class ObservacionCentroInfancia(SoftDeleteModelMixin, models.Model):
         indexes = [
             models.Index(fields=["centro"]),
         ]
-        verbose_name = "Observación Centro de Infancia"
-        verbose_name_plural = "Observaciones Centro de Infancia"
+        verbose_name = "Observación Centro de Desarrollo Infantil"
+        verbose_name_plural = "Observaciones Centro de Desarrollo Infantil"
 
     def __str__(self):
         centro = self.centro.nombre if self.centro else "Centro sin nombre"
