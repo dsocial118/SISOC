@@ -51,8 +51,12 @@
                                     </div>
                                 </div>
                                 <div class="col-2 d-flex justify-content-end align-items-start my-3">
-                                    <a href="{% url 'comedor_detalle' comedor.id %}"
-                                       class="btn btn-primary btn-margin-right">Agregar</a>
+                                    {% if perms.relevamientos.add_relevamiento %}
+                                        <button type="button"
+                                                class="btn btn-primary btn-margin-right"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalRelevamientoNuevo">Agregar</button>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -61,4 +65,50 @@
             </div>
         </div>
     </div>
+
+    {% if perms.relevamientos.add_relevamiento %}
+        <div class="modal fade"
+             id="modalRelevamientoNuevo"
+             tabindex="-1"
+             aria-labelledby="modalRelevamientoNuevoLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post"
+                          action="{% url 'relevamiento_create_edit_ajax' comedor.id %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalRelevamientoNuevoLabel">Nuevo relevamiento</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-2">
+                                <label for="new_territorial_select" class="form-label">Territorial asignado</label>
+                                <select id="new_territorial_select" name="territorial" class="form-select">
+                                    <option value="">Sin territorial</option>
+                                </select>
+                            </div>
+                            <small class="text-muted">Si no selecciona territorial, se crea en estado Pendiente.</small>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Crear relevamiento</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block customJS %}
+    {% if perms.relevamientos.add_relevamiento %}
+        <script nonce="{{ request.csp_nonce }}">
+        const comedorId = "{{ comedor.id }}";
+        </script>
+        <script src="{% static 'custom/js/comedordetail_territorial_cache.js' %}"></script>
+    {% endif %}
 {% endblock %}
