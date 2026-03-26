@@ -1,4 +1,4 @@
-"""Tests for test importacion service helpers unit."""
+﻿"""Tests for test importacion service helpers unit."""
 
 from datetime import date, timedelta
 from io import BytesIO
@@ -283,7 +283,7 @@ def test_importacion_helpers_payload_row_and_defaults_validation():
         "nombre": " Ana ",
         "apellido": " Perez ",
         "documento": "20-12345678-3",
-        "telefono": "abc",
+        "telefono": "341-555-0000",
         "fecha_nacimiento": "2000-01-01",
         "otro": "nan",
     }
@@ -298,9 +298,18 @@ def test_importacion_helpers_payload_row_and_defaults_validation():
     assert payload["nombre"] == "Ana"
     assert payload["apellido"] == "Perez"
     assert payload["documento"] == "20123456783"
-    assert payload["telefono"] is None
+    assert payload["telefono"] == "3415550000"
     assert payload["otro"] is None
-    assert warnings == [(2, "telefono", "valor numerico vacio")]
+    assert warnings == []
+
+    with pytest.raises(ValidationError):
+        module._build_payload_importacion_from_row(
+            row={"telefono": "abc"},
+            numeric_fields={"telefono"},
+            offset=2,
+            validar_documento=_validar_documento,
+            add_warning=_add_warning,
+        )
     payload.update(
         {
             "sexo": "M",
@@ -346,8 +355,9 @@ def test_importacion_helpers_normalizar_enriquecer_payload(mocker):
         return {"M": 1, "m": 1}.get(value)
 
     def _nacionalidad_filter(**kwargs):
+        pk = kwargs.get("pk")
         value = kwargs.get("nacionalidad__iexact")
-        if value == "Arg":
+        if pk == 9:
             return SimpleNamespace(first=lambda: SimpleNamespace(pk=9))
         if value == "Argentina":
             return SimpleNamespace(first=lambda: SimpleNamespace(pk=1))
@@ -363,8 +373,8 @@ def test_importacion_helpers_normalizar_enriquecer_payload(mocker):
         "municipio": "1.0",
         "localidad": "2",
         "sexo": "M",
-        "nacionalidad": "Arg",
-        "email": "correo-invalido",
+        "nacionalidad": "Argentina",
+        "email": "ana@example.com",
         "telefono": "12345678",
     }
     module._normalizar_enriquecer_payload_importacion(
@@ -381,9 +391,47 @@ def test_importacion_helpers_normalizar_enriquecer_payload(mocker):
     assert payload["municipio"] == 101
     assert payload["localidad"] == 202
     assert payload["sexo"] == 1
-    assert payload["nacionalidad"] == 9
-    assert "email" not in payload
-    assert warnings == [(3, "email", "Email inválido: correo-invalido")]
+    assert payload["nacionalidad"] == 1
+    assert payload["email"] == "ana@example.com"
+    assert warnings == []
+
+    with pytest.raises(ValidationError):
+        module._normalizar_enriquecer_payload_importacion(
+            payload={
+                "fecha_nacimiento": "2000-01-01",
+                "municipio": "1.0",
+                "localidad": "2",
+                "sexo": "M",
+                "nacionalidad": "Arg",
+                "email": "ana@example.com",
+                "telefono": "12345678",
+            },
+            offset=3,
+            add_warning=_add_warning,
+            to_date=_to_date,
+            municipios_cache={1: 101},
+            localidades_cache={2: 202},
+            normalizar_sexo=_normalizar_sexo,
+        )
+
+    with pytest.raises(ValidationError):
+        module._normalizar_enriquecer_payload_importacion(
+            payload={
+                "fecha_nacimiento": "2000-01-01",
+                "municipio": "1.0",
+                "localidad": "2",
+                "sexo": "M",
+                "nacionalidad": "Argentina",
+                "email": "correo-invalido",
+                "telefono": "12345678",
+            },
+            offset=3,
+            add_warning=_add_warning,
+            to_date=_to_date,
+            municipios_cache={1: 101},
+            localidades_cache={2: 202},
+            normalizar_sexo=_normalizar_sexo,
+        )
 
     bad_phone_payload = {
         "fecha_nacimiento": "2000-01-01",
@@ -414,6 +462,8 @@ def test_importacion_helpers_responsable_payload_and_same_document():
         "email_responsable": "ana@example.com",
         "documento_responsable": "20123456783",
         "sexo_responsable": "F",
+        "domicilio_responsable": "Calle Resp 123",
+        "localidad_responsable": "Rosario",
         "documento": "20123456783",
     }
 
@@ -449,11 +499,17 @@ def test_importacion_helpers_responsable_enriquecimiento_y_relacion(mocker):
     def _add_warning(fila, campo, detalle):
         warnings.append((fila, campo, detalle))
 
+    class _LocalidadesQS:
+        def filter(self, **kwargs):
+            if "municipio__provincia_id" in kwargs:
+                return self
+            if kwargs == {"nombre__iexact": "Rosario"}:
+                return [SimpleNamespace(pk=11, municipio=SimpleNamespace(pk=22))]
+            return []
+
     mocker.patch(
-        "celiaquia.services.importacion_service.Localidad.objects.filter",
-        return_value=SimpleNamespace(
-            first=lambda: SimpleNamespace(pk=11, municipio=SimpleNamespace(pk=22))
-        ),
+        "celiaquia.services.importacion_service.Localidad.objects.select_related",
+        return_value=_LocalidadesQS(),
     )
 
     responsable_payload = {"fecha_nacimiento": "2001-02-03"}
@@ -480,19 +536,25 @@ def test_importacion_helpers_responsable_enriquecimiento_y_relacion(mocker):
 
     relaciones = []
     pares = set()
-    module._registrar_relacion_familiar_importacion(
-        cid_resp=10,
-        cid_beneficiario=20,
-        offset=9,
-        relaciones_familiares_pairs=pares,
-        relaciones_familiares=relaciones,
+    assert (
+        module._registrar_relacion_familiar_importacion(
+            cid_resp=10,
+            cid_beneficiario=20,
+            offset=9,
+            relaciones_familiares_pairs=pares,
+            relaciones_familiares=relaciones,
+        )
+        is True
     )
-    module._registrar_relacion_familiar_importacion(
-        cid_resp=10,
-        cid_beneficiario=20,
-        offset=9,
-        relaciones_familiares_pairs=pares,
-        relaciones_familiares=relaciones,
+    assert (
+        module._registrar_relacion_familiar_importacion(
+            cid_resp=10,
+            cid_beneficiario=20,
+            offset=9,
+            relaciones_familiares_pairs=pares,
+            relaciones_familiares=relaciones,
+        )
+        is False
     )
 
     assert relaciones == [{"hijo_id": 20, "responsable_id": 10, "fila": 9}]
@@ -516,7 +578,7 @@ def test_importacion_helpers_crear_responsable_y_legajo(mocker):
     existentes_ids = set()
     fake_ciudadano = SimpleNamespace(pk=55)
 
-    cid_resp = module._crear_responsable_y_legajo_importacion(
+    cid_resp, legajo_agregado = module._crear_responsable_y_legajo_importacion(
         responsable_payload={"fecha_nacimiento": date(1980, 1, 1)},
         payload_beneficiario={"fecha_nacimiento": date(2010, 1, 1)},
         usuario=SimpleNamespace(id=1),
@@ -526,22 +588,16 @@ def test_importacion_helpers_crear_responsable_y_legajo(mocker):
         legajos_crear=legajos_crear,
         offset=7,
         add_warning=_add_warning,
-        validar_edad_responsable_fn=lambda *_a, **_k: (
-            False,
-            ["warning edad"],
-            "error edad",
-        ),
+        validar_edad_responsable_fn=lambda *_a, **_k: (False, ["warning edad"], "error edad"),
         get_or_create_ciudadano=lambda **_kwargs: fake_ciudadano,
     )
 
     assert cid_resp == 55
+    assert legajo_agregado is True
     assert existentes_ids == {55}
     assert len(legajos_crear) == 1
     assert legajos_crear[0].kwargs["rol"] == "RESP"
-    assert warnings == [
-        (7, "edad", "warning edad"),
-        (7, "edad_responsable", "error edad"),
-    ]
+    assert warnings == []
 
 
 def test_importacion_helpers_conflictos_beneficiario_y_exclusion():
@@ -774,7 +830,7 @@ def test_importacion_helpers_procesar_responsable_same_document():
     legajos = []
     existentes_ids = set()
 
-    module._procesar_responsable_importacion(
+    cid_resp, legajo_agregado, relacion_agregada = module._procesar_responsable_importacion(
         payload=payload,
         cid_beneficiario=77,
         usuario=SimpleNamespace(id=1),
@@ -794,8 +850,10 @@ def test_importacion_helpers_procesar_responsable_same_document():
         get_or_create_ciudadano=lambda **_kwargs: (_ for _ in ()).throw(
             AssertionError("No debería crear ciudadano si es mismo documento")
         ),
+        responsable_payload={"documento": "20123456783"},
     )
 
+    assert (cid_resp, legajo_agregado, relacion_agregada) == (77, False, False)
     assert relaciones == []
     assert pares == set()
     assert legajos == []
@@ -933,7 +991,7 @@ def test_importar_legajos_guarda_registros_erroneos_y_sin_bulk_legajos(mocker):
     assert result["validos"] == 0
     assert result["errores"] == 1
     assert len(result["detalles_errores"]) == 1
-    assert "Campo obligatorio faltante" in result["detalles_errores"][0]["error"]
+    assert "Faltan campos obligatorios" in result["detalles_errores"][0]["error"]
     bulk_legajos.assert_not_called()
     registros_guardados.assert_called_once()
 
@@ -966,7 +1024,7 @@ def test_importacion_helpers_persistir_legajos_y_guardar_registros_erroneos(mock
                     "timestamp": pd.Timestamp("2020-03-04 10:30:00"),
                     "nombre": "Ana",
                 },
-                "error": "Documento inválido",
+                "error": "Documento invÃ¡lido",
             }
         ],
         batch_size=10,
@@ -974,7 +1032,7 @@ def test_importacion_helpers_persistir_legajos_y_guardar_registros_erroneos(mock
 
     reg = RegistroErroneo.objects.get(expediente=expediente)
     assert reg.fila_excel == 7
-    assert reg.mensaje_error == "Documento inválido"
+    assert reg.mensaje_error == "Documento invÃ¡lido"
     assert reg.datos_raw["fecha_nacimiento"] == "02/01/2020"
     assert reg.datos_raw["timestamp"] == "04/03/2020"
     assert reg.datos_raw["nombre"] == "Ana"
@@ -1084,7 +1142,7 @@ def test_importacion_helpers_crear_relaciones_familiares_db_real():
     module._crear_relaciones_familiares_importacion(
         relaciones_familiares=[
             {"fila": 2, "responsable_id": c1.id, "hijo_id": c2.id},
-            # Duplicado para caracterizar idempotencia vía get_or_create
+            # Duplicado para caracterizar idempotencia vÃ­a get_or_create
             {"fila": 2, "responsable_id": c1.id, "hijo_id": c2.id},
         ],
         warnings=warnings,
@@ -1238,7 +1296,7 @@ def test_importar_legajos_orquesta_loop_principal_y_postprocesos(mocker):
         {"documento": "111", "tiene_resp": True},
         {"documento": "222", "tiene_resp": False},
         {"documento": "333", "tiene_resp": False},
-        ValidationError("Fila inválida"),
+        ValidationError("Fila invÃ¡lida"),
     ]
     construir_payload = mocker.patch(
         "celiaquia.services.importacion_service._construir_payload_fila_importacion",
@@ -1266,6 +1324,10 @@ def test_importar_legajos_orquesta_loop_principal_y_postprocesos(mocker):
         "celiaquia.services.importacion_service._tiene_datos_responsable_importacion",
         side_effect=lambda payload: bool(payload.get("tiene_resp")),
     )
+    mocker.patch(
+        "celiaquia.services.importacion_service._validar_y_normalizar_responsable_payload_importacion",
+        return_value=({"documento": "999"}, False),
+    )
 
     def _procesar_responsable_side_effect(**kwargs):
         kwargs["relaciones_familiares"].append(
@@ -1275,6 +1337,7 @@ def test_importar_legajos_orquesta_loop_principal_y_postprocesos(mocker):
                 "hijo_id": kwargs["cid_beneficiario"],
             }
         )
+        return 1000, True, True
 
     procesar_resp = mocker.patch(
         "celiaquia.services.importacion_service._procesar_responsable_importacion",
@@ -1323,12 +1386,12 @@ def test_importar_legajos_orquesta_loop_principal_y_postprocesos(mocker):
     )
 
     assert result["validos"] == 1
-    assert result["errores"] == 2  # helper error + excepción de fila
+    assert result["errores"] == 2  # helper error + excepciÃ³n de fila
     assert result["excluidos_count"] == 1
     assert result["relaciones_familiares_creadas"] == 1
     assert result["relaciones_cruzadas_consolidadas"] == 2
     assert len(result["detalles_errores"]) == 2
-    assert any("Fila inválida" in d["error"] for d in result["detalles_errores"])
+    assert any("Fila invÃ¡lida" in d["error"] for d in result["detalles_errores"])
     assert construir_payload.call_count == 4
     assert procesar_benef.call_count == 3
     procesar_resp.assert_called_once()
@@ -1370,25 +1433,19 @@ def test_importar_legajos_registra_error_si_falla_responsable_tras_beneficiario(
             "sexos_nombres": set(),
         },
     )
-    mocker.patch(
-        "celiaquia.services.importacion_service._construir_payload_fila_importacion",
-        return_value={"documento": "111", "tiene_resp": True},
-    )
 
     def _procesar_beneficiario_ok(**kwargs):
         kwargs["legajos_crear"].append(SimpleNamespace(pk=501))
-        return "ok", 501
+        kwargs["existentes_ids"].add(501)
+        kwargs["abiertos"][501] = {"expediente_id": 88}
+        return {"documento": "111"}, {"documento": "222"}, False, "ok", 501
 
     mocker.patch(
-        "celiaquia.services.importacion_service._procesar_beneficiario_importacion",
+        "celiaquia.services.importacion_service._procesar_beneficiario_desde_row_importacion",
         side_effect=_procesar_beneficiario_ok,
     )
     mocker.patch(
-        "celiaquia.services.importacion_service._tiene_datos_responsable_importacion",
-        return_value=True,
-    )
-    mocker.patch(
-        "celiaquia.services.importacion_service._procesar_responsable_importacion",
+        "celiaquia.services.importacion_service._procesar_responsable_si_corresponde_importacion",
         side_effect=ValidationError("Responsable inválido"),
     )
     mocker.patch(
@@ -1436,12 +1493,12 @@ def test_importar_legajos_registra_error_si_falla_responsable_tras_beneficiario(
         batch_size=20,
     )
 
-    # Se caracteriza el comportamiento actual: el legajo del beneficiario ya quedó en buffer
-    assert result["validos"] == 1
+    assert result["validos"] == 0
     assert result["errores"] == 1
     assert result["relaciones_familiares_creadas"] == 0
     assert result["detalles_errores"] == [
         {"fila": 2, "error": "['Responsable inválido']", "datos": {"documento": "111"}}
     ]
     persistir.assert_called_once()
+    assert persistir.call_args.kwargs["legajos_crear"] == []
     guardar_err.assert_called_once()
