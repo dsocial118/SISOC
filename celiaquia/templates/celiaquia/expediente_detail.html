@@ -1111,17 +1111,11 @@
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label class="form-label">Localidad Responsable *</label>
-                                                    <select class="form-select"
-                                                            name="localidad_responsable"
-                                                            required>
-                                                        <option value="">Seleccionar...</option>
-                                                        {% for loc in localidades %}
-                                                            <option value="{{ loc.id }}"
-                                                                    {% if registro.datos_raw.localidad_responsable|stringformat:"s" == loc.id|stringformat:"s" or registro.datos_raw.localidad_responsable|lower == loc.nombre|lower %}selected{% endif %}>
-                                                                {{ loc.nombre }} ({{ loc.municipio.nombre }})
-                                                            </option>
-                                                        {% endfor %}
-                                                    </select>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="localidad_responsable"
+                                                           value="{{ registro.datos_raw.localidad_responsable|default:'' }}"
+                                                           required />
                                                 </div>
                                             </div>
 
