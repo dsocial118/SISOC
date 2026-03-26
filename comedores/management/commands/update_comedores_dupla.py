@@ -8,6 +8,7 @@ from django.db import transaction
 from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from comedores.models import Comedor
+from comedores.utils import comedor_usa_admision_para_nomina
 from duplas.models import Dupla
 
 
@@ -72,7 +73,9 @@ class Command(BaseCommand):
                 continue
 
             try:
-                comedor = Comedor.objects.select_related("dupla").get(pk=comedor_id)
+                comedor = Comedor.objects.select_related("dupla", "programa").get(
+                    pk=comedor_id
+                )
             except Comedor.DoesNotExist:
                 stats["errors"] += 1
                 stats["error_lines"].append(line_number)
@@ -119,24 +122,31 @@ class Command(BaseCommand):
             with transaction.atomic():
                 comedor.dupla = dupla
                 comedor.estado = "Asignado a Dupla Técnica"
-                comedor.save(update_fields=["dupla"])
+                comedor.save(update_fields=["dupla", "estado"])
 
                 if options["admision"]:
-                    if (
-                        Admision.objects.filter(
+                    # Los comedores con nómina directa no deben crear admisiones
+                    # aunque este comando se ejecute con --admision.
+                    if not comedor_usa_admision_para_nomina(comedor):
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"Línea {line_number}: comedor {comedor_id} usa "
+                                "nómina directa; no se crea admisión."
+                            )
+                        )
+                    else:
+                        if not Admision.objects.filter(
                             comedor=comedor,
                             tipo="incorporacion",
                             enviada_a_archivo=False,
-                        ).exists()
-                        == False
-                    ):
-                        Admision.objects.create(
-                            comedor=comedor,
-                            tipo="incorporacion",
-                        )
+                        ).exists():
+                            Admision.objects.create(
+                                comedor=comedor,
+                                tipo="incorporacion",
+                            )
 
-                    if Hitos.objects.filter(comedor=comedor).exists() == False:
-                        Hitos.objects.create(comedor=comedor)
+                        if not Hitos.objects.filter(comedor=comedor).exists():
+                            Hitos.objects.create(comedor=comedor)
 
             stats["applied"] += 1
             self.stdout.write(self.style.SUCCESS(f"[APLICADO] {change_message}"))

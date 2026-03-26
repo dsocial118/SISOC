@@ -16,10 +16,8 @@ from comedores.forms.comedor_form import (
 )
 from comedores.models import Nomina
 from comedores.services.comedor_service import ComedorService
+from comedores.utils import comedor_usa_admision_para_nomina
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
-
-# Programas que no requieren admisión para cargar nómina (Abordaje comunitario)
-_PROGRAMAS_SIN_ADMISION = {3, 4}
 
 
 def _get_nomina_scoped_or_404(pk, user):
@@ -39,10 +37,10 @@ def _get_comedor_scoped_or_404(comedor_pk, user):
 
 
 def _get_comedor_directo_or_404(comedor_pk, user):
-    """Obtiene un comedor habilitado para nómina directa (programa 3/4)."""
+    """Obtiene un comedor habilitado para nómina directa."""
     comedor = _get_comedor_scoped_or_404(comedor_pk, user)
-    if comedor.programa_id not in _PROGRAMAS_SIN_ADMISION:
-        raise Http404("La nómina directa solo aplica a programas 3/4.")
+    if comedor_usa_admision_para_nomina(comedor):
+        raise Http404("La nómina directa solo aplica a comedores con nómina directa.")
     return comedor
 
 

@@ -18,6 +18,7 @@ from comedores.models import Comedor, HistorialValidacion, Nomina
 from comedores.services.comedor_service import ComedorService
 from comedores.services.validacion_service import ValidacionService
 from comedores.views import ComedorDetailView, NominaImportarView
+from organizaciones.models import Aval, Firmante, Organizacion, RolFirmante
 
 
 # Tests for ComedorDetailView (HTML)
@@ -27,6 +28,7 @@ def test_comedor_detail_view_get_context(client_logged_fixture, comedor_fixture)
     comedor = comedor_fixture
     url = reverse("comedor_detalle", kwargs={"pk": comedor.pk})
     response = client.get(url)
+    body = response.content.decode()
     assert response.status_code == 200
     for key in [
         "relevamientos",
@@ -47,49 +49,116 @@ def test_comedor_detail_view_get_context(client_logged_fixture, comedor_fixture)
 
     assert "GESTIONAR_API_KEY" not in response.context
     assert "GESTIONAR_API_CREAR_COMEDOR" not in response.context
-
-
-@pytest.mark.django_db
-def test_comedor_detail_view_post_new_relevamiento(
-    client_logged_fixture, comedor_fixture, monkeypatch
-):
-    client = client_logged_fixture
-    comedor = comedor_fixture
-    relevamiento_mock = mock.Mock()
-    relevamiento_mock.pk = 1
-    relevamiento_mock.comedor.pk = comedor.pk
-    monkeypatch.setattr(
-        "relevamientos.service.RelevamientoService.create_pendiente",
-        lambda req, pk: relevamiento_mock,
-    )
-    url = reverse("comedor_detalle", kwargs={"pk": comedor.pk})
-    response = client.post(url, {"territorial": "1"})
-    assert response.status_code == 302
+    assert "nuevo_comedor_detalle" not in body
+    assert "comedores_nuevo/" not in body
+    assert reverse("relevamientos", kwargs={"comedor_pk": comedor.pk}) in body
     assert (
-        reverse("relevamiento_detalle", kwargs={"pk": 1, "comedor_pk": comedor.pk})
-        in response.url
+        reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor.pk}) not in body
     )
 
 
 @pytest.mark.django_db
-def test_comedor_detail_view_post_edit_relevamiento(
-    client_logged_fixture, comedor_fixture, monkeypatch
+def test_comedor_detail_view_responsables_usa_datos_de_organizacion(
+    client_logged_fixture, comedor_fixture
 ):
     client = client_logged_fixture
     comedor = comedor_fixture
-    relevamiento_mock = mock.Mock()
-    relevamiento_mock.pk = 2
-    relevamiento_mock.comedor.pk = comedor.pk
-    monkeypatch.setattr(
-        "relevamientos.service.RelevamientoService.update_territorial",
-        lambda req: relevamiento_mock,
+    organizacion = Organizacion.objects.create(
+        nombre="Asociacion Comedor Norte",
+        cuit=20333444556,
+        email="org@example.com",
+        telefono=1144556677,
     )
-    url = reverse("comedor_detalle", kwargs={"pk": comedor.pk})
-    response = client.post(url, {"territorial_editar": "1"})
-    assert response.status_code == 302
-    assert (
-        reverse("relevamiento_detalle", kwargs={"pk": 2, "comedor_pk": comedor.pk})
-        in response.url
+    rol = RolFirmante.objects.create(nombre="Presidenta")
+    Firmante.objects.create(
+        organizacion=organizacion,
+        nombre="Ana Perez",
+        cuit=27111222333,
+        rol=rol,
+    )
+    Firmante.objects.create(
+        organizacion=organizacion,
+        nombre="Luis Gomez",
+        cuit=20222333444,
+    )
+    Aval.objects.create(
+        organizacion=organizacion,
+        nombre="Carlos Aval",
+        cuit=20999888777,
+    )
+    comedor.organizacion = organizacion
+    comedor.save(update_fields=["organizacion"])
+
+    response = client.get(reverse("comedor_detalle", kwargs={"pk": comedor.pk}))
+    body = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Asociacion Comedor Norte" in body
+    assert "org@example.com" in body
+    assert "1144556677" in body
+    assert "Firmantes" in body
+    assert "Presidenta: Ana Perez 27111222333" in body
+    assert "Luis Gomez 20222333444" in body
+    assert "Avales" in body
+    assert "Aval 1" in body
+    assert "Carlos Aval 20999888777" in body
+    assert "Responsable 1" not in body
+    assert "Responsable 2" not in body
+    assert "Responsable de la tarjeta del cobro" not in body
+    assert "<strong>Aval 2:</strong>" not in body
+
+
+@pytest.mark.django_db
+def test_comedor_detail_view_responsables_oculta_datos_y_bloques_vacios(
+    client_logged_fixture, comedor_fixture
+):
+    client = client_logged_fixture
+    comedor = comedor_fixture
+    organizacion = Organizacion.objects.create(
+        nombre="Organizacion Minima",
+        cuit=20123456789,
+        email="",
+        telefono=None,
+        subtipo_entidad=None,
+    )
+    comedor.organizacion = organizacion
+    comedor.save(update_fields=["organizacion"])
+
+    response = client.get(reverse("comedor_detalle", kwargs={"pk": comedor.pk}))
+    body = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Organizacion Minima" in body
+    assert ">Email:</strong>" not in body
+    assert ">Telefono:</strong>" not in body
+    assert ">Subtipo de entidad:</strong>" not in body
+    assert "Firmantes" not in body
+    assert "Avales" not in body
+
+
+@pytest.mark.django_db
+def test_comedor_detalle_legacy_redirect(client_logged_fixture, comedor_fixture):
+    client = client_logged_fixture
+    comedor = comedor_fixture
+    url = reverse("nuevo_comedor_detalle", kwargs={"pk": comedor.pk})
+    response = client.get(url)
+    assert response.status_code == 301
+    assert response.headers["Location"] == reverse(
+        "comedor_detalle", kwargs={"pk": comedor.pk}
+    )
+
+
+@pytest.mark.django_db
+def test_comedor_detalle_legacy_redirect_preserva_query_string(
+    client_logged_fixture, comedor_fixture
+):
+    client = client_logged_fixture
+    comedor = comedor_fixture
+    url = reverse("nuevo_comedor_detalle", kwargs={"pk": comedor.pk})
+    response = client.get(f"{url}?admision_id=99")
+    assert response.status_code == 301
+    assert response.headers["Location"] == (
+        f"{reverse('comedor_detalle', kwargs={'pk': comedor.pk})}?admision_id=99"
     )
 
 
@@ -165,22 +234,21 @@ def test_comedor_detail_view_post_redirects_on_other(
 
 
 @pytest.mark.django_db
-def test_comedor_detail_view_post_error(
-    monkeypatch, client_logged_fixture, comedor_fixture
+def test_comedor_detail_view_post_legacy_relevamiento_redirects_a_relevamientos(
+    client_logged_fixture, comedor_fixture
 ):
     client = client_logged_fixture
     comedor = comedor_fixture
-
-    def raise_exc(*a, **kw):
-        raise RuntimeError("fail")
-
-    monkeypatch.setattr(
-        "relevamientos.service.RelevamientoService.create_pendiente", raise_exc
-    )
     url = reverse("comedor_detalle", kwargs={"pk": comedor.pk})
     response = client.post(url, {"territorial": "1"}, follow=True)
     assert response.status_code == 200
-    assert "Error al crear el relevamiento" in response.content.decode()
+    assert response.redirect_chain == [
+        (reverse("relevamientos", kwargs={"comedor_pk": comedor.pk}), 302)
+    ]
+    assert (
+        "La gestión de relevamientos ya no se realiza desde este legajo."
+        in response.content.decode()
+    )
 
 
 # Tests for AJAX endpoint (if present)
@@ -692,7 +760,23 @@ from comedores.views import (
 
 def _programa(pk, nombre):
     """Crea (o recupera) un Programas con ID exacto."""
-    prog, _ = Programas.objects.get_or_create(id=pk, defaults={"nombre": nombre})
+    prog, _ = Programas.objects.get_or_create(
+        id=pk,
+        defaults={
+            "nombre": nombre,
+            "usa_admision_para_nomina": pk not in (3, 4),
+        },
+    )
+    cambios = []
+    if prog.nombre != nombre:
+        prog.nombre = nombre
+        cambios.append("nombre")
+    usa_admision_para_nomina = pk not in (3, 4)
+    if prog.usa_admision_para_nomina != usa_admision_para_nomina:
+        prog.usa_admision_para_nomina = usa_admision_para_nomina
+        cambios.append("usa_admision_para_nomina")
+    if cambios:
+        prog.save(update_fields=cambios)
     return prog
 
 
@@ -767,13 +851,15 @@ def test_get_nomina_detail_by_comedor_solo_devuelve_nominas_directas(ciudadano_f
 
 
 # ---------------------------------------------------------------------------
-# Signal — asignar nóminas directas al crear admisión en comedor 3/4
+# Signal — no debe reasignar nóminas directas en programas 3/4
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.django_db
-def test_signal_asigna_nominas_directas_al_crear_admision_prog3(ciudadano_fixture):
-    """Al crear admisión en comedor prog 3, las nóminas directas pasan a esa admisión."""
+def test_signal_no_reasigna_nominas_directas_al_crear_admision_prog3(
+    ciudadano_fixture,
+):
+    """Los programas 3/4 conservan la nómina directa aunque exista una admisión accidental."""
     prog = _programa(3, "Abordaje comunitario - Línea Secos")
     comedor = Comedor.objects.create(nombre="Comedor Signal P3", programa=prog)
     Nomina.objects.create(
@@ -783,13 +869,16 @@ def test_signal_asigna_nominas_directas_al_crear_admision_prog3(ciudadano_fixtur
     admision = Admision.objects.create(comedor=comedor)
 
     nomina = Nomina.objects.get(ciudadano=ciudadano_fixture)
-    assert nomina.admision_id == admision.pk
-    assert nomina.comedor_id is None
+    assert admision.comedor_id == comedor.pk
+    assert nomina.admision_id is None
+    assert nomina.comedor_id == comedor.pk
 
 
 @pytest.mark.django_db
-def test_signal_asigna_nominas_directas_al_crear_admision_prog4(ciudadano_fixture):
-    """Al crear admisión en comedor prog 4, las nóminas directas pasan a esa admisión."""
+def test_signal_no_reasigna_nominas_directas_al_crear_admision_prog4(
+    ciudadano_fixture,
+):
+    """Los programas 3/4 conservan la nómina directa aunque exista una admisión accidental."""
     prog = _programa(4, "Abordaje comunitario - Línea Tradicional")
     comedor = Comedor.objects.create(nombre="Comedor Signal P4", programa=prog)
     Nomina.objects.create(
@@ -799,24 +888,25 @@ def test_signal_asigna_nominas_directas_al_crear_admision_prog4(ciudadano_fixtur
     admision = Admision.objects.create(comedor=comedor)
 
     nomina = Nomina.objects.get(ciudadano=ciudadano_fixture)
-    assert nomina.admision_id == admision.pk
-    assert nomina.comedor_id is None
+    assert admision.comedor_id == comedor.pk
+    assert nomina.admision_id is None
+    assert nomina.comedor_id == comedor.pk
 
 
 @pytest.mark.django_db
-def test_signal_no_asigna_nominas_si_programa_2(ciudadano_fixture):
-    """Al crear admisión en comedor prog 2, las nóminas directas NO se tocan."""
+def test_signal_asigna_nominas_a_admision_si_programa_2(ciudadano_fixture):
+    """Al crear admisión en programa 2, la nómina pasa al flujo por admisión."""
     prog = _programa(2, "Alimentar comunidad")
     comedor = Comedor.objects.create(nombre="Comedor Signal P2", programa=prog)
     nomina = Nomina.objects.create(
         comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
     )
 
-    Admision.objects.create(comedor=comedor)
+    admision = Admision.objects.create(comedor=comedor)
 
     nomina.refresh_from_db()
-    assert nomina.admision_id is None
-    assert nomina.comedor_id == comedor.pk
+    assert nomina.admision_id == admision.pk
+    assert nomina.comedor_id is None
 
 
 @pytest.mark.django_db
@@ -917,9 +1007,7 @@ def test_nomina_directa_delete_view_muestra_cancelacion_directa(
         comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
     )
 
-    url = reverse(
-        "nomina_directa_borrar", kwargs={"pk": comedor.pk, "pk2": nomina.pk}
-    )
+    url = reverse("nomina_directa_borrar", kwargs={"pk": comedor.pk, "pk2": nomina.pk})
     response = client_nomina_fixture.get(url)
 
     assert response.status_code == 200
@@ -963,6 +1051,66 @@ def test_nomina_cambiar_estado_funciona_con_nomina_directa(
     assert response.status_code == 200
     nomina.refresh_from_db()
     assert nomina.estado == Nomina.ESTADO_ESPERA
+
+
+@pytest.mark.django_db
+def test_comedor_detail_view_muestra_nomina_directa_para_programa_sin_admision(
+    ciudadano_fixture,
+):
+    """El detalle del comedor debe enlazar a la nómina directa cuando no usa admisión."""
+    from django.test import RequestFactory
+
+    prog = _programa(4, "Abordaje comunitario - Línea Tradicional")
+    comedor = Comedor.objects.create(nombre="Comedor Directo", programa=prog)
+    Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+
+    view = ComedorDetailView()
+    view.request = RequestFactory().get(f"/comedores/{comedor.pk}")
+    view.object = comedor
+
+    context = view.get_context_data()
+
+    assert context["nomina_total"] == 1
+    assert context["selected_admision_id"] is None
+
+
+@pytest.mark.django_db
+def test_flujo_integrado_comedor_sin_admision_muestra_y_abre_nomina_directa(
+    client_logged_fixture, client_nomina_fixture, ciudadano_fixture, monkeypatch
+):
+    """Cubre el flujo real: detalle del comedor + acceso a la nómina directa."""
+    prog = _programa(3, "Abordaje comunitario - Línea Secos")
+    comedor = Comedor.objects.create(nombre="Comedor Integrado", programa=prog)
+    Nomina.objects.create(
+        comedor=comedor, ciudadano=ciudadano_fixture, estado=Nomina.ESTADO_ACTIVO
+    )
+    monkeypatch.setattr(
+        "comedores.views.comedor.ComedorService.get_comedor_detail_object",
+        lambda pk, user=None: comedor,
+    )
+
+    detalle_url = reverse("comedor_detalle", kwargs={"pk": comedor.pk})
+    detalle_response = client_logged_fixture.get(detalle_url)
+
+    assert detalle_response.status_code == 200
+    detalle_body = detalle_response.content.decode()
+    assert detalle_response.context["selected_admision_id"] is None
+    assert (
+        detalle_response.context["comedor"].programa.usa_admision_para_nomina is False
+    )
+    assert detalle_response.context["nomina_total"] == 1
+    assert reverse("nomina_directa_ver", kwargs={"pk": comedor.pk}) in detalle_body
+    assert "Este comedor usa nómina directa y no depende de admisiones." in detalle_body
+
+    nomina_directa_url = reverse("nomina_directa_ver", kwargs={"pk": comedor.pk})
+    nomina_directa_response = client_nomina_fixture.get(nomina_directa_url)
+
+    assert nomina_directa_response.status_code == 200
+    assert nomina_directa_response.context["admision_pk"] is None
+    assert nomina_directa_response.context["cantidad_nomina"] == 1
+    assert nomina_directa_response.context["object"].pk == comedor.pk
 
 
 # ---------------------------------------------------------------------------

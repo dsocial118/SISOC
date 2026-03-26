@@ -1,4 +1,5 @@
 from django import forms
+from django.core.validators import RegexValidator
 
 from ciudadanos.models import Ciudadano
 from core.models import Localidad, Municipio, Provincia
@@ -40,6 +41,12 @@ __all__ = [
 
 
 class CentroDeInfanciaForm(forms.ModelForm):
+    SOLO_DIGITOS_ERROR = "Ingrese solo números (sin espacios ni signos)."
+    TELEFONO_FORMATO_ERROR = "Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones."
+    TELEFONO_REGEX = RegexValidator(
+        regex=r"^\d+(?:-\d+)*$",
+        message=TELEFONO_FORMATO_ERROR,
+    )
 
     @staticmethod
     def _obtener_provincia_usuario(user):
@@ -64,6 +71,31 @@ class CentroDeInfanciaForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self._popular_campos_ubicacion()
         self._aplicar_provincia_usuario()
+        self._aplicar_atributos_numericos()
+
+    def _aplicar_atributos_numericos(self):
+        # Campos estrictamente numéricos
+        for field_name in ["numero"]:
+            attrs = self.fields[field_name].widget.attrs
+            attrs["inputmode"] = "numeric"
+            attrs["pattern"] = r"\d*"
+
+        # Campos de teléfono: permitir guiones y usar inputmode="tel"
+        for field_name in ["telefono", "telefono_referente"]:
+            if field_name not in self.fields:
+                continue
+            attrs = self.fields[field_name].widget.attrs
+            attrs["inputmode"] = "tel"
+            # Patrón alineado con TELEFONO_REGEX/validación backend: dígitos con grupos separados por guiones
+            attrs["pattern"] = r"\d+(?:-\d+)*"
+
+    def _clean_solo_digitos(self, field_name):
+        value = (self.cleaned_data.get(field_name) or "").strip()
+        if not value:
+            return value
+        if not value.isdigit():
+            raise forms.ValidationError(self.SOLO_DIGITOS_ERROR)
+        return value
 
     def _popular_campos_ubicacion(self):
         def parse_pk(value):
@@ -139,6 +171,23 @@ class CentroDeInfanciaForm(forms.ModelForm):
             if provincia_usuario:
                 return provincia_usuario
         return self.cleaned_data.get("provincia")
+
+    def clean_numero(self):
+        return self._clean_solo_digitos("numero")
+
+    def clean_telefono(self):
+        value = (self.cleaned_data.get("telefono") or "").strip()
+        if not value:
+            return value
+        self.TELEFONO_REGEX(value)
+        return value
+
+    def clean_telefono_referente(self):
+        value = (self.cleaned_data.get("telefono_referente") or "").strip()
+        if not value:
+            return value
+        self.TELEFONO_REGEX(value)
+        return value
 
     class Meta:
         model = CentroDeInfancia
