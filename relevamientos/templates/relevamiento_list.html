@@ -106,9 +106,7 @@
 
 {% block customJS %}
     {% if perms.relevamientos.add_relevamiento %}
-        <script nonce="{{ request.csp_nonce }}">
-        const comedorId = "{{ comedor.id }}";
-        </script>
+        <script nonce="{{ request.csp_nonce }}">const comedorId = "{{ comedor.id }}";</script>
         <script src="{% static 'custom/js/comedordetail_territorial_cache.js' %}"></script>
     {% endif %}
 {% endblock %}

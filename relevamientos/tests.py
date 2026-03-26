@@ -28,7 +28,10 @@ def test_list_view(client_logged, comedor):
     assert response.status_code == 200
     assert comedor.nombre in body
     assert 'data-bs-target="#modalRelevamientoNuevo"' in body
-    assert f'action="{reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor.pk})}"' in body
+    assert (
+        f'action="{reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor.pk})}"'
+        in body
+    )
     assert 'id="new_territorial_select"' in body
 
 
