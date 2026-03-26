@@ -277,7 +277,8 @@ def test_actualizar_registro_erroneo_rechaza_campos_obligatorios_faltantes(clien
     assert "sexo" in response.json()["error"].lower()
 
     registro.refresh_from_db()
-    assert registro.datos_raw["sexo"] == "1"
+    assert "sexo" not in registro.datos_raw
+    assert "sexo" in registro.mensaje_error.lower()
 
 
 @pytest.mark.django_db

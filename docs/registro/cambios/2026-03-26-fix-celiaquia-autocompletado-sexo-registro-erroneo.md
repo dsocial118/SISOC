@@ -9,7 +9,9 @@ En el detalle de expediente de Celiaquía, cuando la importación de Excel falla
 ## Cambios aplicados
 - Se ajustó el template de edición de registros erróneos para mapear abreviaturas `M/F` a opciones `Masculino/Femenino` tanto para beneficiario como para responsable.
 - Se agregó test de regresión para validar que, ante error en otra columna, el formulario mantiene preseleccionados los campos `sexo` y `sexo_responsable` cuando llegan como `M/F`.
+- Se ajustó el endpoint de actualización de `RegistroErroneo` para persistir los cambios de formulario incluso si la validación global todavía falla (guardado parcial con error de validación).
+- Se ajustó el JS de registros erróneos para forzar guardado de cambios pendientes antes de ejecutar `Reprocesar`, evitando condiciones de carrera por debounce.
 
 ## Impacto
 - Mejora de UX en corrección de registros erróneos: se preserva y muestra más información válida durante la subsanación.
-- No modifica reglas de validación de negocio ni obligatoriedad de campos.
+- Se mantiene la misma validación de negocio y obligatoriedad, pero sin perder correcciones parciales del operador.
