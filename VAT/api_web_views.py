@@ -2,6 +2,7 @@ from django.db.models import Count, Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import mixins, status, viewsets
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from core.api_auth import HasAPIKeyOrToken
@@ -245,7 +246,10 @@ class VatWebInscripcionViewSet(
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        inscripcion = serializer.save()
+        try:
+            inscripcion = serializer.save()
+        except ValueError as exc:
+            raise ValidationError({"error": str(exc)}) from exc
         response_serializer = VatWebInscripcionSerializer(
             inscripcion, context={"request": request}
         )

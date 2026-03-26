@@ -50,10 +50,12 @@ from VAT.serializers import (
     EvaluacionSerializer,
     ResultadoEvaluacionSerializer,
 )
+from VAT.services.inscripcion_service import InscripcionService
 from core.api_auth import HasAPIKey
 from core.models import Provincia, Municipio, Localidad
 from core.soft_delete.view_helpers import is_soft_deletable_instance
 from core.utils import format_serializer_errors
+from rest_framework.exceptions import ValidationError
 
 logger = logging.getLogger("django")
 
@@ -451,6 +453,23 @@ class InscripcionViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         if estado:
             queryset = queryset.filter(estado=estado)
         return queryset
+
+    def perform_create(self, serializer):
+        data = serializer.validated_data
+        try:
+            inscripcion = InscripcionService.crear_inscripcion(
+                ciudadano=data["ciudadano"],
+                comision=data["comision"],
+                programa=data.get("programa"),
+                estado=data.get("estado", "inscripta"),
+                origen_canal=data.get("origen_canal", "api"),
+                observaciones=data.get("observaciones", ""),
+                usuario=getattr(self.request, "user", None),
+            )
+        except ValueError as exc:
+            raise ValidationError({"error": str(exc)}) from exc
+
+        serializer.instance = inscripcion
 
 
 # Phase 7 - Evaluaciones
