@@ -127,48 +127,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    const REQUIRED_FIELDS = [
-        'apellido',
-        'nombre',
-        'documento',
-        'fecha_nacimiento',
-        'sexo',
-        'nacionalidad',
-        'municipio',
-        'localidad',
-        'calle',
-        'altura',
-        'codigo_postal',
-        'apellido_responsable',
-        'nombre_responsable',
-        'documento_responsable',
-        'fecha_nacimiento_responsable',
-        'sexo_responsable',
-        'domicilio_responsable',
-        'localidad_responsable'
-    ];
-
-    const FIELD_LABELS = {
-        apellido: 'apellido',
-        nombre: 'nombre',
-        documento: 'documento',
-        fecha_nacimiento: 'fecha de nacimiento',
-        sexo: 'sexo',
-        nacionalidad: 'nacionalidad',
-        municipio: 'municipio',
-        localidad: 'localidad',
-        calle: 'calle',
-        altura: 'altura',
-        codigo_postal: 'codigo postal',
-        apellido_responsable: 'apellido del responsable',
-        nombre_responsable: 'nombre del responsable',
-        documento_responsable: 'documento del responsable',
-        fecha_nacimiento_responsable: 'fecha de nacimiento del responsable',
-        sexo_responsable: 'sexo del responsable',
-        domicilio_responsable: 'domicilio del responsable',
-        localidad_responsable: 'localidad del responsable'
-    };
-
     function mostrarErrorValidacion(form, message) {
         if (form.dataset.validationMessage === message) return;
         form.dataset.validationMessage = message;
@@ -180,16 +138,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function guardarCambiosPendientesAntesDeReprocesar() {
-        const idsPendientes = Array.from(registrosConCambios);
-        if (idsPendientes.length === 0) return { exitosos: 0, fallidos: 0 };
+        const forms = Array.from(document.querySelectorAll('.form-editar-error'));
+        if (forms.length === 0) return { exitosos: 0, fallidos: 0 };
 
         let exitosos = 0;
         let fallidos = 0;
 
-        for (const registroId of idsPendientes) {
+        for (const form of forms) {
+            const registroId = form.dataset.registroId;
             clearTimeout(saveTimers[registroId]);
-            const form = document.querySelector(`.form-editar-error[data-registro-id="${registroId}"]`);
-            if (!form) continue;
             const guardadoOk = await guardarRegistro(form, registroId, { mostrarErrores: false });
             if (guardadoOk) {
                 exitosos += 1;
@@ -213,37 +170,6 @@ document.addEventListener('DOMContentLoaded', function() {
             datos[key] = typeof value === 'string' ? value.trim() : value;
         });
 
-        const faltantes = REQUIRED_FIELDS.filter(field => !String(datos[field] || '').trim());
-        if (faltantes.length > 0) {
-            const nombres = faltantes.map(field => FIELD_LABELS[field] || field);
-            if (mostrarErrores) {
-                mostrarErrorValidacion(
-                    form,
-                    `Faltan campos obligatorios: ${nombres.join(', ')}.`
-                );
-            }
-            return Promise.resolve(false);
-        }
-
-        const telefono = String(datos.telefono || '').trim();
-        if (telefono && telefono.length < 8) {
-            if (mostrarErrores) {
-                mostrarErrorValidacion(form, 'El telefono debe tener al menos 8 digitos.');
-            }
-            return Promise.resolve(false);
-        }
-
-        const telefonoResponsable = String(datos.telefono_responsable || '').trim();
-        if (telefonoResponsable && telefonoResponsable.length < 8) {
-            if (mostrarErrores) {
-                mostrarErrorValidacion(
-                    form,
-                    'El telefono del responsable debe tener al menos 8 digitos.'
-                );
-            }
-            return Promise.resolve(false);
-        }
-
         limpiarErrorValidacion(form);
 
         return fetch(url, {
@@ -265,6 +191,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     setTimeout(() => {
                         row.style.borderLeft = '4px solid #dc3545';
                     }, 1000);
+                }
+                return true;
+            }
+            if (data.saved_partial) {
+                registrosConCambios.delete(String(registroId));
+                if (mostrarErrores) {
+                    mostrarErrorValidacion(
+                        form,
+                        data.error || 'Se guardaron cambios parciales, pero quedan validaciones pendientes.'
+                    );
                 }
                 return true;
             } else {

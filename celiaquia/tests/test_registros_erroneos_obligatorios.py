@@ -275,6 +275,7 @@ def test_actualizar_registro_erroneo_rechaza_campos_obligatorios_faltantes(clien
 
     assert response.status_code == 400
     assert "sexo" in response.json()["error"].lower()
+    assert response.json()["saved_partial"] is True
 
     registro.refresh_from_db()
     assert "sexo" not in registro.datos_raw

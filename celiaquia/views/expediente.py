@@ -1439,7 +1439,14 @@ class ActualizarRegistroErroneoView(View):
         except ValidationError as exc:
             registro.mensaje_error = str(exc)
             registro.save(update_fields=["datos_raw", "mensaje_error"])
-            return JsonResponse({"success": False, "error": str(exc)}, status=400)
+            return JsonResponse(
+                {
+                    "success": False,
+                    "saved_partial": True,
+                    "error": str(exc),
+                },
+                status=400,
+            )
         except Exception as e:
             logger.error("Error actualizando registro errÃ³neo: %s", e, exc_info=True)
             return JsonResponse(
