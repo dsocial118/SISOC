@@ -505,6 +505,8 @@ def test_importacion_helpers_responsable_enriquecimiento_y_relacion(mocker):
                 return self
             if kwargs == {"nombre__iexact": "Rosario"}:
                 return [SimpleNamespace(pk=11, municipio=SimpleNamespace(pk=22))]
+            if kwargs == {"nombre__icontains": "Rosario"}:
+                return [SimpleNamespace(pk=11, municipio=SimpleNamespace(pk=22))]
             return []
 
     mocker.patch(
@@ -560,6 +562,34 @@ def test_importacion_helpers_responsable_enriquecimiento_y_relacion(mocker):
     assert relaciones == [{"hijo_id": 20, "responsable_id": 10, "fila": 9}]
 
 
+def test_importacion_helpers_resuelve_localidad_responsable_con_parentesis(mocker):
+    class _LocalidadesQS:
+        def filter(self, **kwargs):
+            if "municipio__provincia_id" in kwargs:
+                return self
+            if kwargs == {"nombre__iexact": "Rosario"}:
+                return [SimpleNamespace(pk=44, municipio=SimpleNamespace(pk=55))]
+            return []
+
+    mocker.patch(
+        "celiaquia.services.importacion_service.Localidad.objects.select_related",
+        return_value=_LocalidadesQS(),
+    )
+
+    responsable_payload = {}
+    payload = {"localidad_responsable": "Rosario (Municipio Rosario)"}
+    module._resolver_localidad_responsable_payload_importacion(
+        responsable_payload=responsable_payload,
+        payload=payload,
+        provincia_usuario_id=7,
+        offset=1,
+        add_warning=lambda *_args, **_kwargs: None,
+    )
+
+    assert responsable_payload["localidad"] == 44
+    assert responsable_payload["municipio"] == 55
+
+
 def test_importacion_helpers_crear_responsable_y_legajo(mocker):
     warnings = []
 
@@ -588,7 +618,11 @@ def test_importacion_helpers_crear_responsable_y_legajo(mocker):
         legajos_crear=legajos_crear,
         offset=7,
         add_warning=_add_warning,
-        validar_edad_responsable_fn=lambda *_a, **_k: (False, ["warning edad"], "error edad"),
+        validar_edad_responsable_fn=lambda *_a, **_k: (
+            False,
+            ["warning edad"],
+            "error edad",
+        ),
         get_or_create_ciudadano=lambda **_kwargs: fake_ciudadano,
     )
 
@@ -830,27 +864,29 @@ def test_importacion_helpers_procesar_responsable_same_document():
     legajos = []
     existentes_ids = set()
 
-    cid_resp, legajo_agregado, relacion_agregada = module._procesar_responsable_importacion(
-        payload=payload,
-        cid_beneficiario=77,
-        usuario=SimpleNamespace(id=1),
-        expediente=SimpleNamespace(id=9),
-        estado_id=5,
-        provincia_usuario_id=7,
-        offset=12,
-        normalizar_sexo=lambda value: 2 if value == "F" else None,
-        to_date=lambda value: value,
-        add_warning=_add_warning,
-        add_error=_add_error,
-        validar_edad_responsable_fn=lambda *_a, **_k: (True, [], None),
-        existentes_ids=existentes_ids,
-        legajos_crear=legajos,
-        relaciones_familiares_pairs=pares,
-        relaciones_familiares=relaciones,
-        get_or_create_ciudadano=lambda **_kwargs: (_ for _ in ()).throw(
-            AssertionError("No debería crear ciudadano si es mismo documento")
-        ),
-        responsable_payload={"documento": "20123456783"},
+    cid_resp, legajo_agregado, relacion_agregada = (
+        module._procesar_responsable_importacion(
+            payload=payload,
+            cid_beneficiario=77,
+            usuario=SimpleNamespace(id=1),
+            expediente=SimpleNamespace(id=9),
+            estado_id=5,
+            provincia_usuario_id=7,
+            offset=12,
+            normalizar_sexo=lambda value: 2 if value == "F" else None,
+            to_date=lambda value: value,
+            add_warning=_add_warning,
+            add_error=_add_error,
+            validar_edad_responsable_fn=lambda *_a, **_k: (True, [], None),
+            existentes_ids=existentes_ids,
+            legajos_crear=legajos,
+            relaciones_familiares_pairs=pares,
+            relaciones_familiares=relaciones,
+            get_or_create_ciudadano=lambda **_kwargs: (_ for _ in ()).throw(
+                AssertionError("No debería crear ciudadano si es mismo documento")
+            ),
+            responsable_payload={"documento": "20123456783"},
+        )
     )
 
     assert (cid_resp, legajo_agregado, relacion_agregada) == (77, False, False)

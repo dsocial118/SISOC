@@ -99,6 +99,14 @@ def _is_provincial(user) -> bool:
         return False
 
 
+def _can_manage_registros_erroneos(user) -> bool:
+    return bool(
+        _is_admin(user)
+        or _is_provincial(user)
+        or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+    )
+
+
 def _normalizar_datos_registro_erroneo(payload):
     datos_normalizados = {}
     for field in IMPORTACION_EDITABLE_FIELDS:
@@ -117,6 +125,11 @@ def _limpiar_datos_registro_erroneo(payload):
 
 def _resolver_provincia_id_registro_erroneo(user, expediente):
     provincia = _user_provincia(user) or getattr(expediente, "provincia", None)
+    if provincia is None:
+        try:
+            provincia = expediente.usuario_provincia.profile.provincia
+        except Exception:
+            provincia = None
     for attr in ("pk", "id"):
         provincia_id = getattr(provincia, attr, None)
         if provincia_id is not None:
@@ -345,7 +358,9 @@ class ProcesarExpedienteView(View):
                     nom = d.get("nombre", "")
                     estado = d.get("estado_programa") or d.get("motivo") or "-"
                     expid = d.get("expediente_origen_id", "-")
-                    preview.append(f"â€¢ {doc} â€” {ape}, {nom} ({estado}) â€” Exp #{expid}")
+                    preview.append(
+                        f"â€¢ {doc} â€” {ape}, {nom} ({estado}) â€” Exp #{expid}"
+                    )
 
                 extra = ""
                 if len(det) > 10:
@@ -438,7 +453,9 @@ class ExpedientePreviewExcelView(View):
         logger.debug("PREVIEW: %s %s", request.method, request.get_full_path())
         archivo = request.FILES.get("excel_masivo")
         if not archivo:
-            return JsonResponse({"error": "No se recibiÃ³ ningÃºn archivo."}, status=400)
+            return JsonResponse(
+                {"error": "No se recibiÃ³ ningÃºn archivo."}, status=400
+            )
 
         raw_limit = request.POST.get("limit") or request.GET.get("limit")
         max_rows = _parse_limit(raw_limit, default=None, max_cap=5000)
@@ -521,10 +538,12 @@ class ExpedienteDetailView(DetailView):
         is_admin = _is_admin(user)
         is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
         is_tecnico = _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+        can_manage_registros_erroneos = _can_manage_registros_erroneos(user)
         ctx["is_tecnico_celiaquia"] = is_tecnico
         ctx["is_coord_celiaquia"] = is_coord
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
+        ctx["can_manage_registros_erroneos"] = can_manage_registros_erroneos
 
         preview = preview_error = None
         preview_limit_actual = None
@@ -774,6 +793,11 @@ class ExpedienteDetailView(DetailView):
                 Localidad.objects.filter(municipio__provincia=prov)
                 .select_related("municipio")
                 .order_by("municipio__nombre", "nombre")
+            )
+        elif can_manage_registros_erroneos:
+            municipios = Municipio.objects.all().order_by("nombre")
+            localidades = Localidad.objects.select_related("municipio").order_by(
+                "municipio__nombre", "nombre"
             )
 
         ctx.update(
@@ -1380,7 +1404,7 @@ class ActualizarRegistroErroneoView(View):
         user = request.user
         expediente = get_object_or_404(Expediente, pk=pk)
 
-        if not (_is_admin(user) or _is_provincial(user)):
+        if not _can_manage_registros_erroneos(user):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
@@ -1393,8 +1417,10 @@ class ActualizarRegistroErroneoView(View):
 
         try:
             datos_actualizados = json.loads(request.body)
-            # Limpiar valores vacÃ­os
             datos_normalizados = _normalizar_datos_registro_erroneo(datos_actualizados)
+            datos_limpios = _limpiar_datos_registro_erroneo(datos_normalizados)
+            registro.datos_raw = datos_limpios
+
             provincia_id = _resolver_provincia_id_registro_erroneo(user, expediente)
             if not provincia_id:
                 return JsonResponse(
@@ -1409,15 +1435,22 @@ class ActualizarRegistroErroneoView(View):
                 provincia_id=provincia_id,
                 fila_excel=registro.fila_excel,
             )
-            datos_limpios = _limpiar_datos_registro_erroneo(datos_normalizados)
-            registro.datos_raw = datos_limpios
             registro.save(update_fields=["datos_raw"])
 
             return JsonResponse(
                 {"success": True, "message": "Registro actualizado correctamente."}
             )
         except ValidationError as exc:
-            return JsonResponse({"success": False, "error": str(exc)}, status=400)
+            registro.mensaje_error = str(exc)
+            registro.save(update_fields=["datos_raw", "mensaje_error"])
+            return JsonResponse(
+                {
+                    "success": False,
+                    "saved_partial": True,
+                    "error": str(exc),
+                },
+                status=400,
+            )
         except Exception as e:
             logger.error("Error actualizando registro errÃ³neo: %s", e, exc_info=True)
             return JsonResponse(
@@ -1435,7 +1468,7 @@ class ReprocesarRegistrosErroneosView(View):
         user = request.user
         expediente = get_object_or_404(Expediente, pk=pk)
 
-        if not (_is_admin(user) or _is_provincial(user)):
+        if not _can_manage_registros_erroneos(user):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
@@ -1635,7 +1668,7 @@ class EliminarRegistroErroneoView(View):
         user = request.user
         expediente = get_object_or_404(Expediente, pk=pk)
 
-        if not (_is_admin(user) or _is_provincial(user)):
+        if not _can_manage_registros_erroneos(user):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )

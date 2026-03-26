@@ -46,13 +46,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (btnConfirmarReprocesar) {
-        btnConfirmarReprocesar.addEventListener('click', function() {
+        btnConfirmarReprocesar.addEventListener('click', async function() {
             const url = document.querySelector('meta[name="reprocesar-errores-url"]')?.content;
             if (!url) return;
-            
+
             const modal = bootstrap.Modal.getInstance(modalConfirmar);
             modal.hide();
-            
+
+            const guardadoPrevio = await guardarCambiosPendientesAntesDeReprocesar();
+            if (guardadoPrevio.fallidos > 0) {
+                showAlert(
+                    'warning',
+                    `Se guardaron ${guardadoPrevio.exitosos} registros antes de reprocesar y ${guardadoPrevio.fallidos} siguen con errores de validacion.`
+                );
+            }
+
             btnReprocesar.disabled = true;
             btnReprocesar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
             
@@ -100,62 +108,25 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Guardar automáticamente al cambiar campos (con debounce)
     const saveTimers = {};
+    const registrosConCambios = new Set();
     document.querySelectorAll('.form-editar-error').forEach(form => {
         const registroId = form.dataset.registroId;
         const inputs = form.querySelectorAll('input, select, textarea');
-        
+
+        function programarGuardado() {
+            registrosConCambios.add(registroId);
+            clearTimeout(saveTimers[registroId]);
+            saveTimers[registroId] = setTimeout(() => {
+                guardarRegistro(form, registroId);
+            }, 500);
+        }
+
         inputs.forEach(input => {
-            input.addEventListener('change', function() {
-                clearTimeout(saveTimers[registroId]);
-                saveTimers[registroId] = setTimeout(() => {
-                    guardarRegistro(form, registroId);
-                }, 500);
-            });
+            input.addEventListener('change', programarGuardado);
+            input.addEventListener('input', programarGuardado);
         });
     });
     
-    const REQUIRED_FIELDS = [
-        'apellido',
-        'nombre',
-        'documento',
-        'fecha_nacimiento',
-        'sexo',
-        'nacionalidad',
-        'municipio',
-        'localidad',
-        'calle',
-        'altura',
-        'codigo_postal',
-        'apellido_responsable',
-        'nombre_responsable',
-        'documento_responsable',
-        'fecha_nacimiento_responsable',
-        'sexo_responsable',
-        'domicilio_responsable',
-        'localidad_responsable'
-    ];
-
-    const FIELD_LABELS = {
-        apellido: 'apellido',
-        nombre: 'nombre',
-        documento: 'documento',
-        fecha_nacimiento: 'fecha de nacimiento',
-        sexo: 'sexo',
-        nacionalidad: 'nacionalidad',
-        municipio: 'municipio',
-        localidad: 'localidad',
-        calle: 'calle',
-        altura: 'altura',
-        codigo_postal: 'codigo postal',
-        apellido_responsable: 'apellido del responsable',
-        nombre_responsable: 'nombre del responsable',
-        documento_responsable: 'documento del responsable',
-        fecha_nacimiento_responsable: 'fecha de nacimiento del responsable',
-        sexo_responsable: 'sexo del responsable',
-        domicilio_responsable: 'domicilio del responsable',
-        localidad_responsable: 'localidad del responsable'
-    };
-
     function mostrarErrorValidacion(form, message) {
         if (form.dataset.validationMessage === message) return;
         form.dataset.validationMessage = message;
@@ -166,9 +137,31 @@ document.addEventListener('DOMContentLoaded', function() {
         delete form.dataset.validationMessage;
     }
 
-    function guardarRegistro(form, registroId) {
+    async function guardarCambiosPendientesAntesDeReprocesar() {
+        const forms = Array.from(document.querySelectorAll('.form-editar-error'));
+        if (forms.length === 0) return { exitosos: 0, fallidos: 0 };
+
+        let exitosos = 0;
+        let fallidos = 0;
+
+        for (const form of forms) {
+            const registroId = form.dataset.registroId;
+            clearTimeout(saveTimers[registroId]);
+            const guardadoOk = await guardarRegistro(form, registroId, { mostrarErrores: false });
+            if (guardadoOk) {
+                exitosos += 1;
+            } else {
+                fallidos += 1;
+            }
+        }
+
+        return { exitosos, fallidos };
+    }
+
+    function guardarRegistro(form, registroId, options = {}) {
+        const { mostrarErrores = true } = options;
         const urlTemplate = document.querySelector('meta[name="actualizar-error-url-template"]')?.content;
-        if (!urlTemplate) return;
+        if (!urlTemplate) return Promise.resolve(false);
 
         const url = urlTemplate.replace('/0/', `/${registroId}/`);
         const formData = new FormData(form);
@@ -177,34 +170,9 @@ document.addEventListener('DOMContentLoaded', function() {
             datos[key] = typeof value === 'string' ? value.trim() : value;
         });
 
-        const faltantes = REQUIRED_FIELDS.filter(field => !String(datos[field] || '').trim());
-        if (faltantes.length > 0) {
-            const nombres = faltantes.map(field => FIELD_LABELS[field] || field);
-            mostrarErrorValidacion(
-                form,
-                `Faltan campos obligatorios: ${nombres.join(', ')}.`
-            );
-            return;
-        }
-
-        const telefono = String(datos.telefono || '').trim();
-        if (telefono && telefono.length < 8) {
-            mostrarErrorValidacion(form, 'El telefono debe tener al menos 8 digitos.');
-            return;
-        }
-
-        const telefonoResponsable = String(datos.telefono_responsable || '').trim();
-        if (telefonoResponsable && telefonoResponsable.length < 8) {
-            mostrarErrorValidacion(
-                form,
-                'El telefono del responsable debe tener al menos 8 digitos.'
-            );
-            return;
-        }
-
         limpiarErrorValidacion(form);
-        
-        fetch(url, {
+
+        return fetch(url, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': csrfToken,
@@ -216,6 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 limpiarErrorValidacion(form);
+                registrosConCambios.delete(String(registroId));
                 const row = document.querySelector(`.registro-erroneo-row[data-registro-id="${registroId}"]`);
                 if (row) {
                     row.style.borderLeft = '4px solid #28a745';
@@ -223,13 +192,30 @@ document.addEventListener('DOMContentLoaded', function() {
                         row.style.borderLeft = '4px solid #dc3545';
                     }, 1000);
                 }
+                return true;
+            }
+            if (data.saved_partial) {
+                registrosConCambios.delete(String(registroId));
+                if (mostrarErrores) {
+                    mostrarErrorValidacion(
+                        form,
+                        data.error || 'Se guardaron cambios parciales, pero quedan validaciones pendientes.'
+                    );
+                }
+                return true;
             } else {
-                showAlert('danger', 'Error: ' + (data.error || 'Error desconocido'));
+                if (mostrarErrores) {
+                    showAlert('danger', 'Error: ' + (data.error || 'Error desconocido'));
+                }
+                return false;
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('danger', 'Error al guardar registro');
+            if (mostrarErrores) {
+                showAlert('danger', 'Error al guardar registro');
+            }
+            return false;
         });
     }
     

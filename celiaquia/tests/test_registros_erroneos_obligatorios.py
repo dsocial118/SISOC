@@ -2,6 +2,7 @@
 
 from io import BytesIO
 import json
+import re
 
 import pytest
 from django.contrib.auth.models import Permission, User
@@ -174,6 +175,63 @@ def test_detalle_expediente_muestra_campos_responsable_para_registros_erroneos(c
 
 
 @pytest.mark.django_db
+def test_detalle_expediente_autocompleta_sexo_m_f_en_registros_erroneos(client):
+    user, provincia = _crear_usuario_provincial("prov_detail_sexo_mf")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    expediente = _crear_contexto_expediente(user)
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    Nacionalidad.objects.create(nacionalidad="Argentina")
+    sexo_m = Sexo.objects.create(sexo="Masculino")
+    sexo_f = Sexo.objects.create(sexo="Femenino")
+    RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=3,
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "12345678",
+            "fecha_nacimiento": "01/01/2010",
+            "sexo": "M",
+            "nacionalidad": "Argentina",
+            "municipio": str(municipio.pk),
+            "localidad": "999999",
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+            "apellido_responsable": "Gomez",
+            "nombre_responsable": "Laura",
+            "documento_responsable": "20123456789",
+            "fecha_nacimiento_responsable": "01/01/1980",
+            "sexo_responsable": "F",
+            "domicilio_responsable": "Calle Resp 123",
+            "localidad_responsable": "Centro",
+        },
+        mensaje_error="localidad 999999 no encontrado",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert re.search(
+        rf'name="sexo".*?option value="{sexo_m.pk}"\s+selected',
+        content,
+        flags=re.DOTALL,
+    )
+    assert re.search(
+        rf'name="sexo_responsable".*?option value="{sexo_f.pk}"\s+selected',
+        content,
+        flags=re.DOTALL,
+    )
+
+
+@pytest.mark.django_db
 def test_actualizar_registro_erroneo_rechaza_campos_obligatorios_faltantes(client):
     user, provincia = _crear_usuario_provincial("prov_update")
     user.is_superuser = True
@@ -217,9 +275,11 @@ def test_actualizar_registro_erroneo_rechaza_campos_obligatorios_faltantes(clien
 
     assert response.status_code == 400
     assert "sexo" in response.json()["error"].lower()
+    assert response.json()["saved_partial"] is True
 
     registro.refresh_from_db()
-    assert registro.datos_raw["sexo"] == "1"
+    assert "sexo" not in registro.datos_raw
+    assert "sexo" in registro.mensaje_error.lower()
 
 
 @pytest.mark.django_db
