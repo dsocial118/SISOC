@@ -231,7 +231,7 @@
     user-select: none;
     min-width: 70px;
     box-sizing: border-box;
-    border-left: 1px solid rgba(255,255,255,.25);
+    border-left: none;
 }
 
 .accordion-content {
@@ -291,6 +291,61 @@
   text-align: center;
 }
 
+/* Colores de headers VAT (gradientes) */
+.accordion-header--informacion { background: linear-gradient(180deg, #0b756d, #095e58); color: #fff; }
+.accordion-header--ubicacion   { background: linear-gradient(180deg, #f79d00, #d98800); color: #fff; }
+.accordion-header--referente   { background: linear-gradient(180deg, #6a1b99, #531578); color: #fff; }
+.accordion-header--autoridades { background: linear-gradient(180deg, #1565c0, #0d4f9a); color: #fff; }
+.accordion-header--contactos   { background: linear-gradient(180deg, #00897b, #006b60); color: #fff; }
+
+/* Glow sutil en panel activo */
+.accordion-panel.open .accordion-header--informacion { box-shadow: inset 0 0 18px rgba(11,117,109,.35); }
+.accordion-panel.open .accordion-header--ubicacion   { box-shadow: inset 0 0 18px rgba(247,157,0,.35); }
+.accordion-panel.open .accordion-header--referente   { box-shadow: inset 0 0 18px rgba(106,27,153,.35); }
+.accordion-panel.open .accordion-header--autoridades { box-shadow: inset 0 0 18px rgba(21,101,192,.35); }
+.accordion-panel.open .accordion-header--contactos   { box-shadow: inset 0 0 18px rgba(0,137,123,.35); }
+
+/* Icono dentro del header del accordion */
+.accordion-header .accordion-icon {
+    display: block;
+    font-size: 1.15rem;
+    margin-bottom: 0.4rem;
+    opacity: 0.85;
+}
+
+/* Badge contador en la solapa */
+.accordion-header .accordion-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.25);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    padding: 0 5px;
+    margin-top: 0.4rem;
+    line-height: 1;
+}
+
+/* Borde de color en la parte inferior del panel activo (desktop) */
+.accordion-panel.open::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 70px;
+    right: 0;
+    height: 3px;
+    z-index: 2;
+}
+.accordion-panel.open:nth-child(1)::after { background: #0b756d; }
+.accordion-panel.open:nth-child(2)::after { background: #f79d00; }
+.accordion-panel.open:nth-child(3)::after { background: #6a1b99; }
+.accordion-panel.open:nth-child(4)::after { background: #1565c0; }
+.accordion-panel.open:nth-child(5)::after { background: #00897b; }
+
 /* ==========================
    ACORDEÓN VERTICAL (MÓVIL)
 ========================== */
@@ -315,6 +370,22 @@
     border-left: none;
     border-bottom: 1px solid rgba(0,0,0,.1);
     justify-content: flex-start;
+    gap: 0.5rem;
+  }
+
+  .accordion-header .accordion-icon {
+    margin-bottom: 0;
+  }
+
+  .accordion-header .accordion-badge {
+    margin-top: 0;
+    margin-left: auto;
+  }
+
+  .accordion-panel.open::after {
+    left: 0;
+    height: 0;
+    border-bottom: none;
   }
 
   .accordion-content {

@@ -1,0 +1,123 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Comisiones{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+{% url 'vat_comision_list' as reset_url %}
+{% include 'components/search_bar.html' with titulo="Buscar Comisión" placeholder="Buscar por código, nombre u oferta" help_text="Buscar por código, nombre u oferta" reset_url=reset_url add_url='vat_comision_create' add_text='Agregar' query=request.GET.busqueda %}
+
+<div class="row mt-5 max-width-100">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive-lg">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-column="codigo">
+                                    Código
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-column="nombre">
+                                    Nombre
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th>Oferta</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
+                                <th>Cupo</th>
+                                <th>Estado</th>
+                                <th class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comision in comisiones %}
+                            <tr>
+                                <td data-codigo="{{ comision.codigo_comision }}">
+                                    <a href="{% url 'vat_comision_detail' comision.id %}"
+                                       class="link-handler"
+                                       title="Ver detalles">{{ comision.codigo_comision }}</a>
+                                </td>
+                                <td data-nombre="{{ comision.nombre }}">{{ comision.nombre|default:"—" }}</td>
+                                <td>{{ comision.oferta }}</td>
+                                <td>{{ comision.fecha_inicio|date:"d/m/Y"|default:"—" }}</td>
+                                <td>{{ comision.fecha_fin|date:"d/m/Y"|default:"—" }}</td>
+                                <td>{{ comision.cupo }}</td>
+                                <td>
+                                    {% if comision.estado == 'activa' %}
+                                        <span class="badge-validacion validado">
+                                            <i class="fas fa-check-circle"></i>
+                                            {{ comision.get_estado_display }}
+                                        </span>
+                                    {% elif comision.estado == 'cancelada' %}
+                                        <span class="badge-validacion no-validado">
+                                            <i class="fas fa-times-circle"></i>
+                                            {{ comision.get_estado_display }}
+                                        </span>
+                                    {% elif comision.estado == 'finalizada' %}
+                                        <span class="badge-validacion" style="background:#4b5563;color:#e5e7eb;border-color:#6b7280;">
+                                            <i class="fas fa-flag-checkered"></i>
+                                            {{ comision.get_estado_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge-validacion pendiente">
+                                            <i class="fas fa-clock"></i>
+                                            {{ comision.get_estado_display }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="action-buttons" role="group">
+                                        <a href="{% url 'vat_comision_detail' comision.id %}"
+                                           class="btn btn-primary link-handler"
+                                           title="Ver detalle">
+                                            <i class="fas fa-eye"></i>
+                                            Ver
+                                        </a>
+                                        {% if perms.VAT.change_comision %}
+                                        <a href="{% url 'vat_comision_update' comision.id %}"
+                                           class="btn btn-editar link-handler"
+                                           title="Editar comisión">
+                                            <i class="fas fa-edit"></i>
+                                            Editar
+                                        </a>
+                                        {% endif %}
+                                        {% if perms.VAT.delete_comision %}
+                                        <a href="{% url 'vat_comision_delete' comision.id %}"
+                                           class="btn btn-eliminar link-handler"
+                                           title="Eliminar comisión">
+                                            <i class="fas fa-trash-alt"></i>
+                                            Eliminar
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8">
+                                    <div class="no-comedores-message">
+                                        <h3>No se encontraron comisiones</h3>
+                                        <p>No hay comisiones que coincidan con los criterios de búsqueda.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+
+{% endblock %}
+
+{% block customJS %}
+<script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}

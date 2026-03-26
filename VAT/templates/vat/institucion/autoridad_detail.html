@@ -1,0 +1,92 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}{{ autoridad }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <a href="{% url 'vat_autoridad_institucional_list' %}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+                <div>
+                    <h1 class="h2 mb-0" style="color: #1f3a93;"><i class="bi-person-badge me-2"></i>Autoridad</h1>
+                    <small class="text-muted">{{ autoridad }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Centro</label><br><p class="mb-0">{{ autoridad.centro.nombre }}</p></div>
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">DNI</label><br><p class="mb-0">{{ autoridad.dni }}</p></div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Nombre Completo</label><br><p class="mb-0">{{ autoridad.nombre_completo }}</p></div>
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Cargo</label><br><p class="mb-0">{{ autoridad.cargo }}</p></div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Email</label><br><p class="mb-0">{{ autoridad.email|default:"—" }}</p></div>
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Teléfono</label><br><p class="mb-0">{{ autoridad.telefono|default:"—" }}</p></div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Actual</label><br>{% if autoridad.es_actual %}<span class="badge bg-success">Sí</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</div>
+                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Vigencia Hasta</label><br><p class="mb-0">{{ autoridad.vigencia_hasta|date:"d/m/Y"|default:"Vigente" }}</p></div>
+                    </div>
+
+                    {% if autoridad.observaciones %}
+                    <hr class="my-4">
+                    <div class="row"><div class="col-md-12">
+                        <label class="form-label small fw-600 text-muted">Observaciones</label>
+                        <p class="mb-0">{{ autoridad.observaciones }}</p>
+                    </div></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2" style="color: #1f3a93;"></i>Auditoría</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="small text-muted">
+                        <dl>
+                            <dt>Creado</dt><dd>{{ autoridad.fecha_creacion|date:"d/m/Y H:i" }}</dd>
+                            <dt>Modificado</dt><dd>{{ autoridad.fecha_modificacion|date:"d/m/Y H:i" }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4 bg-primary bg-opacity-10">
+                <div class="card-body">
+                    <h6 class="card-title fw-600" style="color: #1f3a93;"><i class="bi bi-lightning me-2"></i>Acciones</h6>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'vat_autoridad_institucional_update' autoridad.id %}" class="btn btn-primary"><i class="bi bi-pencil me-2"></i>Editar</a>
+                        <a href="{% url 'vat_autoridad_institucional_delete' autoridad.id %}" class="btn btn-danger"><i class="bi bi-trash me-2"></i>Eliminar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body">
+                    <h6 class="card-title fw-600" style="color: #1f3a93;"><i class="bi bi-info-circle me-2"></i>Registro</h6>
+                    <div class="small text-muted"><dl><dt>ID</dt><dd>#{{ autoridad.id }}</dd></dl></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>.fw-600 { font-weight: 600 !important; }</style>
+{% endblock %}

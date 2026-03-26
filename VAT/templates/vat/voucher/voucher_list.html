@@ -1,0 +1,103 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Vouchers{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+{% url 'vat_voucher_list' as reset_url %}
+{% include 'components/search_bar.html' with titulo="Buscar Voucher" placeholder="Buscar por nombre o DNI" help_text="Buscar por nombre o DNI" reset_url=reset_url add_url='vat_voucher_create' add_text='Asignar' query=request.GET.busqueda %}
+
+<div class="row mt-5 max-width-100">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive-lg">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-column="ciudadano">
+                                    Ciudadano
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th>DNI</th>
+                                <th>Programa</th>
+                                <th>Créditos</th>
+                                <th>Vencimiento</th>
+                                <th>Estado</th>
+                                <th class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in vouchers %}
+                            <tr>
+                                <td data-ciudadano="{{ v.ciudadano.nombre_completo }}">
+                                    {{ v.ciudadano.nombre_completo }}
+                                </td>
+                                <td>{{ v.ciudadano.documento }}</td>
+                                <td>{{ v.programa }}</td>
+                                <td>
+                                    <strong>{{ v.cantidad_disponible }}</strong>
+                                    <span style="opacity:.6;">/ {{ v.cantidad_inicial }}</span>
+                                </td>
+                                <td>{{ v.fecha_vencimiento|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if v.estado == 'activo' %}
+                                        <span class="badge-validacion validado">
+                                            <i class="fas fa-check-circle"></i>
+                                            {{ v.get_estado_display }}
+                                        </span>
+                                    {% elif v.estado == 'vencido' %}
+                                        <span class="badge-validacion no-validado">
+                                            <i class="fas fa-times-circle"></i>
+                                            {{ v.get_estado_display }}
+                                        </span>
+                                    {% elif v.estado == 'agotado' %}
+                                        <span class="badge-validacion pendiente">
+                                            <i class="fas fa-exclamation-circle"></i>
+                                            {{ v.get_estado_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge-validacion" style="background:#4b5563;color:#e5e7eb;border-color:#6b7280;">
+                                            <i class="fas fa-minus-circle"></i>
+                                            {{ v.get_estado_display }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="action-buttons" role="group">
+                                        <a href="{% url 'vat_voucher_detail' v.pk %}"
+                                           class="btn btn-primary link-handler"
+                                           title="Ver detalle">
+                                            <i class="fas fa-eye"></i>
+                                            Ver
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7">
+                                    <div class="no-comedores-message">
+                                        <h3>No se encontraron vouchers</h3>
+                                        <p>No hay vouchers registrados.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+
+{% endblock %}
+
+{% block customJS %}
+<script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}
