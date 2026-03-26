@@ -283,6 +283,56 @@ def test_actualizar_registro_erroneo_rechaza_campos_obligatorios_faltantes(clien
 
 
 @pytest.mark.django_db
+def test_actualizar_registro_erroneo_mergea_campos_omitidos_y_conserva_sexo(client):
+    user, provincia = _crear_usuario_provincial("prov_update_partial")
+    user.is_superuser = True
+    user.save(update_fields=["is_superuser"])
+    expediente = _crear_contexto_expediente(user)
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    Nacionalidad.objects.create(nacionalidad="Argentina")
+    Sexo.objects.create(sexo="Masculino")
+    Sexo.objects.create(sexo="Femenino")
+    registro = RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=2,
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "30123456789",
+            "fecha_nacimiento": "01/01/2010",
+            "sexo": "1",
+            "nacionalidad": "1",
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+            "apellido_responsable": "Gomez",
+            "nombre_responsable": "Laura",
+            "documento_responsable": "20123456789",
+            "fecha_nacimiento_responsable": "01/01/1980",
+            "sexo_responsable": "2",
+            "domicilio_responsable": "Calle Resp 123",
+            "localidad_responsable": localidad.nombre,
+        },
+        mensaje_error="Localidad inválida",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("registro_erroneo_actualizar", args=[expediente.pk, registro.pk]),
+        data=json.dumps({"localidad": str(localidad.pk)}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    registro.refresh_from_db()
+    assert registro.datos_raw["localidad"] == str(localidad.pk)
+    assert registro.datos_raw["sexo"] == "1"
+
+
+@pytest.mark.django_db
 def test_importacion_con_sexo_responsable_invalido_no_crea_legajo_parcial():
     user, provincia = _crear_usuario_provincial("prov_resp_invalid")
     expediente = _crear_contexto_expediente(user)
