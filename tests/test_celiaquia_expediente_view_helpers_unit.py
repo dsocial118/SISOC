@@ -698,7 +698,7 @@ def test_expediente_nomina_sintys_export_view(mocker):
 def test_actualizar_registro_erroneo_view_paths(mocker):
     view = module.ActualizarRegistroErroneoView()
     expediente = SimpleNamespace()
-    registro = SimpleNamespace(datos_raw={}, save=mocker.Mock())
+    registro = SimpleNamespace(datos_raw={}, fila_excel=2, save=mocker.Mock())
 
     # Sin permisos
     mocker.patch(
@@ -727,6 +727,11 @@ def test_actualizar_registro_erroneo_view_paths(mocker):
         ),
     )
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch(
+        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        return_value=1,
+    )
+    mocker.patch("celiaquia.views.expediente._validar_datos_registro_erroneo")
     ok = view.post(req_ok, pk=1, registro_id=2)
     assert ok.status_code == 200
     assert registro.datos_raw["apellido"] == "Perez"
@@ -739,6 +744,14 @@ def test_actualizar_registro_erroneo_view_paths(mocker):
     req_invalid = SimpleNamespace(
         user=SimpleNamespace(),
         body=b'{"apellido":"Perez","documento":"123"}',
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        return_value=1,
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._validar_datos_registro_erroneo",
+        side_effect=module.ValidationError("sexo invalido"),
     )
     invalid = view.post(req_invalid, pk=1, registro_id=2)
     assert invalid.status_code == 400
@@ -795,6 +808,10 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
     mocker.patch(
         "celiaquia.views.expediente.EstadoLegajo.objects.get",
         return_value=SimpleNamespace(),
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        return_value=None,
     )
     no_prov = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
         view, req_no_prov, pk=1
