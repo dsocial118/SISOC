@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-04-01 -->
+# Versión SISOC 01.04.2026
+
+## Actualizaciones
+
+- [sin-area] Codex/main cherrypick juanikitro no vat. (PR #1368)
+<!-- AUTO-GENERATED RELEASE END: 2026-04-01 -->
+
 # Versión SISOC 18.03.2026
 
 ## Nuevas Funcionalidades
