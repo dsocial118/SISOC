@@ -2,6 +2,7 @@ import pytest
 from django.contrib.auth.models import User
 
 from centrodeinfancia.forms import FormularioCDIForm
+from centrodeinfancia.formulario_cdi_schema import CHOICE_FIELDS, FIELD_LABELS
 from centrodeinfancia.models import CentroDeInfancia
 from core.models import Localidad, Municipio, Provincia
 
@@ -171,3 +172,18 @@ def test_formulario_cdi_opciones_botiquin_muestran_texto_largo():
         ]
         == "Cuentan con botiquín completo de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños"
     )
+
+
+def test_schema_cdi_aplica_matriz_de_textos():
+    workday_choices = dict(CHOICE_FIELDS["workday_type"])
+    first_aid_choices = dict(CHOICE_FIELDS["first_aid_kit_status"])
+
+    assert (
+        workday_choices["simple_single_shift"]
+        == "Jornada simple (un solo turno con un único grupo de niños)"
+    )
+    assert (
+        first_aid_choices["completo_todas_salas_ok_vigente_fuera_alcance"]
+        == "Cuentan con botiquín completo de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños"
+    )
+    assert FIELD_LABELS["survey_date"] == "Fecha de Relevamiento"

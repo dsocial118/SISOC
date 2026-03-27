@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from centrodeinfancia.formulario_cdi_text_overrides import (
+    CHOICE_LABEL_OVERRIDES,
+    FIELD_LABEL_OVERRIDES,
+    MULTI_CHOICE_LABEL_OVERRIDES,
+)
 
 def humanize_code(value: str) -> str:
     """Convierte códigos internos en etiquetas legibles."""
@@ -559,6 +564,22 @@ FIELD_LABELS = {
     "training_instances_technical_team_last_3y": "Instancias de capacitacion para equipo tecnico en ultimos 3 anos",
     "training_instances_kitchen_staff_last_3y": "Instancias de capacitacion para cocina/comedor en ultimos 3 anos",
 }
+
+for field_name, label_overrides in CHOICE_LABEL_OVERRIDES.items():
+    if field_name in CHOICE_FIELDS:
+        CHOICE_FIELDS[field_name] = [
+            (value, label_overrides.get(value, label))
+            for value, label in CHOICE_FIELDS[field_name]
+        ]
+
+for field_name, label_overrides in MULTI_CHOICE_LABEL_OVERRIDES.items():
+    if field_name in MULTI_CHOICE_FIELDS:
+        MULTI_CHOICE_FIELDS[field_name] = [
+            (value, label_overrides.get(value, label))
+            for value, label in MULTI_CHOICE_FIELDS[field_name]
+        ]
+
+FIELD_LABELS.update(FIELD_LABEL_OVERRIDES)
 
 FORMULARIO_CDI_SECTIONS = [
     {
