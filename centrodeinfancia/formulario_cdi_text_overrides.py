@@ -31,7 +31,7 @@ CHOICE_LABEL_OVERRIDES = {
         "no_cumple_sin_revisiones": "La instalación eléctrica no cumple con normas de seguridad y no tiene revisiones periódicas",
     },
     "water_access": {
-        "caneria_dentro_cdi": "Por cañería dentro del CDI",
+        "caneria_dentro_cdi": "Por ceñería dentro del CDI",
         "fuera_cdi_dentro_terreno": "Fuera del CDI pero dentro del terreno",
         "sin_agua": "No tiene agua",
     },
@@ -59,7 +59,7 @@ CHOICE_LABEL_OVERRIDES = {
     "internet_access_quality_staff": {
         "alta_velocidad_con_acceso_personal": "El CDI cuenta con un servicio de internet de alta velocidad al que accede el personal",
         "estable_con_acceso_personal": "El CDI cuenta con un servicio de internet relativamente estable al que accede el personal",
-        "estable_sin_acceso_personal": "El CDI cuenta con un servicio de internet relativamente estable al que accede el personal",
+        "estable_sin_acceso_personal": "El l CDI cuenta con un servicio de internet relativamente estable al que accede el personal",
         "mala_calidad_con_acceso_personal": "El CDI cuenta con un servicio de internet de mala calidad al que accede el personal",
         "sin_servicio": "El CDI no cuenta con un servicio de internet",
     },

@@ -159,8 +159,15 @@ def test_formulario_cdi_aplica_textos_actualizados_en_labels_y_opciones():
     )
     assert (
         dict(form.fields["water_access"].choices)["caneria_dentro_cdi"]
-        == "Por cañería dentro del CDI"
+        == "Por ceñería dentro del CDI"
     )
+    assert (
+        dict(form.fields["internet_access_quality_staff"].choices)[
+            "estable_sin_acceso_personal"
+        ]
+        == "El l CDI cuenta con un servicio de internet relativamente estable al que accede el personal"
+    )
+
 
 @pytest.mark.django_db
 def test_formulario_cdi_opciones_botiquin_muestran_texto_largo():
@@ -177,6 +184,8 @@ def test_formulario_cdi_opciones_botiquin_muestran_texto_largo():
 def test_schema_cdi_aplica_matriz_de_textos():
     workday_choices = dict(CHOICE_FIELDS["workday_type"])
     first_aid_choices = dict(CHOICE_FIELDS["first_aid_kit_status"])
+    water_access_choices = dict(CHOICE_FIELDS["water_access"])
+    internet_choices = dict(CHOICE_FIELDS["internet_access_quality_staff"])
 
     assert (
         workday_choices["simple_single_shift"]
@@ -185,5 +194,10 @@ def test_schema_cdi_aplica_matriz_de_textos():
     assert (
         first_aid_choices["completo_todas_salas_ok_vigente_fuera_alcance"]
         == "Cuentan con botiquín completo de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños"
+    )
+    assert water_access_choices["caneria_dentro_cdi"] == "Por ceñería dentro del CDI"
+    assert (
+        internet_choices["estable_sin_acceso_personal"]
+        == "El l CDI cuenta con un servicio de internet relativamente estable al que accede el personal"
     )
     assert FIELD_LABELS["survey_date"] == "Fecha de Relevamiento"
