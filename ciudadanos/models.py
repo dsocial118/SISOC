@@ -127,7 +127,9 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     @classmethod
     def buscar_por_documento(cls, query, max_results=10, exclude_id=None):
         cleaned = (query or "").strip()
-        if len(cleaned) < 4 or not cleaned.isdigit():
+        # Evita búsquedas por prefijos muy cortos sobre campo numérico, que
+        # generan consultas amplias y pueden degradar fuertemente en MySQL.
+        if len(cleaned) < 7 or not cleaned.isdigit():
             return cls.objects.none()
         qs = cls.objects.filter(documento__startswith=cleaned)
         if exclude_id:
