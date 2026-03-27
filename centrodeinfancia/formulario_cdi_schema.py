@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from centrodeinfancia.formulario_cdi_text_overrides import (
+    CHOICE_LABEL_OVERRIDES,
+    FIELD_LABEL_OVERRIDES,
+    MULTI_CHOICE_LABEL_OVERRIDES,
+)
 
 def humanize_code(value: str) -> str:
     """Convierte códigos internos en etiquetas legibles."""
@@ -146,13 +151,28 @@ CHOICE_FIELDS = {
         "hoyo_tierra",
         "sin_sistema",
     ),
-    "first_aid_kit_status": _options(
-        "completo_todas_salas_ok_vigente_fuera_alcance",
-        "incompleto_todas_salas_ok_vigente_fuera_alcance",
-        "unico_completo_compartido_ok_vigente_fuera_alcance",
-        "incompleto_compartido_o_mal_estado_o_vencido",
-        "no_tienen_o_al_alcance_ninos",
-    ),
+    "first_aid_kit_status": [
+        (
+            "completo_todas_salas_ok_vigente_fuera_alcance",
+            "Cuentan con botiquín completo de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños",
+        ),
+        (
+            "incompleto_todas_salas_ok_vigente_fuera_alcance",
+            "Cuentan con botiquín incompleto de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños",
+        ),
+        (
+            "unico_completo_compartido_ok_vigente_fuera_alcance",
+            "Cuentan con un único botiquín completo de primeros auxilios compartido por las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños",
+        ),
+        (
+            "incompleto_compartido_o_mal_estado_o_vencido",
+            "Cuentan con botiquín incompleto de primeros auxilios compartido por las salas y/o los insumos se encuentran en mala conservación y fuera de la fecha de vencimiento",
+        ),
+        (
+            "no_tienen_o_al_alcance_ninos",
+            "No cuentan con botiquín de primeros auxilios o el botiquín está al alcance de los niños",
+        ),
+    ],
     "internet_access_quality_staff": _options(
         "alta_velocidad_con_acceso_personal",
         "estable_con_acceso_personal",
@@ -495,7 +515,7 @@ FIELD_LABELS = {
     "safe_drinking_water_source": "Acceso a agua segura para consumo",
     "excreta_disposal": "Eliminacion de excretas",
     "has_fire_extinguishers_current": "Existencia de extintores",
-    "first_aid_kit_status": "Existencia de botiquin",
+    "first_aid_kit_status": "Existencia de Botiquín",
     "has_working_computer": "Existencia de computadora",
     "internet_access_quality_staff": "Acceso a internet",
     "has_kitchen_space": "Espacio de cocina",
@@ -544,6 +564,22 @@ FIELD_LABELS = {
     "training_instances_technical_team_last_3y": "Instancias de capacitacion para equipo tecnico en ultimos 3 anos",
     "training_instances_kitchen_staff_last_3y": "Instancias de capacitacion para cocina/comedor en ultimos 3 anos",
 }
+
+for field_name, label_overrides in CHOICE_LABEL_OVERRIDES.items():
+    if field_name in CHOICE_FIELDS:
+        CHOICE_FIELDS[field_name] = [
+            (value, label_overrides.get(value, label))
+            for value, label in CHOICE_FIELDS[field_name]
+        ]
+
+for field_name, label_overrides in MULTI_CHOICE_LABEL_OVERRIDES.items():
+    if field_name in MULTI_CHOICE_FIELDS:
+        MULTI_CHOICE_FIELDS[field_name] = [
+            (value, label_overrides.get(value, label))
+            for value, label in MULTI_CHOICE_FIELDS[field_name]
+        ]
+
+FIELD_LABELS.update(FIELD_LABEL_OVERRIDES)
 
 FORMULARIO_CDI_SECTIONS = [
     {
