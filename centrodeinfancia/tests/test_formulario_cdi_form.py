@@ -159,13 +159,13 @@ def test_formulario_cdi_aplica_textos_actualizados_en_labels_y_opciones():
     )
     assert (
         dict(form.fields["water_access"].choices)["caneria_dentro_cdi"]
-        == "Por ceñería dentro del CDI"
+        == "Por cañería dentro del CDI"
     )
     assert (
         dict(form.fields["internet_access_quality_staff"].choices)[
             "estable_sin_acceso_personal"
         ]
-        == "El l CDI cuenta con un servicio de internet relativamente estable al que accede el personal"
+        == "El CDI cuenta con un servicio de internet relativamente estable al que accede el personal"
     )
 
 
@@ -195,9 +195,9 @@ def test_schema_cdi_aplica_matriz_de_textos():
         first_aid_choices["completo_todas_salas_ok_vigente_fuera_alcance"]
         == "Cuentan con botiquín completo de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños"
     )
-    assert water_access_choices["caneria_dentro_cdi"] == "Por ceñería dentro del CDI"
+    assert water_access_choices["caneria_dentro_cdi"] == "Por cañería dentro del CDI"
     assert (
         internet_choices["estable_sin_acceso_personal"]
-        == "El l CDI cuenta con un servicio de internet relativamente estable al que accede el personal"
+        == "El CDI cuenta con un servicio de internet relativamente estable al que accede el personal"
     )
     assert FIELD_LABELS["survey_date"] == "Fecha de Relevamiento"
