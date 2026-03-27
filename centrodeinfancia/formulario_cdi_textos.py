@@ -1,214 +1,214 @@
-﻿"""Textos oficiales de la matriz CDI para labels y opciones."""
+"""Catálogo textual del formulario CDI."""
 
-from __future__ import annotations
+# pylint: disable=line-too-long
 
-CHOICE_LABEL_OVERRIDES = {
-    "workday_type": {
+SOBREESCRITURAS_ETIQUETAS_OPCIONES = {
+    "tipo_jornada": {
         "simple_single_shift": "Jornada simple (un solo turno con un único grupo de niños)",
         "multiple_simple_shifts": "Dos o más jornadas simples (dos o más turnos a los que asisten distintos grupos de niños)",
         "full_double_same_group": "Jornada completa/doble (dos o más turnos a los que asiste un mismo grupo de niños)",
     },
-    "management_mode": {
+    "modalidad_gestion": {
         "ong": "ONG (incluye organizaciones sociales, movimientos sociales, grupos comunitarios o barriales, etc.)",
         "cogestion_provincial_municipal": "Co-gestión: Gob. Provincial y municipal",
         "cogestion_ong_provincial_municipal": "Co-gestión: ONG/Gob. Provincial/municipal",
     },
-    "tenure_mode": {
+    "modalidad_tenencia": {
         "cedido_gubernamental": "Cedido o prestado por ente gubernamental (Municipio / Comuna / Provincia)",
         "cedido_privado": "Cedido o prestado por un privado",
         "comodato": "Comodato",
     },
-    "electricity_access": {
+    "acceso_energia": {
         "generacion_propia_motor": "Por generación propia a motor / grupo electrógeno",
         "generacion_propia_otros": "Por generación propia por otros medios (solar, eólica)",
         "sin_electricidad": "No tiene electricidad",
     },
-    "electrical_safety": {
+    "seguridad_electrica": {
         "cumple_y_revision_mayor_a_un_ano": "La instalación eléctrica cumple con normas de seguridad y tiene revisiones con una frecuencia mayor al año",
         "cumple_y_revision_anual": "La instalación eléctrica cumple con normas de seguridad y tiene revisiones periódicas anuales",
         "cumple_sin_revisiones": "La instalación eléctrica cumple con normas de seguridad y no tiene revisiones periódicas",
         "cumple_solo_zonas_ninos_sin_revisiones": "La instalación eléctrica cumple con normas de seguridad únicamente en las zonas donde circulan los niños y no tiene revisiones periódicas",
         "no_cumple_sin_revisiones": "La instalación eléctrica no cumple con normas de seguridad y no tiene revisiones periódicas",
     },
-    "water_access": {
+    "acceso_agua": {
         "caneria_dentro_cdi": "Por cañería dentro del CDI",
         "fuera_cdi_dentro_terreno": "Fuera del CDI pero dentro del terreno",
         "sin_agua": "No tiene agua",
     },
-    "safe_drinking_water_source": {
+    "fuente_agua_segura_consumo": {
         "red_o_embotellada_segura": "Agua de red o embotellada – considerada segura para el consumo.",
         "pozo_analisis_vigente": "Agua de pozo con análisis vigente – con aprobación de laboratorio en los últimos 2 años o potabilizada según métodos recomendados.",
         "pozo_analisis_vencido_o_sin_control": "Agua de pozo con análisis vencido o sin control – con aprobación de laboratorio de más de 2 años o sin análisis disponible.",
         "otra_con_proceso_sin_garantia_formal": "Otra fuente de agua con información parcial – existe algún proceso de potabilización pero sin garantía formal.",
         "otra_sin_info_potabilizacion": "Otra fuente de agua sin información sobre su potabilización – no se puede asegurar que sea apta para consumo.",
     },
-    "excreta_disposal": {
+    "eliminacion_excretas": {
         "red_publica_cloaca": "A red pública (cloaca)",
         "camara_septica_pozo_ciego": "A cámara séptica y pozo ciego",
         "solo_pozo_ciego": "Sólo a pozo ciego",
         "hoyo_tierra": "A hoyo o excavación en la tierra",
         "sin_sistema": "No tiene sistema de eliminación de excretas",
     },
-    "first_aid_kit_status": {
+    "estado_botiquin_primeros_auxilios": {
         "completo_todas_salas_ok_vigente_fuera_alcance": "Cuentan con botiquín completo de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños",
         "incompleto_todas_salas_ok_vigente_fuera_alcance": "Cuentan con botiquín incompleto de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños",
         "unico_completo_compartido_ok_vigente_fuera_alcance": "Cuentan con un único botiquín completo de primeros auxilios compartido por las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños",
         "incompleto_compartido_o_mal_estado_o_vencido": "Cuentan con botiquín incompleto de primeros auxilios compartido por las salas y/o los insumos se encuentran en mala conservación y fuera de la fecha de vencimiento",
         "no_tienen_o_al_alcance_ninos": "No cuentan con botiquín de primeros auxilios o el botiquín está al alcance de los niños",
     },
-    "internet_access_quality_staff": {
+    "acceso_internet_personal": {
         "alta_velocidad_con_acceso_personal": "El CDI cuenta con un servicio de internet de alta velocidad al que accede el personal",
         "estable_con_acceso_personal": "El CDI cuenta con un servicio de internet relativamente estable al que accede el personal",
         "estable_sin_acceso_personal": "El CDI cuenta con un servicio de internet relativamente estable al que accede el personal",
         "mala_calidad_con_acceso_personal": "El CDI cuenta con un servicio de internet de mala calidad al que accede el personal",
         "sin_servicio": "El CDI no cuenta con un servicio de internet",
     },
-    "cooking_fuel": {
+    "combustible_cocinar": {
         "gas_red": "Gas de red",
         "gas_granel_tubo_garrafa": "Gas a granel, tubo o en garrafa",
         "lena_o_carbon": "Leña o carbon",
         "no_utiliza": "No utiliza combustible para cocinar",
     },
-    "evacuation_plan_and_drills": {
+    "plan_evacuacion_y_simulacros": {
         "protocolo_escrito_y_2_simulacros_o_mas": "Hay un protocolo de evacuación por escrito y realizan simulacros al menos dos veces por año .",
         "protocolo_escrito_y_simulacros_sin_frecuencia": "Hay un protocolo de evacuación por escrito y se realizan simulacros, aunque no con la frecuencia estipulada.",
         "protocolo_escrito_sin_simulacros": "Hay un protocolo de evacuación por escrito y no se realizan simulacros.",
         "practicas_informales_sin_protocolo": "Solo hay prácticas informales sin protocolos escritos.",
         "sin_protocolo": "No hay protocolo de evacuación.",
     },
-    "first_aid_training_coverage": {
+    "cobertura_capacitacion_primeros_auxilios": {
         "todo_personal_certificado": "Todo el personal cuenta con capacitaciones en primeros auxilios certificadas (Cruz Roja, Bomberos, otros)",
         "entre_70_y_99": "Del 70% al 99% del personal cuenta con capacitaciones en primeros auxilios certificadas",
         "entre_40_y_69": "Del 40% al 69% del personal cuenta con capacitaciones en primeros auxilios certificadas",
         "menos_40": "Menos del 40% del personal cuenta con capacitaciones en primeros auxilios certificadas",
         "ninguno": "El personal no tiene capacitaciones en primeros auxilios certificadas",
     },
-    "emergency_medical_service": {
+    "servicio_emergencia_medica": {
         "servicio_y_cobertura_identificada": "Tienen servicio de emergencia médica y la cobertura de cada niño está identificada.",
         "servicio_sin_cobertura_identificada": "Tienen servicio de emergencia médica, pero la cobertura de cada niño no está identificada.",
         "sin_servicio_con_cobertura_identificada": "No tienen servicio de emergencia médica, pero sí la cobertura identificada por niño.",
         "sin_servicio_con_cobertura_parcial": "No tienen servicio de emergencia médica y la cobertura está identificada sólo parcialmente.",
         "sin_servicio_y_sin_cobertura": "No tienen servicio de emergencia médica ni la cobertura de cada niño identificada.",
     },
-    "menu_preparation_quality": {
+    "calidad_elaboracion_menu": {
         "nutricionista_indicaciones_y_frescos": "El menú es elaborado por nutricionista, respetando indicaciones para la preparación de alimentos e incluyendo alimentos frescos o mínimamente procesados.",
         "nutricionista_indicaciones_a_veces_sin_frescos": "El menú es elaborado por nutricionista, respeta indicaciones, pero a veces no incluye alimentos frescos o mínimamente procesados.",
         "no_siempre_nutricionista_parcial_y_mixto": "El menú no siempre es elaborado por nutricionista; respeta parcialmente las indicaciones y combina alimentos frescos con procesados.",
         "sin_nutricionista_pocas_indicaciones_procesados": "El menú no es elaborado por nutricionista, respeta pocas indicaciones y predominan los alimentos procesados",
         "sin_nutricionista_ultraprocesados": "El menú no es elaborado por nutricionista y utiliza alimentos ultraprocesados",
     },
-    "menu_periodic_evaluation": {
-        "periodica_todas_necesidades_y_patrones_y_personal_capacitado": "El menú se evalúa periódicamente; contempla todas las necesidades nutricionales y patrones alimentarios; el personal está capacitado para su implementación.",
+    "evaluacion_periodica_menu": {
+        "periodica_todas_necesidades_y_patrones_y_personas": "El menú se evalúa periódicamente; contempla todas las necesidades nutricionales y patrones alimentarios; el personal está capacitado para su implementación.",
         "periodica_mayoria_necesidades_y_algunos_patrones": "El menú se evalúa periódicamente; contempla la mayoría de las necesidades nutricionales y algunos patrones alimentarios; el personal cuenta con capacitación básica.",
         "ocasional_parcial_y_capacitacion_esporadica": "El menú se evalúa de manera ocasional; contempla parcialmente las necesidades nutricionales y no incluye todos los patrones alimentarios; las capacitaciones al personal son esporádicas.",
         "rara_vez_limitada_sin_patrones": "El menú rara vez se evalúa; contempla de manera limitada las necesidades nutricionales y no considera patrones alimentarios; el personal carece de capacitación específica.",
         "no_evalua": "El menú no se evalúa; no contempla necesidades nutricionales ni patrones alimentarios; el personal no cuenta con capacitación.",
     },
-    "food_handling_training_coverage": {
+    "cobertura_capacitacion_manipulacion_alimentos": {
         "todo_personal_anmat": "Todo el personal de cocina y comedor tiene capacitaciones y carnet emitido por ANMAT",
         "entre_70_y_99": "Entre el 70% y el 99% del personal tiene capacitaciones y carnet emitido por ANMAT",
         "entre_40_y_60": "Entre el 40% y el 60% del personal tiene capacitaciones y carnet emitido por ANMAT",
         "menos_40": "Menos del 40% del personal tiene capacitaciones y carnet emitido por ANMAT",
         "ninguno": "Ningún integrante del personal tiene capacitaciones ni carnet emitido por ANMAT",
     },
-    "breast_milk_storage_conditions": {
+    "condiciones_almacenamiento_leche_humana": {
         "heladera_exclusiva_identificada_y_rotulada": "Se conserva en heladera exclusiva, identificada por niño/a y rotulada con fecha de extracción.",
         "heladera_compartida_sector_exclusivo_identificada_y_rotulada": "Se conserva en heladera compartida, en un sector exclusivo, identificada por niño/a y rotulada con fecha de extracción.",
         "heladera_exclusiva_identificada_sin_fecha": "Se conserva en heladera exclusiva, identificada por niño/a pero sin rotulación con fecha de extracción.",
         "heladera_compartida_sector_exclusivo_identificada_sin_fecha": "Se conserva en heladera compartida, en un sector exclusivo, identificada por niño/a pero sin rotulación con fecha de extracción.",
         "sin_espacio_exclusivo_ni_identificacion": "No se conserva en espacio exclusivo ni se identifica por niño/a.",
     },
-    "breastfeeding_awareness_actions": {
+    "acciones_sensibilizacion_lactancia": {
         "dos_o_mas_anuales_todas_familias": "Se realizan dos o más acciones anuales con alcance a todas las familias.",
         "una_anual_todas_familias": "Se realiza una acción anual con alcance a todas las familias.",
         "una_anual_alcance_limitado": "Se realizan acciones muy ocasionales y con alcance limitado a las familias.",
         "muy_ocasionales_limitadas": "Se realizan acciones muy ocasionales y con alcance limitado a las familias.",
         "ninguna": "No se realizan acciones de información y sensibilización sobre lactancia.",
     },
-    "family_communication_frequency": {
+    "frecuencia_comunicacion_familias": {
         "reuniones_mensuales_y_canales_formales": "Se realizan reuniones mensuales con las familias y existen canales de comunicación formales (ej. cuaderno, cartelera, mensajes institucionales, plataforma).",
         "reuniones_trimestrales_y_canales_formales": "Se realizan reuniones trimestrales y existen canales formales de comunicación.",
         "reuniones_semestrales_y_algunos_canales": "Se realizan reuniones semestrales y solo algunos canales de comunicación formal funcionan regularmente.",
         "reuniones_anuales_sin_canales": "Se realizan reuniones anuales y no se dispone de canales formales de comunicación.",
         "sin_reuniones_ni_canales": "No se realizan reuniones con familias ni existen canales formales de comunicación.",
     },
-    "parenting_workshops_frequency": {
+    "frecuencia_talleres_crianza": {
         "trimestral_o_mas": "Se realizan al menos cada tres meses",
         "cada_4_a_6_meses": "Se realizan cada cuatro a seis meses",
         "una_vez_al_ano": "Se realiza al menos una vez al año",
         "esporadica": "Se realizan de manera esporádica, no todos los años",
         "no_se_realizan": "No se realizan talleres de crianza ni charlas con profesionales",
     },
-    "networking_level": {
+    "nivel_trabajo_red": {
         "red_mapeo_mesas_trimestral_o_mas": "Trabaja en red con otras instituciones, cuenta con mapeo de actores y participa en mesas intersectoriales con reuniones trimestrales o más frecuentes.",
         "red_mapeo_mesas_semestral": "Trabaja en red con otras instituciones, cuenta con mapeo de actores y participa en mesas intersectoriales con reuniones semestrales.",
         "sin_red_con_mapeo_y_mesas": "No trabaja en red con otras instituciones, pero cuenta con mapeo de actores y participa en mesas intersectoriales al menos semestralmente.",
         "sin_red_sin_mesas_con_mapeo": "No trabaja en red con otras instituciones, no participa en mesas intersectoriales, pero cuenta con mapeo de actores",
         "sin_red_ni_mapeo": "No trabaja en red con instituciones ni cuenta con mapeo de actores de primera infancia.",
     },
-    "rights_violation_protocol": {
+    "protocolo_vulneracion_derechos": {
         "protocolo_revision_periodica_mayoria_conoce": "El CDI cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños, que se revisan periódicamente y es conocido por más de la mitad del personal",
         "protocolo_revision_periodica_menos_mitad": "El CDI cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños, que se revisan periódicamente y es conocido por menos de la mitad del personal",
         "protocolo_sin_revision_mayoria_conoce": "El CDI cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños, que no tiene revisiones periódicas y es conocido por la más de la mitad del personal",
         "protocolo_sin_revision_menos_mitad": "El CDI cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños, que no tiene revisiones periódicas y es conocido por menos de la mitad del personal",
         "no_existe": "El CDI no cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños.",
     },
-    "technical_team_level": {
+    "nivel_equipo_tecnico": {
         "completo_mas_20_horas": "El CDI cuenta con un equipo técnico completo y más de 20 horas semanales de trabajo.",
         "perfiles_diversos_15_19_horas": "El CDI cuenta con un equipo técnico con perfiles diversos (al menos dos de los sugeridos) y entre 15 y 19 horas semanales de trabajo.",
         "al_menos_un_perfil_o_10_14_horas": "El CDI cuenta con un equipo técnico con al menos un perfil profesional y/o con entre 10 y 14 horas semanales de trabajo.",
         "limitado_un_perfil_o_9_o_menos": "El CDI cuenta con un equipo técnico limitado (un solo perfil profesional) y/o 9 horas o menos de trabajo semanal.",
         "sin_equipo": "El CDI no cuenta con equipo técnico.",
     },
-    "socioeducational_project_participants": {
+    "participantes_proyecto_socioeducativo": {
         "conduccion_sala_equipo_auxiliar_familias_comunidad": "Participan la conducción, el personal de sala, el equipo técnico, el personal auxiliar, las familias y actores comunitarios",
         "conduccion_sala_equipo_familias": "Participan la conducción, el personal de sala, el equipo técnico y las familias",
         "conduccion_sala_equipo": "Participan la conducción, el personal de sala y el equipo técnico",
         "conduccion_y_o_equipo": "Participan la conducción y/o el equipo técnico",
         "no_tienen": "No tienen proyecto socioeducativo institucional",
     },
-    "classroom_activity_planning": {
+    "planificacion_actividades_sala": {
         "semanal_en_marco_mensual_o_semestral_y_anual": "Se diseñan actividades semanales enmarcadas en planificaciones más amplias (mensuales o semestrales) y en un plan anual.",
         "semanal_en_marco_mensual_o_semestral_sin_anual": "Se diseñan actividades semanales enmarcadas en planificaciones más amplias (mensuales o semestrales), pero sin plan anual.",
         "semanal_en_marco_anual": "Se diseñan actividades semanales enmarcadas únicamente en un plan anual.",
         "solo_semanal": "Se diseñan únicamente actividades semanales, sin articulación con planificaciones más amplias.",
         "no_planifican": "No se realizan planificaciones de actividades.",
     },
-    "integral_planning": {
+    "planificacion_integral": {
         "intereses_caracteristicas_necesidades_e_integralidad": "Sí, se tienen en cuenta intereses, características, necesidades e integralidad de contenidos",
         "solo_intereses_caracteristicas_necesidades": "Solo se tienen en cuenta los intereses, características y necesidades del grupo",
         "solo_integralidad": "Solo se tiene en cuenta la integralidad de los contenidos",
         "ninguno": "No se tienen en cuenta los intereses, características, necesidades ni integralidad de los contenidos",
         "no_planifican": "No se realizan planificaciones",
     },
-    "direction_training_in_early_childhood": {
+    "formacion_direccion_primera_infancia": {
         "titulo_superior_completo_especifico": "Posee título universitario o terciario completo de carreras específicas en primera infancia (ej. Educación Inicial, Trabajo Social, Psicología, Psicopedagogía, Estimulación Temprana u otras afines).",
         "carrera_75_o_mas_o_posgrados": "Posee al menos el 75% de una carrera superior en temáticas vinculadas a la infancia o cuenta con posgrados/cursos de especialización acreditados.",
         "cursando_formacion_formal": "Se encuentra actualmente cursando una carrera o formación formal relacionada con la primera infancia.",
         "solo_cursos_cortos": "Ha realizado solo cursos o capacitaciones cortas no sistemáticas en temas de infancia.",
         "sin_formacion": "No posee formación superior ni capacitaciones en temáticas vinculadas a la infancia.",
     },
-    "pedagogical_pairs_coverage": {
+    "cobertura_duplas_pedagogicas": {
         "todas": "Sí, en todas las salas trabajan en dupla",
         "mayoria": "Sí, en la mayoría de las salas trabajan en dupla",
         "algunas": "Solo en algunas salas trabajan en dupla",
         "muy_pocas": "Muy pocas salas trabajan en duplas",
         "ninguna": "No se trabaja en duplas en ninguna sala",
     },
-    "qualified_teacher_coverage": {
+    "cobertura_educadora_titulo_habilitante": {
         "todas": "Sí, en todas las salas una educadora cuenta cn título habilitante de nivel inicial",
         "mayoria": "Sí, en la mayoría de las salas una educadora cuenta con título habilitante de nivel inicial",
         "algunas": "Solo en algunas salas una educadora cuenta con título habilitante de nivel inicial",
         "muy_pocas": "Muy pocas salas tienen una educadora con título habilitante",
     },
-    "assistant_training_coverage": {
+    "cobertura_formacion_auxiliares": {
         "todos": "Todos los auxiliares cuentan con formación específica en primera infancia",
         "mayoria": "La mayoría de los auxiliares cuentan con formación específica en primera infancia",
         "algunos": "Algunos auxiliares cuentan con formación específica en primera infancia",
         "muy_pocos": "Muy pocos auxiliares cuentan con formación específica en primera infancia",
         "ninguno": "Ningún auxiliar cuenta con formación en primera infancia",
     },
-    "main_hiring_mode": {
+    "modalidad_contratacion_principal": {
         "permanente": "La mayor proporción de personal tiene Contratación permanente",
         "temporal": "La mayor proporción de personal tiene Contratación temporal",
         "beca_o_pasantia": "La mayor proporción de personal tiene Beca o pasantía",
@@ -217,8 +217,8 @@ CHOICE_LABEL_OVERRIDES = {
     },
 }
 
-MULTI_CHOICE_LABEL_OVERRIDES = {
-    "health_protocol_items": {
+SOBREESCRITURAS_ETIQUETAS_OPCIONES_MULTIPLES = {
+    "items_protocolo_salud": {
         "emergencias_medicas": "Actuación frente a emergencias médicas",
         "suministro_medicamentos": "Suministro de medicamentos",
         "sintomas_enfermedad": "Pautas de actuación frente a síntomas de enfermedad",
@@ -228,57 +228,54 @@ MULTI_CHOICE_LABEL_OVERRIDES = {
     },
 }
 
-FIELD_LABEL_OVERRIDES = {
-    "survey_date": "Fecha de Relevamiento",
-    "exclusive_space_use": "Uso Exclusivo del Espacio: ¿El lugar físico en donde funciona el CDI es compartido con otras actividades, personas u organizaciones?",
-    "electricity_access": "Acceso a Energía: ¿El CDI tiene electricidad? (marcar la opción que corresponda)",
-    "electrical_safety": "Seguridad Eléctrica: ¿Las instalaciones eléctricas cumplen con la normativa de seguridad y se verifican periódicamente?",
-    "water_access": "Acceso a Agua: ¿El CDI tiene agua?",
-    "safe_drinking_water_source": "Acceso a Agua segura para consumo: ¿Cuál es la fuente de agua utilizada para consumo en el CDI?",
-    "excreta_disposal": "Eliminación de excretas - El desagüe del CDI es:",
-    "internet_access_quality_staff": "Acceso a internet: ¿El CDI tiene acceso a internet y es compartido por el personal?",
-    "evacuation_plan_and_drills": "Plan de evacuación ¿El CDI cuenta con plan de evacuación y realiza simulacros?",
-    "first_aid_training_coverage": "Capacitación en primeros auxilios ¿Cuenta todo el personal del CDI con capacitación certificada en primeros auxilios (Cruz Roja, Bomberos, otros)?",
-    "emergency_medical_service": "Servicio de emergencia médica ¿El CDI cuenta con un servicio de emergencia médica (a domicilio pago o línea prioritaria SAME/SEM) y tiene identificada la cobertura correspondiente a cada niño?",
-    "health_protocol_items": "Existencia de protocolo de actuación en salud. ¿El CDI cuenta con un protocolo escrito que contemple los siguientes aspectos? (Marcar todas las opciones que correspondan).",
-    "meals_provided": "Prestación Alimentaria del CDI",
-    "menu_preparation_quality": "Elaboración de alimentos : En referencia al menú, ¿cómo se elabora y qué tipo de alimentos incluye?",
-    "menu_periodic_evaluation": "Evaluación periódica del menú: ¿El CDI realiza evaluaciones periódicas del menú y contempla las necesidades nutricionales (celiaquía, bajo peso, obesidad, diabetes, etc.) y los distintos patrones alimentarios (incluyendo opciones basadas en plantas) de los niños y niñas?",
-    "food_handling_training_coverage": "Capacitaciones en manipulación de alimentos ¿El personal de cocina y comedor cuenta con capacitaciones en manipulación de alimentos y carnet emitido por ANMAT?",
-    "breast_milk_storage_conditions": "Condiciones para el almacenamiento de leche humana ¿El CDI cuenta con condiciones adecuadas para la conservación de leche humana?",
-    "breastfeeding_awareness_actions": "Acciones de información y sensibilización de la lactancia ¿Con qué frecuencia y alcance el CDI realiza acciones de información y sensibilización sobre lactancia (talleres, reuniones, folletería u otras)?",
-    "has_entry_exit_staff": "¿Hay personal encargado para la entrada y salida de los niños y niñas al CDI?",
-    "family_communication_frequency": "Comunicación con las familias ¿Con qué frecuencia el CDI mantiene reuniones con las familias y dispone de canales formales de comunicación?",
-    "parenting_workshops_frequency": "Talleres de crianza, charlas con profesionales ¿Con qué frecuencia el CDI ofrece talleres de crianza o charlas con profesionales dirigidas a las familias?",
-    "actions_promoting_rights_access": "Acciones de Promoción y acceso a derechos: ¿El CDI realiza acciones para facilitar el acceso de los/as niños/as y sus familias a derechos y políticas/programas de promoción y protección social (identidad, AUH/AUD/AUE, pensiones, salud, discapacidad, entre otros)?",
-    "actions_against_rights_violations": "Acciones de acompañamiento ante vulneración de derechos ¿El CDI realiza acciones de acompañamiento a las familias ante situaciones de vulneración de derechos (violencia intrafamiliar, judicialización de conflictos familiares, abuso sexual, entre otras)?",
-    "networking_level": "Trabajo en red ¿El CDI trabaja en red con otras instituciones, cuenta con un mapeo de actores de primera infancia y participa en mesas intersectoriales?",
-    "rights_violation_protocol": "Protocolo frente a vulneración de derechos ¿El CDI cuenta con protocolos específicos para la actuación ante sospecha o vulneración de derechos de los niños, se revisan periódicamente y son conocidos por el personal?",
-    "technical_team_level": "¿El CDI cuenta con un equipo técnico completo (trabajador/a social, psicólogo/a, psicopedagogo/a o estimulador/a temprano) y cuántas horas semanales de trabajo dedica?",
-    "child_development_record_frequency": "desarrollo del niño/a. Registro y frecuencia de actualización ¿Con qué frecuencia el CDI registra y actualiza la información sobre el desarrollo de cada niño/a?",
-    "family_info_record_frequency": "Información familiar. Registro y frecuencia de actualización ¿Con qué frecuencia el CDI registra y actualiza la información familiar de cada niño/a?",
-    "health_vaccine_record_frequency": "Información de controles de salud y vacunas. Registro y frecuencia de actualización ¿Con qué frecuencia el CDI registra y actualiza la información sobre los controles de salud y vacunas de cada niño/a?",
-    "socioeducational_project_participants": "Proyecto socioeducativo institucional ¿Quiénes participan en la elaboración del proyecto socioeducativo institucional del CDI?",
-    "classroom_activity_planning": "Existencia de planificación de actividades en sala ¿Cómo se planifican las actividades en sala dentro del CDI?",
-    "integral_planning": "Planificación integral ¿Las planificaciones de actividades en sala se realizan teniendo en cuenta los intereses, características y necesidades del grupo como así también la integralidad de los contenidos?",
-    "direction_training_in_early_childhood": "Formación de la dirección/coordinación en primera infancia ¿La dirección o coordinación del CDI cuenta con formación superior en temáticas vinculadas a la primera infancia?",
-    "pedagogical_pairs_coverage": "Trabajo en duplas en sala. ¿En todas las salas del CDI se trabaja con duplas pedagógicas a cargo?",
-    "qualified_teacher_coverage": "Formación habilitante del personal de sala. ¿Al menos una educadora cuenta con título habilitante de nivel inicial?",
-    "assistant_training_coverage": "Formación de auxiliares en primera infancia. ¿Los auxiliares de sala cuentan con formación específica en primera infancia?",
-    "main_hiring_mode": "Modalidad de contratación ¿Cuál es la principal modalidad de contratación del personal del CDI?",
-    "meetings_teaching_staff_frequency": "¿Con qué frecuencia se realizan reuniones entre el personal de sala, la coordinación y/o el equipo técnico del CDI?",
-    "meetings_non_teaching_staff_frequency": "¿Con qué frecuencia se realizan reuniones entre el personal no docente del CDI (cocina, limpieza, mantenimiento, etc.) y la coordinación?",
-    "meetings_all_staff_frequency": "¿Con qué frecuencia se realizan reuniones entre todo el personal?",
-    "training_instances_all_staff_last_3y": "En los últimos 3 años, ¿cuántas instancias de capacitación ha promovido el CDI para todo su personal?",
-    "training_instances_room_staff_last_3y": "En los últimos 3 años, ¿cuántas instancias de capacitación ha promovido el CDI para el personal de sala?",
-    "training_instances_technical_team_last_3y": "En los últimos 3 años, ¿cuántas instancias de capacitación ha promovido el CDI para el equipo técnico?",
-    "training_instances_kitchen_staff_last_3y": "En los últimos 3 años, ¿cuántas instancias de capacitación ha promovido el CDI para el personal de cocina y comedor?",
-    "cooking_fuel": "Para cocinar, el CDI utiliza principalmente: (marcar la opción que corresponda)",
-    "has_outdoor_space": "Espacio exterior: ¿El CDI cuenta con espacio exterior donde puedan realizarse actividades con los niños (patio, jardín, etc.)?",
-    "has_outdoor_playground": "Juegos infantiles de exterior ¿El espacio cuenta con juegos infantiles de exterior (hamacas, toboganes, etc.)?",
-    "management_mode": "Modalidad de Gestión",
-    "tenure_mode": "Modalidad de Tenencia",
+SOBREESCRITURAS_ETIQUETAS_CAMPOS = {
+    "fecha_relevamiento": "Fecha de Relevamiento",
+    "uso_exclusivo_espacio": "Uso Exclusivo del Espacio: ¿El lugar físico en donde funciona el CDI es compartido con otras actividades, personas u organizaciones?",
+    "acceso_energia": "Acceso a Energía: ¿El CDI tiene electricidad? (marcar la opción que corresponda)",
+    "seguridad_electrica": "Seguridad Eléctrica: ¿Las instalaciones eléctricas cumplen con la normativa de seguridad y se verifican periódicamente?",
+    "acceso_agua": "Acceso a Agua: ¿El CDI tiene agua?",
+    "fuente_agua_segura_consumo": "Acceso a Agua segura para consumo: ¿Cuál es la fuente de agua utilizada para consumo en el CDI?",
+    "eliminacion_excretas": "Eliminación de excretas - El desagüe del CDI es:",
+    "acceso_internet_personal": "Acceso a internet: ¿El CDI tiene acceso a internet y es compartido por el personal?",
+    "plan_evacuacion_y_simulacros": "Plan de evacuación ¿El CDI cuenta con plan de evacuación y realiza simulacros?",
+    "cobertura_capacitacion_primeros_auxilios": "Capacitación en primeros auxilios ¿Cuenta todo el personal del CDI con capacitación certificada en primeros auxilios (Cruz Roja, Bomberos, otros)?",
+    "servicio_emergencia_medica": "Servicio de emergencia médica ¿El CDI cuenta con un servicio de emergencia médica (a domicilio pago o línea prioritaria SAME/SEM) y tiene identificada la cobertura correspondiente a cada niño?",
+    "items_protocolo_salud": "Existencia de protocolo de actuación en salud. ¿El CDI cuenta con un protocolo escrito que contemple los siguientes aspectos? (Marcar todas las opciones que correspondan).",
+    "prestaciones_alimentarias": "Prestación Alimentaria del CDI",
+    "calidad_elaboracion_menu": "Elaboración de alimentos : En referencia al menú, ¿cómo se elabora y qué tipo de alimentos incluye?",
+    "evaluacion_periodica_menu": "Evaluación periódica del menú: ¿El CDI realiza evaluaciones periódicas del menú y contempla las necesidades nutricionales (celiaquía, bajo peso, obesidad, diabetes, etc.) y los distintos patrones alimentarios (incluyendo opciones basadas en plantas) de los niños y niñas?",
+    "cobertura_capacitacion_manipulacion_alimentos": "Capacitaciones en manipulación de alimentos ¿El personal de cocina y comedor cuenta con capacitaciones en manipulación de alimentos y carnet emitido por ANMAT?",
+    "condiciones_almacenamiento_leche_humana": "Condiciones para el almacenamiento de leche humana ¿El CDI cuenta con condiciones adecuadas para la conservación de leche humana?",
+    "acciones_sensibilizacion_lactancia": "Acciones de información y sensibilización de la lactancia ¿Con qué frecuencia y alcance el CDI realiza acciones de información y sensibilización sobre lactancia (talleres, reuniones, folletería u otras)?",
+    "tiene_personal_entrada_salida": "¿Hay personal encargado para la entrada y salida de los niños y niñas al CDI?",
+    "frecuencia_comunicacion_familias": "Comunicación con las familias ¿Con qué frecuencia el CDI mantiene reuniones con las familias y dispone de canales formales de comunicación?",
+    "frecuencia_talleres_crianza": "Talleres de crianza, charlas con profesionales ¿Con qué frecuencia el CDI ofrece talleres de crianza o charlas con profesionales dirigidas a las familias?",
+    "realiza_acciones_promocion_acceso_derechos": "Acciones de Promoción y acceso a derechos: ¿El CDI realiza acciones para facilitar el acceso de los/as niños/as y sus familias a derechos y políticas/programas de promoción y protección social (identidad, AUH/AUD/AUE, pensiones, salud, discapacidad, entre otros)?",
+    "realiza_acciones_acompanamiento_vulneracion_derechos": "Acciones de acompañamiento ante vulneración de derechos ¿El CDI realiza acciones de acompañamiento a las familias ante situaciones de vulneración de derechos (violencia intrafamiliar, judicialización de conflictos familiares, abuso sexual, entre otras)?",
+    "nivel_trabajo_red": "Trabajo en red ¿El CDI trabaja en red con otras instituciones, cuenta con un mapeo de actores de primera infancia y participa en mesas intersectoriales?",
+    "protocolo_vulneracion_derechos": "Protocolo frente a vulneración de derechos ¿El CDI cuenta con protocolos específicos para la actuación ante sospecha o vulneración de derechos de los niños, se revisan periódicamente y son conocidos por el personal?",
+    "nivel_equipo_tecnico": "¿El CDI cuenta con un equipo técnico completo (trabajador/a social, psicólogo/a, psicopedagogo/a o estimulador/a temprano) y cuántas horas semanales de trabajo dedica?",
+    "frecuencia_registro_desarrollo_nino": "desarrollo del niño/a. Registro y frecuencia de actualización ¿Con qué frecuencia el CDI registra y actualiza la información sobre el desarrollo de cada niño/a?",
+    "frecuencia_registro_informacion_familiar": "Información familiar. Registro y frecuencia de actualización ¿Con qué frecuencia el CDI registra y actualiza la información familiar de cada niño/a?",
+    "frecuencia_registro_salud_vacunas": "Información de controles de salud y vacunas. Registro y frecuencia de actualización ¿Con qué frecuencia el CDI registra y actualiza la información sobre los controles de salud y vacunas de cada niño/a?",
+    "participantes_proyecto_socioeducativo": "Proyecto socioeducativo institucional ¿Quiénes participan en la elaboración del proyecto socioeducativo institucional del CDI?",
+    "planificacion_actividades_sala": "Existencia de planificación de actividades en sala ¿Cómo se planifican las actividades en sala dentro del CDI?",
+    "planificacion_integral": "Planificación integral ¿Las planificaciones de actividades en sala se realizan teniendo en cuenta los intereses, características y necesidades del grupo como así también la integralidad de los contenidos?",
+    "formacion_direccion_primera_infancia": "Formación de la dirección/coordinación en primera infancia ¿La dirección o coordinación del CDI cuenta con formación superior en temáticas vinculadas a la primera infancia?",
+    "cobertura_duplas_pedagogicas": "Trabajo en duplas en sala. ¿En todas las salas del CDI se trabaja con duplas pedagógicas a cargo?",
+    "cobertura_educadora_titulo_habilitante": "Formación habilitante del personal de sala. ¿Al menos una educadora cuenta con título habilitante de nivel inicial?",
+    "cobertura_formacion_auxiliares": "Formación de auxiliares en primera infancia. ¿Los auxiliares de sala cuentan con formación específica en primera infancia?",
+    "modalidad_contratacion_principal": "Modalidad de contratación ¿Cuál es la principal modalidad de contratación del personal del CDI?",
+    "frecuencia_reuniones_personal_sala": "¿Con qué frecuencia se realizan reuniones entre el personal de sala, la coordinación y/o el equipo técnico del CDI?",
+    "frecuencia_reuniones_personal_no_docente": "¿Con qué frecuencia se realizan reuniones entre el personal no docente del CDI (cocina, limpieza, mantenimiento, etc.) y la coordinación?",
+    "frecuencia_reuniones_todo_personal": "¿Con qué frecuencia se realizan reuniones entre todo el personal?",
+    "instancias_capacitacion_todo_personal_ultimos_3_anios": "En los últimos 3 años, ¿cuántas instancias de capacitación ha promovido el CDI para todo su personal?",
+    "instancias_capacitacion_personal_sala_ultimos_3_anios": "En los últimos 3 años, ¿cuántas instancias de capacitación ha promovido el CDI para el personal de sala?",
+    "instancias_capacitacion_equipo_tecnico_ultimos_3_anios": "En los últimos 3 años, ¿cuántas instancias de capacitación ha promovido el CDI para el equipo técnico?",
+    "instancias_capacitacion_personal_cocina_ultimos_3_anios": "En los últimos 3 años, ¿cuántas instancias de capacitación ha promovido el CDI para el personal de cocina y comedor?",
+    "combustible_cocinar": "Para cocinar, el CDI utiliza principalmente: (marcar la opción que corresponda)",
+    "tiene_espacio_exterior": "Espacio exterior: ¿El CDI cuenta con espacio exterior donde puedan realizarse actividades con los niños (patio, jardín, etc.)?",
+    "tiene_juegos_exteriores": "Juegos infantiles de exterior ¿El espacio cuenta con juegos infantiles de exterior (hamacas, toboganes, etc.)?",
+    "modalidad_gestion": "Modalidad de Gestión",
+    "modalidad_tenencia": "Modalidad de Tenencia",
 }
-
-
-

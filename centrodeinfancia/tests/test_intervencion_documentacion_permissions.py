@@ -1,4 +1,4 @@
-import json
+﻿import json
 from types import SimpleNamespace
 
 import pytest
