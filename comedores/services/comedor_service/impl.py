@@ -345,6 +345,7 @@ def _build_comedores_list_values_queryset(base_qs):
             "ultimo_estado__estado_general__estado_detalle",
             "estado_validacion",
             "fecha_validado",
+            "es_judicializado",
         )
         .order_by("-id")
     )
