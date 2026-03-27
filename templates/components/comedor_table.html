@@ -143,6 +143,9 @@
                                                 <a href="{% url 'comedor_detalle' comedor.id %}"
                                                    class="link-handler"
                                                    title="Ver detalles de {{ comedor.nombre }}">{{ comedor.nombre }}</a>
+                                                {% if comedor.es_judicializado %}
+                                                    <span class="badge-judicializado ms-1">Judicializado</span>
+                                                {% endif %}
                                             </td>
                                         {% elif column_key == "tipo" %}
                                             <td>{{ comedor.tipocomedor__nombre | default_if_none:"Sin información" }}</td>
