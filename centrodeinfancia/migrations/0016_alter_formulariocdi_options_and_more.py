@@ -43,17 +43,78 @@ class Migration(migrations.Migration):
                 "verbose_name_plural": "Observaciones Centro de Desarrollo Infantil",
             },
         ),
-        migrations.RemoveConstraint(
-            model_name="formulariocdiarticulationfrequency",
-            name="uniq_formulario_cdi_articulation_institution",
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql=(
+                        "ALTER TABLE "
+                        "centrodeinfancia_formulariocdiarticulationfrequency "
+                        "DROP INDEX uniq_formulario_cdi_articulation_institution"
+                    ),
+                    reverse_sql=(
+                        "ALTER TABLE "
+                        "centrodeinfancia_formulariocdiarticulationfrequency "
+                        "ADD CONSTRAINT "
+                        "uniq_formulario_cdi_articulation_institution "
+                        "UNIQUE (formulario_id, tipo_institucion)"
+                    ),
+                )
+            ],
+            state_operations=[
+                migrations.RemoveConstraint(
+                    model_name="formulariocdiarticulationfrequency",
+                    name="uniq_formulario_cdi_articulation_institution",
+                )
+            ],
         ),
-        migrations.RemoveConstraint(
-            model_name="formulariocdiroomdistribution",
-            name="uniq_formulario_cdi_room_distribution_age_group",
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql=(
+                        "ALTER TABLE "
+                        "centrodeinfancia_formulariocdiroomdistribution "
+                        "DROP INDEX "
+                        "uniq_formulario_cdi_room_distribution_age_group"
+                    ),
+                    reverse_sql=(
+                        "ALTER TABLE "
+                        "centrodeinfancia_formulariocdiroomdistribution "
+                        "ADD CONSTRAINT "
+                        "uniq_formulario_cdi_room_distribution_age_group "
+                        "UNIQUE (formulario_id, grupo_etario)"
+                    ),
+                )
+            ],
+            state_operations=[
+                migrations.RemoveConstraint(
+                    model_name="formulariocdiroomdistribution",
+                    name="uniq_formulario_cdi_room_distribution_age_group",
+                )
+            ],
         ),
-        migrations.RemoveConstraint(
-            model_name="formulariocdiwaitlistbyagegroup",
-            name="uniq_formulario_cdi_waitlist_age_group",
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql=(
+                        "ALTER TABLE "
+                        "centrodeinfancia_formulariocdiwaitlistbyagegroup "
+                        "DROP INDEX uniq_formulario_cdi_waitlist_age_group"
+                    ),
+                    reverse_sql=(
+                        "ALTER TABLE "
+                        "centrodeinfancia_formulariocdiwaitlistbyagegroup "
+                        "ADD CONSTRAINT "
+                        "uniq_formulario_cdi_waitlist_age_group "
+                        "UNIQUE (formulario_id, grupo_etario)"
+                    ),
+                )
+            ],
+            state_operations=[
+                migrations.RemoveConstraint(
+                    model_name="formulariocdiwaitlistbyagegroup",
+                    name="uniq_formulario_cdi_waitlist_age_group",
+                )
+            ],
         ),
         migrations.AlterField(
             model_name="formulariocdi",
