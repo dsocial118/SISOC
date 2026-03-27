@@ -160,3 +160,14 @@ def test_formulario_cdi_aplica_textos_actualizados_en_labels_y_opciones():
         dict(form.fields["water_access"].choices)["caneria_dentro_cdi"]
         == "Por cañería dentro del CDI"
     )
+
+@pytest.mark.django_db
+def test_formulario_cdi_opciones_botiquin_muestran_texto_largo():
+    form = FormularioCDIForm()
+
+    assert (
+        dict(form.fields["first_aid_kit_status"].choices)[
+            "completo_todas_salas_ok_vigente_fuera_alcance"
+        ]
+        == "Cuentan con botiquín completo de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños"
+    )
