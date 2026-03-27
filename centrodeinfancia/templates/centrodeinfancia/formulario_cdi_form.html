@@ -110,7 +110,9 @@
                                         </td>
                                         <td>
                                             {{ row_form.cantidad_personal_sala }}
-                                            {% for error in row_form.cantidad_personal_sala.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                            {% for error in row_form.cantidad_personal_sala.errors %}
+                                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
                                         </td>
                                         <td class="room-staff-ratio">-</td>
                                     </tr>
@@ -155,7 +157,9 @@
                                         </td>
                                         <td>
                                             {{ row_form.cantidad_demanda_insatisfecha }}
-                                            {% for error in row_form.cantidad_demanda_insatisfecha.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                            {% for error in row_form.cantidad_demanda_insatisfecha.errors %}
+                                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -464,5 +468,3 @@
         });
     </script>
 {% endblock %}
-
-

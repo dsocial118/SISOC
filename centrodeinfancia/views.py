@@ -1302,5 +1302,3 @@ def eliminar_archivo_intervencion_centrodeinfancia(request, intervencion_id):
     else:
         messages.error(request, "No hay archivo para eliminar.")
     return redirect("centrodeinfancia_detalle", pk=intervencion.centro_id)
-
-

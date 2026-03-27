@@ -97,12 +97,11 @@ def test_formulario_cdi_filtra_municipio_y_localidad_por_ubicacion_seleccionada(
 def test_formulario_cdi_labels_custom_quedan_en_espanol():
     form = FormularioCDIForm()
 
-    assert form.fields["meses_funcionamiento"].label == "Meses de funcionamiento del CDI"
-    assert form.fields["dias_funcionamiento"].label == "Días de funcionamiento del CDI"
     assert (
-        form.fields["tiene_extintores_vigentes"].label
-        == "Existencia de extintores"
+        form.fields["meses_funcionamiento"].label == "Meses de funcionamiento del CDI"
     )
+    assert form.fields["dias_funcionamiento"].label == "Días de funcionamiento del CDI"
+    assert form.fields["tiene_extintores_vigentes"].label == "Existencia de extintores"
     assert form.fields["tiene_instrumento_priorizacion_ingreso"].label == (
         "Existe instrumento de priorización de ingreso de los niños/as"
     )
@@ -162,6 +161,7 @@ def test_formulario_cdi_aplica_textos_actualizados_en_labels_y_opciones():
         == "Por cañería dentro del CDI"
     )
 
+
 @pytest.mark.django_db
 def test_formulario_cdi_opciones_botiquin_muestran_texto_largo():
     form = FormularioCDIForm()
@@ -187,5 +187,3 @@ def test_schema_cdi_aplica_matriz_de_textos():
         == "Cuentan con botiquín completo de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños"
     )
     assert ETIQUETAS_CAMPOS["fecha_relevamiento"] == "Fecha de Relevamiento"
-
-

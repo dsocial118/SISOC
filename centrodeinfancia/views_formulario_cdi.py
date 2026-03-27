@@ -70,7 +70,9 @@ def _obtener_centro_filtrado_o_404(user, pk):
 
 
 def _obtener_formulario_filtrado_o_404(user, centro_id, form_pk):
-    queryset = _obtener_queryset_formularios_cdi_filtrado(user).filter(centro_id=centro_id)
+    queryset = _obtener_queryset_formularios_cdi_filtrado(user).filter(
+        centro_id=centro_id
+    )
     return get_object_or_404(queryset, pk=form_pk)
 
 
@@ -97,10 +99,7 @@ def _obtener_mapas_opciones_formulario():
 @lru_cache(maxsize=1)
 def _obtener_etiquetas_campos_formulario():
     form = FormularioCDIForm()
-    return {
-        field_name: field.label
-        for field_name, field in form.fields.items()
-    }
+    return {field_name: field.label for field_name, field in form.fields.items()}
 
 
 def _mostrar_valor_campo(obj, field_name):
@@ -135,7 +134,8 @@ def construir_resumenes_formularios(formularios):
             {
                 "id": formulario.id,
                 "fecha_relevamiento": formulario.fecha_relevamiento,
-                "nombre_completo_respondente": formulario.nombre_completo_respondente or "-",
+                "nombre_completo_respondente": formulario.nombre_completo_respondente
+                or "-",
                 "created_at": formulario.created_at,
                 "updated_at": formulario.updated_at,
                 "detail_url": reverse(
@@ -200,14 +200,22 @@ class FormularioCDIDetailView(LoginRequiredMixin, DetailView):
         context["centro"] = self.object.centro
         context["detail_sections"] = self._build_detail_sections(self.object)
         context["filas_salas"] = self.object.filas_distribucion_salas.order_by("id")
-        context["filas_demanda_insatisfecha"] = self.object.filas_demanda_insatisfecha.order_by("id")
+        context["filas_demanda_insatisfecha"] = (
+            self.object.filas_demanda_insatisfecha.order_by("id")
+        )
         context["filas_articulacion"] = self.object.filas_articulacion.order_by("id")
         context["totales_salas"] = self._sum_numeric_rows(
             context["filas_salas"],
-            ["cantidad_salas", "superficie_exclusiva_m2", "cantidad_ninos", "cantidad_personal_sala"],
+            [
+                "cantidad_salas",
+                "superficie_exclusiva_m2",
+                "cantidad_ninos",
+                "cantidad_personal_sala",
+            ],
         )
         context["total_demanda_insatisfecha"] = sum(
-            item.cantidad_demanda_insatisfecha or 0 for item in context["filas_demanda_insatisfecha"]
+            item.cantidad_demanda_insatisfecha or 0
+            for item in context["filas_demanda_insatisfecha"]
         )
         return context
 
@@ -276,8 +284,10 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
         clase_formset_distribucion_salas = construir_clase_formset_distribucion_salas(
             0 if instance and instance.pk else len(OPCIONES_GRUPO_ETARIO_SALAS)
         )
-        clase_formset_demanda_insatisfecha = construir_clase_formset_demanda_insatisfecha(
-            0 if instance and instance.pk else len(OPCIONES_GRUPO_ETARIO_DEMANDA)
+        clase_formset_demanda_insatisfecha = (
+            construir_clase_formset_demanda_insatisfecha(
+                0 if instance and instance.pk else len(OPCIONES_GRUPO_ETARIO_DEMANDA)
+            )
         )
         clase_formset_articulacion = construir_clase_formset_articulacion(
             0 if instance and instance.pk else len(OPCIONES_INSTITUCIONES_ARTICULACION)
@@ -286,12 +296,16 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
         filas_iniciales_salas = (
             []
             if instance
-            else construir_filas_iniciales_fijas(OPCIONES_GRUPO_ETARIO_SALAS, "grupo_etario")
+            else construir_filas_iniciales_fijas(
+                OPCIONES_GRUPO_ETARIO_SALAS, "grupo_etario"
+            )
         )
         filas_iniciales_demanda = (
             []
             if instance
-            else construir_filas_iniciales_fijas(OPCIONES_GRUPO_ETARIO_DEMANDA, "grupo_etario")
+            else construir_filas_iniciales_fijas(
+                OPCIONES_GRUPO_ETARIO_DEMANDA, "grupo_etario"
+            )
         )
         filas_iniciales_articulacion = (
             []
@@ -508,4 +522,3 @@ class FormularioCDIUpdateView(FormularioCDIEditBaseView):
 
     def get_success_message(self, formulario):
         return f"Formulario #{formulario.pk} actualizado correctamente."
-

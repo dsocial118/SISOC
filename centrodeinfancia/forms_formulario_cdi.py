@@ -1,4 +1,4 @@
-﻿"""Forms para FormularioCDI."""
+"""Forms para FormularioCDI."""
 
 from __future__ import annotations
 
@@ -126,11 +126,15 @@ class FormularioCDIForm(forms.ModelForm):
         municipality_instance = getattr(self.instance, municipality_field, None)
         locality_instance = getattr(self.instance, locality_field, None)
 
-        province_value = self._obtener_valor_enlazado_o_inicial(province_field, province_instance)
+        province_value = self._obtener_valor_enlazado_o_inicial(
+            province_field, province_instance
+        )
         municipality_value = self._obtener_valor_enlazado_o_inicial(
             municipality_field, municipality_instance
         )
-        locality_value = self._obtener_valor_enlazado_o_inicial(locality_field, locality_instance)
+        locality_value = self._obtener_valor_enlazado_o_inicial(
+            locality_field, locality_instance
+        )
 
         province = Provincia.objects.filter(pk=self._parsear_pk(province_value)).first()
         municipality = Municipio.objects.filter(
@@ -235,8 +239,11 @@ class MezclaEtiquetaFilaFija:
     @property
     def etiqueta_fila(self):
         option_map = dict(self.opciones_fila)
-        value = self.initial.get(self.campo_codigo_fila) or self.data.get(
-            self.add_prefix(self.campo_codigo_fila)
+        initial = getattr(self, "initial", {})
+        data = getattr(self, "data", {})
+        add_prefix = getattr(self, "add_prefix", lambda field_name: field_name)
+        value = initial.get(self.campo_codigo_fila) or data.get(
+            add_prefix(self.campo_codigo_fila)
         )
         return option_map.get(value, value)
 
@@ -270,7 +277,9 @@ class FormularioCDIDistribucionSalasForm(MezclaEtiquetaFilaFija, forms.ModelForm
             self.fields[field_name].widget.attrs["class"] = "form-control"
 
 
-class FormularioCDIDemandaInsatisfechaGrupoEtarioForm(MezclaEtiquetaFilaFija, forms.ModelForm):
+class FormularioCDIDemandaInsatisfechaGrupoEtarioForm(
+    MezclaEtiquetaFilaFija, forms.ModelForm
+):
     campo_codigo_fila = "grupo_etario"
     opciones_fila = OPCIONES_GRUPO_ETARIO_DEMANDA
 
@@ -284,7 +293,9 @@ class FormularioCDIDemandaInsatisfechaGrupoEtarioForm(MezclaEtiquetaFilaFija, fo
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["cantidad_demanda_insatisfecha"].required = False
-        self.fields["cantidad_demanda_insatisfecha"].widget.attrs["class"] = "form-control"
+        self.fields["cantidad_demanda_insatisfecha"].widget.attrs[
+            "class"
+        ] = "form-control"
 
 
 class FormularioCDIArticulacionFrecuenciaForm(MezclaEtiquetaFilaFija, forms.ModelForm):
@@ -332,6 +343,3 @@ def construir_clase_formset_articulacion(extra=0):
         extra=extra,
         can_delete=False,
     )
-
-
-

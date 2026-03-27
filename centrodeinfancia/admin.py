@@ -49,14 +49,26 @@ class ObservacionCentroInfanciaAdmin(admin.ModelAdmin):
 
 @admin.register(FormularioCDI)
 class FormularioCDIAdmin(admin.ModelAdmin):
-    list_display = ("id", "centro", "fecha_relevamiento", "nombre_completo_respondente", "created_at")
+    list_display = (
+        "id",
+        "centro",
+        "fecha_relevamiento",
+        "nombre_completo_respondente",
+        "created_at",
+    )
     list_filter = ("fecha_relevamiento", "created_at")
     search_fields = ("centro__nombre", "nombre_completo_respondente", "codigo_cdi")
 
 
 @admin.register(FormularioCDIRoomDistribution)
 class FormularioCDIRoomDistributionAdmin(admin.ModelAdmin):
-    list_display = ("id", "formulario", "grupo_etario", "cantidad_salas", "cantidad_ninos")
+    list_display = (
+        "id",
+        "formulario",
+        "grupo_etario",
+        "cantidad_salas",
+        "cantidad_ninos",
+    )
     list_filter = ("grupo_etario",)
 
 
@@ -70,4 +82,3 @@ class FormularioCDIWaitlistByAgeGroupAdmin(admin.ModelAdmin):
 class FormularioCDIArticulationFrequencyAdmin(admin.ModelAdmin):
     list_display = ("id", "formulario", "tipo_institucion", "frecuencia")
     list_filter = ("frecuencia",)
-

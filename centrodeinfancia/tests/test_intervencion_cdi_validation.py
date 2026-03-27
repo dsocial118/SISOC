@@ -86,4 +86,3 @@ def test_cdi_intervencion_destinatario_fijo_centro():
 
     assert form.is_valid(), form.errors
     assert form.cleaned_data["destinatario"] == destinatario_centro
-

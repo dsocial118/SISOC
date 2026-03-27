@@ -410,6 +410,3 @@ class ObservacionCentroInfanciaForm(forms.ModelForm):
                 }
             )
         }
-
-
-

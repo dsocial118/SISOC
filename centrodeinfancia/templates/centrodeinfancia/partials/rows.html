@@ -1,4 +1,5 @@
-﻿{% for item in centros %}
+﻿
+{% for item in centros %}
     <tr>
         {% for column_key in active_columns %}
             {% if column_key == "nombre" %}
@@ -64,4 +65,3 @@
         </td>
     </tr>
 {% endfor %}
-

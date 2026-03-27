@@ -697,4 +697,3 @@ def log_aval_delete(sender, instance: Aval, **kwargs):
     Registra bajas (soft/hard) de avales sin duplicar eventos.
     """
     _log_related_organizacion_delete(instance, "Aval")
-

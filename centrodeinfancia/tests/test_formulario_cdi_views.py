@@ -232,7 +232,10 @@ def test_formulario_cdi_crear_renderiza_filas_editables_base(client):
     assert response.status_code == 200
     content = response.content.decode("utf-8")
     assert 'name="distribucion_salas-0-cantidad_salas"' in content
-    assert 'name="demanda_insatisfecha_por_grupo_etario-0-cantidad_demanda_insatisfecha"' in content
+    assert (
+        'name="demanda_insatisfecha_por_grupo_etario-0-cantidad_demanda_insatisfecha"'
+        in content
+    )
     assert 'name="frecuencia_articulacion-0-frecuencia"' in content
 
 
@@ -283,4 +286,3 @@ def test_formulario_cdi_form_sections_agrupa_meses_y_dias_en_la_misma_fila(clien
     )
     row_names = [[field["name"] for field in row] for row in general_section["rows"]]
     assert ["meses_funcionamiento", "dias_funcionamiento"] in row_names
-

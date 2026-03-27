@@ -242,7 +242,9 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
     )
 
     fecha_relevamiento = models.DateField(blank=True, null=True)
-    nombre_completo_respondente = models.CharField(max_length=255, blank=True, null=True)
+    nombre_completo_respondente = models.CharField(
+        max_length=255, blank=True, null=True
+    )
     rol_respondente = models.CharField(max_length=255, blank=True, null=True)
     email_respondente = models.EmailField(max_length=255, blank=True, null=True)
 
@@ -360,7 +362,9 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
     codigo_postal_organizacion = models.CharField(max_length=12, blank=True, null=True)
     edificio_organizacion = models.CharField(max_length=255, blank=True, null=True)
     piso_organizacion = models.CharField(max_length=255, blank=True, null=True)
-    departamento_domicilio_organizacion = models.CharField(max_length=255, blank=True, null=True)
+    departamento_domicilio_organizacion = models.CharField(
+        max_length=255, blank=True, null=True
+    )
     oficina_organizacion = models.CharField(max_length=255, blank=True, null=True)
     telefono_organizacion = models.CharField(
         max_length=20,
@@ -369,15 +373,21 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         validators=[PHONE_VALIDATOR],
     )
     email_organizacion = models.EmailField(max_length=255, blank=True, null=True)
-    nombre_referente_organizacion = models.CharField(max_length=255, blank=True, null=True)
-    apellido_referente_organizacion = models.CharField(max_length=255, blank=True, null=True)
+    nombre_referente_organizacion = models.CharField(
+        max_length=255, blank=True, null=True
+    )
+    apellido_referente_organizacion = models.CharField(
+        max_length=255, blank=True, null=True
+    )
     telefono_referente_organizacion = models.CharField(
         max_length=20,
         blank=True,
         null=True,
         validators=[PHONE_VALIDATOR],
     )
-    email_referente_organizacion = models.EmailField(max_length=255, blank=True, null=True)
+    email_referente_organizacion = models.EmailField(
+        max_length=255, blank=True, null=True
+    )
     modalidad_tenencia = models.CharField(
         max_length=64,
         choices=CAMPOS_OPCIONES["modalidad_tenencia"],
@@ -479,7 +489,9 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
     items_protocolo_salud = models.JSONField(default=list, blank=True)
 
     prestaciones_alimentarias = models.JSONField(default=list, blank=True)
-    prestaciones_alimentarias_otra = models.CharField(max_length=255, blank=True, null=True)
+    prestaciones_alimentarias_otra = models.CharField(
+        max_length=255, blank=True, null=True
+    )
     calidad_elaboracion_menu = models.CharField(
         max_length=128,
         choices=CAMPOS_OPCIONES["calidad_elaboracion_menu"],
@@ -518,12 +530,8 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
     )
     tiene_instrumento_priorizacion_ingreso = models.BooleanField(blank=True, null=True)
-    cantidad_ninos_discapacidad = models.PositiveIntegerField(
-        blank=True, null=True
-    )
-    cantidad_ninos_etnia_especifica = models.PositiveIntegerField(
-        blank=True, null=True
-    )
+    cantidad_ninos_discapacidad = models.PositiveIntegerField(blank=True, null=True)
+    cantidad_ninos_etnia_especifica = models.PositiveIntegerField(blank=True, null=True)
     tiene_personal_entrada_salida = models.CharField(
         max_length=16,
         choices=CAMPOS_OPCIONES["tiene_personal_entrada_salida"],
@@ -664,25 +672,33 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
     )
     instancias_capacitacion_todo_personal_ultimos_3_anios = models.CharField(
         max_length=32,
-        choices=CAMPOS_OPCIONES["instancias_capacitacion_todo_personal_ultimos_3_anios"],
+        choices=CAMPOS_OPCIONES[
+            "instancias_capacitacion_todo_personal_ultimos_3_anios"
+        ],
         blank=True,
         null=True,
     )
     instancias_capacitacion_personal_sala_ultimos_3_anios = models.CharField(
         max_length=32,
-        choices=CAMPOS_OPCIONES["instancias_capacitacion_personal_sala_ultimos_3_anios"],
+        choices=CAMPOS_OPCIONES[
+            "instancias_capacitacion_personal_sala_ultimos_3_anios"
+        ],
         blank=True,
         null=True,
     )
     instancias_capacitacion_equipo_tecnico_ultimos_3_anios = models.CharField(
         max_length=32,
-        choices=CAMPOS_OPCIONES["instancias_capacitacion_equipo_tecnico_ultimos_3_anios"],
+        choices=CAMPOS_OPCIONES[
+            "instancias_capacitacion_equipo_tecnico_ultimos_3_anios"
+        ],
         blank=True,
         null=True,
     )
     instancias_capacitacion_personal_cocina_ultimos_3_anios = models.CharField(
         max_length=32,
-        choices=CAMPOS_OPCIONES["instancias_capacitacion_personal_cocina_ultimos_3_anios"],
+        choices=CAMPOS_OPCIONES[
+            "instancias_capacitacion_personal_cocina_ultimos_3_anios"
+        ],
         blank=True,
         null=True,
     )
@@ -694,7 +710,9 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
 
     def __str__(self):
         fecha = (
-            self.fecha_relevamiento.strftime("%Y-%m-%d") if self.fecha_relevamiento else "sin fecha"
+            self.fecha_relevamiento.strftime("%Y-%m-%d")
+            if self.fecha_relevamiento
+            else "sin fecha"
         )
         return f"Formulario CDI #{self.pk} - {self.centro} - {fecha}"
 
@@ -754,7 +772,9 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
             )
 
         if "ninguna" in meals and len(meals) > 1:
-            errors["prestaciones_alimentarias"] = "No puede combinar 'ninguna' con otras opciones."
+            errors["prestaciones_alimentarias"] = (
+                "No puede combinar 'ninguna' con otras opciones."
+            )
 
         dependent_field_rules = (
             (
@@ -884,7 +904,9 @@ class FormularioCDIWaitlistByAgeGroup(SoftDeleteModelMixin, models.Model):
         on_delete=models.CASCADE,
         related_name="filas_demanda_insatisfecha",
     )
-    grupo_etario = models.CharField(max_length=32, choices=OPCIONES_GRUPO_ETARIO_DEMANDA)
+    grupo_etario = models.CharField(
+        max_length=32, choices=OPCIONES_GRUPO_ETARIO_DEMANDA
+    )
     cantidad_demanda_insatisfecha = models.PositiveIntegerField(blank=True, null=True)
 
     class Meta:
@@ -929,6 +951,3 @@ class FormularioCDIArticulationFrequency(SoftDeleteModelMixin, models.Model):
                 name="uniq_formulario_cdi_articulacion_tipo_institucion",
             )
         ]
-
-
-

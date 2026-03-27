@@ -160,5 +160,3 @@ def test_form_edicion_mantiene_campos_obligatorios():
 
     assert not form.is_valid()
     assert "nombre" in form.errors
-
-
