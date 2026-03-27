@@ -73,7 +73,7 @@ def _get_actor():
 
 def _build_custom_signal_additional_data(default_source=None):
     """
-    Propaga metadata de Fase 2 en logs custom (on_commit), para no perder batch/source.
+    Propaga metadatos de Fase 2 en logs custom (on_commit), para no perder batch/source.
     """
     context = get_audit_context()
     payload = {}
@@ -166,7 +166,7 @@ def _actor_snapshot_data(actor):
 
 def _build_audit_entry_meta_defaults(entry):
     """
-    Construye metadata persistida Fase 2 a partir de LogEntry + contexto thread-local.
+    Construye metadatos persistida Fase 2 a partir de LogEntry + contexto thread-local.
     """
     context_data = get_audit_context()
     additional_data = _normalize_additional_data(
@@ -298,7 +298,7 @@ def _log_related_organizacion_delete(instance, label: str):
 @receiver(post_save, sender=LogEntry)
 def ensure_audit_entry_meta(sender, instance: LogEntry, created: bool, **kwargs):
     """
-    Persiste metadata de Fase 2 para cualquier evento de django-auditlog.
+    Persiste metadatos de Fase 2 para cualquier evento de django-auditlog.
     """
     if not created:
         return
@@ -414,8 +414,8 @@ def log_formulario_cdi_creation(
         return
 
     fecha = None
-    if getattr(instance, "survey_date", None):
-        fecha = instance.survey_date.strftime("%Y-%m-%d")
+    if getattr(instance, "fecha_relevamiento", None):
+        fecha = instance.fecha_relevamiento.strftime("%Y-%m-%d")
 
     description = f"Formulario CDI #{instance.pk}"
     if fecha:

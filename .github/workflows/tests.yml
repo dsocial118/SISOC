@@ -197,6 +197,7 @@ jobs:
                   script: |
                       const required = [
                         "gitleaks",
+                        "encoding_check",
                         "black",
                         "djlint",
                         "pylint",
