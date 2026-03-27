@@ -1,4 +1,4 @@
-{% extends "includes/main.html" %}
+﻿{% extends "includes/main.html" %}
 {% load crispy_forms_tags static %}
 
 {% block title %}
@@ -31,7 +31,7 @@
             <div class="card-body">
                 <h3 class="mb-1">{{ centro.nombre }}</h3>
                 <p class="text-muted mb-0">
-                    Formulario vinculado al centro #{{ centro.id }} ({{ centro.cdi_code|default:"Sin codigo" }})
+                    Formulario vinculado al centro #{{ centro.id }} ({{ centro.codigo_cdi|default:"Sin codigo" }})
                 </p>
             </div>
         </div>
@@ -39,7 +39,7 @@
         <form method="post" novalidate>
             {% csrf_token %}
 
-            {% if form.errors or room_formset.errors or room_formset.non_form_errors or waitlist_formset.errors or waitlist_formset.non_form_errors or articulation_formset.errors or articulation_formset.non_form_errors %}
+            {% if form.errors or formset_distribucion_salas.errors or formset_distribucion_salas.non_form_errors or formset_demanda_insatisfecha.errors or formset_demanda_insatisfecha.non_form_errors or formset_articulacion.errors or formset_articulacion.non_form_errors %}
                 <div class="alert alert-danger">
                     No se pudo guardar el formulario. Revisá los campos marcados.
                     {% if form.non_field_errors %}<div class="mt-2">{{ form.non_field_errors }}</div>{% endif %}
@@ -71,9 +71,9 @@
                     <strong>Organización de Salas: ¿Cómo se distribuyen los niños y niñas en las salas dentro del CDI? Complete la siguiente tabla consignando para cada grupo existente, la cantidad de salas, la superficie exclusiva en m², la cantidad de niñas y niños que concurren y la cantidad de personal de sala disponible.</strong>
                 </div>
                 <div class="card-body">
-                    {{ room_formset.management_form }}
-                    {% if room_formset.non_form_errors %}
-                        <div class="alert alert-danger">{{ room_formset.non_form_errors }}</div>
+                    {{ formset_distribucion_salas.management_form }}
+                    {% if formset_distribucion_salas.non_form_errors %}
+                        <div class="alert alert-danger">{{ formset_distribucion_salas.non_form_errors }}</div>
                     {% endif %}
                     <div class="table-responsive">
                         <table class="table table-bordered align-middle">
@@ -88,29 +88,29 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for row_form in room_formset.forms %}
+                                {% for row_form in formset_distribucion_salas.forms %}
                                     <tr>
                                         <td>
-                                            {{ row_form.age_group }}
-                                            {{ row_form.row_label }}
+                                            {{ row_form.grupo_etario }}
+                                            {{ row_form.etiqueta_fila }}
                                         </td>
                                         <td>
-                                            {{ row_form.room_count }}
-                                            {% for error in row_form.room_count.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                            {{ row_form.cantidad_salas }}
+                                            {% for error in row_form.cantidad_salas.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                                         </td>
                                         <td>
-                                            {{ row_form.exclusive_area_m2 }}
-                                            {% for error in row_form.exclusive_area_m2.errors %}
+                                            {{ row_form.superficie_exclusiva_m2 }}
+                                            {% for error in row_form.superficie_exclusiva_m2.errors %}
                                                 <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
                                         </td>
                                         <td>
-                                            {{ row_form.children_count }}
-                                            {% for error in row_form.children_count.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                            {{ row_form.cantidad_ninos }}
+                                            {% for error in row_form.cantidad_ninos.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                                         </td>
                                         <td>
-                                            {{ row_form.staff_count }}
-                                            {% for error in row_form.staff_count.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                            {{ row_form.cantidad_personal_sala }}
+                                            {% for error in row_form.cantidad_personal_sala.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                                         </td>
                                         <td class="room-staff-ratio">-</td>
                                     </tr>
@@ -134,9 +134,9 @@
                     <strong>Demanda insatisfecha por sala</strong>
                 </div>
                 <div class="card-body">
-                    {{ waitlist_formset.management_form }}
-                    {% if waitlist_formset.non_form_errors %}
-                        <div class="alert alert-danger">{{ waitlist_formset.non_form_errors }}</div>
+                    {{ formset_demanda_insatisfecha.management_form }}
+                    {% if formset_demanda_insatisfecha.non_form_errors %}
+                        <div class="alert alert-danger">{{ formset_demanda_insatisfecha.non_form_errors }}</div>
                     {% endif %}
                     <div class="table-responsive">
                         <table class="table table-bordered align-middle">
@@ -147,15 +147,15 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for row_form in waitlist_formset.forms %}
+                                {% for row_form in formset_demanda_insatisfecha.forms %}
                                     <tr>
                                         <td>
-                                            {{ row_form.age_group }}
-                                            {{ row_form.row_label }}
+                                            {{ row_form.grupo_etario }}
+                                            {{ row_form.etiqueta_fila }}
                                         </td>
                                         <td>
-                                            {{ row_form.waitlist_count }}
-                                            {% for error in row_form.waitlist_count.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                            {{ row_form.cantidad_demanda_insatisfecha }}
+                                            {% for error in row_form.cantidad_demanda_insatisfecha.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -170,9 +170,9 @@
                     <strong>Articulaciones institucionales</strong>
                 </div>
                 <div class="card-body">
-                    {{ articulation_formset.management_form }}
-                    {% if articulation_formset.non_form_errors %}
-                        <div class="alert alert-danger">{{ articulation_formset.non_form_errors }}</div>
+                    {{ formset_articulacion.management_form }}
+                    {% if formset_articulacion.non_form_errors %}
+                        <div class="alert alert-danger">{{ formset_articulacion.non_form_errors }}</div>
                     {% endif %}
                     <div class="table-responsive">
                         <table class="table table-bordered align-middle">
@@ -183,15 +183,15 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for row_form in articulation_formset.forms %}
+                                {% for row_form in formset_articulacion.forms %}
                                     <tr>
                                         <td>
-                                            {{ row_form.institution_type }}
-                                            {{ row_form.row_label }}
+                                            {{ row_form.tipo_institucion }}
+                                            {{ row_form.etiqueta_fila }}
                                         </td>
                                         <td>
-                                            {{ row_form.frequency }}
-                                            {% for error in row_form.frequency.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                            {{ row_form.frecuencia }}
+                                            {% for error in row_form.frecuencia.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -225,41 +225,41 @@
         document.addEventListener("DOMContentLoaded", function() {
             const wrappers = Array.from(document.querySelectorAll("[data-field-name]"));
             const showWhen = {
-                workday_type_other: function() {
-                    return document.getElementById("id_workday_type")?.value === "other";
+                tipo_jornada_otra: function() {
+                    return document.getElementById("id_tipo_jornada")?.value === "other";
                 },
-                electrical_safety: function() {
-                    return document.getElementById("id_electricity_access")?.value !== "sin_electricidad";
+                seguridad_electrica: function() {
+                    return document.getElementById("id_acceso_energia")?.value !== "sin_electricidad";
                 },
-                management_mode_other: function() {
-                    return document.getElementById("id_management_mode")?.value === "otra";
+                modalidad_gestion_otra: function() {
+                    return document.getElementById("id_modalidad_gestion")?.value === "otra";
                 },
-                tenure_mode_other: function() {
-                    return document.getElementById("id_tenure_mode")?.value === "otra";
+                modalidad_tenencia_otra: function() {
+                    return document.getElementById("id_modalidad_tenencia")?.value === "otra";
                 },
-                cooking_fuel: function() {
-                    return document.getElementById("id_has_kitchen_space")?.value === "si";
+                combustible_cocinar: function() {
+                    return document.getElementById("id_tiene_espacio_cocina")?.value === "si";
                 },
-                has_outdoor_playground: function() {
-                    return document.getElementById("id_has_outdoor_space")?.value === "si";
+                tiene_juegos_exteriores: function() {
+                    return document.getElementById("id_tiene_espacio_exterior")?.value === "si";
                 },
-                meals_provided_other: function() {
-                    return Array.from(document.querySelectorAll("input[name='meals_provided']:checked")).some(function(input) {
+                prestaciones_alimentarias_otra: function() {
+                    return Array.from(document.querySelectorAll("input[name='prestaciones_alimentarias']:checked")).some(function(input) {
                         return input.value === "otra";
                     });
                 },
-                menu_preparation_quality: function() {
-                    return !Array.from(document.querySelectorAll("input[name='meals_provided']:checked")).some(function(input) {
+                calidad_elaboracion_menu: function() {
+                    return !Array.from(document.querySelectorAll("input[name='prestaciones_alimentarias']:checked")).some(function(input) {
                         return input.value === "ninguna";
                     });
                 },
-                menu_periodic_evaluation: function() {
-                    return !Array.from(document.querySelectorAll("input[name='meals_provided']:checked")).some(function(input) {
+                evaluacion_periodica_menu: function() {
+                    return !Array.from(document.querySelectorAll("input[name='prestaciones_alimentarias']:checked")).some(function(input) {
                         return input.value === "ninguna";
                     });
                 },
-                food_handling_training_coverage: function() {
-                    return !Array.from(document.querySelectorAll("input[name='meals_provided']:checked")).some(function(input) {
+                cobertura_capacitacion_manipulacion_alimentos: function() {
+                    return !Array.from(document.querySelectorAll("input[name='prestaciones_alimentarias']:checked")).some(function(input) {
                         return input.value === "ninguna";
                     });
                 },
@@ -396,7 +396,7 @@
 
             function refreshRoomDistributionTotals() {
                 const roomRows = Array.from(document.querySelectorAll("tbody tr")).filter(function(row) {
-                    return row.querySelector("input[id$='-room_count']");
+                    return row.querySelector("input[id$='-cantidad_salas']");
                 });
 
                 let totalRooms = 0;
@@ -405,10 +405,10 @@
                 let totalStaff = 0;
 
                 roomRows.forEach(function(row) {
-                    const roomCount = toNumber(row.querySelector("input[id$='-room_count']"));
-                    const area = toNumber(row.querySelector("input[id$='-exclusive_area_m2']"));
-                    const children = toNumber(row.querySelector("input[id$='-children_count']"));
-                    const staff = toNumber(row.querySelector("input[id$='-staff_count']"));
+                    const roomCount = toNumber(row.querySelector("input[id$='-cantidad_salas']"));
+                    const area = toNumber(row.querySelector("input[id$='-superficie_exclusiva_m2']"));
+                    const children = toNumber(row.querySelector("input[id$='-cantidad_ninos']"));
+                    const staff = toNumber(row.querySelector("input[id$='-cantidad_personal_sala']"));
 
                     totalRooms += roomCount;
                     totalArea += area;
@@ -441,10 +441,10 @@
             document.addEventListener("input", function(event) {
                 const targetId = event.target?.id || "";
                 if (
-                    targetId.includes("-room_count") ||
-                    targetId.includes("-exclusive_area_m2") ||
-                    targetId.includes("-children_count") ||
-                    targetId.includes("-staff_count")
+                    targetId.includes("-cantidad_salas") ||
+                    targetId.includes("-superficie_exclusiva_m2") ||
+                    targetId.includes("-cantidad_ninos") ||
+                    targetId.includes("-cantidad_personal_sala")
                 ) {
                     refreshRoomDistributionTotals();
                 }
@@ -452,15 +452,17 @@
             refreshRoomDistributionTotals();
 
             setupGeoCascade({
-                provincia: "#id_cdi_province",
-                municipio: "#id_cdi_municipality",
-                localidad: "#id_cdi_locality",
+                provincia: "#id_provincia_cdi",
+                municipio: "#id_municipio_cdi",
+                localidad: "#id_localidad_cdi",
             });
             setupGeoCascade({
-                provincia: "#id_org_province",
-                municipio: "#id_org_municipality",
-                localidad: "#id_org_locality",
+                provincia: "#id_provincia_organizacion",
+                municipio: "#id_municipio_organizacion",
+                localidad: "#id_localidad_organizacion",
             });
         });
     </script>
 {% endblock %}
+
+

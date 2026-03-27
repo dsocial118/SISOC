@@ -1,4 +1,4 @@
-{% extends "includes/main.html" %}
+﻿{% extends "includes/main.html" %}
 
 {% block title %}Formulario CDI #{{ formulario.id }}{% endblock %}
 {% block titulo-pagina %}Formulario CDI #{{ formulario.id }}{% endblock %}
@@ -15,7 +15,7 @@
         <div class="card mb-3">
             <div class="card-body">
                 <h3 class="mb-1">{{ centro.nombre }}</h3>
-                <p class="text-muted mb-1">Formulario #{{ formulario.id }} | CDI code {{ formulario.cdi_code|default:"-" }}</p>
+                <p class="text-muted mb-1">Formulario #{{ formulario.id }} | Código CDI {{ formulario.codigo_cdi|default:"-" }}</p>
                 <p class="text-muted mb-0">
                     Creado {{ formulario.created_at|date:"d/m/Y H:i" }}
                     {% if formulario.created_by %}
@@ -61,24 +61,24 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for row in room_rows %}
+                            {% for row in filas_salas %}
                                 <tr>
-                                    <td>{{ row.get_age_group_display }}</td>
-                                    <td>{{ row.room_count|default:"-" }}</td>
-                                    <td>{{ row.exclusive_area_m2|default:"-" }}</td>
-                                    <td>{{ row.children_count|default:"-" }}</td>
-                                    <td>{{ row.staff_count|default:"-" }}</td>
-                                    <td>{{ row.staff_per_room|default:"-" }}</td>
+                                    <td>{{ row.get_grupo_etario_display }}</td>
+                                    <td>{{ row.cantidad_salas|default:"-" }}</td>
+                                    <td>{{ row.superficie_exclusiva_m2|default:"-" }}</td>
+                                    <td>{{ row.cantidad_ninos|default:"-" }}</td>
+                                    <td>{{ row.cantidad_personal_sala|default:"-" }}</td>
+                                    <td>{{ row.personal_por_sala|default:"-" }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                         <tfoot>
                             <tr>
                                 <th>Totales</th>
-                                <th>{{ room_totals.room_count }}</th>
-                                <th>{{ room_totals.exclusive_area_m2 }}</th>
-                                <th>{{ room_totals.children_count }}</th>
-                                <th>{{ room_totals.staff_count }}</th>
+                                <th>{{ totales_salas.cantidad_salas }}</th>
+                                <th>{{ totales_salas.superficie_exclusiva_m2 }}</th>
+                                <th>{{ totales_salas.cantidad_ninos }}</th>
+                                <th>{{ totales_salas.cantidad_personal_sala }}</th>
                                 <th>-</th>
                             </tr>
                         </tfoot>
@@ -101,17 +101,17 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for row in waitlist_rows %}
+                            {% for row in filas_demanda_insatisfecha %}
                                 <tr>
-                                    <td>{{ row.get_age_group_display }}</td>
-                                    <td>{{ row.waitlist_count|default:"-" }}</td>
+                                    <td>{{ row.get_grupo_etario_display }}</td>
+                                    <td>{{ row.cantidad_demanda_insatisfecha|default:"-" }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                         <tfoot>
                             <tr>
                                 <th>Total</th>
-                                <th>{{ waitlist_total }}</th>
+                                <th>{{ total_demanda_insatisfecha }}</th>
                             </tr>
                         </tfoot>
                     </table>
@@ -133,10 +133,10 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for row in articulation_rows %}
+                            {% for row in filas_articulacion %}
                                 <tr>
-                                    <td>{{ row.get_institution_type_display }}</td>
-                                    <td>{{ row.get_frequency_display|default:"-" }}</td>
+                                    <td>{{ row.get_tipo_institucion_display }}</td>
+                                    <td>{{ row.get_frecuencia_display|default:"-" }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -146,3 +146,5 @@
         </div>
     </div>
 {% endblock %}
+
+

@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 from django.contrib.auth.models import User
 
 from centrodeinfancia.forms import CentroDeInfanciaForm
@@ -109,7 +109,7 @@ def test_form_acepta_telefono_como_numero_plano():
     )
     form = CentroDeInfanciaForm(
         data={
-            "nombre": "CDI Telefono",
+            "nombre": "CDI Teléfono",
             "telefono": "5491140333588",
             "telefono_referente": "1133557799",
         },
@@ -130,7 +130,7 @@ def test_form_acepta_telefono_con_guiones_opcionales():
     )
     form = CentroDeInfanciaForm(
         data={
-            "nombre": "CDI Telefono Guiones",
+            "nombre": "CDI Teléfono Guiones",
             "telefono": "11-1234-1234",
             "telefono_referente": "549-11-4033-3588",
         },
@@ -160,3 +160,5 @@ def test_form_edicion_mantiene_campos_obligatorios():
 
     assert not form.is_valid()
     assert "nombre" in form.errors
+
+

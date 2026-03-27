@@ -1,4 +1,4 @@
-# pylint: disable=too-many-lines
+﻿# pylint: disable=too-many-lines
 import logging
 import os
 from datetime import date, datetime
@@ -56,7 +56,7 @@ from centrodeinfancia.models import (
     ObservacionCentroInfancia,
     Trabajador,
 )
-from centrodeinfancia.views_formulario_cdi import build_formulario_summary_items
+from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 
 
@@ -494,9 +494,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         ):
             formularios_qs = self.object.formularios.select_related(
                 "created_by"
-            ).order_by("-survey_date", "-created_at", "-id")
+            ).order_by("-fecha_relevamiento", "-created_at", "-id")
             context["formularios_total"] = formularios_qs.count()
-            context["formularios_recent"] = build_formulario_summary_items(
+            context["formularios_recent"] = construir_resumenes_formularios(
                 list(formularios_qs[:3])
             )
         else:
@@ -1302,3 +1302,5 @@ def eliminar_archivo_intervencion_centrodeinfancia(request, intervencion_id):
     else:
         messages.error(request, "No hay archivo para eliminar.")
     return redirect("centrodeinfancia_detalle", pk=intervencion.centro_id)
+
+

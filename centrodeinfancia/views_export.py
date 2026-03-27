@@ -1,4 +1,4 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
+﻿from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.views.generic import View
 
@@ -76,3 +76,4 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         return self.export_csv(queryset)
+

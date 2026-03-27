@@ -1,4 +1,4 @@
-from django import forms
+﻿from django import forms
 from django.core.validators import RegexValidator
 
 from ciudadanos.models import Ciudadano
@@ -20,10 +20,10 @@ from centrodeinfancia.models import (
 )
 from centrodeinfancia.forms_formulario_cdi import (
     FormularioCDIForm,
-    build_fixed_initial_rows,
-    build_articulation_formset_class,
-    build_room_distribution_formset_class,
-    build_waitlist_formset_class,
+    construir_filas_iniciales_fijas,
+    construir_clase_formset_articulacion,
+    construir_clase_formset_distribucion_salas,
+    construir_clase_formset_demanda_insatisfecha,
 )
 
 __all__ = [
@@ -33,10 +33,10 @@ __all__ = [
     "IntervencionCentroInfanciaForm",
     "TrabajadorForm",
     "FormularioCDIForm",
-    "build_fixed_initial_rows",
-    "build_articulation_formset_class",
-    "build_room_distribution_formset_class",
-    "build_waitlist_formset_class",
+    "construir_filas_iniciales_fijas",
+    "construir_clase_formset_articulacion",
+    "construir_clase_formset_distribucion_salas",
+    "construir_clase_formset_demanda_insatisfecha",
 ]
 
 
@@ -410,3 +410,6 @@ class ObservacionCentroInfanciaForm(forms.ModelForm):
                 }
             )
         }
+
+
+

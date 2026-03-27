@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+﻿from datetime import date, timedelta
 
 import pytest
 from django.contrib.auth.models import Permission, User
@@ -36,24 +36,24 @@ def _crear_usuario(username, provincia=None, superuser=False):
     return user
 
 
-def _build_formulario_create_payload(centro, **overrides):
+def _construir_payload_creacion_formulario(centro, **overrides):
     payload = {
-        "survey_date": "2026-03-13",
-        "respondent_full_name": "Ana Perez",
-        "cdi_name": centro.nombre,
-        "cdi_code": centro.cdi_code,
-        "room_distribution-TOTAL_FORMS": "6",
-        "room_distribution-INITIAL_FORMS": "0",
-        "room_distribution-MIN_NUM_FORMS": "0",
-        "room_distribution-MAX_NUM_FORMS": "1000",
-        "waitlist_by_age_group-TOTAL_FORMS": "6",
-        "waitlist_by_age_group-INITIAL_FORMS": "0",
-        "waitlist_by_age_group-MIN_NUM_FORMS": "0",
-        "waitlist_by_age_group-MAX_NUM_FORMS": "1000",
-        "articulation_frequency-TOTAL_FORMS": "15",
-        "articulation_frequency-INITIAL_FORMS": "0",
-        "articulation_frequency-MIN_NUM_FORMS": "0",
-        "articulation_frequency-MAX_NUM_FORMS": "1000",
+        "fecha_relevamiento": "2026-03-13",
+        "nombre_completo_respondente": "Ana Perez",
+        "nombre_cdi": centro.nombre,
+        "codigo_cdi": centro.codigo_cdi,
+        "distribucion_salas-TOTAL_FORMS": "6",
+        "distribucion_salas-INITIAL_FORMS": "0",
+        "distribucion_salas-MIN_NUM_FORMS": "0",
+        "distribucion_salas-MAX_NUM_FORMS": "1000",
+        "demanda_insatisfecha_por_grupo_etario-TOTAL_FORMS": "6",
+        "demanda_insatisfecha_por_grupo_etario-INITIAL_FORMS": "0",
+        "demanda_insatisfecha_por_grupo_etario-MIN_NUM_FORMS": "0",
+        "demanda_insatisfecha_por_grupo_etario-MAX_NUM_FORMS": "1000",
+        "frecuencia_articulacion-TOTAL_FORMS": "15",
+        "frecuencia_articulacion-INITIAL_FORMS": "0",
+        "frecuencia_articulacion-MIN_NUM_FORMS": "0",
+        "frecuencia_articulacion-MAX_NUM_FORMS": "1000",
     }
 
     for index, value in enumerate(
@@ -66,12 +66,12 @@ def _build_formulario_create_payload(centro, **overrides):
             "multiedad",
         ]
     ):
-        payload[f"room_distribution-{index}-age_group"] = value
+        payload[f"distribucion_salas-{index}-grupo_etario"] = value
 
     for index, value in enumerate(
         ["lactantes", "deambuladores", "un_ano", "dos_anos", "tres_anos", "cuatro_anos"]
     ):
-        payload[f"waitlist_by_age_group-{index}-age_group"] = value
+        payload[f"demanda_insatisfecha_por_grupo_etario-{index}-grupo_etario"] = value
 
     for index, value in enumerate(
         [
@@ -92,7 +92,7 @@ def _build_formulario_create_payload(centro, **overrides):
             "identidad_renaper",
         ]
     ):
-        payload[f"articulation_frequency-{index}-institution_type"] = value
+        payload[f"frecuencia_articulacion-{index}-tipo_institucion"] = value
 
     payload.update(overrides)
     return payload
@@ -122,7 +122,7 @@ def test_formulario_cdi_detalle_respeta_scope_por_provincia():
         nombre="CDI Salta", provincia=provincia_b
     )
     formulario = FormularioCDI.objects.create(
-        centro=centro_b, cdi_code=centro_b.cdi_code
+        centro=centro_b, codigo_cdi=centro_b.codigo_cdi
     )
 
     request = RequestFactory().get(
@@ -152,9 +152,9 @@ def test_detalle_cdi_muestra_solo_ultimos_tres_formularios(client):
         formularios.append(
             FormularioCDI.objects.create(
                 centro=centro,
-                cdi_code=centro.cdi_code,
-                survey_date=base_date + timedelta(days=offset),
-                respondent_full_name=f"Persona {offset}",
+                codigo_cdi=centro.codigo_cdi,
+                fecha_relevamiento=base_date + timedelta(days=offset),
+                nombre_completo_respondente=f"Persona {offset}",
             )
         )
 
@@ -177,8 +177,8 @@ def test_detalle_cdi_no_expone_formularios_sin_permiso_especifico(client):
     centro = CentroDeInfancia.objects.create(nombre="CDI Permisos")
     FormularioCDI.objects.create(
         centro=centro,
-        cdi_code=centro.cdi_code,
-        respondent_full_name="Persona Reservada",
+        codigo_cdi=centro.codigo_cdi,
+        nombre_completo_respondente="Persona Reservada",
     )
 
     response = client.get(reverse("centrodeinfancia_detalle", kwargs={"pk": centro.pk}))
@@ -198,9 +198,9 @@ def test_formulario_cdi_editar_preserva_snapshot_historico_del_centro(client):
     )
     formulario = FormularioCDI.objects.create(
         centro=centro,
-        cdi_code=centro.cdi_code,
-        cdi_name="Centro Historico",
-        cdi_street="Calle Historica",
+        codigo_cdi=centro.codigo_cdi,
+        nombre_cdi="Centro Historico",
+        calle_cdi="Calle Historica",
     )
 
     centro.nombre = "Centro Modificado"
@@ -215,8 +215,8 @@ def test_formulario_cdi_editar_preserva_snapshot_historico_del_centro(client):
     )
 
     assert response.status_code == 200
-    assert response.context["form"]["cdi_name"].value() == "Centro Historico"
-    assert response.context["form"]["cdi_street"].value() == "Calle Historica"
+    assert response.context["form"]["nombre_cdi"].value() == "Centro Historico"
+    assert response.context["form"]["calle_cdi"].value() == "Calle Historica"
 
 
 @pytest.mark.django_db
@@ -231,9 +231,9 @@ def test_formulario_cdi_crear_renderiza_filas_editables_base(client):
 
     assert response.status_code == 200
     content = response.content.decode("utf-8")
-    assert 'name="room_distribution-0-room_count"' in content
-    assert 'name="waitlist_by_age_group-0-waitlist_count"' in content
-    assert 'name="articulation_frequency-0-frequency"' in content
+    assert 'name="distribucion_salas-0-cantidad_salas"' in content
+    assert 'name="demanda_insatisfecha_por_grupo_etario-0-cantidad_demanda_insatisfecha"' in content
+    assert 'name="frecuencia_articulacion-0-frecuencia"' in content
 
 
 @pytest.mark.django_db
@@ -242,14 +242,14 @@ def test_formulario_cdi_crear_guarda_y_limpia_campos_ocultos(client):
     client.force_login(user)
     centro = CentroDeInfancia.objects.create(nombre="CDI Guardado")
 
-    payload = _build_formulario_create_payload(
+    payload = _construir_payload_creacion_formulario(
         centro,
-        has_kitchen_space="no",
-        cooking_fuel="gas_red",
-        has_outdoor_space="no",
-        has_outdoor_playground="si",
-        meals_provided=["ninguna"],
-        menu_preparation_quality="sin_nutricionista_ultraprocesados",
+        tiene_espacio_cocina="no",
+        combustible_cocinar="gas_red",
+        tiene_espacio_exterior="no",
+        tiene_juegos_exteriores="si",
+        prestaciones_alimentarias=["ninguna"],
+        calidad_elaboracion_menu="sin_nutricionista_ultraprocesados",
     )
 
     response = client.post(
@@ -260,9 +260,9 @@ def test_formulario_cdi_crear_guarda_y_limpia_campos_ocultos(client):
     assert response.status_code == 302
     formulario = FormularioCDI.objects.get(centro=centro)
     assert formulario.source_form_version == 1
-    assert formulario.cooking_fuel in ("", None)
-    assert formulario.has_outdoor_playground in ("", None)
-    assert formulario.menu_preparation_quality in ("", None)
+    assert formulario.combustible_cocinar in ("", None)
+    assert formulario.tiene_juegos_exteriores in ("", None)
+    assert formulario.calidad_elaboracion_menu in ("", None)
 
 
 @pytest.mark.django_db
@@ -282,4 +282,5 @@ def test_formulario_cdi_form_sections_agrupa_meses_y_dias_en_la_misma_fila(clien
         if section["title"] == "Caracterizacion general"
     )
     row_names = [[field["name"] for field in row] for row in general_section["rows"]]
-    assert ["operation_months", "operation_days"] in row_names
+    assert ["meses_funcionamiento", "dias_funcionamiento"] in row_names
+

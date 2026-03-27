@@ -1,4 +1,4 @@
-from datetime import date
+﻿from datetime import date
 
 import pytest
 from django.contrib.auth.models import User
@@ -199,3 +199,4 @@ def test_eliminar_documentacion_no_permite_intervencion_fuera_de_scope():
 
     with pytest.raises(Http404):
         eliminar_archivo_intervencion_centrodeinfancia(request, intervencion.pk)
+

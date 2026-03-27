@@ -1,4 +1,4 @@
-import json
+﻿import json
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -86,3 +86,4 @@ def test_subir_documentacion_acepta_archivo_valido(mocker):
     assert intervencion.saved_kwargs == {
         "update_fields": ["documentacion", "tiene_documentacion"]
     }
+

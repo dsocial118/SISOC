@@ -1,5 +1,5 @@
-"""
-Señales para crear entradas de auditoría adicionales asociadas a comedores y
+﻿"""
+SeÃ±ales para crear entradas de auditorÃ­a adicionales asociadas a comedores y
 organizaciones.
 """
 
@@ -60,7 +60,7 @@ def _get_context_actor():
 
 def _get_actor():
     """
-    Obtiene el usuario autenticado actual, si está disponible.
+    Obtiene el usuario autenticado actual, si estÃ¡ disponible.
     """
     actor = _get_context_actor()
     if actor:
@@ -73,7 +73,7 @@ def _get_actor():
 
 def _build_custom_signal_additional_data(default_source=None):
     """
-    Propaga metadata de Fase 2 en logs custom (on_commit), para no perder batch/source.
+    Propaga metadatos de Fase 2 en logs custom (on_commit), para no perder batch/source.
     """
     context = get_audit_context()
     payload = {}
@@ -166,7 +166,7 @@ def _actor_snapshot_data(actor):
 
 def _build_audit_entry_meta_defaults(entry):
     """
-    Construye metadata persistida Fase 2 a partir de LogEntry + contexto thread-local.
+    Construye metadatos persistida Fase 2 a partir de LogEntry + contexto thread-local.
     """
     context_data = get_audit_context()
     additional_data = _normalize_additional_data(
@@ -199,7 +199,7 @@ def _build_audit_entry_meta_defaults(entry):
 
 def _log_comedor_event(comedor: Comedor, changes: dict, action: int):
     """
-    Genera una entrada de auditoría para un comedor con los cambios provistos.
+    Genera una entrada de auditorÃ­a para un comedor con los cambios provistos.
     """
     if not comedor or not changes:
         return
@@ -226,7 +226,7 @@ def _log_centro_infancia_event(
     action: int,
 ):
     """
-    Genera una entrada de auditoría para un centro de infancia con los cambios provistos.
+    Genera una entrada de auditorÃ­a para un centro de infancia con los cambios provistos.
     """
     if not centro or not changes:
         return
@@ -249,7 +249,7 @@ def _log_centro_infancia_event(
 
 def _log_organizacion_event(organizacion: Organizacion, changes: dict, action: int):
     """
-    Genera una entrada de auditoría para una organización con los cambios provistos.
+    Genera una entrada de auditorÃ­a para una organizaciÃ³n con los cambios provistos.
     """
     if not organizacion or not changes:
         return
@@ -272,7 +272,7 @@ def _log_organizacion_event(organizacion: Organizacion, changes: dict, action: i
 
 def _mark_delete_event_logged(instance) -> bool:
     """
-    Evita registrar dos veces el mismo delete cuando conviven señales soft/hard delete.
+    Evita registrar dos veces el mismo delete cuando conviven seÃ±ales soft/hard delete.
     """
     marker_attr = "_audittrail_delete_logged"  # pylint: disable=protected-access
     if getattr(instance, marker_attr, False):
@@ -283,7 +283,7 @@ def _mark_delete_event_logged(instance) -> bool:
 
 def _log_related_organizacion_delete(instance, label: str):
     """
-    Registra eliminación de una entidad relacionada a organización.
+    Registra eliminaciÃ³n de una entidad relacionada a organizaciÃ³n.
     """
     organizacion = getattr(instance, "organizacion", None)
     if not organizacion or _mark_delete_event_logged(instance):
@@ -298,7 +298,7 @@ def _log_related_organizacion_delete(instance, label: str):
 @receiver(post_save, sender=LogEntry)
 def ensure_audit_entry_meta(sender, instance: LogEntry, created: bool, **kwargs):
     """
-    Persiste metadata de Fase 2 para cualquier evento de django-auditlog.
+    Persiste metadatos de Fase 2 para cualquier evento de django-auditlog.
     """
     if not created:
         return
@@ -317,19 +317,19 @@ def ensure_audit_entry_meta(sender, instance: LogEntry, created: bool, **kwargs)
 @receiver(post_save, sender=Admision)
 def log_admision_creation(sender, instance: Admision, created: bool, **kwargs):
     """
-    Registra la creación de admisiones vinculadas a un comedor.
+    Registra la creaciÃ³n de admisiones vinculadas a un comedor.
     """
     if not created or not instance.comedor:
         return
 
     estado = getattr(instance, "estado_mostrar", None)
-    description = f"Admisión #{instance.pk}"
+    description = f"AdmisiÃ³n #{instance.pk}"
     if estado:
         description = f"{description} ({estado})"
 
     _log_comedor_event(
         instance.comedor,
-        {"Admisión": [None, description]},
+        {"AdmisiÃ³n": [None, description]},
         LogEntry.Action.CREATE,
     )
 
@@ -337,19 +337,19 @@ def log_admision_creation(sender, instance: Admision, created: bool, **kwargs):
 @receiver(post_save, sender=Intervencion)
 def log_intervencion_creation(sender, instance: Intervencion, created: bool, **kwargs):
     """
-    Registra la creación de intervenciones vinculadas a un comedor.
+    Registra la creaciÃ³n de intervenciones vinculadas a un comedor.
     """
     if not created or not instance.comedor:
         return
 
     tipo = getattr(instance, "tipo_intervencion", None)
-    description = f"Intervención #{instance.pk}"
+    description = f"IntervenciÃ³n #{instance.pk}"
     if tipo:
         description = f"{description} - {tipo}"
 
     _log_comedor_event(
         instance.comedor,
-        {"Intervención": [None, description]},
+        {"IntervenciÃ³n": [None, description]},
         LogEntry.Action.CREATE,
     )
 
@@ -362,18 +362,18 @@ def log_nomina_centro_infancia_creation(
     **kwargs,
 ):
     """
-    Registra altas de nómina vinculadas a un centro de infancia.
+    Registra altas de nÃ³mina vinculadas a un centro de infancia.
     """
     if not created or not instance.centro:
         return
 
-    description = f"Nómina #{instance.pk}"
+    description = f"NÃ³mina #{instance.pk}"
     if instance.ciudadano_id:
         description = f"{description} - {instance.ciudadano}"
 
     _log_centro_infancia_event(
         instance.centro,
-        {"Nómina": [None, description]},
+        {"NÃ³mina": [None, description]},
         LogEntry.Action.CREATE,
     )
 
@@ -392,13 +392,13 @@ def log_intervencion_centro_infancia_creation(
         return
 
     tipo = getattr(instance, "tipo_intervencion", None)
-    description = f"Intervención #{instance.pk}"
+    description = f"IntervenciÃ³n #{instance.pk}"
     if tipo:
         description = f"{description} - {tipo}"
 
     _log_centro_infancia_event(
         instance.centro,
-        {"Intervención": [None, description]},
+        {"IntervenciÃ³n": [None, description]},
         LogEntry.Action.CREATE,
     )
 
@@ -414,8 +414,8 @@ def log_formulario_cdi_creation(
         return
 
     fecha = None
-    if getattr(instance, "survey_date", None):
-        fecha = instance.survey_date.strftime("%Y-%m-%d")
+    if getattr(instance, "fecha_relevamiento", None):
+        fecha = instance.fecha_relevamiento.strftime("%Y-%m-%d")
 
     description = f"Formulario CDI #{instance.pk}"
     if fecha:
@@ -431,7 +431,7 @@ def log_formulario_cdi_creation(
 @receiver(post_save, sender=Relevamiento)
 def log_relevamiento_creation(sender, instance: Relevamiento, created: bool, **kwargs):
     """
-    Registra la creación de relevamientos vinculados a un comedor.
+    Registra la creaciÃ³n de relevamientos vinculados a un comedor.
     """
     if not created or not instance.comedor:
         return
@@ -524,7 +524,7 @@ def cache_imagen_comedor_state(sender, instance: ImagenComedor, **kwargs):
 @receiver(post_save, sender=ImagenComedor)
 def log_imagen_comedor_change(sender, instance: ImagenComedor, created: bool, **kwargs):
     """
-    Registra altas y modificaciones de imágenes asociadas a un comedor.
+    Registra altas y modificaciones de imÃ¡genes asociadas a un comedor.
     """
     imagen_nombre = instance.imagen.name if instance.imagen else ""
 
@@ -563,7 +563,7 @@ def log_imagen_comedor_change(sender, instance: ImagenComedor, created: bool, **
 @receiver(post_delete, sender=ImagenComedor)
 def log_imagen_comedor_deletion(sender, instance: ImagenComedor, **kwargs):
     """
-    Registra la eliminación de imágenes asociadas a un comedor.
+    Registra la eliminaciÃ³n de imÃ¡genes asociadas a un comedor.
     """
     imagen_nombre = instance.imagen.name if instance.imagen else "Imagen eliminada"
     _log_comedor_event(
@@ -593,7 +593,7 @@ def cache_firmante_state(sender, instance: Firmante, **kwargs):
 @receiver(post_save, sender=Firmante)
 def log_firmante_changes(sender, instance: Firmante, created: bool, **kwargs):
     """
-    Registra creación y cambios de firmantes asociados a una organización.
+    Registra creaciÃ³n y cambios de firmantes asociados a una organizaciÃ³n.
     """
     if not instance.organizacion:
         return
@@ -650,7 +650,7 @@ def cache_aval_state(sender, instance: Aval, **kwargs):
 @receiver(post_save, sender=Aval)
 def log_aval_changes(sender, instance: Aval, created: bool, **kwargs):
     """
-    Registra creación y cambios de avales asociados a una organización.
+    Registra creaciÃ³n y cambios de avales asociados a una organizaciÃ³n.
     """
     if not instance.organizacion:
         return
@@ -697,3 +697,4 @@ def log_aval_delete(sender, instance: Aval, **kwargs):
     Registra bajas (soft/hard) de avales sin duplicar eventos.
     """
     _log_related_organizacion_delete(instance, "Aval")
+
