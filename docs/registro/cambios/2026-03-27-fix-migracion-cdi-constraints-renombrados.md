@@ -18,15 +18,19 @@ Luego, `0016` intentaba remover constraints históricas con `migrations.RemoveCo
 
 ## Cambio aplicado
 
-- En `centrodeinfancia/migrations/0016_alter_formulariocdi_options_and_more.py` se reemplazaron los tres `RemoveConstraint` conflictivos por `migrations.SeparateDatabaseAndState`.
-- La parte de base usa `RunSQL` para eliminar los índices únicos viejos por nombre.
-- La parte de estado sigue removiendo los constraints históricos para que `0016` pueda luego agregar los nuevos constraints con nombres y campos en español.
+- En `centrodeinfancia/migrations/0016_alter_formulariocdi_options_and_more.py` se reemplazó la transición frágil de constraints por una sincronización introspectiva.
+- La migración ahora inspecciona las constraints reales en MySQL y:
+  - renombra el índice viejo al nuevo si existe,
+  - no hace nada si el nombre nuevo ya está presente,
+  - crea la constraint nueva sólo si no hay ninguna unique equivalente sobre las mismas columnas.
+- El estado de Django se actualiza con `SeparateDatabaseAndState` para remover los nombres históricos y registrar los nuevos nombres en español sin volver a crear índices duplicados.
 
 ## Impacto
 
 - El cambio es acotado a la migración fallida.
 - No modifica modelos, formularios ni comportamiento funcional del módulo CDI.
-- Permite destrabar entornos que ya aplicaron `0015` pero quedaron frenados al iniciar `0016`.
+- Evita el error original por resolución de campos obsoletos y también evita el fallo MySQL `Cannot drop index ... needed in a foreign key constraint`.
+- Permite destrabar entornos que ya aplicaron `0015` pero quedaron frenados al iniciar `0016`, incluso si quedaron en estados intermedios respecto de los nombres de constraints.
 
 ## Validación
 

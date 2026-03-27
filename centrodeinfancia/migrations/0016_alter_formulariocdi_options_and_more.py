@@ -4,6 +4,100 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
+UNIQUE_CONSTRAINT_RENAMES = (
+    (
+        "centrodeinfancia_formulariocdiarticulationfrequency",
+        "uniq_formulario_cdi_articulation_institution",
+        "uniq_formulario_cdi_articulacion_tipo_institucion",
+        ("formulario_id", "tipo_institucion"),
+    ),
+    (
+        "centrodeinfancia_formulariocdiroomdistribution",
+        "uniq_formulario_cdi_room_distribution_age_group",
+        "uniq_formulario_cdi_distribucion_salas_grupo_etario",
+        ("formulario_id", "grupo_etario"),
+    ),
+    (
+        "centrodeinfancia_formulariocdiwaitlistbyagegroup",
+        "uniq_formulario_cdi_waitlist_age_group",
+        "uniq_formulario_cdi_waitlist_grupo_etario",
+        ("formulario_id", "grupo_etario"),
+    ),
+)
+
+
+def _build_unique_sql(table_name, constraint_name, columns):
+    columns_sql = ", ".join(columns)
+    return (
+        f"ALTER TABLE {table_name} "
+        f"ADD CONSTRAINT {constraint_name} UNIQUE ({columns_sql})"
+    )
+
+
+def sync_unique_constraint_names(apps, schema_editor):
+    if schema_editor.connection.vendor != "mysql":
+        return
+
+    with schema_editor.connection.cursor() as cursor:
+        introspection = schema_editor.connection.introspection
+        constraints = {
+            table_name: introspection.get_constraints(cursor, table_name)
+            for table_name, _, _, _ in UNIQUE_CONSTRAINT_RENAMES
+        }
+
+    for table_name, old_name, new_name, columns in UNIQUE_CONSTRAINT_RENAMES:
+        table_constraints = constraints.get(table_name, {})
+
+        if new_name in table_constraints:
+            continue
+
+        if old_name in table_constraints:
+            schema_editor.execute(
+                f"ALTER TABLE {table_name} RENAME INDEX {old_name} TO {new_name}"
+            )
+            continue
+
+        if any(
+            constraint.get("unique") and tuple(constraint.get("columns") or ()) == columns
+            for constraint in table_constraints.values()
+        ):
+            continue
+
+        schema_editor.execute(_build_unique_sql(table_name, new_name, columns))
+
+
+def reverse_sync_unique_constraint_names(apps, schema_editor):
+    if schema_editor.connection.vendor != "mysql":
+        return
+
+    with schema_editor.connection.cursor() as cursor:
+        introspection = schema_editor.connection.introspection
+        constraints = {
+            table_name: introspection.get_constraints(cursor, table_name)
+            for table_name, _, _, _ in UNIQUE_CONSTRAINT_RENAMES
+        }
+
+    for table_name, old_name, new_name, columns in UNIQUE_CONSTRAINT_RENAMES:
+        table_constraints = constraints.get(table_name, {})
+
+        if old_name in table_constraints:
+            continue
+
+        if new_name in table_constraints:
+            schema_editor.execute(
+                f"ALTER TABLE {table_name} RENAME INDEX {new_name} TO {old_name}"
+            )
+            continue
+
+        if any(
+            constraint.get("unique") and tuple(constraint.get("columns") or ()) == columns
+            for constraint in table_constraints.values()
+        ):
+            continue
+
+        schema_editor.execute(_build_unique_sql(table_name, old_name, columns))
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -45,75 +139,55 @@ class Migration(migrations.Migration):
         ),
         migrations.SeparateDatabaseAndState(
             database_operations=[
-                migrations.RunSQL(
-                    sql=(
-                        "ALTER TABLE "
-                        "centrodeinfancia_formulariocdiarticulationfrequency "
-                        "DROP INDEX uniq_formulario_cdi_articulation_institution"
-                    ),
-                    reverse_sql=(
-                        "ALTER TABLE "
-                        "centrodeinfancia_formulariocdiarticulationfrequency "
-                        "ADD CONSTRAINT "
-                        "uniq_formulario_cdi_articulation_institution "
-                        "UNIQUE (formulario_id, tipo_institucion)"
-                    ),
+                migrations.RunPython(
+                    sync_unique_constraint_names,
+                    reverse_code=reverse_sync_unique_constraint_names,
                 )
             ],
             state_operations=[
                 migrations.RemoveConstraint(
                     model_name="formulariocdiarticulationfrequency",
                     name="uniq_formulario_cdi_articulation_institution",
-                )
+                ),
+                migrations.AddConstraint(
+                    model_name="formulariocdiarticulationfrequency",
+                    constraint=models.UniqueConstraint(
+                        fields=("formulario", "tipo_institucion"),
+                        name="uniq_formulario_cdi_articulacion_tipo_institucion",
+                    ),
+                ),
             ],
         ),
         migrations.SeparateDatabaseAndState(
-            database_operations=[
-                migrations.RunSQL(
-                    sql=(
-                        "ALTER TABLE "
-                        "centrodeinfancia_formulariocdiroomdistribution "
-                        "DROP INDEX "
-                        "uniq_formulario_cdi_room_distribution_age_group"
-                    ),
-                    reverse_sql=(
-                        "ALTER TABLE "
-                        "centrodeinfancia_formulariocdiroomdistribution "
-                        "ADD CONSTRAINT "
-                        "uniq_formulario_cdi_room_distribution_age_group "
-                        "UNIQUE (formulario_id, grupo_etario)"
-                    ),
-                )
-            ],
+            database_operations=[],
             state_operations=[
                 migrations.RemoveConstraint(
                     model_name="formulariocdiroomdistribution",
                     name="uniq_formulario_cdi_room_distribution_age_group",
-                )
+                ),
+                migrations.AddConstraint(
+                    model_name="formulariocdiroomdistribution",
+                    constraint=models.UniqueConstraint(
+                        fields=("formulario", "grupo_etario"),
+                        name="uniq_formulario_cdi_distribucion_salas_grupo_etario",
+                    ),
+                ),
             ],
         ),
         migrations.SeparateDatabaseAndState(
-            database_operations=[
-                migrations.RunSQL(
-                    sql=(
-                        "ALTER TABLE "
-                        "centrodeinfancia_formulariocdiwaitlistbyagegroup "
-                        "DROP INDEX uniq_formulario_cdi_waitlist_age_group"
-                    ),
-                    reverse_sql=(
-                        "ALTER TABLE "
-                        "centrodeinfancia_formulariocdiwaitlistbyagegroup "
-                        "ADD CONSTRAINT "
-                        "uniq_formulario_cdi_waitlist_age_group "
-                        "UNIQUE (formulario_id, grupo_etario)"
-                    ),
-                )
-            ],
+            database_operations=[],
             state_operations=[
                 migrations.RemoveConstraint(
                     model_name="formulariocdiwaitlistbyagegroup",
                     name="uniq_formulario_cdi_waitlist_age_group",
-                )
+                ),
+                migrations.AddConstraint(
+                    model_name="formulariocdiwaitlistbyagegroup",
+                    constraint=models.UniqueConstraint(
+                        fields=("formulario", "grupo_etario"),
+                        name="uniq_formulario_cdi_waitlist_grupo_etario",
+                    ),
+                ),
             ],
         ),
         migrations.AlterField(
@@ -1081,27 +1155,6 @@ class Migration(migrations.Migration):
                 on_delete=django.db.models.deletion.SET_NULL,
                 to="intervenciones.tipointervencion",
                 verbose_name="Tipo de intervención",
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name="formulariocdiarticulationfrequency",
-            constraint=models.UniqueConstraint(
-                fields=("formulario", "tipo_institucion"),
-                name="uniq_formulario_cdi_articulacion_tipo_institucion",
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name="formulariocdiroomdistribution",
-            constraint=models.UniqueConstraint(
-                fields=("formulario", "grupo_etario"),
-                name="uniq_formulario_cdi_distribucion_salas_grupo_etario",
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name="formulariocdiwaitlistbyagegroup",
-            constraint=models.UniqueConstraint(
-                fields=("formulario", "grupo_etario"),
-                name="uniq_formulario_cdi_waitlist_grupo_etario",
             ),
         ),
     ]
