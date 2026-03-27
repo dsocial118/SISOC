@@ -65,8 +65,16 @@ Antes de editar, definir:
 - cuál es el comportamiento a cambiar,
 - cuál es el archivo responsable,
 - cuál es el test mínimo que lo cubre.
+- cuál es el check mínimo de formato/lint que confirma que el archivo nuevo sigue `black`, `pylint` y/o `djlint`.
 
 Si el cambio requiere tocar muchos archivos, explicar por qué.
+
+## 2.1) Escribir compatible con el tooling del repo
+
+- Python: escribir `black-first`. Tomar `88` caracteres como referencia práctica y usar paréntesis implícitos antes que continuaciones manuales.
+- `pylint`: respetar naming y estructura definidos en `.pylintrc`; no introducir variables ambiguas, imports fuera de orden ni argumentos innecesarios “porque después se arreglan”.
+- Templates: escribir bloques y tags para que `djlint` necesite ajustes mínimos. Evitar HTML/Django comprimido en una sola línea cuando hay condicionales, loops o atributos largos.
+- Antes de correr checks globales, ejecutar validaciones acotadas sobre los archivos editados siempre que el cambio lo permita.
 
 ## 3) Reportar cambios de forma útil
 
@@ -118,6 +126,7 @@ Formato sugerido:
 - No inventé APIs/campos/modelos.
 - Mantuve diff chico y enfocado.
 - No toqué configs de tooling/CI sin pedido.
+- Escribí código/templates ya alineados con `black`, `pylint` y `djlint`, evitando depender de un formateo correctivo masivo.
 - Agregué tests mínimos o expliqué por qué no.
 - Registré cambios/decisiones importantes en `docs/` (subcarpeta temática) o expliqué por qué no aplicaba.
 - Declaré supuestos y riesgos.
