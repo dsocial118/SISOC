@@ -1,9 +1,15 @@
-"""Definiciones compartidas para FormularioCDI."""
+﻿"""Definiciones compartidas para FormularioCDI."""
 
 from __future__ import annotations
 
+from centrodeinfancia.formulario_cdi_textos import (
+    SOBREESCRITURAS_ETIQUETAS_CAMPOS,
+    SOBREESCRITURAS_ETIQUETAS_OPCIONES,
+    SOBREESCRITURAS_ETIQUETAS_OPCIONES_MULTIPLES,
+)
 
-def humanize_code(value: str) -> str:
+
+def humanizar_codigo(value: str) -> str:
     """Convierte códigos internos en etiquetas legibles."""
     text = str(value or "").replace("_", " ")
     replacements = {
@@ -21,7 +27,7 @@ def humanize_code(value: str) -> str:
     return text.capitalize()
 
 
-MONTH_OPTIONS = [
+OPCIONES_MESES = [
     ("ENE", "ENE"),
     ("FEB", "FEB"),
     ("MAR", "MAR"),
@@ -36,7 +42,7 @@ MONTH_OPTIONS = [
     ("DIC", "DIC"),
 ]
 
-WEEKDAY_OPTIONS = [
+OPCIONES_DIAS_SEMANA = [
     ("LUNES", "Lunes"),
     ("MARTES", "Martes"),
     ("MIERCOLES", "Miercoles"),
@@ -46,25 +52,25 @@ WEEKDAY_OPTIONS = [
     ("DOMINGO", "Domingo"),
 ]
 
-ROOM_AGE_GROUP_OPTIONS = [
+OPCIONES_GRUPO_ETARIO_SALAS = [
     ("lactantes", "Lactantes"),
     ("deambuladores", "Deambuladores"),
-    ("dos_anos", "Dos anos"),
-    ("tres_anos", "Tres anos"),
-    ("cuatro_anos", "Cuatro anos"),
+    ("dos_anos", "Dos años"),
+    ("tres_anos", "Tres años"),
+    ("cuatro_anos", "Cuatro Años"),
     ("multiedad", "Multiedad"),
 ]
 
-WAITLIST_AGE_GROUP_OPTIONS = [
+OPCIONES_GRUPO_ETARIO_DEMANDA = [
     ("lactantes", "Lactantes"),
     ("deambuladores", "Deambuladores"),
-    ("un_ano", "Un ano"),
-    ("dos_anos", "Dos anos"),
-    ("tres_anos", "Tres anos"),
-    ("cuatro_anos", "Cuatro anos"),
+    ("un_ano", "Un año"),
+    ("dos_anos", "dos años"),
+    ("tres_anos", "tres años"),
+    ("cuatro_anos", "cuatro años"),
 ]
 
-ARTICULATION_INSTITUTION_OPTIONS = [
+OPCIONES_INSTITUCIONES_ARTICULACION = [
     ("servicio_promocion_proteccion_local", "Servicio de promocion y proteccion local"),
     ("servicio_promocion_proteccion_zonal", "Servicio de promocion y proteccion zonal"),
     ("salud_caps_hospital_municipal", "Salud CAPS/Hospital municipal"),
@@ -83,18 +89,18 @@ ARTICULATION_INSTITUTION_OPTIONS = [
 ]
 
 
-def _options(*values: str) -> list[tuple[str, str]]:
-    return [(value, humanize_code(value)) for value in values]
+def _construir_opciones(*values: str) -> list[tuple[str, str]]:
+    return [(value, humanizar_codigo(value)) for value in values]
 
 
-CHOICE_FIELDS = {
-    "workday_type": [
+CAMPOS_OPCIONES = {
+    "tipo_jornada": [
         ("simple_single_shift", "Jornada simple"),
         ("multiple_simple_shifts", "Dos o mas jornadas simples"),
         ("full_double_same_group", "Jornada completa/doble"),
         ("other", "Otra"),
     ],
-    "management_mode": _options(
+    "modalidad_gestion": _construir_opciones(
         "gobierno_nacional",
         "gobierno_provincial",
         "gobierno_municipal",
@@ -103,7 +109,7 @@ CHOICE_FIELDS = {
         "cogestion_ong_provincial_municipal",
         "otra",
     ),
-    "tenure_mode": _options(
+    "modalidad_tenencia": _construir_opciones(
         "propio",
         "alquilado",
         "cedido_gubernamental",
@@ -112,290 +118,298 @@ CHOICE_FIELDS = {
         "ocupado_de_hecho",
         "otra",
     ),
-    "electricity_access": _options(
+    "acceso_energia": _construir_opciones(
         "red_formal",
         "red_informal",
         "generacion_propia_motor",
         "generacion_propia_otros",
         "sin_electricidad",
     ),
-    "electrical_safety": _options(
+    "seguridad_electrica": _construir_opciones(
         "cumple_y_revision_mayor_a_un_ano",
         "cumple_y_revision_anual",
         "cumple_sin_revisiones",
         "cumple_solo_zonas_ninos_sin_revisiones",
         "no_cumple_sin_revisiones",
     ),
-    "water_access": _options(
+    "acceso_agua": _construir_opciones(
         "caneria_dentro_cdi",
         "fuera_cdi_dentro_terreno",
         "fuera_del_terreno",
         "sin_agua",
     ),
-    "safe_drinking_water_source": _options(
+    "fuente_agua_segura_consumo": _construir_opciones(
         "red_o_embotellada_segura",
         "pozo_analisis_vigente",
         "pozo_analisis_vencido_o_sin_control",
         "otra_con_proceso_sin_garantia_formal",
         "otra_sin_info_potabilizacion",
     ),
-    "excreta_disposal": _options(
+    "eliminacion_excretas": _construir_opciones(
         "red_publica_cloaca",
         "camara_septica_pozo_ciego",
         "solo_pozo_ciego",
         "hoyo_tierra",
         "sin_sistema",
     ),
-    "first_aid_kit_status": _options(
+    "estado_botiquin_primeros_auxilios": _construir_opciones(
         "completo_todas_salas_ok_vigente_fuera_alcance",
         "incompleto_todas_salas_ok_vigente_fuera_alcance",
         "unico_completo_compartido_ok_vigente_fuera_alcance",
         "incompleto_compartido_o_mal_estado_o_vencido",
         "no_tienen_o_al_alcance_ninos",
     ),
-    "internet_access_quality_staff": _options(
+    "acceso_internet_personal": _construir_opciones(
         "alta_velocidad_con_acceso_personal",
         "estable_con_acceso_personal",
         "estable_sin_acceso_personal",
         "mala_calidad_con_acceso_personal",
         "sin_servicio",
     ),
-    "has_kitchen_space": [
+    "tiene_espacio_cocina": [
         ("si", "Si"),
         ("no", "No"),
         ("no_sabe_no_responde", "No sabe / No responde"),
     ],
-    "cooking_fuel": _options(
+    "combustible_cocinar": _construir_opciones(
         "gas_red",
         "gas_granel_tubo_garrafa",
         "electricidad",
         "lena_o_carbon",
         "no_utiliza",
     ),
-    "has_outdoor_space": [("si", "Si"), ("no", "No"), ("no_responde", "No responde")],
-    "has_outdoor_playground": [
+    "tiene_espacio_exterior": [
         ("si", "Si"),
         ("no", "No"),
         ("no_responde", "No responde"),
     ],
-    "evacuation_plan_and_drills": _options(
+    "tiene_juegos_exteriores": [
+        ("si", "Si"),
+        ("no", "No"),
+        ("no_responde", "No responde"),
+    ],
+    "plan_evacuacion_y_simulacros": _construir_opciones(
         "protocolo_escrito_y_2_simulacros_o_mas",
         "protocolo_escrito_y_simulacros_sin_frecuencia",
         "protocolo_escrito_sin_simulacros",
         "practicas_informales_sin_protocolo",
         "sin_protocolo",
     ),
-    "first_aid_training_coverage": _options(
+    "cobertura_capacitacion_primeros_auxilios": _construir_opciones(
         "todo_personal_certificado",
         "entre_70_y_99",
         "entre_40_y_69",
         "menos_40",
         "ninguno",
     ),
-    "emergency_medical_service": _options(
+    "servicio_emergencia_medica": _construir_opciones(
         "servicio_y_cobertura_identificada",
         "servicio_sin_cobertura_identificada",
         "sin_servicio_con_cobertura_identificada",
         "sin_servicio_con_cobertura_parcial",
         "sin_servicio_y_sin_cobertura",
     ),
-    "menu_preparation_quality": _options(
+    "calidad_elaboracion_menu": _construir_opciones(
         "nutricionista_indicaciones_y_frescos",
         "nutricionista_indicaciones_a_veces_sin_frescos",
         "no_siempre_nutricionista_parcial_y_mixto",
         "sin_nutricionista_pocas_indicaciones_procesados",
         "sin_nutricionista_ultraprocesados",
     ),
-    "menu_periodic_evaluation": _options(
-        "periodica_todas_necesidades_y_patrones_y_personal_capacitado",
+    "evaluacion_periodica_menu": _construir_opciones(
+        "periodica_todas_necesidades_y_patrones_y_personas",
         "periodica_mayoria_necesidades_y_algunos_patrones",
         "ocasional_parcial_y_capacitacion_esporadica",
         "rara_vez_limitada_sin_patrones",
         "no_evalua",
     ),
-    "food_handling_training_coverage": _options(
+    "cobertura_capacitacion_manipulacion_alimentos": _construir_opciones(
         "todo_personal_anmat",
         "entre_70_y_99",
         "entre_40_y_60",
         "menos_40",
         "ninguno",
     ),
-    "breast_milk_storage_conditions": _options(
+    "condiciones_almacenamiento_leche_humana": _construir_opciones(
         "heladera_exclusiva_identificada_y_rotulada",
         "heladera_compartida_sector_exclusivo_identificada_y_rotulada",
         "heladera_exclusiva_identificada_sin_fecha",
         "heladera_compartida_sector_exclusivo_identificada_sin_fecha",
         "sin_espacio_exclusivo_ni_identificacion",
     ),
-    "breastfeeding_awareness_actions": _options(
+    "acciones_sensibilizacion_lactancia": _construir_opciones(
         "dos_o_mas_anuales_todas_familias",
         "una_anual_todas_familias",
         "una_anual_alcance_limitado",
         "muy_ocasionales_limitadas",
         "ninguna",
     ),
-    "has_waitlist_registry": [("si", "Si"), ("no", "No"), ("ns_nc", "NS/NC")],
-    "has_entry_exit_staff": [("si", "Si"), ("no", "No"), ("ns_nc", "NS/NC")],
-    "family_communication_frequency": _options(
+    "tiene_registro_lista_espera": [("si", "Si"), ("no", "No"), ("ns_nc", "NS/NC")],
+    "tiene_personal_entrada_salida": [("si", "Si"), ("no", "No"), ("ns_nc", "NS/NC")],
+    "frecuencia_comunicacion_familias": _construir_opciones(
         "reuniones_mensuales_y_canales_formales",
         "reuniones_trimestrales_y_canales_formales",
         "reuniones_semestrales_y_algunos_canales",
         "reuniones_anuales_sin_canales",
         "sin_reuniones_ni_canales",
     ),
-    "parenting_workshops_frequency": _options(
+    "frecuencia_talleres_crianza": _construir_opciones(
         "trimestral_o_mas",
         "cada_4_a_6_meses",
         "una_vez_al_ano",
         "esporadica",
         "no_se_realizan",
     ),
-    "actions_promoting_rights_access": [("si", "Si"), ("no", "No"), ("ns_nc", "NS/NC")],
-    "actions_against_rights_violations": [
+    "realiza_acciones_promocion_acceso_derechos": [
         ("si", "Si"),
         ("no", "No"),
         ("ns_nc", "NS/NC"),
     ],
-    "networking_level": _options(
+    "realiza_acciones_acompanamiento_vulneracion_derechos": [
+        ("si", "Si"),
+        ("no", "No"),
+        ("ns_nc", "NS/NC"),
+    ],
+    "nivel_trabajo_red": _construir_opciones(
         "red_mapeo_mesas_trimestral_o_mas",
         "red_mapeo_mesas_semestral",
         "sin_red_con_mapeo_y_mesas",
         "sin_red_sin_mesas_con_mapeo",
         "sin_red_ni_mapeo",
     ),
-    "rights_violation_protocol": _options(
+    "protocolo_vulneracion_derechos": _construir_opciones(
         "protocolo_revision_periodica_mayoria_conoce",
         "protocolo_revision_periodica_menos_mitad",
         "protocolo_sin_revision_mayoria_conoce",
         "protocolo_sin_revision_menos_mitad",
         "no_existe",
     ),
-    "technical_team_level": _options(
+    "nivel_equipo_tecnico": _construir_opciones(
         "completo_mas_20_horas",
         "perfiles_diversos_15_19_horas",
         "al_menos_un_perfil_o_10_14_horas",
         "limitado_un_perfil_o_9_o_menos",
         "sin_equipo",
     ),
-    "child_development_record_frequency": _options(
+    "frecuencia_registro_desarrollo_nino": _construir_opciones(
         "mensual",
         "trimestral",
         "semestral",
         "anual",
         "no_registra",
     ),
-    "family_info_record_frequency": _options(
+    "frecuencia_registro_informacion_familiar": _construir_opciones(
         "mensual",
         "trimestral",
         "semestral",
         "anual",
         "no_registra",
     ),
-    "health_vaccine_record_frequency": _options(
+    "frecuencia_registro_salud_vacunas": _construir_opciones(
         "mensual",
         "trimestral",
         "semestral",
         "anual",
         "no_registra",
     ),
-    "socioeducational_project_participants": _options(
+    "participantes_proyecto_socioeducativo": _construir_opciones(
         "conduccion_sala_equipo_auxiliar_familias_comunidad",
         "conduccion_sala_equipo_familias",
         "conduccion_sala_equipo",
         "conduccion_y_o_equipo",
         "no_tienen",
     ),
-    "classroom_activity_planning": _options(
+    "planificacion_actividades_sala": _construir_opciones(
         "semanal_en_marco_mensual_o_semestral_y_anual",
         "semanal_en_marco_mensual_o_semestral_sin_anual",
         "semanal_en_marco_anual",
         "solo_semanal",
         "no_planifican",
     ),
-    "integral_planning": _options(
+    "planificacion_integral": _construir_opciones(
         "intereses_caracteristicas_necesidades_e_integralidad",
         "solo_intereses_caracteristicas_necesidades",
         "solo_integralidad",
         "ninguno",
         "no_planifican",
     ),
-    "direction_training_in_early_childhood": _options(
+    "formacion_direccion_primera_infancia": _construir_opciones(
         "titulo_superior_completo_especifico",
         "carrera_75_o_mas_o_posgrados",
         "cursando_formacion_formal",
         "solo_cursos_cortos",
         "sin_formacion",
     ),
-    "pedagogical_pairs_coverage": _options(
+    "cobertura_duplas_pedagogicas": _construir_opciones(
         "todas",
         "mayoria",
         "algunas",
         "muy_pocas",
         "ninguna",
     ),
-    "qualified_teacher_coverage": _options(
+    "cobertura_educadora_titulo_habilitante": _construir_opciones(
         "todas",
         "mayoria",
         "algunas",
         "muy_pocas",
     ),
-    "assistant_training_coverage": _options(
+    "cobertura_formacion_auxiliares": _construir_opciones(
         "todos",
         "mayoria",
         "algunos",
         "muy_pocos",
         "ninguno",
     ),
-    "main_hiring_mode": _options(
+    "modalidad_contratacion_principal": _construir_opciones(
         "permanente",
         "temporal",
         "beca_o_pasantia",
         "programa_social_insercion",
         "voluntario_u_otra",
     ),
-    "meetings_teaching_staff_frequency": _options(
+    "frecuencia_reuniones_personal_sala": _construir_opciones(
         "mensual",
         "trimestral",
         "semestral",
         "anual",
         "no_se_realizan",
     ),
-    "meetings_non_teaching_staff_frequency": _options(
+    "frecuencia_reuniones_personal_no_docente": _construir_opciones(
         "mensual",
         "trimestral",
         "semestral",
         "anual",
         "no_se_realizan",
     ),
-    "meetings_all_staff_frequency": _options(
+    "frecuencia_reuniones_todo_personal": _construir_opciones(
         "mensual",
         "trimestral",
         "semestral",
         "anual",
         "no_se_realizan",
     ),
-    "training_instances_all_staff_last_3y": _options(
+    "instancias_capacitacion_todo_personal_ultimos_3_anios": _construir_opciones(
         "seis_o_mas",
         "cuatro_o_cinco",
         "dos_o_tres",
         "una",
         "ninguna",
     ),
-    "training_instances_room_staff_last_3y": _options(
+    "instancias_capacitacion_personal_sala_ultimos_3_anios": _construir_opciones(
         "seis_o_mas",
         "cuatro_o_cinco",
         "dos_o_tres",
         "una",
         "ninguna",
     ),
-    "training_instances_technical_team_last_3y": _options(
+    "instancias_capacitacion_equipo_tecnico_ultimos_3_anios": _construir_opciones(
         "seis_o_mas",
         "cuatro_o_cinco",
         "dos_o_tres",
         "una",
         "ninguna",
     ),
-    "training_instances_kitchen_staff_last_3y": _options(
+    "instancias_capacitacion_personal_cocina_ultimos_3_anios": _construir_opciones(
         "seis_o_mas",
         "cuatro_o_cinco",
         "dos_o_tres",
@@ -405,10 +419,10 @@ CHOICE_FIELDS = {
     ),
 }
 
-MULTI_CHOICE_FIELDS = {
-    "operation_months": MONTH_OPTIONS,
-    "operation_days": WEEKDAY_OPTIONS,
-    "health_protocol_items": _options(
+CAMPOS_OPCIONES_MULTIPLES = {
+    "meses_funcionamiento": OPCIONES_MESES,
+    "dias_funcionamiento": OPCIONES_DIAS_SEMANA,
+    "items_protocolo_salud": _construir_opciones(
         "emergencias_medicas",
         "suministro_medicamentos",
         "sintomas_enfermedad",
@@ -416,7 +430,7 @@ MULTI_CHOICE_FIELDS = {
         "conocido_por_todo_el_personal",
         "no_existe_protocolo_escrito",
     ),
-    "meals_provided": _options(
+    "prestaciones_alimentarias": _construir_opciones(
         "desayuno",
         "almuerzo",
         "merienda",
@@ -427,309 +441,325 @@ MULTI_CHOICE_FIELDS = {
     ),
 }
 
-BOOLEAN_LABELS = {
-    "exclusive_space_use": (
+ETIQUETAS_BOOLEANAS = {
+    "uso_exclusivo_espacio": (
         "Si, compartido con otras actividades/personas/organizaciones",
         "No",
     ),
 }
 
-FIELD_LABELS = {
-    "survey_date": "Fecha",
-    "respondent_full_name": "Nombre y apellido de quien responde el cuestionario",
-    "respondent_role": "Funcion que cumple",
-    "respondent_email": "Mail de contacto",
-    "cdi_name": "Nombre del Centro de Desarrollo Infantil",
-    "cdi_code": "Identificador interno del CDI",
-    "cdi_province": "Provincia del CDI",
-    "cdi_department": "Departamento del CDI",
-    "cdi_municipality": "Municipio del CDI",
-    "cdi_locality": "Localidad del CDI",
-    "cdi_street": "Calle del CDI",
-    "cdi_door_number": "Numeracion de puerta del CDI",
-    "cdi_postal_code": "Codigo postal del CDI",
-    "cdi_geo_latitude": "Coordenada geografica latitud",
-    "cdi_geo_longitude": "Coordenada geografica longitud",
-    "cdi_phone": "Telefono del CDI",
-    "cdi_email": "Mail del CDI",
-    "cdi_contact_first_name": "Referente del CDI nombre/s",
-    "cdi_contact_last_name": "Referente del CDI apellido/s",
-    "cdi_contact_phone": "Referente del CDI telefono",
-    "cdi_contact_email": "Referente del CDI mail",
-    "operation_months": "Meses de funcionamiento del CDI",
-    "operation_days": "Días de funcionamiento del CDI",
-    "opening_time": "Horario de apertura",
-    "closing_time": "Horario de cierre",
-    "workday_type": "Tipo de jornada",
-    "workday_type_other": "Otra jornada - especificar",
-    "total_children_count": "Cantidad de niños que asisten en total",
-    "total_staff_count": "Cantidad de personal en total",
-    "management_mode": "Modalidad de gestion",
-    "management_mode_other": "Modalidad de gestion - otra",
-    "managing_organization_name": "Denominacion del organismo u organizacion",
-    "managing_organization_cuit": "CUIT del organismo",
-    "org_province": "Provincia del organismo",
-    "org_department": "Departamento del organismo",
-    "org_municipality": "Municipio del organismo",
-    "org_locality": "Localidad del organismo",
-    "org_street": "Calle",
-    "org_number": "Numeracion",
-    "org_postal_code": "Codigo postal",
-    "org_building": "Edificio",
-    "org_floor": "Piso",
-    "org_apartment": "Departamento",
-    "org_office": "Oficina",
-    "org_phone": "Telefono",
-    "org_email": "Mail",
-    "org_contact_first_name": "Referente institucional nombre/s",
-    "org_contact_last_name": "Referente institucional apellido/s",
-    "org_contact_phone": "Referente institucional telefono",
-    "org_contact_email": "Referente institucional mail",
-    "tenure_mode": "Modalidad de tenencia",
-    "tenure_mode_other": "Modalidad de tenencia - otra",
-    "exclusive_space_use": "Uso exclusivo del espacio",
-    "room_count_excluding_service_areas": "Cantidad de ambientes (sin cocina/banos/pasillos/garajes)",
-    "electricity_access": "Acceso a energia",
-    "electrical_safety": "Seguridad electrica",
-    "water_access": "Acceso a agua",
-    "safe_drinking_water_source": "Acceso a agua segura para consumo",
-    "excreta_disposal": "Eliminacion de excretas",
-    "has_fire_extinguishers_current": "Existencia de extintores",
-    "first_aid_kit_status": "Existencia de botiquin",
-    "has_working_computer": "Existencia de computadora",
-    "internet_access_quality_staff": "Acceso a internet",
-    "has_kitchen_space": "Espacio de cocina",
-    "cooking_fuel": "Combustible usado para cocinar",
-    "has_outdoor_space": "Espacio exterior",
-    "has_outdoor_playground": "Juegos infantiles de exterior",
-    "evacuation_plan_and_drills": "Plan de evacuacion",
-    "first_aid_training_coverage": "Capacitacion en primeros auxilios",
-    "emergency_medical_service": "Servicio de emergencia medica + cobertura identificada",
-    "health_protocol_items": "Protocolo de actuación en salud",
-    "meals_provided": "Alimentacion",
-    "meals_provided_other": "Otra comida - especificar",
-    "menu_preparation_quality": "Elaboracion de alimentos",
-    "menu_periodic_evaluation": "Evaluacion periodica del menu",
-    "food_handling_training_coverage": "Capacitaciones en manipulacion de alimentos",
-    "breast_milk_storage_conditions": "Condiciones para almacenamiento de leche humana",
-    "breastfeeding_awareness_actions": "Acciones de informacion y sensibilizacion de lactancia",
-    "has_waitlist_registry": "Existe registro de lista de espera",
-    "has_admission_prioritization_tool": "Existe instrumento de priorización de ingreso de los niños/as",
-    "children_with_disabilities_count": "Cantidad de niños con discapacidad",
-    "children_specific_ethnicity_count": "Cantidad de niños de alguna etnia en particular",
-    "has_entry_exit_staff": "Personal encargado para entrada y salida",
-    "family_communication_frequency": "Comunicacion con las familias",
-    "parenting_workshops_frequency": "Talleres de crianza / charlas con profesionales",
-    "actions_promoting_rights_access": "Acciones de promocion y acceso a derechos",
-    "actions_against_rights_violations": "Acciones de acompanamiento ante vulneracion de derechos",
-    "networking_level": "Trabajo en red",
-    "rights_violation_protocol": "Protocolo frente a vulneracion de derechos",
-    "technical_team_level": "Equipo tecnico",
-    "child_development_record_frequency": "Registro de desarrollo del niño/a",
-    "family_info_record_frequency": "Registro de informacion familiar",
-    "health_vaccine_record_frequency": "Registro de controles de salud y vacunas",
-    "socioeducational_project_participants": "Proyecto socioeducativo institucional",
-    "classroom_activity_planning": "Existencia de planificacion de actividades en sala",
-    "integral_planning": "Planificacion integral",
-    "direction_training_in_early_childhood": "Formacion de la direccion/coordinacion en primera infancia",
-    "pedagogical_pairs_coverage": "Trabajo en duplas en sala",
-    "qualified_teacher_coverage": "Formacion habilitante del personal de sala",
-    "assistant_training_coverage": "Formacion de auxiliares en primera infancia",
-    "main_hiring_mode": "Modalidad de contratacion",
-    "meetings_teaching_staff_frequency": "Reuniones entre personal de sala, coordinacion y/o equipo tecnico",
-    "meetings_non_teaching_staff_frequency": "Reuniones entre personal no docente y coordinacion",
-    "meetings_all_staff_frequency": "Reuniones entre todo el personal",
-    "training_instances_all_staff_last_3y": "Instancias de capacitacion para todo el personal en ultimos 3 anos",
-    "training_instances_room_staff_last_3y": "Instancias de capacitacion para personal de sala en ultimos 3 anos",
-    "training_instances_technical_team_last_3y": "Instancias de capacitacion para equipo tecnico en ultimos 3 anos",
-    "training_instances_kitchen_staff_last_3y": "Instancias de capacitacion para cocina/comedor en ultimos 3 anos",
+ETIQUETAS_CAMPOS = {
+    "fecha_relevamiento": "Fecha",
+    "nombre_completo_respondente": "Nombre y apellido de quien responde el cuestionario",
+    "rol_respondente": "Funcion que cumple",
+    "email_respondente": "Mail de contacto",
+    "nombre_cdi": "Nombre del Centro de Desarrollo Infantil",
+    "codigo_cdi": "Identificador interno del CDI",
+    "provincia_cdi": "Provincia del CDI",
+    "departamento_cdi": "Departamento del CDI",
+    "municipio_cdi": "Municipio del CDI",
+    "localidad_cdi": "Localidad del CDI",
+    "calle_cdi": "Calle del CDI",
+    "numero_puerta_cdi": "Numeracion de puerta del CDI",
+    "codigo_postal_cdi": "Codigo postal del CDI",
+    "latitud_geografica_cdi": "Coordenada geografica latitud",
+    "longitud_geografica_cdi": "Coordenada geografica longitud",
+    "telefono_cdi": "Teléfono del CDI",
+    "email_cdi": "Mail del CDI",
+    "nombre_referente_cdi": "Referente del CDI nombre/s",
+    "apellido_referente_cdi": "Referente del CDI apellido/s",
+    "telefono_referente_cdi": "Referente del CDI telefono",
+    "email_referente_cdi": "Referente del CDI mail",
+    "meses_funcionamiento": "Meses de funcionamiento del CDI",
+    "dias_funcionamiento": "Días de funcionamiento del CDI",
+    "horario_apertura": "Horario de apertura",
+    "horario_cierre": "Horario de cierre",
+    "tipo_jornada": "Tipo de jornada",
+    "tipo_jornada_otra": "Otra jornada - especificar",
+    "cantidad_total_ninos": "Cantidad de niños que asisten en total",
+    "cantidad_total_personal": "Cantidad de personal en total",
+    "modalidad_gestion": "Modalidad de gestion",
+    "modalidad_gestion_otra": "Modalidad de gestion - otra",
+    "nombre_organizacion_gestora": "Denominacion del organismo u organizacion",
+    "cuit_organizacion_gestora": "CUIT del organismo",
+    "provincia_organizacion": "Provincia del organismo",
+    "departamento_organizacion": "Departamento del organismo",
+    "municipio_organizacion": "Municipio del organismo",
+    "localidad_organizacion": "Localidad del organismo",
+    "calle_organizacion": "Calle",
+    "numero_organizacion": "Numeracion",
+    "codigo_postal_organizacion": "Codigo postal",
+    "edificio_organizacion": "Edificio",
+    "piso_organizacion": "Piso",
+    "departamento_domicilio_organizacion": "Departamento",
+    "oficina_organizacion": "Oficina",
+    "telefono_organizacion": "Teléfono",
+    "email_organizacion": "Mail",
+    "nombre_referente_organizacion": "Referente institucional nombre/s",
+    "apellido_referente_organizacion": "Referente institucional apellido/s",
+    "telefono_referente_organizacion": "Referente institucional telefono",
+    "email_referente_organizacion": "Referente institucional mail",
+    "modalidad_tenencia": "Modalidad de tenencia",
+    "modalidad_tenencia_otra": "Modalidad de tenencia - otra",
+    "uso_exclusivo_espacio": "Uso exclusivo del espacio",
+    "cantidad_ambientes_sin_areas_servicio": "Cantidad de ambientes (sin cocina/banos/pasillos/garajes)",
+    "acceso_energia": "Acceso a energia",
+    "seguridad_electrica": "Seguridad electrica",
+    "acceso_agua": "Acceso a agua",
+    "fuente_agua_segura_consumo": "Acceso a agua segura para consumo",
+    "eliminacion_excretas": "Eliminacion de excretas",
+    "tiene_extintores_vigentes": "Existencia de extintores",
+    "estado_botiquin_primeros_auxilios": "Existencia de Botiquín",
+    "tiene_computadora_funcionando": "Existencia de computadora",
+    "acceso_internet_personal": "Acceso a internet",
+    "tiene_espacio_cocina": "Espacio de cocina",
+    "combustible_cocinar": "Combustible usado para cocinar",
+    "tiene_espacio_exterior": "Espacio exterior",
+    "tiene_juegos_exteriores": "Juegos infantiles de exterior",
+    "plan_evacuacion_y_simulacros": "Plan de evacuacion",
+    "cobertura_capacitacion_primeros_auxilios": "Capacitación en primeros auxilios",
+    "servicio_emergencia_medica": "Servicio de emergencia medica + cobertura identificada",
+    "items_protocolo_salud": "Protocolo de actuación en salud",
+    "prestaciones_alimentarias": "Alimentacion",
+    "prestaciones_alimentarias_otra": "Otra comida - especificar",
+    "calidad_elaboracion_menu": "Elaboracion de alimentos",
+    "evaluacion_periodica_menu": "Evaluacion periodica del menu",
+    "cobertura_capacitacion_manipulacion_alimentos": "Capacitaciones en manipulación de alimentos",
+    "condiciones_almacenamiento_leche_humana": "Condiciones para almacenamiento de leche humana",
+    "acciones_sensibilizacion_lactancia": "Acciones de informacion y sensibilizacion de lactancia",
+    "tiene_registro_lista_espera": "Existe registro de lista de espera",
+    "tiene_instrumento_priorizacion_ingreso": "Existe instrumento de priorización de ingreso de los niños/as",
+    "cantidad_ninos_discapacidad": "Cantidad de niños con discapacidad",
+    "cantidad_ninos_etnia_especifica": "Cantidad de niños de alguna etnia en particular",
+    "tiene_personal_entrada_salida": "Personal encargado para entrada y salida",
+    "frecuencia_comunicacion_familias": "Comunicacion con las familias",
+    "frecuencia_talleres_crianza": "Talleres de crianza / charlas con profesionales",
+    "realiza_acciones_promocion_acceso_derechos": "Acciones de promocion y acceso a derechos",
+    "realiza_acciones_acompanamiento_vulneracion_derechos": "Acciones de acompanamiento ante vulneracion de derechos",
+    "nivel_trabajo_red": "Trabajo en red",
+    "protocolo_vulneracion_derechos": "Protocolo frente a vulneracion de derechos",
+    "nivel_equipo_tecnico": "Equipo técnico",
+    "frecuencia_registro_desarrollo_nino": "Registro de desarrollo del niño/a",
+    "frecuencia_registro_informacion_familiar": "Registro de informacion familiar",
+    "frecuencia_registro_salud_vacunas": "Registro de controles de salud y vacunas",
+    "participantes_proyecto_socioeducativo": "Proyecto socioeducativo institucional",
+    "planificacion_actividades_sala": "Existencia de planificacion de actividades en sala",
+    "planificacion_integral": "Planificacion integral",
+    "formacion_direccion_primera_infancia": "Formación de la dirección/coordinación en primera infancia",
+    "cobertura_duplas_pedagogicas": "Trabajo en duplas en sala",
+    "cobertura_educadora_titulo_habilitante": "Formacion habilitante del personal de sala",
+    "cobertura_formacion_auxiliares": "Formacion de auxiliares en primera infancia",
+    "modalidad_contratacion_principal": "Modalidad de contratacion",
+    "frecuencia_reuniones_personal_sala": "Reuniones entre personal de sala, coordinación y/o equipo técnico",
+    "frecuencia_reuniones_personal_no_docente": "Reuniones entre personal no docente y coordinación",
+    "frecuencia_reuniones_todo_personal": "Reuniones entre todo el personal",
+    "instancias_capacitacion_todo_personal_ultimos_3_anios": "Instancias de capacitación para todo el personal en últimos 3 años",
+    "instancias_capacitacion_personal_sala_ultimos_3_anios": "Instancias de capacitación para personal de sala en últimos 3 años",
+    "instancias_capacitacion_equipo_tecnico_ultimos_3_anios": "Instancias de capacitación para equipo técnico en últimos 3 años",
+    "instancias_capacitacion_personal_cocina_ultimos_3_anios": "Instancias de capacitación para cocina/comedor en últimos 3 años",
 }
 
-FORMULARIO_CDI_SECTIONS = [
+for field_name, label_overrides in SOBREESCRITURAS_ETIQUETAS_OPCIONES.items():
+    if field_name in CAMPOS_OPCIONES:
+        CAMPOS_OPCIONES[field_name] = [
+            (value, label_overrides.get(value, label))
+            for value, label in CAMPOS_OPCIONES[field_name]
+        ]
+
+for field_name, label_overrides in SOBREESCRITURAS_ETIQUETAS_OPCIONES_MULTIPLES.items():
+    if field_name in CAMPOS_OPCIONES_MULTIPLES:
+        CAMPOS_OPCIONES_MULTIPLES[field_name] = [
+            (value, label_overrides.get(value, label))
+            for value, label in CAMPOS_OPCIONES_MULTIPLES[field_name]
+        ]
+
+ETIQUETAS_CAMPOS.update(SOBREESCRITURAS_ETIQUETAS_CAMPOS)
+
+SECCIONES_FORMULARIO_CDI = [
     {
-        "id": "metadata",
+        "id": "metadatos",
         "title": "Metadatos del relevamiento",
         "fields": [
-            "survey_date",
-            "respondent_full_name",
-            "respondent_role",
-            "respondent_email",
+            "fecha_relevamiento",
+            "nombre_completo_respondente",
+            "rol_respondente",
+            "email_respondente",
         ],
     },
     {
-        "id": "general_characterization",
+        "id": "caracterizacion_general",
         "title": "Caracterizacion general",
         "fields": [
-            "cdi_name",
-            "cdi_code",
-            "cdi_province",
-            "cdi_department",
-            "cdi_municipality",
-            "cdi_locality",
-            "cdi_street",
-            "cdi_door_number",
-            "cdi_postal_code",
-            "cdi_geo_latitude",
-            "cdi_geo_longitude",
-            "cdi_phone",
-            "cdi_email",
-            "cdi_contact_first_name",
-            "cdi_contact_last_name",
-            "cdi_contact_phone",
-            "cdi_contact_email",
-            "operation_months",
-            "operation_days",
-            "opening_time",
-            "closing_time",
-            "workday_type",
-            "workday_type_other",
-            "total_children_count",
-            "total_staff_count",
+            "nombre_cdi",
+            "codigo_cdi",
+            "provincia_cdi",
+            "departamento_cdi",
+            "municipio_cdi",
+            "localidad_cdi",
+            "calle_cdi",
+            "numero_puerta_cdi",
+            "codigo_postal_cdi",
+            "latitud_geografica_cdi",
+            "longitud_geografica_cdi",
+            "telefono_cdi",
+            "email_cdi",
+            "nombre_referente_cdi",
+            "apellido_referente_cdi",
+            "telefono_referente_cdi",
+            "email_referente_cdi",
+            "meses_funcionamiento",
+            "dias_funcionamiento",
+            "horario_apertura",
+            "horario_cierre",
+            "tipo_jornada",
+            "tipo_jornada_otra",
+            "cantidad_total_ninos",
+            "cantidad_total_personal",
         ],
     },
     {
-        "id": "pfpi_participation",
+        "id": "participacion_pfpi",
         "title": "CDI que participan del PFPI",
         "fields": [
-            "management_mode",
-            "management_mode_other",
-            "managing_organization_name",
-            "managing_organization_cuit",
-            "org_province",
-            "org_department",
-            "org_municipality",
-            "org_locality",
-            "org_street",
-            "org_number",
-            "org_postal_code",
-            "org_building",
-            "org_floor",
-            "org_apartment",
-            "org_office",
-            "org_phone",
-            "org_email",
-            "org_contact_first_name",
-            "org_contact_last_name",
-            "org_contact_phone",
-            "org_contact_email",
-            "tenure_mode",
-            "tenure_mode_other",
-            "exclusive_space_use",
-            "room_count_excluding_service_areas",
+            "modalidad_gestion",
+            "modalidad_gestion_otra",
+            "nombre_organizacion_gestora",
+            "cuit_organizacion_gestora",
+            "provincia_organizacion",
+            "departamento_organizacion",
+            "municipio_organizacion",
+            "localidad_organizacion",
+            "calle_organizacion",
+            "numero_organizacion",
+            "codigo_postal_organizacion",
+            "edificio_organizacion",
+            "piso_organizacion",
+            "departamento_domicilio_organizacion",
+            "oficina_organizacion",
+            "telefono_organizacion",
+            "email_organizacion",
+            "nombre_referente_organizacion",
+            "apellido_referente_organizacion",
+            "telefono_referente_organizacion",
+            "email_referente_organizacion",
+            "modalidad_tenencia",
+            "modalidad_tenencia_otra",
+            "uso_exclusivo_espacio",
+            "cantidad_ambientes_sin_areas_servicio",
         ],
     },
     {
-        "id": "infrastructure_services",
+        "id": "infraestructura_servicios",
         "title": "Infraestructura y servicios",
         "fields": [
-            "electricity_access",
-            "electrical_safety",
-            "water_access",
-            "safe_drinking_water_source",
-            "excreta_disposal",
-            "has_fire_extinguishers_current",
-            "first_aid_kit_status",
-            "has_working_computer",
-            "internet_access_quality_staff",
-            "has_kitchen_space",
-            "cooking_fuel",
-            "has_outdoor_space",
-            "has_outdoor_playground",
-            "evacuation_plan_and_drills",
-            "first_aid_training_coverage",
-            "emergency_medical_service",
-            "health_protocol_items",
+            "acceso_energia",
+            "seguridad_electrica",
+            "acceso_agua",
+            "fuente_agua_segura_consumo",
+            "eliminacion_excretas",
+            "tiene_extintores_vigentes",
+            "estado_botiquin_primeros_auxilios",
+            "tiene_computadora_funcionando",
+            "acceso_internet_personal",
+            "tiene_espacio_cocina",
+            "combustible_cocinar",
+            "tiene_espacio_exterior",
+            "tiene_juegos_exteriores",
+            "plan_evacuacion_y_simulacros",
+            "cobertura_capacitacion_primeros_auxilios",
+            "servicio_emergencia_medica",
+            "items_protocolo_salud",
         ],
     },
     {
-        "id": "food_module",
+        "id": "modulo_alimentacion",
         "title": "Alimentacion",
         "fields": [
-            "meals_provided",
-            "meals_provided_other",
-            "menu_preparation_quality",
-            "menu_periodic_evaluation",
-            "food_handling_training_coverage",
-            "breast_milk_storage_conditions",
-            "breastfeeding_awareness_actions",
+            "prestaciones_alimentarias",
+            "prestaciones_alimentarias_otra",
+            "calidad_elaboracion_menu",
+            "evaluacion_periodica_menu",
+            "cobertura_capacitacion_manipulacion_alimentos",
+            "condiciones_almacenamiento_leche_humana",
+            "acciones_sensibilizacion_lactancia",
         ],
     },
     {
-        "id": "admissions_and_population",
+        "id": "demanda_ingreso_poblacion",
         "title": "Demanda, ingreso y poblacion",
         "fields": [
-            "has_waitlist_registry",
-            "has_admission_prioritization_tool",
-            "children_with_disabilities_count",
-            "children_specific_ethnicity_count",
-            "has_entry_exit_staff",
+            "tiene_registro_lista_espera",
+            "tiene_instrumento_priorizacion_ingreso",
+            "cantidad_ninos_discapacidad",
+            "cantidad_ninos_etnia_especifica",
+            "tiene_personal_entrada_salida",
         ],
     },
     {
-        "id": "families_and_rights",
+        "id": "familias_derechos",
         "title": "Familias, derechos y articulacion",
         "fields": [
-            "family_communication_frequency",
-            "parenting_workshops_frequency",
-            "actions_promoting_rights_access",
-            "actions_against_rights_violations",
+            "frecuencia_comunicacion_familias",
+            "frecuencia_talleres_crianza",
+            "realiza_acciones_promocion_acceso_derechos",
+            "realiza_acciones_acompanamiento_vulneracion_derechos",
         ],
     },
     {
-        "id": "networking_and_protocols",
+        "id": "trabajo_red_protocolos",
         "title": "Trabajo en red y protocolos",
         "fields": [
-            "networking_level",
-            "rights_violation_protocol",
+            "nivel_trabajo_red",
+            "protocolo_vulneracion_derechos",
         ],
     },
     {
-        "id": "technical_team",
-        "title": "Equipo tecnico",
-        "fields": ["technical_team_level"],
+        "id": "equipo_tecnico",
+        "title": "Equipo técnico",
+        "fields": ["nivel_equipo_tecnico"],
     },
     {
-        "id": "child_records_and_pedagogical_project",
+        "id": "registros_ninos_proyecto_pedagogico",
         "title": "Registros del niño y proyecto pedagógico",
         "fields": [
-            "child_development_record_frequency",
-            "family_info_record_frequency",
-            "health_vaccine_record_frequency",
-            "socioeducational_project_participants",
-            "classroom_activity_planning",
-            "integral_planning",
-            "direction_training_in_early_childhood",
+            "frecuencia_registro_desarrollo_nino",
+            "frecuencia_registro_informacion_familiar",
+            "frecuencia_registro_salud_vacunas",
+            "participantes_proyecto_socioeducativo",
+            "planificacion_actividades_sala",
+            "planificacion_integral",
+            "formacion_direccion_primera_infancia",
         ],
     },
     {
-        "id": "staff_profile",
+        "id": "perfil_personal",
         "title": "Perfil y contratacion del personal",
         "fields": [
-            "pedagogical_pairs_coverage",
-            "qualified_teacher_coverage",
-            "assistant_training_coverage",
-            "main_hiring_mode",
+            "cobertura_duplas_pedagogicas",
+            "cobertura_educadora_titulo_habilitante",
+            "cobertura_formacion_auxiliares",
+            "modalidad_contratacion_principal",
         ],
     },
     {
-        "id": "team_meetings_and_training",
-        "title": "Reuniones y capacitacion",
+        "id": "reuniones_capacitaciones",
+        "title": "Reuniones y capacitación",
         "fields": [
-            "meetings_teaching_staff_frequency",
-            "meetings_non_teaching_staff_frequency",
-            "meetings_all_staff_frequency",
-            "training_instances_all_staff_last_3y",
-            "training_instances_room_staff_last_3y",
-            "training_instances_technical_team_last_3y",
-            "training_instances_kitchen_staff_last_3y",
+            "frecuencia_reuniones_personal_sala",
+            "frecuencia_reuniones_personal_no_docente",
+            "frecuencia_reuniones_todo_personal",
+            "instancias_capacitacion_todo_personal_ultimos_3_anios",
+            "instancias_capacitacion_personal_sala_ultimos_3_anios",
+            "instancias_capacitacion_equipo_tecnico_ultimos_3_anios",
+            "instancias_capacitacion_personal_cocina_ultimos_3_anios",
         ],
     },
 ]
 
-SUMMARY_FIELD_NAMES = [
+CAMPOS_RESUMEN = [
     "id",
-    "survey_date",
-    "respondent_full_name",
+    "fecha_relevamiento",
+    "nombre_completo_respondente",
     "created_at",
     "updated_at",
 ]

@@ -45,6 +45,15 @@ Para trabajar en SISOC con asistentes, la documentación en `docs/` es fuente de
 
 No imponer como obligatorio si no fue pedido: `ruff`, `mypy`, `eslint`, `prettier` (no hay configuración formal activa para estos checks en el repo).
 
+## Disciplina de formato y lint para IAs (obligatoria)
+
+- Escribir Python compatible con `black` desde el inicio. La referencia operativa es `line-length = 88`; no usar el `max-line-length = 150` de `pylint` como excusa para dejar líneas largas evitables.
+- Preferir construcciones que `black` resuelve bien: paréntesis implícitos, literales multilínea y llamadas partidas por argumentos. Evitar alinear manualmente, columnas “bonitas” o wraps ad hoc que después `black` desarma.
+- Mantener imports en bloques consistentes: standard library, terceros y código local. No reordenar imports no relacionados fuera del archivo tocado.
+- Escribir nombres, firmas y variables alineados con `.pylintrc`: `snake_case` para funciones/variables, `PascalCase` para clases y helpers privados con prefijo `_` cuando aplique.
+- En templates, escribir HTML/Django template tags pensando en `djlint`: indentación de 4 espacios, tags anidados legibles y sin compactar bloques en una sola línea si el formatter los va a expandir.
+- Validar primero sobre archivos modificados para reducir fricción y ruido. Escalar a checks más amplios solo si el impacto del cambio lo justifica o el pedido lo exige.
+
 ## Patrones críticos del repo (leer antes de proponer cambios)
 
 - La lógica de negocio va preferentemente en `services/` (no en views/templates).
@@ -71,9 +80,12 @@ docker compose exec django pytest -m smoke
 
 black .
 black --check . --config pyproject.toml
+black path/al/archivo.py --config pyproject.toml
 djlint . --configuration=.djlintrc --reformat
 djlint . --check --configuration=.djlintrc
+djlint templates/ruta.html --reformat --configuration=.djlintrc
 pylint **/*.py --rcfile=.pylintrc
+pylint app/archivo.py --rcfile=.pylintrc
 ```
 
 ## Reglas de comportamiento para IAs (obligatorias)
