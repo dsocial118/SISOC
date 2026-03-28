@@ -123,6 +123,19 @@ def _limpiar_datos_registro_erroneo(payload):
     return {k: v for k, v in payload.items() if v not in (None, "")}
 
 
+def _consolidar_datos_registro_erroneo(datos_previos, datos_nuevos):
+    datos_consolidados = _normalizar_datos_registro_erroneo(datos_previos or {})
+    for field in IMPORTACION_EDITABLE_FIELDS:
+        if field not in datos_nuevos:
+            continue
+        value = datos_nuevos.get(field)
+        if value in (None, ""):
+            datos_consolidados.pop(field, None)
+            continue
+        datos_consolidados[field] = value
+    return datos_consolidados
+
+
 def _resolver_provincia_id_registro_erroneo(user, expediente):
     provincia = _user_provincia(user) or getattr(expediente, "provincia", None)
     if provincia is None:
@@ -1417,7 +1430,10 @@ class ActualizarRegistroErroneoView(View):
 
         try:
             datos_actualizados = json.loads(request.body)
-            datos_normalizados = _normalizar_datos_registro_erroneo(datos_actualizados)
+            datos_nuevos = _normalizar_datos_registro_erroneo(datos_actualizados)
+            datos_normalizados = _consolidar_datos_registro_erroneo(
+                registro.datos_raw, datos_nuevos
+            )
             datos_limpios = _limpiar_datos_registro_erroneo(datos_normalizados)
             registro.datos_raw = datos_limpios
 

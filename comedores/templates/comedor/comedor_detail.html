@@ -141,6 +141,13 @@
                                 {% endif %}
                             </button>
                         </li>
+                        {% if comedor.es_judicializado %}
+                            <li class="list-inline-item">
+                                <button class="btn btn-sm btn-judicializado mb-2">
+                                    <i class="bi bi-gavel me-1"></i>Judicializado
+                                </button>
+                            </li>
+                        {% endif %}
                     </ul>
                 </div>
                 {% with selected_admision|default:admision_activa as display_admision %}
