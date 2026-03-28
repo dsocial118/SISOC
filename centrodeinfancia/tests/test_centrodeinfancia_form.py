@@ -1,7 +1,8 @@
-import pytest
+﻿import pytest
 from django.contrib.auth.models import User
 
 from centrodeinfancia.forms import CentroDeInfanciaForm
+from centrodeinfancia.models import CentroDeInfancia
 from core.models import Provincia
 from users.models import Profile
 
@@ -108,7 +109,7 @@ def test_form_acepta_telefono_como_numero_plano():
     )
     form = CentroDeInfanciaForm(
         data={
-            "nombre": "CDI Telefono",
+            "nombre": "CDI Teléfono",
             "telefono": "5491140333588",
             "telefono_referente": "1133557799",
         },
@@ -129,7 +130,7 @@ def test_form_acepta_telefono_con_guiones_opcionales():
     )
     form = CentroDeInfanciaForm(
         data={
-            "nombre": "CDI Telefono Guiones",
+            "nombre": "CDI Teléfono Guiones",
             "telefono": "11-1234-1234",
             "telefono_referente": "549-11-4033-3588",
         },
@@ -140,3 +141,22 @@ def test_form_acepta_telefono_con_guiones_opcionales():
     assert form.is_valid(), form.errors
     assert form.cleaned_data["telefono"] == "11-1234-1234"
     assert form.cleaned_data["telefono_referente"] == "549-11-4033-3588"
+
+
+@pytest.mark.django_db
+def test_form_edicion_mantiene_campos_obligatorios():
+    user = User.objects.create_user(
+        username="user-edicion-obligatorios",
+        password="test1234",
+    )
+    centro = CentroDeInfancia.objects.create(nombre="CDI Inicial")
+
+    form = CentroDeInfanciaForm(
+        data={"nombre": ""},
+        instance=centro,
+        user=user,
+        lock_provincia_from_user=False,
+    )
+
+    assert not form.is_valid()
+    assert "nombre" in form.errors

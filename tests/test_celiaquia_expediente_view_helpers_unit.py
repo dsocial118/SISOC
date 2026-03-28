@@ -710,7 +710,30 @@ def test_expediente_nomina_sintys_export_view(mocker):
 def test_actualizar_registro_erroneo_view_paths(mocker):
     view = module.ActualizarRegistroErroneoView()
     expediente = SimpleNamespace()
-    registro = SimpleNamespace(datos_raw={}, fila_excel=2, save=mocker.Mock())
+    registro = SimpleNamespace(
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "123",
+            "fecha_nacimiento": "01/01/2010",
+            "sexo": "1",
+            "nacionalidad": "1",
+            "municipio": "1",
+            "localidad": "1",
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+            "apellido_responsable": "Gomez",
+            "nombre_responsable": "Laura",
+            "documento_responsable": "20123456789",
+            "fecha_nacimiento_responsable": "01/01/1980",
+            "sexo_responsable": "2",
+            "domicilio_responsable": "Calle Resp 123",
+            "localidad_responsable": "Centro",
+        },
+        fila_excel=2,
+        save=mocker.Mock(),
+    )
 
     # Sin permisos
     mocker.patch(
@@ -747,6 +770,19 @@ def test_actualizar_registro_erroneo_view_paths(mocker):
     ok = view.post(req_ok, pk=1, registro_id=2)
     assert ok.status_code == 200
     assert registro.datos_raw["apellido"] == "Perez"
+    assert registro.datos_raw["sexo"] == "1"
+
+    mocker.patch(
+        "celiaquia.views.expediente.get_object_or_404",
+        side_effect=[expediente, registro],
+    )
+    req_partial = SimpleNamespace(
+        user=SimpleNamespace(),
+        body=b'{"localidad":"99"}',
+    )
+    partial = view.post(req_partial, pk=1, registro_id=2)
+    assert partial.status_code == 200
+    assert registro.datos_raw["localidad"] == "99"
     assert registro.datos_raw["sexo"] == "1"
 
     mocker.patch(

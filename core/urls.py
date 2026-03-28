@@ -14,6 +14,11 @@ from core.views import (
     MontoPrestacionProgramaUpdateView,
     MontoPrestacionProgramaDeleteView,
     MontoPrestacionProgramaDetailView,
+    ProgramaListView,
+    ProgramaCreateView,
+    ProgramaDetailView,
+    ProgramaUpdateView,
+    ProgramaDeleteView,
 )
 from core.decorators import permissions_any_required
 from .trash_views import (
@@ -93,6 +98,11 @@ urlpatterns = [
         ),
         name="montoprestacion_detalle",
     ),
+    path("programas/", ProgramaListView.as_view(), name="programa_listar"),
+    path("programas/crear/", ProgramaCreateView.as_view(), name="programa_crear"),
+    path("programas/<int:pk>/", ProgramaDetailView.as_view(), name="programa_detalle"),
+    path("programas/<int:pk>/editar/", ProgramaUpdateView.as_view(), name="programa_editar"),
+    path("programas/<int:pk>/eliminar/", ProgramaDeleteView.as_view(), name="programa_eliminar"),
     path("papelera/", TrashListView.as_view(), name="papelera_list"),
     path(
         "papelera/preview-restore/<str:app_label>/<str:model_name>/<int:pk>/",

@@ -1,0 +1,62 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block titulo-pagina %}{{ titulo }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="bi bi-sliders me-2"></i>{{ titulo }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    {% if field.html_name == "renovacion_tipo" %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ field.label }}</label>
+                        <div class="d-flex gap-3 mt-1">
+                            {% for radio in field %}
+                            <div class="form-check">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    {% elif field.field.widget.input_type == "checkbox" %}
+                    <div class="mb-3 form-check">
+                        {{ field }}
+                        <label class="form-check-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {% if field.help_text %}<div class="text-muted small">{{ field.help_text }}</div>{% endif %}
+                        {% if field.errors %}<div class="text-danger small">{{ field.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                        <div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>
+                        {% endif %}
+                        {% if field.help_text %}
+                        <div class="text-muted small mt-1">{{ field.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Guardar
+                        </button>
+                        <a href="{% url 'vat_voucher_parametria_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

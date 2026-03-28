@@ -1,0 +1,46 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Eliminar Inscripción - VAT{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 text-dark">Eliminar Inscripción</h1>
+        </div>
+    </div>
+
+    <div class="card border-danger">
+        <div class="card-body p-5">
+            <div class="text-center mb-4">
+                <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+            </div>
+
+            <h4 class="text-center mb-3">¿Está seguro que desea eliminar esta inscripción?</h4>
+
+            <div class="alert alert-warning" role="alert">
+                <strong>Esta acción no se puede deshacer.</strong><br>
+                <p class="mb-0 mt-2">Se eliminará:</p>
+                <ul class="mb-0">
+                    <li>Ciudadano: <strong>{{ inscripcion.ciudadano.nombre_completo }}</strong></li>
+                    <li>Oferta: <strong>{{ inscripcion.oferta.plan_curricular.titulo_referencia.nombre }}</strong></li>
+                    <li>Estado actual: <strong>{{ inscripcion.get_estado_display }}</strong></li>
+                </ul>
+            </div>
+
+            <div class="mt-4">
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger me-2">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                    <a href="{% url 'vat_inscripcion_oferta_detail' inscripcion.pk %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

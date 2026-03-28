@@ -1,3 +1,4 @@
+﻿
 {% for item in centros %}
     <tr>
         {% for column_key in active_columns %}
@@ -58,7 +59,7 @@
     <tr>
         <td colspan="{{ active_columns|length|add:1 }}">
             <div class="no-comedores-message">
-                <h3>No se encontraron centros de infancia</h3>
+                <h3>No se encontraron centros de desarrollo infantil</h3>
                 <p>No hay centros que coincidan con los criterios de búsqueda.</p>
             </div>
         </td>
