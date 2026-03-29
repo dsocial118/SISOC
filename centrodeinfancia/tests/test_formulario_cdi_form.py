@@ -168,7 +168,6 @@ def test_formulario_cdi_aplica_textos_actualizados_en_labels_y_opciones():
     )
 
 
-
 @pytest.mark.django_db
 def test_formulario_cdi_opciones_botiquin_muestran_texto_largo():
     form = FormularioCDIForm()

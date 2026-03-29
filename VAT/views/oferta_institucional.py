@@ -3,7 +3,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import View
-from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView, TemplateView
+from django.views.generic import (
+    ListView,
+    CreateView,
+    DetailView,
+    UpdateView,
+    DeleteView,
+    TemplateView,
+)
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.utils import timezone
@@ -29,6 +36,7 @@ logger = logging.getLogger("django")
 # ============================================================================
 # OFERTA INSTITUCIONAL VIEWS
 # ============================================================================
+
 
 class OfertaInstitucionalListView(LoginRequiredMixin, ListView):
     model = OfertaInstitucional
@@ -112,7 +120,9 @@ class OfertaInstitucionalUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class OfertaInstitucionalDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+class OfertaInstitucionalDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     model = OfertaInstitucional
     template_name = "vat/oferta_institucional/oferta_confirm_delete.html"
     context_object_name = "oferta"
@@ -123,6 +133,7 @@ class OfertaInstitucionalDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixi
 # COMISIÓN VIEWS
 # ============================================================================
 
+
 class ComisionListView(LoginRequiredMixin, ListView):
     model = Comision
     template_name = "vat/oferta_institucional/comision_list.html"
@@ -130,7 +141,11 @@ class ComisionListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = Comision.objects.select_related("oferta").prefetch_related("horarios").order_by("codigo_comision")
+        queryset = (
+            Comision.objects.select_related("oferta")
+            .prefetch_related("horarios")
+            .order_by("codigo_comision")
+        )
 
         oferta_id = self.request.GET.get("oferta_id")
         estado = self.request.GET.get("estado")
@@ -181,13 +196,17 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "comision"
 
     def get_queryset(self):
-        return Comision.objects.select_related("oferta__centro", "oferta__plan_curricular__titulo_referencia")
+        return Comision.objects.select_related(
+            "oferta__centro", "oferta__plan_curricular__titulo_referencia"
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comision = self.object
         context["horarios"] = list(
-            ComisionHorario.objects.filter(comision=comision).select_related("dia_semana")
+            ComisionHorario.objects.filter(comision=comision).select_related(
+                "dia_semana"
+            )
         )
         context["sesiones"] = list(
             SesionComision.objects.filter(comision=comision)
@@ -266,11 +285,13 @@ class AsistenciaSesionView(LoginRequiredMixin, TemplateView):
         filas = []
         for insc in inscripciones:
             asist = asistencias_existentes.get(insc.pk)
-            filas.append({
-                "inscripcion": insc,
-                "presente": asist.presente if asist else None,
-                "observaciones": asist.observaciones if asist else "",
-            })
+            filas.append(
+                {
+                    "inscripcion": insc,
+                    "presente": asist.presente if asist else None,
+                    "observaciones": asist.observaciones if asist else "",
+                }
+            )
         context["sesion"] = sesion
         context["filas"] = filas
         context["ya_tomada"] = bool(asistencias_existentes)
@@ -324,6 +345,7 @@ class ComisionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteVi
 # COMISIÓN HORARIO VIEWS
 # ============================================================================
 
+
 class ComisionHorarioListView(LoginRequiredMixin, ListView):
     model = ComisionHorario
     template_name = "vat/oferta_institucional/horario_list.html"
@@ -331,7 +353,9 @@ class ComisionHorarioListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = ComisionHorario.objects.select_related("comision", "dia_semana").order_by("comision", "dia_semana", "hora_desde")
+        queryset = ComisionHorario.objects.select_related(
+            "comision", "dia_semana"
+        ).order_by("comision", "dia_semana", "hora_desde")
 
         comision_id = self.request.GET.get("comision_id")
         dia = self.request.GET.get("dia_semana")
@@ -359,9 +383,12 @@ class ComisionHorarioCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         response = super().form_valid(form)
         from VAT.services.sesion_comision_service.impl import SesionComisionService
+
         cantidad = SesionComisionService.generar_para_horario(self.object)
         if cantidad:
-            messages.success(self.request, f"Horario creado. Se generaron {cantidad} sesiones.")
+            messages.success(
+                self.request, f"Horario creado. Se generaron {cantidad} sesiones."
+            )
         else:
             messages.success(self.request, "Horario creado exitosamente.")
         return response
@@ -384,8 +411,11 @@ class ComisionHorarioUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         response = super().form_valid(form)
         from VAT.services.sesion_comision_service.impl import SesionComisionService
+
         cantidad = SesionComisionService.regenerar_para_horario(self.object)
-        messages.success(self.request, f"Horario actualizado. {cantidad} sesiones regeneradas.")
+        messages.success(
+            self.request, f"Horario actualizado. {cantidad} sesiones regeneradas."
+        )
         return response
 
     def get_success_url(self):
@@ -399,6 +429,7 @@ class ComisionHorarioDeleteView(LoginRequiredMixin, DeleteView):
 
     def form_valid(self, form):
         from VAT.services.sesion_comision_service.impl import SesionComisionService
+
         SesionComisionService.eliminar_para_horario(self.object)
         return super().form_valid(form)
 

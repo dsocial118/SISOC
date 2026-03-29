@@ -4,87 +4,142 @@
 {% block title %}{{ horario }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex align-items-center gap-2 mb-4">
-                <a href="{% url 'vat_comision_horario_list' %}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
-                <div>
-                    <h1 class="h2 mb-0" style="color: #1f3a93;"><i class="bi-clock me-2"></i>Horario</h1>
-                    <small class="text-muted">{{ horario }}</small>
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <a href="{% url 'vat_comision_horario_list' %}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+                    <div>
+                        <h1 class="h2 mb-0" style="color: #1f3a93;">
+                            <i class="bi-clock me-2"></i>Horario
+                        </h1>
+                        <small class="text-muted">{{ horario }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-light border-bottom">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <label class="form-label small fw-600 text-muted">Comisión</label>
+                                <br />
+                                <p class="mb-0">{{ horario.comision }}</p>
+                            </div>
+                        </div>
+                        <hr class="my-4" />
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-600 text-muted">Día de la Semana</label>
+                                <br />
+                                <p class="mb-0">{{ horario.dia_semana }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-600 text-muted">Aula/Espacio</label>
+                                <br />
+                                <p class="mb-0">{{ horario.aula_espacio|default:"—" }}</p>
+                            </div>
+                        </div>
+                        <hr class="my-4" />
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-600 text-muted">Hora Desde</label>
+                                <br />
+                                <p class="mb-0">{{ horario.hora_desde|time:"H:i" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-600 text-muted">Hora Hasta</label>
+                                <br />
+                                <p class="mb-0">{{ horario.hora_hasta|time:"H:i" }}</p>
+                            </div>
+                        </div>
+                        <hr class="my-4" />
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <label class="form-label small fw-600 text-muted">Vigente</label>
+                                <br />
+                                {% if horario.vigente %}
+                                    <span class="badge bg-success">Sí</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if horario.observaciones %}
+                            <hr class="my-4" />
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <label class="form-label small fw-600 text-muted">Observaciones</label>
+                                    <p class="mb-0">{{ horario.observaciones }}</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light border-bottom">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history me-2" style="color: #1f3a93;"></i>Auditoría
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="small text-muted">
+                            <dl>
+                                <dt>Creado</dt>
+                                <dd>
+                                    {{ horario.fecha_creacion|date:"d/m/Y H:i" }}
+                                </dd>
+                                <dt>Modificado</dt>
+                                <dd>
+                                    {{ horario.fecha_modificacion|date:"d/m/Y H:i" }}
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm mb-4 bg-primary bg-opacity-10">
+                    <div class="card-body">
+                        <h6 class="card-title fw-600" style="color: #1f3a93;">
+                            <i class="bi bi-lightning me-2"></i>Acciones
+                        </h6>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'vat_comision_horario_update' horario.id %}"
+                               class="btn btn-primary"><i class="bi bi-pencil me-2"></i>Editar</a>
+                            <a href="{% url 'vat_comision_horario_delete' horario.id %}"
+                               class="btn btn-danger"><i class="bi bi-trash me-2"></i>Eliminar</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title fw-600" style="color: #1f3a93;">
+                            <i class="bi bi-info-circle me-2"></i>Registro
+                        </h6>
+                        <div class="small text-muted">
+                            <dl>
+                                <dt>ID</dt>
+                                <dd>
+                                    #{{ horario.id }}
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-light border-bottom">
-                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información</h5>
-                </div>
-                <div class="card-body p-4">
-                    <div class="row mb-4">
-                        <div class="col-md-12"><label class="form-label small fw-600 text-muted">Comisión</label><br><p class="mb-0">{{ horario.comision }}</p></div>
-                    </div>
-                    <hr class="my-4">
-                    <div class="row mb-4">
-                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Día de la Semana</label><br><p class="mb-0">{{ horario.dia_semana }}</p></div>
-                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Aula/Espacio</label><br><p class="mb-0">{{ horario.aula_espacio|default:"—" }}</p></div>
-                    </div>
-                    <hr class="my-4">
-                    <div class="row mb-4">
-                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Hora Desde</label><br><p class="mb-0">{{ horario.hora_desde|time:"H:i" }}</p></div>
-                        <div class="col-md-6"><label class="form-label small fw-600 text-muted">Hora Hasta</label><br><p class="mb-0">{{ horario.hora_hasta|time:"H:i" }}</p></div>
-                    </div>
-                    <hr class="my-4">
-                    <div class="row mb-4">
-                        <div class="col-md-12"><label class="form-label small fw-600 text-muted">Vigente</label><br>{% if horario.vigente %}<span class="badge bg-success">Sí</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</div>
-                    </div>
-
-                    {% if horario.observaciones %}
-                    <hr class="my-4">
-                    <div class="row"><div class="col-md-12">
-                        <label class="form-label small fw-600 text-muted">Observaciones</label>
-                        <p class="mb-0">{{ horario.observaciones }}</p>
-                    </div></div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-light border-bottom">
-                    <h5 class="mb-0"><i class="bi bi-clock-history me-2" style="color: #1f3a93;"></i>Auditoría</h5>
-                </div>
-                <div class="card-body p-4">
-                    <div class="small text-muted">
-                        <dl>
-                            <dt>Creado</dt><dd>{{ horario.fecha_creacion|date:"d/m/Y H:i" }}</dd>
-                            <dt>Modificado</dt><dd>{{ horario.fecha_modificacion|date:"d/m/Y H:i" }}</dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm mb-4 bg-primary bg-opacity-10">
-                <div class="card-body">
-                    <h6 class="card-title fw-600" style="color: #1f3a93;"><i class="bi bi-lightning me-2"></i>Acciones</h6>
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'vat_comision_horario_update' horario.id %}" class="btn btn-primary"><i class="bi bi-pencil me-2"></i>Editar</a>
-                        <a href="{% url 'vat_comision_horario_delete' horario.id %}" class="btn btn-danger"><i class="bi bi-trash me-2"></i>Eliminar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="card border-0 shadow-sm bg-light">
-                <div class="card-body">
-                    <h6 class="card-title fw-600" style="color: #1f3a93;"><i class="bi bi-info-circle me-2"></i>Registro</h6>
-                    <div class="small text-muted"><dl><dt>ID</dt><dd>#{{ horario.id }}</dd></dl></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<style>.fw-600 { font-weight: 600 !important; }</style>
+    <style>.fw-600 { font-weight: 600 !important; }</style>
 {% endblock %}

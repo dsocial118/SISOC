@@ -1094,10 +1094,6 @@ class ComedorService:
             if resultado.get("success"):
                 return resultado
             last_error = resultado.get("error") or last_error
-            # Solo tiene sentido probar otro sexo cuando RENAPER respondió
-            # "sin coincidencia". Para errores de integración fallamos rápido.
-            if resultado.get("raw_response") is None:
-                break
         return {
             "success": False,
             "error": last_error or "No se encontraron datos en RENAPER.",

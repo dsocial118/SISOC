@@ -20,11 +20,36 @@ from VAT.serializers import (
     tags=["VAT Web - Centros"],
     description="Centros visibles para la web. Permite búsqueda textual y filtros geográficos.",
     parameters=[
-        OpenApiParameter("q", OpenApiTypes.STR, OpenApiParameter.QUERY, description="Busca por nombre o código."),
-        OpenApiParameter("provincia_id", OpenApiTypes.INT, OpenApiParameter.QUERY, description="Filtra por provincia."),
-        OpenApiParameter("municipio_id", OpenApiTypes.INT, OpenApiParameter.QUERY, description="Filtra por municipio."),
-        OpenApiParameter("localidad_id", OpenApiTypes.INT, OpenApiParameter.QUERY, description="Filtra por localidad."),
-        OpenApiParameter("activo", OpenApiTypes.BOOL, OpenApiParameter.QUERY, description="Por defecto devuelve solo activos."),
+        OpenApiParameter(
+            "q",
+            OpenApiTypes.STR,
+            OpenApiParameter.QUERY,
+            description="Busca por nombre o código.",
+        ),
+        OpenApiParameter(
+            "provincia_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra por provincia.",
+        ),
+        OpenApiParameter(
+            "municipio_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra por municipio.",
+        ),
+        OpenApiParameter(
+            "localidad_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra por localidad.",
+        ),
+        OpenApiParameter(
+            "activo",
+            OpenApiTypes.BOOL,
+            OpenApiParameter.QUERY,
+            description="Por defecto devuelve solo activos.",
+        ),
     ],
 )
 class VatWebCentroViewSet(viewsets.ReadOnlyModelViewSet):
@@ -63,10 +88,30 @@ class VatWebCentroViewSet(viewsets.ReadOnlyModelViewSet):
     tags=["VAT Web - Títulos"],
     description="Títulos de referencia disponibles para navegación web.",
     parameters=[
-        OpenApiParameter("q", OpenApiTypes.STR, OpenApiParameter.QUERY, description="Busca por nombre o código de referencia."),
-        OpenApiParameter("sector_id", OpenApiTypes.INT, OpenApiParameter.QUERY, description="Filtra por sector."),
-        OpenApiParameter("subsector_id", OpenApiTypes.INT, OpenApiParameter.QUERY, description="Filtra por subsector."),
-        OpenApiParameter("activo", OpenApiTypes.BOOL, OpenApiParameter.QUERY, description="Por defecto devuelve solo activos."),
+        OpenApiParameter(
+            "q",
+            OpenApiTypes.STR,
+            OpenApiParameter.QUERY,
+            description="Busca por nombre o código de referencia.",
+        ),
+        OpenApiParameter(
+            "sector_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra por sector.",
+        ),
+        OpenApiParameter(
+            "subsector_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra por subsector.",
+        ),
+        OpenApiParameter(
+            "activo",
+            OpenApiTypes.BOOL,
+            OpenApiParameter.QUERY,
+            description="Por defecto devuelve solo activos.",
+        ),
     ],
 )
 class VatWebTituloViewSet(viewsets.ReadOnlyModelViewSet):
@@ -104,13 +149,48 @@ class VatWebTituloViewSet(viewsets.ReadOnlyModelViewSet):
     tags=["VAT Web - Cursos"],
     description="Cursos/comisiones disponibles para la web, con centro, título, programa, costo y cupos.",
     parameters=[
-        OpenApiParameter("q", OpenApiTypes.STR, OpenApiParameter.QUERY, description="Busca por comisión, título o centro."),
-        OpenApiParameter("centro_id", OpenApiTypes.INT, OpenApiParameter.QUERY, description="Filtra por centro."),
-        OpenApiParameter("titulo_id", OpenApiTypes.INT, OpenApiParameter.QUERY, description="Filtra por título de referencia."),
-        OpenApiParameter("programa_id", OpenApiTypes.INT, OpenApiParameter.QUERY, description="Filtra por programa."),
-        OpenApiParameter("ciclo_lectivo", OpenApiTypes.INT, OpenApiParameter.QUERY, description="Filtra por ciclo lectivo."),
-        OpenApiParameter("estado", OpenApiTypes.STR, OpenApiParameter.QUERY, description="Filtra por estado de comisión."),
-        OpenApiParameter("usa_voucher", OpenApiTypes.BOOL, OpenApiParameter.QUERY, description="Filtra por cursos que usan voucher."),
+        OpenApiParameter(
+            "q",
+            OpenApiTypes.STR,
+            OpenApiParameter.QUERY,
+            description="Busca por comisión, título o centro.",
+        ),
+        OpenApiParameter(
+            "centro_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra por centro.",
+        ),
+        OpenApiParameter(
+            "titulo_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra por título de referencia.",
+        ),
+        OpenApiParameter(
+            "programa_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra por programa.",
+        ),
+        OpenApiParameter(
+            "ciclo_lectivo",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra por ciclo lectivo.",
+        ),
+        OpenApiParameter(
+            "estado",
+            OpenApiTypes.STR,
+            OpenApiParameter.QUERY,
+            description="Filtra por estado de comisión.",
+        ),
+        OpenApiParameter(
+            "usa_voucher",
+            OpenApiTypes.BOOL,
+            OpenApiParameter.QUERY,
+            description="Filtra por cursos que usan voucher.",
+        ),
     ],
 )
 class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
@@ -160,7 +240,9 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
         if estado:
             queryset = queryset.filter(estado=estado)
         if usa_voucher is not None:
-            queryset = queryset.filter(oferta__usa_voucher=usa_voucher.lower() == "true")
+            queryset = queryset.filter(
+                oferta__usa_voucher=usa_voucher.lower() == "true"
+            )
 
         return queryset
 
@@ -208,9 +290,24 @@ class VatWebInscripcionViewSet(
     @extend_schema(
         summary="Listar inscripciones VAT",
         parameters=[
-            OpenApiParameter("ciudadano_id", OpenApiTypes.INT, OpenApiParameter.QUERY, description="Filtra por ciudadano."),
-            OpenApiParameter("documento", OpenApiTypes.STR, OpenApiParameter.QUERY, description="Filtra por documento del ciudadano."),
-            OpenApiParameter("estado", OpenApiTypes.STR, OpenApiParameter.QUERY, description="Filtra por estado de inscripción."),
+            OpenApiParameter(
+                "ciudadano_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra por ciudadano.",
+            ),
+            OpenApiParameter(
+                "documento",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filtra por documento del ciudadano.",
+            ),
+            OpenApiParameter(
+                "estado",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filtra por estado de inscripción.",
+            ),
         ],
         responses=VatWebInscripcionSerializer(many=True),
     )
@@ -249,7 +346,7 @@ class VatWebInscripcionViewSet(
         try:
             inscripcion = serializer.save()
         except ValueError as exc:
-            raise ValidationError({"error": str(exc)}) from exc
+            raise ValidationError({"error": [str(exc)]}) from exc
         response_serializer = VatWebInscripcionSerializer(
             inscripcion, context={"request": request}
         )

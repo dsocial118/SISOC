@@ -9,7 +9,13 @@ from django.views.generic import (
 from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 
-from VAT.models import Sector, Subsector, TituloReferencia, ModalidadCursada, PlanVersionCurricular
+from VAT.models import (
+    Sector,
+    Subsector,
+    TituloReferencia,
+    ModalidadCursada,
+    PlanVersionCurricular,
+)
 from VAT.forms import (
     SectorForm,
     SubsectorForm,
@@ -20,6 +26,7 @@ from VAT.forms import (
 
 
 # ============ MODALIDAD CURSADA ============
+
 
 class ModalidadCursadaListView(LoginRequiredMixin, ListView):
     model = ModalidadCursada
@@ -58,7 +65,9 @@ class ModalidadCursadaUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, "Modalidad de cursado actualizada correctamente.")
+        messages.success(
+            self.request, "Modalidad de cursado actualizada correctamente."
+        )
         return response
 
     def get_success_url(self):
@@ -77,6 +86,7 @@ class ModalidadCursadaDeleteView(LoginRequiredMixin, DeleteView):
 
 
 # ============ SECTOR ============
+
 
 class SectorListView(LoginRequiredMixin, ListView):
     model = Sector
@@ -140,6 +150,7 @@ class SectorDeleteView(LoginRequiredMixin, DeleteView):
 
 # ============ SUBSECTOR ============
 
+
 class SubsectorListView(LoginRequiredMixin, ListView):
     model = Subsector
     template_name = "vat/catalogo/subsector_list.html"
@@ -147,7 +158,12 @@ class SubsectorListView(LoginRequiredMixin, ListView):
     paginate_by = 50
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related("sector").order_by("sector__nombre", "nombre")
+        queryset = (
+            super()
+            .get_queryset()
+            .select_related("sector")
+            .order_by("sector__nombre", "nombre")
+        )
         sector_id = self.request.GET.get("sector")
         if sector_id:
             queryset = queryset.filter(sector_id=sector_id)
@@ -207,6 +223,7 @@ class SubsectorDeleteView(LoginRequiredMixin, DeleteView):
 
 # ============ MODALIDAD CURSADA ============
 
+
 class ModalidadCursadaListView(LoginRequiredMixin, ListView):
     model = ModalidadCursada
     template_name = "vat/catalogo/modalidadcursada_list.html"
@@ -244,7 +261,9 @@ class ModalidadCursadaUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, "Modalidad de cursado actualizada correctamente.")
+        messages.success(
+            self.request, "Modalidad de cursado actualizada correctamente."
+        )
         return response
 
     def get_success_url(self):
@@ -264,6 +283,7 @@ class ModalidadCursadaDeleteView(LoginRequiredMixin, DeleteView):
 
 # ============ TITULO REFERENCIA ============
 
+
 class TituloReferenciaListView(LoginRequiredMixin, ListView):
     model = TituloReferencia
     template_name = "vat/catalogo/titulorreferencia_list.html"
@@ -271,7 +291,12 @@ class TituloReferenciaListView(LoginRequiredMixin, ListView):
     paginate_by = 50
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related("sector", "subsector").order_by("nombre")
+        queryset = (
+            super()
+            .get_queryset()
+            .select_related("sector", "subsector")
+            .order_by("nombre")
+        )
         sector_id = self.request.GET.get("sector")
         activo = self.request.GET.get("activo")
         if sector_id:
@@ -311,7 +336,11 @@ class TituloReferenciaDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["planes"] = self.object.planes.all().select_related("modalidad_cursada").order_by("modalidad_cursada")
+        context["planes"] = (
+            self.object.planes.all()
+            .select_related("modalidad_cursada")
+            .order_by("modalidad_cursada")
+        )
         return context
 
 
@@ -322,7 +351,9 @@ class TituloReferenciaUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, "Título de referencia actualizado correctamente.")
+        messages.success(
+            self.request, "Título de referencia actualizado correctamente."
+        )
         return response
 
     def get_success_url(self):
@@ -342,6 +373,7 @@ class TituloReferenciaDeleteView(LoginRequiredMixin, DeleteView):
 
 # ============ PLAN VERSION CURRICULAR ============
 
+
 class PlanVersionCurricularListView(LoginRequiredMixin, ListView):
     model = PlanVersionCurricular
     template_name = "vat/catalogo/planversioncurricular_list.html"
@@ -349,9 +381,12 @@ class PlanVersionCurricularListView(LoginRequiredMixin, ListView):
     paginate_by = 50
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related(
-            "titulo_referencia", "modalidad_cursada"
-        ).order_by("titulo_referencia", "modalidad_cursada")
+        queryset = (
+            super()
+            .get_queryset()
+            .select_related("titulo_referencia", "modalidad_cursada")
+            .order_by("titulo_referencia", "modalidad_cursada")
+        )
         titulo_id = self.request.GET.get("titulo")
         activo = self.request.GET.get("activo")
         if titulo_id:
@@ -381,7 +416,9 @@ class PlanVersionCurricularCreateView(LoginRequiredMixin, CreateView):
         return response
 
     def get_success_url(self):
-        return reverse("vat_planversioncurricular_detail", kwargs={"pk": self.object.pk})
+        return reverse(
+            "vat_planversioncurricular_detail", kwargs={"pk": self.object.pk}
+        )
 
 
 class PlanVersionCurricularDetailView(LoginRequiredMixin, DetailView):
@@ -401,7 +438,9 @@ class PlanVersionCurricularUpdateView(LoginRequiredMixin, UpdateView):
         return response
 
     def get_success_url(self):
-        return reverse("vat_planversioncurricular_detail", kwargs={"pk": self.object.pk})
+        return reverse(
+            "vat_planversioncurricular_detail", kwargs={"pk": self.object.pk}
+        )
 
 
 class PlanVersionCurricularDeleteView(LoginRequiredMixin, DeleteView):

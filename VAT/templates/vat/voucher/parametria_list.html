@@ -4,87 +4,87 @@
 {% block title %}Parametrías de Voucher{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
 
-{% url 'vat_voucher_parametria_list' as reset_url %}
-{% include 'components/search_bar.html' with titulo="Buscar Parametría" placeholder="Buscar por nombre o programa" help_text="Buscar por nombre o programa" reset_url=reset_url add_url='vat_voucher_parametria_create' add_text='Agregar' query=request.GET.busqueda %}
+    {% url 'vat_voucher_parametria_list' as reset_url %}
+    {% include 'components/search_bar.html' with titulo="Buscar Parametría" placeholder="Buscar por nombre o programa" help_text="Buscar por nombre o programa" reset_url=reset_url add_url='vat_voucher_parametria_create' add_text='Agregar' query=request.GET.busqueda %}
 
-<div class="row mt-5 max-width-100">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive-lg">
-                    <table class="table table-bordered table-striped projects">
-                        <thead>
-                            <tr>
-                                <th class="sortable" data-column="nombre">
-                                    Nombre
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th>Programa</th>
-                                <th>Créditos</th>
-                                <th>Vencimiento</th>
-                                <th>Estado</th>
-                                <th>Vouchers</th>
-                                <th class="notexport">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for p in parametrias %}
-                            <tr>
-                                <td data-nombre="{{ p.nombre }}">
-                                    <a href="{% url 'vat_voucher_parametria_detail' p.pk %}"
-                                       class="link-handler"
-                                       title="Ver detalles">{{ p.nombre }}</a>
-                                </td>
-                                <td>{{ p.programa }}</td>
-                                <td>{{ p.cantidad_inicial }}</td>
-                                <td>{{ p.fecha_vencimiento|date:"d/m/Y" }}</td>
-                                <td>
-                                    {% if p.activa %}
-                                        <span class="badge-validacion validado">
-                                            <i class="fas fa-check-circle"></i> Activa
-                                        </span>
-                                    {% else %}
-                                        <span class="badge-validacion no-validado">
-                                            <i class="fas fa-times-circle"></i> Inactiva
-                                        </span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ p.vouchers.count }}</td>
-                                <td>
-                                    <div class="action-buttons" role="group">
-                                        <a href="{% url 'vat_voucher_parametria_detail' p.pk %}"
-                                           class="btn btn-primary link-handler"
-                                           title="Ver detalle">
-                                            <i class="fas fa-eye"></i>
-                                            Ver
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="7">
-                                    <div class="no-comedores-message">
-                                        <h3>No se encontraron parametrías</h3>
-                                        <p>No hay parametrías registradas.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+    <div class="row mt-5 max-width-100">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive-lg">
+                        <table class="table table-bordered table-striped projects">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-column="nombre">
+                                        Nombre
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th>Programa</th>
+                                    <th>Créditos</th>
+                                    <th>Vencimiento</th>
+                                    <th>Estado</th>
+                                    <th>Vouchers</th>
+                                    <th class="notexport">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in parametrias %}
+                                    <tr>
+                                        <td data-nombre="{{ p.nombre }}">
+                                            <a href="{% url 'vat_voucher_parametria_detail' p.pk %}"
+                                               class="link-handler"
+                                               title="Ver detalles">{{ p.nombre }}</a>
+                                        </td>
+                                        <td>{{ p.programa }}</td>
+                                        <td>{{ p.cantidad_inicial }}</td>
+                                        <td>{{ p.fecha_vencimiento|date:"d/m/Y" }}</td>
+                                        <td>
+                                            {% if p.activa %}
+                                                <span class="badge-validacion validado">
+                                                    <i class="fas fa-check-circle"></i> Activa
+                                                </span>
+                                            {% else %}
+                                                <span class="badge-validacion no-validado">
+                                                    <i class="fas fa-times-circle"></i> Inactiva
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ p.vouchers.count }}</td>
+                                        <td>
+                                            <div class="action-buttons" role="group">
+                                                <a href="{% url 'vat_voucher_parametria_detail' p.pk %}"
+                                                   class="btn btn-primary link-handler"
+                                                   title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                    Ver
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="7">
+                                            <div class="no-comedores-message">
+                                                <h3>No se encontraron parametrías</h3>
+                                                <p>No hay parametrías registradas.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-{% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
 
 {% endblock %}
 
 {% block customJS %}
-<script src="{% static 'custom/js/listSort.js' %}"></script>
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
 {% endblock %}

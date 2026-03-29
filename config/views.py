@@ -20,6 +20,8 @@ class VatSpectacularAPIView(SpectacularAPIView):
         if not isinstance(schema, dict):
             return response
 
+        schema = dict(schema)
+
         paths = schema.get("paths") or {}
         schema["paths"] = {
             path: value
@@ -29,8 +31,10 @@ class VatSpectacularAPIView(SpectacularAPIView):
 
         info = schema.get("info")
         if isinstance(info, dict):
+            info = dict(info)
             title = info.get("title") or "API"
             info["title"] = f"{title} - VAT"
+            schema["info"] = info
 
         response.data = schema
         return response

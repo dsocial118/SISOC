@@ -43,8 +43,14 @@ router.register(
 )
 router.register(r"sectores", SectorViewSet, basename="vat-api-sector")
 router.register(r"subsectores", SubsectorViewSet, basename="vat-api-subsector")
-router.register(r"titulos-referencia", TituloReferenciaViewSet, basename="vat-api-titulo-referencia")
-router.register(r"modalidades-cursadas", ModalidadCursadaViewSet, basename="vat-api-modalidad-cursada")
+router.register(
+    r"titulos-referencia", TituloReferenciaViewSet, basename="vat-api-titulo-referencia"
+)
+router.register(
+    r"modalidades-cursadas",
+    ModalidadCursadaViewSet,
+    basename="vat-api-modalidad-cursada",
+)
 router.register(
     r"planes-curriculares",
     PlanVersionCurricularViewSet,

@@ -234,7 +234,7 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
             contexto["nomina_actual"] = nomina_actual
         return contexto
 
-    def get_vat_context(self, ciudadano):
+    def get_vat_context(self, ciudadano):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         try:
             from VAT.models import (
                 AsistenciaSesion,
@@ -279,9 +279,7 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
                 .order_by("-fecha_registro")
             )
         except Exception:
-            logger.exception(
-                "Error cargando datos VAT para ciudadano %s", ciudadano.pk
-            )
+            logger.exception("Error cargando datos VAT para ciudadano %s", ciudadano.pk)
             return {
                 "vat_inscripciones": [],
                 "vat_vouchers": [],
@@ -290,7 +288,9 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
             }
 
         creditos_totales = sum(v.cantidad_inicial for v in vouchers)
-        creditos_disponibles = sum(v.cantidad_disponible for v in vouchers if v.estado == "activo")
+        creditos_disponibles = sum(
+            v.cantidad_disponible for v in vouchers if v.estado == "activo"
+        )
         voucher_activo = next((v for v in vouchers if v.estado == "activo"), None)
         asistencias_por_inscripcion = defaultdict(
             lambda: {"presentes": 0, "registradas": 0}
@@ -310,9 +310,7 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
             inscripcion.asistencias_presentes = resumen["presentes"]
             inscripcion.asistencias_registradas = registradas
             inscripcion.asistencia_porcentaje = (
-                round((resumen["presentes"] / registradas) * 100)
-                if registradas
-                else 0
+                round((resumen["presentes"] / registradas) * 100) if registradas else 0
             )
 
         programas = {}
@@ -357,10 +355,14 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
             programa_ctx["inscripciones"].append(inscripcion)
             programa_ctx["cursos_asignados"] += 1
             programa_ctx["asistencias_presentes"] += inscripcion.asistencias_presentes
-            programa_ctx["asistencias_registradas"] += inscripcion.asistencias_registradas
+            programa_ctx[
+                "asistencias_registradas"
+            ] += inscripcion.asistencias_registradas
 
         for inscripcion_oferta in inscripciones_oferta:
-            programa = getattr(getattr(inscripcion_oferta.oferta, "oferta", None), "programa", None)
+            programa = getattr(
+                getattr(inscripcion_oferta.oferta, "oferta", None), "programa", None
+            )
             programa_ctx = ensure_programa(programa)
             if not programa_ctx:
                 continue

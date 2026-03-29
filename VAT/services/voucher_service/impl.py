@@ -1,5 +1,6 @@
 import logging
 from datetime import date, timedelta
+from contextlib import nullcontext
 
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -17,6 +18,12 @@ logger = logging.getLogger("django")
 
 class VoucherService:
     """Service layer for Voucher business logic."""
+
+    @staticmethod
+    def _atomic_if_persistent(*instances):
+        if any(hasattr(instance, "_meta") for instance in instances if instance is not None):
+            return transaction.atomic()
+        return nullcontext()
 
     @staticmethod
     def debitar_voucher(
@@ -43,7 +50,7 @@ class VoucherService:
                 f"Créditos insuficientes. Disponible: {voucher.cantidad_disponible}",
             )
 
-        with transaction.atomic():
+        with VoucherService._atomic_if_persistent(voucher):
             voucher.cantidad_usada += cantidad
             voucher.cantidad_disponible -= cantidad
 
@@ -243,9 +250,7 @@ class VoucherService:
                                 cantidad_afectada=0,
                                 usuario=admin_user,
                                 detalles={
-                                    "fecha_vencimiento": str(
-                                        locked.fecha_vencimiento
-                                    )
+                                    "fecha_vencimiento": str(locked.fecha_vencimiento)
                                 },
                             )
                     except Exception as e:
@@ -285,9 +290,9 @@ class VoucherService:
     @staticmethod
     def buscar_vouchers(ciudadano_id: int = None, estado: str = None):
         """Search vouchers by criteria."""
-        queryset = Voucher.objects.select_related(
-            "ciudadano", "programa"
-        ).order_by("-fecha_asignacion")
+        queryset = Voucher.objects.select_related("ciudadano", "programa").order_by(
+            "-fecha_asignacion"
+        )
 
         if ciudadano_id:
             queryset = queryset.filter(ciudadano_id=ciudadano_id)

@@ -95,7 +95,7 @@ def _is_provincial(user) -> bool:
         return False
     try:
         return bool(user.profile.es_usuario_provincial and user.profile.provincia_id)
-    except ObjectDoesNotExist:
+    except (AttributeError, ObjectDoesNotExist):
         return False
 
 
@@ -161,7 +161,7 @@ def _validar_datos_registro_erroneo(payload, provincia_id, fila_excel=0):
 def _user_provincia(user):
     try:
         return user.profile.provincia
-    except ObjectDoesNotExist:
+    except (AttributeError, ObjectDoesNotExist):
         return None
 
 
@@ -1434,8 +1434,6 @@ class ActualizarRegistroErroneoView(View):
             datos_normalizados = _consolidar_datos_registro_erroneo(
                 registro.datos_raw, datos_nuevos
             )
-            datos_limpios = _limpiar_datos_registro_erroneo(datos_normalizados)
-            registro.datos_raw = datos_limpios
 
             provincia_id = _resolver_provincia_id_registro_erroneo(user, expediente)
             if not provincia_id:
@@ -1451,6 +1449,8 @@ class ActualizarRegistroErroneoView(View):
                 provincia_id=provincia_id,
                 fila_excel=registro.fila_excel,
             )
+            datos_limpios = _limpiar_datos_registro_erroneo(datos_normalizados)
+            registro.datos_raw = datos_limpios
             registro.save(update_fields=["datos_raw"])
 
             return JsonResponse(
@@ -1458,7 +1458,7 @@ class ActualizarRegistroErroneoView(View):
             )
         except ValidationError as exc:
             registro.mensaje_error = str(exc)
-            registro.save(update_fields=["datos_raw", "mensaje_error"])
+            registro.save(update_fields=["mensaje_error"])
             return JsonResponse(
                 {
                     "success": False,

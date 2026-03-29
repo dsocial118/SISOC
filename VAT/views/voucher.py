@@ -22,7 +22,9 @@ class VoucherListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        qs = Voucher.objects.select_related("ciudadano", "programa").order_by("-fecha_asignacion")
+        qs = Voucher.objects.select_related("ciudadano", "programa").order_by(
+            "-fecha_asignacion"
+        )
         estado = self.request.GET.get("estado")
         programa = self.request.GET.get("programa")
         buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
@@ -40,6 +42,7 @@ class VoucherListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         from core.models import Programa
+
         ctx = super().get_context_data(**kwargs)
         ctx["estado_choices"] = Voucher.ESTADO_CHOICES
         ctx["programas"] = Programa.objects.only("id", "nombre")
@@ -58,8 +61,12 @@ class VoucherDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         voucher = self.object
         ctx["estado_info"] = VoucherService.obtener_estado_actual(voucher)
-        ctx["recargas"] = voucher.recargas.select_related("autorizado_por").order_by("-fecha_recarga")
-        ctx["usos"] = voucher.usos.select_related("inscripcion_oferta__oferta").order_by("-fecha_uso")
+        ctx["recargas"] = voucher.recargas.select_related("autorizado_por").order_by(
+            "-fecha_recarga"
+        )
+        ctx["usos"] = voucher.usos.select_related(
+            "inscripcion_oferta__oferta"
+        ).order_by("-fecha_uso")
         ctx["logs"] = voucher.logs.order_by("-fecha_evento")
         ctx["recarga_form"] = VoucherRecargaForm()
         return ctx
@@ -87,7 +94,9 @@ class VoucherCreateView(LoginRequiredMixin, CreateView):
                 fecha_vencimiento=data["fecha_vencimiento"],
                 usuario=self.request.user,
             )
-            messages.success(self.request, f"Voucher asignado exitosamente a {data['ciudadano']}.")
+            messages.success(
+                self.request, f"Voucher asignado exitosamente a {data['ciudadano']}."
+            )
             return redirect(reverse("vat_voucher_detail", kwargs={"pk": voucher.pk}))
         except Exception as e:
             logger.exception("Error creando voucher")
@@ -156,8 +165,7 @@ class VoucherAsignacionMasivaView(LoginRequiredMixin, View):
 
         # Batch: una query para todos los ciudadanos y otra para los que ya tienen voucher activo
         ciudadanos_map = {
-            c.documento: c
-            for c in Ciudadano.objects.filter(documento__in=dnis)
+            c.documento: c for c in Ciudadano.objects.filter(documento__in=dnis)
         }
         con_voucher_activo = set(
             Voucher.objects.filter(
@@ -188,16 +196,25 @@ class VoucherAsignacionMasivaView(LoginRequiredMixin, View):
                 logger.exception(f"Error creando voucher masivo para DNI {dni}: {e}")
                 errores.append(dni)
 
-        return self._render(request, form, resultado={
-            "creados": creados,
-            "no_encontrados": no_encontrados,
-            "ya_tenia": ya_tenia,
-            "errores": errores,
-        })
+        return self._render(
+            request,
+            form,
+            resultado={
+                "creados": creados,
+                "no_encontrados": no_encontrados,
+                "ya_tenia": ya_tenia,
+                "errores": errores,
+            },
+        )
 
     def _render(self, request, form, resultado=None):
         from django.shortcuts import render
-        return render(request, self.template_name, {
-            "form": form,
-            "resultado": resultado,
-        })
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "resultado": resultado,
+            },
+        )
