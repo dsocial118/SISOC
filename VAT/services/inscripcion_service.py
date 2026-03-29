@@ -20,9 +20,10 @@ class InscripcionService:
     def _resolver_usuario_auditoria(usuario):
         if getattr(usuario, "is_authenticated", False):
             return usuario
-        return User.objects.filter(is_staff=True).first() or User.objects.filter(
-            is_superuser=True
-        ).first()
+        return (
+            User.objects.filter(is_staff=True).first()
+            or User.objects.filter(is_superuser=True).first()
+        )
 
     @staticmethod
     def validar_inscripcion_unica(ciudadano, programa) -> tuple[bool, str]:

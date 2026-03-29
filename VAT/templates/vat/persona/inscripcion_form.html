@@ -1,110 +1,146 @@
 {% extends "includes/main.html" %}
 {% load static %}
 
-{% block title %}{% if form.instance.id %}Editar{% else %}Nueva{% endif %} Inscripción{% endblock %}
+{% block title %}
+    {% if form.instance.id %}
+        Editar
+    {% else %}
+        Nueva
+    {% endif %}
+    Inscripción
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex align-items-center gap-2 mb-4">
-                <a href="{% url 'vat_inscripcion_list' %}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
-                <div>
-                    <h1 class="h2 mb-0" style="color: #1f3a93;">
-                        {% if form.instance.id %}<i class="bi bi-pencil-square me-2"></i>Editar Inscripción
-                        {% else %}<i class="bi bi-plus-circle me-2"></i>Nueva Inscripción{% endif %}
-                    </h1>
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <a href="{% url 'vat_inscripcion_list' %}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+                    <div>
+                        <h1 class="h2 mb-0" style="color: #1f3a93;">
+                            {% if form.instance.id %}
+                                <i class="bi bi-pencil-square me-2"></i>Editar Inscripción
+                            {% else %}
+                                <i class="bi bi-plus-circle me-2"></i>Nueva Inscripción
+                            {% endif %}
+                        </h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light border-bottom">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información General
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.ciudadano.id_for_label }}" class="form-label fw-600">
+                                        {{ form.ciudadano.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-person" style="color: #1f3a93;"></i></span>
+                                        {{ form.ciudadano }}
+                                    </div>
+                                    {% if form.ciudadano.errors %}<div class="text-danger small mt-1">{{ form.ciudadano.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.comision.id_for_label }}" class="form-label fw-600">
+                                        {{ form.comision.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-people" style="color: #1f3a93;"></i></span>
+                                        {{ form.comision }}
+                                    </div>
+                                    {% if form.comision.errors %}<div class="text-danger small mt-1">{{ form.comision.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.programa.id_for_label }}" class="form-label fw-600">
+                                        {{ form.programa.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-folder" style="color: #1f3a93;"></i></span>
+                                        {{ form.programa }}
+                                    </div>
+                                    {% if form.programa.errors %}<div class="text-danger small mt-1">{{ form.programa.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.estado.id_for_label }}" class="form-label fw-600">
+                                        {{ form.estado.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-flag" style="color: #1f3a93;"></i></span>
+                                        {{ form.estado }}
+                                    </div>
+                                    {% if form.estado.errors %}<div class="text-danger small mt-1">{{ form.estado.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.origen_canal.id_for_label }}" class="form-label fw-600">
+                                        {{ form.origen_canal.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-signpost-split" style="color: #1f3a93;"></i></span>
+                                        {{ form.origen_canal }}
+                                    </div>
+                                    {% if form.origen_canal.errors %}<div class="text-danger small mt-1">{{ form.origen_canal.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <label for="{{ form.observaciones.id_for_label }}" class="form-label fw-600">{{ form.observaciones.label }}</label>
+                                    {{ form.observaciones }}
+                                    {% if form.observaciones.errors %}
+                                        <div class="text-danger small mt-1">{{ form.observaciones.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <hr class="my-4" />
+                            <div class="d-flex gap-2 justify-content-end">
+                                <a href="{% url 'vat_inscripcion_list' %}"
+                                   class="btn btn-outline-secondary"><i class="bi bi-x-lg me-2"></i>Cancelar</a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>
+                                    {% if form.instance.id %}
+                                        Actualizar
+                                    {% else %}
+                                        Crear
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title fw-600" style="color: #1f3a93;">
+                            <i class="bi bi-info-circle me-2"></i>Información
+                        </h6>
+                        <div class="small text-muted">
+                            <p>Vincula una persona con una comisión y programa.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-light border-bottom">
-                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información General</h5>
-                </div>
-                <div class="card-body p-4">
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="{{ form.ciudadano.id_for_label }}" class="form-label fw-600">{{ form.ciudadano.label }} <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-person" style="color: #1f3a93;"></i></span>
-                                    {{ form.ciudadano }}
-                                </div>
-                                {% if form.ciudadano.errors %}<div class="text-danger small mt-1">{{ form.ciudadano.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.comision.id_for_label }}" class="form-label fw-600">{{ form.comision.label }} <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-people" style="color: #1f3a93;"></i></span>
-                                    {{ form.comision }}
-                                </div>
-                                {% if form.comision.errors %}<div class="text-danger small mt-1">{{ form.comision.errors.0 }}</div>{% endif %}
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="{{ form.programa.id_for_label }}" class="form-label fw-600">{{ form.programa.label }} <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-folder" style="color: #1f3a93;"></i></span>
-                                    {{ form.programa }}
-                                </div>
-                                {% if form.programa.errors %}<div class="text-danger small mt-1">{{ form.programa.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.estado.id_for_label }}" class="form-label fw-600">{{ form.estado.label }} <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-flag" style="color: #1f3a93;"></i></span>
-                                    {{ form.estado }}
-                                </div>
-                                {% if form.estado.errors %}<div class="text-danger small mt-1">{{ form.estado.errors.0 }}</div>{% endif %}
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="{{ form.origen_canal.id_for_label }}" class="form-label fw-600">{{ form.origen_canal.label }} <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-signpost-split" style="color: #1f3a93;"></i></span>
-                                    {{ form.origen_canal }}
-                                </div>
-                                {% if form.origen_canal.errors %}<div class="text-danger small mt-1">{{ form.origen_canal.errors.0 }}</div>{% endif %}
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-md-12">
-                                <label for="{{ form.observaciones.id_for_label }}" class="form-label fw-600">{{ form.observaciones.label }}</label>
-                                {{ form.observaciones }}
-                                {% if form.observaciones.errors %}<div class="text-danger small mt-1">{{ form.observaciones.errors.0 }}</div>{% endif %}
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-                        <div class="d-flex gap-2 justify-content-end">
-                            <a href="{% url 'vat_inscripcion_list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-2"></i>Cancelar</a>
-                            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>{% if form.instance.id %}Actualizar{% else %}Crear{% endif %}</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm bg-light">
-                <div class="card-body">
-                    <h6 class="card-title fw-600" style="color: #1f3a93;"><i class="bi bi-info-circle me-2"></i>Información</h6>
-                    <div class="small text-muted"><p>Vincula una persona con una comisión y programa.</p></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<style>
+    <style>
     .form-control, .form-select { border: 1px solid #e0e0e0; border-radius: 0.5rem; padding: 0.75rem 1rem; }
     .form-control:focus, .form-select:focus { border-color: #1f3a93; box-shadow: 0 0 0 0.2rem rgba(31, 58, 147, 0.15); }
     .input-group-text { border: 1px solid #e0e0e0 !important; }
     .fw-600 { font-weight: 600 !important; }
-</style>
+    </style>
 {% endblock %}

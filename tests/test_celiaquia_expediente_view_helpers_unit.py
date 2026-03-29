@@ -62,7 +62,9 @@ def test_provincial_helpers_and_parse_limit():
 
 
 def test_resolver_provincia_registro_erroneo_fallback_a_usuario_expediente():
-    expediente_user = SimpleNamespace(profile=SimpleNamespace(provincia=SimpleNamespace(id=33)))
+    expediente_user = SimpleNamespace(
+        profile=SimpleNamespace(provincia=SimpleNamespace(id=33))
+    )
     expediente = SimpleNamespace(provincia=None, usuario_provincia=expediente_user)
     user = SimpleNamespace(is_authenticated=True)
 

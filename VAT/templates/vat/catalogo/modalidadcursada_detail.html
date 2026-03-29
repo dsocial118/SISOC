@@ -1,32 +1,48 @@
 {% extends "includes/main.html" %}
 {% block title %}Detalle Modalidad de Cursado{% endblock %}
 {% block breadcrumb %}
-<ol class="breadcrumb float-sm-right">
-    <li class="breadcrumb-item"><a href="{% url 'vat_centro_list' %}">VAT</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'vat_modalidadcursada_list' %}">Modalidades de Cursado</a></li>
-    <li class="breadcrumb-item active">{{ modalidad.nombre }}</li>
-</ol>
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_centro_list' %}">VAT</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_modalidadcursada_list' %}">Modalidades de Cursado</a>
+        </li>
+        <li class="breadcrumb-item active">{{ modalidad.nombre }}</li>
+    </ol>
 {% endblock %}
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h3 class="card-title">{{ modalidad.nombre }}</h3>
-                <div class="card-tools">
-                    <a href="{% url 'vat_modalidadcursada_update' modalidad.id %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                    <a href="{% url 'vat_modalidadcursada_delete' modalidad.id %}" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></a>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title">{{ modalidad.nombre }}</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'vat_modalidadcursada_update' modalidad.id %}"
+                           class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                        <a href="{% url 'vat_modalidadcursada_delete' modalidad.id %}"
+                           class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></a>
+                    </div>
                 </div>
-            </div>
-            <div class="card-body">
-                <p><strong>Descripción:</strong></p>
-                <p>{{ modalidad.descripcion|default:"Sin descripción" }}</p>
-                <p><strong>Activo:</strong> {% if modalidad.activo %}Sí{% else %}No{% endif %}</p>
-            </div>
-            <div class="card-footer">
-                <a href="{% url 'vat_modalidadcursada_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+                <div class="card-body">
+                    <p>
+                        <strong>Descripción:</strong>
+                    </p>
+                    <p>{{ modalidad.descripcion|default:"Sin descripción" }}</p>
+                    <p>
+                        <strong>Activo:</strong>
+                        {% if modalidad.activo %}
+                            Sí
+                        {% else %}
+                            No
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'vat_modalidadcursada_list' %}"
+                       class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+                </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

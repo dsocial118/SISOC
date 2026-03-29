@@ -42,6 +42,7 @@ class CentroSerializer(serializers.ModelSerializer):
     modalidad_institucional_nombre = serializers.CharField(
         source="modalidad_institucional.nombre", read_only=True
     )
+
     class Meta:
         model = Centro
         fields = [
@@ -100,7 +101,14 @@ class LocalidadSerializer(serializers.ModelSerializer):
 class ModalidadInstitucionalSerializer(serializers.ModelSerializer):
     class Meta:
         model = ModalidadInstitucional
-        fields = ["id", "nombre", "descripcion", "activo", "fecha_creacion", "fecha_modificacion"]
+        fields = [
+            "id",
+            "nombre",
+            "descripcion",
+            "activo",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
         read_only_fields = ["fecha_creacion", "fecha_modificacion"]
 
 
@@ -173,9 +181,7 @@ class InscripcionOfertaSerializer(serializers.ModelSerializer):
     ciudadano_nombre = serializers.CharField(
         source="ciudadano.nombre_completo", read_only=True
     )
-    oferta_nombre = serializers.CharField(
-        source="oferta.nombre", read_only=True
-    )
+    oferta_nombre = serializers.CharField(source="oferta.nombre", read_only=True)
 
     class Meta:
         model = InscripcionOferta
@@ -233,15 +239,14 @@ class VoucherSerializer(serializers.ModelSerializer):
     ciudadano_nombre = serializers.CharField(
         source="ciudadano.nombre_completo", read_only=True
     )
-    programa_nombre = serializers.CharField(
-        source="programa.nombre", read_only=True
-    )
+    programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
     recargas = VoucherRecargaSerializer(many=True, read_only=True)
     usos = VoucherUsoSerializer(many=True, read_only=True)
     dias_para_vencimiento = serializers.SerializerMethodField()
 
     def get_dias_para_vencimiento(self, obj):
         from datetime import date
+
         delta = obj.fecha_vencimiento - date.today()
         return delta.days
 
@@ -333,9 +338,7 @@ class InstitucionIdentificadorHistSerializer(serializers.ModelSerializer):
 
 
 class InstitucionUbicacionSerializer(serializers.ModelSerializer):
-    localidad_nombre = serializers.CharField(
-        source="localidad.nombre", read_only=True
-    )
+    localidad_nombre = serializers.CharField(source="localidad.nombre", read_only=True)
 
     class Meta:
         model = InstitucionUbicacion
@@ -413,9 +416,7 @@ class OfertaInstitucionalSerializer(serializers.ModelSerializer):
     plan_nombre = serializers.CharField(
         source="plan_curricular.titulo_referencia.nombre", read_only=True
     )
-    programa_nombre = serializers.CharField(
-        source="programa.nombre", read_only=True
-    )
+    programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
     comisiones = ComisionSerializer(many=True, read_only=True)
 
     class Meta:
@@ -454,9 +455,7 @@ class InscripcionSerializer(serializers.ModelSerializer):
     comision_codigo = serializers.CharField(
         source="comision.codigo_comision", read_only=True
     )
-    programa_nombre = serializers.CharField(
-        source="programa.nombre", read_only=True
-    )
+    programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
 
     class Meta:
         model = Inscripcion
@@ -587,7 +586,14 @@ class VatWebCursoHorarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ComisionHorario
-        fields = ["id", "dia_semana", "dia_nombre", "hora_desde", "hora_hasta", "aula_espacio"]
+        fields = [
+            "id",
+            "dia_semana",
+            "dia_nombre",
+            "hora_desde",
+            "hora_hasta",
+            "aula_espacio",
+        ]
 
 
 class VatWebCursoSerializer(serializers.ModelSerializer):
@@ -599,13 +605,19 @@ class VatWebCursoSerializer(serializers.ModelSerializer):
     titulo_nombre = serializers.CharField(
         source="oferta.plan_curricular.titulo_referencia.nombre", read_only=True
     )
-    plan_curricular_id = serializers.IntegerField(source="oferta.plan_curricular_id", read_only=True)
+    plan_curricular_id = serializers.IntegerField(
+        source="oferta.plan_curricular_id", read_only=True
+    )
     plan_curricular_nombre = serializers.CharField(
         source="oferta.plan_curricular", read_only=True
     )
     programa_id = serializers.IntegerField(source="oferta.programa_id", read_only=True)
-    programa_nombre = serializers.CharField(source="oferta.programa.nombre", read_only=True)
-    ciclo_lectivo = serializers.IntegerField(source="oferta.ciclo_lectivo", read_only=True)
+    programa_nombre = serializers.CharField(
+        source="oferta.programa.nombre", read_only=True
+    )
+    ciclo_lectivo = serializers.IntegerField(
+        source="oferta.ciclo_lectivo", read_only=True
+    )
     costo = serializers.DecimalField(
         source="oferta.costo", max_digits=10, decimal_places=2, read_only=True
     )
@@ -649,8 +661,12 @@ class VatWebCursoSerializer(serializers.ModelSerializer):
 
 
 class VatWebInscripcionSerializer(serializers.ModelSerializer):
-    ciudadano_nombre = serializers.CharField(source="ciudadano.nombre_completo", read_only=True)
-    ciudadano_documento = serializers.IntegerField(source="ciudadano.documento", read_only=True)
+    ciudadano_nombre = serializers.CharField(
+        source="ciudadano.nombre_completo", read_only=True
+    )
+    ciudadano_documento = serializers.IntegerField(
+        source="ciudadano.documento", read_only=True
+    )
     curso = VatWebCursoSerializer(source="comision", read_only=True)
     programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
 
@@ -689,9 +705,7 @@ class VatWebInscripcionCreateSerializer(serializers.Serializer):
         documento = (attrs.get("documento") or "").strip()
 
         if not ciudadano_id and not documento:
-            raise serializers.ValidationError(
-                "Debe enviar ciudadano_id o documento."
-            )
+            raise serializers.ValidationError("Debe enviar ciudadano_id o documento.")
 
         if ciudadano_id and documento:
             raise serializers.ValidationError(

@@ -116,9 +116,7 @@ class SectorForm(forms.ModelForm):
     descripcion = forms.CharField(
         label="Descripción",
         required=False,
-        widget=forms.Textarea(
-            attrs={"class": "form-control", "rows": 4}
-        ),
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 4}),
     )
 
     class Meta:
@@ -139,9 +137,7 @@ class SubsectorForm(forms.ModelForm):
     descripcion = forms.CharField(
         label="Descripción",
         required=False,
-        widget=forms.Textarea(
-            attrs={"class": "form-control", "rows": 4}
-        ),
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 4}),
     )
 
     class Meta:
@@ -173,9 +169,7 @@ class TituloReferenciaForm(forms.ModelForm):
     descripcion = forms.CharField(
         label="Descripción",
         required=False,
-        widget=forms.Textarea(
-            attrs={"class": "form-control", "rows": 4}
-        ),
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 4}),
     )
     activo = forms.BooleanField(
         label="Activo",
@@ -186,7 +180,14 @@ class TituloReferenciaForm(forms.ModelForm):
 
     class Meta:
         model = TituloReferencia
-        fields = ["sector", "subsector", "nombre", "codigo_referencia", "descripcion", "activo"]
+        fields = [
+            "sector",
+            "subsector",
+            "nombre",
+            "codigo_referencia",
+            "descripcion",
+            "activo",
+        ]
 
 
 class ModalidadCursadaForm(forms.ModelForm):
@@ -197,9 +198,7 @@ class ModalidadCursadaForm(forms.ModelForm):
     descripcion = forms.CharField(
         label="Descripción",
         required=False,
-        widget=forms.Textarea(
-            attrs={"class": "form-control", "rows": 4}
-        ),
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 4}),
     )
     activo = forms.BooleanField(
         label="Activo",
@@ -326,6 +325,7 @@ class InscripcionOfertaForm(forms.ModelForm):
 # PHASE 2 - INSTITUCIÓN FORMS
 # ============================================================================
 
+
 class InstitucionContactoForm(forms.ModelForm):
     centro = forms.ModelChoiceField(
         queryset=Centro.objects.all(),
@@ -359,7 +359,14 @@ class InstitucionContactoForm(forms.ModelForm):
 
     class Meta:
         model = InstitucionContacto
-        fields = ["centro", "tipo", "valor", "es_principal", "observaciones", "vigencia_hasta"]
+        fields = [
+            "centro",
+            "tipo",
+            "valor",
+            "es_principal",
+            "observaciones",
+            "vigencia_hasta",
+        ]
 
 
 class AutoridadInstitucionalForm(forms.ModelForm):
@@ -396,7 +403,9 @@ class AutoridadInstitucionalForm(forms.ModelForm):
     cargo_otro = forms.CharField(
         label="Especificar cargo",
         required=False,
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Descripción del cargo"}),
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Descripción del cargo"}
+        ),
     )
     email = forms.EmailField(
         label="Email",
@@ -442,7 +451,16 @@ class AutoridadInstitucionalForm(forms.ModelForm):
 
     class Meta:
         model = AutoridadInstitucional
-        fields = ["centro", "nombre_completo", "dni", "cargo", "email", "telefono", "es_actual", "vigencia_hasta"]
+        fields = [
+            "centro",
+            "nombre_completo",
+            "dni",
+            "cargo",
+            "email",
+            "telefono",
+            "es_actual",
+            "vigencia_hasta",
+        ]
 
 
 class InstitucionIdentificadorHistForm(forms.ModelForm):
@@ -462,7 +480,8 @@ class InstitucionIdentificadorHistForm(forms.ModelForm):
     )
     rol_institucional = forms.ChoiceField(
         label="Rol Institucional",
-        choices=[("", "---")] + list(InstitucionIdentificadorHist.ROL_INSTITUCIONAL_CHOICES),
+        choices=[("", "---")]
+        + list(InstitucionIdentificadorHist.ROL_INSTITUCIONAL_CHOICES),
         required=False,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
@@ -484,19 +503,31 @@ class InstitucionIdentificadorHistForm(forms.ModelForm):
 
     class Meta:
         model = InstitucionIdentificadorHist
-        fields = ["centro", "tipo_identificador", "valor_identificador", "rol_institucional", "es_actual", "vigencia_hasta", "motivo"]
+        fields = [
+            "centro",
+            "tipo_identificador",
+            "valor_identificador",
+            "rol_institucional",
+            "es_actual",
+            "vigencia_hasta",
+            "motivo",
+        ]
 
 
 class InstitucionUbicacionForm(forms.ModelForm):
     centro = forms.ModelChoiceField(
         queryset=Centro.objects.all(),
         label="Centro",
-        widget=forms.Select(attrs={"class": "form-control", "id": "id_centro_ubicacion"}),
+        widget=forms.Select(
+            attrs={"class": "form-control", "id": "id_centro_ubicacion"}
+        ),
     )
     localidad = forms.ModelChoiceField(
         queryset=Localidad.objects.none(),
         label="Localidad",
-        widget=forms.Select(attrs={"class": "form-control", "id": "id_localidad_ubicacion"}),
+        widget=forms.Select(
+            attrs={"class": "form-control", "id": "id_localidad_ubicacion"}
+        ),
     )
 
     def __init__(self, *args, **kwargs):
@@ -508,7 +539,10 @@ class InstitucionUbicacionForm(forms.ModelForm):
         elif "centro" in self.data:
             try:
                 from VAT.models import Centro as CentroModel
-                centro = CentroModel.objects.select_related("municipio", "provincia").get(pk=self.data["centro"])
+
+                centro = CentroModel.objects.select_related(
+                    "municipio", "provincia"
+                ).get(pk=self.data["centro"])
             except (CentroModel.DoesNotExist, ValueError):
                 pass
         if centro:
@@ -518,6 +552,7 @@ class InstitucionUbicacionForm(forms.ModelForm):
             elif centro.provincia_id:
                 qs = qs.filter(municipio__provincia_id=centro.provincia_id)
             self.fields["localidad"].queryset = qs
+
     rol_ubicacion = forms.ChoiceField(
         label="Rol de Ubicación",
         choices=InstitucionUbicacion.ROL_UBICACION_CHOICES,
@@ -541,12 +576,20 @@ class InstitucionUbicacionForm(forms.ModelForm):
 
     class Meta:
         model = InstitucionUbicacion
-        fields = ["centro", "localidad", "rol_ubicacion", "domicilio", "es_principal", "observaciones"]
+        fields = [
+            "centro",
+            "localidad",
+            "rol_ubicacion",
+            "domicilio",
+            "es_principal",
+            "observaciones",
+        ]
 
 
 # ============================================================================
 # PHASE 4 - OFERTA INSTITUCIONAL FORMS
 # ============================================================================
+
 
 class OfertaInstitucionalForm(forms.ModelForm):
     centro = forms.ModelChoiceField(
@@ -605,7 +648,18 @@ class OfertaInstitucionalForm(forms.ModelForm):
 
     class Meta:
         model = OfertaInstitucional
-        fields = ["centro", "plan_curricular", "programa", "nombre_local", "ciclo_lectivo", "estado", "costo", "usa_voucher", "fecha_publicacion", "observaciones"]
+        fields = [
+            "centro",
+            "plan_curricular",
+            "programa",
+            "nombre_local",
+            "ciclo_lectivo",
+            "estado",
+            "costo",
+            "usa_voucher",
+            "fecha_publicacion",
+            "observaciones",
+        ]
 
 
 class ComisionForm(forms.ModelForm):
@@ -653,7 +707,17 @@ class ComisionForm(forms.ModelForm):
 
     class Meta:
         model = Comision
-        fields = ["oferta", "ubicacion", "codigo_comision", "nombre", "fecha_inicio", "fecha_fin", "cupo", "estado", "observaciones"]
+        fields = [
+            "oferta",
+            "ubicacion",
+            "codigo_comision",
+            "nombre",
+            "fecha_inicio",
+            "fecha_fin",
+            "cupo",
+            "estado",
+            "observaciones",
+        ]
 
 
 class ComisionHorarioForm(forms.ModelForm):
@@ -688,12 +752,20 @@ class ComisionHorarioForm(forms.ModelForm):
 
     class Meta:
         model = ComisionHorario
-        fields = ["comision", "dia_semana", "hora_desde", "hora_hasta", "aula_espacio", "vigente"]
+        fields = [
+            "comision",
+            "dia_semana",
+            "hora_desde",
+            "hora_hasta",
+            "aula_espacio",
+            "vigente",
+        ]
 
 
 # ============================================================================
 # PHASE 5 - INSCRIPCIÓN FORMS
 # ============================================================================
+
 
 class InscripcionForm(forms.ModelForm):
     ciudadano = forms.ModelChoiceField(
@@ -729,12 +801,20 @@ class InscripcionForm(forms.ModelForm):
 
     class Meta:
         model = Inscripcion
-        fields = ["ciudadano", "comision", "programa", "estado", "origen_canal", "observaciones"]
+        fields = [
+            "ciudadano",
+            "comision",
+            "programa",
+            "estado",
+            "origen_canal",
+            "observaciones",
+        ]
 
 
 # ============================================================================
 # PHASE 7 - EVALUACIÓN FORMS
 # ============================================================================
+
 
 class EvaluacionForm(forms.ModelForm):
     comision = forms.ModelChoiceField(
@@ -777,7 +857,16 @@ class EvaluacionForm(forms.ModelForm):
 
     class Meta:
         model = Evaluacion
-        fields = ["comision", "tipo", "nombre", "descripcion", "fecha", "es_final", "ponderacion", "observaciones"]
+        fields = [
+            "comision",
+            "tipo",
+            "nombre",
+            "descripcion",
+            "fecha",
+            "es_final",
+            "ponderacion",
+            "observaciones",
+        ]
 
 
 class ResultadoEvaluacionForm(forms.ModelForm):
@@ -801,7 +890,7 @@ class ResultadoEvaluacionForm(forms.ModelForm):
         required=False,
         widget=forms.Select(
             choices=[(None, "---"), (True, "Sí"), (False, "No")],
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control"},
         ),
     )
     observaciones = forms.CharField(
@@ -812,7 +901,13 @@ class ResultadoEvaluacionForm(forms.ModelForm):
 
     class Meta:
         model = ResultadoEvaluacion
-        fields = ["evaluacion", "inscripcion", "calificacion", "aprobo", "observaciones"]
+        fields = [
+            "evaluacion",
+            "inscripcion",
+            "calificacion",
+            "aprobo",
+            "observaciones",
+        ]
 
 
 # ============================================================================
@@ -860,7 +955,10 @@ class VoucherParametriaForm(forms.ModelForm):
     )
     renovacion_tipo = forms.ChoiceField(
         label="Tipo de renovación",
-        choices=[("suma", "Sumar al saldo existente"), ("reinicia", "Reiniciar al valor configurado")],
+        choices=[
+            ("suma", "Sumar al saldo existente"),
+            ("reinicia", "Reiniciar al valor configurado"),
+        ],
         widget=forms.RadioSelect(),
         initial="suma",
     )
@@ -877,15 +975,30 @@ class VoucherParametriaForm(forms.ModelForm):
 
     def clean_fecha_vencimiento(self):
         from datetime import date
+
         fecha = self.cleaned_data.get("fecha_vencimiento")
         if fecha and fecha <= date.today():
-            raise forms.ValidationError("La fecha de vencimiento debe ser posterior a hoy.")
+            raise forms.ValidationError(
+                "La fecha de vencimiento debe ser posterior a hoy."
+            )
         return fecha
 
     class Meta:
         from VAT.models import VoucherParametria
+
         model = VoucherParametria
-        fields = ["nombre", "descripcion", "programa", "cantidad_inicial", "fecha_vencimiento", "renovacion_mensual", "cantidad_renovacion", "renovacion_tipo", "inscripcion_unica_activa"]
+        fields = [
+            "nombre",
+            "descripcion",
+            "programa",
+            "cantidad_inicial",
+            "fecha_vencimiento",
+            "renovacion_mensual",
+            "cantidad_renovacion",
+            "renovacion_tipo",
+            "inscripcion_unica_activa",
+        ]
+
 
 class VoucherForm(forms.ModelForm):
     ciudadano = forms.ModelChoiceField(
@@ -910,13 +1023,17 @@ class VoucherForm(forms.ModelForm):
 
     def clean_fecha_vencimiento(self):
         from datetime import date
+
         fecha = self.cleaned_data.get("fecha_vencimiento")
         if fecha and fecha <= date.today():
-            raise forms.ValidationError("La fecha de vencimiento debe ser posterior a hoy.")
+            raise forms.ValidationError(
+                "La fecha de vencimiento debe ser posterior a hoy."
+            )
         return fecha
 
     class Meta:
         from VAT.models import Voucher
+
         model = Voucher
         fields = ["ciudadano", "programa", "cantidad_inicial", "fecha_vencimiento"]
 
@@ -935,6 +1052,7 @@ class VoucherRecargaForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         from VAT.models import VoucherRecarga
+
         self.fields["motivo"].choices = VoucherRecarga.MOTIVO_CHOICES
 
 
@@ -956,19 +1074,24 @@ class VoucherAsignacionMasivaForm(forms.Form):
     dnis = forms.CharField(
         label="DNIs",
         help_text="Ingresá los DNIs separados por comas, espacios o saltos de línea.",
-        widget=forms.Textarea(attrs={
-            "class": "form-control",
-            "rows": 5,
-            "placeholder": "Ej: 12345678, 23456789, 34567890",
-        }),
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 5,
+                "placeholder": "Ej: 12345678, 23456789, 34567890",
+            }
+        ),
     )
 
     def clean_dnis(self):
         raw = self.cleaned_data["dnis"]
         import re
+
         dnis = [d.strip() for d in re.split(r"[\s,;]+", raw) if d.strip()]
         if not dnis:
             raise forms.ValidationError("Ingresá al menos un DNI.")
         if len(dnis) > 500:
-            raise forms.ValidationError("No se pueden asignar más de 500 vouchers a la vez.")
+            raise forms.ValidationError(
+                "No se pueden asignar más de 500 vouchers a la vez."
+            )
         return dnis

@@ -3,9 +3,9 @@
 {% block title %}{{ parametria.nombre }}{% endblock %}
 {% block titulo-pagina %}Parametría de Voucher{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
 
-<style>
+    <style>
     .parametria-hero {
         background: linear-gradient(135deg, #1a3a5c 0%, #0d6efd 100%);
         border-radius: 12px;
@@ -54,330 +54,370 @@
     }
     .empty-state i { font-size: 2.5rem; margin-bottom: .75rem; }
     .empty-state p { font-size: .85rem; margin: 0; }
-</style>
+    </style>
 
-<!-- HERO -->
-<div class="parametria-hero">
-    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-        <div>
-            <div class="hero-label mb-1">Parametría de voucher</div>
-            <h4 class="mb-1 text-white fw-bold">{{ parametria.nombre }}</h4>
-            {% if parametria.descripcion %}
-            <div class="small mb-2" style="opacity:.75">{{ parametria.descripcion }}</div>
-            {% endif %}
-            <div class="d-flex flex-wrap gap-2 mt-2">
-                <span class="badge" style="background:rgba(255,255,255,.2);color:#fff">
-                    <i class="bi bi-collection me-1"></i>{{ parametria.programa }}
-                </span>
-                <span class="badge" style="background:rgba(255,255,255,.2);color:#fff">
-                    <i class="bi bi-calendar-x me-1"></i>Vence {{ parametria.fecha_vencimiento|date:"d/m/Y" }}
-                </span>
-                {% if parametria.renovacion_mensual %}
-                <span class="badge bg-warning text-dark">
-                    <i class="bi bi-arrow-repeat me-1"></i>Renovación mensual
-                    {% if parametria.cantidad_renovacion %}· {{ parametria.cantidad_renovacion }} créd.{% endif %}
-                    · {{ parametria.get_renovacion_tipo_display }}
-                </span>
+    <!-- HERO -->
+    <div class="parametria-hero">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <div class="hero-label mb-1">Parametría de voucher</div>
+                <h4 class="mb-1 text-white fw-bold">{{ parametria.nombre }}</h4>
+                {% if parametria.descripcion %}
+                    <div class="small mb-2" style="opacity:.75">{{ parametria.descripcion }}</div>
                 {% endif %}
-                {% if parametria.inscripcion_unica_activa %}
-                <span class="badge" style="background:rgba(255,255,255,.2);color:#fff">
-                    <i class="bi bi-1-circle me-1"></i>Inscripción única activa
-                </span>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff">
+                        <i class="bi bi-collection me-1"></i>{{ parametria.programa }}
+                    </span>
+                    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff">
+                        <i class="bi bi-calendar-x me-1"></i>Vence {{ parametria.fecha_vencimiento|date:"d/m/Y" }}
+                    </span>
+                    {% if parametria.renovacion_mensual %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="bi bi-arrow-repeat me-1"></i>Renovación mensual
+                            {% if parametria.cantidad_renovacion %}· {{ parametria.cantidad_renovacion }} créd.{% endif %}
+                            · {{ parametria.get_renovacion_tipo_display }}
+                        </span>
+                    {% endif %}
+                    {% if parametria.inscripcion_unica_activa %}
+                        <span class="badge" style="background:rgba(255,255,255,.2);color:#fff">
+                            <i class="bi bi-1-circle me-1"></i>Inscripción única activa
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="d-flex gap-2 align-items-start">
+                {% if parametria.activa %}
+                    <span class="badge bg-success px-3 py-2">Activa</span>
+                {% else %}
+                    <span class="badge bg-secondary px-3 py-2">Inactiva</span>
                 {% endif %}
+                <a href="{% url 'vat_voucher_parametria_list' %}"
+                   class="btn btn-sm btn-light">
+                    <i class="bi bi-arrow-left me-1"></i>Volver
+                </a>
             </div>
         </div>
-        <div class="d-flex gap-2 align-items-start">
-            {% if parametria.activa %}
-            <span class="badge bg-success px-3 py-2">Activa</span>
-            {% else %}
-            <span class="badge bg-secondary px-3 py-2">Inactiva</span>
-            {% endif %}
-            <a href="{% url 'vat_voucher_parametria_list' %}" class="btn btn-sm btn-light">
-                <i class="bi bi-arrow-left me-1"></i>Volver
-            </a>
-        </div>
     </div>
-</div>
 
-<!-- STATS — usan clases card de Bootstrap que respetan el dark theme -->
-<div class="row g-2 mb-3">
-    <div class="col-6 col-md-3">
-        <div class="card text-center py-3">
-            <div class="fs-2 fw-bold">{{ total }}</div>
-            <div class="text-muted small text-uppercase" style="letter-spacing:.04em;font-size:.72rem">Total</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card text-center py-3">
-            <div class="fs-2 fw-bold text-success">{{ activos }}</div>
-            <div class="text-muted small text-uppercase" style="letter-spacing:.04em;font-size:.72rem">Activos</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card text-center py-3">
-            <div class="fs-2 fw-bold text-warning">{{ agotados }}</div>
-            <div class="text-muted small text-uppercase" style="letter-spacing:.04em;font-size:.72rem">Agotados</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card text-center py-3">
-            <div class="fs-2 fw-bold text-danger">{{ vencidos }}</div>
-            <div class="text-muted small text-uppercase" style="letter-spacing:.04em;font-size:.72rem">Vencidos</div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3">
-
-    <!-- VOUCHERS ASIGNADOS -->
-    <div class="col-md-7">
-        <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="card-title mb-0 fs-6 fw-semibold">
-                    <i class="bi bi-ticket-perforated me-2 text-primary"></i>Vouchers asignados
-                </h3>
-                {% if total %}<span class="badge bg-primary rounded-pill">{{ total }}</span>{% endif %}
+    <!-- STATS — usan clases card de Bootstrap que respetan el dark theme -->
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-3">
+            <div class="card text-center py-3">
+                <div class="fs-2 fw-bold">{{ total }}</div>
+                <div class="text-muted small text-uppercase"
+                     style="letter-spacing:.04em;
+                            font-size:.72rem">Total</div>
             </div>
-            <div class="card-body p-0">
-                {% if vouchers %}
-                <table class="table table-sm table-hover mb-0 align-middle">
-                    <thead>
-                        <tr>
-                            <th>Ciudadano</th>
-                            <th>DNI</th>
-                            <th class="text-end">Créditos</th>
-                            <th>Estado</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for v in vouchers %}
-                        <tr>
-                            <td class="fw-semibold">{{ v.ciudadano.nombre_completo }}</td>
-                            <td class="text-muted small font-monospace">{{ v.ciudadano.documento }}</td>
-                            <td class="text-end">
-                                <span class="fw-bold">{{ v.cantidad_disponible }}</span>
-                                <span class="text-muted small"> / {{ v.cantidad_inicial }}</span>
-                                <div class="progress mt-1" style="height:3px;width:60px;margin-left:auto;">
-                                    <div class="progress-bar {% if v.cantidad_disponible == 0 %}bg-danger{% elif v.cantidad_disponible < v.cantidad_inicial %}bg-warning{% else %}bg-success{% endif %}"
-                                         style="width:{% widthratio v.cantidad_disponible v.cantidad_inicial 100 %}%"></div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center py-3">
+                <div class="fs-2 fw-bold text-success">{{ activos }}</div>
+                <div class="text-muted small text-uppercase"
+                     style="letter-spacing:.04em;
+                            font-size:.72rem">Activos</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center py-3">
+                <div class="fs-2 fw-bold text-warning">{{ agotados }}</div>
+                <div class="text-muted small text-uppercase"
+                     style="letter-spacing:.04em;
+                            font-size:.72rem">Agotados</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center py-3">
+                <div class="fs-2 fw-bold text-danger">{{ vencidos }}</div>
+                <div class="text-muted small text-uppercase"
+                     style="letter-spacing:.04em;
+                            font-size:.72rem">Vencidos</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+
+        <!-- VOUCHERS ASIGNADOS -->
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0 fs-6 fw-semibold">
+                        <i class="bi bi-ticket-perforated me-2 text-primary"></i>Vouchers asignados
+                    </h3>
+                    {% if total %}<span class="badge bg-primary rounded-pill">{{ total }}</span>{% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if vouchers %}
+                        <table class="table table-sm table-hover mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Ciudadano</th>
+                                    <th>DNI</th>
+                                    <th class="text-end">Créditos</th>
+                                    <th>Estado</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for v in vouchers %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ v.ciudadano.nombre_completo }}</td>
+                                        <td class="text-muted small font-monospace">{{ v.ciudadano.documento }}</td>
+                                        <td class="text-end">
+                                            <span class="fw-bold">{{ v.cantidad_disponible }}</span>
+                                            <span class="text-muted small">/ {{ v.cantidad_inicial }}</span>
+                                            <div class="progress mt-1" style="height:3px;width:60px;margin-left:auto;">
+                                                <div class="progress-bar {% if v.cantidad_disponible == 0 %}bg-danger{% elif v.cantidad_disponible < v.cantidad_inicial %}bg-warning{% else %}bg-success{% endif %}"
+                                                     style="width:{% widthratio v.cantidad_disponible v.cantidad_inicial 100 %}%">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge rounded-pill {% if v.estado == 'activo' %}bg-success{% elif v.estado == 'vencido' %}bg-danger{% elif v.estado == 'agotado' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                                {{ v.get_estado_display }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{% url 'vat_voucher_detail' v.pk %}"
+                                               class="btn btn-sm btn-outline-primary py-0 px-2">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="bi bi-ticket-perforated"></i>
+                            <p>
+                                Todavía no hay vouchers asignados
+                                <br />
+                                desde esta parametría.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL DE ASIGNACIÓN -->
+        {% if perms.VAT.add_voucher %}
+            <div class="col-md-5">
+                <div class="assign-panel shadow-sm">
+                    <div class="assign-tab">
+                        <button class="active"
+                                onclick="switchTab(this,'tab-individual')"
+                                type="button">
+                            <i class="bi bi-person-plus me-1"></i>Individual
+                        </button>
+                        <button onclick="switchTab(this,'tab-masivo')" type="button">
+                            <i class="bi bi-people me-1"></i>Masiva
+                        </button>
+                    </div>
+
+                    <div id="tab-individual" class="assign-body">
+                        <p class="text-muted small mb-3">
+                            Buscá al ciudadano por DNI. Se asignarán <strong>{{ parametria.cantidad_inicial }} créditos</strong> con vencimiento <strong>{{ parametria.fecha_vencimiento|date:"d/m/Y" }}</strong>.
+                        </p>
+                        <form method="post"
+                              action="{% url 'vat_voucher_parametria_asignar' parametria.pk %}">
+                            {% csrf_token %}
+                            <label class="form-label small fw-semibold text-uppercase text-muted"
+                                   style="letter-spacing:.05em">DNI</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text"
+                                       name="dni"
+                                       class="form-control font-monospace"
+                                       placeholder="Ej: 30123456"
+                                       required
+                                       pattern="[0-9]+"
+                                       title="Solo números"
+                                       autocomplete="off" />
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                            </div>
+                            <div class="text-muted small mt-2">
+                                <i class="bi bi-info-circle me-1"></i>Si ya tiene voucher agotado o vencido, se reactivará.
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="tab-masivo" class="assign-body" style="display:none">
+                        <p class="text-muted small mb-3">
+                            Pegá hasta <strong>500 DNIs</strong> separados por coma, espacio o salto de línea.
+                        </p>
+                        <form method="post"
+                              action="{% url 'vat_voucher_parametria_asignar_masivo' parametria.pk %}">
+                            {% csrf_token %}
+                            <label class="form-label small fw-semibold text-uppercase text-muted"
+                                   style="letter-spacing:.05em">DNIs</label>
+                            <textarea name="dnis"
+                                      class="form-control form-control-sm font-monospace mb-3"
+                                      rows="7"
+                                      placeholder="30123456&#10;28765432&#10;35987654"></textarea>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-check-all me-1"></i>Procesar asignación masiva
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+
+    <!-- MÉTRICAS -->
+    {% if total %}
+        <div class="row g-3 mt-1">
+
+            <!-- Uso de créditos -->
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0 fs-6 fw-semibold">
+                            <i class="bi bi-lightning-charge me-2 text-primary"></i>Uso de créditos
+                        </h3>
+                    </div>
+                    <div class="card-body d-flex flex-column justify-content-between gap-3">
+                        <div class="row g-2 text-center">
+                            <div class="col-6">
+                                <div class="fs-3 fw-bold text-primary">{{ creditos_usados }}</div>
+                                <div class="text-muted"
+                                     style="font-size:.75rem;
+                                            text-transform:uppercase;
+                                            letter-spacing:.05em">Usados</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="fs-3 fw-bold">{{ creditos_emitidos }}</div>
+                                <div class="text-muted"
+                                     style="font-size:.75rem;
+                                            text-transform:uppercase;
+                                            letter-spacing:.05em">Emitidos</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="small fw-bold text-primary">{{ pct_uso }}% usado</span>
+                                <span class="small text-muted">{{ creditos_disponibles }} disponibles</span>
+                            </div>
+                            <div class="progress" style="height:10px;border-radius:5px;">
+                                <div class="progress-bar bg-primary" style="width:{{ pct_uso }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Distribución por estado -->
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0 fs-6 fw-semibold">
+                            <i class="bi bi-pie-chart me-2 text-primary"></i>Distribución por estado
+                        </h3>
+                    </div>
+                    <div class="card-body d-flex flex-column gap-3">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span><span class="badge bg-success me-1" style="font-size:.55rem">●</span>Activos</span>
+                                <span class="fw-bold">{{ activos }} <span class="text-muted fw-normal small">({{ pct_activos }}%)</span></span>
+                            </div>
+                            <div class="progress" style="height:6px;border-radius:3px;">
+                                <div class="progress-bar bg-success" style="width:{{ pct_activos }}%"></div>
+                            </div>
+                        </div>
+                        {% if agotados %}
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span><span class="badge bg-warning text-dark me-1" style="font-size:.55rem">●</span>Agotados</span>
+                                    <span class="fw-bold">{{ agotados }} <span class="text-muted fw-normal small">({% widthratio agotados total 100 %}%)</span></span>
                                 </div>
-                            </td>
-                            <td>
+                                <div class="progress" style="height:6px;border-radius:3px;">
+                                    <div class="progress-bar bg-warning"
+                                         style="width:{% widthratio agotados total 100 %}%"></div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if vencidos %}
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span><span class="badge bg-danger me-1" style="font-size:.55rem">●</span>Vencidos</span>
+                                    <span class="fw-bold">{{ vencidos }} <span class="text-muted fw-normal small">({% widthratio vencidos total 100 %}%)</span></span>
+                                </div>
+                                <div class="progress" style="height:6px;border-radius:3px;">
+                                    <div class="progress-bar bg-danger"
+                                         style="width:{% widthratio vencidos total 100 %}%"></div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if cancelados %}
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span><span class="badge bg-secondary me-1" style="font-size:.55rem">●</span>Cancelados</span>
+                                    <span class="fw-bold">{{ cancelados }} <span class="text-muted fw-normal small">({% widthratio cancelados total 100 %}%)</span></span>
+                                </div>
+                                <div class="progress" style="height:6px;border-radius:3px;">
+                                    <div class="progress-bar bg-secondary"
+                                         style="width:{% widthratio cancelados total 100 %}%"></div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Últimas asignaciones -->
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0 fs-6 fw-semibold">
+                            <i class="bi bi-clock-history me-2 text-primary"></i>Últimas asignaciones
+                        </h3>
+                    </div>
+                    <div class="card-body p-0">
+                        {% for v in ultimas %}
+                            <div class="d-flex justify-content-between align-items-center px-3 py-3 {% if not forloop.last %}border-bottom{% endif %}">
+                                <div>
+                                    <div class="fw-semibold">{{ v.ciudadano.nombre_completo }}</div>
+                                    <div class="text-muted small font-monospace">{{ v.ciudadano.documento }}</div>
+                                    <div class="text-muted small mt-1">{{ v.fecha_asignacion|date:"d/m/Y" }}</div>
+                                </div>
                                 <span class="badge rounded-pill {% if v.estado == 'activo' %}bg-success{% elif v.estado == 'vencido' %}bg-danger{% elif v.estado == 'agotado' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
                                     {{ v.get_estado_display }}
                                 </span>
-                            </td>
-                            <td class="text-end">
-                                <a href="{% url 'vat_voucher_detail' v.pk %}" class="btn btn-sm btn-outline-primary py-0 px-2">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                            </td>
-                        </tr>
+                            </div>
                         {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <div class="empty-state">
-                    <i class="bi bi-ticket-perforated"></i>
-                    <p>Todavía no hay vouchers asignados<br>desde esta parametría.</p>
+                    </div>
                 </div>
-                {% endif %}
+            </div>
+
+        </div>
+    {% else %}
+        <div class="row g-3 mt-1">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="empty-state">
+                            <i class="bi bi-bar-chart-line"></i>
+                            <p>Sin datos todavía. Asigná vouchers para ver métricas.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-
-    <!-- PANEL DE ASIGNACIÓN -->
-    {% if perms.VAT.add_voucher %}
-    <div class="col-md-5">
-        <div class="assign-panel shadow-sm">
-            <div class="assign-tab">
-                <button class="active" onclick="switchTab(this,'tab-individual')" type="button">
-                    <i class="bi bi-person-plus me-1"></i>Individual
-                </button>
-                <button onclick="switchTab(this,'tab-masivo')" type="button">
-                    <i class="bi bi-people me-1"></i>Masiva
-                </button>
-            </div>
-
-            <div id="tab-individual" class="assign-body">
-                <p class="text-muted small mb-3">
-                    Buscá al ciudadano por DNI. Se asignarán <strong>{{ parametria.cantidad_inicial }} créditos</strong> con vencimiento <strong>{{ parametria.fecha_vencimiento|date:"d/m/Y" }}</strong>.
-                </p>
-                <form method="post" action="{% url 'vat_voucher_parametria_asignar' parametria.pk %}">
-                    {% csrf_token %}
-                    <label class="form-label small fw-semibold text-uppercase text-muted" style="letter-spacing:.05em">DNI</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" name="dni" class="form-control font-monospace" placeholder="Ej: 30123456"
-                               required pattern="[0-9]+" title="Solo números" autocomplete="off">
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i></button>
-                    </div>
-                    <div class="text-muted small mt-2">
-                        <i class="bi bi-info-circle me-1"></i>Si ya tiene voucher agotado o vencido, se reactivará.
-                    </div>
-                </form>
-            </div>
-
-            <div id="tab-masivo" class="assign-body" style="display:none">
-                <p class="text-muted small mb-3">
-                    Pegá hasta <strong>500 DNIs</strong> separados por coma, espacio o salto de línea.
-                </p>
-                <form method="post" action="{% url 'vat_voucher_parametria_asignar_masivo' parametria.pk %}">
-                    {% csrf_token %}
-                    <label class="form-label small fw-semibold text-uppercase text-muted" style="letter-spacing:.05em">DNIs</label>
-                    <textarea name="dnis" class="form-control form-control-sm font-monospace mb-3" rows="7"
-                              placeholder="30123456&#10;28765432&#10;35987654"></textarea>
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-check-all me-1"></i>Procesar asignación masiva
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
     {% endif %}
 
-</div>
-
-<!-- MÉTRICAS -->
-{% if total %}
-<div class="row g-3 mt-1">
-
-    <!-- Uso de créditos -->
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-header">
-                <h3 class="card-title mb-0 fs-6 fw-semibold">
-                    <i class="bi bi-lightning-charge me-2 text-primary"></i>Uso de créditos
-                </h3>
-            </div>
-            <div class="card-body d-flex flex-column justify-content-between gap-3">
-                <div class="row g-2 text-center">
-                    <div class="col-6">
-                        <div class="fs-3 fw-bold text-primary">{{ creditos_usados }}</div>
-                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Usados</div>
-                    </div>
-                    <div class="col-6">
-                        <div class="fs-3 fw-bold">{{ creditos_emitidos }}</div>
-                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Emitidos</div>
-                    </div>
-                </div>
-                <div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="small fw-bold text-primary">{{ pct_uso }}% usado</span>
-                        <span class="small text-muted">{{ creditos_disponibles }} disponibles</span>
-                    </div>
-                    <div class="progress" style="height:10px;border-radius:5px;">
-                        <div class="progress-bar bg-primary" style="width:{{ pct_uso }}%"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Distribución por estado -->
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-header">
-                <h3 class="card-title mb-0 fs-6 fw-semibold">
-                    <i class="bi bi-pie-chart me-2 text-primary"></i>Distribución por estado
-                </h3>
-            </div>
-            <div class="card-body d-flex flex-column gap-3">
-                <div>
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span><span class="badge bg-success me-1" style="font-size:.55rem">●</span>Activos</span>
-                        <span class="fw-bold">{{ activos }} <span class="text-muted fw-normal small">({{ pct_activos }}%)</span></span>
-                    </div>
-                    <div class="progress" style="height:6px;border-radius:3px;">
-                        <div class="progress-bar bg-success" style="width:{{ pct_activos }}%"></div>
-                    </div>
-                </div>
-                {% if agotados %}
-                <div>
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span><span class="badge bg-warning text-dark me-1" style="font-size:.55rem">●</span>Agotados</span>
-                        <span class="fw-bold">{{ agotados }} <span class="text-muted fw-normal small">({% widthratio agotados total 100 %}%)</span></span>
-                    </div>
-                    <div class="progress" style="height:6px;border-radius:3px;">
-                        <div class="progress-bar bg-warning" style="width:{% widthratio agotados total 100 %}%"></div>
-                    </div>
-                </div>
-                {% endif %}
-                {% if vencidos %}
-                <div>
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span><span class="badge bg-danger me-1" style="font-size:.55rem">●</span>Vencidos</span>
-                        <span class="fw-bold">{{ vencidos }} <span class="text-muted fw-normal small">({% widthratio vencidos total 100 %}%)</span></span>
-                    </div>
-                    <div class="progress" style="height:6px;border-radius:3px;">
-                        <div class="progress-bar bg-danger" style="width:{% widthratio vencidos total 100 %}%"></div>
-                    </div>
-                </div>
-                {% endif %}
-                {% if cancelados %}
-                <div>
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span><span class="badge bg-secondary me-1" style="font-size:.55rem">●</span>Cancelados</span>
-                        <span class="fw-bold">{{ cancelados }} <span class="text-muted fw-normal small">({% widthratio cancelados total 100 %}%)</span></span>
-                    </div>
-                    <div class="progress" style="height:6px;border-radius:3px;">
-                        <div class="progress-bar bg-secondary" style="width:{% widthratio cancelados total 100 %}%"></div>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- Últimas asignaciones -->
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-header">
-                <h3 class="card-title mb-0 fs-6 fw-semibold">
-                    <i class="bi bi-clock-history me-2 text-primary"></i>Últimas asignaciones
-                </h3>
-            </div>
-            <div class="card-body p-0">
-                {% for v in ultimas %}
-                <div class="d-flex justify-content-between align-items-center px-3 py-3 {% if not forloop.last %}border-bottom{% endif %}">
-                    <div>
-                        <div class="fw-semibold">{{ v.ciudadano.nombre_completo }}</div>
-                        <div class="text-muted small font-monospace">{{ v.ciudadano.documento }}</div>
-                        <div class="text-muted small mt-1">{{ v.fecha_asignacion|date:"d/m/Y" }}</div>
-                    </div>
-                    <span class="badge rounded-pill {% if v.estado == 'activo' %}bg-success{% elif v.estado == 'vencido' %}bg-danger{% elif v.estado == 'agotado' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                        {{ v.get_estado_display }}
-                    </span>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-
-</div>
-{% else %}
-<div class="row g-3 mt-1">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="empty-state">
-                    <i class="bi bi-bar-chart-line"></i>
-                    <p>Sin datos todavía. Asigná vouchers para ver métricas.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<script>
+    <script>
 function switchTab(btn, tabId) {
     btn.closest('.assign-panel').querySelectorAll('.assign-tab button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     btn.closest('.assign-panel').querySelectorAll('.assign-body').forEach(p => p.style.display = 'none');
     document.getElementById(tabId).style.display = 'block';
 }
-</script>
+    </script>
 
 {% endblock %}

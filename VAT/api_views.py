@@ -181,7 +181,9 @@ class SubsectorViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 @extend_schema(tags=["VAT - Catálogos Académicos"])
 class TituloReferenciaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = TituloReferencia.objects.select_related("sector", "subsector").order_by("nombre")
+    queryset = TituloReferencia.objects.select_related("sector", "subsector").order_by(
+        "nombre"
+    )
     serializer_class = TituloReferenciaSerializer
     permission_classes = [HasAPIKey]
 
@@ -237,9 +239,9 @@ class PlanVersionCurricularViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet
 
 @extend_schema(tags=["VAT - Inscripciones"])
 class InscripcionOfertaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = InscripcionOferta.objects.select_related(
-        "oferta", "ciudadano"
-    ).order_by("-fecha_inscripcion")
+    queryset = InscripcionOferta.objects.select_related("oferta", "ciudadano").order_by(
+        "-fecha_inscripcion"
+    )
     serializer_class = InscripcionOfertaSerializer
     permission_classes = [HasAPIKey]
 
@@ -261,9 +263,11 @@ class VoucherViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     Supports filtering by ciudadano_id, estado, programa_id.
     """
 
-    queryset = Voucher.objects.select_related(
-        "ciudadano", "programa"
-    ).prefetch_related("recargas", "usos").order_by("-fecha_asignacion")
+    queryset = (
+        Voucher.objects.select_related("ciudadano", "programa")
+        .prefetch_related("recargas", "usos")
+        .order_by("-fecha_asignacion")
+    )
     serializer_class = VoucherSerializer
     permission_classes = [HasAPIKey]
 
@@ -286,13 +290,15 @@ class VoucherViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     def disponible(self, request, pk=None):
         """Get available credit for a voucher."""
         voucher = self.get_object()
-        return Response({
-            "voucher_id": voucher.id,
-            "cantidad_disponible": voucher.cantidad_disponible,
-            "cantidad_usada": voucher.cantidad_usada,
-            "cantidad_inicial": voucher.cantidad_inicial,
-            "estado": voucher.estado,
-        })
+        return Response(
+            {
+                "voucher_id": voucher.id,
+                "cantidad_disponible": voucher.cantidad_disponible,
+                "cantidad_usada": voucher.cantidad_usada,
+                "cantidad_inicial": voucher.cantidad_inicial,
+                "estado": voucher.estado,
+            }
+        )
 
     @action(detail=False, methods=["get"])
     def por_ciudadano(self, request):
@@ -309,6 +315,7 @@ class VoucherViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 
 # Phase 2 - Institución (Institution-related ViewSets)
+
 
 @extend_schema(tags=["VAT - Institución"])
 class InstitucionContactoViewSet(viewsets.ModelViewSet):
@@ -343,7 +350,9 @@ class AutoridadInstitucionalViewSet(viewsets.ModelViewSet):
 
 @extend_schema(tags=["VAT - Institución"])
 class InstitucionIdentificadorHistViewSet(viewsets.ModelViewSet):
-    queryset = InstitucionIdentificadorHist.objects.select_related("centro").order_by("-vigencia_desde")
+    queryset = InstitucionIdentificadorHist.objects.select_related("centro").order_by(
+        "-vigencia_desde"
+    )
     serializer_class = InstitucionIdentificadorHistSerializer
     permission_classes = [HasAPIKey]
 
@@ -379,6 +388,7 @@ class InstitucionUbicacionViewSet(viewsets.ModelViewSet):
 
 # Phase 4 - Oferta Institucional
 
+
 @extend_schema(tags=["VAT - Oferta Institucional"])
 class OfertaInstitucionalViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     queryset = OfertaInstitucional.objects.select_related(
@@ -400,9 +410,11 @@ class OfertaInstitucionalViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 @extend_schema(tags=["VAT - Oferta Institucional"])
 class ComisionViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = Comision.objects.select_related(
-        "oferta"
-    ).prefetch_related("horarios").order_by("nombre")
+    queryset = (
+        Comision.objects.select_related("oferta")
+        .prefetch_related("horarios")
+        .order_by("nombre")
+    )
     serializer_class = ComisionSerializer
     permission_classes = [HasAPIKey]
 
@@ -419,7 +431,9 @@ class ComisionViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 @extend_schema(tags=["VAT - Oferta Institucional"])
 class ComisionHorarioViewSet(viewsets.ModelViewSet):
-    queryset = ComisionHorario.objects.select_related("comision").order_by("dia_semana", "hora_desde")
+    queryset = ComisionHorario.objects.select_related("comision").order_by(
+        "dia_semana", "hora_desde"
+    )
     serializer_class = ComisionHorarioSerializer
     permission_classes = [HasAPIKey]
 
@@ -433,11 +447,12 @@ class ComisionHorarioViewSet(viewsets.ModelViewSet):
 
 # Phase 5 - Inscripciones
 
+
 @extend_schema(tags=["VAT - Inscripciones"])
 class InscripcionViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = Inscripcion.objects.select_related(
-        "ciudadano", "comision"
-    ).order_by("-fecha_inscripcion")
+    queryset = Inscripcion.objects.select_related("ciudadano", "comision").order_by(
+        "-fecha_inscripcion"
+    )
     serializer_class = InscripcionSerializer
     permission_classes = [HasAPIKey]
 
@@ -474,11 +489,14 @@ class InscripcionViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 # Phase 7 - Evaluaciones
 
+
 @extend_schema(tags=["VAT - Evaluaciones"])
 class EvaluacionViewSet(viewsets.ModelViewSet):
-    queryset = Evaluacion.objects.select_related(
-        "comision"
-    ).prefetch_related("resultados").order_by("-fecha")
+    queryset = (
+        Evaluacion.objects.select_related("comision")
+        .prefetch_related("resultados")
+        .order_by("-fecha")
+    )
     serializer_class = EvaluacionSerializer
     permission_classes = [HasAPIKey]
 

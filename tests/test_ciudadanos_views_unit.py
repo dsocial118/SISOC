@@ -280,7 +280,11 @@ def test_ciudadanos_detail_vat_context_resume_por_programa(mocker):
         "VAT.models.Inscripcion.objects.filter",
         return_value=SimpleNamespace(
             select_related=lambda *a, **k: SimpleNamespace(
-                order_by=lambda *x, **y: [inscripcion_a1, inscripcion_a2, inscripcion_b1]
+                order_by=lambda *x, **y: [
+                    inscripcion_a1,
+                    inscripcion_a2,
+                    inscripcion_b1,
+                ]
             )
         ),
     )
@@ -288,7 +292,11 @@ def test_ciudadanos_detail_vat_context_resume_por_programa(mocker):
         "VAT.models.Voucher.objects.filter",
         return_value=SimpleNamespace(
             select_related=lambda *a, **k: SimpleNamespace(
-                order_by=lambda *x, **y: [voucher_activo, voucher_agotado, voucher_programa_b]
+                order_by=lambda *x, **y: [
+                    voucher_activo,
+                    voucher_agotado,
+                    voucher_programa_b,
+                ]
             )
         ),
     )
@@ -317,9 +325,7 @@ def test_ciudadanos_detail_vat_context_resume_por_programa(mocker):
     assert len(context["vat_programas"]) == 2
 
     programa_a_ctx = next(
-        item
-        for item in context["vat_programas"]
-        if item["programa"] is programa_a
+        item for item in context["vat_programas"] if item["programa"] is programa_a
     )
     assert programa_a_ctx["creditos_totales"] == 15
     assert programa_a_ctx["creditos_actuales"] == 4

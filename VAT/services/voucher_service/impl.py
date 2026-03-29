@@ -243,9 +243,7 @@ class VoucherService:
                                 cantidad_afectada=0,
                                 usuario=admin_user,
                                 detalles={
-                                    "fecha_vencimiento": str(
-                                        locked.fecha_vencimiento
-                                    )
+                                    "fecha_vencimiento": str(locked.fecha_vencimiento)
                                 },
                             )
                     except Exception as e:
@@ -285,9 +283,9 @@ class VoucherService:
     @staticmethod
     def buscar_vouchers(ciudadano_id: int = None, estado: str = None):
         """Search vouchers by criteria."""
-        queryset = Voucher.objects.select_related(
-            "ciudadano", "programa"
-        ).order_by("-fecha_asignacion")
+        queryset = Voucher.objects.select_related("ciudadano", "programa").order_by(
+            "-fecha_asignacion"
+        )
 
         if ciudadano_id:
             queryset = queryset.filter(ciudadano_id=ciudadano_id)

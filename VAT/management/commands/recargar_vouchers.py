@@ -52,12 +52,16 @@ class Command(BaseCommand):
         sistema = self._get_system_user()
 
         # Parametrías activas con renovación mensual habilitada
-        qs = VoucherParametria.objects.filter(renovacion_mensual=True, activa=True).select_related("programa")
+        qs = VoucherParametria.objects.filter(
+            renovacion_mensual=True, activa=True
+        ).select_related("programa")
         if options["parametria"]:
             qs = qs.filter(pk=options["parametria"])
 
         if not qs.exists():
-            self.stdout.write(self.style.WARNING("No hay parametrías con renovación mensual activa."))
+            self.stdout.write(
+                self.style.WARNING("No hay parametrías con renovación mensual activa.")
+            )
             return
 
         self._separador()
@@ -95,7 +99,9 @@ class Command(BaseCommand):
 
             if check:
                 self.stdout.write(f"  → {vouchers.count()} vouchers para renovar")
-                self.stdout.write(f"  → {por_vencer.count()} vouchers a marcar como vencidos")
+                self.stdout.write(
+                    f"  → {por_vencer.count()} vouchers a marcar como vencidos"
+                )
                 continue
 
             # Marcar vencidos primero (validar_vencimiento maneja el save y el log)
@@ -125,23 +131,31 @@ class Command(BaseCommand):
                     if ok:
                         total_ok += 1
                         self.stdout.write(
-                            self.style.SUCCESS(f"  ✓ {voucher.ciudadano.nombre_completo}: {msg}")
+                            self.style.SUCCESS(
+                                f"  ✓ {voucher.ciudadano.nombre_completo}: {msg}"
+                            )
                         )
                     else:
                         total_err += 1
                         self.stdout.write(
-                            self.style.ERROR(f"  ✗ {voucher.ciudadano.nombre_completo}: {msg}")
+                            self.style.ERROR(
+                                f"  ✗ {voucher.ciudadano.nombre_completo}: {msg}"
+                            )
                         )
                 except Exception as e:
                     total_err += 1
                     logger.exception(f"Error renovando voucher {voucher.id}")
                     self.stdout.write(
-                        self.style.ERROR(f"  ✗ {voucher.ciudadano.nombre_completo}: ERROR — {e}")
+                        self.style.ERROR(
+                            f"  ✗ {voucher.ciudadano.nombre_completo}: ERROR — {e}"
+                        )
                     )
 
         self._separador()
         if not check:
-            self.stdout.write(f"Renovados: {total_ok}  |  Vencidos marcados: {total_venc}  |  Errores: {total_err}")
+            self.stdout.write(
+                f"Renovados: {total_ok}  |  Vencidos marcados: {total_venc}  |  Errores: {total_err}"
+            )
             logger.info(
                 f"recargar_vouchers: ok={total_ok} vencidos={total_venc} errores={total_err}"
             )

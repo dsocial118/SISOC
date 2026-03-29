@@ -1,89 +1,101 @@
 {% extends "includes/main.html" %}
 {% load static %}
 
-{% block title %}{% if inscripcionoferta.pk %}Editar{% else %}Nueva{% endif %} Inscripción - VAT{% endblock %}
+{% block title %}
+    {% if inscripcionoferta.pk %}
+        Editar
+    {% else %}
+        Nueva
+    {% endif %}
+    Inscripción - VAT
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h1 class="h3 text-dark">
-                {% if inscripcionoferta.pk %}Editar Inscripción{% else %}Nueva Inscripción{% endif %}
-            </h1>
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="h3 text-dark">
+                    {% if inscripcionoferta.pk %}
+                        Editar Inscripción
+                    {% else %}
+                        Nueva Inscripción
+                    {% endif %}
+                </h1>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{% url 'vat_inscripcion_oferta_list' %}"
+                   class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
         </div>
-        <div class="col-md-4 text-end">
-            <a href="{% url 'vat_inscripcion_oferta_list' %}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                                <br />
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.oferta.id_for_label }}" class="form-label">
+                                {{ form.oferta.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.oferta }}
+                            {% if form.oferta.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.oferta.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.ciudadano.id_for_label }}" class="form-label">
+                                {{ form.ciudadano.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.ciudadano }}
+                            {% if form.ciudadano.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.ciudadano.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.estado.id_for_label }}" class="form-label">
+                                {{ form.estado.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.estado }}
+                            {% if form.estado.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.estado.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                        <a href="{% url 'vat_inscripcion_oferta_list' %}"
+                           class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-
-    <div class="card">
-        <div class="card-body">
-            <form method="post" novalidate>
-                {% csrf_token %}
-
-                {% if form.non_field_errors %}
-                <div class="alert alert-danger" role="alert">
-                    {% for error in form.non_field_errors %}
-                        {{ error }}<br>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.oferta.id_for_label }}" class="form-label">
-                            {{ form.oferta.label }}
-                            <span class="text-danger">*</span>
-                        </label>
-                        {{ form.oferta }}
-                        {% if form.oferta.errors %}
-                        <div class="text-danger small mt-1">
-                            {% for error in form.oferta.errors %}{{ error }}{% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.ciudadano.id_for_label }}" class="form-label">
-                            {{ form.ciudadano.label }}
-                            <span class="text-danger">*</span>
-                        </label>
-                        {{ form.ciudadano }}
-                        {% if form.ciudadano.errors %}
-                        <div class="text-danger small mt-1">
-                            {% for error in form.ciudadano.errors %}{{ error }}{% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.estado.id_for_label }}" class="form-label">
-                            {{ form.estado.label }}
-                            <span class="text-danger">*</span>
-                        </label>
-                        {{ form.estado }}
-                        {% if form.estado.errors %}
-                        <div class="text-danger small mt-1">
-                            {% for error in form.estado.errors %}{{ error }}{% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Guardar
-                    </button>
-                    <a href="{% url 'vat_inscripcion_oferta_list' %}" class="btn btn-secondary">
-                        Cancelar
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 {% endblock %}

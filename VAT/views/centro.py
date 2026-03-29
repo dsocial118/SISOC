@@ -124,14 +124,17 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # Evaluar listas una sola vez para reutilizar en los counts
         ctx["autoridades"] = list(centro.autoridades.filter(es_actual=True))
-        ctx["identificadores"] = list(centro.identificadores_hist.filter(es_actual=True))
+        ctx["identificadores"] = list(
+            centro.identificadores_hist.filter(es_actual=True)
+        )
         ctx["contactos"] = list(centro.contactos_adicionales.all())
         ctx["ubicaciones"] = centro.ubicaciones.select_related("localidad").all()
 
         # annotate para evitar N+1 al contar comisiones por oferta
         ctx["ofertas"] = list(
-            centro.ofertas_institucionales
-            .select_related("plan_curricular__titulo_referencia", "programa")
+            centro.ofertas_institucionales.select_related(
+                "plan_curricular__titulo_referencia", "programa"
+            )
             .annotate(comisiones_count=Count("comisiones"))
             .order_by("-ciclo_lectivo")
         )

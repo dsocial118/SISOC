@@ -47,13 +47,13 @@ class ModalidadInstitucionalCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(
-            self.request, "Modalidad institucional creada correctamente."
-        )
+        messages.success(self.request, "Modalidad institucional creada correctamente.")
         return response
 
     def get_success_url(self):
-        return reverse("vat_modalidad_institucional_detail", kwargs={"pk": self.object.pk})
+        return reverse(
+            "vat_modalidad_institucional_detail", kwargs={"pk": self.object.pk}
+        )
 
 
 class ModalidadInstitucionalDetailView(LoginRequiredMixin, DetailView):
@@ -75,7 +75,9 @@ class ModalidadInstitucionalUpdateView(LoginRequiredMixin, UpdateView):
         return response
 
     def get_success_url(self):
-        return reverse("vat_modalidad_institucional_detail", kwargs={"pk": self.object.pk})
+        return reverse(
+            "vat_modalidad_institucional_detail", kwargs={"pk": self.object.pk}
+        )
 
 
 class ModalidadInstitucionalDeleteView(LoginRequiredMixin, DeleteView):
@@ -85,7 +87,5 @@ class ModalidadInstitucionalDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy("vat_modalidad_institucional_list")
 
     def delete(self, request, *args, **kwargs):
-        messages.success(
-            request, "Modalidad institucional eliminada correctamente."
-        )
+        messages.success(request, "Modalidad institucional eliminada correctamente.")
         return super().delete(request, *args, **kwargs)

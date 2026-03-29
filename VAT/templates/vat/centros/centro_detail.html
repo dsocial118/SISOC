@@ -19,20 +19,25 @@
 {% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
 
     <!-- ACCIONES -->
     <div class="d-print-none mb-3">
         <div class="mb-2">
-            <a href="{% url 'vat_centro_list' %}" class="btn btn-secondary backbutton-handler">Volver</a>
+            <a href="{% url 'vat_centro_list' %}"
+               class="btn btn-secondary backbutton-handler">Volver</a>
         </div>
         <div class="d-flex justify-content-end flex-wrap gap-1">
             {% if perms.VAT.add_ofertainstitucional %}
-            <a href="{% url 'vat_oferta_institucional_create' %}?centro={{ centro.id }}" class="btn btn-sm btn-primary">Nueva Oferta</a>
+                <a href="{% url 'vat_oferta_institucional_create' %}?centro={{ centro.id }}"
+                   class="btn btn-sm btn-primary">Nueva Oferta</a>
             {% endif %}
-            <a href="{% url 'vat_centro_update' centro.id %}" class="btn btn-sm btn-primary">Editar</a>
-            <a href="{% url 'vat_centro_delete' centro.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+            <a href="{% url 'vat_centro_update' centro.id %}"
+               class="btn btn-sm btn-primary">Editar</a>
+            <a href="{% url 'vat_centro_delete' centro.id %}"
+               class="btn btn-sm btn-danger">Eliminar</a>
         </div>
     </div>
 
@@ -41,37 +46,61 @@
         <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6 pt-3">
             <div class="info-card bg-card">
                 <div class="row">
-                    <div class="col-3"><i class="fa fa-book fa-2x"></i></div>
-                    <div class="col-9 text-start"><p>{{ count_ofertas }}</p></div>
+                    <div class="col-3">
+                        <i class="fa fa-book fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ count_ofertas }}</p>
+                    </div>
                 </div>
-                <div class="row info-card-label"><h5 class="mt-2">Ofertas</h5></div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Ofertas</h5>
+                </div>
             </div>
         </div>
         <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6 pt-3">
             <div class="info-card bg-card">
                 <div class="row">
-                    <div class="col-3"><i class="fa fa-users fa-2x"></i></div>
-                    <div class="col-9 text-start"><p>{{ count_comisiones }}</p></div>
+                    <div class="col-3">
+                        <i class="fa fa-users fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ count_comisiones }}</p>
+                    </div>
                 </div>
-                <div class="row info-card-label"><h5 class="mt-2">Comisiones</h5></div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Comisiones</h5>
+                </div>
             </div>
         </div>
         <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6 pt-3">
             <div class="info-card bg-card">
                 <div class="row">
-                    <div class="col-3"><i class="fa fa-user-tie fa-2x"></i></div>
-                    <div class="col-9 text-start"><p>{{ count_autoridades }}</p></div>
+                    <div class="col-3">
+                        <i class="fa fa-user-tie fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ count_autoridades }}</p>
+                    </div>
                 </div>
-                <div class="row info-card-label"><h5 class="mt-2">Autoridades</h5></div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Autoridades</h5>
+                </div>
             </div>
         </div>
         <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6 pt-3">
             <div class="info-card bg-card">
                 <div class="row">
-                    <div class="col-3"><i class="fa fa-id-card fa-2x"></i></div>
-                    <div class="col-9 text-start"><p>{{ count_identificadores }}</p></div>
+                    <div class="col-3">
+                        <i class="fa fa-id-card fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ count_identificadores }}</p>
+                    </div>
                 </div>
-                <div class="row info-card-label"><h5 class="mt-2">Identificadores</h5></div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Identificadores</h5>
+                </div>
             </div>
         </div>
     </div>
@@ -80,35 +109,65 @@
     <div class="accordion-horizontal rounded shadow shadow-sm mb-3">
         <!-- SOLAPA 1: Información -->
         <div class="accordion-panel open">
-            <button type="button" class="accordion-header h5 accordion-header--informacion">
+            <button type="button"
+                    class="accordion-header h5 accordion-header--informacion">
                 <i class="bi bi-info-circle accordion-icon"></i>
                 Información
             </button>
             <div class="accordion-content">
                 <div class="row">
                     <div class="col-12 col-lg-6">
-                        <p class="mb-2"><i class="bi bi-upc me-2"></i><strong>Código:</strong> {{ centro.codigo|default:"-" }}</p>
-                        <p class="mb-2"><i class="bi bi-building me-2"></i><strong>Modalidad Institucional:</strong> {{ centro.modalidad_institucional|default:"-" }}</p>
-                        <p class="mb-2"><i class="bi bi-briefcase me-2"></i><strong>Tipo de Gestión:</strong> {{ centro.tipo_gestion|default:"-" }}</p>
-                        <p class="mb-2"><i class="bi bi-bank me-2"></i><strong>Clase de Institución:</strong> {{ centro.clase_institucion|default:"-" }}</p>
-                        <p class="mb-2"><i class="bi bi-info-circle me-2"></i><strong>Situación:</strong> {{ centro.situacion|default:"-" }}</p>
-                        <p class="mb-2"><i class="bi bi-calendar me-2"></i><strong>Fecha de Alta:</strong> {{ centro.fecha_alta|date:"d/m/Y"|default:"-" }}</p>
-                        <p class="mb-0"><i class="bi bi-diagram-3 me-2"></i><strong>Organización:</strong> {{ centro.organizacion_asociada|default:"-" }}</p>
+                        <p class="mb-2">
+                            <i class="bi bi-upc me-2"></i><strong>Código:</strong> {{ centro.codigo|default:"-" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-building me-2"></i><strong>Modalidad Institucional:</strong> {{ centro.modalidad_institucional|default:"-" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-briefcase me-2"></i><strong>Tipo de Gestión:</strong> {{ centro.tipo_gestion|default:"-" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-bank me-2"></i><strong>Clase de Institución:</strong> {{ centro.clase_institucion|default:"-" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-info-circle me-2"></i><strong>Situación:</strong> {{ centro.situacion|default:"-" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-calendar me-2"></i><strong>Fecha de Alta:</strong> {{ centro.fecha_alta|date:"d/m/Y"|default:"-" }}
+                        </p>
+                        <p class="mb-0">
+                            <i class="bi bi-diagram-3 me-2"></i><strong>Organización:</strong> {{ centro.organizacion_asociada|default:"-" }}
+                        </p>
                     </div>
                     <div class="col-12 col-lg-6 mt-3 mt-lg-0">
-                        <p class="mb-2"><i class="bi bi-telephone me-2"></i><strong>Teléfono:</strong> {{ centro.telefono|default:"-" }}</p>
-                        <p class="mb-2"><i class="bi bi-phone me-2"></i><strong>Celular:</strong> {{ centro.celular|default:"-" }}</p>
-                        <p class="mb-2"><i class="bi bi-envelope me-2"></i><strong>Correo:</strong>
-                            {% if centro.correo %}<a href="mailto:{{ centro.correo }}">{{ centro.correo }}</a>{% else %}-{% endif %}
+                        <p class="mb-2">
+                            <i class="bi bi-telephone me-2"></i><strong>Teléfono:</strong> {{ centro.telefono|default:"-" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-phone me-2"></i><strong>Celular:</strong> {{ centro.celular|default:"-" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-envelope me-2"></i><strong>Correo:</strong>
+                            {% if centro.correo %}
+                                <a href="mailto:{{ centro.correo }}">{{ centro.correo }}</a>
+                            {% else %}
+                                -
+                            {% endif %}
                         </p>
                         {% if centro.sitio_web %}
-                        <p class="mb-2"><i class="bi bi-globe me-2"></i><strong>Sitio web:</strong> <a href="{{ centro.sitio_web }}" target="_blank">{{ centro.sitio_web }}</a></p>
+                            <p class="mb-2">
+                                <i class="bi bi-globe me-2"></i><strong>Sitio web:</strong> <a href="{{ centro.sitio_web }}" target="_blank">{{ centro.sitio_web }}</a>
+                            </p>
                         {% endif %}
                         {% if centro.link_redes %}
-                        <p class="mb-2"><i class="bi bi-share me-2"></i><strong>Redes sociales:</strong> <a href="{{ centro.link_redes }}" target="_blank">{{ centro.link_redes }}</a></p>
+                            <p class="mb-2">
+                                <i class="bi bi-share me-2"></i><strong>Redes sociales:</strong> <a href="{{ centro.link_redes }}" target="_blank">{{ centro.link_redes }}</a>
+                            </p>
                         {% endif %}
                         {% if centro.domicilio_actividad %}
-                        <p class="mb-0"><i class="bi bi-signpost me-2"></i><strong>Domicilio de actividades:</strong> {{ centro.domicilio_actividad }}</p>
+                            <p class="mb-0">
+                                <i class="bi bi-signpost me-2"></i><strong>Domicilio de actividades:</strong> {{ centro.domicilio_actividad }}
+                            </p>
                         {% endif %}
                     </div>
                 </div>
@@ -126,12 +185,17 @@
                     <div class="col-12 col-lg-5">
                         {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
                             <div class="w-100" style="height: 340px;">
-                                <iframe width="100%" height="100%" frameborder="0" style="border:0; border-radius: 12px;"
-                                    src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
-                                    allowfullscreen></iframe>
+                                <iframe width="100%"
+                                        height="100%"
+                                        frameborder="0"
+                                        style="border:0;
+                                               border-radius: 12px"
+                                        src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+                                        allowfullscreen></iframe>
                             </div>
                         {% else %}
-                            <div class="d-flex align-items-center justify-content-center text-muted" style="height: 340px;">
+                            <div class="d-flex align-items-center justify-content-center text-muted"
+                                 style="height: 340px">
                                 <div class="text-center">
                                     <i class="bi bi-geo fs-1"></i>
                                     <p class="mb-0 fw-bold">No hay datos suficientes para cargar el mapa.</p>
@@ -140,12 +204,20 @@
                         {% endif %}
                     </div>
                     <div class="col-12 col-lg-7 mt-3 mt-lg-0">
-                        <p class="mb-2"><i class="bi bi-map me-2"></i><strong>Provincia:</strong> {{ centro.provincia|default:"-" }}</p>
-                        <p class="mb-2"><i class="bi bi-pin-map me-2"></i><strong>Municipio:</strong> {{ centro.municipio|default:"-" }}</p>
-                        <p class="mb-2"><i class="bi bi-geo-alt me-2"></i><strong>Localidad:</strong> {{ centro.localidad|default:"-" }}</p>
-                        <p class="mb-2"><i class="bi bi-signpost me-2"></i><strong>Calle:</strong>
+                        <p class="mb-2">
+                            <i class="bi bi-map me-2"></i><strong>Provincia:</strong> {{ centro.provincia|default:"-" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-pin-map me-2"></i><strong>Municipio:</strong> {{ centro.municipio|default:"-" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-geo-alt me-2"></i><strong>Localidad:</strong> {{ centro.localidad|default:"-" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-signpost me-2"></i><strong>Calle:</strong>
                             {% if centro.calle %}
-                                {{ centro.calle }}{% if centro.numero %} {{ centro.numero }}{% endif %}
+                                {{ centro.calle }}
+                                {% if centro.numero %}{{ centro.numero }}{% endif %}
                             {% else %}
                                 -
                             {% endif %}
@@ -166,24 +238,35 @@
                     <h4 class="mb-0">Referente</h4>
                     <small class="text-muted">Persona de referencia asociada al centro.</small>
                 </div>
-                <p class="mb-2"><i class="bi bi-person me-2"></i><strong>Nombre y Apellido:</strong>
+                <p class="mb-2">
+                    <i class="bi bi-person me-2"></i><strong>Nombre y Apellido:</strong>
                     {% if centro.nombre_referente or centro.apellido_referente %}
                         {{ centro.nombre_referente }} {{ centro.apellido_referente }}
                     {% else %}
                         -
                     {% endif %}
                 </p>
-                <p class="mb-2"><i class="bi bi-telephone me-2"></i><strong>Teléfono:</strong> {{ centro.telefono_referente|default:"-" }}</p>
-                <p class="mb-2"><i class="bi bi-envelope me-2"></i><strong>Correo:</strong>
-                    {% if centro.correo_referente %}<a href="mailto:{{ centro.correo_referente }}">{{ centro.correo_referente }}</a>{% else %}-{% endif %}
+                <p class="mb-2">
+                    <i class="bi bi-telephone me-2"></i><strong>Teléfono:</strong> {{ centro.telefono_referente|default:"-" }}
                 </p>
-                <p class="mb-0"><i class="bi bi-person-badge me-2"></i><strong>Usuario del sistema:</strong> {{ centro.referente.get_full_name|default:centro.referente.username }}</p>
+                <p class="mb-2">
+                    <i class="bi bi-envelope me-2"></i><strong>Correo:</strong>
+                    {% if centro.correo_referente %}
+                        <a href="mailto:{{ centro.correo_referente }}">{{ centro.correo_referente }}</a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </p>
+                <p class="mb-0">
+                    <i class="bi bi-person-badge me-2"></i><strong>Usuario del sistema:</strong> {{ centro.referente.get_full_name|default:centro.referente.username }}
+                </p>
             </div>
         </div>
 
         <!-- SOLAPA 4: Autoridades -->
         <div class="accordion-panel">
-            <button type="button" class="accordion-header h5 accordion-header--autoridades">
+            <button type="button"
+                    class="accordion-header h5 accordion-header--autoridades">
                 <i class="bi bi-people accordion-icon"></i>
                 Autoridades
                 {% if count_autoridades %}<span class="accordion-badge">{{ count_autoridades }}</span>{% endif %}
@@ -195,35 +278,47 @@
                         <small class="text-muted">Autoridades actuales del centro.</small>
                     </div>
                     {% if perms.VAT.add_autoridadinstitucional %}
-                    <a href="{% url 'vat_autoridad_institucional_create' %}?centro={{ centro.id }}" class="btn btn-sm btn-primary">Agregar</a>
+                        <a href="{% url 'vat_autoridad_institucional_create' %}?centro={{ centro.id }}"
+                           class="btn btn-sm btn-primary">Agregar</a>
                     {% endif %}
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped align-middle mb-0">
                         <thead>
-                            <tr><th>Nombre</th><th>DNI</th><th>Cargo</th><th>Email</th><th>Teléfono</th><th>Acciones</th></tr>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>DNI</th>
+                                <th>Cargo</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Acciones</th>
+                            </tr>
                         </thead>
                         <tbody>
                             {% for a in autoridades %}
-                            <tr>
-                                <td>{{ a.nombre_completo }}</td>
-                                <td>{{ a.dni }}</td>
-                                <td>{{ a.cargo }}</td>
-                                <td>{{ a.email|default:"—" }}</td>
-                                <td>{{ a.telefono|default:"—" }}</td>
-                                <td>
-                                    <div class="d-flex gap-2 flex-wrap">
-                                        {% if perms.VAT.change_autoridadinstitucional %}
-                                        <a href="{% url 'vat_autoridad_institucional_update' a.pk %}" class="btn btn-sm btn-warning py-0 px-1"><i class="fas fa-edit"></i></a>
-                                        {% endif %}
-                                        {% if perms.VAT.delete_autoridadinstitucional %}
-                                        <a href="{% url 'vat_autoridad_institucional_delete' a.pk %}" class="btn btn-sm btn-danger py-0 px-1"><i class="fas fa-trash"></i></a>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td>{{ a.nombre_completo }}</td>
+                                    <td>{{ a.dni }}</td>
+                                    <td>{{ a.cargo }}</td>
+                                    <td>{{ a.email|default:"—" }}</td>
+                                    <td>{{ a.telefono|default:"—" }}</td>
+                                    <td>
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            {% if perms.VAT.change_autoridadinstitucional %}
+                                                <a href="{% url 'vat_autoridad_institucional_update' a.pk %}"
+                                                   class="btn btn-sm btn-warning py-0 px-1"><i class="fas fa-edit"></i></a>
+                                            {% endif %}
+                                            {% if perms.VAT.delete_autoridadinstitucional %}
+                                                <a href="{% url 'vat_autoridad_institucional_delete' a.pk %}"
+                                                   class="btn btn-sm btn-danger py-0 px-1"><i class="fas fa-trash"></i></a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
                             {% empty %}
-                            <tr><td colspan="6" class="text-center text-muted py-4">No hay autoridades asociadas a este centro.</td></tr>
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">No hay autoridades asociadas a este centro.</td>
+                                </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -245,33 +340,49 @@
                         <small class="text-muted">Información de contacto adicional del centro.</small>
                     </div>
                     {% if perms.VAT.add_institucioncontacto %}
-                    <a href="{% url 'vat_institucion_contacto_create' %}?centro={{ centro.id }}" class="btn btn-sm btn-primary">Agregar</a>
+                        <a href="{% url 'vat_institucion_contacto_create' %}?centro={{ centro.id }}"
+                           class="btn btn-sm btn-primary">Agregar</a>
                     {% endif %}
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped align-middle mb-0">
                         <thead>
-                            <tr><th>Tipo</th><th>Valor</th><th>Principal</th><th>Acciones</th></tr>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                                <th>Principal</th>
+                                <th>Acciones</th>
+                            </tr>
                         </thead>
                         <tbody>
                             {% for c in contactos %}
-                            <tr>
-                                <td>{{ c.get_tipo_display }}</td>
-                                <td>{{ c.valor }}</td>
-                                <td>{% if c.es_principal %}<span class="badge bg-success">Sí</span>{% else %}—{% endif %}</td>
-                                <td>
-                                    <div class="d-flex gap-2 flex-wrap">
-                                        {% if perms.VAT.change_institucioncontacto %}
-                                        <a href="{% url 'vat_institucion_contacto_update' c.pk %}" class="btn btn-sm btn-warning py-0 px-1"><i class="fas fa-edit"></i></a>
+                                <tr>
+                                    <td>{{ c.get_tipo_display }}</td>
+                                    <td>{{ c.valor }}</td>
+                                    <td>
+                                        {% if c.es_principal %}
+                                            <span class="badge bg-success">Sí</span>
+                                        {% else %}
+                                            —
                                         {% endif %}
-                                        {% if perms.VAT.delete_institucioncontacto %}
-                                        <a href="{% url 'vat_institucion_contacto_delete' c.pk %}" class="btn btn-sm btn-danger py-0 px-1"><i class="fas fa-trash"></i></a>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            {% if perms.VAT.change_institucioncontacto %}
+                                                <a href="{% url 'vat_institucion_contacto_update' c.pk %}"
+                                                   class="btn btn-sm btn-warning py-0 px-1"><i class="fas fa-edit"></i></a>
+                                            {% endif %}
+                                            {% if perms.VAT.delete_institucioncontacto %}
+                                                <a href="{% url 'vat_institucion_contacto_delete' c.pk %}"
+                                                   class="btn btn-sm btn-danger py-0 px-1"><i class="fas fa-trash"></i></a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
                             {% empty %}
-                            <tr><td colspan="4" class="text-center text-muted py-4">No hay contactos adicionales registrados.</td></tr>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">No hay contactos adicionales registrados.</td>
+                                </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -288,7 +399,8 @@
                     <h3 class="card-title fw-bold me-3 pt-1">Identificadores</h3>
                     <div class="card-tools">
                         {% if perms.VAT.add_institucionidentificadorhist %}
-                        <a href="{% url 'vat_institucion_identificador_create' %}?centro={{ centro.id }}" class="btn btn-primary btn-sm me-2">Agregar</a>
+                            <a href="{% url 'vat_institucion_identificador_create' %}?centro={{ centro.id }}"
+                               class="btn btn-primary btn-sm me-2">Agregar</a>
                         {% endif %}
                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
                             <i class="fas fa-minus"></i>
@@ -297,22 +409,28 @@
                 </div>
                 <div class="card-body p-0">
                     {% if identificadores %}
-                    <table class="table table-sm mb-0">
-                        <thead>
-                            <tr><th>Tipo</th><th>Valor</th><th>Rol</th></tr>
-                        </thead>
-                        <tbody>
-                            {% for id in identificadores %}
-                            <tr>
-                                <td>{{ id.get_tipo_identificador_display }}</td>
-                                <td><strong>{{ id.valor_identificador }}</strong></td>
-                                <td>{{ id.get_rol_institucional_display|default:"—" }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Valor</th>
+                                    <th>Rol</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for id in identificadores %}
+                                    <tr>
+                                        <td>{{ id.get_tipo_identificador_display }}</td>
+                                        <td>
+                                            <strong>{{ id.valor_identificador }}</strong>
+                                        </td>
+                                        <td>{{ id.get_rol_institucional_display|default:"—" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     {% else %}
-                    <p class="text-muted small p-3 mb-0">Sin identificadores registrados.</p>
+                        <p class="text-muted small p-3 mb-0">Sin identificadores registrados.</p>
                     {% endif %}
                 </div>
             </div>
@@ -327,7 +445,8 @@
                     <h3 class="card-title fw-bold me-3 pt-1">Ubicaciones adicionales</h3>
                     <div class="card-tools">
                         {% if perms.VAT.add_institucionubicacion %}
-                        <a href="{% url 'vat_institucion_ubicacion_create' %}?centro={{ centro.id }}" class="btn btn-primary btn-sm me-2">Agregar</a>
+                            <a href="{% url 'vat_institucion_ubicacion_create' %}?centro={{ centro.id }}"
+                               class="btn btn-primary btn-sm me-2">Agregar</a>
                         {% endif %}
                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
                             <i class="fas fa-minus"></i>
@@ -336,23 +455,34 @@
                 </div>
                 <div class="card-body p-0">
                     {% if ubicaciones %}
-                    <table class="table table-sm mb-0">
-                        <thead>
-                            <tr><th>Rol</th><th>Localidad</th><th>Domicilio</th><th>Principal</th></tr>
-                        </thead>
-                        <tbody>
-                            {% for u in ubicaciones %}
-                            <tr>
-                                <td>{{ u.get_rol_ubicacion_display }}</td>
-                                <td>{{ u.localidad }}</td>
-                                <td>{{ u.domicilio|default:"—" }}</td>
-                                <td>{% if u.es_principal %}<span class="badge bg-primary">Sí</span>{% else %}—{% endif %}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Rol</th>
+                                    <th>Localidad</th>
+                                    <th>Domicilio</th>
+                                    <th>Principal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in ubicaciones %}
+                                    <tr>
+                                        <td>{{ u.get_rol_ubicacion_display }}</td>
+                                        <td>{{ u.localidad }}</td>
+                                        <td>{{ u.domicilio|default:"—" }}</td>
+                                        <td>
+                                            {% if u.es_principal %}
+                                                <span class="badge bg-primary">Sí</span>
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     {% else %}
-                    <p class="text-muted small p-3 mb-0">Sin ubicaciones adicionales registradas.</p>
+                        <p class="text-muted small p-3 mb-0">Sin ubicaciones adicionales registradas.</p>
                     {% endif %}
                 </div>
             </div>
@@ -367,7 +497,8 @@
                     <h3 class="card-title fw-bold me-3 pt-1">Ofertas Institucionales</h3>
                     <div class="card-tools">
                         {% if perms.VAT.add_ofertainstitucional %}
-                        <a href="{% url 'vat_oferta_institucional_create' %}?centro={{ centro.id }}" class="btn btn-primary btn-sm me-3">Nueva Oferta</a>
+                            <a href="{% url 'vat_oferta_institucional_create' %}?centro={{ centro.id }}"
+                               class="btn btn-primary btn-sm me-3">Nueva Oferta</a>
                         {% endif %}
                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
                             <i class="fas fa-minus"></i>
@@ -376,54 +507,66 @@
                 </div>
                 <div class="card-body p-0">
                     {% if ofertas %}
-                    {% for oferta in ofertas %}
-                    <div class="px-3 pt-3 pb-1">
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <strong>{{ oferta.plan_curricular.titulo_referencia.nombre }}</strong>
-                            <span class="badge bg-secondary">{{ oferta.ciclo_lectivo }}</span>
-                            <span class="badge {% if oferta.estado == 'publicada' %}bg-success{% elif oferta.estado == 'aprobada' %}bg-primary{% elif oferta.estado == 'planificada' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                                {{ oferta.get_estado_display }}
-                            </span>
-                            <a href="{% url 'vat_oferta_institucional_detail' oferta.pk %}" class="btn btn-sm btn-outline-secondary py-0 ms-auto">Ver oferta</a>
-                        </div>
-                        {% with comisiones=oferta.comisiones.all %}
-                        {% if comisiones %}
-                        <table class="table table-sm mb-2">
-                            <thead class="table-light">
-                                <tr><th>Código</th><th>Nombre</th><th>Período</th><th>Cupo</th><th>Estado</th><th></th></tr>
-                            </thead>
-                            <tbody>
-                                {% for comision in comisiones %}
-                                <tr>
-                                    <td><strong>{{ comision.codigo_comision }}</strong></td>
-                                    <td>{{ comision.nombre }}</td>
-                                    <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} — {{ comision.fecha_fin|date:"d/m/Y" }}</td>
-                                    <td>{{ comision.cupo }}</td>
-                                    <td>
-                                        <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
-                                            {{ comision.get_estado_display }}
-                                        </span>
-                                    </td>
-                                    <td class="text-end">
-                                        <a href="{% url 'vat_comision_detail' comision.pk %}" class="btn btn-sm btn-outline-info py-0 px-1"><i class="fas fa-eye"></i></a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        {% else %}
-                        <p class="text-muted small mb-2">Sin comisiones.
-                            {% if perms.VAT.add_comision %}
-                            <a href="{% url 'vat_comision_create' %}?oferta={{ oferta.id }}">Crear una</a>
-                            {% endif %}
-                        </p>
-                        {% endif %}
-                        {% endwith %}
-                    </div>
-                    {% if not forloop.last %}<hr class="my-0">{% endif %}
-                    {% endfor %}
+                        {% for oferta in ofertas %}
+                            <div class="px-3 pt-3 pb-1">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <strong>{{ oferta.plan_curricular.titulo_referencia.nombre }}</strong>
+                                    <span class="badge bg-secondary">{{ oferta.ciclo_lectivo }}</span>
+                                    <span class="badge {% if oferta.estado == 'publicada' %}bg-success{% elif oferta.estado == 'aprobada' %}bg-primary{% elif oferta.estado == 'planificada' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                        {{ oferta.get_estado_display }}
+                                    </span>
+                                    <a href="{% url 'vat_oferta_institucional_detail' oferta.pk %}"
+                                       class="btn btn-sm btn-outline-secondary py-0 ms-auto">Ver oferta</a>
+                                </div>
+                                {% with comisiones=oferta.comisiones.all %}
+                                    {% if comisiones %}
+                                        <table class="table table-sm mb-2">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Código</th>
+                                                    <th>Nombre</th>
+                                                    <th>Período</th>
+                                                    <th>Cupo</th>
+                                                    <th>Estado</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for comision in comisiones %}
+                                                    <tr>
+                                                        <td>
+                                                            <strong>{{ comision.codigo_comision }}</strong>
+                                                        </td>
+                                                        <td>{{ comision.nombre }}</td>
+                                                        <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} — {{ comision.fecha_fin|date:"d/m/Y" }}</td>
+                                                        <td>{{ comision.cupo }}</td>
+                                                        <td>
+                                                            <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                                                {{ comision.get_estado_display }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <a href="{% url 'vat_comision_detail' comision.pk %}"
+                                                               class="btn btn-sm btn-outline-info py-0 px-1"><i class="fas fa-eye"></i></a>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    {% else %}
+                                        <p class="text-muted small mb-2">
+                                            Sin comisiones.
+                                            {% if perms.VAT.add_comision %}
+                                                <a href="{% url 'vat_comision_create' %}?oferta={{ oferta.id }}">Crear una</a>
+                                            {% endif %}
+                                        </p>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            {% if not forloop.last %}<hr class="my-0" />{% endif %}
+                        {% endfor %}
                     {% else %}
-                    <p class="text-muted small p-3 mb-0">Sin ofertas institucionales registradas.</p>
+                        <p class="text-muted small p-3 mb-0">Sin ofertas institucionales registradas.</p>
                     {% endif %}
                 </div>
             </div>

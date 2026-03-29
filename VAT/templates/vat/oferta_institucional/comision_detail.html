@@ -4,7 +4,7 @@
 {% block title %}{{ comision.codigo_comision }} — Comisión{% endblock %}
 
 {% block content %}
-<style>
+    <style>
 /* ── Hero ─────────────────────────────────────── */
 .ci-hero {
     background: linear-gradient(135deg, #1a3a6e 0%, #1f3a93 50%, #3a6bc4 100%);
@@ -230,253 +230,433 @@
 
 /* ── Audit row ────────────────────────────────── */
 .ci-audit { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .73rem; color: var(--bs-secondary-color); border-top: 1px solid var(--bs-border-color-translucent); padding: .75rem 1.25rem 1.25rem; }
-</style>
+    </style>
 
-{# ── HERO ───────────────────────────────────────────────────────── #}
-<div class="ci-hero">
-    {# ── Fila superior: back + título + editar ── #}
-    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
-        <div class="d-flex align-items-center gap-3">
-            <a href="{% url 'vat_comision_list' %}" class="ci-back"><i class="bi bi-arrow-left"></i></a>
-            <div>
-                <div class="ci-hero-title" style="margin-top:0;">{{ comision.nombre|default:comision.codigo_comision }}</div>
-                <div class="ci-hero-sub" style="opacity:.75;font-size:.88rem;"><i class="bi bi-book me-1"></i>{{ comision.oferta }}</div>
+    {# ── HERO ───────────────────────────────────────────────────────── #}
+    <div class="ci-hero">
+        {# ── Fila superior: back + título + editar ── #}
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <a href="{% url 'vat_comision_list' %}" class="ci-back"><i class="bi bi-arrow-left"></i></a>
+                <div>
+                    <div class="ci-hero-title" style="margin-top:0;">{{ comision.nombre|default:comision.codigo_comision }}</div>
+                    <div class="ci-hero-sub" style="opacity:.75;font-size:.88rem;">
+                        <i class="bi bi-book me-1"></i>{{ comision.oferta }}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="ci-code-badge">{{ comision.codigo_comision }}</span>
+                <span class="ci-state-badge">{{ comision.get_estado_display }}</span>
+                {% if perms.VAT.change_comision %}
+                    <a href="{% url 'vat_comision_update' comision.id %}"
+                       class="ci-edit-btn"><i class="bi bi-pencil me-1"></i>Editar</a>
+                {% endif %}
             </div>
         </div>
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <span class="ci-code-badge">{{ comision.codigo_comision }}</span>
-            <span class="ci-state-badge">{{ comision.get_estado_display }}</span>
-            {% if perms.VAT.change_comision %}
-            <a href="{% url 'vat_comision_update' comision.id %}" class="ci-edit-btn"><i class="bi bi-pencil me-1"></i>Editar</a>
+
+        {# ── Fila inferior: stats distribuidos ── #}
+        <div style="background:rgba(255,255,255,.08);
+                    border-radius:8px;
+                    padding:.85rem 1.15rem;
+                    display:flex;
+                    flex-wrap:wrap;
+                    gap:0">
+            <div style="flex:1;min-width:80px;padding:.25rem .5rem;">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Cupo</span>
+                <span class="ci-stat-val" style="font-size:1.15rem;">{{ comision.cupo }}</span>
+            </div>
+            <div style="flex:1;
+                        min-width:90px;
+                        padding:.25rem .5rem;
+                        border-left:1px solid rgba(255,255,255,.12)">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Inscriptos</span>
+                <span class="ci-stat-val" style="font-size:1.15rem;">{{ inscripciones|length }}</span>
+            </div>
+            <div style="flex:1;
+                        min-width:80px;
+                        padding:.25rem .5rem;
+                        border-left:1px solid rgba(255,255,255,.12)">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Sesiones</span>
+                <span class="ci-stat-val" style="font-size:1.15rem;">{{ sesiones|length }}</span>
+            </div>
+            <div style="flex:1;
+                        min-width:80px;
+                        padding:.25rem .5rem;
+                        border-left:1px solid rgba(255,255,255,.12)">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Horarios</span>
+                <span class="ci-stat-val" style="font-size:1.15rem;">{{ horarios|length }}</span>
+            </div>
+            {% if comision.fecha_inicio %}
+                <div style="flex:1;
+                            min-width:100px;
+                            padding:.25rem .5rem;
+                            border-left:1px solid rgba(255,255,255,.12)">
+                    <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Inicio</span>
+                    <span class="ci-stat-val"><i class="bi bi-calendar3 me-1" style="font-size:.8rem;opacity:.6;"></i>{{ comision.fecha_inicio|date:"d/m/Y" }}</span>
+                </div>
+            {% endif %}
+            {% if comision.fecha_fin %}
+                <div style="flex:1;
+                            min-width:100px;
+                            padding:.25rem .5rem;
+                            border-left:1px solid rgba(255,255,255,.12)">
+                    <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Fin</span>
+                    <span class="ci-stat-val"><i class="bi bi-calendar3 me-1" style="font-size:.8rem;opacity:.6;"></i>{{ comision.fecha_fin|date:"d/m/Y" }}</span>
+                </div>
             {% endif %}
         </div>
     </div>
 
-    {# ── Fila inferior: stats distribuidos ── #}
-    <div style="background:rgba(255,255,255,.08);border-radius:8px;padding:.85rem 1.15rem;display:flex;flex-wrap:wrap;gap:0;">
-        <div style="flex:1;min-width:80px;padding:.25rem .5rem;">
-            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Cupo</span>
-            <span class="ci-stat-val" style="font-size:1.15rem;">{{ comision.cupo }}</span>
-        </div>
-        <div style="flex:1;min-width:90px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);">
-            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Inscriptos</span>
-            <span class="ci-stat-val" style="font-size:1.15rem;">{{ inscripciones|length }}</span>
-        </div>
-        <div style="flex:1;min-width:80px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);">
-            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Sesiones</span>
-            <span class="ci-stat-val" style="font-size:1.15rem;">{{ sesiones|length }}</span>
-        </div>
-        <div style="flex:1;min-width:80px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);">
-            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Horarios</span>
-            <span class="ci-stat-val" style="font-size:1.15rem;">{{ horarios|length }}</span>
-        </div>
-        {% if comision.fecha_inicio %}
-        <div style="flex:1;min-width:100px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);">
-            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Inicio</span>
-            <span class="ci-stat-val"><i class="bi bi-calendar3 me-1" style="font-size:.8rem;opacity:.6;"></i>{{ comision.fecha_inicio|date:"d/m/Y" }}</span>
-        </div>
-        {% endif %}
-        {% if comision.fecha_fin %}
-        <div style="flex:1;min-width:100px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);">
-            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Fin</span>
-            <span class="ci-stat-val"><i class="bi bi-calendar3 me-1" style="font-size:.8rem;opacity:.6;"></i>{{ comision.fecha_fin|date:"d/m/Y" }}</span>
-        </div>
-        {% endif %}
-    </div>
-</div>
+    {# ── BODY ───────────────────────────────────────────────────────── #}
+    <div class="row g-3 align-items-start">
 
-{# ── BODY ───────────────────────────────────────────────────────── #}
-<div class="row g-3 align-items-start">
+        {# ── MAIN ── #}
+        <div class="col-xl-8">
 
-    {# ── MAIN ── #}
-    <div class="col-xl-8">
-
-        {# TAB BAR #}
-        <div class="ci-tabbar" role="tablist">
-            <button class="ci-tab active" data-bs-toggle="tab" data-bs-target="#ci-info" type="button" role="tab" aria-selected="true">
-                <i class="bi bi-info-circle"></i>Información
-            </button>
-            <button class="ci-tab" data-bs-toggle="tab" data-bs-target="#ci-inscriptos" type="button" role="tab" aria-selected="false">
-                <i class="bi bi-people"></i>Inscriptos{% if inscripciones %}<span class="ci-cnt">{{ inscripciones|length }}</span>{% endif %}
-            </button>
-            <button class="ci-tab" data-bs-toggle="tab" data-bs-target="#ci-sesiones" type="button" role="tab" aria-selected="false">
-                <i class="bi bi-calendar-check"></i>Sesiones{% if sesiones %}<span class="ci-cnt">{{ sesiones|length }}</span>{% endif %}
-            </button>
-            <button class="ci-tab" data-bs-toggle="tab" data-bs-target="#ci-horarios" type="button" role="tab" aria-selected="false">
-                <i class="bi bi-clock"></i>Horarios{% if horarios %}<span class="ci-cnt">{{ horarios|length }}</span>{% endif %}
-            </button>
-        </div>
-
-        <div class="tab-content">
-
-            {# INFO #}
-            <div class="tab-pane fade show active" id="ci-info" role="tabpanel">
-                <div class="ci-panel">
-                    <div class="ci-info-grid">
-                        <div class="ci-info-item"><span class="ci-lbl">Código</span><span class="ci-val" style="font-family:monospace;">{{ comision.codigo_comision }}</span></div>
-                        <div class="ci-info-item"><span class="ci-lbl">Nombre</span><span class="ci-val">{{ comision.nombre|default:"—" }}</span></div>
-                        <div class="ci-info-item"><span class="ci-lbl">Oferta</span><span class="ci-val">{{ comision.oferta }}</span></div>
-                        <div class="ci-info-item"><span class="ci-lbl">Ubicación</span><span class="ci-val">{{ comision.ubicacion|default:"—" }}</span></div>
-                        <div class="ci-info-item"><span class="ci-lbl">Fecha inicio</span><span class="ci-val">{{ comision.fecha_inicio|date:"d/m/Y"|default:"—" }}</span></div>
-                        <div class="ci-info-item"><span class="ci-lbl">Fecha fin</span><span class="ci-val">{{ comision.fecha_fin|date:"d/m/Y"|default:"—" }}</span></div>
-                        <div class="ci-info-item"><span class="ci-lbl">Cupo</span><span class="ci-val">{{ comision.cupo }}</span></div>
-                        <div class="ci-info-item"><span class="ci-lbl">Estado</span><span class="ci-val"><span class="ci-pill ci-pill-blue">{{ comision.get_estado_display }}</span></span></div>
-                    </div>
-                    {% if comision.observaciones %}
-                    <div style="margin: 0 1.25rem; padding: .75rem 1rem; background: var(--bs-tertiary-bg); border: 1px solid var(--bs-border-color); border-radius: 8px; margin-bottom: .5rem;">
-                        <span class="ci-lbl">Observaciones</span>
-                        <p class="mb-0 small" style="color:var(--bs-body-color);">{{ comision.observaciones }}</p>
-                    </div>
-                    {% endif %}
-                    <div class="ci-audit">
-                        <span><i class="bi bi-clock me-1"></i>Creado {{ comision.fecha_creacion|date:"d/m/Y H:i" }}</span>
-                        <span><i class="bi bi-pencil me-1"></i>Modificado {{ comision.fecha_modificacion|date:"d/m/Y H:i" }}</span>
-                        <span class="ms-auto">#{{ comision.id }}</span>
-                    </div>
-                </div>
+            {# TAB BAR #}
+            <div class="ci-tabbar" role="tablist">
+                <button class="ci-tab active"
+                        data-bs-toggle="tab"
+                        data-bs-target="#ci-info"
+                        type="button"
+                        role="tab"
+                        aria-selected="true">
+                    <i class="bi bi-info-circle"></i>Información
+                </button>
+                <button class="ci-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#ci-inscriptos"
+                        type="button"
+                        role="tab"
+                        aria-selected="false">
+                    <i class="bi bi-people"></i>Inscriptos
+                    {% if inscripciones %}<span class="ci-cnt">{{ inscripciones|length }}</span>{% endif %}
+                </button>
+                <button class="ci-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#ci-sesiones"
+                        type="button"
+                        role="tab"
+                        aria-selected="false">
+                    <i class="bi bi-calendar-check"></i>Sesiones
+                    {% if sesiones %}<span class="ci-cnt">{{ sesiones|length }}</span>{% endif %}
+                </button>
+                <button class="ci-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#ci-horarios"
+                        type="button"
+                        role="tab"
+                        aria-selected="false">
+                    <i class="bi bi-clock"></i>Horarios
+                    {% if horarios %}<span class="ci-cnt">{{ horarios|length }}</span>{% endif %}
+                </button>
             </div>
 
-            {# INSCRIPTOS #}
-            <div class="tab-pane fade" id="ci-inscriptos" role="tabpanel">
-                <div class="ci-panel">
-                    <div class="ci-sec-head">
-                        <span class="ci-sec-title"><i class="bi bi-people me-2"></i>Inscriptos</span>
-                        {% if perms.VAT.add_inscripcion %}
-                        <a href="{% url 'vat_inscripcion_create' %}?comision={{ comision.id }}" class="btn btn-sm btn-primary rounded-3"><i class="bi bi-plus-lg me-1"></i>Inscribir</a>
-                        {% endif %}
-                    </div>
-                    {% if inscripciones %}
-                    {% for insc in inscripciones %}
-                    <div class="ci-row">
-                        <div class="ci-av ci-av-{{ forloop.counter|divisibleby:5|yesno:'5,' }}{{ forloop.counter|divisibleby:4|yesno:'4,' }}{{ forloop.counter|divisibleby:3|yesno:'3,' }}{{ forloop.counter|divisibleby:2|yesno:'2,1' }}">{{ insc.ciudadano.nombre_completo|slice:":2"|upper }}</div>
-                        <div style="flex:1;min-width:0;">
-                            <a href="{% url 'vat_inscripcion_detail' insc.pk %}" class="d-block fw-semibold text-decoration-none" style="font-size:.87rem;color:var(--bs-body-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ insc.ciudadano.nombre_completo }}</a>
-                            <span class="d-block" style="font-size:.74rem;color:var(--bs-secondary-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ insc.programa }}</span>
-                        </div>
-                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                            <span style="font-size:.7rem;color:var(--bs-secondary-color);white-space:nowrap;">{{ insc.fecha_inscripcion|date:"d/m/Y" }}</span>
-                            <span class="ci-pill {% if insc.estado == 'inscripta' %}ci-pill-green{% elif insc.estado == 'pre_inscripta' %}ci-pill-yellow{% elif insc.estado == 'validada_presencial' %}ci-pill-blue{% elif insc.estado == 'completada' %}ci-pill-teal{% elif insc.estado == 'abandonada' %}ci-pill-gray{% elif insc.estado == 'rechazada' %}ci-pill-red{% else %}ci-pill-gray{% endif %}">{{ insc.get_estado_display }}</span>
-                            {% if perms.VAT.change_inscripcion and insc.estado == 'pre_inscripta' %}
-                            <form method="post" action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}" class="d-inline">{% csrf_token %}<input type="hidden" name="estado" value="inscripta"><button type="submit" class="ci-pill ci-pill-green border-0 cursor-pointer" style="cursor:pointer;font-size:.69rem;" title="Aceptar inscripción"><i class="bi bi-check-lg me-1"></i>Aceptar</button></form>
-                            <form method="post" action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}" class="d-inline">{% csrf_token %}<input type="hidden" name="estado" value="rechazada"><button type="submit" class="ci-pill ci-pill-red border-0" style="cursor:pointer;font-size:.69rem;" title="Rechazar inscripción"><i class="bi bi-x-lg me-1"></i>Rechazar</button></form>
-                            {% endif %}
-                            {% if perms.VAT.change_inscripcion %}
-                            <div class="dropdown">
-                                <button class="ci-dots dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3" style="font-size:.84rem;">
-                                    {% for val, lbl in estado_choices %}{% if val != insc.estado %}
-                                    <li><form method="post" action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}">{% csrf_token %}<input type="hidden" name="estado" value="{{ val }}"><button type="submit" class="dropdown-item rounded-2">{{ lbl }}</button></form></li>
-                                    {% endif %}{% endfor %}
-                                </ul>
+            <div class="tab-content">
+
+                {# INFO #}
+                <div class="tab-pane fade show active" id="ci-info" role="tabpanel">
+                    <div class="ci-panel">
+                        <div class="ci-info-grid">
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Código</span><span class="ci-val" style="font-family:monospace;">{{ comision.codigo_comision }}</span>
                             </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Nombre</span><span class="ci-val">{{ comision.nombre|default:"—" }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Oferta</span><span class="ci-val">{{ comision.oferta }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Ubicación</span><span class="ci-val">{{ comision.ubicacion|default:"—" }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Fecha inicio</span><span class="ci-val">{{ comision.fecha_inicio|date:"d/m/Y"|default:"—" }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Fecha fin</span><span class="ci-val">{{ comision.fecha_fin|date:"d/m/Y"|default:"—" }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Cupo</span><span class="ci-val">{{ comision.cupo }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Estado</span><span class="ci-val"><span class="ci-pill ci-pill-blue">{{ comision.get_estado_display }}</span></span>
+                            </div>
+                        </div>
+                        {% if comision.observaciones %}
+                            <div style="margin: 0 1.25rem;
+                                        padding: .75rem 1rem;
+                                        background: var(--bs-tertiary-bg);
+                                        border: 1px solid var(--bs-border-color);
+                                        border-radius: 8px;
+                                        margin-bottom: .5rem">
+                                <span class="ci-lbl">Observaciones</span>
+                                <p class="mb-0 small" style="color:var(--bs-body-color);">{{ comision.observaciones }}</p>
+                            </div>
+                        {% endif %}
+                        <div class="ci-audit">
+                            <span><i class="bi bi-clock me-1"></i>Creado {{ comision.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                            <span><i class="bi bi-pencil me-1"></i>Modificado {{ comision.fecha_modificacion|date:"d/m/Y H:i" }}</span>
+                            <span class="ms-auto">#{{ comision.id }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {# INSCRIPTOS #}
+                <div class="tab-pane fade" id="ci-inscriptos" role="tabpanel">
+                    <div class="ci-panel">
+                        <div class="ci-sec-head">
+                            <span class="ci-sec-title"><i class="bi bi-people me-2"></i>Inscriptos</span>
+                            {% if perms.VAT.add_inscripcion %}
+                                <a href="{% url 'vat_inscripcion_create' %}?comision={{ comision.id }}"
+                                   class="btn btn-sm btn-primary rounded-3"><i class="bi bi-plus-lg me-1"></i>Inscribir</a>
                             {% endif %}
                         </div>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <div class="ci-empty"><i class="bi bi-person-plus"></i><p class="ci-empty-t">Sin inscriptos aún</p><p class="ci-empty-s">Inscribí ciudadanos a esta comisión para verlos aquí.</p></div>
-                    {% endif %}
-                </div>
-            </div>
-
-            {# SESIONES #}
-            <div class="tab-pane fade" id="ci-sesiones" role="tabpanel">
-                <div class="ci-panel">
-                    <div class="ci-sec-head">
-                        <span class="ci-sec-title"><i class="bi bi-calendar-check me-2"></i>Sesiones</span>
-                    </div>
-                    {% if sesiones %}
-                    {% for sesion in sesiones %}
-                    <div class="ci-row" style="border-left: 3px solid {% if sesion.estado == 'realizada' %}rgba(34,197,94,.5){% elif sesion.estado == 'cancelada' %}rgba(239,68,68,.5){% else %}transparent{% endif %}; padding-left: calc(1.25rem - 3px);">
-                        <span class="ci-sesnum">#{{ sesion.numero_sesion }}</span>
-                        <div class="ci-datetile"><span class="d">{{ sesion.fecha|date:"d" }}</span><span class="m">{{ sesion.fecha|date:"M" }}</span></div>
-                        <div style="flex:1;">
-                            <div style="font-size:.85rem;font-weight:600;color:var(--bs-body-color);">{{ sesion.horario.dia_semana }}</div>
-                            <div style="font-size:.77rem;color:var(--bs-secondary-color);"><i class="bi bi-clock me-1"></i>{{ sesion.horario.hora_desde|time:"H:i" }} – {{ sesion.horario.hora_hasta|time:"H:i" }}{% if sesion.horario.aula_espacio %} &nbsp;·&nbsp; <i class="bi bi-geo-alt me-1"></i>{{ sesion.horario.aula_espacio }}{% endif %}</div>
-                        </div>
-                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                            <span class="ci-pill {% if sesion.estado == 'realizada' %}ci-pill-green{% elif sesion.estado == 'cancelada' %}ci-pill-red{% else %}ci-pill-blue{% endif %}">{{ sesion.get_estado_display }}</span>
-                            <a href="{% url 'vat_asistencia_sesion' sesion.pk %}" class="ci-asist {% if sesion.estado == 'realizada' %}ci-asist-done{% endif %}"><i class="bi bi-check2-square"></i>Asistencia</a>
-                        </div>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <div class="ci-empty"><i class="bi bi-calendar-x"></i><p class="ci-empty-t">Sin sesiones generadas</p><p class="ci-empty-s">Agregá un horario para generar las sesiones automáticamente.</p></div>
-                    {% endif %}
-                </div>
-            </div>
-
-            {# HORARIOS #}
-            <div class="tab-pane fade" id="ci-horarios" role="tabpanel">
-                <div class="ci-panel">
-                    <div class="ci-sec-head">
-                        <span class="ci-sec-title"><i class="bi bi-clock me-2"></i>Horarios</span>
-                        {% if perms.VAT.add_comisionhorario %}
-                        <a href="{% url 'vat_comision_horario_create' %}?comision={{ comision.id }}" class="btn btn-sm btn-primary rounded-3"><i class="bi bi-plus-lg me-1"></i>Agregar</a>
+                        {% if inscripciones %}
+                            {% for insc in inscripciones %}
+                                <div class="ci-row">
+                                    <div class="ci-av ci-av-{{ forloop.counter|divisibleby:5|yesno:'5,' }}{{ forloop.counter|divisibleby:4|yesno:'4,' }}{{ forloop.counter|divisibleby:3|yesno:'3,' }}{{ forloop.counter|divisibleby:2|yesno:'2,1' }}">
+                                        {{ insc.ciudadano.nombre_completo|slice:":2"|upper }}
+                                    </div>
+                                    <div style="flex:1;min-width:0;">
+                                        <a href="{% url 'vat_inscripcion_detail' insc.pk %}"
+                                           class="d-block fw-semibold text-decoration-none"
+                                           style="font-size:.87rem;
+                                                  color:var(--bs-body-color);
+                                                  white-space:nowrap;
+                                                  overflow:hidden;
+                                                  text-overflow:ellipsis">{{ insc.ciudadano.nombre_completo }}</a>
+                                        <span class="d-block"
+                                              style="font-size:.74rem;
+                                                     color:var(--bs-secondary-color);
+                                                     white-space:nowrap;
+                                                     overflow:hidden;
+                                                     text-overflow:ellipsis">{{ insc.programa }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        <span style="font-size:.7rem;
+                                                     color:var(--bs-secondary-color);
+                                                     white-space:nowrap">{{ insc.fecha_inscripcion|date:"d/m/Y" }}</span>
+                                        <span class="ci-pill {% if insc.estado == 'inscripta' %}ci-pill-green{% elif insc.estado == 'pre_inscripta' %}ci-pill-yellow{% elif insc.estado == 'validada_presencial' %}ci-pill-blue{% elif insc.estado == 'completada' %}ci-pill-teal{% elif insc.estado == 'abandonada' %}ci-pill-gray{% elif insc.estado == 'rechazada' %}ci-pill-red{% else %}ci-pill-gray{% endif %}">{{ insc.get_estado_display }}</span>
+                                        {% if perms.VAT.change_inscripcion and insc.estado == 'pre_inscripta' %}
+                                            <form method="post"
+                                                  action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}"
+                                                  class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="estado" value="inscripta" />
+                                                <button type="submit"
+                                                        class="ci-pill ci-pill-green border-0 cursor-pointer"
+                                                        style="cursor:pointer;
+                                                               font-size:.69rem"
+                                                        title="Aceptar inscripción">
+                                                    <i class="bi bi-check-lg me-1"></i>Aceptar
+                                                </button>
+                                            </form>
+                                            <form method="post"
+                                                  action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}"
+                                                  class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="estado" value="rechazada" />
+                                                <button type="submit"
+                                                        class="ci-pill ci-pill-red border-0"
+                                                        style="cursor:pointer;
+                                                               font-size:.69rem"
+                                                        title="Rechazar inscripción">
+                                                    <i class="bi bi-x-lg me-1"></i>Rechazar
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        {% if perms.VAT.change_inscripcion %}
+                                            <div class="dropdown">
+                                                <button class="ci-dots dropdown-toggle" data-bs-toggle="dropdown">
+                                                    <i class="bi bi-three-dots-vertical"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3"
+                                                    style="font-size:.84rem">
+                                                    {% for val, lbl in estado_choices %}
+                                                        {% if val != insc.estado %}
+                                                            <li>
+                                                                <form method="post"
+                                                                      action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}">
+                                                                    {% csrf_token %}
+                                                                    <input type="hidden" name="estado" value="{{ val }}" />
+                                                                    <button type="submit" class="dropdown-item rounded-2">{{ lbl }}</button>
+                                                                </form>
+                                                            </li>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="ci-empty">
+                                <i class="bi bi-person-plus"></i>
+                                <p class="ci-empty-t">Sin inscriptos aún</p>
+                                <p class="ci-empty-s">Inscribí ciudadanos a esta comisión para verlos aquí.</p>
+                            </div>
                         {% endif %}
                     </div>
-                    {% if horarios %}
-                    {% for horario in horarios %}
-                    <div class="ci-row">
-                        <span class="ci-dia">{{ horario.dia_semana }}</span>
-                        <div style="flex:1;font-size:.86rem;font-weight:500;color:var(--bs-body-color);">
-                            <i class="bi bi-clock me-1" style="color:var(--bs-secondary-color);"></i>{{ horario.hora_desde|time:"H:i" }} – {{ horario.hora_hasta|time:"H:i" }}
-                            {% if horario.aula_espacio %}<span style="font-size:.8rem;color:var(--bs-secondary-color);margin-left:.85rem;"><i class="bi bi-geo-alt me-1"></i>{{ horario.aula_espacio }}</span>{% endif %}
+                </div>
+
+                {# SESIONES #}
+                <div class="tab-pane fade" id="ci-sesiones" role="tabpanel">
+                    <div class="ci-panel">
+                        <div class="ci-sec-head">
+                            <span class="ci-sec-title"><i class="bi bi-calendar-check me-2"></i>Sesiones</span>
                         </div>
-                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                            <span class="ci-pill {% if horario.vigente %}ci-pill-green{% else %}ci-pill-gray{% endif %}">{% if horario.vigente %}Vigente{% else %}Inactivo{% endif %}</span>
-                            {% if perms.VAT.change_comisionhorario %}<a href="{% url 'vat_comision_horario_update' horario.pk %}" class="ci-iconbtn"><i class="bi bi-pencil"></i></a>{% endif %}
-                            {% if perms.VAT.delete_comisionhorario %}<a href="{% url 'vat_comision_horario_delete' horario.pk %}" class="ci-iconbtn ci-iconbtn-danger"><i class="bi bi-trash"></i></a>{% endif %}
-                        </div>
+                        {% if sesiones %}
+                            {% for sesion in sesiones %}
+                                <div class="ci-row"
+                                     style="border-left: 3px solid {% if sesion.estado == 'realizada' %}rgba(34,197,94,.5){% elif sesion.estado == 'cancelada' %}rgba(239,68,68,.5){% else %}transparent{% endif %};
+                                            padding-left: calc(1.25rem - 3px)">
+                                    <span class="ci-sesnum">#{{ sesion.numero_sesion }}</span>
+                                    <div class="ci-datetile">
+                                        <span class="d">{{ sesion.fecha|date:"d" }}</span><span class="m">{{ sesion.fecha|date:"M" }}</span>
+                                    </div>
+                                    <div style="flex:1;">
+                                        <div style="font-size:.85rem;font-weight:600;color:var(--bs-body-color);">{{ sesion.horario.dia_semana }}</div>
+                                        <div style="font-size:.77rem;color:var(--bs-secondary-color);">
+                                            <i class="bi bi-clock me-1"></i>{{ sesion.horario.hora_desde|time:"H:i" }} – {{ sesion.horario.hora_hasta|time:"H:i" }}
+                                            {% if sesion.horario.aula_espacio %}
+                                                &nbsp;·&nbsp; <i class="bi bi-geo-alt me-1"></i>{{ sesion.horario.aula_espacio }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        <span class="ci-pill {% if sesion.estado == 'realizada' %}ci-pill-green{% elif sesion.estado == 'cancelada' %}ci-pill-red{% else %}ci-pill-blue{% endif %}">{{ sesion.get_estado_display }}</span>
+                                        <a href="{% url 'vat_asistencia_sesion' sesion.pk %}"
+                                           class="ci-asist {% if sesion.estado == 'realizada' %}ci-asist-done{% endif %}"><i class="bi bi-check2-square"></i>Asistencia</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="ci-empty">
+                                <i class="bi bi-calendar-x"></i>
+                                <p class="ci-empty-t">Sin sesiones generadas</p>
+                                <p class="ci-empty-s">Agregá un horario para generar las sesiones automáticamente.</p>
+                            </div>
+                        {% endif %}
                     </div>
-                    {% endfor %}
-                    {% else %}
-                    <div class="ci-empty"><i class="bi bi-clock-history"></i><p class="ci-empty-t">Sin horarios cargados</p><p class="ci-empty-s">Agregá un horario para esta comisión.</p></div>
+                </div>
+
+                {# HORARIOS #}
+                <div class="tab-pane fade" id="ci-horarios" role="tabpanel">
+                    <div class="ci-panel">
+                        <div class="ci-sec-head">
+                            <span class="ci-sec-title"><i class="bi bi-clock me-2"></i>Horarios</span>
+                            {% if perms.VAT.add_comisionhorario %}
+                                <a href="{% url 'vat_comision_horario_create' %}?comision={{ comision.id }}"
+                                   class="btn btn-sm btn-primary rounded-3"><i class="bi bi-plus-lg me-1"></i>Agregar</a>
+                            {% endif %}
+                        </div>
+                        {% if horarios %}
+                            {% for horario in horarios %}
+                                <div class="ci-row">
+                                    <span class="ci-dia">{{ horario.dia_semana }}</span>
+                                    <div style="flex:1;
+                                                font-size:.86rem;
+                                                font-weight:500;
+                                                color:var(--bs-body-color)">
+                                        <i class="bi bi-clock me-1" style="color:var(--bs-secondary-color);"></i>{{ horario.hora_desde|time:"H:i" }} – {{ horario.hora_hasta|time:"H:i" }}
+                                        {% if horario.aula_espacio %}
+                                            <span style="font-size:.8rem;
+                                                         color:var(--bs-secondary-color);
+                                                         margin-left:.85rem"><i class="bi bi-geo-alt me-1"></i>{{ horario.aula_espacio }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        <span class="ci-pill {% if horario.vigente %}ci-pill-green{% else %}ci-pill-gray{% endif %}">
+                                            {% if horario.vigente %}
+                                                Vigente
+                                            {% else %}
+                                                Inactivo
+                                            {% endif %}
+                                        </span>
+                                        {% if perms.VAT.change_comisionhorario %}
+                                            <a href="{% url 'vat_comision_horario_update' horario.pk %}"
+                                               class="ci-iconbtn"><i class="bi bi-pencil"></i></a>
+                                        {% endif %}
+                                        {% if perms.VAT.delete_comisionhorario %}
+                                            <a href="{% url 'vat_comision_horario_delete' horario.pk %}"
+                                               class="ci-iconbtn ci-iconbtn-danger"><i class="bi bi-trash"></i></a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="ci-empty">
+                                <i class="bi bi-clock-history"></i>
+                                <p class="ci-empty-t">Sin horarios cargados</p>
+                                <p class="ci-empty-s">Agregá un horario para esta comisión.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        {# ── SIDEBAR ── #}
+        <div class="col-xl-4">
+            <div style="position:sticky;top:1rem;">
+
+                <div class="ci-scard">
+                    <p class="ci-sc-title">Acciones rápidas</p>
+                    <div class="d-grid gap-2">
+                        {% if perms.VAT.change_comision %}
+                            <a href="{% url 'vat_comision_update' comision.id %}"
+                               class="btn btn-primary rounded-3"><i class="bi bi-pencil me-2"></i>Editar comisión</a>
+                        {% endif %}
+                        {% if perms.VAT.add_inscripcion %}
+                            <a href="{% url 'vat_inscripcion_create' %}?comision={{ comision.id }}"
+                               class="btn btn-outline-primary rounded-3"><i class="bi bi-person-plus me-2"></i>Inscribir ciudadano</a>
+                        {% endif %}
+                        {% if perms.VAT.add_comisionhorario %}
+                            <a href="{% url 'vat_comision_horario_create' %}?comision={{ comision.id }}"
+                               class="btn btn-outline-secondary rounded-3"><i class="bi bi-plus-circle me-2"></i>Agregar horario</a>
+                        {% endif %}
+                        {% if perms.VAT.delete_comision %}
+                            <a href="{% url 'vat_comision_delete' comision.id %}"
+                               class="btn btn-outline-danger rounded-3"><i class="bi bi-trash me-2"></i>Eliminar</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="ci-scard">
+                    <p class="ci-sc-title">Ocupación de cupo</p>
+                    <div class="d-flex align-items-baseline gap-1 mb-2">
+                        <span class="ci-cupo-num">{{ inscripciones|length }}</span>
+                        <span class="ci-cupo-sep">/</span>
+                        <span class="ci-cupo-tot">{{ comision.cupo }}</span>
+                        <span class="ci-cupo-lbl">inscriptos</span>
+                    </div>
+                    {% if comision.cupo %}
+                        {% widthratio inscripciones|length comision.cupo 100 as pct %}
+                        <div class="ci-prog">
+                            <div class="ci-prog-bar"
+                                 style="width:{% widthratio inscripciones|length comision.cupo 100 %}%;
+                                        background:{% if pct >= 90 %}#f87171{% elif pct >= 60 %}#facc15{% else %}#4a7fe8{% endif %}">
+                            </div>
+                        </div>
                     {% endif %}
                 </div>
-            </div>
 
+                <div class="ci-scard">
+                    <p class="ci-sc-title">Oferta asociada</p>
+                    <p class="mb-2"
+                       style="font-size:.86rem;
+                              font-weight:600;
+                              color:var(--bs-body-color)">{{ comision.oferta }}</p>
+                    <a href="{% url 'vat_oferta_institucional_detail' comision.oferta_id %}"
+                       class="btn btn-outline-secondary btn-sm rounded-3 w-100"><i class="bi bi-box-arrow-up-right me-1"></i>Ver oferta</a>
+                </div>
+
+            </div>
         </div>
+
     </div>
-
-    {# ── SIDEBAR ── #}
-    <div class="col-xl-4">
-        <div style="position:sticky;top:1rem;">
-
-            <div class="ci-scard">
-                <p class="ci-sc-title">Acciones rápidas</p>
-                <div class="d-grid gap-2">
-                    {% if perms.VAT.change_comision %}<a href="{% url 'vat_comision_update' comision.id %}" class="btn btn-primary rounded-3"><i class="bi bi-pencil me-2"></i>Editar comisión</a>{% endif %}
-                    {% if perms.VAT.add_inscripcion %}<a href="{% url 'vat_inscripcion_create' %}?comision={{ comision.id }}" class="btn btn-outline-primary rounded-3"><i class="bi bi-person-plus me-2"></i>Inscribir ciudadano</a>{% endif %}
-                    {% if perms.VAT.add_comisionhorario %}<a href="{% url 'vat_comision_horario_create' %}?comision={{ comision.id }}" class="btn btn-outline-secondary rounded-3"><i class="bi bi-plus-circle me-2"></i>Agregar horario</a>{% endif %}
-                    {% if perms.VAT.delete_comision %}<a href="{% url 'vat_comision_delete' comision.id %}" class="btn btn-outline-danger rounded-3"><i class="bi bi-trash me-2"></i>Eliminar</a>{% endif %}
-                </div>
-            </div>
-
-            <div class="ci-scard">
-                <p class="ci-sc-title">Ocupación de cupo</p>
-                <div class="d-flex align-items-baseline gap-1 mb-2">
-                    <span class="ci-cupo-num">{{ inscripciones|length }}</span>
-                    <span class="ci-cupo-sep">/</span>
-                    <span class="ci-cupo-tot">{{ comision.cupo }}</span>
-                    <span class="ci-cupo-lbl">inscriptos</span>
-                </div>
-                {% if comision.cupo %}
-                {% widthratio inscripciones|length comision.cupo 100 as pct %}
-                <div class="ci-prog">
-                    <div class="ci-prog-bar" style="width:{% widthratio inscripciones|length comision.cupo 100 %}%;background:{% if pct >= 90 %}#f87171{% elif pct >= 60 %}#facc15{% else %}#4a7fe8{% endif %};"></div>
-                </div>
-                {% endif %}
-            </div>
-
-            <div class="ci-scard">
-                <p class="ci-sc-title">Oferta asociada</p>
-                <p class="mb-2" style="font-size:.86rem;font-weight:600;color:var(--bs-body-color);">{{ comision.oferta }}</p>
-                <a href="{% url 'vat_oferta_institucional_detail' comision.oferta_id %}" class="btn btn-outline-secondary btn-sm rounded-3 w-100"><i class="bi bi-box-arrow-up-right me-1"></i>Ver oferta</a>
-            </div>
-
-        </div>
-    </div>
-
-</div>
 {% endblock %}

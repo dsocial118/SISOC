@@ -1,7 +1,13 @@
 import logging
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
+from django.views.generic import (
+    ListView,
+    CreateView,
+    DetailView,
+    UpdateView,
+    DeleteView,
+)
 from django.contrib import messages
 from django.db.models import Q, Count
 
@@ -21,6 +27,7 @@ logger = logging.getLogger("django")
 # ============================================================================
 # EVALUACIÓN VIEWS
 # ============================================================================
+
 
 class EvaluacionListView(LoginRequiredMixin, ListView):
     model = Evaluacion
@@ -102,6 +109,7 @@ class EvaluacionDeleteView(LoginRequiredMixin, DeleteView):
 # RESULTADO EVALUACIÓN VIEWS
 # ============================================================================
 
+
 class ResultadoEvaluacionListView(LoginRequiredMixin, ListView):
     model = ResultadoEvaluacion
     template_name = "vat/evaluacion/resultado_list.html"
@@ -160,11 +168,15 @@ class ResultadoEvaluacionUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         form.instance.registrado_por = self.request.user
-        messages.success(self.request, "Resultado de evaluación actualizado exitosamente.")
+        messages.success(
+            self.request, "Resultado de evaluación actualizado exitosamente."
+        )
         return super().form_valid(form)
 
 
-class ResultadoEvaluacionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+class ResultadoEvaluacionDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     model = ResultadoEvaluacion
     template_name = "vat/evaluacion/resultado_confirm_delete.html"
     context_object_name = "resultado"
