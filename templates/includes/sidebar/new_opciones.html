@@ -1,5 +1,5 @@
 {% load static custom_filters %}
-{% with pagina_actual=request.resolver_match.route %}
+{% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only %}
     <li class="nav-item">
         <a href="{% url 'dashboard' %}"
            class="nav-link {% if 'dashboard' in pagina_actual %}active{% endif %}">
@@ -14,7 +14,7 @@
             <p>Novedades del sistema</p>
         </a>
     </li>
-    {% if request.user|has_any_perm:"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group" %}
+    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group" %}
         <li class="nav-item">
             <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-users"></i>
@@ -44,7 +44,7 @@
             </ul>
         </li>
     {% endif %}
-    {% if request.user.is_superuser %}
+    {% if not vat_sidebar_only and request.user.is_superuser %}
         <li class="nav-item">
             <a href="{% url 'papelera_list' %}"
                class="nav-link {% if 'papelera/' in pagina_actual %}active{% endif %}">
@@ -62,7 +62,7 @@
             </p>
         </a>
         <ul class="nav nav-treeview">
-            {% if request.user|has_perm_code:"comedores.view_comedor" %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"comedores.view_comedor" %}
                 <li class="nav-item">
                     <a href="{% url 'comedores' %}"
                        class="nav-link {% if 'comedores_nuevo/' in pagina_actual %}active{% endif %}">
@@ -96,7 +96,7 @@
                     </ul>
                 </li>
             {% endif %}
-            {% if request.user|has_perm_code:"acompanamientos.view_informacionrelevante" %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"acompanamientos.view_informacionrelevante" %}
                 <li class="nav-item">
                     <a href="{% url 'lista_comedores_acompanamiento' %}"
                        class="nav-link {% if 'acompanamiento' in pagina_actual %}active{% endif %}">
@@ -105,7 +105,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+            {% if not vat_sidebar_only and request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
                 <li class="nav-item">
                     <a href="{% url 'rendicion_cuentas_final_listar' %}"
                        class="nav-link {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
@@ -114,7 +114,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_perm_code:"organizaciones.view_organizacion" %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"organizaciones.view_organizacion" %}
                 <li class="nav-item">
                     <a href="{% url 'organizaciones' %}"
                        class="nav-link {% if 'organizaciones/listar' in pagina_actual %}active{% endif %}">
@@ -123,7 +123,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_perm_code:"centrodeinfancia.view_centrodeinfancia" %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"centrodeinfancia.view_centrodeinfancia" %}
                 <li class="nav-item">
                     <a href="{% url 'centrodeinfancia' %}"
                        class="nav-link {% if 'centrodeinfancia/listar' in pagina_actual %}active{% endif %}">
@@ -132,7 +132,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_perm_code:"ciudadanos.view_ciudadano" %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"ciudadanos.view_ciudadano" %}
                 <li class="nav-item">
                     <a href="{% url 'ciudadanos' %}"
                        class="nav-link {% if 'ciudadanos/listar' in pagina_actual %}active{% endif %}">
@@ -141,7 +141,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_perm_code:"centrodefamilia.view_centro" %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"centrodefamilia.view_centro" %}
                 <li class="nav-item">
                     <a href="{% url 'centro_list' %}"
                        class="nav-link {% if 'centros/' in pagina_actual %}active{% endif %}">

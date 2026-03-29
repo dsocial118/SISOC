@@ -1,5 +1,5 @@
 {% load static custom_filters dashboard_tags %}
-{% with pagina_actual=request.resolver_match.route %}
+{% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only %}
     <!-- INFORMACIÓN DE USUARIO -->
     <li class="nav-item user-info mb-2 mt-2">
         <div class="user-panel d-flex align-items-center p-3">
@@ -42,6 +42,7 @@
             <p>Novedades del sistema</p>
         </a>
     </li>
+    {% if not vat_sidebar_only %}
     <!-- COMUNICADOS -->
     <li class="nav-item nav-main-item {% if 'comunicados' in pagina_actual %}menu-open{% endif %}">
         <a href="#"
@@ -69,8 +70,9 @@
             {% endif %}
         </ul>
     </li>
+    {% endif %}
 
-    {% if request.user|has_any_perm:"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group" %}
+    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group" %}
         <li class="nav-item nav-main-item">
             <a href="#" class="nav-link">
                 <img src="{% static 'custom/img/iconos_sidebar/administracion.svg' %}"
@@ -137,6 +139,7 @@
             </ul>
         </li>
     {% endif %}
+    {% if not vat_sidebar_only %}
     {% tableros_para_sidebar as tableros %}
     {% with has_dashboard_cf=request.user|has_perm_code:"dashboard.view_dashboard" %}
         {% if has_dashboard_cf or tableros %}
@@ -196,6 +199,7 @@
             </li>
         {% endif %}
     {% endwith %}
+    {% endif %}
     <!-- MENÚ LEGAJOS -->
     <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual %}menu-open{% endif %}">
         <a href="#" class="nav-link">
@@ -206,6 +210,7 @@
             </p>
         </a>
         <ul class="nav nav-treeview">
+            {% if not vat_sidebar_only %}
             <!-- CIUDADANOS -->
             {% if request.user|has_perm_code:"ciudadanos.view_ciudadano" %}
                 <li class="nav-item {% if 'ciudadanos' in pagina_actual %}menu-open{% endif %}">
@@ -407,6 +412,7 @@
                     </ul>
                 </li>
             {% endif %}
+            {% endif %}
             <!-- VAT / INET -->
             {% if request.user|has_perm_code:"VAT.view_centro" %}
                 <li class="nav-item {% if 'vat/' in pagina_actual %}menu-open{% endif %}">
@@ -605,6 +611,7 @@
                     </ul>
                 </li>
             {% endif %}
+            {% if not vat_sidebar_only %}
             <!-- CELIAQUÍA -->
             {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user.is_superuser %}
                 <li class="nav-item">
@@ -639,6 +646,7 @@
                         {% endif %}
                     </ul>
                 </li>
+            {% endif %}
             {% endif %}
         </ul>
     </li>

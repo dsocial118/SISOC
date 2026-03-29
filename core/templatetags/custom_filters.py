@@ -46,6 +46,19 @@ def has_any_perm(user, permission_codes):
 
 
 @register.filter
+def is_vat_sidebar_only(user):
+    """Indica si el usuario debe ver solo opciones VAT en el sidebar."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return False
+
+    from VAT.services.access_scope import is_vat_provincial, is_vat_referente, is_vat_sse
+
+    return bool(is_vat_sse(user) or is_vat_referente(user) or is_vat_provincial(user))
+
+
+@register.filter
 def endswith(value, suffix):
     try:
         return str(value).lower().endswith(str(suffix).lower())

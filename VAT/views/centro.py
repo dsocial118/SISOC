@@ -47,7 +47,12 @@ from VAT.forms import (
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
-from iam.services import user_has_permission_code
+from VAT.services.access_scope import (
+    can_user_access_centro,
+    can_user_add_vat_entities,
+    filter_centros_queryset_for_user,
+    is_vat_referente,
+)
 
 
 BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
@@ -61,14 +66,6 @@ BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
 )
 
 
-ROLE_VAT_SSE_PERMISSION = "auth.role_vat_sse"
-ROLE_REFERENTE_CENTRO_PERMISSION = "auth.role_referentecentrovat"
-
-
-def _has_permission(user, permission_code):
-    return user_has_permission_code(user, permission_code)
-
-
 class CentroListView(LoginRequiredMixin, ListView):
     model = Centro
     template_name = "vat/centros/centro_list.html"
@@ -80,13 +77,7 @@ class CentroListView(LoginRequiredMixin, ListView):
 
         user = self.request.user
         busq = self.request.GET.get("busqueda", "").strip()
-
-        if user.is_superuser or _has_permission(user, ROLE_VAT_SSE_PERMISSION):
-            pass
-        elif _has_permission(user, ROLE_REFERENTE_CENTRO_PERMISSION):
-            base_qs = base_qs.filter(referente=user)
-        else:
-            return Centro.objects.none()
+        base_qs = filter_centros_queryset_for_user(base_qs, user)
 
         if busq:
             base_qs = base_qs.filter(Q(nombre__icontains=busq))
@@ -108,9 +99,7 @@ class CentroListView(LoginRequiredMixin, ListView):
             }
         )
 
-        ctx["can_add"] = user.is_superuser or _has_permission(
-            user, ROLE_VAT_SSE_PERMISSION
-        )
+        ctx["can_add"] = can_user_add_vat_entities(user)
 
         ctx["table_headers"] = [
             {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
@@ -130,10 +119,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
-        user = self.request.user
-        es_ref = obj.referente_id == user.id
-        es_vat_sse = _has_permission(user, ROLE_VAT_SSE_PERMISSION)
-        if not (es_ref or user.is_superuser or es_vat_sse):
+        if not can_user_access_centro(self.request.user, obj):
             raise PermissionDenied
         return obj
 
@@ -142,10 +128,11 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         centro = self.object
 
         # Evaluar listas una sola vez para reutilizar en los counts
-        ctx["autoridades"] = list(centro.autoridades.all().order_by("-es_actual", "-vigencia_desde"))
+        ctx["autoridades"] = list(
+            centro.autoridades.all().order_by("-es_actual", "-vigencia_desde")
+        )
         ctx["identificadores"] = list(
-            centro.identificadores_hist
-            .select_related("ubicacion")
+            centro.identificadores_hist.select_related("ubicacion")
             .all()
             .order_by("-es_actual", "-vigencia_desde")
         )
@@ -154,14 +141,14 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # annotate para evitar N+1 al contar comisiones por oferta
         ctx["ofertas"] = list(
-            centro.ofertas_institucionales
-            .select_related("plan_curricular__titulo_referencia", "programa")
+            centro.ofertas_institucionales.select_related(
+                "plan_curricular__titulo_referencia", "programa"
+            )
             .annotate(comisiones_count=Count("comisiones"))
             .order_by("-ciclo_lectivo")
         )
         ctx["comisiones"] = list(
-            Comision.objects
-            .filter(oferta__centro=centro)
+            Comision.objects.filter(oferta__centro=centro)
             .select_related(
                 "oferta__plan_curricular__titulo_referencia",
                 "oferta__programa",
@@ -178,28 +165,35 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # Títulos y planes activos (catálogo disponible)
         ctx["titulos"] = list(
-            TituloReferencia.objects
-            .filter(activo=True)
+            TituloReferencia.objects.filter(activo=True)
             .select_related("sector", "subsector")
             .prefetch_related("planes")
         )
         ctx["planes"] = list(
-            PlanVersionCurricular.objects
-            .filter(activo=True)
-            .select_related("titulo_referencia", "modalidad_cursada")
+            PlanVersionCurricular.objects.filter(activo=True).select_related(
+                "titulo_referencia", "modalidad_cursada"
+            )
         )
 
         # Forms para modales
         ctx["contacto_form"] = InstitucionContactoForm(initial={"centro": centro})
-        ctx["autoridad_form"] = AutoridadInstitucionalForm(initial={"centro": centro, "es_actual": True})
+        ctx["autoridad_form"] = AutoridadInstitucionalForm(
+            initial={"centro": centro, "es_actual": True}
+        )
         ctx["identificador_form"] = InstitucionIdentificadorHistForm(
             initial={"centro": centro, "es_actual": True}
         )
         ctx["ubicacion_form"] = InstitucionUbicacionForm(initial={"centro": centro})
         ctx["oferta_form"] = OfertaInstitucionalForm(initial={"centro": centro})
         ctx["comision_form"] = ComisionForm()
-        ctx["comision_form"].fields["oferta"].queryset = centro.ofertas_institucionales.order_by("-ciclo_lectivo")
-        ctx["comision_form"].fields["ubicacion"].queryset = centro.ubicaciones.select_related("localidad").order_by("es_principal", "rol_ubicacion")
+        ctx["comision_form"].fields["oferta"].queryset = (
+            centro.ofertas_institucionales.order_by("-ciclo_lectivo")
+        )
+        ctx["comision_form"].fields["ubicacion"].queryset = (
+            centro.ubicaciones.select_related("localidad").order_by(
+                "es_principal", "rol_ubicacion"
+            )
+        )
         ctx["titulo_form"] = TituloReferenciaForm()
         ctx["plan_form"] = PlanVersionCurricularForm()
 
@@ -211,6 +205,11 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     form_class = CentroAltaForm
     template_name = "vat/centros/centro_create_form.html"
     success_url = reverse_lazy("vat_centro_list")
+
+    def dispatch(self, request, *args, **kwargs):
+        if not can_user_add_vat_entities(request.user):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -297,9 +296,13 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
-        user = request.user
-        es_vat_sse = _has_permission(user, ROLE_VAT_SSE_PERMISSION)
-        if not (centro.referente_id == user.id or user.is_superuser or es_vat_sse):
+        if not (
+            can_user_add_vat_entities(request.user)
+            or (
+                is_vat_referente(request.user)
+                and centro.referente_id == request.user.id
+            )
+        ):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -319,9 +322,13 @@ class CentroDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
 
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
-        user = request.user
-        es_vat_sse = _has_permission(user, ROLE_VAT_SSE_PERMISSION)
-        if not (centro.referente_id == user.id or user.is_superuser or es_vat_sse):
+        if not (
+            can_user_add_vat_entities(request.user)
+            or (
+                is_vat_referente(request.user)
+                and centro.referente_id == request.user.id
+            )
+        ):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -335,15 +342,7 @@ def centros_ajax(request):
         user = request.user
 
         qs = Centro.objects.select_related("referente")
-
-        if user.is_superuser:
-            pass
-        elif _has_permission(user, ROLE_VAT_SSE_PERMISSION):
-            pass
-        elif _has_permission(user, ROLE_REFERENTE_CENTRO_PERMISSION):
-            qs = qs.filter(referente=user)
-        else:
-            qs = Centro.objects.none()
+        qs = filter_centros_queryset_for_user(qs, user)
 
         busq = query.strip()
         if busq:
@@ -354,7 +353,7 @@ def centros_ajax(request):
         paginator = Paginator(qs, 10)
         page_obj = paginator.get_page(page)
 
-        can_add = user.is_superuser or _has_permission(user, ROLE_VAT_SSE_PERMISSION)
+        can_add = can_user_add_vat_entities(user)
 
         context = {
             "centros": page_obj,
