@@ -13,6 +13,7 @@ from django.db.models import F, Q
 from django.utils import timezone
 
 from users.models import AccesoComedorPWA, AuditAccesoComedorPWA, Profile
+from users.profile_utils import get_profile_or_none
 
 User = get_user_model()
 
@@ -97,7 +98,7 @@ def get_pwa_context(user) -> dict:
         .values_list("comedor_id", flat=True)
         .first()
     )
-    profile = getattr(user, "profile", None)
+    profile = get_profile_or_none(user)
     return {
         "is_pwa_user": bool(roles),
         "roles": roles,

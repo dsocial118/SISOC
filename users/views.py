@@ -27,7 +27,13 @@ from .forms import (
     UserCreationForm,
 )
 from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
+from .profile_utils import get_profile_or_none
 from .services import UsuariosService
+from .temporary_passwords import (
+    clear_temporary_password,
+    get_temporary_password,
+    store_temporary_password,
+)
 
 
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -87,6 +93,11 @@ class UserCreateView(AdminRequiredMixin, CreateView):
         response = super().form_valid(form)
         generated_password = getattr(form, "generated_password", None)
         if generated_password:
+            store_temporary_password(
+                self.request.session,
+                user_id=self.object.pk,
+                password=generated_password,
+            )
             messages.success(
                 self.request,
                 (
@@ -111,19 +122,28 @@ class UserUpdateView(AdminRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        profile = getattr(self.object, "profile", None)
+        profile = get_profile_or_none(self.object)
+        temporary_password = get_temporary_password(
+            self.request.session,
+            user_id=self.object.pk,
+        )
+        if not getattr(profile, "must_change_password", False):
+            clear_temporary_password(self.request.session, user_id=self.object.pk)
+            temporary_password = None
         context["temporary_password_visible"] = bool(
             profile
             and getattr(profile, "must_change_password", False)
-            and getattr(profile, "temporary_password_plaintext", None)
+            and temporary_password
         )
-        context["temporary_password_plaintext"] = (
-            getattr(profile, "temporary_password_plaintext", None) if profile else None
-        )
+        context["temporary_password_plaintext"] = temporary_password
         return context
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        if form.cleaned_data.get("password") or not form.cleaned_data.get(
+            "es_representante_pwa", False
+        ):
+            clear_temporary_password(self.request.session, user_id=self.object.pk)
         messages.success(self.request, "Usuario actualizado correctamente.")
         return response
 
@@ -188,7 +208,7 @@ class FirstLoginPasswordChangeView(LoginRequiredMixin, FormView):
     success_url = reverse_lazy("inicio")
 
     def dispatch(self, request, *args, **kwargs):
-        profile = getattr(request.user, "profile", None)
+        profile = get_profile_or_none(request.user)
         if not getattr(profile, "must_change_password", False):
             return HttpResponseRedirect(self.success_url)
         return super().dispatch(request, *args, **kwargs)
@@ -200,18 +220,16 @@ class FirstLoginPasswordChangeView(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         user = form.save()
-        profile = getattr(user, "profile", None)
+        profile = get_profile_or_none(user)
         if profile:
             profile.must_change_password = False
             profile.password_changed_at = timezone.now()
             profile.initial_password_expires_at = None
-            profile.temporary_password_plaintext = None
             profile.save(
                 update_fields=[
                     "must_change_password",
                     "password_changed_at",
                     "initial_password_expires_at",
-                    "temporary_password_plaintext",
                 ]
             )
         update_session_auth_hash(self.request, user)
@@ -247,18 +265,16 @@ class PasswordResetConfirmCustomView(PasswordResetConfirmView):
         user = form.user
         response = super().form_valid(form)
 
-        profile = getattr(user, "profile", None)
+        profile = get_profile_or_none(user)
         if profile:
             profile.must_change_password = False
             profile.password_changed_at = timezone.now()
             profile.initial_password_expires_at = None
-            profile.temporary_password_plaintext = None
             profile.save(
                 update_fields=[
                     "must_change_password",
                     "password_changed_at",
                     "initial_password_expires_at",
-                    "temporary_password_plaintext",
                 ]
             )
 

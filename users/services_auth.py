@@ -13,6 +13,8 @@ from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
+from users.profile_utils import get_profile_or_none
+
 User = get_user_model()
 logger = logging.getLogger("django")
 
@@ -101,18 +103,16 @@ def confirm_password_reset(
     user.set_password(new_password)
     user.save(update_fields=["password"])
 
-    profile = getattr(user, "profile", None)
+    profile = get_profile_or_none(user)
     if profile:
         profile.must_change_password = False
         profile.password_changed_at = timezone.now()
         profile.initial_password_expires_at = None
-        profile.temporary_password_plaintext = None
         profile.save(
             update_fields=[
                 "must_change_password",
                 "password_changed_at",
                 "initial_password_expires_at",
-                "temporary_password_plaintext",
             ]
         )
 

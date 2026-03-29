@@ -14,6 +14,7 @@ from core.models import Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
 from users.models import AccesoComedorPWA, Profile
+from users.profile_utils import get_profile_or_none
 from users.services_pwa import (
     deactivate_representante_accesses,
     is_pwa_user,
@@ -31,7 +32,7 @@ class BackofficeAuthenticationForm(AuthenticationForm):
                 "Este usuario solo puede ingresar desde la PWA.",
                 code="pwa_only",
             )
-        profile = getattr(user, "profile", None)
+        profile = get_profile_or_none(user)
         expires_at = getattr(profile, "initial_password_expires_at", None)
         if (
             getattr(profile, "must_change_password", False)
@@ -70,20 +71,16 @@ class ComedorPWASelectMultiple(forms.SelectMultiple):
 
 class PWAAccessMixin:
     @staticmethod
-    def _set_initial_password_flags(
-        profile,
-        *,
-        must_change_password: bool,
-        temporary_password_plaintext: str | None = None,
-    ):
+    def _set_initial_password_flags(profile, *, must_change_password: bool):
         profile.must_change_password = must_change_password
-        profile.password_changed_at = None if must_change_password else profile.password_changed_at
+        profile.password_changed_at = (
+            None if must_change_password else profile.password_changed_at
+        )
         profile.initial_password_expires_at = (
             timezone.now() + timedelta(hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS)
             if must_change_password
             else None
         )
-        profile.temporary_password_plaintext = temporary_password_plaintext
 
     def _setup_pwa_fields(self):
         self.fields["es_representante_pwa"] = forms.BooleanField(
@@ -373,11 +370,7 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
             )
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
             profile.rol = self.cleaned_data.get("rol")
-            self._set_initial_password_flags(
-                profile,
-                must_change_password=True,
-                temporary_password_plaintext=self.generated_password,
-            )
+            self._set_initial_password_flags(profile, must_change_password=True)
             profile.save()
             # Evita devolver un profile cacheado con valores viejos tras el signal de User.
             user.refresh_from_db()
@@ -526,13 +519,7 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
             profile.rol = self.cleaned_data.get("rol")
             if new_pwd:
-                self._set_initial_password_flags(
-                    profile,
-                    must_change_password=True,
-                    temporary_password_plaintext=None,
-                )
-            elif not self.cleaned_data.get("es_representante_pwa", False):
-                profile.temporary_password_plaintext = None
+                self._set_initial_password_flags(profile, must_change_password=True)
             profile.save()
             user.refresh_from_db()
 

@@ -152,14 +152,15 @@ class ColaboradorEspacioService:
             .get(pk=colaborador.pk)
         )
         snapshot_antes = ColaboradorEspacioService._snapshot(colaborador_antes)
-        actividades = cleaned_data.pop("actividades", [])
+        actividades = cleaned_data.pop("actividades", None)
         for field_name, value in cleaned_data.items():
             setattr(colaborador, field_name, value)
         colaborador.modificado_por = (
             actor if getattr(actor, "is_authenticated", False) else None
         )
         colaborador.save()
-        colaborador.actividades.set(actividades)
+        if actividades is not None:
+            colaborador.actividades.set(actividades)
         snapshot_despues = ColaboradorEspacioService._snapshot(colaborador)
         ColaboradorEspacioService._registrar_auditoria(
             colaborador=colaborador,

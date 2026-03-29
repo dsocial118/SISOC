@@ -240,6 +240,41 @@ def test_update_colaborador_ok(comedor, sexo, actividad):
 
 
 @pytest.mark.django_db
+def test_update_colaborador_preserva_actividades_si_no_se_envia_actividad_ids(
+    comedor, sexo, actividad
+):
+    representante = _create_representante(comedor=comedor)
+    client = _auth_client_for_user(representante)
+    ciudadano = _create_ciudadano(sexo=sexo)
+    colaborador = ColaboradorEspacio.objects.create(
+        comedor=comedor,
+        ciudadano=ciudadano,
+        genero="ND",
+        codigo_telefono="11",
+        numero_telefono="12345678",
+        fecha_alta="2026-03-20",
+        creado_por=representante,
+        modificado_por=representante,
+    )
+    colaborador.actividades.set([actividad])
+
+    response = client.patch(
+        f"/api/pwa/espacios/{comedor.id}/colaboradores/{colaborador.id}/",
+        {
+            "numero_telefono": "55555555",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    colaborador.refresh_from_db()
+    assert colaborador.numero_telefono == "55555555"
+    assert list(colaborador.actividades.values_list("nombre", flat=True)) == [
+        "Compras"
+    ]
+
+
+@pytest.mark.django_db
 def test_delete_colaborador_es_baja_logica_y_permanece_en_listado(
     comedor, sexo, actividad
 ):
