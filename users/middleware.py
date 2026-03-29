@@ -1,6 +1,8 @@
 from django.shortcuts import redirect
 from django.urls import reverse, NoReverseMatch
 
+from users.profile_utils import get_profile_or_none
+
 
 class FirstLoginPasswordChangeMiddleware:
     """Redirige a cambio de contraseña obligatorio en primer ingreso web."""
@@ -11,7 +13,7 @@ class FirstLoginPasswordChangeMiddleware:
     def __call__(self, request):
         user = getattr(request, "user", None)
         if user and getattr(user, "is_authenticated", False):
-            profile = getattr(user, "profile", None)
+            profile = get_profile_or_none(user)
             must_change = bool(getattr(profile, "must_change_password", False))
             if must_change and not self._is_exempt_path(request.path):
                 return redirect("password_change_required")

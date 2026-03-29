@@ -1015,12 +1015,20 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             and self.object.clasificaciones_optimized
             else None
         )
+        colaboradores_espacio = (
+            self.object.colaboradores_espacio_optimized
+            if hasattr(self.object, "colaboradores_espacio_optimized")
+            else self.object.colaboradores_espacio.select_related(
+                "ciudadano__sexo"
+            ).prefetch_related("actividades")
+        )
         return {
             "relevamientos": relevamientos,
             "observaciones": observaciones,
             "count_relevamientos": count_relevamientos,
             "actividades_comunitarias_count": actividades_comunitarias_count,
             "comedor_categoria": comedor_categoria,
+            "colaboradores_espacio": colaboradores_espacio,
         }
 
     def _build_relaciones_table_contexts(self, admisiones_qs):

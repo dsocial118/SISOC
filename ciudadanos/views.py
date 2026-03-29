@@ -196,9 +196,9 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
 
     def get_comedor_context(self, ciudadano):
         try:
-            from comedores.models import Nomina
+            from comedores.models import ColaboradorEspacio, Nomina
         except ImportError:
-            return {"nominas_comedor": []}
+            return {"nominas_comedor": [], "colaboraciones_comedor": []}
 
         try:
             nominas = list(
@@ -210,12 +210,25 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
                 )
                 .order_by("-fecha")
             )
+            colaboraciones = list(
+                ColaboradorEspacio.objects.filter(ciudadano=ciudadano)
+                .select_related(
+                    "comedor__provincia",
+                    "comedor__municipio",
+                    "comedor__tipocomedor",
+                )
+                .prefetch_related("actividades")
+                .order_by("-fecha_alta", "-id")
+            )
         except Exception:
             logger.exception(
                 "Error cargando nominas de comedor para ciudadano %s", ciudadano.pk
             )
-            return {"nominas_comedor": []}
-        contexto = {"nominas_comedor": nominas}
+            return {"nominas_comedor": [], "colaboraciones_comedor": []}
+        contexto = {
+            "nominas_comedor": nominas,
+            "colaboraciones_comedor": colaboraciones,
+        }
         nomina_actual = nominas[0] if nominas else None
         if nomina_actual:
             contexto["nomina_actual"] = nomina_actual
