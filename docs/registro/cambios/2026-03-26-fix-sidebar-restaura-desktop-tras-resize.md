@@ -17,7 +17,8 @@ Se agregó sincronización en `static/custom/js/base.js` basada en la visibilida
   - Selector: `[data-lte-toggle="sidebar"].d-lg-none`
   - Si el botón está oculto (`display: none`), se considera desktop.
 - En desktop:
-  - Se remueve `sidebar-open` y `sidebar-collapse` del `body`.
+  - Se remueve `sidebar-open` del `body`.
+  - `sidebar-collapse` solo se limpia cuando el layout no expone toggle de sidebar en desktop.
   - Se limpian clases/estilos residuales en `.app-sidebar` (`show`, `sidebar-open`, `margin-left`).
   - Se elimina `.sidebar-overlay` residual.
 - Se ejecuta al cargar y en `resize` (con `setTimeout(..., 0)` para sincronizar con el ciclo del layout).
@@ -31,6 +32,7 @@ Se agregó sincronización en `static/custom/js/base.js` basada en la visibilida
 3. Abrir/cerrar sidebar en mobile.
 4. Maximizar nuevamente.
 5. Verificar que el sidebar vuelve al estado desktop correcto y no queda en modo mobile.
+6. En layouts con toggle desktop, colapsar el sidebar, redimensionar la ventana y verificar que `sidebar-collapse` se conserva.
 
 ## Riesgo / rollback
 - Riesgo bajo (cambio acotado al manejo de clases CSS del sidebar).

@@ -230,6 +230,9 @@ $.widget.bridge("uibutton", $.ui.button);
         const sidebarToggleMobileButton = document.querySelector(
             "[data-lte-toggle=\"sidebar\"].d-lg-none",
         );
+        const sidebarToggleDesktopButton = document.querySelector(
+            "[data-lte-toggle=\"sidebar\"]:not(.d-lg-none)",
+        );
 
         function isDesktopSidebarViewport() {
             if (!sidebarToggleMobileButton) {
@@ -237,6 +240,15 @@ $.widget.bridge("uibutton", $.ui.button);
             }
             const styles = window.getComputedStyle(sidebarToggleMobileButton);
             return styles.display === "none";
+        }
+
+        function preservesDesktopSidebarCollapse() {
+            if (!sidebarToggleDesktopButton) {
+                return false;
+            }
+
+            const styles = window.getComputedStyle(sidebarToggleDesktopButton);
+            return styles.display !== "none";
         }
 
         function hideMenuOpenULs() {
@@ -285,7 +297,9 @@ $.widget.bridge("uibutton", $.ui.button);
 
             const body = $("body");
             body.removeClass("sidebar-open");
-            body.removeClass("sidebar-collapse");
+            if (!preservesDesktopSidebarCollapse()) {
+                body.removeClass("sidebar-collapse");
+            }
             $(".app-sidebar").removeClass("show sidebar-open").css("margin-left", "");
             $(".sidebar-overlay").remove();
         }
