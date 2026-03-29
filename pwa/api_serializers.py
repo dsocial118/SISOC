@@ -67,7 +67,7 @@ class ColaboradorEspacioPWASerializer(serializers.ModelSerializer):
         dni = (value or "").strip()
         if not DNI_REGEX.fullmatch(dni):
             raise serializers.ValidationError(
-                "Formato de DNI inválido. Debe contener 7 u 8 dígitos."
+                "Formato de DNI invÃ¡lido. Debe contener 7 u 8 dÃ­gitos."
             )
         return dni
 
@@ -75,7 +75,7 @@ class ColaboradorEspacioPWASerializer(serializers.ModelSerializer):
         phone = (value or "").strip()
         if not PHONE_REGEX.fullmatch(phone):
             raise serializers.ValidationError(
-                "Formato de teléfono inválido. Solo números y + - ( ) espacios."
+                "Formato de telÃ©fono invÃ¡lido. Solo nÃºmeros y + - ( ) espacios."
             )
         return phone
 
@@ -188,7 +188,7 @@ class ColaboradorEspacioPWACreateUpdateSerializer(serializers.Serializer):
         dni = (value or "").strip()
         if not DNI_REGEX.fullmatch(dni):
             raise serializers.ValidationError(
-                "Formato de DNI inválido. Debe contener 7 u 8 dígitos."
+                "Formato de DNI invÃ¡lido. Debe contener 7 u 8 dÃ­gitos."
             )
         return dni
 
@@ -196,7 +196,7 @@ class ColaboradorEspacioPWACreateUpdateSerializer(serializers.Serializer):
         phone = str(value or "").strip()
         if phone and not phone.isdigit():
             raise serializers.ValidationError(
-                "El código de teléfono debe contener solo números."
+                "El cÃ³digo de telÃ©fono debe contener solo nÃºmeros."
             )
         return phone or None
 
@@ -204,7 +204,7 @@ class ColaboradorEspacioPWACreateUpdateSerializer(serializers.Serializer):
         phone = str(value or "").strip()
         if phone and not phone.isdigit():
             raise serializers.ValidationError(
-                "El número de teléfono debe contener solo números."
+                "El nÃºmero de telÃ©fono debe contener solo nÃºmeros."
             )
         return phone or None
 
@@ -218,7 +218,7 @@ class ColaboradorEspacioPWACreateUpdateSerializer(serializers.Serializer):
         )
         if len(actividades_validas) != len(actividad_ids):
             raise serializers.ValidationError(
-                "Hay actividades inválidas o inactivas en la selección."
+                "Hay actividades invÃ¡lidas o inactivas en la selecciÃ³n."
             )
         return actividad_ids
 
@@ -282,6 +282,16 @@ class ColaboradorActividadCatalogoSerializer(serializers.ModelSerializer):
 class ColaboradorGeneroPWAListSerializer(serializers.Serializer):
     id = serializers.CharField()
     label = serializers.CharField()
+
+    def create(self, validated_data):
+        raise NotImplementedError(
+            "ColaboradorGeneroPWAListSerializer no implementa create()."
+        )
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError(
+            "ColaboradorGeneroPWAListSerializer no implementa update()."
+        )
 
 
 class CatalogoActividadPWASerializer(serializers.ModelSerializer):
@@ -490,7 +500,7 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
             False if profile is None else bool(profile.asistencia_actividades)
         )
         if asistencia_alimentaria:
-            badges.append("Alimentación")
+            badges.append("AlimentaciÃ³n")
         if asistencia_actividades:
             badges.append("Actividades")
         return badges
@@ -556,7 +566,7 @@ class NominaEspacioPWACreateUpdateSerializer(serializers.Serializer):
         dni = (value or "").strip()
         if not DNI_REGEX.fullmatch(dni):
             raise serializers.ValidationError(
-                "Formato de DNI inválido. Debe contener 7 u 8 dígitos."
+                "Formato de DNI invÃ¡lido. Debe contener 7 u 8 dÃ­gitos."
             )
         return dni
 
@@ -589,7 +599,7 @@ class NominaRenaperPreviewSerializer(serializers.Serializer):
         dni = (value or "").strip()
         if not DNI_REGEX.fullmatch(dni):
             raise serializers.ValidationError(
-                "Formato de DNI inválido. Debe contener 7 u 8 dígitos."
+                "Formato de DNI invÃ¡lido. Debe contener 7 u 8 dÃ­gitos."
             )
         return dni
 

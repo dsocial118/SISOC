@@ -178,7 +178,7 @@ def test_consultar_renaper_and_build_data(mocker):
     mocker.patch(
         "comedores.services.comedor_service.impl.consultar_datos_renaper",
         side_effect=[
-            {"success": False, "error": "x"},
+            {"success": False, "error": "x", "raw_response": {"coincidencias": 0}},
             {"success": True, "data": {"dni": "123"}},
         ],
     )
@@ -188,9 +188,9 @@ def test_consultar_renaper_and_build_data(mocker):
     mocker.patch(
         "comedores.services.comedor_service.impl.consultar_datos_renaper",
         side_effect=[
-            {"success": False, "error": "x"},
-            {"success": False, "error": "y"},
-            {"success": False, "error": "z"},
+            {"success": False, "error": "x", "raw_response": {"coincidencias": 0}},
+            {"success": False, "error": "y", "raw_response": {"coincidencias": 0}},
+            {"success": False, "error": "z", "raw_response": {"coincidencias": 0}},
         ],
     )
     fail = module.ComedorService._consultar_renaper_por_dni("123")

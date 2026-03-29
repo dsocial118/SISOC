@@ -1,17 +1,35 @@
 {% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
-{% block title %}{% if edit_mode %}Editar colaborador{% else %}Agregar colaborador{% endif %}{% endblock %}
+{% block title %}
+    {% if edit_mode %}
+        Editar colaborador
+    {% else %}
+        Agregar colaborador
+    {% endif %}
+{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
             <a href="{% url 'comedor_detalle' object.id %}">Comedor</a>
         </li>
-        <li class="breadcrumb-item active">{% if edit_mode %}Editar colaborador{% else %}Agregar colaborador{% endif %}</li>
+        <li class="breadcrumb-item active">
+            {% if edit_mode %}
+                Editar colaborador
+            {% else %}
+                Agregar colaborador
+            {% endif %}
+        </li>
     </ol>
 {% endblock %}
 {% block content %}
     <div class="container">
-        <h2 class="text-center display-4 mb-4">{% if edit_mode %}Editar colaborador del espacio{% else %}Agregar colaborador del espacio{% endif %}</h2>
+        <h2 class="text-center display-4 mb-4">
+            {% if edit_mode %}
+                Editar colaborador del espacio
+            {% else %}
+                Agregar colaborador del espacio
+            {% endif %}
+        </h2>
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
@@ -90,9 +108,7 @@
             </div>
 
             {% if colaborador_existente %}
-                <div class="alert alert-warning">
-                    La persona ya se encuentra registrada como colaborador de este espacio.
-                </div>
+                <div class="alert alert-warning">La persona ya se encuentra registrada como colaborador de este espacio.</div>
             {% else %}
                 <div class="card mb-3">
                     <div class="card-header font-weight-bold">Datos del colaborador</div>
@@ -100,24 +116,32 @@
                         <form method="post">
                             {% csrf_token %}
                             {% if ciudadano_encontrado %}
-                                <input type="hidden" name="ciudadano_id" value="{{ ciudadano_encontrado.id }}" />
+                                <input type="hidden"
+                                       name="ciudadano_id"
+                                       value="{{ ciudadano_encontrado.id }}" />
                             {% elif edit_mode %}
-                                <input type="hidden" name="ciudadano_id" value="{{ colaborador.ciudadano_id }}" />
+                                <input type="hidden"
+                                       name="ciudadano_id"
+                                       value="{{ colaborador.ciudadano_id }}" />
                             {% else %}
                                 <input type="hidden" name="dni" value="{{ query }}" />
                             {% endif %}
                             {{ form|crispy }}
                             <button type="submit"
                                     class="btn btn-primary"
-                                    data-submit-with-spinner="Guardando…">{% if edit_mode %}Guardar cambios{% else %}Guardar colaborador{% endif %}</button>
+                                    data-submit-with-spinner="Guardando…">
+                                {% if edit_mode %}
+                                    Guardar cambios
+                                {% else %}
+                                    Guardar colaborador
+                                {% endif %}
+                            </button>
                         </form>
                     </div>
                 </div>
             {% endif %}
         {% elif query %}
-            <div class="alert alert-info">
-                No se encontraron datos para el DNI ingresado.
-            </div>
+            <div class="alert alert-info">No se encontraron datos para el DNI ingresado.</div>
         {% endif %}
     </div>
 {% endblock %}

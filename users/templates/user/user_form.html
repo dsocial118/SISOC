@@ -54,9 +54,7 @@
                             <div class="alert alert-warning" role="alert">
                                 <strong>Contraseña temporal vigente:</strong>
                                 <span class="ml-2">{{ temporary_password_plaintext }}</span>
-                                <div class="small mt-2">
-                                    Se mostrará aquí hasta que el usuario cambie su contraseña.
-                                </div>
+                                <div class="small mt-2">Se mostrará aquí hasta que el usuario cambie su contraseña.</div>
                             </div>
                         {% endif %}
                         {{ form.username | as_crispy_field }}
@@ -80,9 +78,7 @@
                     </div>
                     <div class="card-body">
                         <div id="mobile-toggle-wrapper">{{ form.es_representante_pwa | as_crispy_field }}</div>
-                        <div id="mobile-association-type-wrapper" style="display: none">
-                            {{ form.tipo_asociacion_pwa | as_crispy_field }}
-                        </div>
+                        <div id="mobile-association-type-wrapper" style="display: none">{{ form.tipo_asociacion_pwa | as_crispy_field }}</div>
                         <div id="mobile-association-choice-wrapper" class="mb-3">
                             <div class="mobile-selector-intro">
                                 <div>
@@ -93,28 +89,26 @@
                                     </p>
                                 </div>
                             </div>
-                            <div id="mobile-tabs" class="mobile-tabs" role="tablist" aria-label="Configuración de alcance">
+                            <div id="mobile-tabs"
+                                 class="mobile-tabs"
+                                 role="tablist"
+                                 aria-label="Configuración de alcance">
                                 <button type="button"
                                         class="mobile-tab-button is-active"
                                         data-mobile-tab="organizaciones"
                                         role="tab"
-                                        aria-selected="true">
-                                    Organizaciones
-                                </button>
+                                        aria-selected="true">Organizaciones</button>
                                 <button type="button"
                                         class="mobile-tab-button"
                                         data-mobile-tab="espacios"
                                         role="tab"
-                                        aria-selected="false">
-                                    Espacios
-                                </button>
+                                        aria-selected="false">Espacios</button>
                             </div>
                         </div>
                         <div id="mobile-organizaciones-wrapper">
-                            <div class="d-none">
-                                {{ form.organizaciones_pwa | as_crispy_field }}
-                            </div>
-                            <div id="mobile-organizaciones-table-panel" class="mobile-organizaciones-table-panel">
+                            <div class="d-none">{{ form.organizaciones_pwa | as_crispy_field }}</div>
+                            <div id="mobile-organizaciones-table-panel"
+                                 class="mobile-organizaciones-table-panel">
                                 <div class="mobile-selector-panel__header">
                                     <div>
                                         <h6 class="mb-1">Organizaciones habilitadas</h6>
@@ -134,16 +128,16 @@
                                                 <th scope="col">Organización</th>
                                             </tr>
                                         </thead>
-                                        <tbody id="mobile-organizaciones-table-body"></tbody>
+                                        <tbody id="mobile-organizaciones-table-body">
+                                        </tbody>
                                     </table>
                                 </div>
                                 <p id="mobile-organizaciones-empty-state"
                                    class="text-muted small mb-0 mt-2"
-                                   style="display: none">
-                                    No hay organizaciones que coincidan con la búsqueda.
-                                </p>
+                                   style="display: none">No hay organizaciones que coincidan con la búsqueda.</p>
                             </div>
-                            <div id="mobile-comedores-organizacion-panel" class="mobile-selector-table-panel mt-3">
+                            <div id="mobile-comedores-organizacion-panel"
+                                 class="mobile-selector-table-panel mt-3">
                                 <div class="mobile-selector-panel__header">
                                     <div>
                                         <h6 class="mb-1">Espacios de las organizaciones seleccionadas</h6>
@@ -167,7 +161,8 @@
                                                 <th scope="col">Organización</th>
                                             </tr>
                                         </thead>
-                                        <tbody id="mobile-comedores-organizacion-table-body"></tbody>
+                                        <tbody id="mobile-comedores-organizacion-table-body">
+                                        </tbody>
                                     </table>
                                 </div>
                                 <p id="mobile-comedores-organizacion-hint"
@@ -182,9 +177,7 @@
                             </div>
                         </div>
                         <div id="mobile-comedores-wrapper">
-                            <div class="d-none">
-                                {{ form.comedores_pwa | as_crispy_field }}
-                            </div>
+                            <div class="d-none">{{ form.comedores_pwa | as_crispy_field }}</div>
                             <div id="mobile-comedores-table-panel" class="mobile-selector-table-panel">
                                 <div class="mobile-selector-panel__header">
                                     <div>
@@ -209,14 +202,13 @@
                                                 <th scope="col">Organización</th>
                                             </tr>
                                         </thead>
-                                        <tbody id="mobile-comedores-table-body"></tbody>
+                                        <tbody id="mobile-comedores-table-body">
+                                        </tbody>
                                     </table>
                                 </div>
                                 <p id="mobile-comedores-empty-state"
                                    class="text-muted small mb-0 mt-2"
-                                   style="display: none">
-                                    No hay espacios que coincidan con la búsqueda.
-                                </p>
+                                   style="display: none">No hay espacios que coincidan con la búsqueda.</p>
                             </div>
                         </div>
                     </div>
@@ -389,12 +381,7 @@
         .map((option) => {
           const organizacionName = option.dataset.organizacionNombre || '';
           return `
-            <tr
-              data-comedor-row
-              data-comedor-id="${escapeHtml(option.value)}"
-              data-comedor-nombre="${escapeHtml(option.text)}"
-              data-organizacion-nombre="${escapeHtml(organizacionName)}"
-            >
+            <tr data-comedor-row data-comedor-id="${escapeHtml(option.value)}" data-comedor-nombre="${escapeHtml(option.text)}" data-organizacion-nombre="${escapeHtml(organizacionName)}">
               <td class="mobile-selector-check-column">
                 <div class="form-check mb-0">
                   <input

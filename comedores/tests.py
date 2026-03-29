@@ -89,7 +89,10 @@ def test_comedor_detail_view_renderiza_card_colaboradores(
             fecha_alta="2026-03-26",
             fecha_baja=None,
             actividades=SimpleNamespace(
-                all=lambda: [SimpleNamespace(nombre="Compras"), SimpleNamespace(nombre="Limpieza")]
+                all=lambda: [
+                    SimpleNamespace(nombre="Compras"),
+                    SimpleNamespace(nombre="Limpieza"),
+                ]
             ),
         )
     ]
@@ -446,10 +449,13 @@ def test_colaborador_espacio_permite_reingreso_historico(comedor_fixture, monkey
     )
 
     assert response.status_code == 302
-    assert ColaboradorEspacio.objects.filter(
-        comedor=comedor_fixture,
-        ciudadano=ciudadano,
-    ).count() == 2
+    assert (
+        ColaboradorEspacio.objects.filter(
+            comedor=comedor_fixture,
+            ciudadano=ciudadano,
+        ).count()
+        == 2
+    )
     nuevo = ColaboradorEspacio.objects.exclude(pk=historial.pk).get()
     assert nuevo.fecha_baja is None
     audit = AuditColaboradorEspacio.objects.filter(
@@ -560,6 +566,16 @@ def test_crear_ciudadano_desde_renaper_normaliza_foreign_keys(monkeypatch):
 @pytest.mark.django_db
 def test_comedor_detail_view_post_new_relevamiento(
     client_logged_fixture, comedor_fixture, monkeypatch
+):
+    client = client_logged_fixture
+    comedor = comedor_fixture
+    url = reverse("comedor_detalle", kwargs={"pk": comedor.pk})
+    response = client.post(url, {"territorial": "1"})
+
+    assert response.status_code == 302
+    assert response.url == reverse("relevamientos", kwargs={"comedor_pk": comedor.pk})
+
+
 def test_comedor_detail_view_responsables_usa_datos_de_organizacion(
     client_logged_fixture, comedor_fixture
 ):

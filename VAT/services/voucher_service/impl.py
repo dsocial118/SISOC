@@ -21,7 +21,9 @@ class VoucherService:
 
     @staticmethod
     def _atomic_if_persistent(*instances):
-        if any(hasattr(instance, "_meta") for instance in instances if instance is not None):
+        if any(
+            hasattr(instance, "_meta") for instance in instances if instance is not None
+        ):
             return transaction.atomic()
         return nullcontext()
 

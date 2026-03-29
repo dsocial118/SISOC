@@ -27,13 +27,17 @@ class InscripcionService:
 
     @staticmethod
     def _atomic_if_persistent(*instances):
-        if any(hasattr(instance, "_meta") for instance in instances if instance is not None):
+        if any(
+            hasattr(instance, "_meta") for instance in instances if instance is not None
+        ):
             return transaction.atomic()
         return nullcontext()
 
     @staticmethod
     def _uses_persistent_models(*instances):
-        return any(hasattr(instance, "_meta") for instance in instances if instance is not None)
+        return any(
+            hasattr(instance, "_meta") for instance in instances if instance is not None
+        )
 
     @staticmethod
     def _resolver_usuario_auditoria(usuario):
@@ -136,7 +140,9 @@ class InscripcionService:
                 voucher = (
                     Voucher.objects.filter(
                         ciudadano_id=InscripcionService._resolve_lookup_id(ciudadano),
-                        programa_id=InscripcionService._resolve_lookup_id(oferta.programa),
+                        programa_id=InscripcionService._resolve_lookup_id(
+                            oferta.programa
+                        ),
                         estado="activo",
                     )
                     .order_by("fecha_vencimiento")

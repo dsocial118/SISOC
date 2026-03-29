@@ -27,7 +27,9 @@ class ColaboradorEspacioCreateView(LoginRequiredMixin, CreateView):
         )
 
     def _build_busqueda_context(self):
-        source = self.request.POST if self.request.method == "POST" else self.request.GET
+        source = (
+            self.request.POST if self.request.method == "POST" else self.request.GET
+        )
         query = (source.get("query") or source.get("dni") or "").strip()
         ciudadano_id = (source.get("ciudadano_id") or "").strip()
         context = {
@@ -39,9 +41,7 @@ class ColaboradorEspacioCreateView(LoginRequiredMixin, CreateView):
         }
         if ciudadano_id:
             ciudadano = (
-                Ciudadano.objects.select_related("sexo")
-                .filter(pk=ciudadano_id)
-                .first()
+                Ciudadano.objects.select_related("sexo").filter(pk=ciudadano_id).first()
             )
             if ciudadano:
                 context["ciudadano_encontrado"] = ciudadano
@@ -59,7 +59,8 @@ class ColaboradorEspacioCreateView(LoginRequiredMixin, CreateView):
 
         if not query.isdigit() or len(query) < 7:
             messages.warning(
-                self.request, "Ingrese un DNI numérico válido para realizar la búsqueda."
+                self.request,
+                "Ingrese un DNI numérico válido para realizar la búsqueda.",
             )
             return context
 
@@ -73,8 +74,8 @@ class ColaboradorEspacioCreateView(LoginRequiredMixin, CreateView):
         )
         if ciudadano:
             context["ciudadano_encontrado"] = ciudadano
-            context["preview_data"] = ColaboradorEspacioService.build_preview_from_ciudadano(
-                ciudadano
+            context["preview_data"] = (
+                ColaboradorEspacioService.build_preview_from_ciudadano(ciudadano)
             )
             context["colaborador_existente"] = ColaboradorEspacio.objects.filter(
                 comedor=self._get_comedor(),
@@ -162,9 +163,11 @@ class ColaboradorEspacioUpdateView(LoginRequiredMixin, UpdateView):
         )
 
     def get_queryset(self):
-        return ColaboradorEspacio.objects.filter(comedor=self._get_comedor()).select_related(
-            "ciudadano__sexo"
-        ).prefetch_related("actividades")
+        return (
+            ColaboradorEspacio.objects.filter(comedor=self._get_comedor())
+            .select_related("ciudadano__sexo")
+            .prefetch_related("actividades")
+        )
 
     def get_success_url(self):
         return reverse_lazy("comedor_detalle", kwargs={"pk": self.kwargs["pk"]})
