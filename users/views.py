@@ -82,6 +82,11 @@ class UserCreateView(AdminRequiredMixin, CreateView):
     success_url = reverse_lazy("usuarios")
     required_permissions = ("auth.add_user",)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
+
 
 class UserUpdateView(AdminRequiredMixin, UpdateView):
     model = User
@@ -89,6 +94,11 @@ class UserUpdateView(AdminRequiredMixin, UpdateView):
     template_name = "user/user_form.html"
     success_url = reverse_lazy("usuarios")
     required_permissions = ("auth.change_user",)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
 
 
 class UserDeleteView(AdminRequiredMixin, DeleteView):

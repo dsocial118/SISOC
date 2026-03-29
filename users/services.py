@@ -2,7 +2,7 @@ import logging
 from typing import Tuple, List
 
 from django.contrib.auth.models import User
-from django.db.models import F
+from django.db.models import Count, F, Q
 from django.urls import reverse
 
 from iam.services import user_has_any_permission_codes, user_has_permission_code
@@ -39,7 +39,68 @@ class UsuariosService:
     def get_filtered_usuarios(request_or_get):
         """Aplica filtros combinables sobre el listado de usuarios."""
         base_qs = UsuariosService.get_usuarios_queryset()
+        base_qs = UsuariosService._apply_actor_scope(base_qs, request_or_get)
         return BENEFICIARIO_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
+
+    @staticmethod
+    def _apply_actor_scope(base_qs, request_or_get):
+        """
+        Restringe visibilidad de usuarios según el alcance delegable del actor.
+
+        Regla: si el actor tiene configurado `grupos_asignables` y/o
+        `roles_asignables` (auth.role_*), solo puede ver usuarios cuyos grupos
+        y roles directos sean un subconjunto de ese alcance.
+        """
+        actor = getattr(request_or_get, "user", None)
+        if not actor or not getattr(actor, "is_authenticated", False):
+            return base_qs
+        if actor.is_superuser:
+            return base_qs
+
+        profile = getattr(actor, "profile", None)
+        if not profile:
+            return base_qs
+
+        allowed_groups = profile.grupos_asignables.all()
+        allowed_roles = profile.roles_asignables.filter(
+            content_type__app_label="auth",
+            codename__startswith="role_",
+        )
+
+        has_group_scope = allowed_groups.exists()
+        has_role_scope = allowed_roles.exists()
+        if not has_group_scope and not has_role_scope:
+            return base_qs
+
+        scoped_qs = base_qs.annotate(
+            total_groups=Count("groups", distinct=True),
+            allowed_groups_count=Count(
+                "groups",
+                filter=Q(groups__in=allowed_groups),
+                distinct=True,
+            ),
+            total_role_permissions=Count(
+                "user_permissions",
+                filter=Q(
+                    user_permissions__content_type__app_label="auth",
+                    user_permissions__codename__startswith="role_",
+                ),
+                distinct=True,
+            ),
+            allowed_role_permissions_count=Count(
+                "user_permissions",
+                filter=Q(user_permissions__in=allowed_roles),
+                distinct=True,
+            ),
+        ).filter(
+            Q(pk=actor.pk)
+            | (
+                Q(total_groups=F("allowed_groups_count"))
+                & Q(total_role_permissions=F("allowed_role_permissions_count"))
+            )
+        )
+
+        return scoped_qs.distinct().order_by("-id")
 
     @staticmethod
     def get_usuarios_queryset():

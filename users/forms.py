@@ -19,6 +19,12 @@ from users.services_pwa import (
 )
 
 
+ROLE_PERMISSION_QUERYSET = Permission.objects.select_related("content_type").filter(
+    content_type__app_label="auth",
+    codename__startswith="role_",
+).order_by("name")
+
+
 class BackofficeAuthenticationForm(AuthenticationForm):
     """Bloquea login web para usuarios de uso exclusivo PWA."""
 
@@ -134,7 +140,124 @@ class PWAAccessMixin:
         return cleaned
 
 
-class UserCreationForm(PWAAccessMixin, forms.ModelForm):
+class DelegationScopeMixin:
+    actor = None
+
+    def _setup_delegation_fields(self):
+        self.fields["grupos_asignables"] = forms.ModelMultipleChoiceField(
+            queryset=Group.objects.all().order_by("name"),
+            required=False,
+            widget=forms.SelectMultiple(attrs={"class": "select2"}),
+            label="Grupos que puede asignar",
+            help_text=(
+                "Define qué grupos podrá asignar este usuario al crear/editar "
+                "otros usuarios."
+            ),
+        )
+        self.fields["roles_asignables"] = forms.ModelMultipleChoiceField(
+            queryset=ROLE_PERMISSION_QUERYSET,
+            required=False,
+            widget=forms.SelectMultiple(attrs={"class": "select2"}),
+            label="Roles que puede asignar",
+            help_text="Permisos auth.role_* delegables a terceros.",
+        )
+
+    def _is_unrestricted_actor(self):
+        return not self.actor or self.actor.is_superuser
+
+    def _allowed_groups_for_actor(self):
+        if self._is_unrestricted_actor():
+            return Group.objects.all().order_by("name")
+
+        profile = getattr(self.actor, "profile", None)
+        if not profile:
+            return Group.objects.none()
+        return profile.grupos_asignables.all().order_by("name")
+
+    def _allowed_roles_for_actor(self):
+        if self._is_unrestricted_actor():
+            return ROLE_PERMISSION_QUERYSET
+
+        profile = getattr(self.actor, "profile", None)
+        if not profile:
+            return Permission.objects.none()
+        return profile.roles_asignables.filter(
+            content_type__app_label="auth",
+            codename__startswith="role_",
+        ).order_by("name")
+
+    def _scope_assignable_fields_for_actor(self):
+        allowed_groups = self._allowed_groups_for_actor()
+        allowed_roles = self._allowed_roles_for_actor()
+
+        self.fields["groups"].queryset = allowed_groups
+        self.fields["user_permissions"].queryset = allowed_roles
+        self.fields["grupos_asignables"].queryset = allowed_groups
+        self.fields["roles_asignables"].queryset = allowed_roles
+
+    def _init_delegation_fields(self, profile):
+        if not profile:
+            return
+        self.fields["grupos_asignables"].initial = profile.grupos_asignables.all()
+        self.fields["roles_asignables"].initial = profile.roles_asignables.filter(
+            content_type__app_label="auth",
+            codename__startswith="role_",
+        )
+
+    def _validate_selected_within_allowed(self, cleaned):
+        if self._is_unrestricted_actor():
+            return
+
+        allowed_group_ids = set(
+            self._allowed_groups_for_actor().values_list("id", flat=True)
+        )
+        selected_group_ids = set(
+            cleaned.get("groups", Group.objects.none()).values_list("id", flat=True)
+        )
+        selected_assignable_group_ids = set(
+            cleaned.get("grupos_asignables", Group.objects.none()).values_list(
+                "id", flat=True
+            )
+        )
+
+        if not selected_group_ids.issubset(allowed_group_ids):
+            self.add_error(
+                "groups",
+                "Solo puede asignar grupos habilitados para su usuario.",
+            )
+        if not selected_assignable_group_ids.issubset(allowed_group_ids):
+            self.add_error(
+                "grupos_asignables",
+                "Solo puede delegar grupos que usted mismo puede asignar.",
+            )
+
+        allowed_role_ids = set(
+            self._allowed_roles_for_actor().values_list("id", flat=True)
+        )
+        selected_role_ids = set(
+            cleaned.get("user_permissions", Permission.objects.none()).values_list(
+                "id", flat=True
+            )
+        )
+        selected_assignable_role_ids = set(
+            cleaned.get("roles_asignables", Permission.objects.none()).values_list(
+                "id", flat=True
+            )
+        )
+
+        if not selected_role_ids.issubset(allowed_role_ids):
+            self.add_error(
+                "user_permissions",
+                "Solo puede asignar roles habilitados para su usuario.",
+            )
+        if not selected_assignable_role_ids.issubset(allowed_role_ids):
+            self.add_error(
+                "roles_asignables",
+                "Solo puede delegar roles que usted mismo puede asignar.",
+            )
+
+
+class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
@@ -195,8 +318,11 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
+        self.actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
         self._setup_pwa_fields()
+        self._setup_delegation_fields()
+        self._scope_assignable_fields_for_actor()
         self.fields["email"].required = True
 
     def clean(self):
@@ -206,6 +332,7 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
             self.add_error("provincia", "Seleccione una provincia.")
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
+        self._validate_selected_within_allowed(cleaned)
         return self._clean_pwa_fields(cleaned)
 
     def save(self, commit=True):
@@ -250,6 +377,8 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
             profile.save()
             # Evita devolver un profile cacheado con valores viejos tras el signal de User.
             user.refresh_from_db()
+            profile.grupos_asignables.set(self.cleaned_data.get("grupos_asignables", []))
+            profile.roles_asignables.set(self.cleaned_data.get("roles_asignables", []))
 
             duplas = self.cleaned_data.get("duplas_asignadas", [])
             if profile.es_coordinador and duplas:
@@ -262,7 +391,7 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
         return user
 
 
-class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
+class CustomUserChangeForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput,
         label="Contraseña (dejar en blanco para no cambiarla)",
@@ -327,8 +456,11 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
+        self.actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
         self._setup_pwa_fields()
+        self._setup_delegation_fields()
+        self._scope_assignable_fields_for_actor()
         self.fields["email"].required = True
         self._original_password_hash = self.instance.password
         self.fields["password"].initial = ""
@@ -345,6 +477,7 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
             self.fields["es_coordinador"].initial = prof.es_coordinador
             self.fields["duplas_asignadas"].initial = prof.duplas_asignadas.all()
             self.fields["rol"].initial = prof.rol
+            self._init_delegation_fields(prof)
 
     def clean(self):
         cleaned = super().clean()
@@ -353,6 +486,7 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
             self.add_error("provincia", "Seleccione una provincia.")
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
+        self._validate_selected_within_allowed(cleaned)
         return self._clean_pwa_fields(cleaned)
 
     def save(self, commit=True):
@@ -402,6 +536,8 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
                 )
             profile.save()
             user.refresh_from_db()
+            profile.grupos_asignables.set(self.cleaned_data.get("grupos_asignables", []))
+            profile.roles_asignables.set(self.cleaned_data.get("roles_asignables", []))
 
             duplas = self.cleaned_data.get("duplas_asignadas", [])
             if profile.es_coordinador and duplas:

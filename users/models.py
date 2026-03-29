@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, Permission, User
 from django.db import models
 
 from core.models import Provincia
@@ -109,6 +109,20 @@ class Profile(models.Model):
         related_name="coordinadores",
         verbose_name="Duplas asignadas",
         help_text="Duplas (equipos técnicos) asignadas a este coordinador",
+    )
+    grupos_asignables = models.ManyToManyField(
+        Group,
+        blank=True,
+        related_name="perfiles_delegadores",
+        verbose_name="Grupos que puede asignar",
+        help_text="Define qué grupos puede asignar este usuario al crear/editar otros usuarios.",
+    )
+    roles_asignables = models.ManyToManyField(
+        Permission,
+        blank=True,
+        related_name="perfiles_roles_delegables",
+        verbose_name="Roles que puede asignar",
+        help_text="Permisos auth.role_* que este usuario puede asignar a terceros.",
     )
 
     def __str__(self):
