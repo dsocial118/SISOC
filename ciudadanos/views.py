@@ -221,7 +221,7 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
             contexto["nomina_actual"] = nomina_actual
         return contexto
 
-    def get_vat_context(self, ciudadano):
+    def get_vat_context(self, ciudadano):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         try:
             from VAT.models import (
                 AsistenciaSesion,

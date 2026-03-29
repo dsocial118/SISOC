@@ -1,9 +1,10 @@
 import logging
 
+from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema
 
 from VAT.models import (
     Centro,
@@ -52,10 +53,8 @@ from VAT.serializers import (
 )
 from VAT.services.inscripcion_service import InscripcionService
 from core.api_auth import HasAPIKey
-from core.models import Provincia, Municipio, Localidad
+from core.models import Localidad, Municipio, Provincia
 from core.soft_delete.view_helpers import is_soft_deletable_instance
-from core.utils import format_serializer_errors
-from rest_framework.exceptions import ValidationError
 
 logger = logging.getLogger("django")
 
