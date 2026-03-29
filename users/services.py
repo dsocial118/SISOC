@@ -2,7 +2,7 @@ import logging
 from typing import Tuple, List
 
 from django.contrib.auth.models import User
-from django.db.models import F
+from django.db.models import Case, CharField, F, Value, When
 from django.urls import reverse
 
 from iam.services import user_has_any_permission_codes, user_has_permission_code
@@ -36,6 +36,51 @@ BENEFICIARIO_ADVANCED_FILTER = AdvancedFilterEngine(
 
 class UsuariosService:
     @staticmethod
+    def build_table_items(users, table_fields):
+        """Arma filas con acciones dependientes del estado actual del usuario."""
+        items = []
+        fields = list(table_fields)
+
+        for user in users:
+            cells = [
+                {
+                    "content": getattr(user, field["name"], ""),
+                }
+                for field in fields
+            ]
+            actions = [
+                {
+                    "label": "Editar",
+                    "url": reverse("usuario_editar", args=[user.pk]),
+                    "type": "editar",
+                    "icon": "edit",
+                }
+            ]
+
+            if user.is_active:
+                actions.append(
+                    {
+                        "label": "Desactivar",
+                        "url": reverse("usuario_borrar", args=[user.pk]),
+                        "type": "desactivar",
+                        "icon": "times-circle",
+                    }
+                )
+            else:
+                actions.append(
+                    {
+                        "label": "Activar",
+                        "url": reverse("usuario_activar", args=[user.pk]),
+                        "type": "activar",
+                        "icon": "check-circle",
+                    }
+                )
+
+            items.append({"cells": cells, "actions": actions})
+
+        return items
+
+    @staticmethod
     def get_filtered_usuarios(request_or_get):
         """Aplica filtros combinables sobre el listado de usuarios."""
         base_qs = UsuariosService.get_usuarios_queryset()
@@ -47,7 +92,14 @@ class UsuariosService:
         # Profile tiene FK a User y a Provincia; seleccionar esas relaciones evita consultas N+1
         return (
             User.objects.select_related("profile")
-            .annotate(rol=F("profile__rol"))
+            .annotate(
+                rol=F("profile__rol"),
+                is_active_display=Case(
+                    When(is_active=True, then=Value("true")),
+                    default=Value("false"),
+                    output_field=CharField(),
+                ),
+            )
             .order_by("-id")
         )
 
@@ -61,20 +113,6 @@ class UsuariosService:
         )
         return {
             **columns_context,
-            "table_actions": [
-                {
-                    "label": "Editar",
-                    "url_name": "usuario_editar",
-                    "type": "editar",
-                    "icon": "edit",
-                },
-                {
-                    "label": "Eliminar",
-                    "url_name": "usuario_borrar",
-                    "type": "eliminar",
-                    "icon": "trash-alt",
-                },
-            ],
             "breadcrumb_items": [
                 {"text": "Usuarios", "url": reverse("usuarios")},
                 {"text": "Listar", "active": True},

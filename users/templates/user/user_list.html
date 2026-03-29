@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% url 'usuarios_exportar' as export_url %}
     {% include 'components/search_bar.html' with titulo="Buscar Usuario" reset_url=reset_url filters_mode=filters_mode filters_js=filters_js filters_action=filters_action show_add_button=show_add_button export_url=export_url %}
-    {% include 'components/data_table.html' with headers=table_headers items=users show_actions=True actions=table_actions empty_message='No hay usuarios disponibles.' fields=table_fields %}
+    {% include 'components/data_table.html' with headers=table_headers items=user_table_items show_actions=True custom_cells=True custom_actions=True empty_message='No hay usuarios disponibles.' %}
 {% endblock content %}
 {% block customJS %}
     <!-- Script de ordenamiento reutilizable para tablas -->

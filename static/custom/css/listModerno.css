@@ -500,6 +500,47 @@
   box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
 }
 
+
+/* Botón Activar */
+.projects .btn-activar,
+.table .btn-activar,
+.comedor-actions .btn-activar,
+.project-actions .btn-activar {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.projects .btn-activar:hover,
+.table .btn-activar:hover,
+.comedor-actions .btn-activar:hover,
+.project-actions .btn-activar:hover {
+  background: #059669;
+  border-color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* Boton Desactivar */
+.projects .btn-desactivar,
+.table .btn-desactivar,
+.comedor-actions .btn-desactivar,
+.project-actions .btn-desactivar {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+
+.projects .btn-desactivar:hover,
+.table .btn-desactivar:hover,
+.comedor-actions .btn-desactivar:hover,
+.project-actions .btn-desactivar:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
 /* Botón Eliminar / Danger - Rojo */
 .projects .btn-eliminar,
 .table .btn-eliminar,
