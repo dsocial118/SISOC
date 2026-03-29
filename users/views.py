@@ -72,6 +72,10 @@ class UserListView(AdminRequiredMixin, ListView):
 
         # Configuración para el componente data_table
         context.update(UsuariosService.get_usuarios_list_context(self.request))
+        context["user_table_items"] = UsuariosService.build_table_items(
+            context["users"],
+            context["table_fields"],
+        )
         return context
 
 

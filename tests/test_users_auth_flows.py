@@ -18,6 +18,7 @@ from core.decorators import permissions_any_required
 from core.permissions.registry import resolve_permission_codes
 from iam.services import user_has_permission_code
 from users.forms import CustomUserChangeForm, GroupForm, UserCreationForm
+from users.services import UsuariosService
 from users.services_group_permissions import sync_permissions_for_group
 
 User = get_user_model()
@@ -378,3 +379,122 @@ def test_user_export_requires_view_and_export_permissions(client):
     user.user_permissions.add(export_permission)
     response = client.get(reverse("usuarios_exportar"))
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_user_list_view_shows_actions_according_to_is_active(client):
+    user = User.objects.create_user(
+        username="users_reader_actions",
+        email="users_reader_actions@example.com",
+        password="Secreta123!",
+    )
+    view_user_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="view_user",
+    )
+    user.user_permissions.add(view_user_permission)
+
+    active_user = User.objects.create_user(
+        username="active_target",
+        email="active_target@example.com",
+        password="Secreta123!",
+        is_active=True,
+    )
+    inactive_user = User.objects.create_user(
+        username="inactive_target",
+        email="inactive_target@example.com",
+        password="Secreta123!",
+        is_active=False,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("usuarios"))
+    items_by_username = {
+        item["cells"][2]["content"]: item for item in response.context["user_table_items"]
+    }
+
+    active_item = items_by_username[active_user.username]
+    inactive_item = items_by_username[inactive_user.username]
+
+    assert [action["label"] for action in active_item["actions"]] == [
+        "Editar",
+        "Desactivar",
+    ]
+    assert [action["label"] for action in inactive_item["actions"]] == [
+        "Editar",
+        "Activar",
+    ]
+
+
+@pytest.mark.django_db
+def test_usuarios_service_annotates_is_active_display_as_true_false():
+    active_user = User.objects.create_user(
+        username="active_display_user",
+        email="active_display_user@example.com",
+        password="Secreta123!",
+        is_active=True,
+    )
+    inactive_user = User.objects.create_user(
+        username="inactive_display_user",
+        email="inactive_display_user@example.com",
+        password="Secreta123!",
+        is_active=False,
+    )
+
+    queryset = UsuariosService.get_usuarios_queryset()
+
+    assert queryset.get(pk=active_user.pk).is_active_display == "true"
+    assert queryset.get(pk=inactive_user.pk).is_active_display == "false"
+
+
+@pytest.mark.django_db
+def test_user_activate_view_reactivates_user_with_delete_permission(client):
+    user = User.objects.create_user(
+        username="users_admin_activate",
+        email="users_admin_activate@example.com",
+        password="Secreta123!",
+    )
+    delete_user_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="delete_user",
+    )
+    user.user_permissions.add(delete_user_permission)
+    inactive_user = User.objects.create_user(
+        username="inactive_to_activate",
+        email="inactive_to_activate@example.com",
+        password="Secreta123!",
+        is_active=False,
+    )
+
+    client.force_login(user)
+    get_response = client.get(reverse("usuario_activar", kwargs={"pk": inactive_user.pk}))
+    post_response = client.post(
+        reverse("usuario_activar", kwargs={"pk": inactive_user.pk})
+    )
+
+    assert get_response.status_code == 200
+    assert post_response.status_code in {302, 303}
+    inactive_user.refresh_from_db()
+    assert inactive_user.is_active is True
+
+
+@pytest.mark.django_db
+def test_user_activate_view_returns_403_without_delete_permission(client):
+    user = User.objects.create_user(
+        username="users_without_delete_permission",
+        email="users_without_delete_permission@example.com",
+        password="Secreta123!",
+    )
+    inactive_user = User.objects.create_user(
+        username="inactive_forbidden",
+        email="inactive_forbidden@example.com",
+        password="Secreta123!",
+        is_active=False,
+    )
+
+    client.force_login(user)
+    response = client.post(reverse("usuario_activar", kwargs={"pk": inactive_user.pk}))
+
+    assert response.status_code == 403
+    inactive_user.refresh_from_db()
+    assert inactive_user.is_active is False
