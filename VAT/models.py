@@ -4,7 +4,6 @@ from django.utils import timezone
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Sexo, Programa
 from core.soft_delete import SoftDeleteModelMixin
-from organizaciones.models import Organizacion
 
 
 class Centro(SoftDeleteModelMixin, models.Model):
@@ -18,15 +17,7 @@ class Centro(SoftDeleteModelMixin, models.Model):
         blank=False,
     )
     codigo = models.CharField(max_length=20, unique=True)
-    foto = models.ImageField(upload_to="vat_centros/", blank=True, null=True)
     activo = models.BooleanField(default=True)
-    organizacion_asociada = models.ForeignKey(
-        Organizacion,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        related_name="vat_centros",
-    )
     provincia = models.ForeignKey(
         to=Provincia,
         on_delete=models.PROTECT,
@@ -52,14 +43,35 @@ class Centro(SoftDeleteModelMixin, models.Model):
     domicilio_actividad = models.CharField(
         max_length=255, verbose_name="Domicilio de actividades"
     )
+    codigo_postal = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="Código Postal",
+    )
+    lote = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Lote",
+    )
+    manzana = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Manzana",
+    )
+    entre_calles = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Entre Calles",
+    )
     telefono = models.CharField(max_length=50, verbose_name="Teléfono")
     celular = models.CharField(max_length=50, verbose_name="Celular")
     correo = models.EmailField(max_length=100, verbose_name="Correo electrónico")
     sitio_web = models.URLField(
         max_length=200, blank=True, null=True, verbose_name="Sitio web"
-    )
-    link_redes = models.URLField(
-        max_length=200, blank=True, null=True, verbose_name="Redes sociales"
     )
     nombre_referente = models.CharField(
         max_length=100, verbose_name="Nombre del responsable"
@@ -73,14 +85,6 @@ class Centro(SoftDeleteModelMixin, models.Model):
     correo_referente = models.EmailField(
         max_length=100, verbose_name="Correo del responsable"
     )
-    modalidad_institucional = models.ForeignKey(
-        "ModalidadInstitucional",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="vat_centros",
-        verbose_name="Modalidad Institucional",
-    )
     tipo_gestion = models.CharField(
         max_length=50, null=True, blank=True, verbose_name="Tipo de Gestión"
     )
@@ -90,10 +94,6 @@ class Centro(SoftDeleteModelMixin, models.Model):
     situacion = models.CharField(
         max_length=50, null=True, blank=True, verbose_name="Situación"
     )
-    fecha_alta = models.DateField(
-        null=True, blank=True, verbose_name="Fecha de Alta"
-    )
-
     def __str__(self):
         return self.nombre
 
@@ -642,6 +642,29 @@ class InstitucionContacto(models.Model):
         verbose_name="Tipo de Contacto",
     )
     valor = models.CharField(max_length=255, verbose_name="Valor")
+    nombre_contacto = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Nombre del Contacto",
+    )
+    rol_area = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Rol / Área",
+    )
+    telefono_contacto = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="Teléfono del Contacto",
+    )
+    email_contacto = models.EmailField(
+        blank=True,
+        null=True,
+        verbose_name="Correo del Contacto",
+    )
     es_principal = models.BooleanField(
         default=False, verbose_name="Es Principal"
     )
@@ -749,6 +772,14 @@ class InstitucionIdentificadorHist(models.Model):
         null=True,
         verbose_name="Rol Institucional",
     )
+    ubicacion = models.ForeignKey(
+        "InstitucionUbicacion",
+        on_delete=models.SET_NULL,
+        related_name="identificadores_hist",
+        blank=True,
+        null=True,
+        verbose_name="Ubicación asociada",
+    )
     es_actual = models.BooleanField(
         default=True, verbose_name="Es Actual"
     )
@@ -768,6 +799,11 @@ class InstitucionIdentificadorHist(models.Model):
     fecha_modificacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+        if self.ubicacion_id:
+            return (
+                f"{self.centro} - {self.get_tipo_identificador_display()}: "
+                f"{self.valor_identificador} ({self.ubicacion})"
+            )
         return f"{self.centro} - {self.get_tipo_identificador_display()}: {self.valor_identificador}"
 
     class Meta:
@@ -807,6 +843,13 @@ class InstitucionUbicacion(models.Model):
         choices=ROL_UBICACION_CHOICES,
         verbose_name="Rol de Ubicación",
     )
+    nombre_ubicacion = models.CharField(
+        max_length=120,
+        blank=True,
+        null=True,
+        verbose_name="Nombre de Ubicación",
+        help_text="Ejemplo: Sede Centro, Anexo Norte, Punto Barrio Sur.",
+    )
     domicilio = models.CharField(
         max_length=255, blank=True, null=True, verbose_name="Domicilio"
     )
@@ -832,7 +875,8 @@ class InstitucionUbicacion(models.Model):
     fecha_modificacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.centro} - {self.get_rol_ubicacion_display()} ({self.localidad})"
+        nombre = self.nombre_ubicacion or self.get_rol_ubicacion_display()
+        return f"{self.centro} - {nombre} ({self.localidad})"
 
     class Meta:
         verbose_name = "Ubicación de Institución"

@@ -8,13 +8,20 @@ from django.views.generic import (
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
+from django.db import transaction
 from django.db.models import Count, Q
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 
 from VAT.models import (
+    AutoridadInstitucional,
     Centro,
+    Comision,
+    InstitucionIdentificadorHist,
+    InstitucionUbicacion,
+    PlanVersionCurricular,
+    TituloReferencia,
 )
 from VAT.services.centro_filter_config import (
     FIELD_MAP as CENTRO_FILTER_MAP,
@@ -25,12 +32,17 @@ from VAT.services.centro_filter_config import (
     get_filters_ui_config as get_centro_filters_ui_config,
 )
 from VAT.forms import (
+    CentroAltaForm,
     CentroForm,
+    InstitucionContactoAltaFormSet,
     InstitucionContactoForm,
     AutoridadInstitucionalForm,
     InstitucionIdentificadorHistForm,
     InstitucionUbicacionForm,
     OfertaInstitucionalForm,
+    ComisionForm,
+    TituloReferenciaForm,
+    PlanVersionCurricularForm,
 )
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
@@ -130,8 +142,13 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         centro = self.object
 
         # Evaluar listas una sola vez para reutilizar en los counts
-        ctx["autoridades"] = list(centro.autoridades.filter(es_actual=True))
-        ctx["identificadores"] = list(centro.identificadores_hist.filter(es_actual=True))
+        ctx["autoridades"] = list(centro.autoridades.all().order_by("-es_actual", "-vigencia_desde"))
+        ctx["identificadores"] = list(
+            centro.identificadores_hist
+            .select_related("ubicacion")
+            .all()
+            .order_by("-es_actual", "-vigencia_desde")
+        )
         ctx["contactos"] = list(centro.contactos_adicionales.all())
         ctx["ubicaciones"] = centro.ubicaciones.select_related("localidad").all()
 
@@ -142,33 +159,135 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             .annotate(comisiones_count=Count("comisiones"))
             .order_by("-ciclo_lectivo")
         )
+        ctx["comisiones"] = list(
+            Comision.objects
+            .filter(oferta__centro=centro)
+            .select_related(
+                "oferta__plan_curricular__titulo_referencia",
+                "oferta__programa",
+            )
+            .order_by("codigo_comision")
+        )
 
         # Todos los counts desde datos ya cargados, sin queries adicionales
         ctx["count_ofertas"] = len(ctx["ofertas"])
-        ctx["count_comisiones"] = sum(o.comisiones_count for o in ctx["ofertas"])
+        ctx["count_comisiones"] = len(ctx["comisiones"])
         ctx["count_autoridades"] = len(ctx["autoridades"])
         ctx["count_identificadores"] = len(ctx["identificadores"])
         ctx["count_contactos"] = len(ctx["contactos"])
 
+        # Títulos y planes activos (catálogo disponible)
+        ctx["titulos"] = list(
+            TituloReferencia.objects
+            .filter(activo=True)
+            .select_related("sector", "subsector")
+            .prefetch_related("planes")
+        )
+        ctx["planes"] = list(
+            PlanVersionCurricular.objects
+            .filter(activo=True)
+            .select_related("titulo_referencia", "modalidad_cursada")
+        )
+
         # Forms para modales
         ctx["contacto_form"] = InstitucionContactoForm(initial={"centro": centro})
-        ctx["autoridad_form"] = AutoridadInstitucionalForm(initial={"centro": centro})
-        ctx["identificador_form"] = InstitucionIdentificadorHistForm(initial={"centro": centro})
+        ctx["autoridad_form"] = AutoridadInstitucionalForm(initial={"centro": centro, "es_actual": True})
+        ctx["identificador_form"] = InstitucionIdentificadorHistForm(
+            initial={"centro": centro, "es_actual": True}
+        )
         ctx["ubicacion_form"] = InstitucionUbicacionForm(initial={"centro": centro})
         ctx["oferta_form"] = OfertaInstitucionalForm(initial={"centro": centro})
+        ctx["comision_form"] = ComisionForm()
+        ctx["comision_form"].fields["oferta"].queryset = centro.ofertas_institucionales.order_by("-ciclo_lectivo")
+        ctx["comision_form"].fields["ubicacion"].queryset = centro.ubicaciones.select_related("localidad").order_by("es_principal", "rol_ubicacion")
+        ctx["titulo_form"] = TituloReferenciaForm()
+        ctx["plan_form"] = PlanVersionCurricularForm()
 
         return ctx
 
 
 class CentroCreateView(LoginRequiredMixin, CreateView):
     model = Centro
-    form_class = CentroForm
-    template_name = "vat/centros/centro_form.html"
+    form_class = CentroAltaForm
+    template_name = "vat/centros/centro_create_form.html"
     success_url = reverse_lazy("vat_centro_list")
 
-    def form_valid(self, form):
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        contacto_formset = kwargs.get("contacto_formset")
+        if contacto_formset is None:
+            contacto_formset = InstitucionContactoAltaFormSet(prefix="contactos")
+        ctx.update(
+            {
+                "contacto_formset": contacto_formset,
+                "cancel_url": reverse("vat_centro_list"),
+            }
+        )
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        self.object = None
+        form = self.get_form()
+        contacto_formset = InstitucionContactoAltaFormSet(
+            self.request.POST,
+            prefix="contactos",
+        )
+
+        if form.is_valid() and contacto_formset.is_valid():
+            return self.form_valid(form, contacto_formset)
+        return self.form_invalid(form, contacto_formset)
+
+    def form_valid(self, form, contacto_formset):
+        with transaction.atomic():
+            self.object = form.save()
+
+            contacto_formset.instance = self.object
+            contacto_formset.save()
+
+            AutoridadInstitucional.objects.create(
+                centro=self.object,
+                nombre_completo=(
+                    f"{form.cleaned_data['nombre_referente']} "
+                    f"{form.cleaned_data['apellido_referente']}"
+                ).strip(),
+                dni=form.cleaned_data["autoridad_dni"],
+                cargo="Director/a",
+                email=form.cleaned_data["correo_referente"],
+                telefono=form.cleaned_data.get("telefono_referente"),
+                es_actual=True,
+            )
+
+            InstitucionIdentificadorHist.objects.create(
+                centro=self.object,
+                tipo_identificador="cue",
+                valor_identificador=form.cleaned_data["codigo"],
+                rol_institucional="sede",
+                es_actual=True,
+            )
+
+            InstitucionUbicacion.objects.create(
+                centro=self.object,
+                localidad=form.cleaned_data["localidad"],
+                rol_ubicacion="sede_principal",
+                domicilio=form.cleaned_data["domicilio_actividad"],
+                es_principal=True,
+            )
+
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
+
+    def form_invalid(self, form, contacto_formset):
+        return self.render_to_response(
+            self.get_context_data(
+                form=form,
+                contacto_formset=contacto_formset,
+            )
+        )
+
+    def get_success_url(self):
+        if self.request.POST.get("save_continue"):
+            return reverse("vat_centro_detail", kwargs={"pk": self.object.pk})
+        return super().get_success_url()
 
 
 class CentroUpdateView(LoginRequiredMixin, UpdateView):

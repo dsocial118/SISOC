@@ -51,7 +51,6 @@
                                 <label for="{{ form.activo.id_for_label }}" class="ml-2">Centro activo</label>
                             </div>
                         </div>
-                        <div class="col-md-6">{{ form.organizacion_asociada|as_crispy_field }}</div>
                         <div class="col-md-6">{{ form.referente|as_crispy_field }}</div>
                     </div>
                 </div>
@@ -99,7 +98,6 @@
                         <div class="col-md-4">{{ form.celular|as_crispy_field }}</div>
                         <div class="col-md-4">{{ form.correo|as_crispy_field }}</div>
                         <div class="col-md-6">{{ form.sitio_web|as_crispy_field }}</div>
-                        <div class="col-md-6">{{ form.link_redes|as_crispy_field }}</div>
                     </div>
                 </div>
             </div>
@@ -122,25 +120,6 @@
                         <div class="col-md-3">{{ form.apellido_referente|as_crispy_field }}</div>
                         <div class="col-md-3">{{ form.telefono_referente|as_crispy_field }}</div>
                         <div class="col-md-3">{{ form.correo_referente|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SECCIÓN 5: Multimedia -->
-        <div class="card bg-dark text-white mb-4">
-            <div class="card-header bg-panel5 d-flex justify-content-between align-items-center"
-                 style="cursor:pointer"
-                 data-toggle="collapse"
-                 data-target="#sec-media"
-                 aria-expanded="false">
-                <span><i class="fas fa-image mr-2"></i><strong>5. Foto</strong></span>
-                <i class="fas fa-chevron-down toggle-icon"></i>
-            </div>
-            <div id="sec-media" class="collapse">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">{{ form.foto|as_crispy_field }}</div>
                     </div>
                 </div>
             </div>

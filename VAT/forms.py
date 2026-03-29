@@ -1,5 +1,9 @@
+import re
+
 from django import forms
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.forms import BaseInlineFormSet, inlineformset_factory
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Sexo
 from core.models import Localidad, Programa
@@ -32,6 +36,61 @@ HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
     (f"{h:02d}:30", f"{h:02d}:30") for h in range(0, 24)
 ]
 
+TIPO_GESTION_CHOICES = [
+    ("", "Seleccionar tipo de gestión..."),
+    ("Estatal", "Estatal"),
+    ("Privada", "Privada"),
+]
+
+CLASE_INSTITUCION_CHOICES = [
+    ("", "Seleccionar clase de institución..."),
+    ("Formación Profesional", "Formación Profesional"),
+    ("Secundario Técnico", "Secundario Técnico"),
+    ("Superior Formación Docente", "Superior Formación Docente"),
+    ("Superior Técnico", "Superior Técnico"),
+    ("Secundario Orientado", "Secundario Orientado"),
+]
+
+ESTADO_ETP_CHOICES = [
+    ("", "Seleccionar estado ETP..."),
+    ("Institución de ETP", "Institución de ETP"),
+    (
+        "Institución de Otro Nivel y/o Modalidad",
+        "Institución de Otro Nivel y/o Modalidad",
+    ),
+]
+
+
+def _clean_non_empty_text(value, field_label):
+    cleaned_value = (value or "").strip()
+    if not cleaned_value:
+        raise ValidationError(f"{field_label} no puede contener solo espacios.")
+    return cleaned_value
+
+
+def _clean_numeric_text(value, field_label, min_length=None, max_length=None):
+    cleaned_value = (value or "").strip()
+    if cleaned_value and not cleaned_value.isdigit():
+        raise ValidationError(f"{field_label} debe contener solo números.")
+    if min_length and len(cleaned_value) < min_length:
+        raise ValidationError(
+            f"{field_label} debe tener al menos {min_length} dígitos."
+        )
+    if max_length and len(cleaned_value) > max_length:
+        raise ValidationError(
+            f"{field_label} no puede superar los {max_length} dígitos."
+        )
+    return cleaned_value
+
+
+def _clean_phone_text(value, field_label):
+    cleaned_value = (value or "").strip()
+    if cleaned_value and not re.fullmatch(r"[0-9+()\-\s]+", cleaned_value):
+        raise ValidationError(
+            f"{field_label} solo puede incluir números, espacios, paréntesis o guiones."
+        )
+    return cleaned_value
+
 
 class CentroForm(forms.ModelForm):
     class Meta:
@@ -39,30 +98,29 @@ class CentroForm(forms.ModelForm):
         fields = [
             "nombre",
             "codigo",
-            "organizacion_asociada",
             "provincia",
             "municipio",
             "localidad",
             "calle",
             "numero",
             "domicilio_actividad",
+            "codigo_postal",
+            "lote",
+            "manzana",
+            "entre_calles",
             "telefono",
             "celular",
             "correo",
             "sitio_web",
-            "link_redes",
             "nombre_referente",
             "apellido_referente",
             "telefono_referente",
             "correo_referente",
             "referente",
-            "foto",
             "activo",
-            "modalidad_institucional",
             "tipo_gestion",
             "clase_institucion",
             "situacion",
-            "fecha_alta",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -72,7 +130,288 @@ class CentroForm(forms.ModelForm):
             groups__name="ReferenteCentroVAT"
         ).only("id", "username", "first_name", "last_name")
 
-        self.fields["organizacion_asociada"].empty_label = "Seleccionar organización..."
+
+class CentroAltaForm(CentroForm):
+    nombre = forms.CharField(
+        label="Denominación de la institución",
+        max_length=150,
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Nombre oficial de la institución"}
+        ),
+    )
+    codigo = forms.CharField(
+        label="Clave Única de Establecimiento (CUE)",
+        max_length=9,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Ej: 500144900",
+                "inputmode": "numeric",
+            }
+        ),
+        help_text="Debe contener solo números.",
+    )
+    provincia = forms.ModelChoiceField(
+        queryset=Centro._meta.get_field("provincia").remote_field.model.objects.order_by("nombre"),
+        label="Jurisdicción",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    municipio = forms.ModelChoiceField(
+        queryset=Centro._meta.get_field("municipio").remote_field.model.objects.order_by("nombre"),
+        label="Municipio / Partido",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    localidad = forms.ModelChoiceField(
+        queryset=Localidad.objects.order_by("nombre"),
+        label="Localidad",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    domicilio_actividad = forms.CharField(
+        label="Dirección completa",
+        max_length=200,
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Referencia general del domicilio"}
+        ),
+    )
+    calle = forms.CharField(
+        label="Calle",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    numero = forms.IntegerField(
+        label="Altura",
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    codigo_postal = forms.CharField(
+        label="Código Postal",
+        required=False,
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "inputmode": "numeric"}
+        ),
+    )
+    lote = forms.CharField(
+        label="Lote",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    manzana = forms.CharField(
+        label="Manzana",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    entre_calles = forms.CharField(
+        label="Entre calles",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    telefono = forms.CharField(
+        label="Teléfono institucional",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    celular = forms.CharField(
+        label="Teléfono alternativo",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    correo = forms.EmailField(
+        label="Correo electrónico institucional",
+        widget=forms.EmailInput(attrs={"class": "form-control"}),
+    )
+    sitio_web = forms.URLField(
+        label="Sitio web institucional",
+        required=False,
+        widget=forms.URLInput(attrs={"class": "form-control"}),
+    )
+    tipo_gestion = forms.ChoiceField(
+        label="Tipo de gestión",
+        choices=TIPO_GESTION_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    clase_institucion = forms.ChoiceField(
+        label="Clase de institución",
+        choices=CLASE_INSTITUCION_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    situacion = forms.ChoiceField(
+        label="Estado ETP",
+        choices=ESTADO_ETP_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    autoridad_dni = forms.CharField(
+        label="Documento del director/a (DNI)",
+        max_length=20,
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "inputmode": "numeric"}
+        ),
+    )
+
+    class Meta(CentroForm.Meta):
+        fields = CentroForm.Meta.fields
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["activo"].required = False
+        self.fields["referente"].empty_label = "Seleccionar referente..."
+        self.fields["provincia"].empty_label = "Seleccionar jurisdicción..."
+        self.fields["municipio"].empty_label = "Seleccionar municipio..."
+        self.fields["localidad"].empty_label = "Seleccionar localidad..."
+
+    def clean_nombre(self):
+        return _clean_non_empty_text(self.cleaned_data.get("nombre"), "La denominación")
+
+    def clean_codigo(self):
+        return _clean_numeric_text(
+            self.cleaned_data.get("codigo"),
+            "El CUE",
+            min_length=9,
+            max_length=9,
+        )
+
+    def clean_domicilio_actividad(self):
+        return _clean_non_empty_text(
+            self.cleaned_data.get("domicilio_actividad"),
+            "La dirección completa",
+        )
+
+    def clean_codigo_postal(self):
+        return _clean_numeric_text(
+            self.cleaned_data.get("codigo_postal"),
+            "El código postal",
+            max_length=20,
+        )
+
+    def clean_telefono(self):
+        return _clean_phone_text(
+            self.cleaned_data.get("telefono"),
+            "El teléfono institucional",
+        )
+
+    def clean_celular(self):
+        return _clean_phone_text(
+            self.cleaned_data.get("celular"),
+            "El teléfono alternativo",
+        )
+
+    def clean_telefono_referente(self):
+        return _clean_phone_text(
+            self.cleaned_data.get("telefono_referente"),
+            "El teléfono del director/a",
+        )
+
+    def clean_autoridad_dni(self):
+        return _clean_numeric_text(
+            self.cleaned_data.get("autoridad_dni"),
+            "El DNI del director/a",
+            max_length=20,
+        )
+
+    def save(self, commit=True):
+        self.instance.activo = True
+        return super().save(commit=commit)
+
+
+class BaseInstitucionContactoAltaFormSet(BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+
+        contactos_activos = []
+        contactos_principales = 0
+
+        for form in self.forms:
+            if not getattr(form, "cleaned_data", None):
+                continue
+            if self.can_delete and form.cleaned_data.get("DELETE"):
+                continue
+            if not form.cleaned_data.get("nombre_contacto"):
+                continue
+
+            contactos_activos.append(form)
+            if form.cleaned_data.get("es_principal"):
+                contactos_principales += 1
+
+        if not contactos_activos:
+            raise ValidationError("Debe cargar al menos un contacto adicional.")
+        if contactos_principales != 1:
+            raise ValidationError("Debe existir exactamente un contacto principal.")
+
+
+class InstitucionContactoAltaForm(forms.ModelForm):
+    nombre_contacto = forms.CharField(
+        label="Nombre del contacto",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    rol_area = forms.CharField(
+        label="Rol / Área",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    telefono_contacto = forms.CharField(
+        label="Teléfono",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    email_contacto = forms.EmailField(
+        label="Correo electrónico",
+        widget=forms.EmailInput(attrs={"class": "form-control"}),
+    )
+    es_principal = forms.BooleanField(
+        label="Contacto principal",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    class Meta:
+        model = InstitucionContacto
+        fields = [
+            "nombre_contacto",
+            "rol_area",
+            "telefono_contacto",
+            "email_contacto",
+            "es_principal",
+        ]
+
+    def clean_nombre_contacto(self):
+        return _clean_non_empty_text(
+            self.cleaned_data.get("nombre_contacto"),
+            "El nombre del contacto",
+        )
+
+    def clean_rol_area(self):
+        return _clean_non_empty_text(
+            self.cleaned_data.get("rol_area"),
+            "El rol o área",
+        )
+
+    def clean_telefono_contacto(self):
+        return _clean_phone_text(
+            self.cleaned_data.get("telefono_contacto"),
+            "El teléfono del contacto",
+        )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        email_contacto = self.cleaned_data.get("email_contacto")
+        telefono_contacto = self.cleaned_data.get("telefono_contacto")
+        if email_contacto:
+            instance.tipo = "email"
+            instance.valor = email_contacto
+        else:
+            instance.tipo = "telefono"
+            instance.valor = telefono_contacto
+        if commit:
+            instance.save()
+        return instance
+
+
+InstitucionContactoAltaFormSet = inlineformset_factory(
+    Centro,
+    InstitucionContacto,
+    form=InstitucionContactoAltaForm,
+    formset=BaseInstitucionContactoAltaFormSet,
+    extra=1,
+    can_delete=False,
+)
 
 
 class ModalidadInstitucionalForm(forms.ModelForm):
@@ -460,9 +799,9 @@ class InstitucionIdentificadorHistForm(forms.ModelForm):
         label="Valor del Identificador",
         widget=forms.TextInput(attrs={"class": "form-control"}),
     )
-    rol_institucional = forms.ChoiceField(
-        label="Rol Institucional",
-        choices=[("", "---")] + list(InstitucionIdentificadorHist.ROL_INSTITUCIONAL_CHOICES),
+    ubicacion = forms.ModelChoiceField(
+        queryset=InstitucionUbicacion.objects.none(),
+        label="Ubicación Asociada",
         required=False,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
@@ -482,9 +821,45 @@ class InstitucionIdentificadorHistForm(forms.ModelForm):
         widget=forms.TextInput(attrs={"class": "form-control"}),
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        centro = None
+        if self.instance and self.instance.pk and self.instance.centro_id:
+            centro = self.instance.centro
+        elif "centro" in self.data:
+            try:
+                centro = Centro.objects.get(pk=self.data["centro"])
+            except (Centro.DoesNotExist, ValueError):
+                pass
+        elif self.initial.get("centro"):
+            try:
+                centro_val = self.initial["centro"]
+                if isinstance(centro_val, Centro):
+                    centro = centro_val
+                else:
+                    centro = Centro.objects.get(pk=centro_val)
+            except (Centro.DoesNotExist, ValueError):
+                pass
+
+        if centro:
+            self.fields["ubicacion"].queryset = (
+                InstitucionUbicacion.objects
+                .filter(centro=centro)
+                .select_related("localidad")
+                .order_by("-es_principal", "rol_ubicacion")
+            )
+
     class Meta:
         model = InstitucionIdentificadorHist
-        fields = ["centro", "tipo_identificador", "valor_identificador", "rol_institucional", "es_actual", "vigencia_hasta", "motivo"]
+        fields = [
+            "centro",
+            "tipo_identificador",
+            "valor_identificador",
+            "ubicacion",
+            "es_actual",
+            "vigencia_hasta",
+            "motivo",
+        ]
 
 
 class InstitucionUbicacionForm(forms.ModelForm):
@@ -501,7 +876,7 @@ class InstitucionUbicacionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # En edición: pre-filtrar localidades por el municipio del centro guardado
+        # Pre-filtrar localidades por el municipio del centro
         centro = None
         if self.instance and self.instance.pk and self.instance.centro_id:
             centro = self.instance.centro
@@ -509,6 +884,16 @@ class InstitucionUbicacionForm(forms.ModelForm):
             try:
                 from VAT.models import Centro as CentroModel
                 centro = CentroModel.objects.select_related("municipio", "provincia").get(pk=self.data["centro"])
+            except (CentroModel.DoesNotExist, ValueError):
+                pass
+        elif self.initial.get("centro"):
+            try:
+                from VAT.models import Centro as CentroModel
+                centro_val = self.initial["centro"]
+                if isinstance(centro_val, CentroModel):
+                    centro = centro_val
+                else:
+                    centro = CentroModel.objects.select_related("municipio", "provincia").get(pk=centro_val)
             except (CentroModel.DoesNotExist, ValueError):
                 pass
         if centro:
@@ -522,6 +907,16 @@ class InstitucionUbicacionForm(forms.ModelForm):
         label="Rol de Ubicación",
         choices=InstitucionUbicacion.ROL_UBICACION_CHOICES,
         widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    nombre_ubicacion = forms.CharField(
+        label="Nombre de Ubicación",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Ej: Sede Centro, Anexo Norte",
+            }
+        ),
     )
     domicilio = forms.CharField(
         label="Domicilio",
@@ -541,7 +936,15 @@ class InstitucionUbicacionForm(forms.ModelForm):
 
     class Meta:
         model = InstitucionUbicacion
-        fields = ["centro", "localidad", "rol_ubicacion", "domicilio", "es_principal", "observaciones"]
+        fields = [
+            "centro",
+            "localidad",
+            "rol_ubicacion",
+            "nombre_ubicacion",
+            "domicilio",
+            "es_principal",
+            "observaciones",
+        ]
 
 
 # ============================================================================
@@ -730,6 +1133,46 @@ class InscripcionForm(forms.ModelForm):
     class Meta:
         model = Inscripcion
         fields = ["ciudadano", "comision", "programa", "estado", "origen_canal", "observaciones"]
+
+
+class CiudadanoInscripcionRapidaForm(forms.ModelForm):
+    apellido = forms.CharField(
+        label="Apellido",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    nombre = forms.CharField(
+        label="Nombre",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    fecha_nacimiento = forms.DateField(
+        label="Fecha de Nacimiento",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    tipo_documento = forms.CharField(
+        initial=Ciudadano.DOCUMENTO_DNI,
+        widget=forms.HiddenInput(),
+    )
+    documento = forms.IntegerField(
+        label="Documento",
+        widget=forms.NumberInput(attrs={"class": "form-control", "inputmode": "numeric"}),
+    )
+    sexo = forms.ModelChoiceField(
+        queryset=Sexo.objects.all(),
+        label="Sexo",
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
+    class Meta:
+        model = Ciudadano
+        fields = [
+            "apellido",
+            "nombre",
+            "fecha_nacimiento",
+            "tipo_documento",
+            "documento",
+            "sexo",
+        ]
 
 
 # ============================================================================

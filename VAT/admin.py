@@ -33,27 +33,27 @@ from .models import (
 
 @admin.register(Centro)
 class CentroAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "modalidad_institucional", "tipo_gestion", "activo")
-    list_filter = ("activo", "modalidad_institucional", "tipo_gestion")
+    list_display = ("nombre", "tipo_gestion", "activo")
+    list_filter = ("activo", "tipo_gestion")
     search_fields = ("nombre",)
     fieldsets = (
         ("Información General", {
-            "fields": ("nombre", "codigo", "organizacion_asociada", "referente")
+            "fields": ("nombre", "codigo", "referente")
         }),
         ("Ubicación", {
             "fields": ("provincia", "municipio", "localidad", "calle", "numero", "domicilio_actividad")
         }),
         ("Contacto", {
-            "fields": ("telefono", "celular", "correo", "sitio_web", "link_redes")
+            "fields": ("telefono", "celular", "correo", "sitio_web")
         }),
         ("Responsable", {
             "fields": ("nombre_referente", "apellido_referente", "telefono_referente", "correo_referente")
         }),
-        ("Información DER v4", {
-            "fields": ("modalidad_institucional", "tipo_gestion", "clase_institucion", "situacion", "fecha_alta")
+        ("Clasificación", {
+            "fields": ("tipo_gestion", "clase_institucion", "situacion")
         }),
         ("Estado", {
-            "fields": ("foto", "activo")
+            "fields": ("activo",)
         }),
     )
 

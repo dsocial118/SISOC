@@ -1,0 +1,182 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Alta de Centro VAT{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
+{% endblock %}
+
+{% block content %}
+    {% include 'components/alert_message.html' with show_django_messages=True %}
+
+    <form method="post" enctype="multipart/form-data" id="centro-alta-form" novalidate>
+        {% csrf_token %}
+
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h2 class="mb-1">Alta de Institución</h2>
+                <p class="text-muted mb-0">Registro inicial de Centro en VAT con ubicación, contactos y autoridad.</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ cancel_url }}" class="btn btn-secondary">
+                    <i class="fas fa-times mr-1"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-1"></i>Guardar
+                </button>
+                <button type="submit" name="save_continue" value="1" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-right mr-1"></i>Guardar y continuar
+                </button>
+            </div>
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+        {% if contacto_formset.non_form_errors %}
+            <div class="alert alert-danger">{{ contacto_formset.non_form_errors }}</div>
+        {% endif %}
+
+        <div class="card bg-dark text-white mb-3">
+            <div class="card-header bg-panel1">
+                <strong>1. Datos de la Institución</strong>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">{{ form.nombre|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.codigo|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.clase_institucion|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.tipo_gestion|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.situacion|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.referente|as_crispy_field }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-dark text-white mb-3">
+            <div class="card-header bg-panel2">
+                <strong>2. Ubicación</strong>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">{{ form.domicilio_actividad|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.calle|as_crispy_field }}</div>
+                    <div class="col-md-2">{{ form.numero|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.codigo_postal|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.lote|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.manzana|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.entre_calles|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.municipio|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.localidad|as_crispy_field }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-dark text-white mb-3">
+            <div class="card-header bg-panel3">
+                <strong>3.1 Datos de contacto institucional</strong>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">{{ form.correo|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.telefono|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.celular|as_crispy_field }}</div>
+                    <div class="col-md-12">{{ form.sitio_web|as_crispy_field }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-dark text-white mb-3">
+            <div class="card-header bg-panel4 d-flex justify-content-between align-items-center">
+                <strong>3.2 Contactos de la institución</strong>
+                <button type="button" class="btn btn-sm btn-outline-light" id="add-contacto-btn">
+                    <i class="fas fa-plus mr-1"></i>Agregar contacto
+                </button>
+            </div>
+            <div class="card-body">
+                {{ contacto_formset.management_form }}
+                <div id="contactos-formset">
+                    {% for contacto_form in contacto_formset %}
+                        <div class="border rounded p-3 mb-3 contacto-form-item" data-form-index="{{ forloop.counter0 }}">
+                            {% for hidden in contacto_form.hidden_fields %}{{ hidden }}{% endfor %}
+                            <div class="row">
+                                <div class="col-md-4">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
+                                <div class="col-md-3">{{ contacto_form.rol_area|as_crispy_field }}</div>
+                                <div class="col-md-2">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
+                                <div class="col-md-3">{{ contacto_form.email_contacto|as_crispy_field }}</div>
+                                <div class="col-md-3 d-flex align-items-center">
+                                    <div class="form-group mt-4 pt-2">
+                                        {{ contacto_form.es_principal }}
+                                        <label for="{{ contacto_form.es_principal.id_for_label }}" class="ml-2">Principal</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-center justify-content-end">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-contacto-btn">
+                                        <i class="fas fa-trash mr-1"></i>Quitar
+                                    </button>
+                                </div>
+                            </div>
+                            {% if contacto_form.errors %}
+                                <div class="alert alert-danger mt-2 mb-0">{{ contacto_form.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-dark text-white mb-4">
+            <div class="card-header bg-panel5">
+                <strong>4. Autoridades</strong>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">{{ form.nombre_referente|as_crispy_field }}</div>
+                    <div class="col-md-3">{{ form.apellido_referente|as_crispy_field }}</div>
+                    <div class="col-md-2">{{ form.autoridad_dni|as_crispy_field }}</div>
+                    <div class="col-md-2">{{ form.telefono_referente|as_crispy_field }}</div>
+                    <div class="col-md-2">{{ form.correo_referente|as_crispy_field }}</div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <template id="contacto-empty-form-template">
+        <div class="border rounded p-3 mb-3 contacto-form-item" data-form-index="__prefix__">
+            __FORM_FIELDS__
+        </div>
+    </template>
+{% endblock %}
+
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+        var contactoEmptyFormHtml = `{% filter escapejs %}
+            {% with contacto_form=contacto_formset.empty_form %}
+                {% for hidden in contacto_form.hidden_fields %}{{ hidden }}{% endfor %}
+                <div class="row">
+                    <div class="col-md-4">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
+                    <div class="col-md-3">{{ contacto_form.rol_area|as_crispy_field }}</div>
+                    <div class="col-md-2">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
+                    <div class="col-md-3">{{ contacto_form.email_contacto|as_crispy_field }}</div>
+                    <div class="col-md-3 d-flex align-items-center">
+                        <div class="form-group mt-4 pt-2">
+                            {{ contacto_form.es_principal }}
+                            <label for="{{ contacto_form.es_principal.id_for_label }}" class="ml-2">Principal</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-center justify-content-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-contacto-btn">
+                            <i class="fas fa-trash mr-1"></i>Quitar
+                        </button>
+                    </div>
+                </div>
+            {% endwith %}
+        {% endfilter %}`;
+    </script>
+    <script src="{% static 'custom/js/centro_create_form.js' %}"></script>
+{% endblock %}

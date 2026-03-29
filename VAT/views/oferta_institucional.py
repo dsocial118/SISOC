@@ -21,6 +21,7 @@ from VAT.forms import (
     OfertaInstitucionalForm,
     ComisionForm,
     ComisionHorarioForm,
+    CiudadanoInscripcionRapidaForm,
 )
 
 logger = logging.getLogger("django")
@@ -186,6 +187,12 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comision = self.object
+        horario_form = ComisionHorarioForm(initial={"comision": comision.id})
+        horario_form.fields["comision"].queryset = Comision.objects.filter(pk=comision.pk)
+        context["horario_form"] = horario_form
+        context["ciudadano_rapido_form"] = CiudadanoInscripcionRapidaForm(
+            initial={"documento": "", "tipo_documento": "DNI"}
+        )
         context["horarios"] = list(
             ComisionHorario.objects.filter(comision=comision).select_related("dia_semana")
         )

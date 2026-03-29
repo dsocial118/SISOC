@@ -110,7 +110,7 @@
     {# ── Fila superior: back + título + badges ── #}
     <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
         <div class="d-flex align-items-center gap-3">
-            <a href="{% url 'vat_inscripcion_list' %}" class="ci-back"><i class="bi bi-arrow-left"></i></a>
+            <a href="{% url 'vat_comision_detail' inscripcion.comision_id %}" class="ci-back"><i class="bi bi-arrow-left"></i></a>
             <div>
                 <div class="ci-hero-title" style="margin-top:0;">{{ inscripcion.ciudadano.nombre_completo }}</div>
                 <div class="ci-hero-sub" style="opacity:.75;font-size:.88rem;"><i class="bi bi-clipboard-check me-1"></i>Inscripción a {{ inscripcion.comision.codigo_comision }}</div>
