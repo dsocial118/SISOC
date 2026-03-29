@@ -3,6 +3,8 @@ from django.core.exceptions import ValidationError
 from ciudadanos.models import Ciudadano
 from ciudadanos.forms import CiudadanoForm
 from comedores.models import (
+    ActividadColaboradorEspacio,
+    ColaboradorEspacio,
     Comedor,
     Referente,
     ImagenComedor,
@@ -84,6 +86,70 @@ class CiudadanoFormParaNomina(forms.ModelForm):
         widgets = {
             "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
         }
+
+
+class ColaboradorEspacioForm(forms.ModelForm):
+    fecha_alta = forms.DateField(
+        widget=forms.DateInput(
+            attrs={"class": "form-control", "type": "date"},
+            format="%Y-%m-%d",
+        ),
+        input_formats=["%Y-%m-%d"],
+    )
+    fecha_baja = forms.DateField(
+        required=False,
+        widget=forms.DateInput(
+            attrs={"class": "form-control", "type": "date"},
+            format="%Y-%m-%d",
+        ),
+        input_formats=["%Y-%m-%d"],
+    )
+    actividades = forms.ModelMultipleChoiceField(
+        queryset=ActividadColaboradorEspacio.objects.filter(activo=True).order_by(
+            "orden", "id"
+        ),
+        widget=forms.CheckboxSelectMultiple(),
+        required=True,
+    )
+
+    class Meta:
+        model = ColaboradorEspacio
+        fields = [
+            "genero",
+            "codigo_telefono",
+            "numero_telefono",
+            "fecha_alta",
+            "fecha_baja",
+            "actividades",
+        ]
+        widgets = {
+            "genero": forms.Select(attrs={"class": "form-select"}),
+            "codigo_telefono": forms.TextInput(attrs={"class": "form-control"}),
+            "numero_telefono": forms.TextInput(attrs={"class": "form-control"}),
+        }
+
+    def clean_codigo_telefono(self):
+        value = (self.cleaned_data.get("codigo_telefono") or "").strip()
+        if value and not value.isdigit():
+            raise ValidationError("El código de teléfono debe contener solo números.")
+        return value or None
+
+    def clean_numero_telefono(self):
+        value = (self.cleaned_data.get("numero_telefono") or "").strip()
+        if value and not value.isdigit():
+            raise ValidationError("El número de teléfono debe contener solo números.")
+        return value or None
+
+    def clean(self):
+        cleaned_data = super().clean()
+        fecha_alta = cleaned_data.get("fecha_alta")
+        fecha_baja = cleaned_data.get("fecha_baja")
+        if fecha_alta and fecha_baja and fecha_baja < fecha_alta:
+            self.add_error(
+                "fecha_baja",
+                "La fecha de baja no puede ser anterior a la fecha de alta.",
+            )
+        return cleaned_data
 
 
 class ComedorForm(forms.ModelForm):

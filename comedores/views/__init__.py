@@ -5,6 +5,11 @@ from .comedor import (
     ComedorListView,
     ComedorUpdateView,
 )
+from .colaborador import (
+    ColaboradorEspacioCreateView,
+    ColaboradorEspacioDeleteView,
+    ColaboradorEspacioUpdateView,
+)
 from .dupla import AsignarDuplaListView
 from .nomina import (
     NominaCreateView,
@@ -28,6 +33,9 @@ from .validacion import validar_comedor
 
 __all__ = [
     "AsignarDuplaListView",
+    "ColaboradorEspacioCreateView",
+    "ColaboradorEspacioDeleteView",
+    "ColaboradorEspacioUpdateView",
     "ComedorCreateView",
     "ComedorDeleteView",
     "ComedorDetailView",
