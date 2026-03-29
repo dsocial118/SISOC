@@ -607,9 +607,7 @@ class ColaboradorEspacio(models.Model):
         for field_name in ("codigo_telefono", "numero_telefono"):
             value = getattr(self, field_name)
             if value and not str(value).isdigit():
-                errors[field_name] = ValidationError(
-                    "Debe contener solo números."
-                )
+                errors[field_name] = ValidationError("Debe contener solo números.")
         if self.fecha_baja and self.fecha_alta and self.fecha_baja < self.fecha_alta:
             errors["fecha_baja"] = ValidationError(
                 "La fecha de baja no puede ser anterior a la fecha de alta."

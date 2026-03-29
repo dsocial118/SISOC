@@ -181,7 +181,9 @@ class ColaboradorEspacioPWAViewSet(viewsets.ViewSet):
         return self._get_queryset().filter(pk=self.kwargs["pk"]).first()
 
     def list(self, request, comedor_id=None):
-        serializer = ColaboradorEspacioPWAListSerializer(self._get_queryset(), many=True)
+        serializer = ColaboradorEspacioPWAListSerializer(
+            self._get_queryset(), many=True
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, comedor_id=None):

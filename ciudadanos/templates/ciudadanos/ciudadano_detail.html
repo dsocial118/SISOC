@@ -2187,7 +2187,8 @@
                                         <td>{{ colaboracion.fecha_baja|date:"d/m/Y"|default:"-" }}</td>
                                         <td>
                                             {% for actividad in colaboracion.actividades.all %}
-                                                {{ actividad.nombre }}{% if not forloop.last %}, {% endif %}
+                                                {{ actividad.nombre }}
+                                                {% if not forloop.last %},{% endif %}
                                             {% empty %}
                                                 -
                                             {% endfor %}

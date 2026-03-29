@@ -232,7 +232,9 @@ def test_update_colaborador_ok(comedor, sexo, actividad):
     assert colaborador.genero == "M"
     assert colaborador.numero_telefono == "99999999"
     assert str(colaborador.fecha_baja) == "2026-03-28"
-    assert list(colaborador.actividades.values_list("nombre", flat=True)) == ["Limpieza"]
+    assert list(colaborador.actividades.values_list("nombre", flat=True)) == [
+        "Limpieza"
+    ]
     assert AuditColaboradorEspacio.objects.filter(
         colaborador=colaborador,
         accion=AuditColaboradorEspacio.ACCION_UPDATE,
@@ -269,9 +271,7 @@ def test_update_colaborador_preserva_actividades_si_no_se_envia_actividad_ids(
     assert response.status_code == 200
     colaborador.refresh_from_db()
     assert colaborador.numero_telefono == "55555555"
-    assert list(colaborador.actividades.values_list("nombre", flat=True)) == [
-        "Compras"
-    ]
+    assert list(colaborador.actividades.values_list("nombre", flat=True)) == ["Compras"]
 
 
 @pytest.mark.django_db

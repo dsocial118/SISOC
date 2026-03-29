@@ -247,4 +247,6 @@ class AuditAccesoComedorPWA(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user_id or '-'} {self.accion} {self.fecha_evento:%Y-%m-%d %H:%M:%S}"
+        return (
+            f"{self.user_id or '-'} {self.accion} {self.fecha_evento:%Y-%m-%d %H:%M:%S}"
+        )

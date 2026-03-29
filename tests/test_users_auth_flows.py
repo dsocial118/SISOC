@@ -368,7 +368,9 @@ def test_user_update_view_shows_temporary_password(client):
 
 
 @pytest.mark.django_db
-def test_user_create_view_redirects_with_temporary_password_visible(client, monkeypatch):
+def test_user_create_view_redirects_with_temporary_password_visible(
+    client, monkeypatch
+):
     provincia = Provincia.objects.create(nombre="Salta")
     organizacion = Organizacion.objects.create(nombre="Organización Visible")
     comedor = Comedor.objects.create(
@@ -585,7 +587,8 @@ def test_user_list_view_shows_actions_according_to_is_active(client):
     client.force_login(user)
     response = client.get(reverse("usuarios"))
     items_by_username = {
-        item["cells"][2]["content"]: item for item in response.context["user_table_items"]
+        item["cells"][2]["content"]: item
+        for item in response.context["user_table_items"]
     }
 
     active_item = items_by_username[active_user.username]
@@ -642,7 +645,9 @@ def test_user_activate_view_reactivates_user_with_delete_permission(client):
     )
 
     client.force_login(user)
-    get_response = client.get(reverse("usuario_activar", kwargs={"pk": inactive_user.pk}))
+    get_response = client.get(
+        reverse("usuario_activar", kwargs={"pk": inactive_user.pk})
+    )
     post_response = client.post(
         reverse("usuario_activar", kwargs={"pk": inactive_user.pk})
     )
