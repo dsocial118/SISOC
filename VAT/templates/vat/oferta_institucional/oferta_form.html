@@ -191,7 +191,7 @@
     .input-group-text { border: 1px solid #e0e0e0 !important; }
     .fw-600 { font-weight: 600 !important; }
     </style>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
 (function () {
     const toggle = document.getElementById('{{ form.usa_voucher.id_for_label }}');
     const campoCosto = document.getElementById('campo-costo');

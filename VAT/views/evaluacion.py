@@ -81,7 +81,7 @@ class EvaluacionDetailView(LoginRequiredMixin, DetailView):
         evaluacion = self.get_object()
         context["resultados"] = ResultadoEvaluacion.objects.filter(
             evaluacion=evaluacion
-        ).select_related("inscripcion__persona")
+        ).select_related("inscripcion__ciudadano")
         context["total_resultados"] = context["resultados"].count()
         context["aprobados"] = context["resultados"].filter(aprobo=True).count()
         return context
@@ -118,7 +118,7 @@ class ResultadoEvaluacionListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = ResultadoEvaluacion.objects.select_related(
-            "evaluacion", "inscripcion__persona"
+            "evaluacion", "inscripcion__ciudadano"
         ).order_by("-fecha_registro")
 
         evaluacion_id = self.request.GET.get("evaluacion_id")
@@ -134,8 +134,8 @@ class ResultadoEvaluacionListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(calificacion=calificacion)
         if buscar:
             queryset = queryset.filter(
-                Q(inscripcion__persona__apellido__icontains=buscar)
-                | Q(inscripcion__persona__nombre__icontains=buscar)
+                Q(inscripcion__ciudadano__apellido__icontains=buscar)
+                | Q(inscripcion__ciudadano__nombre__icontains=buscar)
                 | Q(evaluacion__nombre__icontains=buscar)
             )
 

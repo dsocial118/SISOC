@@ -346,7 +346,7 @@ class VatWebInscripcionViewSet(
         try:
             inscripcion = serializer.save()
         except ValueError as exc:
-            raise ValidationError({"error": str(exc)}) from exc
+            raise ValidationError({"error": [str(exc)]}) from exc
         response_serializer = VatWebInscripcionSerializer(
             inscripcion, context={"request": request}
         )

@@ -202,7 +202,7 @@ class VoucherAdmin(admin.ModelAdmin):
     )
     list_filter = ("estado", "programa", "fecha_vencimiento", "fecha_asignacion")
     search_fields = ("ciudadano__nombre", "ciudadano__apellido", "ciudadano__documento")
-    readonly_fields = ("fecha_creacion", "fecha_modificacion")
+    readonly_fields = ("fecha_asignacion", "fecha_creacion", "fecha_modificacion")
     inlines = [VoucherRecargaInline, VoucherUsoInline]
     fieldsets = (
         (
@@ -589,8 +589,8 @@ class ResultadoEvaluacionAdmin(admin.ModelAdmin):
     )
     list_filter = ("aprobo", "evaluacion__tipo", "fecha_registro")
     search_fields = (
-        "inscripcion__persona__nombre",
-        "inscripcion__persona__apellido",
+        "inscripcion__ciudadano__nombre",
+        "inscripcion__ciudadano__apellido",
         "evaluacion__nombre",
     )
     readonly_fields = ("fecha_registro", "fecha_creacion", "fecha_modificacion")

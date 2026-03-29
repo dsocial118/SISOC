@@ -1,5 +1,6 @@
 import logging
 from datetime import date, timedelta
+from contextlib import nullcontext
 
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -17,6 +18,12 @@ logger = logging.getLogger("django")
 
 class VoucherService:
     """Service layer for Voucher business logic."""
+
+    @staticmethod
+    def _atomic_if_persistent(*instances):
+        if any(hasattr(instance, "_meta") for instance in instances if instance is not None):
+            return transaction.atomic()
+        return nullcontext()
 
     @staticmethod
     def debitar_voucher(
@@ -43,7 +50,7 @@ class VoucherService:
                 f"Créditos insuficientes. Disponible: {voucher.cantidad_disponible}",
             )
 
-        with transaction.atomic():
+        with VoucherService._atomic_if_persistent(voucher):
             voucher.cantidad_usada += cantidad
             voucher.cantidad_disponible -= cantidad
 

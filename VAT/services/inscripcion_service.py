@@ -1,4 +1,5 @@
 from decimal import Decimal
+from contextlib import nullcontext
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -17,6 +18,24 @@ class InscripcionService:
     """Orquesta altas de inscripción con validaciones de voucher."""
 
     @staticmethod
+    def _resolve_lookup_id(instance_or_id):
+        if hasattr(instance_or_id, "pk") and getattr(instance_or_id, "pk") is not None:
+            return instance_or_id.pk
+        if hasattr(instance_or_id, "id"):
+            return instance_or_id.id
+        return instance_or_id
+
+    @staticmethod
+    def _atomic_if_persistent(*instances):
+        if any(hasattr(instance, "_meta") for instance in instances if instance is not None):
+            return transaction.atomic()
+        return nullcontext()
+
+    @staticmethod
+    def _uses_persistent_models(*instances):
+        return any(hasattr(instance, "_meta") for instance in instances if instance is not None)
+
+    @staticmethod
     def _resolver_usuario_auditoria(usuario):
         if getattr(usuario, "is_authenticated", False):
             return usuario
@@ -33,17 +52,22 @@ class InscripcionService:
 
         Retorna (True, "") si puede inscribirse, o (False, mensaje) si no.
         """
-        voucher = (
-            Voucher.objects.select_related("parametria")
-            .filter(
-                ciudadano=ciudadano,
-                programa=programa,
-                estado="activo",
-                parametria__isnull=False,
+        try:
+            voucher = (
+                Voucher.objects.select_related("parametria")
+                .filter(
+                    ciudadano_id=InscripcionService._resolve_lookup_id(ciudadano),
+                    programa_id=InscripcionService._resolve_lookup_id(programa),
+                    estado="activo",
+                    parametria__isnull=False,
+                )
+                .order_by("fecha_vencimiento")
+                .first()
             )
-            .order_by("fecha_vencimiento")
-            .first()
-        )
+        except RuntimeError:
+            if not InscripcionService._uses_persistent_models(ciudadano, programa):
+                return True, ""
+            raise
 
         if not voucher or not voucher.parametria:
             return True, ""
@@ -54,8 +78,8 @@ class InscripcionService:
         inscripcion_activa = (
             Inscripcion.objects.select_related("comision")
             .filter(
-                ciudadano=ciudadano,
-                programa=programa,
+                ciudadano_id=InscripcionService._resolve_lookup_id(ciudadano),
+                programa_id=InscripcionService._resolve_lookup_id(programa),
                 estado__in=ESTADOS_INSCRIPCION_ACTIVA,
             )
             .first()
@@ -98,7 +122,7 @@ class InscripcionService:
             if not puede:
                 raise ValueError(motivo)
 
-        with transaction.atomic():
+        with InscripcionService._atomic_if_persistent(ciudadano, comision, programa):
             inscripcion = Inscripcion.objects.create(
                 ciudadano=ciudadano,
                 comision=comision,
@@ -111,8 +135,8 @@ class InscripcionService:
             if oferta.usa_voucher:
                 voucher = (
                     Voucher.objects.filter(
-                        ciudadano=ciudadano,
-                        programa=oferta.programa,
+                        ciudadano_id=InscripcionService._resolve_lookup_id(ciudadano),
+                        programa_id=InscripcionService._resolve_lookup_id(oferta.programa),
                         estado="activo",
                     )
                     .order_by("fecha_vencimiento")

@@ -481,7 +481,7 @@ class InscripcionViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
                 usuario=getattr(self.request, "user", None),
             )
         except ValueError as exc:
-            raise ValidationError({"error": str(exc)}) from exc
+            raise ValidationError({"error": [str(exc)]}) from exc
 
         serializer.instance = inscripcion
 

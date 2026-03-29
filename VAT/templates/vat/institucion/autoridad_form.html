@@ -175,7 +175,7 @@
     .input-group-text { border: 1px solid #e0e0e0 !important; }
     .fw-600 { font-weight: 600 !important; }
     </style>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
 (function () {
     const cargoSelect = document.getElementById('id_cargo');
     const wrapper = document.getElementById('cargo_otro_wrapper');

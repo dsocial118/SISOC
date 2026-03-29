@@ -411,7 +411,7 @@
         </div>
     {% endif %}
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
 function switchTab(btn, tabId) {
     btn.closest('.assign-panel').querySelectorAll('.assign-tab button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
