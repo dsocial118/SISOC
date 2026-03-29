@@ -1,8 +1,11 @@
+# pylint: disable=too-many-lines
+
 from django import forms
 from django.contrib.auth.models import User
+
 from ciudadanos.models import Ciudadano
-from core.models import Dia, Sexo
 from core.models import Localidad, Programa
+from core.models import Dia
 from VAT.models import (
     Centro,
     ModalidadInstitucional,
@@ -22,10 +25,6 @@ from VAT.models import (
     Inscripcion,
     Evaluacion,
     ResultadoEvaluacion,
-)
-from VAT.services.form_service import (
-    setup_location_fields,
-    set_readonly_fields,
 )
 
 HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
@@ -538,12 +537,10 @@ class InstitucionUbicacionForm(forms.ModelForm):
             centro = self.instance.centro
         elif "centro" in self.data:
             try:
-                from VAT.models import Centro as CentroModel
-
-                centro = CentroModel.objects.select_related(
-                    "municipio", "provincia"
-                ).get(pk=self.data["centro"])
-            except (CentroModel.DoesNotExist, ValueError):
+                centro = Centro.objects.select_related("municipio", "provincia").get(
+                    pk=self.data["centro"]
+                )
+            except (Centro.DoesNotExist, ValueError):
                 pass
         if centro:
             qs = Localidad.objects.order_by("nombre")

@@ -22,8 +22,6 @@ from VAT.models import (
     ComisionHorario,
     # Fase 5
     Inscripcion,
-    # Fase 6
-    AsistenciaSesion,
     # Fase 7
     Evaluacion,
     ResultadoEvaluacion,
@@ -754,4 +752,9 @@ class VatWebInscripcionCreateSerializer(serializers.Serializer):
             origen_canal="api",
             observaciones=validated_data.get("observaciones", ""),
             usuario=getattr(request, "user", None),
+        )
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError(
+            "VatWebInscripcionCreateSerializer solo soporta operaciones de creación."
         )
