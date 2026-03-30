@@ -285,8 +285,7 @@ def test_formulario_cdi_crear_guarda_telefonos_flexibles_autocompletados(client)
     assert response_get.status_code == 200
     assert response_get.context["form"]["telefono_cdi"].value() == "12345678"
     assert (
-        response_get.context["form"]["telefono_referente_cdi"].value()
-        == "11-2233-4455"
+        response_get.context["form"]["telefono_referente_cdi"].value() == "11-2233-4455"
     )
 
     payload = _construir_payload_creacion_formulario(
