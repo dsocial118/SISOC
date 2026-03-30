@@ -72,6 +72,16 @@
             color: #ffffff !important;
         }
 
+        .card-header.d-flex {
+            gap: 0.75rem;
+        }
+
+        .card-header.d-flex > .btn,
+        .card-header.d-flex > .btn-group {
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
         .detalles-centro-header {
             background: linear-gradient(135deg, #1f3b6d 0%, #2b4f8c 100%) !important;
             color: #ffffff !important;
@@ -215,18 +225,21 @@
                     </div>
                     <div class="col-md-5 text-end">
                         <div class="btn-group" role="group">
-                            <a href="{% url 'vat_centro_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <a href="{% url 'vat_centro_list' %}"
+                               class="btn btn-outline-secondary btn-sm">
                                 <i class="fas fa-arrow-left me-2"></i>Volver
                             </a>
                             {% if perms.VAT.change_centro %}
-                            <a href="{% url 'vat_centro_update' centro.id %}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-edit me-1"></i>Editar
-                            </a>
+                                <a href="{% url 'vat_centro_update' centro.id %}"
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fas fa-edit me-1"></i>Editar
+                                </a>
                             {% endif %}
                             {% if perms.VAT.delete_centro %}
-                            <a href="{% url 'vat_centro_delete' centro.id %}" class="btn btn-danger btn-sm">
-                                <i class="fas fa-trash me-1"></i>Eliminar
-                            </a>
+                                <a href="{% url 'vat_centro_delete' centro.id %}"
+                                   class="btn btn-danger btn-sm">
+                                    <i class="fas fa-trash me-1"></i>Eliminar
+                                </a>
                             {% endif %}
                         </div>
                     </div>
@@ -241,7 +254,9 @@
             <div class="card h-100 border-0 shadow-sm info-card">
                 <div class="card-body d-flex align-items-center">
                     <div class="flex-shrink-0 me-3">
-                        <div class="bg-primary bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                        <div class="bg-primary bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center"
+                             style="width: 50px;
+                                    height: 50px">
                             <i class="fas fa-graduation-cap fa-lg"></i>
                         </div>
                     </div>
@@ -256,7 +271,9 @@
             <div class="card h-100 border-0 shadow-sm info-card">
                 <div class="card-body d-flex align-items-center">
                     <div class="flex-shrink-0 me-3">
-                        <div class="bg-success bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                        <div class="bg-success bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center"
+                             style="width: 50px;
+                                    height: 50px">
                             <i class="fas fa-users fa-lg"></i>
                         </div>
                     </div>
@@ -271,7 +288,9 @@
             <div class="card h-100 border-0 shadow-sm info-card">
                 <div class="card-body d-flex align-items-center">
                     <div class="flex-shrink-0 me-3">
-                        <div class="bg-warning bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                        <div class="bg-warning bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center"
+                             style="width: 50px;
+                                    height: 50px">
                             <i class="fas fa-user-tie fa-lg"></i>
                         </div>
                     </div>
@@ -286,7 +305,9 @@
             <div class="card h-100 border-0 shadow-sm info-card">
                 <div class="card-body d-flex align-items-center">
                     <div class="flex-shrink-0 me-3">
-                        <div class="bg-info bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                        <div class="bg-info bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center"
+                             style="width: 50px;
+                                    height: 50px">
                             <i class="fas fa-id-card fa-lg"></i>
                         </div>
                     </div>
@@ -310,17 +331,32 @@
         <div class="card-body p-0">
             <ul class="nav nav-pills nav-fill" id="centroTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="datos-generales-tab" data-bs-toggle="tab" data-bs-target="#datos-generales" type="button" role="tab">
+                    <button class="nav-link active"
+                            id="datos-generales-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#datos-generales"
+                            type="button"
+                            role="tab">
                         <i class="fas fa-info-circle me-1"></i>Datos Generales
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="estructura-tab" data-bs-toggle="tab" data-bs-target="#estructura" type="button" role="tab">
+                    <button class="nav-link"
+                            id="estructura-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#estructura"
+                            type="button"
+                            role="tab">
                         <i class="fas fa-sitemap me-1"></i>Estructura Institucional
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="catalogo-tab" data-bs-toggle="tab" data-bs-target="#catalogo" type="button" role="tab">
+                    <button class="nav-link"
+                            id="catalogo-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#catalogo"
+                            type="button"
+                            role="tab">
                         <i class="fas fa-graduation-cap me-1"></i>Catalogo y Ofertas
                     </button>
                 </li>
@@ -334,7 +370,9 @@
         {# TAB 1: DATOS GENERALES                                           #}
         {# Agrupa: Información + Referente + Contactos                      #}
         {# ================================================================ #}
-        <div class="tab-pane fade show active" id="datos-generales" role="tabpanel">
+        <div class="tab-pane fade show active"
+             id="datos-generales"
+             role="tabpanel">
 
             <!-- Informacion General -->
             <div class="card shadow-sm mb-4">
@@ -390,20 +428,22 @@
                                 </p>
                             </div>
                             {% if centro.sitio_web %}
-                            <div class="mb-3">
-                                <label class="form-label fw-bold text-muted">Sitio Web</label>
-                                <p class="mb-0">
-                                    <a href="{{ centro.sitio_web }}" target="_blank" class="text-decoration-none">
-                                        <i class="fas fa-globe me-1"></i>{{ centro.sitio_web }}
-                                    </a>
-                                </p>
-                            </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-muted">Sitio Web</label>
+                                    <p class="mb-0">
+                                        <a href="{{ centro.sitio_web }}"
+                                           target="_blank"
+                                           class="text-decoration-none">
+                                            <i class="fas fa-globe me-1"></i>{{ centro.sitio_web }}
+                                        </a>
+                                    </p>
+                                </div>
                             {% endif %}
                             {% if centro.domicilio_actividad %}
-                            <div class="mb-0">
-                                <label class="form-label fw-bold text-muted">Domicilio de Actividades</label>
-                                <p class="mb-0">{{ centro.domicilio_actividad }}</p>
-                            </div>
+                                <div class="mb-0">
+                                    <label class="form-label fw-bold text-muted">Domicilio de Actividades</label>
+                                    <p class="mb-0">{{ centro.domicilio_actividad }}</p>
+                                </div>
                             {% endif %}
                         </div>
                     </div>
@@ -457,7 +497,8 @@
                                 <label class="form-label fw-bold text-muted">Correo</label>
                                 <p class="mb-0">
                                     {% if centro.correo_referente %}
-                                        <a href="mailto:{{ centro.correo_referente }}" class="text-decoration-none">
+                                        <a href="mailto:{{ centro.correo_referente }}"
+                                           class="text-decoration-none">
                                             <i class="fas fa-envelope me-2 text-primary"></i>{{ centro.correo_referente }}
                                         </a>
                                     {% else %}
@@ -478,59 +519,76 @@
                         Contactos Adicionales
                     </h6>
                     {% if perms.VAT.add_institucioncontacto %}
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalContacto">
-                        <i class="fas fa-plus me-1"></i>Agregar
-                    </button>
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalContacto">
+                            <i class="fas fa-plus me-1"></i>Agregar
+                        </button>
                     {% endif %}
                 </div>
                 <div class="card-body p-0">
                     {% if contactos %}
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th><i class="fas fa-tag me-1"></i>Tipo</th>
-                                    <th><i class="fas fa-address-book me-1"></i>Valor</th>
-                                    <th><i class="fas fa-star me-1"></i>Principal</th>
-                                    <th class="text-center"><i class="fas fa-cogs me-1"></i>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for c in contactos %}
-                                <tr>
-                                    <td><span class="badge bg-info">{{ c.get_tipo_display }}</span></td>
-                                    <td class="fw-bold">{{ c.valor }}</td>
-                                    <td class="text-center">
-                                        {% if c.es_principal %}
-                                            <i class="fas fa-star text-warning"></i>
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            {% if perms.VAT.change_institucioncontacto %}
-                                            <button class="btn btn-outline-warning" onclick="editContacto({{ c.id }})" title="Editar">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            {% endif %}
-                                            {% if perms.VAT.delete_institucioncontacto %}
-                                            <button class="btn btn-outline-danger" onclick="deleteContacto({{ c.id }})" title="Eliminar">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>
+                                            <i class="fas fa-tag me-1"></i>Tipo
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-address-book me-1"></i>Valor
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-star me-1"></i>Principal
+                                        </th>
+                                        <th class="text-center">
+                                            <i class="fas fa-cogs me-1"></i>Acciones
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for c in contactos %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-info">{{ c.get_tipo_display }}</span>
+                                            </td>
+                                            <td class="fw-bold">{{ c.valor }}</td>
+                                            <td class="text-center">
+                                                {% if c.es_principal %}
+                                                    <i class="fas fa-star text-warning"></i>
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_institucioncontacto %}
+                                                        <button class="btn btn-outline-warning"
+                                                                onclick="editContacto({{ c.id }})"
+                                                                title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                    {% if perms.VAT.delete_institucioncontacto %}
+                                                        <button class="btn btn-outline-danger"
+                                                                onclick="deleteContacto({{ c.id }})"
+                                                                title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     {% else %}
-                    <div class="text-center py-4 text-muted">
-                        <i class="fas fa-phone fa-2x mb-2 opacity-50"></i>
-                        <p class="mb-0">No hay contactos adicionales registrados.</p>
-                    </div>
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-phone fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No hay contactos adicionales registrados.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -558,9 +616,13 @@
                         </div>
                         {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
                             <div class="map-container">
-                                <iframe width="100%" height="100%" frameborder="0" style="border:0; border-radius: 12px;"
-                                    src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
-                                    allowfullscreen></iframe>
+                                <iframe width="100%"
+                                        height="100%"
+                                        frameborder="0"
+                                        style="border:0;
+                                               border-radius: 12px"
+                                        src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+                                        allowfullscreen></iframe>
                             </div>
                         {% else %}
                             <div class="map-container d-flex align-items-center justify-content-center text-white">
@@ -572,14 +634,22 @@
                         {% endif %}
                         <div class="details-container">
                             <h3 class="section-title">Ubicacion Principal</h3>
-                            <hr class="section-divider">
+                            <hr class="section-divider" />
                             <ul>
-                                <li><i class="fas fa-map-marker-alt"></i><strong>Provincia:</strong> {{ centro.provincia|default:"-" }}</li>
-                                <li><i class="fas fa-city"></i><strong>Municipio:</strong> {{ centro.municipio|default:"-" }}</li>
-                                <li><i class="fas fa-building"></i><strong>Localidad:</strong> {{ centro.localidad|default:"-" }}</li>
-                                <li><i class="fas fa-road"></i><strong>Domicilio:</strong>
+                                <li>
+                                    <i class="fas fa-map-marker-alt"></i><strong>Provincia:</strong> {{ centro.provincia|default:"-" }}
+                                </li>
+                                <li>
+                                    <i class="fas fa-city"></i><strong>Municipio:</strong> {{ centro.municipio|default:"-" }}
+                                </li>
+                                <li>
+                                    <i class="fas fa-building"></i><strong>Localidad:</strong> {{ centro.localidad|default:"-" }}
+                                </li>
+                                <li>
+                                    <i class="fas fa-road"></i><strong>Domicilio:</strong>
                                     {% if centro.calle %}
-                                        {{ centro.calle }}{% if centro.numero %} {{ centro.numero }}{% endif %}
+                                        {{ centro.calle }}
+                                        {% if centro.numero %}{{ centro.numero }}{% endif %}
                                     {% else %}
                                         -
                                     {% endif %}
@@ -598,46 +668,70 @@
                         Ubicaciones Adicionales
                     </h6>
                     {% if perms.VAT.add_institucionubicacion %}
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalUbicacion">
-                        <i class="fas fa-plus me-1"></i>Agregar
-                    </button>
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalUbicacion">
+                            <i class="fas fa-plus me-1"></i>Agregar
+                        </button>
                     {% endif %}
                 </div>
                 <div class="card-body p-0">
                     {% if ubicaciones %}
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr><th>Nombre</th><th>Rol</th><th>Localidad</th><th>Domicilio</th><th>Principal</th><th class="text-center">Acciones</th></tr>
-                            </thead>
-                            <tbody>
-                                {% for u in ubicaciones %}
-                                <tr>
-                                    <td>{{ u.nombre_ubicacion|default:u.get_rol_ubicacion_display }}</td>
-                                    <td>{{ u.get_rol_ubicacion_display }}</td>
-                                    <td>{{ u.localidad }}</td>
-                                    <td>{{ u.domicilio|default:"\u2014" }}</td>
-                                    <td>{% if u.es_principal %}<span class="badge bg-primary">Si</span>{% else %}\u2014{% endif %}</td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            {% if perms.VAT.change_institucionubicacion %}
-                                            <button class="btn btn-outline-warning" onclick="editUbicacion({{ u.id }})" title="Editar"><i class="fas fa-edit"></i></button>
-                                            {% endif %}
-                                            {% if perms.VAT.delete_institucionubicacion %}
-                                            <button class="btn btn-outline-danger" onclick="deleteUbicacion({{ u.id }})" title="Eliminar"><i class="fas fa-trash"></i></button>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Rol</th>
+                                        <th>Localidad</th>
+                                        <th>Domicilio</th>
+                                        <th>Principal</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for u in ubicaciones %}
+                                        <tr>
+                                            <td>{{ u.nombre_ubicacion|default:u.get_rol_ubicacion_display }}</td>
+                                            <td>{{ u.get_rol_ubicacion_display }}</td>
+                                            <td>{{ u.localidad }}</td>
+                                            <td>{{ u.domicilio|default:"\u2014" }}</td>
+                                            <td>
+                                                {% if u.es_principal %}
+                                                    <span class="badge bg-primary">Si</span>
+                                                {% else %}
+                                                    \u2014
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_institucionubicacion %}
+                                                        <button class="btn btn-outline-warning"
+                                                                onclick="editUbicacion({{ u.id }})"
+                                                                title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                    {% if perms.VAT.delete_institucionubicacion %}
+                                                        <button class="btn btn-outline-danger"
+                                                                onclick="deleteUbicacion({{ u.id }})"
+                                                                title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     {% else %}
-                    <div class="text-center py-4 text-muted">
-                        <i class="fas fa-map fa-2x mb-2 opacity-50"></i>
-                        <p class="mb-0">Sin ubicaciones adicionales registradas.</p>
-                    </div>
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-map fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">Sin ubicaciones adicionales registradas.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -650,63 +744,84 @@
                         Autoridades Institucionales
                     </h6>
                     {% if perms.VAT.add_autoridadinstitucional %}
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalAutoridad">
-                        <i class="fas fa-plus me-1"></i>Agregar
-                    </button>
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalAutoridad">
+                            <i class="fas fa-plus me-1"></i>Agregar
+                        </button>
                     {% endif %}
                 </div>
                 <div class="card-body p-0">
                     {% if autoridades %}
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th><i class="fas fa-user me-1"></i>Nombre</th>
-                                    <th><i class="fas fa-id-card me-1"></i>DNI</th>
-                                    <th><i class="fas fa-briefcase me-1"></i>Cargo</th>
-                                    <th><i class="fas fa-envelope me-1"></i>Email</th>
-                                    <th><i class="fas fa-phone me-1"></i>Telefono</th>
-                                    <th class="text-center"><i class="fas fa-cogs me-1"></i>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for a in autoridades %}
-                                <tr>
-                                    <td class="fw-bold">{{ a.nombre_completo }}</td>
-                                    <td>{{ a.dni }}</td>
-                                    <td><span class="badge bg-secondary">{{ a.cargo }}</span></td>
-                                    <td>
-                                        {% if a.email %}
-                                            <a href="mailto:{{ a.email }}" class="text-decoration-none">{{ a.email }}</a>
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ a.telefono|default:"-" }}</td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            {% if perms.VAT.change_autoridadinstitucional %}
-                                            <button class="btn btn-outline-warning" onclick="editAutoridad({{ a.id }})" title="Editar">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            {% endif %}
-                                            {% if perms.VAT.delete_autoridadinstitucional %}
-                                            <button class="btn btn-outline-danger" onclick="deleteAutoridad({{ a.id }})" title="Eliminar">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>
+                                            <i class="fas fa-user me-1"></i>Nombre
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-id-card me-1"></i>DNI
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-briefcase me-1"></i>Cargo
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-envelope me-1"></i>Email
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-phone me-1"></i>Telefono
+                                        </th>
+                                        <th class="text-center">
+                                            <i class="fas fa-cogs me-1"></i>Acciones
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for a in autoridades %}
+                                        <tr>
+                                            <td class="fw-bold">{{ a.nombre_completo }}</td>
+                                            <td>{{ a.dni }}</td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ a.cargo }}</span>
+                                            </td>
+                                            <td>
+                                                {% if a.email %}
+                                                    <a href="mailto:{{ a.email }}" class="text-decoration-none">{{ a.email }}</a>
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ a.telefono|default:"-" }}</td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_autoridadinstitucional %}
+                                                        <button class="btn btn-outline-warning"
+                                                                onclick="editAutoridad({{ a.id }})"
+                                                                title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                    {% if perms.VAT.delete_autoridadinstitucional %}
+                                                        <button class="btn btn-outline-danger"
+                                                                onclick="deleteAutoridad({{ a.id }})"
+                                                                title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     {% else %}
-                    <div class="text-center py-4 text-muted">
-                        <i class="fas fa-user-tie fa-2x mb-2 opacity-50"></i>
-                        <p class="mb-0">No hay autoridades asociadas.</p>
-                    </div>
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-user-tie fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No hay autoridades asociadas.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -719,45 +834,64 @@
                         Identificadores
                     </h6>
                     {% if perms.VAT.add_institucionidentificadorhist %}
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalIdentificador">
-                        <i class="fas fa-plus me-1"></i>Agregar
-                    </button>
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalIdentificador">
+                            <i class="fas fa-plus me-1"></i>Agregar
+                        </button>
                     {% endif %}
                 </div>
                 <div class="card-body p-0">
                     {% if identificadores %}
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr><th>Tipo</th><th>Valor</th><th>Rol</th><th>Ubicación</th><th class="text-center">Acciones</th></tr>
-                            </thead>
-                            <tbody>
-                                {% for id in identificadores %}
-                                <tr>
-                                    <td>{{ id.get_tipo_identificador_display }}</td>
-                                    <td><strong>{{ id.valor_identificador }}</strong></td>
-                                    <td>{{ id.get_rol_institucional_display|default:"\u2014" }}</td>
-                                    <td>{{ id.ubicacion|default:"\u2014" }}</td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            {% if perms.VAT.change_institucionidentificadorhist %}
-                                            <button class="btn btn-outline-warning" onclick="editIdentificador({{ id.id }})" title="Editar"><i class="fas fa-edit"></i></button>
-                                            {% endif %}
-                                            {% if perms.VAT.delete_institucionidentificadorhist %}
-                                            <button class="btn btn-outline-danger" onclick="deleteIdentificador({{ id.id }})" title="Eliminar"><i class="fas fa-trash"></i></button>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Valor</th>
+                                        <th>Rol</th>
+                                        <th>Ubicación</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for id in identificadores %}
+                                        <tr>
+                                            <td>{{ id.get_tipo_identificador_display }}</td>
+                                            <td>
+                                                <strong>{{ id.valor_identificador }}</strong>
+                                            </td>
+                                            <td>{{ id.get_rol_institucional_display|default:"\u2014" }}</td>
+                                            <td>{{ id.ubicacion|default:"\u2014" }}</td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_institucionidentificadorhist %}
+                                                        <button class="btn btn-outline-warning"
+                                                                onclick="editIdentificador({{ id.id }})"
+                                                                title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                    {% if perms.VAT.delete_institucionidentificadorhist %}
+                                                        <button class="btn btn-outline-danger"
+                                                                onclick="deleteIdentificador({{ id.id }})"
+                                                                title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     {% else %}
-                    <div class="text-center py-4 text-muted">
-                        <i class="fas fa-id-card fa-2x mb-2 opacity-50"></i>
-                        <p class="mb-0">Sin identificadores registrados.</p>
-                    </div>
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-id-card fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">Sin identificadores registrados.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -781,57 +915,69 @@
                         <small class="text-muted">Titulos habilitados para este centro.</small>
                     </div>
                     {% if perms.VAT.add_titulorreferencia %}
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalTitulo">
-                        <i class="fas fa-plus me-1"></i>Nuevo Titulo
-                    </button>
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalTitulo">
+                            <i class="fas fa-plus me-1"></i>Nuevo Titulo
+                        </button>
                     {% endif %}
                 </div>
                 <div class="card-body p-0">
                     {% if titulos %}
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Sector</th>
-                                    <th>Subsector</th>
-                                    <th>Titulo</th>
-                                    <th>Codigo Ref.</th>
-                                    <th>Planes</th>
-                                    <th class="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for t in titulos %}
-                                <tr>
-                                    <td><span class="badge bg-secondary">{{ t.sector.nombre }}</span></td>
-                                    <td>{{ t.subsector.nombre|default:"\u2014" }}</td>
-                                    <td class="fw-bold">{{ t.nombre }}</td>
-                                    <td>{{ t.codigo_referencia|default:"\u2014" }}</td>
-                                    <td>
-                                        <span class="badge bg-info">{{ t.planes.count }} plan{{ t.planes.count|pluralize:"es" }}</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            {% if perms.VAT.change_titulorreferencia %}
-                                            <button class="btn btn-outline-warning" onclick="editTitulo({{ t.id }})" title="Editar"><i class="fas fa-edit"></i></button>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Sector</th>
+                                        <th>Subsector</th>
+                                        <th>Titulo</th>
+                                        <th>Codigo Ref.</th>
+                                        <th>Planes</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for t in titulos %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ t.sector.nombre }}</span>
+                                            </td>
+                                            <td>{{ t.subsector.nombre|default:"\u2014" }}</td>
+                                            <td class="fw-bold">{{ t.nombre }}</td>
+                                            <td>{{ t.codigo_referencia|default:"\u2014" }}</td>
+                                            <td>
+                                                <span class="badge bg-info">{{ t.planes.count }} plan{{ t.planes.count|pluralize:"es" }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_titulorreferencia %}
+                                                        <button class="btn btn-outline-warning"
+                                                                onclick="editTitulo({{ t.id }})"
+                                                                title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     {% else %}
-                    <div class="text-center py-4 text-muted">
-                        <i class="fas fa-book fa-2x mb-2 opacity-50"></i>
-                        <p class="mb-0">No hay titulos de referencia registrados.</p>
-                        {% if perms.VAT.add_titulorreferencia %}
-                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#modalTitulo">
-                            <i class="fas fa-plus me-1"></i>Crear el primer titulo
-                        </button>
-                        {% endif %}
-                    </div>
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-book fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No hay titulos de referencia registrados.</p>
+                            {% if perms.VAT.add_titulorreferencia %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary mt-2"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalTitulo">
+                                    <i class="fas fa-plus me-1"></i>Crear el primer titulo
+                                </button>
+                            {% endif %}
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -847,55 +993,67 @@
                         <small class="text-muted">Planes asociados a los titulos del centro.</small>
                     </div>
                     {% if perms.VAT.add_planversioncurricular %}
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalPlan">
-                        <i class="fas fa-plus me-1"></i>Nuevo Plan
-                    </button>
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalPlan">
+                            <i class="fas fa-plus me-1"></i>Nuevo Plan
+                        </button>
                     {% endif %}
                 </div>
                 <div class="card-body p-0">
                     {% if planes %}
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Titulo de Referencia</th>
-                                    <th>Modalidad de Cursado</th>
-                                    <th>Version</th>
-                                    <th>Horas Reloj</th>
-                                    <th>Normativa</th>
-                                    <th class="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for p in planes %}
-                                <tr>
-                                    <td class="fw-bold">{{ p.titulo_referencia.nombre }}</td>
-                                    <td><span class="badge bg-secondary">{{ p.modalidad_cursada.nombre }}</span></td>
-                                    <td>{{ p.version|default:"\u2014" }}</td>
-                                    <td>{{ p.horas_reloj|default:"\u2014" }}</td>
-                                    <td>{{ p.normativa|default:"\u2014" }}</td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            {% if perms.VAT.change_planversioncurricular %}
-                                            <button class="btn btn-outline-warning" onclick="editPlan({{ p.id }})" title="Editar"><i class="fas fa-edit"></i></button>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Titulo de Referencia</th>
+                                        <th>Modalidad de Cursado</th>
+                                        <th>Version</th>
+                                        <th>Horas Reloj</th>
+                                        <th>Normativa</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in planes %}
+                                        <tr>
+                                            <td class="fw-bold">{{ p.titulo_referencia.nombre }}</td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ p.modalidad_cursada.nombre }}</span>
+                                            </td>
+                                            <td>{{ p.version|default:"\u2014" }}</td>
+                                            <td>{{ p.horas_reloj|default:"\u2014" }}</td>
+                                            <td>{{ p.normativa|default:"\u2014" }}</td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_planversioncurricular %}
+                                                        <button class="btn btn-outline-warning"
+                                                                onclick="editPlan({{ p.id }})"
+                                                                title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     {% else %}
-                    <div class="text-center py-4 text-muted">
-                        <i class="fas fa-clipboard-list fa-2x mb-2 opacity-50"></i>
-                        <p class="mb-0">No hay planes curriculares registrados.</p>
-                        {% if titulos and perms.VAT.add_planversioncurricular %}
-                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#modalPlan">
-                            <i class="fas fa-plus me-1"></i>Crear el primer plan
-                        </button>
-                        {% endif %}
-                    </div>
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-clipboard-list fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No hay planes curriculares registrados.</p>
+                            {% if titulos and perms.VAT.add_planversioncurricular %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary mt-2"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalPlan">
+                                    <i class="fas fa-plus me-1"></i>Crear el primer plan
+                                </button>
+                            {% endif %}
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -911,71 +1069,87 @@
                         <small class="text-muted">Programas educativos ofrecidos.</small>
                     </div>
                     {% if perms.VAT.add_ofertainstitucional %}
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalOferta">
-                        <i class="fas fa-plus me-1"></i>Nueva Oferta
-                    </button>
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalOferta">
+                            <i class="fas fa-plus me-1"></i>Nueva Oferta
+                        </button>
                     {% endif %}
                 </div>
                 <div class="card-body">
                     {% if ofertas %}
-                    {% for oferta in ofertas %}
-                    <div class="{% if not forloop.first %}mt-3 pt-3 border-top{% endif %}">
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <strong>{{ oferta.plan_curricular.titulo_referencia.nombre }}</strong>
-                            <span class="badge bg-secondary">{{ oferta.ciclo_lectivo }}</span>
-                            <span class="badge {% if oferta.estado == 'publicada' %}bg-success{% elif oferta.estado == 'aprobada' %}bg-primary{% elif oferta.estado == 'planificada' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                                {{ oferta.get_estado_display }}
-                            </span>
-                            {% if oferta.usa_voucher %}
-                            <span class="badge bg-info"><i class="fas fa-ticket-alt me-1"></i>Voucher</span>
-                            {% endif %}
-                            <a href="{% url 'vat_oferta_institucional_detail' oferta.pk %}" class="btn btn-sm btn-outline-secondary py-0 ms-auto">Ver oferta</a>
-                        </div>
-                        {% with comisiones=oferta.comisiones.all %}
-                        {% if comisiones %}
-                        <table class="table table-sm mb-0">
-                            <thead class="table-light">
-                                <tr><th>Codigo</th><th>Nombre</th><th>Periodo</th><th>Cupo</th><th>Estado</th><th></th></tr>
-                            </thead>
-                            <tbody>
-                                {% for comision in comisiones %}
-                                <tr>
-                                    <td><strong>{{ comision.codigo_comision }}</strong></td>
-                                    <td>{{ comision.nombre }}</td>
-                                    <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} \u2014 {{ comision.fecha_fin|date:"d/m/Y" }}</td>
-                                    <td>{{ comision.cupo }}</td>
-                                    <td>
-                                        <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
-                                            {{ comision.get_estado_display }}
-                                        </span>
-                                    </td>
-                                    <td class="text-end">
-                                        <a href="{% url 'vat_comision_detail' comision.pk %}" class="btn btn-sm btn-outline-info py-0 px-1"><i class="fas fa-eye"></i></a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        {% else %}
-                        <p class="text-muted small mb-0">Sin comisiones.
-                            {% if perms.VAT.add_comision %}
-                            <a href="{% url 'vat_comision_create' %}?oferta={{ oferta.id }}">Crear una</a>
-                            {% endif %}
-                        </p>
-                        {% endif %}
-                        {% endwith %}
-                    </div>
-                    {% endfor %}
+                        {% for oferta in ofertas %}
+                            <div class="{% if not forloop.first %}mt-3 pt-3 border-top{% endif %}">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <strong>{{ oferta.plan_curricular.titulo_referencia.nombre }}</strong>
+                                    <span class="badge bg-secondary">{{ oferta.ciclo_lectivo }}</span>
+                                    <span class="badge {% if oferta.estado == 'publicada' %}bg-success{% elif oferta.estado == 'aprobada' %}bg-primary{% elif oferta.estado == 'planificada' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                        {{ oferta.get_estado_display }}
+                                    </span>
+                                    {% if oferta.usa_voucher %}<span class="badge bg-info"><i class="fas fa-ticket-alt me-1"></i>Voucher</span>{% endif %}
+                                    <a href="{% url 'vat_oferta_institucional_detail' oferta.pk %}"
+                                       class="btn btn-sm btn-outline-secondary py-0 ms-auto">Ver oferta</a>
+                                </div>
+                                {% with comisiones=oferta.comisiones.all %}
+                                    {% if comisiones %}
+                                        <table class="table table-sm mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Codigo</th>
+                                                    <th>Nombre</th>
+                                                    <th>Periodo</th>
+                                                    <th>Cupo</th>
+                                                    <th>Estado</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for comision in comisiones %}
+                                                    <tr>
+                                                        <td>
+                                                            <strong>{{ comision.codigo_comision }}</strong>
+                                                        </td>
+                                                        <td>{{ comision.nombre }}</td>
+                                                        <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} \u2014 {{ comision.fecha_fin|date:"d/m/Y" }}</td>
+                                                        <td>{{ comision.cupo }}</td>
+                                                        <td>
+                                                            <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                                                {{ comision.get_estado_display }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <a href="{% url 'vat_comision_detail' comision.pk %}"
+                                                               class="btn btn-sm btn-outline-info py-0 px-1"><i class="fas fa-eye"></i></a>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    {% else %}
+                                        <p class="text-muted small mb-0">
+                                            Sin comisiones.
+                                            {% if perms.VAT.add_comision %}
+                                                <a href="{% url 'vat_comision_create' %}?oferta={{ oferta.id }}">Crear una</a>
+                                            {% endif %}
+                                        </p>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        {% endfor %}
                     {% else %}
-                    <div class="text-center py-4 text-muted">
-                        <i class="fas fa-graduation-cap fa-2x mb-2 opacity-50"></i>
-                        <p class="mb-0">Sin ofertas institucionales registradas.</p>
-                        {% if planes and perms.VAT.add_ofertainstitucional %}
-                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#modalOferta">
-                            <i class="fas fa-plus me-1"></i>Crear la primera oferta
-                        </button>
-                        {% endif %}
-                    </div>
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-graduation-cap fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">Sin ofertas institucionales registradas.</p>
+                            {% if planes and perms.VAT.add_ofertainstitucional %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary mt-2"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalOferta">
+                                    <i class="fas fa-plus me-1"></i>Crear la primera oferta
+                                </button>
+                            {% endif %}
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -991,56 +1165,63 @@
                         <small class="text-muted">Comisiones asociadas a las ofertas institucionales del centro.</small>
                     </div>
                     {% if perms.VAT.add_comision %}
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalComision">
-                        <i class="fas fa-plus me-1"></i>Nueva Comision
-                    </button>
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalComision">
+                            <i class="fas fa-plus me-1"></i>Nueva Comision
+                        </button>
                     {% endif %}
                 </div>
                 <div class="card-body p-0">
                     {% if comisiones %}
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Codigo</th>
-                                    <th>Comision</th>
-                                    <th>Oferta</th>
-                                    <th>Ciclo Lectivo</th>
-                                    <th>Periodo</th>
-                                    <th>Cupo</th>
-                                    <th>Estado</th>
-                                    <th class="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for comision in comisiones %}
-                                <tr>
-                                    <td><strong>{{ comision.codigo_comision }}</strong></td>
-                                    <td>{{ comision.nombre }}</td>
-                                    <td>{{ comision.oferta.plan_curricular.titulo_referencia.nombre }}</td>
-                                    <td>{{ comision.oferta.ciclo_lectivo }}</td>
-                                    <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} - {{ comision.fecha_fin|date:"d/m/Y" }}</td>
-                                    <td>{{ comision.cupo }}</td>
-                                    <td>
-                                        <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
-                                            {{ comision.get_estado_display }}
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <a href="{% url 'vat_comision_detail' comision.pk %}" class="btn btn-sm btn-outline-info" title="Ver detalle">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Codigo</th>
+                                        <th>Comision</th>
+                                        <th>Oferta</th>
+                                        <th>Ciclo Lectivo</th>
+                                        <th>Periodo</th>
+                                        <th>Cupo</th>
+                                        <th>Estado</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for comision in comisiones %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ comision.codigo_comision }}</strong>
+                                            </td>
+                                            <td>{{ comision.nombre }}</td>
+                                            <td>{{ comision.oferta.plan_curricular.titulo_referencia.nombre }}</td>
+                                            <td>{{ comision.oferta.ciclo_lectivo }}</td>
+                                            <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} - {{ comision.fecha_fin|date:"d/m/Y" }}</td>
+                                            <td>{{ comision.cupo }}</td>
+                                            <td>
+                                                <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                                    {{ comision.get_estado_display }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="{% url 'vat_comision_detail' comision.pk %}"
+                                                   class="btn btn-sm btn-outline-info"
+                                                   title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     {% else %}
-                    <div class="text-center py-4 text-muted">
-                        <i class="fas fa-users fa-2x mb-2 opacity-50"></i>
-                        <p class="mb-0">No hay comisiones registradas para este centro.</p>
-                    </div>
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-users fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No hay comisiones registradas para este centro.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -1054,34 +1235,38 @@
     <!-- ================================================================ -->
 
     <!-- Modal Autoridad -->
-    <div class="modal fade" id="modalAutoridad" tabindex="-1" aria-labelledby="modalAutoridadLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="modalAutoridad"
+         tabindex="-1"
+         aria-labelledby="modalAutoridadLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content shadow-lg">
                 <div class="modal-header bg-gradient-primary text-white">
                     <h5 class="modal-title" id="modalAutoridadLabel">
                         <i class="fas fa-user-tie me-2"></i>Agregar Autoridad
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                 </div>
-                <form id="formAutoridad" method="post" action="{% url 'vat_autoridad_institucional_create' %}?centro={{ centro.id }}">
+                <form id="formAutoridad"
+                      method="post"
+                      action="{% url 'vat_autoridad_institucional_create' %}?centro={{ centro.id }}">
                     {% csrf_token %}
                     <div class="modal-body">
                         <div class="row">
                             {% for field in autoridad_form %}
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                                    {{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
-                                </label>
-                                {{ field }}
-                                {% if field.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ field.errors.0 }}
-                                    </div>
-                                {% endif %}
-                                {% if field.help_text %}
-                                    <div class="form-text">{{ field.help_text }}</div>
-                                {% endif %}
-                            </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                        {{ field.label }}
+                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                </div>
                             {% endfor %}
                         </div>
                     </div>
@@ -1099,18 +1284,25 @@
     </div>
 
     <!-- Modal Contacto -->
-    <div class="modal fade" id="modalContacto" tabindex="-1" aria-labelledby="modalContactoLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="modalContacto"
+         tabindex="-1"
+         aria-labelledby="modalContactoLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalContactoLabel">Agregar Contacto</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                 </div>
-                <form id="formContacto" method="post" action="{% url 'vat_institucion_contacto_create' %}?centro={{ centro.id }}">
+                <form id="formContacto"
+                      method="post"
+                      action="{% url 'vat_institucion_contacto_create' %}?centro={{ centro.id }}">
                     {% csrf_token %}
-                    <div class="modal-body">
-                        {{ contacto_form.as_p }}
-                    </div>
+                    <div class="modal-body">{{ contacto_form.as_p }}</div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Guardar</button>
@@ -1121,18 +1313,25 @@
     </div>
 
     <!-- Modal Identificador -->
-    <div class="modal fade" id="modalIdentificador" tabindex="-1" aria-labelledby="modalIdentificadorLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="modalIdentificador"
+         tabindex="-1"
+         aria-labelledby="modalIdentificadorLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalIdentificadorLabel">Agregar Identificador</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                 </div>
-                <form id="formIdentificador" method="post" action="{% url 'vat_institucion_identificador_create' %}?centro={{ centro.id }}">
+                <form id="formIdentificador"
+                      method="post"
+                      action="{% url 'vat_institucion_identificador_create' %}?centro={{ centro.id }}">
                     {% csrf_token %}
-                    <div class="modal-body">
-                        {{ identificador_form.as_p }}
-                    </div>
+                    <div class="modal-body">{{ identificador_form.as_p }}</div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Guardar</button>
@@ -1143,18 +1342,25 @@
     </div>
 
     <!-- Modal Ubicacion -->
-    <div class="modal fade" id="modalUbicacion" tabindex="-1" aria-labelledby="modalUbicacionLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="modalUbicacion"
+         tabindex="-1"
+         aria-labelledby="modalUbicacionLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalUbicacionLabel">Agregar Ubicacion</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                 </div>
-                <form id="formUbicacion" method="post" action="{% url 'vat_institucion_ubicacion_create' %}?centro={{ centro.id }}">
+                <form id="formUbicacion"
+                      method="post"
+                      action="{% url 'vat_institucion_ubicacion_create' %}?centro={{ centro.id }}">
                     {% csrf_token %}
-                    <div class="modal-body">
-                        {{ ubicacion_form.as_p }}
-                    </div>
+                    <div class="modal-body">{{ ubicacion_form.as_p }}</div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Guardar</button>
@@ -1165,18 +1371,25 @@
     </div>
 
     <!-- Modal Oferta -->
-    <div class="modal fade" id="modalOferta" tabindex="-1" aria-labelledby="modalOfertaLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="modalOferta"
+         tabindex="-1"
+         aria-labelledby="modalOfertaLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalOfertaLabel">Nueva Oferta Institucional</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                 </div>
-                <form id="formOferta" method="post" action="{% url 'vat_oferta_institucional_create' %}?centro={{ centro.id }}">
+                <form id="formOferta"
+                      method="post"
+                      action="{% url 'vat_oferta_institucional_create' %}?centro={{ centro.id }}">
                     {% csrf_token %}
-                    <div class="modal-body">
-                        {{ oferta_form.as_p }}
-                    </div>
+                    <div class="modal-body">{{ oferta_form.as_p }}</div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Guardar</button>
@@ -1187,18 +1400,25 @@
     </div>
 
     <!-- Modal Comision -->
-    <div class="modal fade" id="modalComision" tabindex="-1" aria-labelledby="modalComisionLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="modalComision"
+         tabindex="-1"
+         aria-labelledby="modalComisionLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalComisionLabel">Nueva Comision</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                 </div>
-                <form id="formComision" method="post" action="{% url 'vat_comision_create' %}">
+                <form id="formComision"
+                      method="post"
+                      action="{% url 'vat_comision_create' %}">
                     {% csrf_token %}
-                    <div class="modal-body">
-                        {{ comision_form.as_p }}
-                    </div>
+                    <div class="modal-body">{{ comision_form.as_p }}</div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Guardar</button>
@@ -1209,32 +1429,38 @@
     </div>
 
     <!-- Modal Titulo de Referencia -->
-    <div class="modal fade" id="modalTitulo" tabindex="-1" aria-labelledby="modalTituloLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="modalTitulo"
+         tabindex="-1"
+         aria-labelledby="modalTituloLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content shadow-lg">
                 <div class="modal-header bg-gradient-primary text-white">
                     <h5 class="modal-title" id="modalTituloLabel">
                         <i class="fas fa-book me-2"></i>Nuevo Titulo de Referencia
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                 </div>
-                <form id="formTitulo" method="post" action="{% url 'vat_titulorreferencia_create' %}?centro={{ centro.id }}">
+                <form id="formTitulo"
+                      method="post"
+                      action="{% url 'vat_titulorreferencia_create' %}?centro={{ centro.id }}">
                     {% csrf_token %}
                     <div class="modal-body">
                         <div class="row">
                             {% for field in titulo_form %}
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                                    {{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
-                                </label>
-                                {{ field }}
-                                {% if field.errors %}
-                                    <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
-                                {% endif %}
-                                {% if field.help_text %}
-                                    <div class="form-text">{{ field.help_text }}</div>
-                                {% endif %}
-                            </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                        {{ field.label }}
+                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                </div>
                             {% endfor %}
                         </div>
                     </div>
@@ -1252,32 +1478,38 @@
     </div>
 
     <!-- Modal Plan Curricular -->
-    <div class="modal fade" id="modalPlan" tabindex="-1" aria-labelledby="modalPlanLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="modalPlan"
+         tabindex="-1"
+         aria-labelledby="modalPlanLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content shadow-lg">
                 <div class="modal-header bg-gradient-primary text-white">
                     <h5 class="modal-title" id="modalPlanLabel">
                         <i class="fas fa-clipboard-list me-2"></i>Nuevo Plan Curricular
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                 </div>
-                <form id="formPlan" method="post" action="{% url 'vat_planversioncurricular_create' %}?centro={{ centro.id }}">
+                <form id="formPlan"
+                      method="post"
+                      action="{% url 'vat_planversioncurricular_create' %}?centro={{ centro.id }}">
                     {% csrf_token %}
                     <div class="modal-body">
                         <div class="row">
                             {% for field in plan_form %}
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                                    {{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
-                                </label>
-                                {{ field }}
-                                {% if field.errors %}
-                                    <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
-                                {% endif %}
-                                {% if field.help_text %}
-                                    <div class="form-text">{{ field.help_text }}</div>
-                                {% endif %}
-                            </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                        {{ field.label }}
+                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                </div>
                             {% endfor %}
                         </div>
                     </div>
