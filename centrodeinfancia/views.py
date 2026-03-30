@@ -51,6 +51,7 @@ from centrodeinfancia.forms import (
 )
 from centrodeinfancia.models import (
     CentroDeInfancia,
+    DepartamentoIpi,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     ObservacionCentroInfancia,
@@ -64,6 +65,7 @@ CDI_LIST_HEADERS = [
     {"title": "Nombre"},
     {"title": "Organización"},
     {"title": "Provincia"},
+    {"title": "Departamento"},
     {"title": "Municipio"},
     {"title": "Localidad"},
     {"title": "Calle"},
@@ -75,6 +77,7 @@ CDI_LIST_FIELDS = [
     {"name": "nombre"},
     {"name": "organizacion"},
     {"name": "provincia"},
+    {"name": "departamento"},
     {"name": "municipio"},
     {"name": "localidad"},
     {"name": "calle"},
@@ -90,7 +93,11 @@ DOCUMENTACION_INTERVENCION_EXTS_PERMITIDAS = {".pdf", ".jpg", ".jpeg", ".png"}
 
 def _centros_cdi_queryset_detalle():
     return CentroDeInfancia.objects.select_related(
-        "organizacion", "provincia", "municipio", "localidad"
+        "organizacion",
+        "provincia",
+        "departamento",
+        "municipio",
+        "localidad",
     )
 
 
@@ -183,7 +190,11 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
         queryset = CentroDeInfancia.objects.select_related(
-            "organizacion", "provincia", "municipio", "localidad"
+            "organizacion",
+            "provincia",
+            "departamento",
+            "municipio",
+            "localidad",
         )
         queryset = _aplicar_filtro_provincia_usuario(queryset, self.request.user)
         if query:
@@ -199,7 +210,13 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             "centrodeinfancia_list",
             CDI_LIST_HEADERS,
             CDI_LIST_FIELDS,
-            default_keys=["nombre", "organizacion", "provincia", "municipio"],
+            default_keys=[
+                "nombre",
+                "organizacion",
+                "provincia",
+                "departamento",
+                "municipio",
+            ],
             required_keys=["nombre"],
         )
         context["breadcrumb_items"] = [
@@ -672,7 +689,13 @@ def centrodeinfancia_ajax(request):
             "centrodeinfancia_list",
             CDI_LIST_HEADERS,
             CDI_LIST_FIELDS,
-            default_keys=["nombre", "organizacion", "provincia", "municipio"],
+            default_keys=[
+                "nombre",
+                "organizacion",
+                "provincia",
+                "departamento",
+                "municipio",
+            ],
             required_keys=["nombre"],
         )
         active_columns = columns_context.get("column_active_keys") or [
@@ -680,7 +703,11 @@ def centrodeinfancia_ajax(request):
         ]
 
         queryset = CentroDeInfancia.objects.select_related(
-            "organizacion", "provincia", "municipio", "localidad"
+            "organizacion",
+            "provincia",
+            "departamento",
+            "municipio",
+            "localidad",
         )
         queryset = _aplicar_filtro_provincia_usuario(queryset, req.user)
         if query:
@@ -709,6 +736,20 @@ def centrodeinfancia_ajax(request):
         )
 
     return _centrodeinfancia_ajax(request)
+
+
+@login_required
+def load_departamentos_ipi(request):
+    provincia_id = request.GET.get("provincia_id")
+    departamentos = DepartamentoIpi.objects.none()
+
+    if provincia_id:
+        departamentos = DepartamentoIpi.objects.filter(provincia_id=provincia_id)
+
+    return JsonResponse(
+        list(departamentos.order_by("nombre").values("id", "nombre", "decil_ipi")),
+        safe=False,
+    )
 
 
 class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):

@@ -13,6 +13,7 @@ from organizaciones.models import Organizacion
 from users.models import Profile
 from centrodeinfancia.models import (
     CentroDeInfancia,
+    DepartamentoIpi,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     ObservacionCentroInfancia,
@@ -47,6 +48,11 @@ class CentroDeInfanciaForm(forms.ModelForm):
         regex=r"^\d+(?:-\d+)*$",
         message=TELEFONO_FORMATO_ERROR,
     )
+    decil_ipi = forms.CharField(
+        label="Decil de IPI",
+        required=False,
+        disabled=True,
+    )
 
     @staticmethod
     def _obtener_provincia_usuario(user):
@@ -72,6 +78,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
         self._popular_campos_ubicacion()
         self._aplicar_provincia_usuario()
         self._aplicar_atributos_numericos()
+        self._aplicar_campo_decil_ipi()
 
     def _aplicar_atributos_numericos(self):
         # Campos estrictamente numéricos
@@ -89,6 +96,10 @@ class CentroDeInfanciaForm(forms.ModelForm):
             # Patrón alineado con TELEFONO_REGEX/validación backend: dígitos con grupos separados por guiones
             attrs["pattern"] = r"\d+(?:-\d+)*"
 
+    def _aplicar_campo_decil_ipi(self):
+        self.fields["decil_ipi"].widget.attrs["readonly"] = True
+        self.fields["decil_ipi"].widget.attrs["tabindex"] = "-1"
+
     def _clean_solo_digitos(self, field_name):
         value = (self.cleaned_data.get(field_name) or "").strip()
         if not value:
@@ -104,6 +115,9 @@ class CentroDeInfanciaForm(forms.ModelForm):
         provincia = Provincia.objects.filter(
             pk=parse_pk(self.data.get(self.add_prefix("provincia")))
         ).first() or getattr(self.instance, "provincia", None)
+        departamento = DepartamentoIpi.objects.filter(
+            pk=parse_pk(self.data.get(self.add_prefix("departamento")))
+        ).first() or getattr(self.instance, "departamento", None)
         municipio = Municipio.objects.filter(
             pk=parse_pk(self.data.get(self.add_prefix("municipio")))
         ).first() or getattr(self.instance, "municipio", None)
@@ -121,15 +135,29 @@ class CentroDeInfanciaForm(forms.ModelForm):
 
         if provincia:
             self.fields["provincia"].initial = provincia
+            self.fields["departamento"].queryset = DepartamentoIpi.objects.filter(
+                provincia=provincia
+            ).order_by("nombre")
             self.fields["municipio"].queryset = Municipio.objects.filter(
                 provincia=provincia
             ).order_by("nombre")
         else:
+            self.fields["departamento"].queryset = DepartamentoIpi.objects.all().order_by(
+                "nombre"
+            )
             self.fields["municipio"].queryset = Municipio.objects.all().order_by(
                 "nombre"
             )
             self.fields["localidad"].queryset = Localidad.objects.all().order_by(
                 "nombre"
+            )
+
+        if departamento:
+            self.fields["departamento"].initial = departamento
+            self.fields["decil_ipi"].initial = (
+                str(departamento.decil_ipi)
+                if departamento.decil_ipi is not None
+                else ""
             )
 
         if municipio:
@@ -156,6 +184,9 @@ class CentroDeInfanciaForm(forms.ModelForm):
             )
             self.fields["provincia"].initial = provincia_usuario
             self.fields["provincia"].disabled = True
+            self.fields["departamento"].queryset = DepartamentoIpi.objects.filter(
+                provincia=provincia_usuario
+            ).order_by("nombre")
             self.fields["municipio"].queryset = Municipio.objects.filter(
                 provincia=provincia_usuario
             ).order_by("nombre")
@@ -195,6 +226,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
             "nombre",
             "organizacion",
             "provincia",
+            "departamento",
             "municipio",
             "localidad",
             "calle",

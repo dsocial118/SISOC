@@ -10,6 +10,8 @@
                 <td data-organizacion="{{ item.organizacion|default:'' }}">{{ item.organizacion|default:"-" }}</td>
             {% elif column_key == "provincia" %}
                 <td data-provincia="{{ item.provincia|default:'' }}">{{ item.provincia|default:"-" }}</td>
+            {% elif column_key == "departamento" %}
+                <td data-departamento="{{ item.departamento|default:'' }}">{{ item.departamento|default:"-" }}</td>
             {% elif column_key == "municipio" %}
                 <td data-municipio="{{ item.municipio|default:'' }}">{{ item.municipio|default:"-" }}</td>
             {% elif column_key == "localidad" %}
