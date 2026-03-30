@@ -11,6 +11,7 @@ from django.utils import timezone
 from comedores.models import Comedor
 from core.models import Provincia
 from duplas.models import Dupla
+from organizaciones.models import Organizacion
 from users.models import AccesoComedorPWA, Profile
 from users.services_pwa import (
     deactivate_representante_accesses,
@@ -62,6 +63,13 @@ class PWAAccessMixin:
             required=False,
             label="Es representante PWA",
         )
+        self.fields["organizaciones_pwa"] = forms.ModelMultipleChoiceField(
+            queryset=Organizacion.objects.all().order_by("nombre"),
+            required=False,
+            widget=forms.SelectMultiple(attrs={"class": "select2"}),
+            label="Organizaciones PWA",
+            help_text="Organizaciones habilitadas para construir el alcance en la PWA.",
+        )
         self.fields["comedores_pwa"] = forms.ModelMultipleChoiceField(
             queryset=Comedor.objects.all().order_by("nombre"),
             required=False,
@@ -78,8 +86,14 @@ class PWAAccessMixin:
             rol=AccesoComedorPWA.ROL_REPRESENTANTE,
             activo=True,
         )
+        organizacion_ids = list(
+            accesos.exclude(organizacion_id__isnull=True)
+            .values_list("organizacion_id", flat=True)
+            .distinct()
+        )
         comedor_ids = list(accesos.values_list("comedor_id", flat=True))
         self.fields["es_representante_pwa"].initial = bool(comedor_ids)
+        self.fields["organizaciones_pwa"].initial = organizacion_ids
         self.fields["comedores_pwa"].initial = comedor_ids
 
     def _clean_pwa_fields(self, cleaned):
