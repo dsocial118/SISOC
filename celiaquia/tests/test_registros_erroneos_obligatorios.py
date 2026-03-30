@@ -1,5 +1,6 @@
 """Regresiones para campos obligatorios en registros erróneos de Celiaquía."""
 
+from datetime import date
 from io import BytesIO
 import json
 import re
@@ -52,6 +53,15 @@ def _crear_archivo_excel(headers, row):
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         ),
     )
+
+
+def _fecha_hace_anos(anos):
+    hoy = date.today()
+    try:
+        fecha = hoy.replace(year=hoy.year - anos)
+    except ValueError:
+        fecha = hoy.replace(month=2, day=28, year=hoy.year - anos)
+    return fecha.strftime("%d/%m/%Y")
 
 
 @pytest.mark.django_db
@@ -407,6 +417,236 @@ def test_importacion_con_sexo_responsable_invalido_no_crea_legajo_parcial():
     registro = RegistroErroneo.objects.get(expediente=expediente)
     assert "sexo responsable" in registro.mensaje_error.lower()
     assert registro.datos_raw["sexo_responsable"] == "X"
+
+
+@pytest.mark.django_db
+def test_importacion_menor_sin_responsable_genera_error():
+    user, provincia = _crear_usuario_provincial("prov_menor_sin_resp")
+    expediente = _crear_contexto_expediente(user)
+    EstadoLegajo.objects.create(nombre="DOCUMENTO_PENDIENTE")
+    Sexo.objects.create(sexo="Masculino")
+    Sexo.objects.create(sexo="Femenino")
+    Nacionalidad.objects.create(nacionalidad="Argentina")
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+
+    archivo = _crear_archivo_excel(
+        headers=[
+            "apellido",
+            "nombre",
+            "documento",
+            "fecha_nacimiento",
+            "sexo",
+            "nacionalidad",
+            "municipio",
+            "localidad",
+            "calle",
+            "altura",
+            "codigo_postal",
+            "telefono",
+            "email",
+            "APELLIDO_RESPONSABLE",
+            "NOMBRE_REPSONSABLE",
+            "Cuit_Responsable",
+            "FECHA_DE_NACIMIENTO_RESPONSABLE",
+            "SEXO_RESPONSABLE",
+            "DOMICILIO_RESPONSABLE",
+            "LOCALIDAD_RESPONSABLE",
+            "CELULAR_RESPONSABLE",
+            "CORREO_RESPONSABLE",
+        ],
+        row=[
+            "Perez",
+            "Ana",
+            "30123456789",
+            _fecha_hace_anos(10),
+            "F",
+            "Argentina",
+            municipio.pk,
+            localidad.pk,
+            "Calle 1",
+            "123",
+            "1000",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+        ],
+    )
+
+    resultado = ImportacionService.importar_legajos_desde_excel(
+        expediente=expediente,
+        archivo_excel=archivo,
+        usuario=user,
+    )
+
+    assert resultado["validos"] == 0
+    assert resultado["errores"] == 1
+    assert ExpedienteCiudadano.objects.count() == 0
+
+    registro = RegistroErroneo.objects.get(expediente=expediente)
+    assert "debe tener un responsable" in registro.mensaje_error.lower()
+
+
+@pytest.mark.django_db
+def test_importacion_mayor_con_datos_parciales_de_responsable_exige_completar_obligatorios():
+    user, provincia = _crear_usuario_provincial("prov_mayor_resp_parcial")
+    expediente = _crear_contexto_expediente(user)
+    EstadoLegajo.objects.create(nombre="DOCUMENTO_PENDIENTE")
+    Sexo.objects.create(sexo="Masculino")
+    Sexo.objects.create(sexo="Femenino")
+    Nacionalidad.objects.create(nacionalidad="Argentina")
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+
+    archivo = _crear_archivo_excel(
+        headers=[
+            "apellido",
+            "nombre",
+            "documento",
+            "fecha_nacimiento",
+            "sexo",
+            "nacionalidad",
+            "municipio",
+            "localidad",
+            "calle",
+            "altura",
+            "codigo_postal",
+            "telefono",
+            "email",
+            "APELLIDO_RESPONSABLE",
+            "NOMBRE_REPSONSABLE",
+            "Cuit_Responsable",
+            "FECHA_DE_NACIMIENTO_RESPONSABLE",
+            "SEXO_RESPONSABLE",
+            "DOMICILIO_RESPONSABLE",
+            "LOCALIDAD_RESPONSABLE",
+            "CELULAR_RESPONSABLE",
+            "CORREO_RESPONSABLE",
+        ],
+        row=[
+            "Perez",
+            "Ana",
+            "30123456789",
+            _fecha_hace_anos(25),
+            "F",
+            "Argentina",
+            municipio.pk,
+            localidad.pk,
+            "Calle 1",
+            "123",
+            "1000",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "3415550000",
+            "",
+        ],
+    )
+
+    resultado = ImportacionService.importar_legajos_desde_excel(
+        expediente=expediente,
+        archivo_excel=archivo,
+        usuario=user,
+    )
+
+    assert resultado["validos"] == 0
+    assert resultado["errores"] == 1
+    assert ExpedienteCiudadano.objects.count() == 0
+
+    registro = RegistroErroneo.objects.get(expediente=expediente)
+    mensaje = registro.mensaje_error.lower()
+    assert "faltan campos obligatorios" in mensaje
+    assert "apellido_responsable" in mensaje
+    assert "documento_responsable" in mensaje
+
+
+@pytest.mark.django_db
+def test_importacion_mayor_sin_responsable_sigue_permitida():
+    user, provincia = _crear_usuario_provincial("prov_mayor_sin_resp")
+    expediente = _crear_contexto_expediente(user)
+    EstadoLegajo.objects.create(nombre="DOCUMENTO_PENDIENTE")
+    Sexo.objects.create(sexo="Masculino")
+    Sexo.objects.create(sexo="Femenino")
+    Nacionalidad.objects.create(nacionalidad="Argentina")
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+
+    archivo = _crear_archivo_excel(
+        headers=[
+            "apellido",
+            "nombre",
+            "documento",
+            "fecha_nacimiento",
+            "sexo",
+            "nacionalidad",
+            "municipio",
+            "localidad",
+            "calle",
+            "altura",
+            "codigo_postal",
+            "telefono",
+            "email",
+            "APELLIDO_RESPONSABLE",
+            "NOMBRE_REPSONSABLE",
+            "Cuit_Responsable",
+            "FECHA_DE_NACIMIENTO_RESPONSABLE",
+            "SEXO_RESPONSABLE",
+            "DOMICILIO_RESPONSABLE",
+            "LOCALIDAD_RESPONSABLE",
+            "CELULAR_RESPONSABLE",
+            "CORREO_RESPONSABLE",
+        ],
+        row=[
+            "Perez",
+            "Ana",
+            "30123456789",
+            _fecha_hace_anos(30),
+            "F",
+            "Argentina",
+            municipio.pk,
+            localidad.pk,
+            "Calle 1",
+            "123",
+            "1000",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+        ],
+    )
+
+    resultado = ImportacionService.importar_legajos_desde_excel(
+        expediente=expediente,
+        archivo_excel=archivo,
+        usuario=user,
+    )
+
+    assert resultado["validos"] == 1
+    assert resultado["errores"] == 0
+
+    legajo = ExpedienteCiudadano.objects.get(expediente=expediente)
+    assert legajo.rol == ExpedienteCiudadano.ROLE_BENEFICIARIO
 
 
 @pytest.mark.django_db

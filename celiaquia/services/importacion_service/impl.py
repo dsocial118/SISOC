@@ -12,6 +12,7 @@ from django.db.models import Q
 from ciudadanos.models import Ciudadano
 from core.models import Provincia, Municipio, Localidad, Sexo
 from celiaquia.models import EstadoCupo, EstadoLegajo, ExpedienteCiudadano
+from celiaquia.services.validacion_edad_service import ValidacionEdadService
 
 logger = logging.getLogger("django")
 
@@ -137,6 +138,13 @@ IMPORTACION_RESPONSABLE_REQUIRED_FIELDS = (
     "sexo_responsable",
     "domicilio_responsable",
     "localidad_responsable",
+)
+
+IMPORTACION_RESPONSABLE_FIELDS = (
+    *IMPORTACION_RESPONSABLE_REQUIRED_FIELDS,
+    "telefono_responsable",
+    "email_responsable",
+    "contacto_responsable",
 )
 
 IMPORTACION_EDITABLE_FIELDS = (
@@ -933,7 +941,7 @@ def validar_y_normalizar_payloads_importacion(
 
     responsable_payload = None
     es_mismo_documento_resp = False
-    if _tiene_datos_responsable_importacion(payload_normalizado):
+    if _debe_validarse_responsable_importacion(payload_normalizado):
         (
             responsable_payload,
             es_mismo_documento_resp,
@@ -1563,12 +1571,18 @@ def _procesar_beneficiario_importacion(
 
 def _tiene_datos_responsable_importacion(payload):
     return any(
-        [
-            payload.get("apellido_responsable"),
-            payload.get("nombre_responsable"),
-            payload.get("fecha_nacimiento_responsable"),
-        ]
+        _valor_tiene_contenido_importacion(payload.get(field))
+        for field in IMPORTACION_RESPONSABLE_FIELDS
     )
+
+
+def _debe_validarse_responsable_importacion(payload):
+    tiene_datos_responsable = _tiene_datos_responsable_importacion(payload)
+    ValidacionEdadService.validar_beneficiario_menor_con_responsable(
+        payload.get("fecha_nacimiento"),
+        tiene_responsable=tiene_datos_responsable,
+    )
+    return tiene_datos_responsable
 
 
 IMPORTACION_NUMERIC_FIELDS = {
@@ -1736,7 +1750,7 @@ def _procesar_beneficiario_desde_row_importacion(
 
     responsable_payload = None
     es_mismo_documento_resp = False
-    if _tiene_datos_responsable_importacion(payload):
+    if _debe_validarse_responsable_importacion(payload):
         (
             responsable_payload,
             es_mismo_documento_resp,
@@ -1806,10 +1820,9 @@ def _procesar_responsable_si_corresponde_importacion(
     relaciones_familiares,
     responsable_payload=None,
 ):
-    if responsable_payload is None and not _tiene_datos_responsable_importacion(
-        payload
-    ):
-        return None, False, False
+    if responsable_payload is None:
+        if not _debe_validarse_responsable_importacion(payload):
+            return None, False, False
 
     return _procesar_responsable_importacion(
         payload=payload,
