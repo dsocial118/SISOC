@@ -198,9 +198,7 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             "departamento",
             "municipio",
             "localidad",
-        ).annotate(
-            tiene_nomina=Exists(nomina_subquery)
-        )
+        ).annotate(tiene_nomina=Exists(nomina_subquery))
         queryset = _aplicar_filtro_provincia_usuario(queryset, self.request.user)
         if query:
             queryset = queryset.filter(

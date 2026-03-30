@@ -218,7 +218,9 @@ def test_formulario_cdi_inicializa_departamento_desde_la_instancia():
         provincia=provincia,
         nombre="Comuna 1",
     )
+    centro = CentroDeInfancia.objects.create(nombre="CDI Inicializacion")
     formulario = FormularioCDI.objects.create(
+        centro=centro,
         provincia_cdi=provincia,
         departamento_cdi=departamento,
     )
