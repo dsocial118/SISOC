@@ -1,4 +1,4 @@
-﻿"""CRUD web para FormularioCDI."""
+"""CRUD web para FormularioCDI."""
 
 from __future__ import annotations
 

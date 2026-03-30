@@ -40,7 +40,7 @@ class BackofficeAuthenticationForm(AuthenticationForm):
             and expires_at <= timezone.now()
         ):
             raise forms.ValidationError(
-                "La contraseÃ±a inicial expirÃ³. Solicite un reinicio a un administrador.",
+                "La contraseña inicial expiró. Solicite un reinicio a un administrador.",
                 code="initial_password_expired",
             )
 
@@ -50,7 +50,7 @@ class UserLoginForm(BackofficeAuthenticationForm):
 
 
 class ComedorPWASelectMultiple(forms.SelectMultiple):
-    """Agrega metadata de organizaciÃ³n en las opciones para filtrado dinÃ¡mico."""
+    """Agrega metadata de organización en las opciones para filtrado dinámico."""
 
     def create_option(  # pylint: disable=too-many-arguments
         self, name, value, label, selected, index, subindex=None, attrs=None
@@ -90,10 +90,10 @@ class PWAAccessMixin:
         self.fields["tipo_asociacion_pwa"] = forms.ChoiceField(
             required=False,
             choices=(
-                ("", "Seleccione una opciÃ³n"),
+                ("", "Seleccione una opción"),
                 (
                     AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
-                    "Usuario asociado a OrganizaciÃ³n",
+                    "Usuario asociado a Organización",
                 ),
                 (
                     AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO,
@@ -101,14 +101,14 @@ class PWAAccessMixin:
                 ),
             ),
             widget=forms.Select(attrs={"class": "select2"}),
-            label="Tipo de asociaciÃ³n mobile",
+            label="Tipo de asociación mobile",
         )
         self.fields["organizaciones_pwa"] = forms.ModelMultipleChoiceField(
             queryset=Organizacion.objects.all().order_by("nombre"),
             required=False,
             widget=forms.SelectMultiple(attrs={"class": "select2"}),
             label="Organizaciones",
-            help_text="Seleccione una o mÃ¡s organizaciones registradas en el sistema.",
+            help_text="Seleccione una o más organizaciones registradas en el sistema.",
         )
         self.fields["comedores_pwa"] = forms.ModelMultipleChoiceField(
             queryset=Comedor.objects.select_related("organizacion").order_by(
@@ -244,7 +244,7 @@ class PWAAccessMixin:
 
 
 class UserCreationForm(PWAAccessMixin, forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput, label="ContraseÃ±a")
+    password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
         required=False,
@@ -259,7 +259,7 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Permisos directos",
         help_text=(
-            "Permisos adicionales especÃ­ficos para este usuario, "
+            "Permisos adicionales específicos para este usuario, "
             "independientes de sus grupos."
         ),
     )
@@ -275,13 +275,13 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
     )
     es_coordinador = forms.BooleanField(
         required=False,
-        label="Es Coordinador de Equipo TÃ©cnico",
+        label="Es Coordinador de Equipo Técnico",
     )
     duplas_asignadas = forms.ModelMultipleChoiceField(
         queryset=Dupla.objects.activas(),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
-        label="Equipos tÃ©cnicos (Duplas) asignadas",
+        label="Equipos técnicos (Duplas) asignadas",
         help_text="Duplas activas disponibles (con o sin comedores asignados)",
     )
     rol = forms.CharField(max_length=100, required=False, label="Rol")
@@ -384,7 +384,7 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
 class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput,
-        label="ContraseÃ±a (dejar en blanco para no cambiarla)",
+        label="Contraseña (dejar en blanco para no cambiarla)",
         required=False,
     )
     groups = forms.ModelMultipleChoiceField(
@@ -401,7 +401,7 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Permisos directos",
         help_text=(
-            "Permisos adicionales especÃ­ficos para este usuario, "
+            "Permisos adicionales específicos para este usuario, "
             "independientes de sus grupos."
         ),
     )
@@ -417,13 +417,13 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
     )
     es_coordinador = forms.BooleanField(
         required=False,
-        label="Es Coordinador de Equipo TÃ©cnico",
+        label="Es Coordinador de Equipo Técnico",
     )
     duplas_asignadas = forms.ModelMultipleChoiceField(
         queryset=Dupla.objects.activas(),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
-        label="Equipos tÃ©cnicos (Duplas) asignadas",
+        label="Equipos técnicos (Duplas) asignadas",
         help_text="Duplas activas disponibles (con o sin comedores asignados)",
     )
     rol = forms.CharField(max_length=100, required=False, label="Rol")

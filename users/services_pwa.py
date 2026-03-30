@@ -118,7 +118,7 @@ def _validate_operator_role_invariants(user):
 
     if AccesoComedorPWA.ROL_REPRESENTANTE in active_roles:
         raise ValidationError(
-            "Un usuario PWA no puede tener roles activos representante y operador simultÃ¡neamente."
+            "Un usuario PWA no puede tener roles activos representante y operador simultáneamente."
         )
 
     operadores = active_rows.filter(rol=AccesoComedorPWA.ROL_OPERADOR)
@@ -297,13 +297,13 @@ def _normalize_representante_access_specs(
             AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
             AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO,
         }:
-            raise ValidationError("Tipo de asociaciÃ³n PWA invÃ¡lido.")
+            raise ValidationError("Tipo de asociación PWA inválido.")
         if (
             tipo_asociacion == AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
             and not organizacion_id
         ):
             raise ValidationError(
-                "Los accesos PWA asociados a organizaciÃ³n requieren una organizaciÃ³n."
+                "Los accesos PWA asociados a organización requieren una organización."
             )
         if tipo_asociacion == AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO:
             organizacion_id = None

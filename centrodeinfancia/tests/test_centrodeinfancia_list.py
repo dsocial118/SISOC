@@ -12,9 +12,7 @@ from core.models import Provincia
 @pytest.mark.django_db
 def test_listado_cdi_muestra_si_tiene_nomina(client):
     user = User.objects.create_user(username="listado-cdi", password="test1234")
-    user.user_permissions.add(
-        Permission.objects.get(codename="view_centrodeinfancia")
-    )
+    user.user_permissions.add(Permission.objects.get(codename="view_centrodeinfancia"))
     client.force_login(user)
 
     provincia = Provincia.objects.create(nombre="Buenos Aires")

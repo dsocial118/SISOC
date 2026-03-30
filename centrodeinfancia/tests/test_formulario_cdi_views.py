@@ -1,4 +1,4 @@
-﻿from datetime import date, timedelta
+from datetime import date, timedelta
 
 import pytest
 from django.contrib.auth.models import Permission, User
