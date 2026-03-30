@@ -37,24 +37,37 @@ class CentroAdmin(admin.ModelAdmin):
     list_filter = ("activo", "tipo_gestion")
     search_fields = ("nombre",)
     fieldsets = (
-        ("Información General", {
-            "fields": ("nombre", "codigo", "referente")
-        }),
-        ("Ubicación", {
-            "fields": ("provincia", "municipio", "localidad", "calle", "numero", "domicilio_actividad")
-        }),
-        ("Contacto", {
-            "fields": ("telefono", "celular", "correo", "sitio_web")
-        }),
-        ("Responsable", {
-            "fields": ("nombre_referente", "apellido_referente", "telefono_referente", "correo_referente")
-        }),
-        ("Clasificación", {
-            "fields": ("tipo_gestion", "clase_institucion", "situacion")
-        }),
-        ("Estado", {
-            "fields": ("activo",)
-        }),
+        ("Información General", {"fields": ("nombre", "codigo", "referente")}),
+        (
+            "Ubicación",
+            {
+                "fields": (
+                    "provincia",
+                    "municipio",
+                    "localidad",
+                    "calle",
+                    "numero",
+                    "domicilio_actividad",
+                )
+            },
+        ),
+        ("Contacto", {"fields": ("telefono", "celular", "correo", "sitio_web")}),
+        (
+            "Responsable",
+            {
+                "fields": (
+                    "nombre_referente",
+                    "apellido_referente",
+                    "telefono_referente",
+                    "correo_referente",
+                )
+            },
+        ),
+        (
+            "Clasificación",
+            {"fields": ("tipo_gestion", "clase_institucion", "situacion")},
+        ),
+        ("Estado", {"fields": ("activo",)}),
     )
 
 
@@ -91,15 +104,12 @@ class TituloReferenciaAdmin(admin.ModelAdmin):
     list_filter = ("sector", "subsector", "activo")
     search_fields = ("nombre", "codigo_referencia")
     fieldsets = (
-        ("Información General", {
-            "fields": ("nombre", "codigo_referencia", "descripcion")
-        }),
-        ("Clasificación", {
-            "fields": ("sector", "subsector")
-        }),
-        ("Estado", {
-            "fields": ("activo",)
-        }),
+        (
+            "Información General",
+            {"fields": ("nombre", "codigo_referencia", "descripcion")},
+        ),
+        ("Clasificación", {"fields": ("sector", "subsector")}),
+        ("Estado", {"fields": ("activo",)}),
     )
 
 
@@ -116,18 +126,16 @@ class PlanVersionCurricularAdmin(admin.ModelAdmin):
     list_filter = ("titulo_referencia", "modalidad_cursada", "activo")
     search_fields = ("titulo_referencia__nombre", "version")
     fieldsets = (
-        ("Información General", {
-            "fields": ("titulo_referencia", "modalidad_cursada", "version")
-        }),
-        ("Normativa y Horas", {
-            "fields": ("normativa", "horas_reloj")
-        }),
-        ("Niveles y Frecuencia", {
-            "fields": ("nivel_requerido", "nivel_certifica", "frecuencia")
-        }),
-        ("Estado", {
-            "fields": ("activo",)
-        }),
+        (
+            "Información General",
+            {"fields": ("titulo_referencia", "modalidad_cursada", "version")},
+        ),
+        ("Normativa y Horas", {"fields": ("normativa", "horas_reloj")}),
+        (
+            "Niveles y Frecuencia",
+            {"fields": ("nivel_requerido", "nivel_certifica", "frecuencia")},
+        ),
+        ("Estado", {"fields": ("activo",)}),
     )
 
 
@@ -137,13 +145,14 @@ class InscripcionOfertaAdmin(admin.ModelAdmin):
     list_filter = ("estado", "fecha_inscripcion")
     search_fields = ("ciudadano__nombre", "ciudadano__apellido")
     fieldsets = (
-        ("Información", {
-            "fields": ("oferta", "ciudadano", "estado")
-        }),
-        ("Auditoría", {
-            "fields": ("inscrito_por", "fecha_inscripcion", "fecha_modificacion"),
-            "classes": ("collapse",)
-        }),
+        ("Información", {"fields": ("oferta", "ciudadano", "estado")}),
+        (
+            "Auditoría",
+            {
+                "fields": ("inscrito_por", "fecha_inscripcion", "fecha_modificacion"),
+                "classes": ("collapse",),
+            },
+        ),
     )
     readonly_fields = ("fecha_inscripcion", "fecha_modificacion", "inscrito_por")
 
@@ -247,20 +256,36 @@ class VoucherUsoAdmin(admin.ModelAdmin):
     )
     readonly_fields = ("fecha_uso",)
     fieldsets = (
-        ("Información", {"fields": ("voucher", "inscripcion_oferta", "cantidad_usada")}),
+        (
+            "Información",
+            {"fields": ("voucher", "inscripcion_oferta", "cantidad_usada")},
+        ),
         ("Auditoría", {"fields": ("fecha_uso",), "classes": ("collapse",)}),
     )
 
 
 @admin.register(VoucherLog)
 class VoucherLogAdmin(admin.ModelAdmin):
-    list_display = ("voucher", "tipo_evento", "cantidad_afectada", "fecha_evento", "usuario")
+    list_display = (
+        "voucher",
+        "tipo_evento",
+        "cantidad_afectada",
+        "fecha_evento",
+        "usuario",
+    )
     list_filter = ("tipo_evento", "fecha_evento")
     search_fields = (
         "voucher__ciudadano__nombre",
         "voucher__ciudadano__apellido",
     )
-    readonly_fields = ("fecha_evento", "voucher", "tipo_evento", "cantidad_afectada", "usuario", "detalles")
+    readonly_fields = (
+        "fecha_evento",
+        "voucher",
+        "tipo_evento",
+        "cantidad_afectada",
+        "usuario",
+        "detalles",
+    )
 
     def has_add_permission(self, request):
         return False
@@ -296,7 +321,14 @@ class VoucherLogAdmin(admin.ModelAdmin):
 
 @admin.register(InstitucionContacto)
 class InstitucionContactoAdmin(admin.ModelAdmin):
-    list_display = ("centro", "tipo", "valor", "es_principal", "vigencia_desde", "vigencia_hasta")
+    list_display = (
+        "centro",
+        "tipo",
+        "valor",
+        "es_principal",
+        "vigencia_desde",
+        "vigencia_hasta",
+    )
     list_filter = ("tipo", "es_principal", "vigencia_desde")
     search_fields = ("centro__nombre", "valor")
     readonly_fields = ("vigencia_desde", "fecha_creacion", "fecha_modificacion")
@@ -304,7 +336,14 @@ class InstitucionContactoAdmin(admin.ModelAdmin):
 
 @admin.register(AutoridadInstitucional)
 class AutoridadInstitucionalAdmin(admin.ModelAdmin):
-    list_display = ("centro", "nombre_completo", "cargo", "dni", "es_actual", "vigencia_desde")
+    list_display = (
+        "centro",
+        "nombre_completo",
+        "cargo",
+        "dni",
+        "es_actual",
+        "vigencia_desde",
+    )
     list_filter = ("es_actual", "vigencia_desde")
     search_fields = ("centro__nombre", "nombre_completo", "dni")
     readonly_fields = ("vigencia_desde", "fecha_creacion", "fecha_modificacion")
@@ -312,7 +351,13 @@ class AutoridadInstitucionalAdmin(admin.ModelAdmin):
 
 @admin.register(InstitucionIdentificadorHist)
 class InstitucionIdentificadorHistAdmin(admin.ModelAdmin):
-    list_display = ("centro", "tipo_identificador", "valor_identificador", "rol_institucional", "es_actual")
+    list_display = (
+        "centro",
+        "tipo_identificador",
+        "valor_identificador",
+        "rol_institucional",
+        "es_actual",
+    )
     list_filter = ("tipo_identificador", "rol_institucional", "es_actual")
     search_fields = ("centro__nombre", "valor_identificador")
     readonly_fields = ("vigencia_desde", "fecha_creacion", "fecha_modificacion")
@@ -339,25 +384,31 @@ class ComisionInline(admin.TabularInline):
 
 @admin.register(OfertaInstitucional)
 class OfertaInstitucionalAdmin(admin.ModelAdmin):
-    list_display = ("centro", "plan_curricular", "ciclo_lectivo", "estado", "usa_voucher")
+    list_display = (
+        "centro",
+        "plan_curricular",
+        "ciclo_lectivo",
+        "estado",
+        "usa_voucher",
+    )
     list_filter = ("estado", "centro", "ciclo_lectivo", "usa_voucher")
     search_fields = ("centro__nombre", "plan_curricular__titulo_referencia__nombre")
     inlines = [ComisionInline]
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
     fieldsets = (
-        ("Información", {
-            "fields": ("centro", "plan_curricular", "programa")
-        }),
-        ("Detalles", {
-            "fields": ("nombre_local", "ciclo_lectivo", "plan_externo_id")
-        }),
-        ("Estado y Voucher", {
-            "fields": ("estado", "costo", "usa_voucher", "fecha_publicacion")
-        }),
-        ("Auditoría", {
-            "fields": ("observaciones", "fecha_creacion", "fecha_modificacion"),
-            "classes": ("collapse",)
-        }),
+        ("Información", {"fields": ("centro", "plan_curricular", "programa")}),
+        ("Detalles", {"fields": ("nombre_local", "ciclo_lectivo", "plan_externo_id")}),
+        (
+            "Estado y Voucher",
+            {"fields": ("estado", "costo", "usa_voucher", "fecha_publicacion")},
+        ),
+        (
+            "Auditoría",
+            {
+                "fields": ("observaciones", "fecha_creacion", "fecha_modificacion"),
+                "classes": ("collapse",),
+            },
+        ),
     )
 
 
@@ -369,31 +420,45 @@ class ComisionHorarioInline(admin.TabularInline):
 
 @admin.register(Comision)
 class ComisionAdmin(admin.ModelAdmin):
-    list_display = ("codigo_comision", "nombre", "oferta", "cupo", "estado", "fecha_inicio")
+    list_display = (
+        "codigo_comision",
+        "nombre",
+        "oferta",
+        "cupo",
+        "estado",
+        "fecha_inicio",
+    )
     list_filter = ("estado", "oferta__centro", "fecha_inicio")
     search_fields = ("codigo_comision", "nombre", "oferta__centro__nombre")
     inlines = [ComisionHorarioInline]
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
     fieldsets = (
-        ("Información", {
-            "fields": ("oferta", "ubicacion", "codigo_comision", "nombre")
-        }),
-        ("Período", {
-            "fields": ("fecha_inicio", "fecha_fin")
-        }),
-        ("Capacidad", {
-            "fields": ("cupo", "estado")
-        }),
-        ("Auditoría", {
-            "fields": ("observaciones", "fecha_creacion", "fecha_modificacion"),
-            "classes": ("collapse",)
-        }),
+        (
+            "Información",
+            {"fields": ("oferta", "ubicacion", "codigo_comision", "nombre")},
+        ),
+        ("Período", {"fields": ("fecha_inicio", "fecha_fin")}),
+        ("Capacidad", {"fields": ("cupo", "estado")}),
+        (
+            "Auditoría",
+            {
+                "fields": ("observaciones", "fecha_creacion", "fecha_modificacion"),
+                "classes": ("collapse",),
+            },
+        ),
     )
 
 
 @admin.register(ComisionHorario)
 class ComisionHorarioAdmin(admin.ModelAdmin):
-    list_display = ("comision", "dia_semana", "hora_desde", "hora_hasta", "aula_espacio", "vigente")
+    list_display = (
+        "comision",
+        "dia_semana",
+        "hora_desde",
+        "hora_hasta",
+        "aula_espacio",
+        "vigente",
+    )
     list_filter = ("vigente", "dia_semana")
     search_fields = ("comision__codigo_comision", "aula_espacio")
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
@@ -407,20 +472,36 @@ class ComisionHorarioAdmin(admin.ModelAdmin):
 @admin.register(Inscripcion)
 class InscripcionAdmin(admin.ModelAdmin):
     list_display = ("ciudadano", "comision", "estado", "fecha_inscripcion", "programa")
-    list_filter = ("estado", "comision__oferta__centro", "fecha_inscripcion", "programa")
-    search_fields = ("ciudadano__nombre", "ciudadano__apellido", "comision__codigo_comision")
+    list_filter = (
+        "estado",
+        "comision__oferta__centro",
+        "fecha_inscripcion",
+        "programa",
+    )
+    search_fields = (
+        "ciudadano__nombre",
+        "ciudadano__apellido",
+        "comision__codigo_comision",
+    )
     readonly_fields = ("fecha_inscripcion", "fecha_creacion", "fecha_modificacion")
     fieldsets = (
-        ("Información", {
-            "fields": ("ciudadano", "comision", "programa")
-        }),
-        ("Estado", {
-            "fields": ("estado", "origen_canal", "fecha_validacion_presencial")
-        }),
-        ("Auditoría", {
-            "fields": ("observaciones", "fecha_inscripcion", "fecha_creacion", "fecha_modificacion"),
-            "classes": ("collapse",)
-        }),
+        ("Información", {"fields": ("ciudadano", "comision", "programa")}),
+        (
+            "Estado",
+            {"fields": ("estado", "origen_canal", "fecha_validacion_presencial")},
+        ),
+        (
+            "Auditoría",
+            {
+                "fields": (
+                    "observaciones",
+                    "fecha_inscripcion",
+                    "fecha_creacion",
+                    "fecha_modificacion",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
     )
 
 
@@ -431,7 +512,13 @@ class InscripcionAdmin(admin.ModelAdmin):
 
 @admin.register(AsistenciaSesion)
 class AsistenciaSesionAdmin(admin.ModelAdmin):
-    list_display = ("sesion", "inscripcion", "presente", "registrado_por", "fecha_registro")
+    list_display = (
+        "sesion",
+        "inscripcion",
+        "presente",
+        "registrado_por",
+        "fecha_registro",
+    )
     list_filter = ("presente", "sesion__comision", "fecha_registro")
     search_fields = (
         "inscripcion__ciudadano__nombre",
@@ -461,34 +548,51 @@ class EvaluacionAdmin(admin.ModelAdmin):
     inlines = [ResultadoEvaluacionInline]
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
     fieldsets = (
-        ("Información", {
-            "fields": ("comision", "nombre", "tipo", "es_final")
-        }),
-        ("Detalles", {
-            "fields": ("fecha", "descripcion", "ponderacion", "observaciones")
-        }),
-        ("Auditoría", {
-            "fields": ("fecha_creacion", "fecha_modificacion"),
-            "classes": ("collapse",)
-        }),
+        ("Información", {"fields": ("comision", "nombre", "tipo", "es_final")}),
+        (
+            "Detalles",
+            {"fields": ("fecha", "descripcion", "ponderacion", "observaciones")},
+        ),
+        (
+            "Auditoría",
+            {
+                "fields": ("fecha_creacion", "fecha_modificacion"),
+                "classes": ("collapse",),
+            },
+        ),
     )
 
 
 @admin.register(ResultadoEvaluacion)
 class ResultadoEvaluacionAdmin(admin.ModelAdmin):
-    list_display = ("inscripcion", "evaluacion", "calificacion", "aprobo", "fecha_registro", "registrado_por")
+    list_display = (
+        "inscripcion",
+        "evaluacion",
+        "calificacion",
+        "aprobo",
+        "fecha_registro",
+        "registrado_por",
+    )
     list_filter = ("aprobo", "evaluacion__tipo", "fecha_registro")
-    search_fields = ("inscripcion__persona__nombre", "inscripcion__persona__apellido", "evaluacion__nombre")
+    search_fields = (
+        "inscripcion__persona__nombre",
+        "inscripcion__persona__apellido",
+        "evaluacion__nombre",
+    )
     readonly_fields = ("fecha_registro", "fecha_creacion", "fecha_modificacion")
     fieldsets = (
-        ("Información", {
-            "fields": ("evaluacion", "inscripcion")
-        }),
-        ("Resultados", {
-            "fields": ("calificacion", "aprobo", "observaciones")
-        }),
-        ("Auditoría", {
-            "fields": ("registrado_por", "fecha_registro", "fecha_creacion", "fecha_modificacion"),
-            "classes": ("collapse",)
-        }),
+        ("Información", {"fields": ("evaluacion", "inscripcion")}),
+        ("Resultados", {"fields": ("calificacion", "aprobo", "observaciones")}),
+        (
+            "Auditoría",
+            {
+                "fields": (
+                    "registrado_por",
+                    "fecha_registro",
+                    "fecha_creacion",
+                    "fecha_modificacion",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
     )

@@ -19,10 +19,14 @@ from users.services_pwa import (
 )
 
 
-ROLE_PERMISSION_QUERYSET = Permission.objects.select_related("content_type").filter(
-    content_type__app_label="auth",
-    codename__startswith="role_",
-).order_by("name")
+ROLE_PERMISSION_QUERYSET = (
+    Permission.objects.select_related("content_type")
+    .filter(
+        content_type__app_label="auth",
+        codename__startswith="role_",
+    )
+    .order_by("name")
+)
 
 
 class BackofficeAuthenticationForm(AuthenticationForm):
@@ -377,7 +381,9 @@ class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
             profile.save()
             # Evita devolver un profile cacheado con valores viejos tras el signal de User.
             user.refresh_from_db()
-            profile.grupos_asignables.set(self.cleaned_data.get("grupos_asignables", []))
+            profile.grupos_asignables.set(
+                self.cleaned_data.get("grupos_asignables", [])
+            )
             profile.roles_asignables.set(self.cleaned_data.get("roles_asignables", []))
 
             duplas = self.cleaned_data.get("duplas_asignadas", [])
@@ -536,7 +542,9 @@ class CustomUserChangeForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm
                 )
             profile.save()
             user.refresh_from_db()
-            profile.grupos_asignables.set(self.cleaned_data.get("grupos_asignables", []))
+            profile.grupos_asignables.set(
+                self.cleaned_data.get("grupos_asignables", [])
+            )
             profile.roles_asignables.set(self.cleaned_data.get("roles_asignables", []))
 
             duplas = self.cleaned_data.get("duplas_asignadas", [])

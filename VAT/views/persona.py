@@ -8,7 +8,13 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views import View
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
+)
 
 from ciudadanos.models import Ciudadano
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -136,9 +142,12 @@ class InscripcionRapidaComisionView(LoginRequiredMixin, View):
             ciudadano.modificado_por = request.user
             ciudadano.origen_dato = "manual"
 
-        if ciudadano_id and Inscripcion.objects.filter(
-            ciudadano=ciudadano, comision=comision
-        ).exists():
+        if (
+            ciudadano_id
+            and Inscripcion.objects.filter(
+                ciudadano=ciudadano, comision=comision
+            ).exists()
+        ):
             return JsonResponse(
                 {
                     "ok": False,

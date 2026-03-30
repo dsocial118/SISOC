@@ -729,7 +729,9 @@ urlpatterns = [
     ),
     path(
         "vat/inscripciones/rapida-comision/",
-        permissions_any_required(["VAT.add_inscripcion"])(InscripcionRapidaComisionView.as_view()),
+        permissions_any_required(["VAT.add_inscripcion"])(
+            InscripcionRapidaComisionView.as_view()
+        ),
         name="vat_inscripcion_rapida_comision",
     ),
     path(

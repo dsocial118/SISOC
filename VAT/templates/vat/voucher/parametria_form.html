@@ -3,9 +3,9 @@
 {% block title %}{{ titulo }}{% endblock %}
 {% block titulo-pagina %}{{ titulo }}{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
 
-<style>
+    <style>
     .vp-shell {
         max-width: 1200px;
         margin: 0 auto;
@@ -228,156 +228,206 @@
             padding: 1.4rem 1.25rem;
         }
     }
-</style>
+    </style>
 
-<div class="vp-shell">
-    <div class="vp-hero">
-        <h1><i class="bi bi-sliders me-2"></i>{{ titulo }}</h1>
-        <p>Configurá cómo se asignan, vencen y renuevan los créditos de voucher para un programa. El objetivo es que la parametría quede legible y fácil de mantener.</p>
-    </div>
+    <div class="vp-shell">
+        <div class="vp-hero">
+            <h1>
+                <i class="bi bi-sliders me-2"></i>{{ titulo }}
+            </h1>
+            <p>
+                Configurá cómo se asignan, vencen y renuevan los créditos de voucher para un programa. El objetivo es que la parametría quede legible y fácil de mantener.
+            </p>
+        </div>
 
-    <div class="row g-4 align-items-start">
-        <div class="col-lg-8">
-            <div class="card vp-panel">
-                <div class="vp-panel-header">
-                    <h3 class="card-title mb-1">Configuración general</h3>
-                    <div class="text-muted small">Definí la identidad de la parametría y las reglas operativas del voucher.</div>
-                </div>
-                <form method="post">
-                    {% csrf_token %}
-
-                    <div class="vp-section">
-                        <div class="vp-section-title">
-                            <span class="vp-badge"><i class="bi bi-card-text"></i></span>
-                            Identificación
-                        </div>
-                        <div class="vp-section-text">Primero asociá la parametría al programa correcto y asignale un nombre claro para reconocerla después.</div>
-                        <div class="row g-3">
-                            <div class="col-md-6 vp-field">
-                                <label for="{{ form.programa.id_for_label }}">{{ form.programa.label }} <span class="text-danger">*</span></label>
-                                {{ form.programa }}
-                                {% if form.programa.errors %}<div class="text-danger small mt-1">{{ form.programa.errors|join:", " }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6 vp-field">
-                                <label for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }} <span class="text-danger">*</span></label>
-                                {{ form.nombre }}
-                                {% if form.nombre.errors %}<div class="text-danger small mt-1">{{ form.nombre.errors|join:", " }}</div>{% endif %}
-                            </div>
-                            <div class="col-12 vp-field">
-                                <label for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
-                                {{ form.descripcion }}
-                                {% if form.descripcion.errors %}<div class="text-danger small mt-1">{{ form.descripcion.errors|join:", " }}</div>{% endif %}
-                                <div class="vp-help">Usá este campo para aclarar alcance, público objetivo o criterios especiales.</div>
-                            </div>
-                        </div>
+        <div class="row g-4 align-items-start">
+            <div class="col-lg-8">
+                <div class="card vp-panel">
+                    <div class="vp-panel-header">
+                        <h3 class="card-title mb-1">Configuración general</h3>
+                        <div class="text-muted small">Definí la identidad de la parametría y las reglas operativas del voucher.</div>
                     </div>
+                    <form method="post">
+                        {% csrf_token %}
 
-                    <div class="vp-section">
-                        <div class="vp-section-title">
-                            <span class="vp-badge"><i class="bi bi-ticket-perforated"></i></span>
-                            Créditos y vigencia
-                        </div>
-                        <div class="vp-section-text">Definí cuántos créditos recibe cada ciudadano y hasta cuándo serán válidos.</div>
-                        <div class="row g-3">
-                            <div class="col-md-6 vp-field">
-                                <label for="{{ form.cantidad_inicial.id_for_label }}">{{ form.cantidad_inicial.label }} <span class="text-danger">*</span></label>
-                                {{ form.cantidad_inicial }}
-                                {% if form.cantidad_inicial.errors %}<div class="text-danger small mt-1">{{ form.cantidad_inicial.errors|join:", " }}</div>{% endif %}
+                        <div class="vp-section">
+                            <div class="vp-section-title">
+                                <span class="vp-badge"><i class="bi bi-card-text"></i></span>
+                                Identificación
                             </div>
-                            <div class="col-md-6 vp-field">
-                                <label for="{{ form.fecha_vencimiento.id_for_label }}">{{ form.fecha_vencimiento.label }} <span class="text-danger">*</span></label>
-                                {{ form.fecha_vencimiento }}
-                                {% if form.fecha_vencimiento.errors %}<div class="text-danger small mt-1">{{ form.fecha_vencimiento.errors|join:", " }}</div>{% endif %}
+                            <div class="vp-section-text">
+                                Primero asociá la parametría al programa correcto y asignale un nombre claro para reconocerla después.
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="vp-section">
-                        <div class="vp-section-title">
-                            <span class="vp-badge"><i class="bi bi-arrow-repeat"></i></span>
-                            Renovación automática
-                        </div>
-                        <div class="vp-section-text">Configurá si el sistema debe renovar créditos todos los meses y de qué forma hacerlo.</div>
-                        <div class="vp-toggle-card mb-3">
-                            <div class="form-check mb-0">
-                                {{ form.renovacion_mensual }}
-                                <label class="form-check-label fw-semibold" for="{{ form.renovacion_mensual.id_for_label }}">{{ form.renovacion_mensual.label }}</label>
-                            </div>
-                            {% if form.renovacion_mensual.help_text %}<div class="vp-help">{{ form.renovacion_mensual.help_text }}</div>{% endif %}
-                            {% if form.renovacion_mensual.errors %}<div class="text-danger small mt-1">{{ form.renovacion_mensual.errors|join:", " }}</div>{% endif %}
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-md-6 vp-field">
-                                <label for="{{ form.cantidad_renovacion.id_for_label }}">{{ form.cantidad_renovacion.label }}</label>
-                                {{ form.cantidad_renovacion }}
-                                {% if form.cantidad_renovacion.errors %}<div class="text-danger small mt-1">{{ form.cantidad_renovacion.errors|join:", " }}</div>{% endif %}
-                                {% if form.cantidad_renovacion.help_text %}<div class="vp-help">{{ form.cantidad_renovacion.help_text }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6 vp-field">
-                                <label class="d-block">{{ form.renovacion_tipo.label }}</label>
-                                <div class="vp-radio-group mt-2">
-                                    {% for radio in form.renovacion_tipo %}
-                                    <label class="vp-radio-option d-flex align-items-start gap-2 mb-0" for="{{ radio.id_for_label }}">
-                                        {{ radio.tag }}
-                                        <span>{{ radio.choice_label }}</span>
+                            <div class="row g-3">
+                                <div class="col-md-6 vp-field">
+                                    <label for="{{ form.programa.id_for_label }}">
+                                        {{ form.programa.label }} <span class="text-danger">*</span>
                                     </label>
-                                    {% endfor %}
+                                    {{ form.programa }}
+                                    {% if form.programa.errors %}<div class="text-danger small mt-1">{{ form.programa.errors|join:", " }}</div>{% endif %}
                                 </div>
-                                {% if form.renovacion_tipo.errors %}<div class="text-danger small mt-1">{{ form.renovacion_tipo.errors|join:", " }}</div>{% endif %}
+                                <div class="col-md-6 vp-field">
+                                    <label for="{{ form.nombre.id_for_label }}">
+                                        {{ form.nombre.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.nombre }}
+                                    {% if form.nombre.errors %}<div class="text-danger small mt-1">{{ form.nombre.errors|join:", " }}</div>{% endif %}
+                                </div>
+                                <div class="col-12 vp-field">
+                                    <label for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
+                                    {{ form.descripcion }}
+                                    {% if form.descripcion.errors %}
+                                        <div class="text-danger small mt-1">{{ form.descripcion.errors|join:", " }}</div>
+                                    {% endif %}
+                                    <div class="vp-help">Usá este campo para aclarar alcance, público objetivo o criterios especiales.</div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="vp-section">
-                        <div class="vp-section-title">
-                            <span class="vp-badge"><i class="bi bi-shield-check"></i></span>
-                            Reglas de uso
-                        </div>
-                        <div class="vp-section-text">Determiná restricciones funcionales para las inscripciones que dependen de esta parametría.</div>
-                        <div class="vp-toggle-card">
-                            <div class="form-check mb-0">
-                                {{ form.inscripcion_unica_activa }}
-                                <label class="form-check-label fw-semibold" for="{{ form.inscripcion_unica_activa.id_for_label }}">{{ form.inscripcion_unica_activa.label }}</label>
+                        <div class="vp-section">
+                            <div class="vp-section-title">
+                                <span class="vp-badge"><i class="bi bi-ticket-perforated"></i></span>
+                                Créditos y vigencia
                             </div>
-                            {% if form.inscripcion_unica_activa.help_text %}<div class="vp-help">{{ form.inscripcion_unica_activa.help_text }}</div>{% endif %}
-                            {% if form.inscripcion_unica_activa.errors %}<div class="text-danger small mt-1">{{ form.inscripcion_unica_activa.errors|join:", " }}</div>{% endif %}
+                            <div class="vp-section-text">Definí cuántos créditos recibe cada ciudadano y hasta cuándo serán válidos.</div>
+                            <div class="row g-3">
+                                <div class="col-md-6 vp-field">
+                                    <label for="{{ form.cantidad_inicial.id_for_label }}">
+                                        {{ form.cantidad_inicial.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.cantidad_inicial }}
+                                    {% if form.cantidad_inicial.errors %}
+                                        <div class="text-danger small mt-1">{{ form.cantidad_inicial.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 vp-field">
+                                    <label for="{{ form.fecha_vencimiento.id_for_label }}">
+                                        {{ form.fecha_vencimiento.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.fecha_vencimiento }}
+                                    {% if form.fecha_vencimiento.errors %}
+                                        <div class="text-danger small mt-1">{{ form.fecha_vencimiento.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="vp-actions">
-                        <a href="{% url 'vat_voucher_parametria_list' %}" class="btn btn-outline-secondary">Cancelar</a>
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="bi bi-check-lg me-1"></i>Guardar parametría
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                        <div class="vp-section">
+                            <div class="vp-section-title">
+                                <span class="vp-badge"><i class="bi bi-arrow-repeat"></i></span>
+                                Renovación automática
+                            </div>
+                            <div class="vp-section-text">
+                                Configurá si el sistema debe renovar créditos todos los meses y de qué forma hacerlo.
+                            </div>
+                            <div class="vp-toggle-card mb-3">
+                                <div class="form-check mb-0">
+                                    {{ form.renovacion_mensual }}
+                                    <label class="form-check-label fw-semibold"
+                                           for="{{ form.renovacion_mensual.id_for_label }}">
+                                        {{ form.renovacion_mensual.label }}
+                                    </label>
+                                </div>
+                                {% if form.renovacion_mensual.help_text %}
+                                    <div class="vp-help">{{ form.renovacion_mensual.help_text }}</div>
+                                {% endif %}
+                                {% if form.renovacion_mensual.errors %}
+                                    <div class="text-danger small mt-1">{{ form.renovacion_mensual.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6 vp-field">
+                                    <label for="{{ form.cantidad_renovacion.id_for_label }}">{{ form.cantidad_renovacion.label }}</label>
+                                    {{ form.cantidad_renovacion }}
+                                    {% if form.cantidad_renovacion.errors %}
+                                        <div class="text-danger small mt-1">{{ form.cantidad_renovacion.errors|join:", " }}</div>
+                                    {% endif %}
+                                    {% if form.cantidad_renovacion.help_text %}
+                                        <div class="vp-help">{{ form.cantidad_renovacion.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 vp-field">
+                                    <label class="d-block">{{ form.renovacion_tipo.label }}</label>
+                                    <div class="vp-radio-group mt-2">
+                                        {% for radio in form.renovacion_tipo %}
+                                            <label class="vp-radio-option d-flex align-items-start gap-2 mb-0"
+                                                   for="{{ radio.id_for_label }}">
+                                                {{ radio.tag }}
+                                                <span>{{ radio.choice_label }}</span>
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                    {% if form.renovacion_tipo.errors %}
+                                        <div class="text-danger small mt-1">{{ form.renovacion_tipo.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
 
-        <div class="col-lg-4">
-            <div class="card vp-sidecard mb-3">
-                <div class="card-body">
-                    <h5><i class="bi bi-lightbulb me-2"></i>Sugerencia de orden</h5>
-                    <ol class="vp-checklist">
-                        <li>Elegí el programa y un nombre entendible.</li>
-                        <li>Definí créditos iniciales y fecha de vencimiento.</li>
-                        <li>Recién después configurá renovación mensual.</li>
-                        <li>Activá inscripción única solo si el programa lo requiere.</li>
-                    </ol>
+                        <div class="vp-section">
+                            <div class="vp-section-title">
+                                <span class="vp-badge"><i class="bi bi-shield-check"></i></span>
+                                Reglas de uso
+                            </div>
+                            <div class="vp-section-text">
+                                Determiná restricciones funcionales para las inscripciones que dependen de esta parametría.
+                            </div>
+                            <div class="vp-toggle-card">
+                                <div class="form-check mb-0">
+                                    {{ form.inscripcion_unica_activa }}
+                                    <label class="form-check-label fw-semibold"
+                                           for="{{ form.inscripcion_unica_activa.id_for_label }}">
+                                        {{ form.inscripcion_unica_activa.label }}
+                                    </label>
+                                </div>
+                                {% if form.inscripcion_unica_activa.help_text %}
+                                    <div class="vp-help">{{ form.inscripcion_unica_activa.help_text }}</div>
+                                {% endif %}
+                                {% if form.inscripcion_unica_activa.errors %}
+                                    <div class="text-danger small mt-1">{{ form.inscripcion_unica_activa.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="vp-actions">
+                            <a href="{% url 'vat_voucher_parametria_list' %}"
+                               class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-lg me-1"></i>Guardar parametría
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
-            <div class="card vp-sidecard">
-                <div class="card-body">
-                    <h5><i class="bi bi-exclamation-circle me-2"></i>Impacto funcional</h5>
-                    <ul class="vp-checklist">
-                        <li>La fecha de vencimiento debe ser posterior a hoy.</li>
-                        <li>Si no completás créditos de renovación, se reutiliza la cantidad inicial.</li>
-                        <li>El tipo de renovación define si se acumula saldo o se reinicia.</li>
-                    </ul>
+            <div class="col-lg-4">
+                <div class="card vp-sidecard mb-3">
+                    <div class="card-body">
+                        <h5>
+                            <i class="bi bi-lightbulb me-2"></i>Sugerencia de orden
+                        </h5>
+                        <ol class="vp-checklist">
+                            <li>Elegí el programa y un nombre entendible.</li>
+                            <li>Definí créditos iniciales y fecha de vencimiento.</li>
+                            <li>Recién después configurá renovación mensual.</li>
+                            <li>Activá inscripción única solo si el programa lo requiere.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card vp-sidecard">
+                    <div class="card-body">
+                        <h5>
+                            <i class="bi bi-exclamation-circle me-2"></i>Impacto funcional
+                        </h5>
+                        <ul class="vp-checklist">
+                            <li>La fecha de vencimiento debe ser posterior a hoy.</li>
+                            <li>Si no completás créditos de renovación, se reutiliza la cantidad inicial.</li>
+                            <li>El tipo de renovación define si se acumula saldo o se reinicia.</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

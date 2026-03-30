@@ -5,13 +5,17 @@
 {% block title %}Alta de Centro VAT{% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
 {% endblock %}
 
 {% block content %}
     {% include 'components/alert_message.html' with show_django_messages=True %}
 
-    <form method="post" enctype="multipart/form-data" id="centro-alta-form" novalidate>
+    <form method="post"
+          enctype="multipart/form-data"
+          id="centro-alta-form"
+          novalidate>
         {% csrf_token %}
 
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -26,15 +30,16 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save mr-1"></i>Guardar
                 </button>
-                <button type="submit" name="save_continue" value="1" class="btn btn-outline-primary">
+                <button type="submit"
+                        name="save_continue"
+                        value="1"
+                        class="btn btn-outline-primary">
                     <i class="fas fa-arrow-right mr-1"></i>Guardar y continuar
                 </button>
             </div>
         </div>
 
-        {% if form.non_field_errors %}
-            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-        {% endif %}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
         {% if contacto_formset.non_form_errors %}
             <div class="alert alert-danger">{{ contacto_formset.non_form_errors }}</div>
         {% endif %}
@@ -92,7 +97,9 @@
         <div class="card bg-dark text-white mb-3">
             <div class="card-header bg-panel4 d-flex justify-content-between align-items-center">
                 <strong>3.2 Contactos de la institución</strong>
-                <button type="button" class="btn btn-sm btn-outline-light" id="add-contacto-btn">
+                <button type="button"
+                        class="btn btn-sm btn-outline-light"
+                        id="add-contacto-btn">
                     <i class="fas fa-plus mr-1"></i>Agregar contacto
                 </button>
             </div>
@@ -100,7 +107,8 @@
                 {{ contacto_formset.management_form }}
                 <div id="contactos-formset">
                     {% for contacto_form in contacto_formset %}
-                        <div class="border rounded p-3 mb-3 contacto-form-item" data-form-index="{{ forloop.counter0 }}">
+                        <div class="border rounded p-3 mb-3 contacto-form-item"
+                             data-form-index="{{ forloop.counter0 }}">
                             {% for hidden in contacto_form.hidden_fields %}{{ hidden }}{% endfor %}
                             <div class="row">
                                 <div class="col-md-4">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
@@ -114,14 +122,13 @@
                                     </div>
                                 </div>
                                 <div class="col-md-3 d-flex align-items-center justify-content-end">
-                                    <button type="button" class="btn btn-outline-danger btn-sm remove-contacto-btn">
+                                    <button type="button"
+                                            class="btn btn-outline-danger btn-sm remove-contacto-btn">
                                         <i class="fas fa-trash mr-1"></i>Quitar
                                     </button>
                                 </div>
                             </div>
-                            {% if contacto_form.errors %}
-                                <div class="alert alert-danger mt-2 mb-0">{{ contacto_form.errors }}</div>
-                            {% endif %}
+                            {% if contacto_form.errors %}<div class="alert alert-danger mt-2 mb-0">{{ contacto_form.errors }}</div>{% endif %}
                         </div>
                     {% endfor %}
                 </div>
@@ -145,9 +152,8 @@
     </form>
 
     <template id="contacto-empty-form-template">
-        <div class="border rounded p-3 mb-3 contacto-form-item" data-form-index="__prefix__">
-            __FORM_FIELDS__
-        </div>
+        <div class="border rounded p-3 mb-3 contacto-form-item"
+             data-form-index="__prefix__">__FORM_FIELDS__</div>
     </template>
 {% endblock %}
 

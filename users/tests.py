@@ -56,7 +56,9 @@ def test_user_creation_form_persists_assignable_scope_in_profile():
         password="secret",
     )
     assignable_group = Group.objects.create(name="VAT Referente")
-    assignable_role = _create_role_permission("role_vat_referente", "Role VAT Referente")
+    assignable_role = _create_role_permission(
+        "role_vat_referente", "Role VAT Referente"
+    )
 
     form = UserCreationForm(
         actor=actor,
@@ -74,9 +76,9 @@ def test_user_creation_form_persists_assignable_scope_in_profile():
     assert form.is_valid(), form.errors
     created_user = form.save()
 
-    assert list(created_user.profile.grupos_asignables.values_list("id", flat=True)) == [
-        assignable_group.id
-    ]
+    assert list(
+        created_user.profile.grupos_asignables.values_list("id", flat=True)
+    ) == [assignable_group.id]
     assert list(created_user.profile.roles_asignables.values_list("id", flat=True)) == [
         assignable_role.id
     ]
@@ -129,7 +131,9 @@ def test_user_list_without_delegation_scope_keeps_default_visibility():
     request = request_factory.get("/usuarios/")
     request.user = actor
     usernames = set(
-        UsuariosService.get_filtered_usuarios(request).values_list("username", flat=True)
+        UsuariosService.get_filtered_usuarios(request).values_list(
+            "username", flat=True
+        )
     )
 
     assert "sin_scope" in usernames
