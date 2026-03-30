@@ -57,6 +57,13 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
         blank=True,
     )
+    departamento = models.ForeignKey(
+        "DepartamentoIpi",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name="Departamento",
+    )
     municipio = models.ForeignKey(
         Municipio,
         on_delete=models.SET_NULL,
@@ -87,12 +94,127 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
     def __str__(self):
         return str(self.nombre)
 
+    def clean(self):
+        super().clean()
+        if (
+            self.departamento_id
+            and self.provincia_id
+            and self.departamento.provincia_id != self.provincia_id
+        ):
+            raise ValidationError(
+                {
+                    "departamento": (
+                        "El departamento no pertenece a la provincia seleccionada."
+                    )
+                }
+            )
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if not self.codigo_cdi:
             codigo_cdi = f"CDI-{self.pk:06d}"
             type(self).objects.filter(pk=self.pk).update(codigo_cdi=codigo_cdi)
             self.codigo_cdi = codigo_cdi
+
+
+class DepartamentoIpi(models.Model):
+    codigo_departamento = models.CharField(max_length=10, unique=True)
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.PROTECT,
+        related_name="departamentos_ipi",
+    )
+    nombre = models.CharField(max_length=255)
+    tamano_demografico = models.CharField(max_length=255, blank=True, null=True)
+    decil_ipi = models.PositiveSmallIntegerField(blank=True, null=True)
+    nivel_inequidad_ipi = models.CharField(max_length=64, blank=True, null=True)
+    porcentaje_ninos_lista_espera_cdi = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    poblacion_0_a_4_anios = models.PositiveIntegerField(blank=True, null=True)
+    porcentaje_poblacion_0_a_4_anios = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    porcentaje_poblacion_0_a_4_anios_con_nbi = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    porcentaje_poblacion_0_a_4_anios_hogares_monoparentales = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    tasa_natalidad_2018 = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    tasa_mortalidad_infantil_2018 = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    porcentaje_familias_barrios_populares = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    cantidad_barrios_populares = models.PositiveIntegerField(blank=True, null=True)
+    cantidad_asistentes_cdi = models.PositiveIntegerField(blank=True, null=True)
+    cantidad_ninos_lista_espera_cdi = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    poblacion_0_a_4_anios_hogares_monoparentales = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    poblacion_0_a_4_anios_con_nbi = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    total_hogares_censo_2010 = models.PositiveIntegerField(blank=True, null=True)
+    poblacion_total = models.PositiveIntegerField(blank=True, null=True)
+    cantidad_familias_barrios_populares = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    cantidad_establecimientos_nivel_inicial = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    tasa_establecimientos_cada_mil_ninos = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ["provincia__nombre", "nombre"]
+        verbose_name = "Departamento IPI"
+        verbose_name_plural = "Departamentos IPI"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["provincia", "nombre"],
+                name="uniq_departamento_ipi_provincia_nombre",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.nombre} ({self.provincia})"
 
 
 class Trabajador(SoftDeleteModelMixin, models.Model):
@@ -260,7 +382,13 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
         related_name="+",
     )
-    departamento_cdi = models.CharField(max_length=255, blank=True, null=True)
+    departamento_cdi = models.ForeignKey(
+        DepartamentoIpi,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
     municipio_cdi = models.ForeignKey(
         Municipio,
         on_delete=models.SET_NULL,
@@ -345,7 +473,13 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
         related_name="+",
     )
-    departamento_organizacion = models.CharField(max_length=255, blank=True, null=True)
+    departamento_organizacion = models.ForeignKey(
+        DepartamentoIpi,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
     municipio_organizacion = models.ForeignKey(
         Municipio,
         on_delete=models.SET_NULL,
@@ -811,6 +945,12 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         errors = {}
         relation_rules = (
             (
+                "departamento_cdi",
+                "provincia_cdi",
+                "provincia_id",
+                "El departamento no pertenece a la provincia indicada.",
+            ),
+            (
                 "municipio_cdi",
                 "provincia_cdi",
                 "provincia_id",
@@ -821,6 +961,12 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
                 "municipio_cdi",
                 "municipio_id",
                 "La localidad no pertenece al municipio indicado.",
+            ),
+            (
+                "departamento_organizacion",
+                "provincia_organizacion",
+                "provincia_id",
+                "El departamento no pertenece a la provincia indicada.",
             ),
             (
                 "municipio_organizacion",

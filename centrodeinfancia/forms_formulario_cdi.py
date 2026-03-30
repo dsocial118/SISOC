@@ -18,6 +18,7 @@ from centrodeinfancia.formulario_cdi_schema import (
     OPCIONES_GRUPO_ETARIO_DEMANDA,
 )
 from centrodeinfancia.models import (
+    DepartamentoIpi,
     FormularioCDI,
     FormularioCDIArticulationFrequency,
     FormularioCDIRoomDistribution,
@@ -133,15 +134,20 @@ class FormularioCDIForm(forms.ModelForm):
 
     def _configurar_grupo_geo(self, sufijo):
         province_field = f"provincia_{sufijo}"
+        department_field = f"departamento_{sufijo}"
         municipality_field = f"municipio_{sufijo}"
         locality_field = f"localidad_{sufijo}"
 
         province_instance = getattr(self.instance, province_field, None)
+        department_instance = getattr(self.instance, department_field, None)
         municipality_instance = getattr(self.instance, municipality_field, None)
         locality_instance = getattr(self.instance, locality_field, None)
 
         province_value = self._obtener_valor_enlazado_o_inicial(
             province_field, province_instance
+        )
+        department_value = self._obtener_valor_enlazado_o_inicial(
+            department_field, department_instance
         )
         municipality_value = self._obtener_valor_enlazado_o_inicial(
             municipality_field, municipality_instance
@@ -151,6 +157,9 @@ class FormularioCDIForm(forms.ModelForm):
         )
 
         province = Provincia.objects.filter(pk=self._parsear_pk(province_value)).first()
+        department = DepartamentoIpi.objects.filter(
+            pk=self._parsear_pk(department_value)
+        ).first()
         municipality = Municipio.objects.filter(
             pk=self._parsear_pk(municipality_value)
         ).first()
@@ -158,6 +167,11 @@ class FormularioCDIForm(forms.ModelForm):
 
         self.fields[province_field].queryset = Provincia.objects.all().order_by(
             "nombre"
+        )
+        self.fields[department_field].queryset = (
+            DepartamentoIpi.objects.filter(provincia=province).order_by("nombre")
+            if province
+            else DepartamentoIpi.objects.none()
         )
         self.fields[municipality_field].queryset = (
             Municipio.objects.filter(provincia=province).order_by("nombre")
@@ -172,6 +186,8 @@ class FormularioCDIForm(forms.ModelForm):
 
         if province:
             self.fields[province_field].initial = province
+        if department:
+            self.fields[department_field].initial = department
         if municipality:
             self.fields[municipality_field].initial = municipality
         if locality:
