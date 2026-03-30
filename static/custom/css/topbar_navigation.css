@@ -134,22 +134,20 @@ header.main-header,
     top: calc(100% + 0.75rem);
     left: 0;
     display: none;
-    width: min(1080px, calc(100vw - 2rem));
+    width: min(420px, calc(100vw - 2rem));
     max-height: calc(100vh - 120px);
     overflow: auto;
-    padding: 1rem;
+    padding: 0.75rem;
     border: 1px solid rgba(231, 186, 97, 0.22);
     border-radius: 20px;
     background: rgba(35, 45, 79, 0.98);
     box-shadow: 0 24px 64px rgba(15, 23, 42, 0.28);
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 0.9rem;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
-.sisoc-topbar-menu > .nav-item.is-open > .nav-treeview,
-.sisoc-topbar-menu > .nav-item:hover > .nav-treeview,
-.sisoc-topbar-menu > .nav-item:focus-within > .nav-treeview {
-    display: grid;
+.sisoc-topbar-menu > .nav-item.is-open > .nav-treeview {
+    display: flex;
 }
 
 .sisoc-topbar-menu > .nav-item > .nav-treeview > .nav-item {
@@ -157,7 +155,7 @@ header.main-header,
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px;
-    padding: 0.35rem;
+    padding: 0.25rem;
 }
 
 .sisoc-topbar-menu > .nav-item > .nav-treeview > .nav-item > .nav-link {
@@ -181,10 +179,12 @@ header.main-header,
     width: 100%;
     max-height: none;
     overflow: visible;
-    padding: 0;
+    margin-top: 0.2rem;
+    padding: 0.25rem 0 0 0.85rem;
     border: 0;
     background: transparent;
     box-shadow: none;
+    border-left: 1px solid rgba(231, 186, 97, 0.18);
 }
 
 .sisoc-topbar-menu .nav-treeview .nav-treeview .nav-item {
