@@ -371,9 +371,7 @@ class ProcesarExpedienteView(View):
                     nom = d.get("nombre", "")
                     estado = d.get("estado_programa") or d.get("motivo") or "-"
                     expid = d.get("expediente_origen_id", "-")
-                    preview.append(
-                        f"• {doc} — {ape}, {nom} ({estado}) — Exp #{expid}"
-                    )
+                    preview.append(f"• {doc} — {ape}, {nom} ({estado}) — Exp #{expid}")
 
                 extra = ""
                 if len(det) > 10:
@@ -466,9 +464,7 @@ class ExpedientePreviewExcelView(View):
         logger.debug("PREVIEW: %s %s", request.method, request.get_full_path())
         archivo = request.FILES.get("excel_masivo")
         if not archivo:
-            return JsonResponse(
-                {"error": "No se recibió ningún archivo."}, status=400
-            )
+            return JsonResponse({"error": "No se recibió ningún archivo."}, status=400)
 
         raw_limit = request.POST.get("limit") or request.GET.get("limit")
         max_rows = _parse_limit(raw_limit, default=None, max_cap=5000)
