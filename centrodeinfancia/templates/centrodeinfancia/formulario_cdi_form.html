@@ -221,6 +221,7 @@
 
 {% block customJS %}
     <script nonce="{{ request.csp_nonce }}">
+        var ajaxLoadDepartamentosIpiUrl = "{% url 'centrodeinfancia_ajax_load_departamentos_ipi' %}";
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>
@@ -334,10 +335,32 @@
 
             function setupGeoCascade(config) {
                 const provincia = document.querySelector(config.provincia);
+                const departamento = document.querySelector(config.departamento);
                 const municipio = document.querySelector(config.municipio);
                 const localidad = document.querySelector(config.localidad);
-                if (!provincia || !municipio || !localidad) {
+                if (!provincia || !departamento || !municipio || !localidad) {
                     return;
+                }
+
+                async function loadDepartamentos(selectedDepartamento) {
+                    if (!provincia.value) {
+                        replaceOptions(
+                            departamento,
+                            [],
+                            "Seleccione un departamento",
+                            "",
+                        );
+                        return;
+                    }
+                    const departamentos = await fetchOptions(
+                        `${ajaxLoadDepartamentosIpiUrl}?provincia_id=${encodeURIComponent(provincia.value)}`
+                    );
+                    replaceOptions(
+                        departamento,
+                        departamentos,
+                        "Seleccione un departamento",
+                        selectedDepartamento || ""
+                    );
                 }
 
                 async function loadMunicipios(selectedMunicipio, selectedLocalidad) {
@@ -375,6 +398,7 @@
                 }
 
                 provincia.addEventListener("change", function() {
+                    loadDepartamentos("");
                     loadMunicipios("", "");
                 });
                 municipio.addEventListener("change", function() {
@@ -382,6 +406,7 @@
                 });
 
                 if (provincia.value) {
+                    loadDepartamentos(departamento.value);
                     loadMunicipios(municipio.value, localidad.value);
                 }
             }
@@ -457,11 +482,13 @@
 
             setupGeoCascade({
                 provincia: "#id_provincia_cdi",
+                departamento: "#id_departamento_cdi",
                 municipio: "#id_municipio_cdi",
                 localidad: "#id_localidad_cdi",
             });
             setupGeoCascade({
                 provincia: "#id_provincia_organizacion",
+                departamento: "#id_departamento_organizacion",
                 municipio: "#id_municipio_organizacion",
                 localidad: "#id_localidad_organizacion",
             });

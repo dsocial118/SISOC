@@ -9,6 +9,8 @@
 - El formulario de `CentroDeInfancia` muestra además `decil_ipi` en un campo no editable a continuación de `departamento`.
 - La vista de detalle de `CentroDeInfancia` expone el `decil_ipi` resuelto desde el departamento asociado.
 - Se agrega el fixture `centrodeinfancia/fixtures/departamento_ipi.json` con 526 registros generados desde el archivo `.xlsx` provisto.
+- `FormularioCDI` normaliza `departamento_cdi` y `departamento_organizacion` como `ForeignKey` a `DepartamentoIpi`.
+- `FormularioCDI` mantiene `departamento_domicilio_organizacion` como texto libre porque representa el departamento/oficina del domicilio y no un departamento geográfico.
 
 ## Decisión de diseño
 
@@ -16,10 +18,10 @@
 - `provincia` en `DepartamentoIpi` referencia a `core.Provincia` para evitar duplicar la entidad provincial y facilitar filtros/consistencias con el resto del repo.
 - La carga inicial se entrega como fixture para integrarse con el flujo existente de `load_fixtures` del repo y evitar un comando específico de única ocasión.
 - `decil_ipi` no se persiste en `CentroDeInfancia`: se resuelve siempre desde la información del `DepartamentoIpi` seleccionado para evitar duplicación y desincronización de datos.
+- La migración de `FormularioCDI` conserva datos previos solo cuando encuentra coincidencia exacta entre provincia y nombre de departamento en el catálogo IPI; los casos no mapeables quedan nulos para revisión manual.
 
 ## Alcance explícitamente no incluido
 
-- No se modifica `FormularioCDI`.
 - No se ejecuta una carga automática en migración.
 
 ## Carga futura sugerida

@@ -379,7 +379,13 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
         related_name="+",
     )
-    departamento_cdi = models.CharField(max_length=255, blank=True, null=True)
+    departamento_cdi = models.ForeignKey(
+        DepartamentoIpi,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
     municipio_cdi = models.ForeignKey(
         Municipio,
         on_delete=models.SET_NULL,
@@ -464,7 +470,13 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
         related_name="+",
     )
-    departamento_organizacion = models.CharField(max_length=255, blank=True, null=True)
+    departamento_organizacion = models.ForeignKey(
+        DepartamentoIpi,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
     municipio_organizacion = models.ForeignKey(
         Municipio,
         on_delete=models.SET_NULL,
@@ -930,6 +942,12 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         errors = {}
         relation_rules = (
             (
+                "departamento_cdi",
+                "provincia_cdi",
+                "provincia_id",
+                "El departamento no pertenece a la provincia indicada.",
+            ),
+            (
                 "municipio_cdi",
                 "provincia_cdi",
                 "provincia_id",
@@ -940,6 +958,12 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
                 "municipio_cdi",
                 "municipio_id",
                 "La localidad no pertenece al municipio indicado.",
+            ),
+            (
+                "departamento_organizacion",
+                "provincia_organizacion",
+                "provincia_id",
+                "El departamento no pertenece a la provincia indicada.",
             ),
             (
                 "municipio_organizacion",

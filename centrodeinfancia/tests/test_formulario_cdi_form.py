@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 from centrodeinfancia.forms import FormularioCDIForm
 from centrodeinfancia.formulario_cdi_schema import CAMPOS_OPCIONES, ETIQUETAS_CAMPOS
-from centrodeinfancia.models import CentroDeInfancia
+from centrodeinfancia.models import CentroDeInfancia, DepartamentoIpi, FormularioCDI
 from core.models import Localidad, Municipio, Provincia
 
 
@@ -91,6 +91,96 @@ def test_formulario_cdi_filtra_municipio_y_localidad_por_ubicacion_seleccionada(
 
     assert municipio_ids == {municipio_ba.id}
     assert localidad_ids == {localidad_ba.id}
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_filtra_departamentos_por_provincia():
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
+    departamento_ba = DepartamentoIpi.objects.create(
+        codigo_departamento="02001",
+        provincia=provincia_ba,
+        nombre="Comuna 1",
+    )
+    DepartamentoIpi.objects.create(
+        codigo_departamento="82001",
+        provincia=provincia_sf,
+        nombre="Rosario",
+    )
+
+    form = FormularioCDIForm(data={"provincia_cdi": provincia_ba.pk})
+
+    departamento_ids = set(
+        form.fields["departamento_cdi"].queryset.values_list("id", flat=True)
+    )
+
+    assert departamento_ids == {departamento_ba.id}
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_rechaza_departamento_que_no_pertenece_a_la_provincia():
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
+    departamento_sf = DepartamentoIpi.objects.create(
+        codigo_departamento="82001",
+        provincia=provincia_sf,
+        nombre="Rosario",
+    )
+
+    form = FormularioCDIForm(
+        data={
+            "nombre_cdi": "CDI Invalido",
+            "codigo_cdi": "CDI-000001",
+            "provincia_cdi": provincia_ba.pk,
+            "departamento_cdi": departamento_sf.pk,
+            "source_form_version": 1,
+        }
+    )
+
+    assert not form.is_valid()
+    assert "departamento_cdi" in form.errors
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_rechaza_departamento_organizacion_invalido():
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
+    departamento_sf = DepartamentoIpi.objects.create(
+        codigo_departamento="82001",
+        provincia=provincia_sf,
+        nombre="Rosario",
+    )
+
+    form = FormularioCDIForm(
+        data={
+            "nombre_cdi": "CDI Invalido",
+            "codigo_cdi": "CDI-000001",
+            "provincia_organizacion": provincia_ba.pk,
+            "departamento_organizacion": departamento_sf.pk,
+            "source_form_version": 1,
+        }
+    )
+
+    assert not form.is_valid()
+    assert "departamento_organizacion" in form.errors
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_inicializa_departamento_desde_la_instancia():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    departamento = DepartamentoIpi.objects.create(
+        codigo_departamento="02001",
+        provincia=provincia,
+        nombre="Comuna 1",
+    )
+    formulario = FormularioCDI.objects.create(
+        provincia_cdi=provincia,
+        departamento_cdi=departamento,
+    )
+
+    form = FormularioCDIForm(instance=formulario)
+
+    assert form.fields["departamento_cdi"].initial == departamento
 
 
 @pytest.mark.django_db
