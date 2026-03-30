@@ -1,65 +1,49 @@
 {% load static %}
 {% with pagina_actual=request.resolver_match.route %}
-    <nav class="app-header navbar navbar-expand bg-body">
-        <div class="container-fluid">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
-                        <i class="bi bi-list"></i>
-                    </a>
-                </li>
-            </ul>
-            <ul class="navbar-nav ms-auto align-items-center flex-wrap gap-1 gap-md-2">
-                <li class="nav-item">
-                    <span class="nav-link d-flex align-items-center">
-                        <i class="bi bi-person-fill me-2"></i>
-                        <strong class="d-none d-md-inline">{{ user.username }}</strong>
+    <nav class="app-header navbar navbar-expand bg-body sisoc-topbar">
+        <div class="container-fluid sisoc-topbar-shell">
+            <div class="d-flex align-items-center gap-2 sisoc-topbar-brand">
+                <button class="btn btn-link d-inline-flex d-lg-none p-0 text-white"
+                        type="button"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileNavigationNew"
+                        aria-controls="mobileNavigationNew"
+                        aria-label="Abrir menu">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <a href="{% url 'dashboard' %}" class="brand-link d-flex align-items-center">
+                    <img src="{% static 'custom/img/presidencia.png' %}"
+                         alt="SISOC"
+                         class="brand-image mt-1" />
+                    <span class="brand-text fw-bold pt-2 text-white">SiSOC</span>
+                </a>
+            </div>
+            <div class="sisoc-topbar-nav d-none d-lg-block">
+                <ul class="nav sisoc-topbar-menu">
+                    {% include 'includes/sidebar/new_opciones.html' %}
+                </ul>
+            </div>
+            <div class="sisoc-topbar-actions">
+                <div class="sisoc-topbar-user d-none d-xl-inline-flex">
+                    <span class="sisoc-topbar-user__avatar">{{ request.user.username|first|upper }}</span>
+                    <span class="sisoc-topbar-user__meta">
+                        <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+                        <small>Acceso activo</small>
                     </span>
-                </li>
-                <li class="nav-item circle-btn dropdown">
-                    <button class="btn btn-link nav-link d-flex align-items-center text-body"
-                            id="bd-theme"
-                            type="button"
-                            aria-expanded="false"
-                            data-bs-toggle="dropdown"
-                            data-bs-display="static">
-                        <span class="theme-icon-active ms-2"><i class=""></i></span>
-                        <span class="d-lg-none" id="bd-theme-text"></span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end"
-                        aria-labelledby="bd-theme-text"
-                        style="--bs-dropdown-min-width: 8rem">
-                        <li>
-                            <button type="button"
-                                    class="dropdown-item d-flex align-items-center active"
-                                    data-bs-theme-value="dark"
-                                    aria-pressed="true">
-                                <i class="bi bi-moon-fill me-2"></i>
-                                Oscuro
-                                <i class="bi bi-check-lg ms-auto"></i>
-                            </button>
-                        </li>
-                    </ul>
-                </li>
-                <li class="nav-item circle-btn">
-                    <a class="nav-link text-body" href="#" data-lte-toggle="fullscreen">
-                        <i data-lte-icon="maximize" class="bi bi-arrows-fullscreen"></i>
-                        <i data-lte-icon="minimize"
-                           class="bi bi-fullscreen-exit"
-                           style="display: none"></i>
-                    </a>
-                </li>
-                <li class="nav-item circle-btn">
-                    <a class="nav-link text-body" href="{% url 'changelog' %}">
-                        <i class="bi bi-megaphone-fill"></i>
-                    </a>
-                </li>
-                <li class="nav-item circle-btn">
-                    <a class="nav-link text-body" href="{% url 'logout' %}">
-                        <i class="bi bi-box-arrow-right"></i>
-                    </a>
-                </li>
-            </ul>
+                </div>
+                <a class="sisoc-topbar-action" href="{% url 'changelog' %}" aria-label="Novedades">
+                    <i class="bi bi-megaphone-fill"></i>
+                </a>
+                <a class="sisoc-topbar-action" href="#" data-lte-toggle="fullscreen" aria-label="Pantalla completa">
+                    <i data-lte-icon="maximize" class="bi bi-arrows-fullscreen"></i>
+                    <i data-lte-icon="minimize"
+                       class="bi bi-fullscreen-exit"
+                       style="display: none"></i>
+                </a>
+                <a class="sisoc-topbar-action" href="{% url 'logout' %}" aria-label="Cerrar sesion">
+                    <i class="bi bi-box-arrow-right"></i>
+                </a>
+            </div>
         </div>
     </nav>
     {% include "includes/scripts/theme_dark_dropdown_script.html" %}

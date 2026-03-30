@@ -1,14 +1,26 @@
 {% load static %}
-<aside class="app-sidebar shadow">
-    <div class="sidebar-wrapper">
-        <nav class="mt-2">
-            <ul class="nav sidebar-menu flex-column"
-                data-lte-toggle="treeview"
-                role="menu"
-                data-accordion="false">
-                {% include 'includes/sidebar/opciones.html' %}
-                {% block menu-adicional %}{% endblock %}
-            </ul>
-        </nav>
+<div class="offcanvas offcanvas-start sisoc-mobile-nav d-lg-none"
+     tabindex="-1"
+     id="mobileNavigation"
+     aria-labelledby="mobileNavigationLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="mobileNavigationLabel">Menu principal</h5>
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="offcanvas"
+                aria-label="Cerrar"></button>
     </div>
-</aside>
+    <div class="offcanvas-body px-0">
+        <div class="sidebar-wrapper px-3 pb-4">
+            <nav class="mt-2">
+                <ul class="nav sidebar-menu sisoc-mobile-menu flex-column"
+                    data-lte-toggle="treeview"
+                    role="menu"
+                    data-accordion="false">
+                    {% include 'includes/sidebar/opciones.html' with show_user_info=True %}
+                    {% block menu-adicional %}{% endblock %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>

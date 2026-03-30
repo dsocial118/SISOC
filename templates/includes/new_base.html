@@ -86,6 +86,7 @@
         <link rel="stylesheet" href="{% static 'custom/css/nuevo_comedor.css' %}" />
         <link rel="stylesheet" href="{% static 'custom/css/utils.css' %}" />
         <link rel="stylesheet" href="{% static 'custom/css/hitos.css' %}" />
+        <link rel="stylesheet" href="{% static 'custom/css/topbar_navigation.css' %}" />
         {% comment %} <link rel="stylesheet" href="{% static 'custom/css/nuevoColorPrimary.css' %}" /> {% endcomment %}
         {% comment %} <link rel="stylesheet" href="{% static 'custom/css/nuevoColorInfo.css' %}" /> {% endcomment %}
         <!-- Estilos adicionales por pagina-->
@@ -96,7 +97,7 @@
             {% block title %}{% endblock %}
         </title>
     </head>
-    <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary dark-mode dark-mode">
+    <body class="layout-fixed bg-body-tertiary dark-mode dark-mode">
         <div class="app-wrapper">
             {% include 'includes/new_navbar.html' %}
             {% include 'includes/sidebar/new_base.html' %}

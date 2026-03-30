@@ -92,6 +92,7 @@
         {% endcomment %}
         <link rel="stylesheet" href="{% static 'custom/css/utils.css' %}" />
         <link rel="stylesheet" href="{% static 'custom/css/main.css' %}" />
+        <link rel="stylesheet" href="{% static 'custom/css/topbar_navigation.css' %}" />
         <link rel="stylesheet" href="{% static 'custom/css/hitos.css' %}" />
         {% comment %}
         <link rel="stylesheet" href="{% static 'custom/css/nuevoColorPrimary.css' %}" />
@@ -105,7 +106,7 @@
             {% block title %}{% endblock %}
         </title>
     </head>
-    <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary dark-mode">
+    <body class="layout-fixed bg-body-tertiary dark-mode">
         {% include 'includes/header.html' %}
         <div class="app-wrapper">
             {% include 'includes/sidebar/base.html' %}

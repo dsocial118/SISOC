@@ -1,11 +1,13 @@
 {% load static %}
 {% with pagina_actual=request.resolver_match.route %}
     <header class="main-header">
-        <nav class="navbar d-flex flex-wrap align-items-center justify-content-between gap-2">
-            <div class="d-flex align-items-center gap-2">
+        <nav class="navbar sisoc-topbar-shell">
+            <div class="d-flex align-items-center gap-2 sisoc-topbar-brand">
                 <button class="btn btn-link d-inline-flex d-lg-none p-0 text-white"
                         type="button"
-                        data-lte-toggle="sidebar"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileNavigation"
+                        aria-controls="mobileNavigation"
                         aria-label="Abrir menu">
                     <i class="bi bi-list fs-2"></i>
                 </button>
@@ -19,68 +21,48 @@
                     </span>
                 </a>
             </div>
-            <ul class="nav-links mb-0 d-flex align-items-center flex-wrap">
-                <!--li class="nav-item">
-                    <span class="nav-link nav-link-rounded">
-                        <img src="{% static 'custom/img/iconos_navbar/user.svg' %}" alt="Usuario" /> <!--strong>{{ user.username }}</strong -->
-<!--/span>
-                </li -->
-<!--li class="nav-item circle-btn dropdown">
-                    <button class="btn btn-link nav-link nav-link-rounded d-flex align-items-center" id="bd-theme" type="button" aria-expanded="false" data-bs-toggle="dropdown" data-bs-display="static">
-                        <span class="theme-icon-active ms-2"><i class=""></i></span>
-                        <span class="d-lg-none" id="bd-theme-text"></span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme-text" style="--bs-dropdown-min-width: 8rem">
-                        <li>
-                            <button type="button" class="dropdown-item d-flex align-items-center active" data-bs-theme-value="light" aria-pressed="false">
-                                <i class="bi bi-sun-fill me-2"></i>
-                                Claro
-                                <i class="bi bi-check-lg ms-auto d-none"></i>
-                            </button>
-                        </li>
-                        <li>
-                            <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="false">
-                                <i class="bi bi-moon-fill me-2"></i>
-                                Oscuro
-                                <i class="bi bi-check-lg ms-auto d-none"></i>
-                            </button>
-                        </li>
-                    </ul>
-                </li -->
-<!--li class="nav-item">
-            <a class="nav-link nav-link-rounded" href="#">
-                <img src="{% static 'custom/img/iconos_navbar/chat.svg' %}" alt="Chat" />
-            </a>
-        </li -->
-<li class="nav-item circle-btn">
-<a class="nav-link nav-link-rounded" href="{% url 'logout' %}">
-<img src="{% static 'custom/img/iconos_navbar/exit.svg' %}" alt="Chat" />
-</a>
-</li>
-</ul>
-</nav>
-</header>
-<script nonce="{{ request.csp_nonce }}">
-    (() => {
-        "use strict";
+            <div class="sisoc-topbar-nav d-none d-lg-block">
+                <ul class="nav sisoc-topbar-menu">
+                    {% include 'includes/sidebar/opciones.html' with show_user_info=False %}
+                </ul>
+            </div>
+            <div class="sisoc-topbar-actions">
+                <div class="sisoc-topbar-user d-none d-xl-inline-flex">
+                    <span class="sisoc-topbar-user__avatar">{{ request.user.username|first|upper }}</span>
+                    <span class="sisoc-topbar-user__meta">
+                        <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+                        <small>{{ request.user.profile.rol|default:"-" }}</small>
+                    </span>
+                </div>
+                <a class="sisoc-topbar-action"
+                   href="{% url 'logout' %}"
+                   aria-label="Cerrar sesion">
+                    <img src="{% static 'custom/img/iconos_navbar/exit.svg' %}" alt="" />
+                </a>
+            </div>
+        </nav>
+    </header>
+    <script nonce="{{ request.csp_nonce }}">
+        (() => {
+            "use strict";
 
-        const setDarkTheme = () => {
-            document.documentElement.setAttribute("data-bs-theme", "dark");
-            try {
-                localStorage.setItem("theme", "dark");
-            } catch (err) {
-                console.warn("No se pudo persistir el tema oscuro:", err);
+            const setDarkTheme = () => {
+                document.documentElement.setAttribute("data-bs-theme", "dark");
+                try {
+                    localStorage.setItem("theme", "dark");
+                } catch (err) {
+                    console.warn("No se pudo persistir el tema oscuro:", err);
+                }
+            };
+
+            setDarkTheme();
+
+            if (window.matchMedia) {
+                const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+                mediaQuery.addEventListener("change", setDarkTheme);
             }
-        };
 
-        setDarkTheme();
-
-        if (window.matchMedia) {
-            const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-            mediaQuery.addEventListener("change", setDarkTheme);
-        }
-
-        window.addEventListener("DOMContentLoaded", setDarkTheme);
-    })();
-</script>
+            window.addEventListener("DOMContentLoaded", setDarkTheme);
+        })();
+    </script>
 {% endwith %}
