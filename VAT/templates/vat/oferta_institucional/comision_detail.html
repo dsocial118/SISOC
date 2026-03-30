@@ -707,7 +707,7 @@
                                     <input type="text"
                                            class="form-control"
                                            id="inscripcionDocumentoSearch"
-                                           placeholder="Ingrese DNI (mín. 4 dígitos)"
+                                           placeholder="Ingrese DNI (mín. 7 dígitos)"
                                            inputmode="numeric" />
                                     <button type="button"
                                             class="btn btn-outline-secondary"
@@ -910,8 +910,8 @@
             hideQuickForm();
             resetAlert();
 
-            if (!/^\d{4,}$/.test(query)) {
-                showAlert('Ingrese un documento numérico de al menos 4 dígitos.', 'warning');
+            if (!/^\d{7,}$/.test(query)) {
+                showAlert('Ingrese un documento numérico de al menos 7 dígitos.', 'warning');
                 return;
             }
 
