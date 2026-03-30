@@ -2034,19 +2034,25 @@
                                                     <small style="color: rgba(255,255,255,0.7);">Créditos totales</small>
                                                     <div style="font-size: 0.95rem;
                                                                 color: rgba(255,255,255,0.95);
-                                                                margin-top: 0.25rem">{{ programa_vat.creditos_totales }}</div>
+                                                                margin-top: 0.25rem">
+                                                        {{ programa_vat.creditos_totales }}
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <small style="color: rgba(255,255,255,0.7);">Créditos actuales</small>
                                                     <div style="font-size: 0.95rem;
                                                                 color: rgba(255,255,255,0.95);
-                                                                margin-top: 0.25rem">{{ programa_vat.creditos_actuales }}</div>
+                                                                margin-top: 0.25rem">
+                                                        {{ programa_vat.creditos_actuales }}
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <small style="color: rgba(255,255,255,0.7);">Cursos asignados</small>
                                                     <div style="font-size: 0.95rem;
                                                                 color: rgba(255,255,255,0.95);
-                                                                margin-top: 0.25rem">{{ programa_vat.cursos_asignados }}</div>
+                                                                margin-top: 0.25rem">
+                                                        {{ programa_vat.cursos_asignados }}
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <small style="color: rgba(255,255,255,0.7);">Asistencia</small>
@@ -2061,7 +2067,7 @@
                                             {% if programa_vat.inscripciones %}
                                                 <h6 style="margin-top: 1rem;
                                                            margin-bottom: 0.75rem;
-                                                           color: rgba(255,255,255,0.92);">Cursos asignados</h6>
+                                                           color: rgba(255,255,255,0.92)">Cursos asignados</h6>
                                                 <table class="table table-sm">
                                                     <thead>
                                                         <tr>
@@ -2104,7 +2110,7 @@
                                             {% if programa_vat.inscripciones_oferta %}
                                                 <h6 style="margin-top: 1rem;
                                                            margin-bottom: 0.75rem;
-                                                           color: rgba(255,255,255,0.92);">Inscripciones de oferta</h6>
+                                                           color: rgba(255,255,255,0.92)">Inscripciones de oferta</h6>
                                                 <table class="table table-sm">
                                                     <thead>
                                                         <tr>
@@ -2148,6 +2154,53 @@
             </div>
         </div>
 
+
+        {% if colaboraciones_comedor %}
+            <div class="row px-4 mt-3">
+                <div class="col-12">
+                    <div class="tabla-legajo">
+                        <h5 class="mb-3">Colaboraciones en comedores</h5>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Comedor</th>
+                                    <th>Fecha alta</th>
+                                    <th>Fecha baja</th>
+                                    <th>Actividades</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for colaboracion in colaboraciones_comedor %}
+                                    <tr>
+                                        <td>
+                                            {% if colaboracion.comedor and colaboracion.comedor.id %}
+                                                <a href="{% url 'comedor_detalle' colaboracion.comedor.id %}"
+                                                   style="color: #F5A623;
+                                                          text-decoration: underline">
+                                                    {{ colaboracion.comedor.nombre }}
+                                                </a>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ colaboracion.fecha_alta|date:"d/m/Y"|default:"-" }}</td>
+                                        <td>{{ colaboracion.fecha_baja|date:"d/m/Y"|default:"-" }}</td>
+                                        <td>
+                                            {% for actividad in colaboracion.actividades.all %}
+                                                {{ actividad.nombre }}
+                                                {% if not forloop.last %},{% endif %}
+                                            {% empty %}
+                                                -
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
 
     </div>
 

@@ -72,7 +72,9 @@ class SesionComisionService:
         fechas_preservadas = set(
             SesionComision.objects.filter(
                 horario=horario,
-            ).exclude(estado="programada").values_list("fecha", flat=True)
+            )
+            .exclude(estado="programada")
+            .values_list("fecha", flat=True)
         )
 
         # Eliminar solo las programadas
@@ -101,6 +103,7 @@ class SesionComisionService:
     def eliminar_para_horario(horario):
         """Elimina sesiones programadas de un horario que se va a borrar."""
         from VAT.models import SesionComision
+
         deleted, _ = SesionComision.objects.filter(
             horario=horario, estado="programada"
         ).delete()

@@ -1,7 +1,13 @@
 import logging
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
+from django.views.generic import (
+    ListView,
+    CreateView,
+    DetailView,
+    UpdateView,
+    DeleteView,
+)
 from django.contrib import messages
 from django.db.models import Q, Count
 
@@ -21,6 +27,7 @@ logger = logging.getLogger("django")
 # ============================================================================
 # EVALUACIÓN VIEWS
 # ============================================================================
+
 
 class EvaluacionListView(LoginRequiredMixin, ListView):
     model = Evaluacion
@@ -74,7 +81,7 @@ class EvaluacionDetailView(LoginRequiredMixin, DetailView):
         evaluacion = self.get_object()
         context["resultados"] = ResultadoEvaluacion.objects.filter(
             evaluacion=evaluacion
-        ).select_related("inscripcion__persona")
+        ).select_related("inscripcion__ciudadano")
         context["total_resultados"] = context["resultados"].count()
         context["aprobados"] = context["resultados"].filter(aprobo=True).count()
         return context
@@ -102,6 +109,7 @@ class EvaluacionDeleteView(LoginRequiredMixin, DeleteView):
 # RESULTADO EVALUACIÓN VIEWS
 # ============================================================================
 
+
 class ResultadoEvaluacionListView(LoginRequiredMixin, ListView):
     model = ResultadoEvaluacion
     template_name = "vat/evaluacion/resultado_list.html"
@@ -110,7 +118,7 @@ class ResultadoEvaluacionListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = ResultadoEvaluacion.objects.select_related(
-            "evaluacion", "inscripcion__persona"
+            "evaluacion", "inscripcion__ciudadano"
         ).order_by("-fecha_registro")
 
         evaluacion_id = self.request.GET.get("evaluacion_id")
@@ -126,8 +134,8 @@ class ResultadoEvaluacionListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(calificacion=calificacion)
         if buscar:
             queryset = queryset.filter(
-                Q(inscripcion__persona__apellido__icontains=buscar)
-                | Q(inscripcion__persona__nombre__icontains=buscar)
+                Q(inscripcion__ciudadano__apellido__icontains=buscar)
+                | Q(inscripcion__ciudadano__nombre__icontains=buscar)
                 | Q(evaluacion__nombre__icontains=buscar)
             )
 
@@ -160,11 +168,15 @@ class ResultadoEvaluacionUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         form.instance.registrado_por = self.request.user
-        messages.success(self.request, "Resultado de evaluación actualizado exitosamente.")
+        messages.success(
+            self.request, "Resultado de evaluación actualizado exitosamente."
+        )
         return super().form_valid(form)
 
 
-class ResultadoEvaluacionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+class ResultadoEvaluacionDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     model = ResultadoEvaluacion
     template_name = "vat/evaluacion/resultado_confirm_delete.html"
     context_object_name = "resultado"

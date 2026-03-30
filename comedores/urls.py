@@ -1,6 +1,10 @@
-from django.urls import path
 from django.contrib.auth.decorators import login_required
+from django.urls import path
+from django.views.generic.base import RedirectView
 from comedores.views import (
+    ColaboradorEspacioCreateView,
+    ColaboradorEspacioDeleteView,
+    ColaboradorEspacioUpdateView,
     ComedorCreateView,
     ComedorDeleteView,
     ComedorDetailView,
@@ -31,9 +35,6 @@ from comedores.views_territorial import (
     sincronizar_territoriales_api,
     estadisticas_cache_territoriales,
 )
-
-# Views de prueba eliminadas
-
 from intervenciones.views import (
     sub_estados_intervenciones_ajax,
     IntervencionCreateView,
@@ -103,6 +104,27 @@ urlpatterns = [
             ObservacionCreateView.as_view()
         ),
         name="observacion_crear",
+    ),
+    path(
+        "comedores/<int:pk>/colaboradores/crear/",
+        permissions_any_required(["comedores.add_colaboradorespacio"])(
+            ColaboradorEspacioCreateView.as_view()
+        ),
+        name="colaborador_espacio_crear",
+    ),
+    path(
+        "comedores/<int:pk>/colaboradores/<int:pk2>/editar/",
+        permissions_any_required(["comedores.change_colaboradorespacio"])(
+            ColaboradorEspacioUpdateView.as_view()
+        ),
+        name="colaborador_espacio_editar",
+    ),
+    path(
+        "comedores/<int:pk>/colaboradores/<int:pk2>/eliminar/",
+        permissions_any_required(["comedores.delete_colaboradorespacio"])(
+            ColaboradorEspacioDeleteView.as_view()
+        ),
+        name="colaborador_espacio_eliminar",
     ),
     path(
         "comedores/observacion/<int:pk>",
@@ -257,7 +279,6 @@ urlpatterns = [
         relevamiento_crear_editar_ajax,
         name="relevamiento_create_edit_ajax",
     ),
-    # esto es prueba de nuevo front para el comedor
     path(
         "comedores_nuevo/<int:pk>",
         permissions_any_required(
@@ -266,7 +287,13 @@ urlpatterns = [
                 "admisiones.view_admision",
                 "acompanamientos.view_informacionrelevante",
             ]
-        )(ComedorDetailView.as_view(template_name="comedor/new_comedor_detail.html")),
+        )(
+            RedirectView.as_view(
+                pattern_name="comedor_detalle",
+                permanent=True,
+                query_string=True,
+            )
+        ),
         name="nuevo_comedor_detalle",
     ),
     path(

@@ -13,3 +13,246 @@
 .card-header-custom i {
     margin-right: 12px;
 }
+
+#mobile-organizaciones-wrapper select,
+#mobile-comedores-wrapper select,
+#mobile-organizaciones-wrapper .select2-container,
+#mobile-comedores-wrapper .select2-container,
+#mobile-organizaciones-wrapper .select2-selection,
+#mobile-comedores-wrapper .select2-selection,
+#mobile-organizaciones-wrapper .select2-selection__rendered,
+#mobile-comedores-wrapper .select2-selection__rendered {
+    display: none !important;
+}
+
+#mobile-organizaciones-wrapper label[for="id_organizaciones_pwa"],
+#mobile-comedores-wrapper label[for="id_comedores_pwa"],
+#mobile-organizaciones-wrapper .helptext,
+#mobile-comedores-wrapper .helptext {
+    display: none;
+}
+
+.mobile-organizaciones-table-panel,
+.mobile-selector-table-panel {
+    border: 1px solid rgba(224, 224, 224, 0.18);
+    border-radius: 0.85rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+#mobile-organizaciones-wrapper,
+#mobile-comedores-wrapper,
+#mobile-organizaciones-table-panel,
+#mobile-comedores-organizacion-panel,
+#mobile-comedores-table-panel,
+#mobile-association-choice-wrapper {
+    background-color: transparent;
+}
+
+.mobile-organizaciones-table-scroll,
+.mobile-selector-table-scroll {
+    max-height: 18rem;
+    overflow-y: auto;
+    border: 1px solid rgba(224, 224, 224, 0.14);
+    border-radius: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+#mobile-organizaciones-table-panel .table-responsive,
+#mobile-comedores-organizacion-panel .table-responsive,
+#mobile-comedores-table-panel .table-responsive {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.mobile-organizaciones-table-scroll thead th,
+.mobile-selector-table-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: #13253a;
+    color: #f5f7fa;
+}
+
+.mobile-org-check-column,
+.mobile-selector-check-column {
+    width: 7rem;
+    min-width: 7rem;
+}
+
+.mobile-organizaciones-table-scroll td,
+.mobile-organizaciones-table-scroll th,
+.mobile-selector-table-scroll td,
+.mobile-selector-table-scroll th {
+    white-space: normal;
+    vertical-align: middle;
+}
+
+.mobile-selector-intro {
+    margin-bottom: 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid rgba(224, 224, 224, 0.18);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.05);
+    color: #e7edf5;
+}
+
+.mobile-selector-intro h6 {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.mobile-tabs {
+    display: inline-flex;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+}
+
+.mobile-tab-button {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(224, 224, 224, 0.18);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.82);
+    font-weight: 600;
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.mobile-tab-button:hover {
+    border-color: rgba(231, 186, 97, 0.55);
+    color: #ffffff;
+}
+
+.mobile-tab-button.is-active {
+    background: linear-gradient(135deg, rgba(231, 186, 97, 0.24), rgba(231, 186, 97, 0.12));
+    border-color: rgba(231, 186, 97, 0.55);
+    color: #ffffff;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+}
+
+.mobile-selector-panel__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.mobile-selector-panel__header h6 {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.mobile-selector-panel__header p {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.92rem;
+}
+
+#mobile-organizaciones-table-panel .form-label,
+#mobile-comedores-organizacion-panel .form-label,
+#mobile-comedores-table-panel .form-label {
+    color: #f5f7fa;
+}
+
+.mobile-selector-search {
+    border-radius: 0.7rem;
+    border-color: rgba(224, 224, 224, 0.18);
+    background-color: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+}
+
+.mobile-selector-search::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.mobile-organizaciones-table-scroll table,
+.mobile-selector-table-scroll table {
+    margin-bottom: 0;
+}
+
+.mobile-organizaciones-table-scroll tbody tr:hover,
+.mobile-selector-table-scroll tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.mobile-organizaciones-table-scroll thead th,
+.mobile-selector-table-scroll thead th,
+.mobile-organizaciones-table-scroll tbody td,
+.mobile-selector-table-scroll tbody td {
+    background-color: transparent;
+}
+
+.mobile-organizaciones-table-scroll tbody tr,
+.mobile-selector-table-scroll tbody tr {
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom-color: rgba(224, 224, 224, 0.12);
+}
+
+#mobile-organizaciones-table-panel table,
+#mobile-comedores-organizacion-panel table,
+#mobile-comedores-table-panel table,
+#mobile-organizaciones-table-panel thead,
+#mobile-comedores-organizacion-panel thead,
+#mobile-comedores-table-panel thead,
+#mobile-organizaciones-table-panel tbody,
+#mobile-comedores-organizacion-panel tbody,
+#mobile-comedores-table-panel tbody,
+#mobile-organizaciones-table-panel tr,
+#mobile-comedores-organizacion-panel tr,
+#mobile-comedores-table-panel tr,
+#mobile-organizaciones-table-panel th,
+#mobile-comedores-organizacion-panel th,
+#mobile-comedores-table-panel th,
+#mobile-organizaciones-table-panel td,
+#mobile-comedores-organizacion-panel td,
+#mobile-comedores-table-panel td,
+#mobile-organizaciones-table-panel label,
+#mobile-comedores-organizacion-panel label,
+#mobile-comedores-table-panel label {
+    background-color: transparent !important;
+}
+
+#mobile-organizaciones-table-panel tbody tr,
+#mobile-comedores-organizacion-panel tbody tr,
+#mobile-comedores-table-panel tbody tr {
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+
+#mobile-organizaciones-table-panel tbody tr:hover,
+#mobile-comedores-organizacion-panel tbody tr:hover,
+#mobile-comedores-table-panel tbody tr:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+#mobile-organizaciones-table-panel td,
+#mobile-comedores-organizacion-panel td,
+#mobile-comedores-table-panel td,
+#mobile-organizaciones-table-panel label,
+#mobile-comedores-organizacion-panel label,
+#mobile-comedores-table-panel label,
+#mobile-organizaciones-empty-state,
+#mobile-comedores-organizacion-hint,
+#mobile-comedores-organizacion-empty-state,
+#mobile-comedores-empty-state {
+    color: #f5f7fa;
+}
+
+@media (max-width: 768px) {
+    .mobile-tabs {
+        display: flex;
+        width: 100%;
+    }
+
+    .mobile-tab-button {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    .mobile-organizaciones-table-panel,
+    .mobile-selector-table-panel {
+        padding: 0.85rem;
+    }
+}

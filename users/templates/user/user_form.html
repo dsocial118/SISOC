@@ -50,9 +50,22 @@
                         </h5>
                     </div>
                     <div class="card-body">
+                        {% if temporary_password_visible %}
+                            <div class="alert alert-warning" role="alert">
+                                <strong>Contraseña temporal vigente:</strong>
+                                <span class="ml-2">{{ temporary_password_plaintext }}</span>
+                                <div class="small mt-2">Se mostrará aquí hasta que el usuario cambie su contraseña.</div>
+                            </div>
+                        {% endif %}
                         {{ form.username | as_crispy_field }}
                         {{ form.email | as_crispy_field }}
-                        {{ form.password | as_crispy_field }}
+                        <div id="password-field-wrapper">{{ form.password | as_crispy_field }}</div>
+                        <div id="mobile-password-help"
+                             class="alert alert-info mt-2 mb-0"
+                             style="display: none">
+                            Para usuarios con acceso a SISOC - Mobile la contraseña se genera automáticamente
+                            y deberá cambiarse en el primer ingreso.
+                        </div>
                     </div>
                 </div>
 
@@ -60,12 +73,144 @@
                 <div class="card card-custom mb-3 shadow-sm">
                     <div class="card-header card-header-custom">
                         <h5 class="mb-0">
-                            <i class="fas fa-mobile-alt mr-3"></i>Acceso PWA
+                            <i class="fas fa-mobile-alt mr-3"></i>Acceso SISOC - Mobile
                         </h5>
                     </div>
                     <div class="card-body">
-                        {{ form.es_representante_pwa | as_crispy_field }}
-                        {{ form.comedores_pwa | as_crispy_field }}
+                        <div id="mobile-toggle-wrapper">{{ form.es_representante_pwa | as_crispy_field }}</div>
+                        <div id="mobile-association-type-wrapper" style="display: none">{{ form.tipo_asociacion_pwa | as_crispy_field }}</div>
+                        <div id="mobile-association-choice-wrapper" class="mb-3">
+                            <div class="mobile-selector-intro">
+                                <div>
+                                    <h6 class="mb-1">Configuración de alcance mobile</h6>
+                                    <p class="mb-0">
+                                        Podés seleccionar una o más organizaciones, elegir todos o algunos
+                                        de sus espacios y además sumar espacios por fuera de esas organizaciones.
+                                    </p>
+                                </div>
+                            </div>
+                            <div id="mobile-tabs"
+                                 class="mobile-tabs"
+                                 role="tablist"
+                                 aria-label="Configuración de alcance">
+                                <button type="button"
+                                        class="mobile-tab-button is-active"
+                                        data-mobile-tab="organizaciones"
+                                        role="tab"
+                                        aria-selected="true">Organizaciones</button>
+                                <button type="button"
+                                        class="mobile-tab-button"
+                                        data-mobile-tab="espacios"
+                                        role="tab"
+                                        aria-selected="false">Espacios</button>
+                            </div>
+                        </div>
+                        <div id="mobile-organizaciones-wrapper">
+                            <div class="d-none">{{ form.organizaciones_pwa | as_crispy_field }}</div>
+                            <div id="mobile-organizaciones-table-panel"
+                                 class="mobile-organizaciones-table-panel">
+                                <div class="mobile-selector-panel__header">
+                                    <div>
+                                        <h6 class="mb-1">Organizaciones habilitadas</h6>
+                                        <p class="mb-0">Seleccioná una o más organizaciones para construir el alcance.</p>
+                                    </div>
+                                </div>
+                                <label class="form-label" for="mobile-organizaciones-search">Buscar organizaciones</label>
+                                <input type="text"
+                                       id="mobile-organizaciones-search"
+                                       class="form-control mobile-selector-search mb-3"
+                                       placeholder="Escriba para filtrar organizaciones" />
+                                <div class="table-responsive mobile-organizaciones-table-scroll">
+                                    <table class="table table-sm table-hover align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th class="mobile-org-check-column" scope="col">Seleccionar</th>
+                                                <th scope="col">Organización</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="mobile-organizaciones-table-body">
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p id="mobile-organizaciones-empty-state"
+                                   class="text-muted small mb-0 mt-2"
+                                   style="display: none">No hay organizaciones que coincidan con la búsqueda.</p>
+                            </div>
+                            <div id="mobile-comedores-organizacion-panel"
+                                 class="mobile-selector-table-panel mt-3">
+                                <div class="mobile-selector-panel__header">
+                                    <div>
+                                        <h6 class="mb-1">Espacios de las organizaciones seleccionadas</h6>
+                                        <p class="mb-0">
+                                            Al seleccionar una organización se marcan sus espacios y aquí podés
+                                            deseleccionar los que no correspondan.
+                                        </p>
+                                    </div>
+                                </div>
+                                <label class="form-label" for="mobile-comedores-organizacion-search">Buscar espacios de organizaciones</label>
+                                <input type="text"
+                                       id="mobile-comedores-organizacion-search"
+                                       class="form-control mobile-selector-search mb-3"
+                                       placeholder="Escriba para filtrar espacios de organizaciones" />
+                                <div class="table-responsive mobile-selector-table-scroll">
+                                    <table class="table table-sm table-hover align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th class="mobile-selector-check-column" scope="col">Seleccionar</th>
+                                                <th scope="col">Espacio</th>
+                                                <th scope="col">Organización</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="mobile-comedores-organizacion-table-body">
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p id="mobile-comedores-organizacion-hint"
+                                   class="text-muted small mb-0 mt-2">
+                                    Seleccioná al menos una organización para ver sus espacios.
+                                </p>
+                                <p id="mobile-comedores-organizacion-empty-state"
+                                   class="text-muted small mb-0 mt-2"
+                                   style="display: none">
+                                    No hay espacios de organizaciones que coincidan con la búsqueda.
+                                </p>
+                            </div>
+                        </div>
+                        <div id="mobile-comedores-wrapper">
+                            <div class="d-none">{{ form.comedores_pwa | as_crispy_field }}</div>
+                            <div id="mobile-comedores-table-panel" class="mobile-selector-table-panel">
+                                <div class="mobile-selector-panel__header">
+                                    <div>
+                                        <h6 class="mb-1">Espacios</h6>
+                                        <p class="mb-0">
+                                            Sumá espacios por fuera de las organizaciones seleccionadas.
+                                            Los espacios ya mostrados en la pestaña de organizaciones no se repiten acá.
+                                        </p>
+                                    </div>
+                                </div>
+                                <label class="form-label" for="mobile-comedores-search">Buscar espacios</label>
+                                <input type="text"
+                                       id="mobile-comedores-search"
+                                       class="form-control mobile-selector-search mb-3"
+                                       placeholder="Escriba para filtrar espacios" />
+                                <div class="table-responsive mobile-selector-table-scroll">
+                                    <table class="table table-sm table-hover align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th class="mobile-selector-check-column" scope="col">Seleccionar</th>
+                                                <th scope="col">Espacio</th>
+                                                <th scope="col">Organización</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="mobile-comedores-table-body">
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p id="mobile-comedores-empty-state"
+                                   class="text-muted small mb-0 mt-2"
+                                   style="display: none">No hay espacios que coincidan con la búsqueda.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -109,12 +254,304 @@
     <script nonce="{{ request.csp_nonce }}">
   (() => {
     const repCheckbox = document.getElementById('id_es_representante_pwa');
+    const tipoAsociacion = document.getElementById('id_tipo_asociacion_pwa');
+    const organizacionesSelect = document.getElementById('id_organizaciones_pwa');
+    const comedoresSelect = document.getElementById('id_comedores_pwa');
+    const mobileTabs = document.getElementById('mobile-tabs');
     const permisosCard = document.getElementById('backoffice-permisos-card');
     const configCard = document.getElementById('backoffice-config-card');
+    const passwordFieldWrapper = document.getElementById('password-field-wrapper');
+    const mobilePasswordHelp = document.getElementById('mobile-password-help');
+    const associationChoiceWrapper = document.getElementById('mobile-association-choice-wrapper');
+    const associationTypeWrapper = document.getElementById('mobile-association-type-wrapper');
+    const organizacionesWrapper = document.getElementById('mobile-organizaciones-wrapper');
+    const comedoresWrapper = document.getElementById('mobile-comedores-wrapper');
+    const organizacionesSearch = document.getElementById('mobile-organizaciones-search');
+    const organizacionesTableBody = document.getElementById('mobile-organizaciones-table-body');
+    const organizacionesEmptyState = document.getElementById('mobile-organizaciones-empty-state');
+    const comedoresOrganizacionSearch = document.getElementById('mobile-comedores-organizacion-search');
+    const comedoresOrganizacionTableBody = document.getElementById('mobile-comedores-organizacion-table-body');
+    const comedoresOrganizacionHint = document.getElementById('mobile-comedores-organizacion-hint');
+    const comedoresOrganizacionEmptyState = document.getElementById('mobile-comedores-organizacion-empty-state');
+    const comedoresSearch = document.getElementById('mobile-comedores-search');
+    const comedoresTableBody = document.getElementById('mobile-comedores-table-body');
+    const comedoresEmptyState = document.getElementById('mobile-comedores-empty-state');
 
-    if (!repCheckbox) {
+    if (!repCheckbox || !tipoAsociacion || !comedoresSelect || !organizacionesSelect || !mobileTabs) {
       return;
     }
+
+    let previousOrganizationIds = new Set(
+      Array.from(organizacionesSelect.selectedOptions).map((option) => option.value),
+    );
+    let activeTab = 'organizaciones';
+
+    const refreshSelect2 = (element) => {
+      if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+        window.jQuery(element).trigger('change.select2');
+      }
+    };
+
+    const escapeHtml = (value) => String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+
+    const getSelectedValues = (element) =>
+      Array.from(element.selectedOptions).map((option) => option.value).filter(Boolean);
+
+    const syncOrganizationTableFromSelect = () => {
+      if (!organizacionesTableBody) {
+        return;
+      }
+
+      const selectedOrganizationIds = new Set(getSelectedValues(organizacionesSelect));
+      organizacionesTableBody
+        .querySelectorAll('[data-organizacion-row]')
+        .forEach((row) => {
+          const checkbox = row.querySelector('input[type="checkbox"]');
+          if (!checkbox) {
+            return;
+          }
+          checkbox.checked = selectedOrganizationIds.has(checkbox.value);
+        });
+    };
+
+    const applyOrganizationSearch = () => {
+      if (!organizacionesTableBody) {
+        return;
+      }
+
+      const searchTerm = (organizacionesSearch?.value || '').trim().toLowerCase();
+      let visibleRows = 0;
+
+      organizacionesTableBody
+        .querySelectorAll('[data-organizacion-row]')
+        .forEach((row) => {
+          const name = (row.dataset.organizacionNombre || '').toLowerCase();
+          const matches = !searchTerm || name.includes(searchTerm);
+          row.style.display = matches ? '' : 'none';
+          if (matches) {
+            visibleRows += 1;
+          }
+        });
+
+      if (organizacionesEmptyState) {
+        organizacionesEmptyState.style.display = visibleRows === 0 ? '' : 'none';
+      }
+    };
+
+    const renderOrganizationTable = () => {
+      if (!organizacionesTableBody) {
+        return;
+      }
+
+      organizacionesTableBody.innerHTML = Array.from(organizacionesSelect.options)
+        .map((option) => `
+          <tr data-organizacion-row data-organizacion-nombre="${escapeHtml(option.text)}">
+            <td class="mobile-org-check-column">
+              <div class="form-check mb-0">
+                <input
+                  type="checkbox"
+                  class="form-check-input mobile-organizacion-check"
+                  id="mobile-organizacion-${escapeHtml(option.value)}"
+                  value="${escapeHtml(option.value)}"
+                  ${option.selected ? 'checked' : ''}
+                />
+              </div>
+            </td>
+            <td>
+              <label class="mb-0 w-100" for="mobile-organizacion-${escapeHtml(option.value)}">
+                ${escapeHtml(option.text)}
+              </label>
+            </td>
+          </tr>
+        `)
+        .join('');
+
+      applyOrganizationSearch();
+    };
+
+    const renderComedoresRows = (tbody, options) => {
+      if (!tbody) {
+        return;
+      }
+
+      tbody.innerHTML = options
+        .map((option) => {
+          const organizacionName = option.dataset.organizacionNombre || '';
+          return `
+            <tr data-comedor-row data-comedor-id="${escapeHtml(option.value)}" data-comedor-nombre="${escapeHtml(option.text)}" data-organizacion-nombre="${escapeHtml(organizacionName)}">
+              <td class="mobile-selector-check-column">
+                <div class="form-check mb-0">
+                  <input
+                    type="checkbox"
+                    class="form-check-input mobile-comedor-check"
+                    id="${tbody.id}-comedor-${escapeHtml(option.value)}"
+                    value="${escapeHtml(option.value)}"
+                    ${option.selected ? 'checked' : ''}
+                  />
+                </div>
+              </td>
+              <td>
+                <label class="mb-0 w-100" for="${tbody.id}-comedor-${escapeHtml(option.value)}">
+                  ${escapeHtml(option.text)}
+                </label>
+              </td>
+              <td>${escapeHtml(organizacionName)}</td>
+            </tr>
+          `;
+        })
+        .join('');
+    };
+
+    const applyComedoresSearch = (tbody, searchInput, emptyState, hintElement = null) => {
+      if (!tbody) {
+        return;
+      }
+
+      const searchTerm = (searchInput?.value || '').trim().toLowerCase();
+      const rows = Array.from(tbody.querySelectorAll('[data-comedor-row]'));
+      let visibleRows = 0;
+
+      rows.forEach((row) => {
+        const name = (row.dataset.comedorNombre || '').toLowerCase();
+        const organizacion = (row.dataset.organizacionNombre || '').toLowerCase();
+        const matchesSearch = !searchTerm || name.includes(searchTerm) || organizacion.includes(searchTerm);
+        row.style.display = matchesSearch ? '' : 'none';
+        if (matchesSearch) {
+          visibleRows += 1;
+        }
+      });
+
+      if (hintElement) {
+        hintElement.style.display = rows.length === 0 ? '' : 'none';
+      }
+
+      if (emptyState) {
+        emptyState.style.display = rows.length > 0 && visibleRows === 0 ? '' : 'none';
+      }
+    };
+
+    const syncAssociationType = () => {
+      const selectedOrganizationIds = new Set(getSelectedValues(organizacionesSelect));
+      const hasOrganizations = selectedOrganizationIds.size > 0;
+      const hasStandaloneSpaces = Array.from(comedoresSelect.selectedOptions).some(
+        (option) => !selectedOrganizationIds.has(option.dataset.organizacionId || ''),
+      );
+
+      if (hasOrganizations && hasStandaloneSpaces) {
+        tipoAsociacion.value = '';
+        return;
+      }
+      if (hasOrganizations) {
+        tipoAsociacion.value = 'organizacion';
+        return;
+      }
+      if (hasStandaloneSpaces) {
+        tipoAsociacion.value = 'espacio';
+        return;
+      }
+      tipoAsociacion.value = '';
+    };
+
+    const getComedoresOptionsByOrganization = () => {
+      const selectedOrganizationIds = new Set(getSelectedValues(organizacionesSelect));
+      const organizationOptions = [];
+      const extraOptions = [];
+
+      Array.from(comedoresSelect.options).forEach((option) => {
+        const organizacionId = option.dataset.organizacionId || '';
+        if (selectedOrganizationIds.has(organizacionId)) {
+          organizationOptions.push(option);
+        } else {
+          extraOptions.push(option);
+        }
+      });
+
+      return { organizationOptions, extraOptions };
+    };
+
+    const renderComedoresTables = () => {
+      const { organizationOptions, extraOptions } = getComedoresOptionsByOrganization();
+      renderComedoresRows(comedoresOrganizacionTableBody, organizationOptions);
+      renderComedoresRows(comedoresTableBody, extraOptions);
+      applyComedoresSearch(
+        comedoresOrganizacionTableBody,
+        comedoresOrganizacionSearch,
+        comedoresOrganizacionEmptyState,
+        comedoresOrganizacionHint,
+      );
+      applyComedoresSearch(comedoresTableBody, comedoresSearch, comedoresEmptyState);
+      syncAssociationType();
+    };
+
+    const syncComedoresForOrganizaciones = ({ preserveRemovedSelections = false } = {}) => {
+      const selectedOrganizationIds = new Set(getSelectedValues(organizacionesSelect));
+      const addedOrganizationIds = Array.from(selectedOrganizationIds).filter(
+        (value) => !previousOrganizationIds.has(value),
+      );
+      const removedOrganizationIds = Array.from(previousOrganizationIds).filter(
+        (value) => !selectedOrganizationIds.has(value),
+      );
+
+      Array.from(comedoresSelect.options).forEach((option) => {
+        const organizacionId = option.dataset.organizacionId || '';
+        if (addedOrganizationIds.includes(organizacionId)) {
+          option.selected = true;
+        }
+        if (!preserveRemovedSelections && removedOrganizationIds.includes(organizacionId)) {
+          option.selected = false;
+        }
+      });
+
+      previousOrganizationIds = selectedOrganizationIds;
+      refreshSelect2(comedoresSelect);
+      syncOrganizationTableFromSelect();
+      renderComedoresTables();
+    };
+
+    const setActiveTab = (tabName) => {
+      activeTab = tabName === 'espacios' ? 'espacios' : 'organizaciones';
+      const hasOrganizations = getSelectedValues(organizacionesSelect).length > 0;
+      mobileTabs.querySelectorAll('[data-mobile-tab]').forEach((button) => {
+        const isActive = button.dataset.mobileTab === activeTab;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+      organizacionesWrapper.style.display = activeTab === 'organizaciones' || hasOrganizations ? '' : 'none';
+      comedoresWrapper.style.display = activeTab === 'espacios' ? '' : 'none';
+    };
+
+    const toggleAssociationFields = () => {
+      const isPwaUser = repCheckbox.checked;
+
+      associationChoiceWrapper.style.display = isPwaUser ? '' : 'none';
+      associationTypeWrapper.style.display = 'none';
+
+      if (!isPwaUser) {
+        organizacionesWrapper.style.display = 'none';
+        comedoresWrapper.style.display = 'none';
+        tipoAsociacion.value = '';
+        if (organizacionesSearch) {
+          organizacionesSearch.value = '';
+          applyOrganizationSearch();
+        }
+        if (comedoresOrganizacionSearch) {
+          comedoresOrganizacionSearch.value = '';
+        }
+        if (comedoresSearch) {
+          comedoresSearch.value = '';
+        }
+        renderComedoresTables();
+        return;
+      }
+
+      renderComedoresTables();
+      setActiveTab(activeTab);
+    };
 
     const toggleBackofficeFields = () => {
       const isPwaRep = repCheckbox.checked;
@@ -124,10 +561,98 @@
       if (configCard) {
         configCard.style.display = isPwaRep ? 'none' : '';
       }
+      if (passwordFieldWrapper) {
+        passwordFieldWrapper.style.display = isPwaRep ? 'none' : '';
+      }
+      if (mobilePasswordHelp) {
+        mobilePasswordHelp.style.display = isPwaRep ? '' : 'none';
+      }
     };
 
-    repCheckbox.addEventListener('change', toggleBackofficeFields);
+    repCheckbox.addEventListener('change', () => {
+      toggleBackofficeFields();
+      toggleAssociationFields();
+    });
+    mobileTabs.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLButtonElement) || !target.dataset.mobileTab) {
+        return;
+      }
+      setActiveTab(target.dataset.mobileTab);
+    });
+    organizacionesSelect.addEventListener('change', () => {
+      syncOrganizationTableFromSelect();
+      syncComedoresForOrganizaciones();
+    });
+    if (organizacionesTableBody) {
+      organizacionesTableBody.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || !target.classList.contains('mobile-organizacion-check')) {
+          return;
+        }
+
+        const option = Array.from(organizacionesSelect.options).find(
+          (item) => item.value === target.value,
+        );
+        if (!option) {
+          return;
+        }
+
+        option.selected = target.checked;
+        organizacionesSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    }
+    if (organizacionesSearch) {
+      organizacionesSearch.addEventListener('input', applyOrganizationSearch);
+    }
+    comedoresSelect.addEventListener('change', () => {
+      renderComedoresTables();
+    });
+    const onComedorChange = (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || !target.classList.contains('mobile-comedor-check')) {
+          return;
+        }
+
+        const option = Array.from(comedoresSelect.options).find(
+          (item) => item.value === target.value,
+        );
+        if (!option) {
+          return;
+        }
+
+        option.selected = target.checked;
+        comedoresSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+    if (comedoresOrganizacionTableBody) {
+      comedoresOrganizacionTableBody.addEventListener('change', onComedorChange);
+    }
+    if (comedoresTableBody) {
+      comedoresTableBody.addEventListener('change', onComedorChange);
+    }
+    if (comedoresOrganizacionSearch) {
+      comedoresOrganizacionSearch.addEventListener('input', () => {
+        applyComedoresSearch(
+          comedoresOrganizacionTableBody,
+          comedoresOrganizacionSearch,
+          comedoresOrganizacionEmptyState,
+          comedoresOrganizacionHint,
+        );
+      });
+    }
+    if (comedoresSearch) {
+      comedoresSearch.addEventListener('input', () => {
+        applyComedoresSearch(comedoresTableBody, comedoresSearch, comedoresEmptyState);
+      });
+    }
+
+    renderOrganizationTable();
+    syncComedoresForOrganizaciones({ preserveRemovedSelections: true });
+    if (getSelectedValues(organizacionesSelect).length === 0 && getSelectedValues(comedoresSelect).length > 0) {
+      activeTab = 'espacios';
+    }
     toggleBackofficeFields();
+    toggleAssociationFields();
   })();
     </script>
     <script src="{% static 'custom/js/usuarioprovincial.js' %}"></script>

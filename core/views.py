@@ -628,6 +628,7 @@ class MontoPrestacionProgramaDetailView(
 # PROGRAMA VIEWS
 # ============================================================================
 
+
 class ProgramaListView(LoginRequiredMixin, ListView):
     model = Programa
     template_name = "programa_list.html"

@@ -1,4 +1,4 @@
-# pylint: disable=too-many-lines
+﻿# pylint: disable=too-many-lines
 import logging
 import os
 from datetime import date, datetime
@@ -56,7 +56,7 @@ from centrodeinfancia.models import (
     ObservacionCentroInfancia,
     Trabajador,
 )
-from centrodeinfancia.views_formulario_cdi import build_formulario_summary_items
+from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 
 
@@ -203,7 +203,10 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             required_keys=["nombre"],
         )
         context["breadcrumb_items"] = [
-            {"text": "Centro de Infancia", "url": reverse("centrodeinfancia")},
+            {
+                "text": "Centro de Desarrollo Infantil",
+                "url": reverse("centrodeinfancia"),
+            },
             {"text": "Listar", "active": True},
         ]
         context["query"] = self.request.GET.get("busqueda", "")
@@ -491,9 +494,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         ):
             formularios_qs = self.object.formularios.select_related(
                 "created_by"
-            ).order_by("-survey_date", "-created_at", "-id")
+            ).order_by("-fecha_relevamiento", "-created_at", "-id")
             context["formularios_total"] = formularios_qs.count()
-            context["formularios_recent"] = build_formulario_summary_items(
+            context["formularios_recent"] = construir_resumenes_formularios(
                 list(formularios_qs[:3])
             )
         else:
@@ -543,7 +546,7 @@ class CentroDeInfanciaDeleteView(
     template_name = "centrodeinfancia/centrodeinfancia_confirm_delete.html"
     context_object_name = "centro"
     success_url = reverse_lazy("centrodeinfancia")
-    success_message = "Centro de infancia dado de baja correctamente."
+    success_message = "Centro de Desarrollo Infantil dado de baja correctamente."
 
     def get_queryset(self):
         return _centros_cdi_queryset_scoped(self.request.user)

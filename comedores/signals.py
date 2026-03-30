@@ -10,6 +10,7 @@ from comedores.models import (
     Observacion,
     Referente,
 )
+from comedores.utils import comedor_usa_admision_para_nomina
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
 from comedores.tasks import (
     AsyncRemoveComedorToGestionar,
@@ -28,9 +29,6 @@ from rendicioncuentasfinal.models import (
     RendicionCuentasFinal,
     TipoDocumentoRendicionFinal,
 )
-
-# Programas que no requieren admisión para cargar nómina (Abordaje comunitario)
-_PROGRAMAS_SIN_ADMISION = {3, 4}
 
 
 @receiver(post_save, sender=Comedor)
@@ -111,16 +109,16 @@ def clasificacion_relevamiento(sender, instance, **kwargs):
 @receiver(post_save, sender=Admision)
 def asignar_nominas_directas_a_admision(sender, instance, created, **kwargs):
     """
-    Al crear una admisión para un comedor de programa 3/4, asigna las nóminas
-    directas del comedor (comedor_id set, admision=null) a esa admisión.
+    Al crear una admisión para comedores que usan ese flujo, reasigna las
+    nóminas directas al nuevo convenio.
 
-    Esto permite que al incorporar un convenio en un comedor previamente sin
-    admisión, las nóminas ya cargadas queden asociadas al nuevo convenio.
+    Los programas con nómina directa nunca pasan por este camino; el helper
+    centralizado evita que una admisión accidental reconfigure su nómina.
     """
     if not created:
         return
     comedor = instance.comedor
-    if not comedor or comedor.programa_id not in _PROGRAMAS_SIN_ADMISION:
+    if not comedor or not comedor_usa_admision_para_nomina(comedor):
         return
     Nomina.objects.filter(
         comedor=comedor,

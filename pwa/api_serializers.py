@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from comunicados.models import Comunicado, ComunicadoAdjunto
 from comedores.models import Nomina
+from comedores.models import ActividadColaboradorEspacio, ColaboradorEspacio
 from core.models import Dia, Sexo
 
 from pwa.models import (
@@ -66,7 +67,7 @@ class ColaboradorEspacioPWASerializer(serializers.ModelSerializer):
         dni = (value or "").strip()
         if not DNI_REGEX.fullmatch(dni):
             raise serializers.ValidationError(
-                "Formato de DNI inválido. Debe contener 7 u 8 dígitos."
+                "Formato de DNI invÃ¡lido. Debe contener 7 u 8 dÃ­gitos."
             )
         return dni
 
@@ -74,7 +75,7 @@ class ColaboradorEspacioPWASerializer(serializers.ModelSerializer):
         phone = (value or "").strip()
         if not PHONE_REGEX.fullmatch(phone):
             raise serializers.ValidationError(
-                "Formato de teléfono inválido. Solo números y + - ( ) espacios."
+                "Formato de telÃ©fono invÃ¡lido. Solo nÃºmeros y + - ( ) espacios."
             )
         return phone
 
@@ -100,6 +101,197 @@ class ColaboradorEspacioPWASerializer(serializers.ModelSerializer):
                 {"dni": "Ya existe un colaborador activo con ese DNI en este espacio."}
             )
         return attrs
+
+
+class ColaboradorEspacioPWAListSerializer(serializers.ModelSerializer):
+    ciudadano_id = serializers.IntegerField(read_only=True)
+    nombre = serializers.CharField(source="ciudadano.nombre", read_only=True)
+    apellido = serializers.CharField(source="ciudadano.apellido", read_only=True)
+    dni = serializers.SerializerMethodField()
+    prefijo_cuil = serializers.CharField(read_only=True)
+    cuil_cuit = serializers.CharField(read_only=True)
+    sufijo_cuil = serializers.CharField(read_only=True)
+    sexo = serializers.CharField(source="sexo_display", read_only=True)
+    fecha_nacimiento = serializers.DateField(read_only=True)
+    edad = serializers.IntegerField(read_only=True)
+    actividades = serializers.SerializerMethodField()
+    activo = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ColaboradorEspacio
+        fields = (
+            "id",
+            "comedor",
+            "ciudadano_id",
+            "nombre",
+            "apellido",
+            "dni",
+            "prefijo_cuil",
+            "cuil_cuit",
+            "sufijo_cuil",
+            "sexo",
+            "genero",
+            "fecha_nacimiento",
+            "edad",
+            "codigo_telefono",
+            "numero_telefono",
+            "fecha_alta",
+            "fecha_baja",
+            "activo",
+            "actividades",
+            "fecha_creado",
+            "fecha_modificado",
+        )
+        read_only_fields = fields
+
+    def get_dni(self, obj):
+        return str(obj.dni or "")
+
+    def get_actividades(self, obj):
+        actividades = getattr(obj, "actividades", None)
+        if actividades is None:
+            actividades = obj.actividades.all()
+        return [
+            {
+                "id": actividad.id,
+                "alias": actividad.alias,
+                "nombre": actividad.nombre,
+            }
+            for actividad in actividades.order_by("orden", "id")
+        ]
+
+    def get_activo(self, obj):
+        return obj.fecha_baja is None
+
+
+class ColaboradorEspacioPWACreateUpdateSerializer(serializers.Serializer):
+    ciudadano_id = serializers.IntegerField(required=False)
+    dni = serializers.CharField(required=False, allow_blank=False)
+    genero = serializers.ChoiceField(
+        choices=ColaboradorEspacio.GeneroChoices.choices, required=False
+    )
+    codigo_telefono = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
+    numero_telefono = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
+    fecha_alta = serializers.DateField(required=False)
+    fecha_baja = serializers.DateField(required=False, allow_null=True)
+    actividad_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        required=False,
+        allow_empty=False,
+    )
+
+    def validate_dni(self, value):
+        dni = (value or "").strip()
+        if not DNI_REGEX.fullmatch(dni):
+            raise serializers.ValidationError(
+                "Formato de DNI invÃ¡lido. Debe contener 7 u 8 dÃ­gitos."
+            )
+        return dni
+
+    def validate_codigo_telefono(self, value):
+        phone = str(value or "").strip()
+        if phone and not phone.isdigit():
+            raise serializers.ValidationError(
+                "El cÃ³digo de telÃ©fono debe contener solo nÃºmeros."
+            )
+        return phone or None
+
+    def validate_numero_telefono(self, value):
+        phone = str(value or "").strip()
+        if phone and not phone.isdigit():
+            raise serializers.ValidationError(
+                "El nÃºmero de telÃ©fono debe contener solo nÃºmeros."
+            )
+        return phone or None
+
+    def validate_actividad_ids(self, value):
+        actividad_ids = list(dict.fromkeys(value or []))
+        actividades_validas = set(
+            ActividadColaboradorEspacio.objects.filter(
+                id__in=actividad_ids,
+                activo=True,
+            ).values_list("id", flat=True)
+        )
+        if len(actividades_validas) != len(actividad_ids):
+            raise serializers.ValidationError(
+                "Hay actividades invÃ¡lidas o inactivas en la selecciÃ³n."
+            )
+        return actividad_ids
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        is_create = self.instance is None
+
+        if is_create and not attrs.get("ciudadano_id") and not attrs.get("dni"):
+            raise serializers.ValidationError(
+                {
+                    "dni": (
+                        "Debe informar un DNI para buscar en SISOC/RENAPER o enviar "
+                        "un ciudadano existente."
+                    )
+                }
+            )
+
+        if is_create and "fecha_alta" not in attrs:
+            raise serializers.ValidationError(
+                {"fecha_alta": "Este campo es obligatorio."}
+            )
+
+        if is_create and not attrs.get("actividad_ids"):
+            raise serializers.ValidationError(
+                {"actividad_ids": "Debe seleccionar al menos una actividad."}
+            )
+
+        fecha_alta = attrs.get("fecha_alta")
+        fecha_baja = attrs.get("fecha_baja")
+        instance_fecha_alta = getattr(self.instance, "fecha_alta", None)
+        effective_fecha_alta = fecha_alta or instance_fecha_alta
+        if effective_fecha_alta and fecha_baja and fecha_baja < effective_fecha_alta:
+            raise serializers.ValidationError(
+                {
+                    "fecha_baja": (
+                        "La fecha de baja no puede ser anterior a la fecha de alta."
+                    )
+                }
+            )
+
+        return attrs
+
+    def create(self, validated_data):
+        raise NotImplementedError(
+            "ColaboradorEspacioPWACreateUpdateSerializer no implementa create()."
+        )
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError(
+            "ColaboradorEspacioPWACreateUpdateSerializer no implementa update()."
+        )
+
+
+class ColaboradorActividadCatalogoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActividadColaboradorEspacio
+        fields = ("id", "alias", "nombre", "orden")
+        read_only_fields = fields
+
+
+class ColaboradorGeneroPWAListSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    label = serializers.CharField()
+
+    def create(self, validated_data):
+        raise NotImplementedError(
+            "ColaboradorGeneroPWAListSerializer no implementa create()."
+        )
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError(
+            "ColaboradorGeneroPWAListSerializer no implementa update()."
+        )
 
 
 class CatalogoActividadPWASerializer(serializers.ModelSerializer):
@@ -308,7 +500,7 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
             False if profile is None else bool(profile.asistencia_actividades)
         )
         if asistencia_alimentaria:
-            badges.append("Alimentación")
+            badges.append("AlimentaciÃ³n")
         if asistencia_actividades:
             badges.append("Actividades")
         return badges
@@ -374,7 +566,7 @@ class NominaEspacioPWACreateUpdateSerializer(serializers.Serializer):
         dni = (value or "").strip()
         if not DNI_REGEX.fullmatch(dni):
             raise serializers.ValidationError(
-                "Formato de DNI inválido. Debe contener 7 u 8 dígitos."
+                "Formato de DNI invÃ¡lido. Debe contener 7 u 8 dÃ­gitos."
             )
         return dni
 
@@ -407,7 +599,7 @@ class NominaRenaperPreviewSerializer(serializers.Serializer):
         dni = (value or "").strip()
         if not DNI_REGEX.fullmatch(dni):
             raise serializers.ValidationError(
-                "Formato de DNI inválido. Debe contener 7 u 8 dígitos."
+                "Formato de DNI invÃ¡lido. Debe contener 7 u 8 dÃ­gitos."
             )
         return dni
 

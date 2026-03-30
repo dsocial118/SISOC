@@ -26,6 +26,33 @@ urlpatterns = [
         name="pwa-colaboradores-list",
     ),
     path(
+        "espacios/<int:comedor_id>/colaboradores/generos/",
+        ColaboradorEspacioPWAViewSet.as_view(
+            {
+                "get": "generos",
+            }
+        ),
+        name="pwa-colaboradores-generos",
+    ),
+    path(
+        "espacios/<int:comedor_id>/colaboradores/actividades/",
+        ColaboradorEspacioPWAViewSet.as_view(
+            {
+                "get": "actividades",
+            }
+        ),
+        name="pwa-colaboradores-actividades",
+    ),
+    path(
+        "espacios/<int:comedor_id>/colaboradores/preview-dni/",
+        ColaboradorEspacioPWAViewSet.as_view(
+            {
+                "post": "preview_dni",
+            }
+        ),
+        name="pwa-colaboradores-preview-dni",
+    ),
+    path(
         "espacios/<int:comedor_id>/colaboradores/<int:pk>/",
         ColaboradorEspacioPWAViewSet.as_view(
             {

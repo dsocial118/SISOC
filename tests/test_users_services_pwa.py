@@ -7,6 +7,7 @@ from django.db import IntegrityError
 
 from comedores.models import Comedor
 from core.models import Provincia
+from organizaciones.models import Organizacion
 from users.models import AccesoComedorPWA
 from users.services_pwa import (
     create_operador_for_comedor,
@@ -20,8 +21,18 @@ from users.services_pwa import (
 @pytest.fixture
 def comedores(db):
     provincia = Provincia.objects.create(nombre="Santa Fe")
-    comedor_1 = Comedor.objects.create(nombre="Comedor 1", provincia=provincia)
-    comedor_2 = Comedor.objects.create(nombre="Comedor 2", provincia=provincia)
+    organizacion_1 = Organizacion.objects.create(nombre="Organización 1")
+    organizacion_2 = Organizacion.objects.create(nombre="Organización 2")
+    comedor_1 = Comedor.objects.create(
+        nombre="Comedor 1",
+        provincia=provincia,
+        organizacion=organizacion_1,
+    )
+    comedor_2 = Comedor.objects.create(
+        nombre="Comedor 2",
+        provincia=provincia,
+        organizacion=organizacion_2,
+    )
     return comedor_1, comedor_2
 
 
@@ -56,6 +67,30 @@ def test_is_pwa_user_and_accessible_comedores(comedores):
 
     assert is_pwa_user(user) is True
     assert set(get_accessible_comedor_ids(user)) == {comedor_1.id, comedor_2.id}
+
+
+@pytest.mark.django_db
+def test_accessible_comedores_ignores_space_removed_from_selected_organization(
+    comedores,
+):
+    comedor_1, comedor_2 = comedores
+    user = _create_user("rep_org_scope")
+    sync_representante_accesses(
+        user=user,
+        access_specs=[
+            {
+                "comedor_id": comedor_1.id,
+                "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+                "organizacion_id": comedor_1.organizacion_id,
+            }
+        ],
+        actor=None,
+    )
+
+    comedor_1.organizacion = comedor_2.organizacion
+    comedor_1.save(update_fields=["organizacion"])
+
+    assert get_accessible_comedor_ids(user) == []
 
 
 @pytest.mark.django_db
@@ -216,3 +251,56 @@ def test_sync_representante_accesses_switches_selected_comedores(comedores):
         ).exists()
         is True
     )
+
+
+@pytest.mark.django_db
+def test_sync_representante_accesses_supports_organization_association(comedores):
+    comedor_1, _ = comedores
+    user = _create_user("rep_sync_org")
+
+    sync_representante_accesses(
+        user=user,
+        access_specs=[
+            {
+                "comedor_id": comedor_1.id,
+                "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+                "organizacion_id": comedor_1.organizacion_id,
+            }
+        ],
+        actor=None,
+    )
+
+    acceso = AccesoComedorPWA.objects.get(user=user, comedor=comedor_1)
+    assert acceso.tipo_asociacion == AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
+    assert acceso.organizacion_id == comedor_1.organizacion_id
+
+
+@pytest.mark.django_db
+def test_sync_representante_accesses_supports_mixed_association(comedores):
+    comedor_1, comedor_2 = comedores
+    user = _create_user("rep_sync_mixed")
+
+    sync_representante_accesses(
+        user=user,
+        access_specs=[
+            {
+                "comedor_id": comedor_1.id,
+                "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+                "organizacion_id": comedor_1.organizacion_id,
+            },
+            {
+                "comedor_id": comedor_2.id,
+                "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO,
+                "organizacion_id": None,
+            },
+        ],
+        actor=None,
+    )
+
+    acceso_org = AccesoComedorPWA.objects.get(user=user, comedor=comedor_1)
+    acceso_espacio = AccesoComedorPWA.objects.get(user=user, comedor=comedor_2)
+
+    assert acceso_org.tipo_asociacion == AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
+    assert acceso_org.organizacion_id == comedor_1.organizacion_id
+    assert acceso_espacio.tipo_asociacion == AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO
+    assert acceso_espacio.organizacion_id is None

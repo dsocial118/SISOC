@@ -4,73 +4,84 @@
 {% block title %}VAT - Detalle de Modalidad Institucional{% endblock %}
 
 {% block breadcrumb %}
-<ol class="breadcrumb float-sm-right">
-    <li class="breadcrumb-item">
-        <a href="{% url 'vat_centro_list' %}">VAT</a>
-    </li>
-    <li class="breadcrumb-item">
-        <a href="{% url 'vat_modalidad_institucional_list' %}">Modalidades Institucionales</a>
-    </li>
-    <li class="breadcrumb-item active">{{ modalidad.nombre }}</li>
-</ol>
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_centro_list' %}">VAT</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_modalidad_institucional_list' %}">Modalidades Institucionales</a>
+        </li>
+        <li class="breadcrumb-item active">{{ modalidad.nombre }}</li>
+    </ol>
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h3 class="card-title">{{ modalidad.nombre }}</h3>
-                <div class="card-tools">
-                    <a href="{% url 'vat_modalidad_institucional_update' modalidad.id %}" class="btn btn-sm btn-warning">
-                        <i class="fas fa-edit"></i> Editar
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title">{{ modalidad.nombre }}</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'vat_modalidad_institucional_update' modalidad.id %}"
+                           class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        <form method="post"
+                              action="{% url 'vat_modalidad_institucional_delete' modalidad.id %}"
+                              style="display:inline"
+                              onsubmit="return confirm('¿Está seguro de que desea eliminar esta modalidad?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Nombre:</label>
+                        <p>{{ modalidad.nombre }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Descripción:</label>
+                        <p>
+                            {% if modalidad.descripcion %}
+                                {{ modalidad.descripcion }}
+                            {% else %}
+                                <em class="text-muted">Sin descripción</em>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Estado:</label>
+                        <p>
+                            {% if modalidad.activo %}
+                                <span class="badge badge-success">Activo</span>
+                            {% else %}
+                                <span class="badge badge-danger">Inactivo</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Creado:</label>
+                        <p>{{ modalidad.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Última modificación:</label>
+                        <p>{{ modalidad.fecha_modificacion|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'vat_modalidad_institucional_list' %}"
+                       class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
                     </a>
-                    <form method="post" action="{% url 'vat_modalidad_institucional_delete' modalidad.id %}" style="display:inline;" onsubmit="return confirm('¿Está seguro de que desea eliminar esta modalidad?');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-danger">
-                            <i class="fas fa-trash"></i> Eliminar
-                        </button>
-                    </form>
                 </div>
-            </div>
-            <div class="card-body">
-                <div class="form-group">
-                    <label>Nombre:</label>
-                    <p>{{ modalidad.nombre }}</p>
-                </div>
-
-                <div class="form-group">
-                    <label>Descripción:</label>
-                    <p>{% if modalidad.descripcion %}{{ modalidad.descripcion }}{% else %}<em class="text-muted">Sin descripción</em>{% endif %}</p>
-                </div>
-
-                <div class="form-group">
-                    <label>Estado:</label>
-                    <p>
-                        {% if modalidad.activo %}
-                        <span class="badge badge-success">Activo</span>
-                        {% else %}
-                        <span class="badge badge-danger">Inactivo</span>
-                        {% endif %}
-                    </p>
-                </div>
-
-                <div class="form-group">
-                    <label>Creado:</label>
-                    <p>{{ modalidad.fecha_creacion|date:"d/m/Y H:i" }}</p>
-                </div>
-
-                <div class="form-group">
-                    <label>Última modificación:</label>
-                    <p>{{ modalidad.fecha_modificacion|date:"d/m/Y H:i" }}</p>
-                </div>
-            </div>
-            <div class="card-footer">
-                <a href="{% url 'vat_modalidad_institucional_list' %}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver
-                </a>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

@@ -4,87 +4,87 @@
 {% block title %}Sectores{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
 
-{% url 'vat_sector_list' as reset_url %}
-{% include 'components/search_bar.html' with titulo="Buscar Sector" placeholder="Buscar por nombre o descripción" help_text="Buscar por nombre o descripción" reset_url=reset_url add_url='vat_sector_create' add_text='Agregar' query=request.GET.busqueda %}
+    {% url 'vat_sector_list' as reset_url %}
+    {% include 'components/search_bar.html' with titulo="Buscar Sector" placeholder="Buscar por nombre o descripción" help_text="Buscar por nombre o descripción" reset_url=reset_url add_url='vat_sector_create' add_text='Agregar' query=request.GET.busqueda %}
 
-<div class="row mt-5 max-width-100">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive-lg">
-                    <table class="table table-bordered table-striped projects">
-                        <thead>
-                            <tr>
-                                <th class="sortable" data-column="nombre">
-                                    Nombre
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th>Descripción</th>
-                                <th>Subsectores</th>
-                                <th class="notexport">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for sector in sectores %}
-                            <tr>
-                                <td data-nombre="{{ sector.nombre }}">
-                                    <a href="{% url 'vat_sector_detail' sector.id %}"
-                                       class="link-handler"
-                                       title="Ver detalles">{{ sector.nombre }}</a>
-                                </td>
-                                <td>{{ sector.descripcion|truncatewords:10|default:"—" }}</td>
-                                <td>{{ sector.subsectores.count }}</td>
-                                <td>
-                                    <div class="action-buttons" role="group">
-                                        <a href="{% url 'vat_sector_detail' sector.id %}"
-                                           class="btn btn-primary link-handler"
-                                           title="Ver detalle">
-                                            <i class="fas fa-eye"></i>
-                                            Ver
-                                        </a>
-                                        {% if perms.VAT.change_sector %}
-                                        <a href="{% url 'vat_sector_update' sector.id %}"
-                                           class="btn btn-editar link-handler"
-                                           title="Editar sector">
-                                            <i class="fas fa-edit"></i>
-                                            Editar
-                                        </a>
-                                        {% endif %}
-                                        {% if perms.VAT.delete_sector %}
-                                        <a href="{% url 'vat_sector_delete' sector.id %}"
-                                           class="btn btn-eliminar link-handler"
-                                           title="Eliminar sector">
-                                            <i class="fas fa-trash-alt"></i>
-                                            Eliminar
-                                        </a>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4">
-                                    <div class="no-comedores-message">
-                                        <h3>No se encontraron sectores</h3>
-                                        <p>No hay sectores registrados.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+    <div class="row mt-5 max-width-100">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive-lg">
+                        <table class="table table-bordered table-striped projects">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-column="nombre">
+                                        Nombre
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th>Descripción</th>
+                                    <th>Subsectores</th>
+                                    <th class="notexport">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sector in sectores %}
+                                    <tr>
+                                        <td data-nombre="{{ sector.nombre }}">
+                                            <a href="{% url 'vat_sector_detail' sector.id %}"
+                                               class="link-handler"
+                                               title="Ver detalles">{{ sector.nombre }}</a>
+                                        </td>
+                                        <td>{{ sector.descripcion|truncatewords:10|default:"—" }}</td>
+                                        <td>{{ sector.subsectores.count }}</td>
+                                        <td>
+                                            <div class="action-buttons" role="group">
+                                                <a href="{% url 'vat_sector_detail' sector.id %}"
+                                                   class="btn btn-primary link-handler"
+                                                   title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                    Ver
+                                                </a>
+                                                {% if perms.VAT.change_sector %}
+                                                    <a href="{% url 'vat_sector_update' sector.id %}"
+                                                       class="btn btn-editar link-handler"
+                                                       title="Editar sector">
+                                                        <i class="fas fa-edit"></i>
+                                                        Editar
+                                                    </a>
+                                                {% endif %}
+                                                {% if perms.VAT.delete_sector %}
+                                                    <a href="{% url 'vat_sector_delete' sector.id %}"
+                                                       class="btn btn-eliminar link-handler"
+                                                       title="Eliminar sector">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                        Eliminar
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4">
+                                            <div class="no-comedores-message">
+                                                <h3>No se encontraron sectores</h3>
+                                                <p>No hay sectores registrados.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-{% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
 
 {% endblock %}
 
 {% block customJS %}
-<script src="{% static 'custom/js/listSort.js' %}"></script>
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
 {% endblock %}

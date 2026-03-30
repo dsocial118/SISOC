@@ -3,217 +3,233 @@
 {% block title %}Voucher — {{ voucher.ciudadano.nombre_completo }}{% endblock %}
 {% block titulo-pagina %}Detalle de Voucher{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
 
-<!-- ENCABEZADO -->
-<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-    <div>
-        <h4 class="mb-1 fw-semibold">{{ voucher.ciudadano.nombre_completo }}</h4>
-        <span class="text-muted small">DNI {{ voucher.ciudadano.documento }} · {{ voucher.programa }}</span>
-    </div>
-    <div class="d-flex gap-2 align-items-center">
-        <span class="badge fs-6 {% if voucher.estado == 'activo' %}bg-success{% elif voucher.estado == 'vencido' %}bg-danger{% elif voucher.estado == 'agotado' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-            {{ voucher.get_estado_display }}
-        </span>
-        <a href="{% url 'vat_voucher_list' %}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Volver
-        </a>
-    </div>
-</div>
-
-<!-- CRÉDITOS + INFO -->
-<div class="row g-3 mb-3">
-    <!-- Créditos -->
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <div class="text-muted small mb-1">Créditos disponibles</div>
-                <div class="display-5 fw-bold {% if voucher.cantidad_disponible == 0 %}text-danger{% elif voucher.estado == 'activo' %}text-success{% else %}text-secondary{% endif %}">
-                    {{ voucher.cantidad_disponible }}
-                </div>
-                <div class="text-muted small">de {{ voucher.cantidad_inicial }} iniciales</div>
-                <div class="progress mt-2" style="height:8px;">
-                    <div class="progress-bar {% if voucher.cantidad_disponible == 0 %}bg-danger{% elif voucher.cantidad_disponible < voucher.cantidad_inicial %}bg-warning{% else %}bg-success{% endif %}"
-                         style="width:{% widthratio voucher.cantidad_disponible voucher.cantidad_inicial 100 %}%"></div>
-                </div>
-            </div>
+    <!-- ENCABEZADO -->
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+            <h4 class="mb-1 fw-semibold">{{ voucher.ciudadano.nombre_completo }}</h4>
+            <span class="text-muted small">DNI {{ voucher.ciudadano.documento }} · {{ voucher.programa }}</span>
         </div>
-    </div>
-    <!-- Info -->
-    <div class="col-md-8">
-        <div class="card h-100">
-            <div class="card-body">
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-4 text-muted">Programa</dt>
-                    <dd class="col-sm-8">{{ voucher.programa }}</dd>
-                    <dt class="col-sm-4 text-muted">Asignado por</dt>
-                    <dd class="col-sm-8">{{ voucher.asignado_por|default:"—" }}</dd>
-                    <dt class="col-sm-4 text-muted">Fecha asignación</dt>
-                    <dd class="col-sm-8">{{ voucher.fecha_asignacion|date:"d/m/Y" }}</dd>
-                    <dt class="col-sm-4 text-muted">Vencimiento</dt>
-                    <dd class="col-sm-8 {% if voucher.estado == 'vencido' %}text-danger fw-semibold{% endif %}">
-                        {{ voucher.fecha_vencimiento|date:"d/m/Y" }}
-                    </dd>
-                    {% if estado_info.dias_para_vencer is not None %}
-                    <dt class="col-sm-4 text-muted">Días restantes</dt>
-                    <dd class="col-sm-8">
-                        {% if estado_info.dias_para_vencer > 0 %}
-                            <span class="text-success">{{ estado_info.dias_para_vencer }} días</span>
-                        {% else %}
-                            <span class="text-danger">Vencido</span>
-                        {% endif %}
-                    </dd>
-                    {% endif %}
-                </dl>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3">
-    <!-- HISTORIAL DE USOS -->
-    <div class="col-md-7">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="card-title mb-0"><i class="bi bi-receipt me-2"></i>Usos</h3>
-                <span class="badge bg-secondary">{{ usos|length }}</span>
-            </div>
-            <div class="card-body p-0">
-                {% if usos %}
-                <table class="table table-sm table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Oferta</th>
-                            <th class="text-end">Créditos</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for uso in usos %}
-                        <tr>
-                            <td class="text-muted small">{{ uso.fecha_uso|date:"d/m/Y" }}</td>
-                            <td>{{ uso.inscripcion_oferta.oferta }}</td>
-                            <td class="text-end fw-semibold text-danger">-{{ uso.cantidad_usada }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p class="text-muted small text-center py-3 mb-0">Sin usos registrados.</p>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- RECARGAS -->
-        <div class="card mt-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="card-title mb-0"><i class="bi bi-battery-charging me-2"></i>Recargas</h3>
-                <span class="badge bg-secondary">{{ recargas|length }}</span>
-            </div>
-            <div class="card-body p-0">
-                {% if recargas %}
-                <table class="table table-sm table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Motivo</th>
-                            <th>Por</th>
-                            <th class="text-end">Créditos</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for r in recargas %}
-                        <tr>
-                            <td class="text-muted small">{{ r.fecha_recarga|date:"d/m/Y" }}</td>
-                            <td>{{ r.motivo|default:"—" }}</td>
-                            <td class="text-muted small">{{ r.autorizado_por|default:"—" }}</td>
-                            <td class="text-end fw-semibold text-success">+{{ r.cantidad }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p class="text-muted small text-center py-3 mb-0">Sin recargas registradas.</p>
-                {% endif %}
-            </div>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge fs-6 {% if voucher.estado == 'activo' %}bg-success{% elif voucher.estado == 'vencido' %}bg-danger{% elif voucher.estado == 'agotado' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                {{ voucher.get_estado_display }}
+            </span>
+            <a href="{% url 'vat_voucher_list' %}"
+               class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Volver
+            </a>
         </div>
     </div>
 
-    <!-- ACCIONES + LOG -->
-    <div class="col-md-5">
-        <!-- Recarga manual -->
-        {% if perms.VAT.change_voucher %}
-        {% if voucher.estado == 'activo' or voucher.estado == 'agotado' %}
-        <div class="card mb-3">
-            <div class="card-header">
-                <h3 class="card-title mb-0"><i class="bi bi-plus-circle me-2"></i>Recarga manual</h3>
-            </div>
-            <div class="card-body">
-                <form method="post" action="{% url 'vat_voucher_recargar' voucher.pk %}">
-                    {% csrf_token %}
-                    {% for field in recarga_form %}
-                    <div class="mb-2">
-                        <label class="form-label fw-semibold small">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.errors %}
-                        <div class="text-danger small">{{ field.errors|join:", " }}</div>
-                        {% endif %}
+    <!-- CRÉDITOS + INFO -->
+    <div class="row g-3 mb-3">
+        <!-- Créditos -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted small mb-1">Créditos disponibles</div>
+                    <div class="display-5 fw-bold {% if voucher.cantidad_disponible == 0 %}text-danger{% elif voucher.estado == 'activo' %}text-success{% else %}text-secondary{% endif %}">
+                        {{ voucher.cantidad_disponible }}
                     </div>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-sm btn-success w-100">
-                        <i class="bi bi-battery-charging me-1"></i>Recargar
-                    </button>
-                </form>
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Cancelar -->
-        {% if voucher.estado != 'cancelado' %}
-        <div class="card mb-3 border-danger-subtle">
-            <div class="card-header bg-danger-subtle">
-                <h3 class="card-title mb-0 text-danger"><i class="bi bi-x-circle me-2"></i>Cancelar voucher</h3>
-            </div>
-            <div class="card-body">
-                <p class="small text-muted mb-2">Esta acción cancela el voucher. No se pueden deshacer los usos ya realizados.</p>
-                <form method="post" action="{% url 'vat_voucher_cancelar' voucher.pk %}" onsubmit="return confirm('¿Cancelar este voucher?')">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">
-                        <i class="bi bi-x-lg me-1"></i>Cancelar voucher
-                    </button>
-                </form>
-            </div>
-        </div>
-        {% endif %}
-        {% endif %}
-
-        <!-- Log de eventos -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="card-title mb-0"><i class="bi bi-clock-history me-2"></i>Historial</h3>
-                <span class="badge bg-secondary">{{ logs|length }}</span>
-            </div>
-            <div class="card-body p-0">
-                {% if logs %}
-                <ul class="list-group list-group-flush">
-                    {% for log in logs %}
-                    <li class="list-group-item py-2 px-3">
-                        <div class="d-flex justify-content-between">
-                            <span class="badge bg-light text-dark border small">{{ log.tipo_evento }}</span>
-                            <span class="text-muted small">{{ log.fecha_evento|date:"d/m/Y H:i" }}</span>
+                    <div class="text-muted small">de {{ voucher.cantidad_inicial }} iniciales</div>
+                    <div class="progress mt-2" style="height:8px;">
+                        <div class="progress-bar {% if voucher.cantidad_disponible == 0 %}bg-danger{% elif voucher.cantidad_disponible < voucher.cantidad_inicial %}bg-warning{% else %}bg-success{% endif %}"
+                             style="width:{% widthratio voucher.cantidad_disponible voucher.cantidad_inicial 100 %}%">
                         </div>
-                        {% if log.descripcion %}
-                        <div class="text-muted small mt-1">{{ log.descripcion }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Info -->
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-body">
+                    <dl class="row mb-0 small">
+                        <dt class="col-sm-4 text-muted">Programa</dt>
+                        <dd class="col-sm-8">
+                            {{ voucher.programa }}
+                        </dd>
+                        <dt class="col-sm-4 text-muted">Asignado por</dt>
+                        <dd class="col-sm-8">
+                            {{ voucher.asignado_por|default:"—" }}
+                        </dd>
+                        <dt class="col-sm-4 text-muted">Fecha asignación</dt>
+                        <dd class="col-sm-8">
+                            {{ voucher.fecha_asignacion|date:"d/m/Y" }}
+                        </dd>
+                        <dt class="col-sm-4 text-muted">Vencimiento</dt>
+                        <dd class="col-sm-8 {% if voucher.estado == 'vencido' %}text-danger fw-semibold{% endif %}">
+                            {{ voucher.fecha_vencimiento|date:"d/m/Y" }}
+                        </dd>
+                        {% if estado_info.dias_para_vencer is not None %}
+                            <dt class="col-sm-4 text-muted">Días restantes</dt>
+                            <dd class="col-sm-8">
+                                {% if estado_info.dias_para_vencer > 0 %}
+                                    <span class="text-success">{{ estado_info.dias_para_vencer }} días</span>
+                                {% else %}
+                                    <span class="text-danger">Vencido</span>
+                                {% endif %}
+                            </dd>
                         {% endif %}
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <p class="text-muted small text-center py-3 mb-0">Sin eventos registrados.</p>
-                {% endif %}
+                    </dl>
+                </div>
             </div>
         </div>
     </div>
-</div>
+
+    <div class="row g-3">
+        <!-- HISTORIAL DE USOS -->
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-receipt me-2"></i>Usos
+                    </h3>
+                    <span class="badge bg-secondary">{{ usos|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if usos %}
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Oferta</th>
+                                    <th class="text-end">Créditos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for uso in usos %}
+                                    <tr>
+                                        <td class="text-muted small">{{ uso.fecha_uso|date:"d/m/Y" }}</td>
+                                        <td>{{ uso.inscripcion_oferta.oferta }}</td>
+                                        <td class="text-end fw-semibold text-danger">-{{ uso.cantidad_usada }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-muted small text-center py-3 mb-0">Sin usos registrados.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- RECARGAS -->
+            <div class="card mt-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-battery-charging me-2"></i>Recargas
+                    </h3>
+                    <span class="badge bg-secondary">{{ recargas|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if recargas %}
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Motivo</th>
+                                    <th>Por</th>
+                                    <th class="text-end">Créditos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in recargas %}
+                                    <tr>
+                                        <td class="text-muted small">{{ r.fecha_recarga|date:"d/m/Y" }}</td>
+                                        <td>{{ r.motivo|default:"—" }}</td>
+                                        <td class="text-muted small">{{ r.autorizado_por|default:"—" }}</td>
+                                        <td class="text-end fw-semibold text-success">+{{ r.cantidad }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-muted small text-center py-3 mb-0">Sin recargas registradas.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ACCIONES + LOG -->
+        <div class="col-md-5">
+            <!-- Recarga manual -->
+            {% if perms.VAT.change_voucher %}
+                {% if voucher.estado == 'activo' or voucher.estado == 'agotado' %}
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title mb-0">
+                                <i class="bi bi-plus-circle me-2"></i>Recarga manual
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" action="{% url 'vat_voucher_recargar' voucher.pk %}">
+                                {% csrf_token %}
+                                {% for field in recarga_form %}
+                                    <div class="mb-2">
+                                        <label class="form-label fw-semibold small">{{ field.label }}</label>
+                                        {{ field }}
+                                        {% if field.errors %}<div class="text-danger small">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endfor %}
+                                <button type="submit" class="btn btn-sm btn-success w-100">
+                                    <i class="bi bi-battery-charging me-1"></i>Recargar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Cancelar -->
+                {% if voucher.estado != 'cancelado' %}
+                    <div class="card mb-3 border-danger-subtle">
+                        <div class="card-header bg-danger-subtle">
+                            <h3 class="card-title mb-0 text-danger">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar voucher
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-muted mb-2">Esta acción cancela el voucher. No se pueden deshacer los usos ya realizados.</p>
+                            <form method="post"
+                                  action="{% url 'vat_voucher_cancelar' voucher.pk %}"
+                                  onsubmit="return confirm('¿Cancelar este voucher?')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                                    <i class="bi bi-x-lg me-1"></i>Cancelar voucher
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            <!-- Log de eventos -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-clock-history me-2"></i>Historial
+                    </h3>
+                    <span class="badge bg-secondary">{{ logs|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if logs %}
+                        <ul class="list-group list-group-flush">
+                            {% for log in logs %}
+                                <li class="list-group-item py-2 px-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="badge bg-light text-dark border small">{{ log.tipo_evento }}</span>
+                                        <span class="text-muted small">{{ log.fecha_evento|date:"d/m/Y H:i" }}</span>
+                                    </div>
+                                    {% if log.descripcion %}<div class="text-muted small mt-1">{{ log.descripcion }}</div>{% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted small text-center py-3 mb-0">Sin eventos registrados.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 
 {% endblock %}

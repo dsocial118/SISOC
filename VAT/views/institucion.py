@@ -1,7 +1,13 @@
 import logging
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
+from django.views.generic import (
+    ListView,
+    CreateView,
+    DetailView,
+    UpdateView,
+    DeleteView,
+)
 from django.contrib import messages
 from django.db.models import Q
 from django.http import JsonResponse
@@ -29,6 +35,7 @@ logger = logging.getLogger("django")
 # INSTITUCIÓN CONTACTO VIEWS
 # ============================================================================
 
+
 class InstitucionContactoListView(LoginRequiredMixin, ListView):
     model = InstitucionContacto
     template_name = "vat/institucion/contacto_list.html"
@@ -36,7 +43,9 @@ class InstitucionContactoListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = InstitucionContacto.objects.select_related("centro").order_by("centro", "tipo")
+        queryset = InstitucionContacto.objects.select_related("centro").order_by(
+            "centro", "tipo"
+        )
         centro_id = self.request.GET.get("centro_id")
         tipo = self.request.GET.get("tipo")
         buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
@@ -46,7 +55,9 @@ class InstitucionContactoListView(LoginRequiredMixin, ListView):
         if tipo:
             queryset = queryset.filter(tipo=tipo)
         if buscar:
-            queryset = queryset.filter(Q(valor__icontains=buscar) | Q(centro__nombre__icontains=buscar))
+            queryset = queryset.filter(
+                Q(valor__icontains=buscar) | Q(centro__nombre__icontains=buscar)
+            )
 
         return queryset
 
@@ -86,7 +97,9 @@ class InstitucionContactoUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class InstitucionContactoDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+class InstitucionContactoDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     model = InstitucionContacto
     template_name = "vat/institucion/contacto_confirm_delete.html"
     context_object_name = "contacto"
@@ -97,6 +110,7 @@ class InstitucionContactoDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixi
 # AUTORIDAD INSTITUCIONAL VIEWS
 # ============================================================================
 
+
 class AutoridadInstitucionalListView(LoginRequiredMixin, ListView):
     model = AutoridadInstitucional
     template_name = "vat/institucion/autoridad_list.html"
@@ -104,14 +118,19 @@ class AutoridadInstitucionalListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = AutoridadInstitucional.objects.select_related("centro").order_by("-es_actual", "centro")
+        queryset = AutoridadInstitucional.objects.select_related("centro").order_by(
+            "-es_actual", "centro"
+        )
         centro_id = self.request.GET.get("centro_id")
         buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
 
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
         if buscar:
-            queryset = queryset.filter(Q(nombre_completo__icontains=buscar) | Q(centro__nombre__icontains=buscar))
+            queryset = queryset.filter(
+                Q(nombre_completo__icontains=buscar)
+                | Q(centro__nombre__icontains=buscar)
+            )
 
         return queryset
 
@@ -151,7 +170,9 @@ class AutoridadInstitucionalUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class AutoridadInstitucionalDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+class AutoridadInstitucionalDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     model = AutoridadInstitucional
     template_name = "vat/institucion/autoridad_confirm_delete.html"
     context_object_name = "autoridad"
@@ -162,6 +183,7 @@ class AutoridadInstitucionalDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredM
 # INSTITUCIÓN IDENTIFICADOR HISTÓRICO VIEWS
 # ============================================================================
 
+
 class InstitucionIdentificadorHistListView(LoginRequiredMixin, ListView):
     model = InstitucionIdentificadorHist
     template_name = "vat/institucion/identificador_list.html"
@@ -169,7 +191,9 @@ class InstitucionIdentificadorHistListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = InstitucionIdentificadorHist.objects.select_related("centro").order_by("-es_actual", "centro")
+        queryset = InstitucionIdentificadorHist.objects.select_related(
+            "centro"
+        ).order_by("-es_actual", "centro")
         centro_id = self.request.GET.get("centro_id")
         tipo = self.request.GET.get("tipo_identificador")
         buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
@@ -179,7 +203,10 @@ class InstitucionIdentificadorHistListView(LoginRequiredMixin, ListView):
         if tipo:
             queryset = queryset.filter(tipo_identificador=tipo)
         if buscar:
-            queryset = queryset.filter(Q(valor_identificador__icontains=buscar) | Q(centro__nombre__icontains=buscar))
+            queryset = queryset.filter(
+                Q(valor_identificador__icontains=buscar)
+                | Q(centro__nombre__icontains=buscar)
+            )
 
         return queryset
 
@@ -219,7 +246,9 @@ class InstitucionIdentificadorHistUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class InstitucionIdentificadorHistDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+class InstitucionIdentificadorHistDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     model = InstitucionIdentificadorHist
     template_name = "vat/institucion/identificador_confirm_delete.html"
     context_object_name = "identificador"
@@ -230,6 +259,7 @@ class InstitucionIdentificadorHistDeleteView(SoftDeleteDeleteViewMixin, LoginReq
 # INSTITUCIÓN UBICACIÓN VIEWS
 # ============================================================================
 
+
 class InstitucionUbicacionListView(LoginRequiredMixin, ListView):
     model = InstitucionUbicacion
     template_name = "vat/institucion/ubicacion_list.html"
@@ -237,7 +267,9 @@ class InstitucionUbicacionListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = InstitucionUbicacion.objects.select_related("centro", "localidad").order_by("-es_principal", "centro")
+        queryset = InstitucionUbicacion.objects.select_related(
+            "centro", "localidad"
+        ).order_by("-es_principal", "centro")
         centro_id = self.request.GET.get("centro_id")
         rol = self.request.GET.get("rol_ubicacion")
         buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
@@ -247,7 +279,9 @@ class InstitucionUbicacionListView(LoginRequiredMixin, ListView):
         if rol:
             queryset = queryset.filter(rol_ubicacion=rol)
         if buscar:
-            queryset = queryset.filter(Q(domicilio__icontains=buscar) | Q(centro__nombre__icontains=buscar))
+            queryset = queryset.filter(
+                Q(domicilio__icontains=buscar) | Q(centro__nombre__icontains=buscar)
+            )
 
         return queryset
 
@@ -287,7 +321,9 @@ class InstitucionUbicacionUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class InstitucionUbicacionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+class InstitucionUbicacionDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     model = InstitucionUbicacion
     template_name = "vat/institucion/ubicacion_confirm_delete.html"
     context_object_name = "ubicacion"
@@ -300,7 +336,9 @@ def localidades_por_centro(request):
     if not centro_id:
         return JsonResponse({"localidades": []})
     try:
-        centro = Centro.objects.select_related("municipio", "provincia").get(pk=centro_id)
+        centro = Centro.objects.select_related("municipio", "provincia").get(
+            pk=centro_id
+        )
     except Centro.DoesNotExist:
         return JsonResponse({"localidades": []})
 

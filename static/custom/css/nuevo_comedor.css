@@ -1,5 +1,5 @@
 /*------------------------------------
- - Nuevo front Comedores CSS
+ - Estilos de detalle y navegación
  ------------------------------------*/
 
  /* Header y sidebar-brand */
@@ -445,7 +445,7 @@ body.sidebar-collapse .sidebar-user-name {
 }
 
 /* ------------------------------------
- - Comedor detail (new_comedor_detail.html)
+ - Comedor detail
  ------------------------------------ */
 
 .timeline::before,

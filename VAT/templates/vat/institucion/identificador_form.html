@@ -1,119 +1,165 @@
 {% extends "includes/main.html" %}
 {% load static %}
 
-{% block title %}{% if form.instance.id %}Editar{% else %}Nueva{% endif %} Identificador{% endblock %}
+{% block title %}
+    {% if form.instance.id %}
+        Editar
+    {% else %}
+        Nueva
+    {% endif %}
+    Identificador
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex align-items-center gap-2 mb-4">
-                <a href="{% url 'vat_institucion_identificador_list' %}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
-                <div>
-                    <h1 class="h2 mb-0" style="color: #1f3a93;">
-                        {% if form.instance.id %}<i class="bi bi-pencil-square me-2"></i>Editar Identificador
-                        {% else %}<i class="bi bi-plus-circle me-2"></i>Nueva Identificador{% endif %}
-                    </h1>
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <a href="{% url 'vat_institucion_identificador_list' %}"
+                       class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+                    <div>
+                        <h1 class="h2 mb-0" style="color: #1f3a93;">
+                            {% if form.instance.id %}
+                                <i class="bi bi-pencil-square me-2"></i>Editar Identificador
+                            {% else %}
+                                <i class="bi bi-plus-circle me-2"></i>Nueva Identificador
+                            {% endif %}
+                        </h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light border-bottom">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información General
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <label for="{{ form.centro.id_for_label }}" class="form-label fw-600">
+                                        {{ form.centro.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-building" style="color: #1f3a93;"></i></span>
+                                        {{ form.centro }}
+                                    </div>
+                                    {% if form.centro.errors %}<div class="text-danger small mt-1">{{ form.centro.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.tipo_identificador.id_for_label }}"
+                                           class="form-label fw-600">
+                                        {{ form.tipo_identificador.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-tag" style="color: #1f3a93;"></i></span>
+                                        {{ form.tipo_identificador }}
+                                    </div>
+                                    {% if form.tipo_identificador.errors %}
+                                        <div class="text-danger small mt-1">{{ form.tipo_identificador.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.valor_identificador.id_for_label }}"
+                                           class="form-label fw-600">
+                                        {{ form.valor_identificador.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-hash" style="color: #1f3a93;"></i></span>
+                                        {{ form.valor_identificador }}
+                                    </div>
+                                    {% if form.valor_identificador.errors %}
+                                        <div class="text-danger small mt-1">{{ form.valor_identificador.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.rol_institucional.id_for_label }}"
+                                           class="form-label fw-600">{{ form.rol_institucional.label }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-diagram-3" style="color: #1f3a93;"></i></span>
+                                        {{ form.rol_institucional }}
+                                    </div>
+                                    {% if form.rol_institucional.errors %}
+                                        <div class="text-danger small mt-1">{{ form.rol_institucional.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        {{ form.es_actual }}
+                                        <label class="form-check-label fw-600"
+                                               for="{{ form.es_actual.id_for_label }}">
+                                            {{ form.es_actual.label }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.vigencia_hasta.id_for_label }}"
+                                           class="form-label fw-600">{{ form.vigencia_hasta.label }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-calendar" style="color: #1f3a93;"></i></span>
+                                        {{ form.vigencia_hasta }}
+                                    </div>
+                                    {% if form.vigencia_hasta.errors %}
+                                        <div class="text-danger small mt-1">{{ form.vigencia_hasta.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.motivo.id_for_label }}" class="form-label fw-600">{{ form.motivo.label }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-chat-left-text" style="color: #1f3a93;"></i></span>
+                                        {{ form.motivo }}
+                                    </div>
+                                    {% if form.motivo.errors %}<div class="text-danger small mt-1">{{ form.motivo.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+
+                            <hr class="my-4" />
+                            <div class="d-flex gap-2 justify-content-end">
+                                <a href="{% url 'vat_institucion_identificador_list' %}"
+                                   class="btn btn-outline-secondary"><i class="bi bi-x-lg me-2"></i>Cancelar</a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>
+                                    {% if form.instance.id %}
+                                        Actualizar
+                                    {% else %}
+                                        Crear
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title fw-600" style="color: #1f3a93;">
+                            <i class="bi bi-info-circle me-2"></i>Información
+                        </h6>
+                        <div class="small text-muted">
+                            <p>Registro histórico de identificadores (CUIE, CUE, etc).</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-light border-bottom">
-                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información General</h5>
-                </div>
-                <div class="card-body p-4">
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-                        <div class="row mb-4">
-                            <div class="col-md-12">
-                                <label for="{{ form.centro.id_for_label }}" class="form-label fw-600">{{ form.centro.label }} <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-building" style="color: #1f3a93;"></i></span>
-                                    {{ form.centro }}
-                                </div>
-                                {% if form.centro.errors %}<div class="text-danger small mt-1">{{ form.centro.errors.0 }}</div>{% endif %}
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="{{ form.tipo_identificador.id_for_label }}" class="form-label fw-600">{{ form.tipo_identificador.label }} <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-tag" style="color: #1f3a93;"></i></span>
-                                    {{ form.tipo_identificador }}
-                                </div>
-                                {% if form.tipo_identificador.errors %}<div class="text-danger small mt-1">{{ form.tipo_identificador.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.valor_identificador.id_for_label }}" class="form-label fw-600">{{ form.valor_identificador.label }} <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-hash" style="color: #1f3a93;"></i></span>
-                                    {{ form.valor_identificador }}
-                                </div>
-                                {% if form.valor_identificador.errors %}<div class="text-danger small mt-1">{{ form.valor_identificador.errors.0 }}</div>{% endif %}
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="{{ form.rol_institucional.id_for_label }}" class="form-label fw-600">{{ form.rol_institucional.label }}</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-diagram-3" style="color: #1f3a93;"></i></span>
-                                    {{ form.rol_institucional }}
-                                </div>
-                                {% if form.rol_institucional.errors %}<div class="text-danger small mt-1">{{ form.rol_institucional.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-check form-switch">
-                                    {{ form.es_actual }}
-                                    <label class="form-check-label fw-600" for="{{ form.es_actual.id_for_label }}">{{ form.es_actual.label }}</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="{{ form.vigencia_hasta.id_for_label }}" class="form-label fw-600">{{ form.vigencia_hasta.label }}</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-calendar" style="color: #1f3a93;"></i></span>
-                                    {{ form.vigencia_hasta }}
-                                </div>
-                                {% if form.vigencia_hasta.errors %}<div class="text-danger small mt-1">{{ form.vigencia_hasta.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.motivo.id_for_label }}" class="form-label fw-600">{{ form.motivo.label }}</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-chat-left-text" style="color: #1f3a93;"></i></span>
-                                    {{ form.motivo }}
-                                </div>
-                                {% if form.motivo.errors %}<div class="text-danger small mt-1">{{ form.motivo.errors.0 }}</div>{% endif %}
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-                        <div class="d-flex gap-2 justify-content-end">
-                            <a href="{% url 'vat_institucion_identificador_list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-2"></i>Cancelar</a>
-                            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>{% if form.instance.id %}Actualizar{% else %}Crear{% endif %}</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm bg-light">
-                <div class="card-body">
-                    <h6 class="card-title fw-600" style="color: #1f3a93;"><i class="bi bi-info-circle me-2"></i>Información</h6>
-                    <div class="small text-muted"><p>Registro histórico de identificadores (CUIE, CUE, etc).</p></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<style>
+    <style>
     .form-control, .form-select { border: 1px solid #e0e0e0; border-radius: 0.5rem; padding: 0.75rem 1rem; }
     .form-control:focus, .form-select:focus { border-color: #1f3a93; box-shadow: 0 0 0 0.2rem rgba(31, 58, 147, 0.15); }
     .input-group-text { border: 1px solid #e0e0e0 !important; }
     .fw-600 { font-weight: 600 !important; }
-</style>
+    </style>
 {% endblock %}

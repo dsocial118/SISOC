@@ -32,6 +32,7 @@ from comedores.forms.observacion_form import ObservacionForm
 from comedores.models import Comedor, HistorialValidacion, ImagenComedor, Observacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
+from comedores.utils import comedor_usa_admision_para_nomina
 from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -76,6 +77,101 @@ def _count_actividades_comunitarias(anexo) -> int:
         anexo.actividades_culturales,
     ]
     return sum(1 for flag in actividades_flags if flag)
+
+
+def _normalize_responsables_value(value):
+    if value is None:
+        return None
+    if isinstance(value, str):
+        value = value.strip()
+        return value or None
+    value = str(value).strip()
+    return value or None
+
+
+def _join_responsables_parts(*parts):
+    visible_parts = [
+        normalized
+        for normalized in (_normalize_responsables_value(part) for part in parts)
+        if normalized
+    ]
+    return " ".join(visible_parts) if visible_parts else None
+
+
+def _build_organizacion_responsables_context(comedor_obj):
+    organizacion = getattr(comedor_obj, "organizacion", None)
+    if not organizacion:
+        return {
+            "responsables_organizacion": None,
+            "responsables_organizacion_items": [],
+            "responsables_firmantes": [],
+            "responsables_avales": [],
+        }
+
+    organizacion_items = []
+    for icon, label, value, is_date in [
+        ("bi bi-building", "Nombre", organizacion.nombre, False),
+        ("bi bi-card-text", "CUIT", organizacion.cuit, False),
+        ("bi bi-diagram-3", "Tipo de entidad", organizacion.tipo_entidad, False),
+        (
+            "bi bi-diagram-2",
+            "Subtipo de entidad",
+            organizacion.subtipo_entidad,
+            False,
+        ),
+        ("bi bi-envelope", "Email", organizacion.email, False),
+        ("bi bi-telephone", "Telefono", organizacion.telefono, False),
+        (
+            "bi bi-calendar-event",
+            "Fecha de vencimiento de mandatos",
+            organizacion.fecha_vencimiento,
+            True,
+        ),
+    ]:
+        normalized_value = value if is_date else _normalize_responsables_value(value)
+        if not normalized_value:
+            continue
+        organizacion_items.append(
+            {
+                "icon": icon,
+                "label": label,
+                "value": normalized_value,
+                "is_date": is_date,
+            }
+        )
+
+    firmantes = []
+    for firmante in organizacion.firmantes.all():
+        rol_nombre = _normalize_responsables_value(
+            getattr(firmante.rol, "nombre", None)
+        )
+        firmante_data = _join_responsables_parts(firmante.nombre, firmante.cuit)
+        firmante_text = (
+            f"{rol_nombre}: {firmante_data}"
+            if rol_nombre and firmante_data
+            else rol_nombre or firmante_data
+        )
+        if firmante_text:
+            firmantes.append({"icon": "bi bi-person-fill", "text": firmante_text})
+
+    avales = []
+    for index, aval in enumerate(organizacion.avales.all(), start=1):
+        aval_data = _join_responsables_parts(aval.nombre, aval.cuit)
+        if aval_data:
+            avales.append(
+                {
+                    "icon": "bi bi-shield-check",
+                    "label": f"Aval {index}",
+                    "value": aval_data,
+                }
+            )
+
+    return {
+        "responsables_organizacion": organizacion,
+        "responsables_organizacion_items": organizacion_items,
+        "responsables_firmantes": firmantes,
+        "responsables_avales": avales,
+    }
 
 
 def _build_nomina_metrics(nomina_total, nomina_rangos):
@@ -536,15 +632,31 @@ def _build_imagenes_y_programa_history_context(comedor_obj):
 
 
 def _build_admisiones_y_nomina_context(comedor_obj):
-    admisiones_qs = (
-        Admision.objects.filter(comedor=comedor_obj)
-        .select_related("tipo_convenio", "estado")
-        .order_by("-id")
-    )
-    timeline_context = ComedorService.get_admision_timeline_context(admisiones_qs)
-    admision_activa = timeline_context.get("admision_activa")
-    admision_activa_id = getattr(admision_activa, "id", None)
-    if admision_activa_id:
+    if comedor_usa_admision_para_nomina(comedor_obj):
+        admisiones_qs = (
+            Admision.objects.filter(comedor=comedor_obj)
+            .select_related("tipo_convenio", "estado")
+            .order_by("-id")
+        )
+        timeline_context = ComedorService.get_admision_timeline_context(admisiones_qs)
+        admision_activa = timeline_context.get("admision_activa")
+        admision_activa_id = getattr(admision_activa, "id", None)
+        if admision_activa_id:
+            (
+                _,
+                nomina_hombres,
+                nomina_mujeres,
+                _,
+                nomina_espera,
+                nomina_total,
+                nomina_rangos,
+            ) = ComedorService.get_nomina_detail(admision_activa_id, page=1, per_page=1)
+        else:
+            nomina_hombres = nomina_mujeres = nomina_espera = nomina_total = 0
+            nomina_rangos = {}
+    else:
+        admisiones_qs = Admision.objects.none()
+        timeline_context = ComedorService.get_admision_timeline_context(admisiones_qs)
         (
             _,
             nomina_hombres,
@@ -553,10 +665,9 @@ def _build_admisiones_y_nomina_context(comedor_obj):
             nomina_espera,
             nomina_total,
             nomina_rangos,
-        ) = ComedorService.get_nomina_detail(admision_activa_id, page=1, per_page=1)
-    else:
-        nomina_hombres = nomina_mujeres = nomina_espera = nomina_total = 0
-        nomina_rangos = {}
+        ) = ComedorService.get_nomina_detail_by_comedor(
+            comedor_obj.id, page=1, per_page=1
+        )
     nomina_metrics = _build_nomina_metrics(nomina_total, nomina_rangos)
     return {
         "admisiones_qs": admisiones_qs,
@@ -565,6 +676,7 @@ def _build_admisiones_y_nomina_context(comedor_obj):
         "nomina_hombres": nomina_hombres,
         "nomina_mujeres": nomina_mujeres,
         "nomina_espera": nomina_espera,
+        "nomina_rangos": nomina_rangos,
         **nomina_metrics,
     }
 
@@ -903,12 +1015,21 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             and self.object.clasificaciones_optimized
             else None
         )
+        if hasattr(self.object, "colaboradores_espacio_optimized"):
+            colaboradores_espacio = self.object.colaboradores_espacio_optimized
+        elif hasattr(self.object, "colaboradores_espacio"):
+            colaboradores_espacio = self.object.colaboradores_espacio.select_related(
+                "ciudadano__sexo"
+            ).prefetch_related("actividades")
+        else:
+            colaboradores_espacio = []
         return {
             "relevamientos": relevamientos,
             "observaciones": observaciones,
             "count_relevamientos": count_relevamientos,
             "actividades_comunitarias_count": actividades_comunitarias_count,
             "comedor_categoria": comedor_categoria,
+            "colaboradores_espacio": colaboradores_espacio,
         }
 
     def _build_relaciones_table_contexts(self, admisiones_qs):
@@ -940,6 +1061,19 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
     def _redirect_to_detail(self):
         return redirect("comedor_detalle", pk=self.object.pk)
+
+    def _handle_legacy_relevamiento_post(self, request):
+        if (
+            "territorial" not in request.POST
+            and "territorial_editar" not in request.POST
+        ):
+            return None
+
+        messages.error(
+            request,
+            "La gestión de relevamientos ya no se realiza desde este legajo. Use la sección Relevamientos.",
+        )
+        return redirect("relevamientos", comedor_pk=self.object.pk)
 
     def _descartar_admision(self, admision, motivo_descarte):
         estado_descartado, _ = EstadoAdmision.objects.get_or_create(nombre="Descartado")
@@ -985,7 +1119,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         if response is not None:
             return response
 
-        return ComedorService.post_comedor_relevamiento(request, self.object)
+        response = self._handle_legacy_relevamiento_post(request)
+        if response is not None:
+            return response
+
+        return self._redirect_to_detail()
 
     def get_relaciones_optimizadas(self):  # pylint: disable=too-many-locals
         """Obtiene datos de relaciones usando prefetch cuando sea posible."""
@@ -1002,6 +1140,24 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "rendicion_cuentas_final_activo": True,  # rendiciones_mensuales >= 5, (esta validación se saca temporalmente)
             "admision": admisiones_qs,
             **admisiones_nomina_context["timeline_context"],
+            "nomina_total": admisiones_nomina_context["nomina_total"],
+            "nomina_hombres": admisiones_nomina_context["nomina_hombres"],
+            "nomina_mujeres": admisiones_nomina_context["nomina_mujeres"],
+            "nomina_espera": admisiones_nomina_context["nomina_espera"],
+            "nomina_rangos": admisiones_nomina_context["nomina_rangos"],
+            "nomina_menores": admisiones_nomina_context["nomina_menores"],
+            "nomina_pct_sin_dato": admisiones_nomina_context["nomina_pct_sin_dato"],
+            "nomina_pct_ninos": admisiones_nomina_context["nomina_pct_ninos"],
+            "nomina_pct_adolescentes": admisiones_nomina_context[
+                "nomina_pct_adolescentes"
+            ],
+            "nomina_pct_adultos": admisiones_nomina_context["nomina_pct_adultos"],
+            "nomina_pct_adultos_mayores": admisiones_nomina_context[
+                "nomina_pct_adultos_mayores"
+            ],
+            "nomina_pct_adulto_mayor_avanzado": admisiones_nomina_context[
+                "nomina_pct_adulto_mayor_avanzado"
+            ],
             **table_contexts,
         }
 
@@ -1020,6 +1176,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         )
         selected_admision = selected_admision_context["selected_admision"]
         informe_tecnico = selected_admision_context["informe_tecnico"]
+        responsables_context = _build_organizacion_responsables_context(self.object)
 
         # Nómina del convenio seleccionado
         selected_admision_pk = getattr(selected_admision, "pk", None)
@@ -1035,9 +1192,15 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             ) = ComedorService.get_nomina_detail(
                 selected_admision_pk, page=1, per_page=1
             )
-        else:
+        elif comedor_usa_admision_para_nomina(self.object):
             nomina_m = nomina_f = nomina_espera = nomina_total = 0
             nomina_rangos = {}
+        else:
+            nomina_m = relaciones_data.get("nomina_hombres", 0)
+            nomina_f = relaciones_data.get("nomina_mujeres", 0)
+            nomina_espera = relaciones_data.get("nomina_espera", 0)
+            nomina_total = relaciones_data.get("nomina_total", 0)
+            nomina_rangos = relaciones_data.get("nomina_rangos", {})
 
         nomina_metrics = _build_nomina_metrics(nomina_total, nomina_rangos)
 
@@ -1069,6 +1232,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "monto_prestacion_mensual": selected_admision_context[
                     "monto_prestacion_mensual_aprobadas"
                 ],
+                **responsables_context,
             }
         )
         timeline_selected = ComedorService.get_admision_timeline_context_from_admision(

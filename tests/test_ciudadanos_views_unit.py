@@ -209,10 +209,11 @@ def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
 
     mocker.patch("builtins.__import__", side_effect=fake_import2)
     comedor_ctx = module.CiudadanosDetailView().get_comedor_context(ciudadano)
-    assert comedor_ctx == {"nominas_comedor": []}
+    assert comedor_ctx == {"nominas_comedor": [], "colaboraciones_comedor": []}
 
     mocker.patch("builtins.__import__", side_effect=orig_import)
     nom_qs = _ExpedientesList([SimpleNamespace(id=7)])
+    colab_qs = _ExpedientesList([SimpleNamespace(id=9)])
 
     def _select_related_nomina(*args, **kwargs):
         assert args == (
@@ -222,12 +223,29 @@ def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
         )
         return SimpleNamespace(order_by=lambda *x, **y: nom_qs)
 
+    def _select_related_colaborador(*args, **kwargs):
+        assert args == (
+            "comedor__provincia",
+            "comedor__municipio",
+            "comedor__tipocomedor",
+        )
+        return SimpleNamespace(
+            prefetch_related=lambda *x, **y: SimpleNamespace(
+                order_by=lambda *a, **b: colab_qs
+            )
+        )
+
     mocker.patch(
         "comedores.models.Nomina.objects.filter",
         return_value=SimpleNamespace(select_related=_select_related_nomina),
     )
+    mocker.patch(
+        "comedores.models.ColaboradorEspacio.objects.filter",
+        return_value=SimpleNamespace(select_related=_select_related_colaborador),
+    )
     comedor_ok = module.CiudadanosDetailView().get_comedor_context(ciudadano)
     assert comedor_ok["nomina_actual"].id == 7
+    assert comedor_ok["colaboraciones_comedor"][0].id == 9
 
 
 def test_ciudadanos_detail_vat_context_resume_por_programa(mocker):
@@ -280,7 +298,11 @@ def test_ciudadanos_detail_vat_context_resume_por_programa(mocker):
         "VAT.models.Inscripcion.objects.filter",
         return_value=SimpleNamespace(
             select_related=lambda *a, **k: SimpleNamespace(
-                order_by=lambda *x, **y: [inscripcion_a1, inscripcion_a2, inscripcion_b1]
+                order_by=lambda *x, **y: [
+                    inscripcion_a1,
+                    inscripcion_a2,
+                    inscripcion_b1,
+                ]
             )
         ),
     )
@@ -288,7 +310,11 @@ def test_ciudadanos_detail_vat_context_resume_por_programa(mocker):
         "VAT.models.Voucher.objects.filter",
         return_value=SimpleNamespace(
             select_related=lambda *a, **k: SimpleNamespace(
-                order_by=lambda *x, **y: [voucher_activo, voucher_agotado, voucher_programa_b]
+                order_by=lambda *x, **y: [
+                    voucher_activo,
+                    voucher_agotado,
+                    voucher_programa_b,
+                ]
             )
         ),
     )
@@ -317,9 +343,7 @@ def test_ciudadanos_detail_vat_context_resume_por_programa(mocker):
     assert len(context["vat_programas"]) == 2
 
     programa_a_ctx = next(
-        item
-        for item in context["vat_programas"]
-        if item["programa"] is programa_a
+        item for item in context["vat_programas"] if item["programa"] is programa_a
     )
     assert programa_a_ctx["creditos_totales"] == 15
     assert programa_a_ctx["creditos_actuales"] == 4

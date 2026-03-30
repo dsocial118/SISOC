@@ -2,7 +2,9 @@ from decimal import Decimal
 from types import SimpleNamespace
 
 import pytest
+from rest_framework.test import APIRequestFactory
 
+from VAT.api_web_views import VatWebInscripcionViewSet
 from VAT.serializers import VatWebInscripcionCreateSerializer
 from VAT.services.inscripcion_service import InscripcionService
 
@@ -34,6 +36,29 @@ def test_vat_web_inscripcion_create_serializer_resuelve_por_documento(mocker):
     assert serializer.is_valid(), serializer.errors
     assert serializer.validated_data["ciudadano"] is ciudadano
     assert serializer.validated_data["programa"] is programa
+
+
+def test_vat_web_inscripcion_create_devuelve_400_si_falla_regla_negocio(mocker):
+    factory = APIRequestFactory()
+    request = factory.post(
+        "/api/vat/web/inscripciones/",
+        {"documento": "30111222", "comision_id": 9},
+        format="json",
+    )
+
+    serializer_mock = mocker.Mock()
+    serializer_mock.is_valid.return_value = True
+    serializer_mock.save.side_effect = ValueError("No tiene voucher activo.")
+    mocker.patch.object(VatWebInscripcionViewSet, "permission_classes", [])
+    mocker.patch.object(
+        VatWebInscripcionViewSet, "get_serializer", return_value=serializer_mock
+    )
+
+    view = VatWebInscripcionViewSet.as_view({"post": "create"})
+    response = view(request)
+
+    assert response.status_code == 400
+    assert response.data == {"error": ["No tiene voucher activo."]}
 
 
 def test_inscripcion_service_crear_inscripcion_debita_voucher(mocker):

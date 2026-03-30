@@ -14,7 +14,10 @@ from pwa.api_serializers import (
     ActividadEspacioPWACreateUpdateSerializer,
     ActividadEspacioPWAListSerializer,
     CatalogoActividadPWASerializer,
-    ColaboradorEspacioPWASerializer,
+    ColaboradorActividadCatalogoSerializer,
+    ColaboradorEspacioPWACreateUpdateSerializer,
+    ColaboradorEspacioPWAListSerializer,
+    ColaboradorGeneroPWAListSerializer,
     DiaSerializer,
     InscriptoActividadPWAListSerializer,
     MensajeEspacioPWASerializer,
@@ -26,18 +29,12 @@ from pwa.api_serializers import (
 from pwa.models import (
     ActividadEspacioPWA,
     CatalogoActividadPWA,
-    ColaboradorEspacioPWA,
     InscriptoActividadEspacioPWA,
 )
 from pwa.services.actividades_service import (
     create_actividad_espacio,
     soft_delete_actividad_espacio,
     update_actividad_espacio,
-)
-from pwa.services.colaboradores_service import (
-    create_colaborador,
-    soft_delete_colaborador,
-    update_colaborador,
 )
 from pwa.services.mensajes_service import (
     get_mensaje_for_espacio,
@@ -53,7 +50,8 @@ from pwa.services.nomina_service import (
 )
 from users.api_permissions import IsPWAAuthenticatedToken
 from users.api_permissions import IsPWARepresentativeForComedor
-from comedores.models import Nomina
+from comedores.models import ActividadColaboradorEspacio, ColaboradorEspacio, Nomina
+from comedores.services.colaborador_espacio_service import ColaboradorEspacioService
 from comedores.services.comedor_service.impl import ComedorService
 from ciudadanos.models import Ciudadano
 
@@ -172,30 +170,51 @@ class ColaboradorEspacioPWAViewSet(viewsets.ViewSet):
 
     def _get_queryset(self):
         comedor_id = self.kwargs["comedor_id"]
-        return ColaboradorEspacioPWA.objects.filter(
-            comedor_id=comedor_id,
-            activo=True,
-        ).order_by("apellido", "nombre", "-id")
+        return (
+            ColaboradorEspacio.objects.filter(comedor_id=comedor_id)
+            .select_related("ciudadano__sexo")
+            .prefetch_related("actividades")
+            .order_by("fecha_baja", "ciudadano__apellido", "ciudadano__nombre", "-id")
+        )
 
     def _get_object(self):
         return self._get_queryset().filter(pk=self.kwargs["pk"]).first()
 
     def list(self, request, comedor_id=None):
-        serializer = ColaboradorEspacioPWASerializer(self._get_queryset(), many=True)
+        serializer = ColaboradorEspacioPWAListSerializer(
+            self._get_queryset(), many=True
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, comedor_id=None):
-        serializer = ColaboradorEspacioPWASerializer(
-            data=request.data,
-            context={"comedor_id": comedor_id},
-        )
+        serializer = ColaboradorEspacioPWACreateUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        colaborador = create_colaborador(
-            comedor_id=comedor_id,
+        comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, request.user)
+        cleaned_data = dict(serializer.validated_data)
+        dni = cleaned_data.pop("dni", None)
+        ciudadano_id = cleaned_data.pop("ciudadano_id", None)
+        actividad_ids = cleaned_data.pop("actividad_ids", [])
+        if actividad_ids:
+            cleaned_data["actividades"] = list(
+                ActividadColaboradorEspacio.objects.filter(
+                    id__in=actividad_ids,
+                    activo=True,
+                ).order_by("orden", "id")
+            )
+
+        result = ColaboradorEspacioService.create_for_comedor(
+            comedor=comedor,
             actor=request.user,
-            data=serializer.validated_data,
+            cleaned_data=cleaned_data,
+            ciudadano_id=ciudadano_id,
+            dni=dni,
         )
-        response_serializer = ColaboradorEspacioPWASerializer(colaborador)
+        if not result.get("success"):
+            return Response(
+                {"detail": result.get("message", "No se pudo crear el colaborador.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        response_serializer = ColaboradorEspacioPWAListSerializer(result["colaborador"])
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
     def partial_update(self, request, comedor_id=None, pk=None):
@@ -205,19 +224,36 @@ class ColaboradorEspacioPWAViewSet(viewsets.ViewSet):
                 {"detail": "Colaborador no encontrado."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        serializer = ColaboradorEspacioPWASerializer(
+        serializer = ColaboradorEspacioPWACreateUpdateSerializer(
             colaborador,
             data=request.data,
             partial=True,
-            context={"comedor_id": comedor_id},
         )
         serializer.is_valid(raise_exception=True)
-        colaborador = update_colaborador(
+        cleaned_data = dict(serializer.validated_data)
+        actividad_ids = cleaned_data.pop("actividad_ids", None)
+        if actividad_ids is not None:
+            cleaned_data["actividades"] = list(
+                ActividadColaboradorEspacio.objects.filter(
+                    id__in=actividad_ids,
+                    activo=True,
+                ).order_by("orden", "id")
+            )
+        result = ColaboradorEspacioService.update_for_comedor(
             colaborador=colaborador,
             actor=request.user,
-            data=serializer.validated_data,
+            cleaned_data=cleaned_data,
         )
-        response_serializer = ColaboradorEspacioPWASerializer(colaborador)
+        if not result.get("success"):
+            return Response(
+                {
+                    "detail": result.get(
+                        "message", "No se pudo actualizar el colaborador."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        response_serializer = ColaboradorEspacioPWAListSerializer(result["colaborador"])
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, comedor_id=None, pk=None):
@@ -227,12 +263,121 @@ class ColaboradorEspacioPWAViewSet(viewsets.ViewSet):
                 {"detail": "Colaborador no encontrado."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        try:
-            soft_delete_colaborador(colaborador=colaborador, actor=request.user)
-        except ValidationError as exc:
-            detail = exc.message_dict if hasattr(exc, "message_dict") else exc.messages
-            return Response({"detail": detail}, status=status.HTTP_400_BAD_REQUEST)
+        result = ColaboradorEspacioService.soft_delete(
+            colaborador=colaborador, actor=request.user
+        )
+        if not result.get("success"):
+            return Response(
+                {
+                    "detail": result.get(
+                        "message", "No se pudo dar de baja el colaborador."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def generos(self, request, comedor_id=None):
+        serializer = ColaboradorGeneroPWAListSerializer(
+            [
+                {"id": code, "label": label}
+                for code, label in ColaboradorEspacio.GeneroChoices.choices
+            ],
+            many=True,
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def actividades(self, request, comedor_id=None):
+        queryset = ActividadColaboradorEspacio.objects.filter(activo=True).order_by(
+            "orden", "id"
+        )
+        serializer = ColaboradorActividadCatalogoSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _renaper_unavailable_message():
+        return (
+            "No se pudo conectar con RENAPER en este momento. "
+            "Probá nuevamente en unos minutos."
+        )
+
+    @classmethod
+    def _normalize_renaper_error_message(cls, message):
+        normalized_message = str(
+            message or "No se pudieron obtener datos desde RENAPER."
+        )
+        lowered = normalized_message.lower()
+        if (
+            "timed out" in lowered
+            or "connectionpool" in lowered
+            or "max retries exceeded" in lowered
+        ):
+            return cls._renaper_unavailable_message()
+        return normalized_message
+
+    def preview_dni(self, request, comedor_id=None):
+        serializer = NominaRenaperPreviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        dni = serializer.validated_data["dni"]
+
+        ciudadano = (
+            Ciudadano.objects.select_related("sexo")
+            .filter(
+                documento=int(dni),
+                deleted_at__isnull=True,
+            )
+            .first()
+        )
+        if ciudadano:
+            data = ColaboradorEspacioService.build_preview_from_ciudadano(ciudadano)
+            colaborador_existente = ColaboradorEspacio.objects.filter(
+                comedor_id=comedor_id,
+                ciudadano=ciudadano,
+                fecha_baja__isnull=True,
+            ).first()
+            return Response(
+                {
+                    "source": "sisoc",
+                    "ciudadano_id": ciudadano.id,
+                    "ya_registrado_en_espacio": bool(colaborador_existente),
+                    "colaborador_activo_id": (
+                        colaborador_existente.id if colaborador_existente else None
+                    ),
+                    **data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        try:
+            renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(dni)
+        except Exception:
+            return Response(
+                {"detail": self._renaper_unavailable_message()},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not renaper_result.get("success"):
+            message = self._normalize_renaper_error_message(
+                renaper_result.get("message")
+            )
+            return Response(
+                {"detail": message},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        data = ColaboradorEspacioService.build_preview_from_renaper_data(
+            renaper_result.get("data") or {}
+        )
+        return Response(
+            {
+                "source": "renaper",
+                "ciudadano_id": None,
+                "ya_registrado_en_espacio": False,
+                "colaborador_activo_id": None,
+                **data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema(tags=["PWA Actividades"])
