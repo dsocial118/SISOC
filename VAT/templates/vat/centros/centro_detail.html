@@ -137,12 +137,16 @@
             gap: 0.65rem;
         }
 
+        .info-general-body {
+            background: #e3ecf9;
+        }
+
         .ig-row {
             display: grid;
             grid-template-columns: minmax(180px, 240px) 1fr;
             align-items: center;
             gap: 0.85rem;
-            background: #eaf1fb;
+            background: #dbe7f8 !important;
             border: 1px solid #cfdbef;
             border-left: 4px solid #2f5fab;
             border-radius: 10px;
@@ -525,40 +529,54 @@
                         Informacion General
                     </h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body info-general-body">
                     <div class="ig-list">
                         <div class="ig-row">
-                            <div class="ig-key"><i class="fas fa-hashtag"></i>Codigo</div>
+                            <div class="ig-key">
+                                <i class="fas fa-hashtag"></i>Codigo
+                            </div>
                             <div class="ig-data">{{ centro.codigo|default:"-" }}</div>
                         </div>
 
                         <div class="ig-row">
-                            <div class="ig-key"><i class="fas fa-sitemap"></i>Tipo de Gestion</div>
+                            <div class="ig-key">
+                                <i class="fas fa-sitemap"></i>Tipo de Gestion
+                            </div>
                             <div class="ig-data">{{ centro.tipo_gestion|default:"-" }}</div>
                         </div>
 
                         <div class="ig-row">
-                            <div class="ig-key"><i class="fas fa-school"></i>Clase de Institucion</div>
+                            <div class="ig-key">
+                                <i class="fas fa-school"></i>Clase de Institucion
+                            </div>
                             <div class="ig-data">{{ centro.clase_institucion|default:"-" }}</div>
                         </div>
 
                         <div class="ig-row">
-                            <div class="ig-key"><i class="fas fa-flag"></i>Situacion</div>
+                            <div class="ig-key">
+                                <i class="fas fa-flag"></i>Situacion
+                            </div>
                             <div class="ig-data">{{ centro.situacion|default:"-" }}</div>
                         </div>
 
                         <div class="ig-row">
-                            <div class="ig-key"><i class="fas fa-phone"></i>Telefono</div>
+                            <div class="ig-key">
+                                <i class="fas fa-phone"></i>Telefono
+                            </div>
                             <div class="ig-data">{{ centro.telefono|default:"-" }}</div>
                         </div>
 
                         <div class="ig-row">
-                            <div class="ig-key"><i class="fas fa-mobile-alt"></i>Celular</div>
+                            <div class="ig-key">
+                                <i class="fas fa-mobile-alt"></i>Celular
+                            </div>
                             <div class="ig-data">{{ centro.celular|default:"-" }}</div>
                         </div>
 
                         <div class="ig-row">
-                            <div class="ig-key"><i class="fas fa-envelope"></i>Correo</div>
+                            <div class="ig-key">
+                                <i class="fas fa-envelope"></i>Correo
+                            </div>
                             <div class="ig-data">
                                 {% if centro.correo %}
                                     <a href="mailto:{{ centro.correo }}">{{ centro.correo }}</a>
@@ -570,7 +588,9 @@
 
                         {% if centro.sitio_web %}
                             <div class="ig-row">
-                                <div class="ig-key"><i class="fas fa-globe"></i>Sitio Web</div>
+                                <div class="ig-key">
+                                    <i class="fas fa-globe"></i>Sitio Web
+                                </div>
                                 <div class="ig-data">
                                     <a href="{{ centro.sitio_web }}" target="_blank">{{ centro.sitio_web }}</a>
                                 </div>
@@ -579,7 +599,9 @@
 
                         {% if centro.domicilio_actividad %}
                             <div class="ig-row">
-                                <div class="ig-key"><i class="fas fa-map-marker-alt"></i>Domicilio de Actividades</div>
+                                <div class="ig-key">
+                                    <i class="fas fa-map-marker-alt"></i>Domicilio de Actividades
+                                </div>
                                 <div class="ig-data">{{ centro.domicilio_actividad }}</div>
                             </div>
                         {% endif %}
