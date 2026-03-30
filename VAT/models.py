@@ -1,8 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
 from ciudadanos.models import Ciudadano
-from core.models import Dia, Localidad, Municipio, Provincia, Sexo, Programa
+from core.models import Dia, Localidad, Municipio, Provincia, Programa
 from core.soft_delete import SoftDeleteModelMixin
 
 

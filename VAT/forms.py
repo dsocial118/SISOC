@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from ciudadanos.models import Ciudadano
-from core.models import Dia, Sexo
+from core.models import Dia
 from core.models import Localidad, Programa
 from VAT.models import (
     Centro,
@@ -27,10 +27,7 @@ from VAT.models import (
     Evaluacion,
     ResultadoEvaluacion,
 )
-from VAT.services.form_service import (
-    setup_location_fields,
-    set_readonly_fields,
-)
+
 
 HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
     (f"{h:02d}:30", f"{h:02d}:30") for h in range(0, 24)
