@@ -137,8 +137,13 @@
             gap: 0.65rem;
         }
 
+        .info-general-card {
+            background: linear-gradient(180deg, #edf3fb 0%, #e1ebf8 100%);
+            overflow: hidden;
+        }
+
         .info-general-body {
-            background: #e3ecf9;
+            background: transparent;
         }
 
         .ig-row {
@@ -522,89 +527,67 @@
              role="tabpanel">
 
             <!-- Informacion General -->
-            <div class="card shadow-sm mb-4">
+            <div class="card shadow-sm mb-4 info-general-card">
                 <div class="card-header bg-light info-general-header">
                     <h6 class="mb-0 text-primary">
                         <i class="fas fa-info-circle me-2"></i>
                         Informacion General
                     </h6>
                 </div>
-                <div class="card-body info-general-body">
-                    <div class="ig-list">
-                        <div class="ig-row">
-                            <div class="ig-key">
-                                <i class="fas fa-hashtag"></i>Codigo
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Codigo</label>
+                                <p class="mb-0">{{ centro.codigo|default:"-" }}</p>
                             </div>
-                            <div class="ig-data">{{ centro.codigo|default:"-" }}</div>
-                        </div>
-
-                        <div class="ig-row">
-                            <div class="ig-key">
-                                <i class="fas fa-sitemap"></i>Tipo de Gestion
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Tipo de Gestion</label>
+                                <p class="mb-0">{{ centro.tipo_gestion|default:"-" }}</p>
                             </div>
-                            <div class="ig-data">{{ centro.tipo_gestion|default:"-" }}</div>
-                        </div>
-
-                        <div class="ig-row">
-                            <div class="ig-key">
-                                <i class="fas fa-school"></i>Clase de Institucion
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Clase de Institucion</label>
+                                <p class="mb-0">{{ centro.clase_institucion|default:"-" }}</p>
                             </div>
-                            <div class="ig-data">{{ centro.clase_institucion|default:"-" }}</div>
-                        </div>
-
-                        <div class="ig-row">
-                            <div class="ig-key">
-                                <i class="fas fa-flag"></i>Situacion
-                            </div>
-                            <div class="ig-data">{{ centro.situacion|default:"-" }}</div>
-                        </div>
-
-                        <div class="ig-row">
-                            <div class="ig-key">
-                                <i class="fas fa-phone"></i>Telefono
-                            </div>
-                            <div class="ig-data">{{ centro.telefono|default:"-" }}</div>
-                        </div>
-
-                        <div class="ig-row">
-                            <div class="ig-key">
-                                <i class="fas fa-mobile-alt"></i>Celular
-                            </div>
-                            <div class="ig-data">{{ centro.celular|default:"-" }}</div>
-                        </div>
-
-                        <div class="ig-row">
-                            <div class="ig-key">
-                                <i class="fas fa-envelope"></i>Correo
-                            </div>
-                            <div class="ig-data">
-                                {% if centro.correo %}
-                                    <a href="mailto:{{ centro.correo }}">{{ centro.correo }}</a>
-                                {% else %}
-                                    -
-                                {% endif %}
+                            <div class="mb-0">
+                                <label class="form-label fw-bold text-muted">Situacion</label>
+                                <p class="mb-0">{{ centro.situacion|default:"-" }}</p>
                             </div>
                         </div>
-
-                        {% if centro.sitio_web %}
-                            <div class="ig-row">
-                                <div class="ig-key">
-                                    <i class="fas fa-globe"></i>Sitio Web
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Telefono</label>
+                                <p class="mb-0">{{ centro.telefono|default:"-" }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Celular</label>
+                                <p class="mb-0">{{ centro.celular|default:"-" }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Correo</label>
+                                <p class="mb-0">
+                                    {% if centro.correo %}
+                                        <a href="mailto:{{ centro.correo }}" class="text-decoration-none">{{ centro.correo }}</a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% if centro.sitio_web %}
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-muted">Sitio Web</label>
+                                    <p class="mb-0">
+                                        <a href="{{ centro.sitio_web }}" target="_blank" class="text-decoration-none">{{ centro.sitio_web }}</a>
+                                    </p>
                                 </div>
-                                <div class="ig-data">
-                                    <a href="{{ centro.sitio_web }}" target="_blank">{{ centro.sitio_web }}</a>
+                            {% endif %}
+                            {% if centro.domicilio_actividad %}
+                                <div class="mb-0">
+                                    <label class="form-label fw-bold text-muted">Domicilio de Actividades</label>
+                                    <p class="mb-0">{{ centro.domicilio_actividad }}</p>
                                 </div>
-                            </div>
-                        {% endif %}
-
-                        {% if centro.domicilio_actividad %}
-                            <div class="ig-row">
-                                <div class="ig-key">
-                                    <i class="fas fa-map-marker-alt"></i>Domicilio de Actividades
-                                </div>
-                                <div class="ig-data">{{ centro.domicilio_actividad }}</div>
-                            </div>
-                        {% endif %}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
