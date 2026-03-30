@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 from django.contrib.auth.models import User
 
 from centrodeinfancia.forms import FormularioCDIForm

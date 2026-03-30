@@ -1,4 +1,4 @@
-﻿# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines
 import logging
 import os
 from datetime import date, datetime
