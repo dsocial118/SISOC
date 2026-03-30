@@ -54,6 +54,47 @@
         });
     }
 
+    function bindNestedTreeviews(menu) {
+        menu.querySelectorAll(".nav-treeview .nav-item").forEach((item) => {
+            const toggle = item.querySelector(":scope > .nav-link");
+            const submenu = item.querySelector(":scope > .nav-treeview");
+
+            if (!toggle || !submenu) {
+                return;
+            }
+
+            if (item.querySelector(":scope > .nav-treeview .nav-link.active")) {
+                item.classList.add("menu-open");
+            }
+
+            toggle.addEventListener("click", (event) => {
+                if (!isDesktopViewport()) {
+                    return;
+                }
+
+                const href = toggle.getAttribute("href");
+                if (href && href !== "#") {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const parentList = item.parentElement;
+                const willOpen = !item.classList.contains("menu-open");
+
+                if (parentList) {
+                    parentList.querySelectorAll(":scope > .nav-item.menu-open").forEach((sibling) => {
+                        if (sibling !== item) {
+                            sibling.classList.remove("menu-open");
+                        }
+                    });
+                }
+
+                item.classList.toggle("menu-open", willOpen);
+            });
+        });
+    }
+
     function bindTopbarMenu() {
         document.querySelectorAll(".sidebar-menu").forEach((menuRoot) => {
             simplifySingleOptionGroups(menuRoot);
@@ -63,6 +104,8 @@
         if (!menu) {
             return;
         }
+
+        bindNestedTreeviews(menu);
 
         menu.querySelectorAll(":scope > .nav-item").forEach((item) => {
             const toggle = item.querySelector(":scope > .nav-link");

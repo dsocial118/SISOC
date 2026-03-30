@@ -77,6 +77,10 @@ header.main-header,
     overflow: visible !important;
 }
 
+.sisoc-topbar-menu .nav-item {
+    min-height: auto !important;
+}
+
 .sisoc-topbar-menu > .user-info,
 .sisoc-topbar-menu .nav-main-item.menu-open::before {
     display: none;
@@ -113,8 +117,12 @@ header.main-header,
 }
 
 .sisoc-topbar-menu > .nav-main-item > a,
-.sisoc-topbar-menu > .nav-item > .nav-link {
+.sisoc-topbar-menu > .nav-item > .nav-link,
+.sisoc-topbar-menu .nav-link {
     border: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
 }
 
 .sisoc-topbar-menu > .nav-item > .nav-link img,
@@ -158,16 +166,19 @@ header.main-header,
 .sisoc-topbar-menu > .nav-item > .nav-treeview > .nav-item {
     min-height: auto;
     width: 100%;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    padding: 0.25rem;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
 }
 
 .sisoc-topbar-menu > .nav-item > .nav-treeview > .nav-item > .nav-link {
     min-height: auto;
     height: auto;
-    padding: 0.8rem 0.9rem 0.55rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 0.9rem;
     color: #f8fafc;
     font-weight: 700;
     border-radius: 12px;
@@ -180,17 +191,21 @@ header.main-header,
 }
 
 .sisoc-topbar-menu .nav-treeview .nav-treeview {
-    display: block;
+    display: none;
     position: static;
     width: 100%;
     max-height: none;
-    overflow: visible;
+    overflow: hidden;
     margin-top: 0.2rem;
     padding: 0.25rem 0 0 0.85rem;
     border: 0;
     background: transparent;
     box-shadow: none;
     border-left: 1px solid rgba(231, 186, 97, 0.18);
+}
+
+.sisoc-topbar-menu .nav-treeview .nav-item.menu-open > .nav-treeview {
+    display: block;
 }
 
 .sisoc-topbar-menu .nav-treeview .nav-item,
@@ -210,6 +225,12 @@ header.main-header,
     color: rgba(255, 255, 255, 0.86);
 }
 
+.sisoc-topbar-menu .nav-treeview .nav-treeview .nav-item.menu-open > .nav-link,
+.sisoc-topbar-menu .nav-treeview .nav-treeview .nav-link.active {
+    background: rgba(231, 186, 97, 0.12);
+    color: #ffffff;
+}
+
 .sisoc-topbar-menu .nav-treeview .nav-treeview .nav-link:hover,
 .sisoc-topbar-menu .nav-treeview .nav-treeview .nav-link.active {
     background: rgba(231, 186, 97, 0.12);
@@ -218,6 +239,11 @@ header.main-header,
 
 .sisoc-topbar-menu .nav-arrow {
     font-size: 0.9rem;
+    transition: transform 180ms ease;
+}
+
+.sisoc-topbar-menu .nav-treeview .nav-item.menu-open > .nav-link .nav-arrow {
+    transform: rotate(90deg);
 }
 
 .sisoc-topbar-actions {
