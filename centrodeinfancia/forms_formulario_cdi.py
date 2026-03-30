@@ -144,9 +144,7 @@ class FormularioCDIForm(forms.ModelForm):
             for nombre, campo in campos.items()
         }
         valores = {
-            nombre: self._obtener_valor_enlazado_o_inicial(
-                campo, instancias[nombre]
-            )
+            nombre: self._obtener_valor_enlazado_o_inicial(campo, instancias[nombre])
             for nombre, campo in campos.items()
         }
 

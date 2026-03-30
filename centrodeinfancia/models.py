@@ -17,9 +17,7 @@ FormularioCDIArticulationFrequency = (
     _models_cdi_relaciones.FormularioCDIArticulationFrequency
 )
 FormularioCDIRoomDistribution = _models_cdi_relaciones.FormularioCDIRoomDistribution
-FormularioCDIWaitlistByAgeGroup = (
-    _models_cdi_relaciones.FormularioCDIWaitlistByAgeGroup
-)
+FormularioCDIWaitlistByAgeGroup = _models_cdi_relaciones.FormularioCDIWaitlistByAgeGroup
 IntervencionCentroInfancia = _models_cdi_relaciones.IntervencionCentroInfancia
 ObservacionCentroInfancia = _models_cdi_relaciones.ObservacionCentroInfancia
 
