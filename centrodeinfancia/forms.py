@@ -71,7 +71,15 @@ class CentroDeInfanciaForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self._popular_campos_ubicacion()
         self._aplicar_provincia_usuario()
+        self._aplicar_requeridos()
         self._aplicar_atributos_numericos()
+
+    def _aplicar_requeridos(self):
+        for field_name in ["telefono", "telefono_referente"]:
+            self.fields[field_name].required = True
+            self.fields[field_name].error_messages["required"] = (
+                "Este campo es obligatorio."
+            )
 
     def _aplicar_atributos_numericos(self):
         # Campos estrictamente numéricos

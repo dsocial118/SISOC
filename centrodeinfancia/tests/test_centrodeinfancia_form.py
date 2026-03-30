@@ -1,5 +1,6 @@
-﻿import pytest
+import pytest
 from django.contrib.auth.models import User
+from django.urls import reverse
 
 from centrodeinfancia.forms import CentroDeInfanciaForm
 from centrodeinfancia.models import CentroDeInfancia
@@ -17,7 +18,11 @@ def test_form_creacion_bloquea_provincia_si_usuario_tiene_provincia():
     profile.save()
 
     form = CentroDeInfanciaForm(
-        data={"nombre": "CDI Norte"},
+        data={
+            "nombre": "CDI Norte",
+            "telefono": "1122334455",
+            "telefono_referente": "1199887766",
+        },
         user=user,
         lock_provincia_from_user=True,
     )
@@ -37,7 +42,11 @@ def test_form_creacion_no_bloquea_provincia_si_usuario_no_tiene_provincia():
     profile.save()
 
     form = CentroDeInfanciaForm(
-        data={"nombre": "CDI Sur"},
+        data={
+            "nombre": "CDI Sur",
+            "telefono": "1122334455",
+            "telefono_referente": "1199887766",
+        },
         user=user,
         lock_provincia_from_user=True,
     )
@@ -51,10 +60,16 @@ def test_form_creacion_no_bloquea_provincia_si_usuario_no_tiene_provincia():
 def test_form_includes_apellido_referente_opcional():
     user = User.objects.create_user(username="user-apellido", password="test1234")
     form = CentroDeInfanciaForm(
-        data={"nombre": "CDI Este", "apellido_referente": "Gómez"},
+        data={
+            "nombre": "CDI Este",
+            "apellido_referente": "Gómez",
+            "telefono": "1122334455",
+            "telefono_referente": "1199887766",
+        },
         user=user,
         lock_provincia_from_user=False,
     )
+
     assert "apellido_referente" in form.fields
     assert form.is_valid() is True
     assert form.cleaned_data["apellido_referente"] == "Gómez"
@@ -68,6 +83,8 @@ def test_form_acepta_numero_calle_opcional():
             "nombre": "CDI Norte",
             "calle": "San Martín",
             "numero": "123",
+            "telefono": "1122334455",
+            "telefono_referente": "1199887766",
         },
         user=user,
         lock_provincia_from_user=False,
@@ -160,3 +177,72 @@ def test_form_edicion_mantiene_campos_obligatorios():
 
     assert not form.is_valid()
     assert "nombre" in form.errors
+
+
+@pytest.mark.django_db
+def test_form_requiere_telefonos_en_creacion_y_edicion():
+    user = User.objects.create_user(
+        username="user-telefonos-obligatorios",
+        password="test1234",
+    )
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Teléfonos",
+        telefono="1122334455",
+        telefono_referente="1199887766",
+    )
+
+    form_creacion = CentroDeInfanciaForm(
+        data={"nombre": "CDI Nuevo", "telefono": "", "telefono_referente": ""},
+        user=user,
+        lock_provincia_from_user=False,
+    )
+    form_edicion = CentroDeInfanciaForm(
+        data={"nombre": centro.nombre, "telefono": "", "telefono_referente": ""},
+        instance=centro,
+        user=user,
+        lock_provincia_from_user=False,
+    )
+
+    assert not form_creacion.is_valid()
+    assert form_creacion.errors["telefono"] == ["Este campo es obligatorio."]
+    assert form_creacion.errors["telefono_referente"] == [
+        "Este campo es obligatorio."
+    ]
+
+    assert not form_edicion.is_valid()
+    assert form_edicion.errors["telefono"] == ["Este campo es obligatorio."]
+    assert form_edicion.errors["telefono_referente"] == [
+        "Este campo es obligatorio."
+    ]
+
+
+@pytest.mark.django_db
+def test_edicion_centro_muestra_errores_si_se_eliminan_telefonos(client):
+    user = User.objects.create_superuser(
+        username="super-cdi-edicion-telefonos",
+        email="super-cdi-edicion-telefonos@example.com",
+        password="test1234",
+    )
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Edicion",
+        telefono="1122334455",
+        telefono_referente="1199887766",
+    )
+
+    response = client.post(
+        reverse("centrodeinfancia_editar", kwargs={"pk": centro.pk}),
+        {
+            "nombre": centro.nombre,
+            "telefono": "",
+            "telefono_referente": "",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.context["form"].errors["telefono"] == [
+        "Este campo es obligatorio."
+    ]
+    assert response.context["form"].errors["telefono_referente"] == [
+        "Este campo es obligatorio."
+    ]
