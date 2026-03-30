@@ -840,6 +840,10 @@ def test_importacion_helpers_orquesta_beneficiario_y_detecta_responsable(mocker)
         module._tiene_datos_responsable_importacion({"nombre_responsable": "Ana"})
         is True
     )
+    assert (
+        module._tiene_datos_responsable_importacion({"telefono_responsable": "3415550000"})
+        is True
+    )
 
 
 def test_importacion_helpers_procesar_responsable_same_document():
