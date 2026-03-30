@@ -131,56 +131,64 @@
             align-self: stretch;
         }
 
-        .ig-grid {
+        .ig-list {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-            gap: 0.9rem;
-            margin-bottom: 1rem;
+            grid-template-columns: 1fr;
+            gap: 0.65rem;
         }
 
-        .ig-item {
-            border: 1px solid #d7e2f3;
-            border-radius: 12px;
-            background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
-            padding: 0.85rem 0.9rem;
-            min-height: 92px;
+        .ig-row {
+            display: grid;
+            grid-template-columns: minmax(180px, 240px) 1fr;
+            align-items: center;
+            gap: 0.85rem;
+            background: #eaf1fb;
+            border: 1px solid #cfdbef;
+            border-left: 4px solid #2f5fab;
+            border-radius: 10px;
+            padding: 0.7rem 0.85rem;
         }
 
-        .ig-head {
-            display: flex;
+        .ig-key {
+            display: inline-flex;
             align-items: center;
             gap: 0.45rem;
-            margin-bottom: 0.35rem;
-            color: #274a85;
-            font-size: 0.74rem;
+            font-size: 0.76rem;
             font-weight: 700;
-            letter-spacing: 0.02em;
             text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #24457f;
         }
 
-        .ig-head i {
-            font-size: 0.8rem;
+        .ig-key i {
+            width: 18px;
+            text-align: center;
+            color: #2f5fab;
         }
 
-        .ig-value {
-            font-size: 0.96rem;
-            color: #1f2d4d;
+        .ig-data {
+            font-size: 0.97rem;
+            color: #1a2c4d;
             font-weight: 600;
-            line-height: 1.3;
+            line-height: 1.35;
             word-break: break-word;
         }
 
-        .ig-value a {
-            color: #1d5bc8;
+        .ig-data a {
+            color: #134ea8;
             text-decoration: none;
+            font-weight: 700;
         }
 
-        .ig-value a:hover {
+        .ig-data a:hover {
             text-decoration: underline;
         }
 
-        .ig-item-full {
-            grid-column: 1 / -1;
+        @media (max-width: 767.98px) {
+            .ig-row {
+                grid-template-columns: 1fr;
+                gap: 0.35rem;
+            }
         }
 
         .bg-gradient-primary {
@@ -518,61 +526,40 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <div class="ig-grid">
-                        <div class="ig-item">
-                            <div class="ig-head">
-                                <i class="fas fa-hashtag"></i>
-                                Codigo
-                            </div>
-                            <div class="ig-value">{{ centro.codigo|default:"-" }}</div>
+                    <div class="ig-list">
+                        <div class="ig-row">
+                            <div class="ig-key"><i class="fas fa-hashtag"></i>Codigo</div>
+                            <div class="ig-data">{{ centro.codigo|default:"-" }}</div>
                         </div>
 
-                        <div class="ig-item">
-                            <div class="ig-head">
-                                <i class="fas fa-sitemap"></i>
-                                Tipo de Gestion
-                            </div>
-                            <div class="ig-value">{{ centro.tipo_gestion|default:"-" }}</div>
+                        <div class="ig-row">
+                            <div class="ig-key"><i class="fas fa-sitemap"></i>Tipo de Gestion</div>
+                            <div class="ig-data">{{ centro.tipo_gestion|default:"-" }}</div>
                         </div>
 
-                        <div class="ig-item">
-                            <div class="ig-head">
-                                <i class="fas fa-school"></i>
-                                Clase de Institucion
-                            </div>
-                            <div class="ig-value">{{ centro.clase_institucion|default:"-" }}</div>
+                        <div class="ig-row">
+                            <div class="ig-key"><i class="fas fa-school"></i>Clase de Institucion</div>
+                            <div class="ig-data">{{ centro.clase_institucion|default:"-" }}</div>
                         </div>
 
-                        <div class="ig-item">
-                            <div class="ig-head">
-                                <i class="fas fa-flag"></i>
-                                Situacion
-                            </div>
-                            <div class="ig-value">{{ centro.situacion|default:"-" }}</div>
+                        <div class="ig-row">
+                            <div class="ig-key"><i class="fas fa-flag"></i>Situacion</div>
+                            <div class="ig-data">{{ centro.situacion|default:"-" }}</div>
                         </div>
 
-                        <div class="ig-item">
-                            <div class="ig-head">
-                                <i class="fas fa-phone"></i>
-                                Telefono
-                            </div>
-                            <div class="ig-value">{{ centro.telefono|default:"-" }}</div>
+                        <div class="ig-row">
+                            <div class="ig-key"><i class="fas fa-phone"></i>Telefono</div>
+                            <div class="ig-data">{{ centro.telefono|default:"-" }}</div>
                         </div>
 
-                        <div class="ig-item">
-                            <div class="ig-head">
-                                <i class="fas fa-mobile-alt"></i>
-                                Celular
-                            </div>
-                            <div class="ig-value">{{ centro.celular|default:"-" }}</div>
+                        <div class="ig-row">
+                            <div class="ig-key"><i class="fas fa-mobile-alt"></i>Celular</div>
+                            <div class="ig-data">{{ centro.celular|default:"-" }}</div>
                         </div>
 
-                        <div class="ig-item ig-item-full">
-                            <div class="ig-head">
-                                <i class="fas fa-envelope"></i>
-                                Correo
-                            </div>
-                            <div class="ig-value">
+                        <div class="ig-row">
+                            <div class="ig-key"><i class="fas fa-envelope"></i>Correo</div>
+                            <div class="ig-data">
                                 {% if centro.correo %}
                                     <a href="mailto:{{ centro.correo }}">{{ centro.correo }}</a>
                                 {% else %}
@@ -582,24 +569,18 @@
                         </div>
 
                         {% if centro.sitio_web %}
-                            <div class="ig-item ig-item-full">
-                                <div class="ig-head">
-                                    <i class="fas fa-globe"></i>
-                                    Sitio Web
-                                </div>
-                                <div class="ig-value">
+                            <div class="ig-row">
+                                <div class="ig-key"><i class="fas fa-globe"></i>Sitio Web</div>
+                                <div class="ig-data">
                                     <a href="{{ centro.sitio_web }}" target="_blank">{{ centro.sitio_web }}</a>
                                 </div>
                             </div>
                         {% endif %}
 
                         {% if centro.domicilio_actividad %}
-                            <div class="ig-item ig-item-full">
-                                <div class="ig-head">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    Domicilio de Actividades
-                                </div>
-                                <div class="ig-value">{{ centro.domicilio_actividad }}</div>
+                            <div class="ig-row">
+                                <div class="ig-key"><i class="fas fa-map-marker-alt"></i>Domicilio de Actividades</div>
+                                <div class="ig-data">{{ centro.domicilio_actividad }}</div>
                             </div>
                         {% endif %}
                     </div>
@@ -1799,4 +1780,3 @@
         }
     </script>
 {% endblock %}
-
