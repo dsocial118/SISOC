@@ -24,6 +24,14 @@
 
 - No se ejecuta una carga automática en migración.
 
+## Cambios adicionales incluidos en el PR
+
+- Se corrigen las mayúsculas de los labels de `grupo_etario` en `FormularioCDIWaitlistByAgeGroup`
+  (opciones `dos_anos`, `tres_anos`, `cuatro_anos` pasan de minúscula a mayúscula inicial).
+  El cambio aplica tanto en `formulario_cdi_schema.py` (constante `OPCIONES_GRUPO_ETARIO_DEMANDA`)
+  como en la migración `0018` que actualiza los `choices` persistidos en el modelo.
+  Este cambio es solo de presentación y no afecta datos existentes.
+
 ## Carga futura sugerida
 
 1. Si cambia la fuente IPI, regenerar el fixture a partir del `.xlsx` actualizado.

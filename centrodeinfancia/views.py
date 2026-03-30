@@ -19,7 +19,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.html import escape, format_html, format_html_join
 from django.utils.text import Truncator
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -747,12 +747,15 @@ def centrodeinfancia_ajax(request):
 
 
 @login_required
+@require_GET
 def load_departamentos_ipi(request):
-    provincia_id = request.GET.get("provincia_id")
     departamentos = DepartamentoIpi.objects.none()
 
-    if provincia_id:
+    try:
+        provincia_id = int(request.GET.get("provincia_id", ""))
         departamentos = DepartamentoIpi.objects.filter(provincia_id=provincia_id)
+    except (ValueError, TypeError):
+        pass
 
     return JsonResponse(
         list(departamentos.order_by("nombre").values("id", "nombre", "decil_ipi")),
