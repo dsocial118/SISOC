@@ -1,4 +1,4 @@
-﻿name: Formateo y linteo
+name: Formateo y linteo
 
 on:
     pull_request:

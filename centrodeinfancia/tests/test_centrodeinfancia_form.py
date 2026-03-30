@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 
 from centrodeinfancia.forms import CentroDeInfanciaForm
-from centrodeinfancia.models import CentroDeInfancia
+from centrodeinfancia.models import CentroDeInfancia, DepartamentoIpi
 from core.models import Provincia
 from users.models import Profile
 
@@ -205,15 +205,11 @@ def test_form_requiere_telefonos_en_creacion_y_edicion():
 
     assert not form_creacion.is_valid()
     assert form_creacion.errors["telefono"] == ["Este campo es obligatorio."]
-    assert form_creacion.errors["telefono_referente"] == [
-        "Este campo es obligatorio."
-    ]
+    assert form_creacion.errors["telefono_referente"] == ["Este campo es obligatorio."]
 
     assert not form_edicion.is_valid()
     assert form_edicion.errors["telefono"] == ["Este campo es obligatorio."]
-    assert form_edicion.errors["telefono_referente"] == [
-        "Este campo es obligatorio."
-    ]
+    assert form_edicion.errors["telefono_referente"] == ["Este campo es obligatorio."]
 
 
 @pytest.mark.django_db
@@ -240,9 +236,99 @@ def test_edicion_centro_muestra_errores_si_se_eliminan_telefonos(client):
     )
 
     assert response.status_code == 200
-    assert response.context["form"].errors["telefono"] == [
-        "Este campo es obligatorio."
-    ]
+    assert response.context["form"].errors["telefono"] == ["Este campo es obligatorio."]
     assert response.context["form"].errors["telefono_referente"] == [
         "Este campo es obligatorio."
     ]
+
+
+@pytest.mark.django_db
+def test_form_filtra_departamentos_por_provincia():
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
+    departamento_ba = DepartamentoIpi.objects.create(
+        codigo_departamento="02001",
+        provincia=provincia_ba,
+        nombre="Comuna 1",
+    )
+    DepartamentoIpi.objects.create(
+        codigo_departamento="82001",
+        provincia=provincia_sf,
+        nombre="Rosario",
+    )
+
+    form = CentroDeInfanciaForm(
+        data={"nombre": "CDI Norte", "provincia": provincia_ba.id}
+    )
+
+    departamento_ids = set(
+        form.fields["departamento"].queryset.values_list("id", flat=True)
+    )
+
+    assert departamento_ids == {departamento_ba.id}
+
+
+@pytest.mark.django_db
+def test_form_rechaza_departamento_que_no_pertenece_a_la_provincia():
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
+    departamento_sf = DepartamentoIpi.objects.create(
+        codigo_departamento="82001",
+        provincia=provincia_sf,
+        nombre="Rosario",
+    )
+
+    form = CentroDeInfanciaForm(
+        data={
+            "nombre": "CDI Invalido",
+            "provincia": provincia_ba.id,
+            "departamento": departamento_sf.id,
+        }
+    )
+
+    assert not form.is_valid()
+    assert "departamento" in form.errors
+
+
+@pytest.mark.django_db
+def test_form_muestra_decil_ipi_del_departamento_seleccionado():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    departamento = DepartamentoIpi.objects.create(
+        codigo_departamento="02001",
+        provincia=provincia,
+        nombre="Comuna 1",
+        decil_ipi=3,
+    )
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Centro",
+        provincia=provincia,
+        departamento=departamento,
+    )
+
+    form = CentroDeInfanciaForm(instance=centro)
+
+    assert "decil_ipi" in form.fields
+    assert form.fields["decil_ipi"].disabled is True
+    assert form.fields["decil_ipi"].initial == "3"
+
+
+@pytest.mark.django_db
+def test_form_bound_muestra_decil_ipi_del_departamento_en_post():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    departamento = DepartamentoIpi.objects.create(
+        codigo_departamento="02001",
+        provincia=provincia,
+        nombre="Comuna 1",
+        decil_ipi=7,
+    )
+
+    form = CentroDeInfanciaForm(
+        data={
+            "nombre": "",
+            "provincia": provincia.id,
+            "departamento": departamento.id,
+        }
+    )
+
+    assert not form.is_valid()
+    assert form.fields["decil_ipi"].initial == "7"

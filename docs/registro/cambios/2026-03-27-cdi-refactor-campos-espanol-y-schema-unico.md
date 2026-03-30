@@ -1,4 +1,4 @@
-﻿# Refactor CDI: campos persistidos en español y consolidación del schema
+# Refactor CDI: campos persistidos en español y consolidación del schema
 
 Fecha: 2026-03-27
 

@@ -1,4 +1,4 @@
-﻿"""CRUD web para FormularioCDI."""
+"""CRUD web para FormularioCDI."""
 
 from __future__ import annotations
 
@@ -50,9 +50,11 @@ def _obtener_queryset_formularios_cdi_filtrado(user):
         "centro",
         "created_by",
         "provincia_cdi",
+        "departamento_cdi",
         "municipio_cdi",
         "localidad_cdi",
         "provincia_organizacion",
+        "departamento_organizacion",
         "municipio_organizacion",
         "localidad_organizacion",
     )
@@ -63,7 +65,7 @@ def _obtener_queryset_formularios_cdi_filtrado(user):
 
 def _obtener_centro_filtrado_o_404(user, pk):
     queryset = CentroDeInfancia.objects.select_related(
-        "organizacion", "provincia", "municipio", "localidad"
+        "organizacion", "provincia", "departamento", "municipio", "localidad"
     )
     queryset = aplicar_filtro_provincia_usuario(queryset, user)
     return get_object_or_404(queryset, pk=pk)
@@ -260,6 +262,7 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
             "nombre_cdi": centro.nombre,
             "codigo_cdi": centro.codigo_cdi,
             "provincia_cdi": centro.provincia,
+            "departamento_cdi": centro.departamento,
             "municipio_cdi": centro.municipio,
             "localidad_cdi": centro.localidad,
             "calle_cdi": centro.calle,
