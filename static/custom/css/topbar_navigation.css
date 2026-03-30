@@ -18,6 +18,8 @@ header.main-header,
     left: 0;
     right: 0;
     z-index: 1050;
+    max-width: none;
+    overflow: visible !important;
     background-color: #232d4f !important;
     border-bottom: 5px solid #e7ba61 !important;
     color: #ffffff !important;
@@ -39,6 +41,7 @@ header.main-header,
     align-items: center;
     gap: 1rem;
     min-height: 72px;
+    overflow: visible !important;
 }
 
 .sisoc-topbar-brand {
@@ -48,6 +51,7 @@ header.main-header,
 .sisoc-topbar-nav {
     flex: 1 1 auto;
     min-width: 0;
+    overflow: visible !important;
 }
 
 .sisoc-topbar-menu,
@@ -64,11 +68,13 @@ header.main-header,
     min-width: 0;
     margin-left: 0 !important;
     margin-right: 0 !important;
+    overflow: visible !important;
 }
 
 .sisoc-topbar-menu > .nav-item {
     position: relative;
     min-height: auto;
+    overflow: visible !important;
 }
 
 .sisoc-topbar-menu > .user-info,
