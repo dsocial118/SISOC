@@ -11,7 +11,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -63,6 +63,7 @@ from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 CDI_LIST_HEADERS = [
     {"title": "Nombre"},
     {"title": "Organización"},
+    {"title": "Tiene nómina"},
     {"title": "Provincia"},
     {"title": "Municipio"},
     {"title": "Localidad"},
@@ -74,6 +75,7 @@ CDI_LIST_HEADERS = [
 CDI_LIST_FIELDS = [
     {"name": "nombre"},
     {"name": "organizacion"},
+    {"name": "tiene_nomina"},
     {"name": "provincia"},
     {"name": "municipio"},
     {"name": "localidad"},
@@ -182,8 +184,13 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
+        nomina_subquery = NominaCentroInfancia.objects.filter(
+            centro_id=OuterRef("pk")
+        )
         queryset = CentroDeInfancia.objects.select_related(
             "organizacion", "provincia", "municipio", "localidad"
+        ).annotate(
+            tiene_nomina=Exists(nomina_subquery)
         )
         queryset = _aplicar_filtro_provincia_usuario(queryset, self.request.user)
         if query:
@@ -199,7 +206,13 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             "centrodeinfancia_list",
             CDI_LIST_HEADERS,
             CDI_LIST_FIELDS,
-            default_keys=["nombre", "organizacion", "provincia", "municipio"],
+            default_keys=[
+                "nombre",
+                "organizacion",
+                "tiene_nomina",
+                "provincia",
+                "municipio",
+            ],
             required_keys=["nombre"],
         )
         context["breadcrumb_items"] = [
