@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django import forms
+from django.core.validators import RegexValidator
 from django.forms import inlineformset_factory
 
 from core.models import Localidad, Municipio, Provincia
@@ -25,6 +26,13 @@ from centrodeinfancia.models import (
 
 
 OPCIONES_BOOLEANAS = [("", "---------"), ("true", "Si"), ("false", "No")]
+TELEFONO_FORMATO_FLEXIBLE_ERROR = (
+    "Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones."
+)
+TELEFONO_FORMATO_FLEXIBLE_VALIDATOR = RegexValidator(
+    regex=r"^\d+(?:-\d+)*$",
+    message=TELEFONO_FORMATO_FLEXIBLE_ERROR,
+)
 
 
 def construir_filas_iniciales_fijas(options, key_name):
@@ -100,6 +108,12 @@ class FormularioCDIForm(forms.ModelForm):
         }
 
     definiciones_secciones = SECCIONES_FORMULARIO_CDI
+    phone_field_names = (
+        "telefono_cdi",
+        "telefono_referente_cdi",
+        "telefono_organizacion",
+        "telefono_referente_organizacion",
+    )
 
     @staticmethod
     def _parsear_pk(value):
@@ -169,6 +183,7 @@ class FormularioCDIForm(forms.ModelForm):
         self.fields["codigo_cdi"].disabled = True
         self._configurar_grupo_geo("cdi")
         self._configurar_grupo_geo("organizacion")
+        self._aplicar_validacion_flexible_telefonos()
 
         for field_name, options in CAMPOS_OPCIONES.items():
             if field_name in self.fields:
@@ -193,6 +208,15 @@ class FormularioCDIForm(forms.ModelForm):
                 else "form-control"
             )
             field.widget.attrs["class"] = f"{existing} {widget_class}".strip()
+
+    def _aplicar_validacion_flexible_telefonos(self):
+        for field_name in self.phone_field_names:
+            if field_name not in self.fields:
+                continue
+            field = self.fields[field_name]
+            field.validators = [TELEFONO_FORMATO_FLEXIBLE_VALIDATOR]
+            field.widget.attrs["inputmode"] = "tel"
+            field.widget.attrs["pattern"] = r"\d+(?:-\d+)*"
 
     def clean(self):
         cleaned_data = super().clean()

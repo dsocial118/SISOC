@@ -28,8 +28,11 @@ CUIT_VALIDATOR = RegexValidator(
     message="Ingrese un CUIT valido con formato 20-12345678-3.",
 )
 PHONE_VALIDATOR = RegexValidator(
-    regex=r"^\d{2,4}-\d{2,4}-\d{6,8}$",
-    message="Ingrese un telefono valido con formato 054-011-40333588.",
+    regex=r"^\d+(?:-\d+)*$",
+    message=(
+        "Ingrese un teléfono válido: solo números o grupos numéricos separados por "
+        "guiones."
+    ),
 )
 
 
