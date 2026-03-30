@@ -1,4 +1,4 @@
-﻿"""Definiciones compartidas para FormularioCDI."""
+"""Definiciones compartidas para FormularioCDI."""
 
 from __future__ import annotations
 

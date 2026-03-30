@@ -1,4 +1,4 @@
-﻿from django import forms
+from django import forms
 from django.core.validators import RegexValidator
 
 from ciudadanos.models import Ciudadano

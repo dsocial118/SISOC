@@ -1,4 +1,4 @@
-﻿# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines
 import logging
 import os
 from datetime import date, datetime
@@ -184,14 +184,10 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
-        nomina_subquery = NominaCentroInfancia.objects.filter(
-            centro_id=OuterRef("pk")
-        )
+        nomina_subquery = NominaCentroInfancia.objects.filter(centro_id=OuterRef("pk"))
         queryset = CentroDeInfancia.objects.select_related(
             "organizacion", "provincia", "municipio", "localidad"
-        ).annotate(
-            tiene_nomina=Exists(nomina_subquery)
-        )
+        ).annotate(tiene_nomina=Exists(nomina_subquery))
         queryset = _aplicar_filtro_provincia_usuario(queryset, self.request.user)
         if query:
             queryset = queryset.filter(

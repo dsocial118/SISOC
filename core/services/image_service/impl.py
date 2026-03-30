@@ -1,4 +1,4 @@
-﻿"""Servicio de optimización de imágenes con WebP."""
+"""Servicio de optimización de imágenes con WebP."""
 
 import logging
 import os
