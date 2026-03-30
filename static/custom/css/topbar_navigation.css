@@ -150,8 +150,14 @@ header.main-header,
     display: flex;
 }
 
+.sisoc-topbar-menu > .nav-item > .nav-treeview,
+.sisoc-topbar-menu .nav-treeview .nav-treeview {
+    flex-wrap: nowrap !important;
+}
+
 .sisoc-topbar-menu > .nav-item > .nav-treeview > .nav-item {
     min-height: auto;
+    width: 100%;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px;
@@ -185,6 +191,11 @@ header.main-header,
     background: transparent;
     box-shadow: none;
     border-left: 1px solid rgba(231, 186, 97, 0.18);
+}
+
+.sisoc-topbar-menu .nav-treeview .nav-item,
+.sisoc-topbar-menu .nav-treeview .nav-link {
+    width: 100%;
 }
 
 .sisoc-topbar-menu .nav-treeview .nav-treeview .nav-item {
