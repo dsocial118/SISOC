@@ -3,156 +3,338 @@
 {% load crispy_forms_tags %}
 
 {% block title %}Alta de Centro VAT{% endblock %}
+{% block titulo-pagina %}Alta de Centro VAT{% endblock %}
 
 {% block head %}
-    <link rel="stylesheet"
-          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <style>
+        .vp-shell {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .vp-hero {
+            background: linear-gradient(135deg, #183a67 0%, #25518b 55%, #3b74b8 100%);
+            color: #fff;
+            border-radius: 18px;
+            padding: 1.75rem 2rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 18px 45px rgba(24, 58, 103, 0.18);
+        }
+
+        .vp-hero h1 {
+            margin: 0 0 .35rem;
+            font-size: 1.9rem;
+            font-weight: 700;
+        }
+
+        .vp-hero p {
+            margin: 0;
+            max-width: 760px;
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .vp-panel {
+            border: 0;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+            margin-bottom: 1rem;
+        }
+
+        .vp-panel-header {
+            padding: 1.15rem 1.35rem;
+            border-bottom: 1px solid rgba(126, 179, 255, 0.18);
+            background: linear-gradient(135deg, #132c4d 0%, #1d446f 55%, #2d649e 100%);
+            color: #f8fbff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: .75rem;
+        }
+
+        .vp-panel-header .card-title {
+            color: #ffffff;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .vp-panel-header .text-muted,
+        .vp-panel-header .small {
+            color: rgba(240, 247, 255, 0.82) !important;
+        }
+
+        .vp-section {
+            padding: 1.35rem;
+            border-bottom: 1px solid rgba(126, 179, 255, 0.2);
+            background: linear-gradient(180deg, rgba(14, 31, 53, 0.96) 0%, rgba(18, 38, 64, 0.95) 100%);
+        }
+
+        .vp-section:last-child {
+            border-bottom: 0;
+        }
+
+        .vp-field label {
+            font-weight: 600;
+            color: #dceafe;
+            margin-bottom: .35rem;
+        }
+
+        .vp-section .form-group label,
+        .vp-section .control-label,
+        .vp-section .form-check-label,
+        .vp-section small,
+        .vp-section .help-block,
+        .vp-section .text-muted {
+            color: #c9ddf6 !important;
+        }
+
+        .vp-field .form-control,
+        .vp-field .form-select,
+        .vp-field textarea,
+        .vp-field select,
+        .vp-field input {
+            border-radius: 12px;
+            border: 1px solid #d8e1ee;
+            box-shadow: none;
+        }
+
+        .vp-field input[type="checkbox"],
+        .vp-field input[type="radio"] {
+            accent-color: #4a8ddb;
+        }
+
+        .vp-field .form-control:focus,
+        .vp-field .form-select:focus,
+        .vp-field textarea:focus,
+        .vp-field select:focus,
+        .vp-field input:focus {
+            border-color: #3b74b8;
+            box-shadow: 0 0 0 .2rem rgba(59, 116, 184, 0.12);
+        }
+
+        .vp-contact-item {
+            border: 1px solid rgba(126, 179, 255, 0.25);
+            border-radius: 14px;
+            padding: .95rem;
+            background: linear-gradient(180deg, rgba(20, 44, 73, 0.82) 0%, rgba(18, 39, 65, 0.8) 100%);
+        }
+
+        .vp-contact-item .form-check-label {
+            color: #dceafe;
+            font-weight: 600;
+        }
+
+        .vp-actions {
+            display: flex;
+            gap: .75rem;
+            justify-content: flex-end;
+            padding: 1.1rem 1.25rem;
+            background: linear-gradient(180deg, rgba(10, 21, 37, 0.98) 0%, rgba(15, 30, 50, 0.98) 100%);
+            border-top: 1px solid rgba(126, 179, 255, 0.18);
+            border-radius: 0 0 18px 18px;
+            flex-wrap: wrap;
+        }
+
+        .vp-actions .btn-secondary {
+            color: #d8e7f8;
+            border-color: rgba(179, 206, 237, 0.38);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .vp-actions .btn-secondary:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .vp-actions .btn-primary {
+            background: linear-gradient(135deg, #2e6fbc 0%, #4a8ddb 100%);
+            border-color: #4a8ddb;
+        }
+
+        .vp-actions .btn-outline-primary {
+            color: #dbe9f8;
+            border-color: rgba(179, 206, 237, 0.42);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .vp-actions .btn-outline-primary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-color: rgba(179, 206, 237, 0.7);
+        }
+
+        @media (max-width: 991px) {
+            .vp-hero {
+                padding: 1.4rem 1.25rem;
+            }
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
     {% include 'components/alert_message.html' with show_django_messages=True %}
 
-    <form method="post"
-          enctype="multipart/form-data"
-          id="centro-alta-form"
-          novalidate>
-        {% csrf_token %}
-
-        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-            <div>
-                <h2 class="mb-1">Alta de Institución</h2>
-                <p class="text-muted mb-0">Registro inicial de Centro en VAT con ubicación, contactos y autoridad.</p>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
-                <a href="{{ cancel_url }}" class="btn btn-secondary">
-                    <i class="fas fa-times mr-1"></i>Cancelar
-                </a>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save mr-1"></i>Guardar
-                </button>
-                <button type="submit"
-                        name="save_continue"
-                        value="1"
-                        class="btn btn-outline-primary">
-                    <i class="fas fa-arrow-right mr-1"></i>Guardar y continuar
-                </button>
-            </div>
+    <div class="vp-shell">
+        <div class="vp-hero">
+            <h1>
+                <i class="fas fa-building mr-2"></i>Alta de Institución
+            </h1>
+            <p>
+                Registro inicial del centro VAT con datos institucionales, ubicación, contactos y autoridad responsable.
+            </p>
         </div>
 
-        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
-        {% if contacto_formset.non_form_errors %}
-            <div class="alert alert-danger">{{ contacto_formset.non_form_errors }}</div>
-        {% endif %}
+        <form method="post"
+              enctype="multipart/form-data"
+              id="centro-alta-form"
+              novalidate>
+            {% csrf_token %}
 
-        <div class="card bg-dark text-white mb-3">
-            <div class="card-header bg-panel1">
-                <strong>1. Datos de la Institución</strong>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-8">{{ form.nombre|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.codigo|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.clase_institucion|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.tipo_gestion|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.situacion|as_crispy_field }}</div>
-                    <div class="col-md-6">{{ form.referente|as_crispy_field }}</div>
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+            {% if contacto_formset.non_form_errors %}
+                <div class="alert alert-danger">{{ contacto_formset.non_form_errors }}</div>
+            {% endif %}
+
+            <div class="card vp-panel">
+                <div class="vp-panel-header">
+                    <div>
+                        <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>1. Datos de la Institución</h3>
+                        <div class="small">Definí la identidad principal del centro.</div>
+                    </div>
+                </div>
+                <div class="vp-section">
+                    <div class="row">
+                        <div class="col-md-8 vp-field">{{ form.nombre|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.codigo|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.clase_institucion|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.tipo_gestion|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.situacion|as_crispy_field }}</div>
+                        <div class="col-md-6 vp-field">{{ form.referente|as_crispy_field }}</div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="card bg-dark text-white mb-3">
-            <div class="card-header bg-panel2">
-                <strong>2. Ubicación</strong>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-12">{{ form.domicilio_actividad|as_crispy_field }}</div>
-                    <div class="col-md-6">{{ form.calle|as_crispy_field }}</div>
-                    <div class="col-md-2">{{ form.numero|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.codigo_postal|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.lote|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.manzana|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.entre_calles|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.municipio|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.localidad|as_crispy_field }}</div>
+            <div class="card vp-panel">
+                <div class="vp-panel-header">
+                    <div>
+                        <h3 class="card-title"><i class="fas fa-map-marker-alt mr-2"></i>2. Ubicación</h3>
+                        <div class="small">Completá la localización física y referencias del domicilio.</div>
+                    </div>
+                </div>
+                <div class="vp-section">
+                    <div class="row">
+                        <div class="col-md-12 vp-field">{{ form.domicilio_actividad|as_crispy_field }}</div>
+                        <div class="col-md-6 vp-field">{{ form.calle|as_crispy_field }}</div>
+                        <div class="col-md-2 vp-field">{{ form.numero|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.codigo_postal|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.lote|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.manzana|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.entre_calles|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.provincia|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.municipio|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.localidad|as_crispy_field }}</div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="card bg-dark text-white mb-3">
-            <div class="card-header bg-panel3">
-                <strong>3.1 Datos de contacto institucional</strong>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">{{ form.correo|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.telefono|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.celular|as_crispy_field }}</div>
-                    <div class="col-md-12">{{ form.sitio_web|as_crispy_field }}</div>
+            <div class="card vp-panel">
+                <div class="vp-panel-header">
+                    <div>
+                        <h3 class="card-title"><i class="fas fa-phone-alt mr-2"></i>3.1 Contacto institucional</h3>
+                        <div class="small">Canales oficiales de comunicación del centro.</div>
+                    </div>
+                </div>
+                <div class="vp-section">
+                    <div class="row">
+                        <div class="col-md-4 vp-field">{{ form.correo|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.telefono|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.celular|as_crispy_field }}</div>
+                        <div class="col-md-12 vp-field">{{ form.sitio_web|as_crispy_field }}</div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="card bg-dark text-white mb-3">
-            <div class="card-header bg-panel4 d-flex justify-content-between align-items-center">
-                <strong>3.2 Contactos de la institución</strong>
-                <button type="button"
-                        class="btn btn-sm btn-outline-light"
-                        id="add-contacto-btn">
-                    <i class="fas fa-plus mr-1"></i>Agregar contacto
-                </button>
-            </div>
-            <div class="card-body">
-                {{ contacto_formset.management_form }}
-                <div id="contactos-formset">
-                    {% for contacto_form in contacto_formset %}
-                        <div class="border rounded p-3 mb-3 contacto-form-item"
-                             data-form-index="{{ forloop.counter0 }}">
-                            {% for hidden in contacto_form.hidden_fields %}{{ hidden }}{% endfor %}
-                            <div class="row">
-                                <div class="col-md-4">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
-                                <div class="col-md-3">{{ contacto_form.rol_area|as_crispy_field }}</div>
-                                <div class="col-md-2">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
-                                <div class="col-md-3">{{ contacto_form.email_contacto|as_crispy_field }}</div>
-                                <div class="col-md-3 d-flex align-items-center">
-                                    <div class="form-group mt-4 pt-2">
-                                        {{ contacto_form.es_principal }}
-                                        <label for="{{ contacto_form.es_principal.id_for_label }}" class="ml-2">Principal</label>
+            <div class="card vp-panel">
+                <div class="vp-panel-header">
+                    <div>
+                        <h3 class="card-title"><i class="fas fa-address-book mr-2"></i>3.2 Contactos de la institución</h3>
+                        <div class="small">Podés cargar varios contactos y marcar uno como principal.</div>
+                    </div>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-light"
+                            id="add-contacto-btn">
+                        <i class="fas fa-plus mr-1"></i>Agregar contacto
+                    </button>
+                </div>
+                <div class="vp-section">
+                    {{ contacto_formset.management_form }}
+                    <div id="contactos-formset">
+                        {% for contacto_form in contacto_formset %}
+                            <div class="vp-contact-item mb-3 contacto-form-item"
+                                 data-form-index="{{ forloop.counter0 }}">
+                                {% for hidden in contacto_form.hidden_fields %}{{ hidden }}{% endfor %}
+                                <div class="row">
+                                    <div class="col-md-4 vp-field">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
+                                    <div class="col-md-3 vp-field">{{ contacto_form.rol_area|as_crispy_field }}</div>
+                                    <div class="col-md-2 vp-field">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
+                                    <div class="col-md-3 vp-field">{{ contacto_form.email_contacto|as_crispy_field }}</div>
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <div class="form-group mt-4 pt-2 mb-0">
+                                            {{ contacto_form.es_principal }}
+                                            <label for="{{ contacto_form.es_principal.id_for_label }}" class="ml-2 mb-0">Principal</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-center justify-content-end">
+                                        <button type="button"
+                                                class="btn btn-outline-danger btn-sm remove-contacto-btn">
+                                            <i class="fas fa-trash mr-1"></i>Quitar
+                                        </button>
                                     </div>
                                 </div>
-                                <div class="col-md-3 d-flex align-items-center justify-content-end">
-                                    <button type="button"
-                                            class="btn btn-outline-danger btn-sm remove-contacto-btn">
-                                        <i class="fas fa-trash mr-1"></i>Quitar
-                                    </button>
-                                </div>
+                                {% if contacto_form.errors %}<div class="alert alert-danger mt-2 mb-0">{{ contacto_form.errors }}</div>{% endif %}
                             </div>
-                            {% if contacto_form.errors %}<div class="alert alert-danger mt-2 mb-0">{{ contacto_form.errors }}</div>{% endif %}
-                        </div>
-                    {% endfor %}
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="card bg-dark text-white mb-4">
-            <div class="card-header bg-panel5">
-                <strong>4. Autoridades</strong>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">{{ form.nombre_referente|as_crispy_field }}</div>
-                    <div class="col-md-3">{{ form.apellido_referente|as_crispy_field }}</div>
-                    <div class="col-md-2">{{ form.autoridad_dni|as_crispy_field }}</div>
-                    <div class="col-md-2">{{ form.telefono_referente|as_crispy_field }}</div>
-                    <div class="col-md-2">{{ form.correo_referente|as_crispy_field }}</div>
+            <div class="card vp-panel">
+                <div class="vp-panel-header">
+                    <div>
+                        <h3 class="card-title"><i class="fas fa-user-tie mr-2"></i>4. Autoridades</h3>
+                        <div class="small">Datos de la autoridad responsable para el alta inicial.</div>
+                    </div>
+                </div>
+                <div class="vp-section">
+                    <div class="row">
+                        <div class="col-md-3 vp-field">{{ form.nombre_referente|as_crispy_field }}</div>
+                        <div class="col-md-3 vp-field">{{ form.apellido_referente|as_crispy_field }}</div>
+                        <div class="col-md-2 vp-field">{{ form.autoridad_dni|as_crispy_field }}</div>
+                        <div class="col-md-2 vp-field">{{ form.telefono_referente|as_crispy_field }}</div>
+                        <div class="col-md-2 vp-field">{{ form.correo_referente|as_crispy_field }}</div>
+                    </div>
+                </div>
+                <div class="vp-actions">
+                    <a href="{{ cancel_url }}" class="btn btn-secondary">
+                        <i class="fas fa-times mr-1"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-1"></i>Guardar
+                    </button>
+                    <button type="submit"
+                            name="save_continue"
+                            value="1"
+                            class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-right mr-1"></i>Guardar y continuar
+                    </button>
                 </div>
             </div>
-        </div>
-    </form>
+        </form>
+    </div>
 
     <template id="contacto-empty-form-template">
-        <div class="border rounded p-3 mb-3 contacto-form-item"
+        <div class="vp-contact-item mb-3 contacto-form-item"
              data-form-index="__prefix__">__FORM_FIELDS__</div>
     </template>
 {% endblock %}
