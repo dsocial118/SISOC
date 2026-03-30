@@ -11,6 +11,7 @@
 
 ### 2. Configuración y operación
 - `docs/operacion/instalacion.md`: pasos para poner el entorno local en marcha, variables de entorno y dependencias de Docker.
+- `docs/operacion/codex_desktop.md`: bootstrap y comandos operativos para usar Codex Desktop en worktrees del repo.
 - `docs/operacion/integraciones.md`: conexiones con servicios externos, caches y manejo de estáticos/media.
 - `docs/operacion/operaciones.md`: tareas recurrentes, cron jobs y endpoints de health de producción.
 - `docs/operacion/infraestructura.md`: inventario de infraestructura operativo (entornos, arquitectura, networking, deploy, observabilidad, seguridad y roadmap infra).
