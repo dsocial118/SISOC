@@ -722,6 +722,7 @@
                     </div>
                     <form id="formInscripcionRapida"
                           method="post"
+                          novalidate
                           action="{% url 'vat_inscripcion_rapida_comision' %}">
                         {% csrf_token %}
                         <input type="hidden" name="comision" value="{{ comision.id }}" />
