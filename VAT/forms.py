@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from ciudadanos.models import Ciudadano
-from core.models import Dia
+from core.models import Dia, Sexo
 from core.models import Localidad, Programa
 from VAT.models import (
     Centro,
