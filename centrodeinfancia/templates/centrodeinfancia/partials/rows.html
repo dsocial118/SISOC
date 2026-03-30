@@ -10,7 +10,11 @@
                 <td data-organizacion="{{ item.organizacion|default:'' }}">{{ item.organizacion|default:"-" }}</td>
             {% elif column_key == "tiene_nomina" %}
                 <td data-tiene-nomina="{% if item.tiene_nomina %}Si{% else %}No{% endif %}">
-                    {% if item.tiene_nomina %}Si{% else %}No{% endif %}
+                    {% if item.tiene_nomina %}
+                        Si
+                    {% else %}
+                        No
+                    {% endif %}
                 </td>
             {% elif column_key == "provincia" %}
                 <td data-provincia="{{ item.provincia|default:'' }}">{{ item.provincia|default:"-" }}</td>
