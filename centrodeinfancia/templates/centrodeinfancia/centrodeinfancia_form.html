@@ -22,8 +22,17 @@
             </div>
         </div>
 
-        <form method="post" class="w-100" id="centrodesarrolloinfantil-form">
+        <form method="post"
+              class="w-100"
+              id="centrodesarrolloinfantil-form"
+              novalidate>
             {% csrf_token %}
+
+            {% if form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    No se pudo guardar el legajo. Revisá los campos marcados.
+                </div>
+            {% endif %}
 
             <div class="section-card mb-3">
                 <div class="section-header">
