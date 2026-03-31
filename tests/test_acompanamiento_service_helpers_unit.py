@@ -272,14 +272,12 @@ def test_obtener_fechas_hitos_mapea_hito_y_omite_sin_tipo(mocker):
     assert out == {"hito_uno": "02/02/2024"}
 
 
-def test_importar_datos_desde_admision_ok_y_sin_admision(mocker):
-    class _Missing(Exception):
-        pass
-
+def test_importar_datos_desde_admision_ok(mocker):
+    acompanamiento = SimpleNamespace(pk=1)
     mocker.patch(
-        "acompanamientos.acompanamiento_service.Admision.DoesNotExist", _Missing
+        "acompanamientos.acompanamiento_service.Acompanamiento.objects.get_or_create",
+        return_value=(acompanamiento, True),
     )
-
     update_or_create = mocker.patch(
         "acompanamientos.acompanamiento_service.InformacionRelevante.objects.update_or_create"
     )
@@ -295,8 +293,20 @@ def test_importar_datos_desde_admision_ok_y_sin_admision(mocker):
         "acompanamientos.acompanamiento_service.transaction.atomic",
         return_value=nullcontext(),
     )
+    comedor = SimpleNamespace(pk=10)
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Hitos.objects.filter",
+        return_value=SimpleNamespace(first=lambda: None),
+    )
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Hitos.objects.create",
+    )
 
     admision = SimpleNamespace(
+        pk=5,
+        numero_convenio="CONV-1",
+        convenio_numero=None,
+        comedor=comedor,
         numero_expediente="EX-1",
         numero_resolucion="RES-1",
         vencimiento_mandato=date(2026, 1, 1),
@@ -312,22 +322,10 @@ def test_importar_datos_desde_admision_ok_y_sin_admision(mocker):
             ]
         ),
     )
-    get_admision = mocker.patch(
-        "acompanamientos.acompanamiento_service.Admision.objects.get",
-        return_value=admision,
-    )
 
-    comedor = SimpleNamespace(pk=10)
-    AcompanamientoService.importar_datos_desde_admision(comedor)
+    resultado = AcompanamientoService.importar_datos_desde_admision(admision)
 
-    get_admision.assert_called_once_with(comedor=comedor)
+    assert resultado is acompanamiento
     update_or_create.assert_called_once()
     delete_qs.delete.assert_called_once()
     assert crear_prestacion.call_count == 2
-
-    get_admision.side_effect = _Missing("no admision")
-    try:
-        AcompanamientoService.importar_datos_desde_admision(comedor)
-        assert False, "Se esperaba ValueError"
-    except ValueError as exc:
-        assert "No se encontró una admisión" in str(exc)
