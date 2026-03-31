@@ -109,6 +109,7 @@
                                 {% for row_form in formset_distribucion_salas.forms %}
                                     <tr>
                                         <td>
+                                            {{ row_form.id }}
                                             {{ row_form.grupo_etario }}
                                             {{ row_form.etiqueta_fila }}
                                         </td>
@@ -170,6 +171,7 @@
                                 {% for row_form in formset_demanda_insatisfecha.forms %}
                                     <tr>
                                         <td>
+                                            {{ row_form.id }}
                                             {{ row_form.grupo_etario }}
                                             {{ row_form.etiqueta_fila }}
                                         </td>
@@ -208,6 +210,7 @@
                                 {% for row_form in formset_articulacion.forms %}
                                     <tr>
                                         <td>
+                                            {{ row_form.id }}
                                             {{ row_form.tipo_institucion }}
                                             {{ row_form.etiqueta_fila }}
                                         </td>
