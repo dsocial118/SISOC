@@ -29,9 +29,9 @@ from django.views.generic import (
 )
 from auditlog.models import LogEntry
 from ciudadanos.models import Ciudadano
-from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraForm
 from comedores.services.comedor_service import ComedorService
 from core.decorators import permissions_any_required
+from core.models import Nacionalidad, Sexo
 from core.security import safe_redirect
 from core.services.column_preferences import build_columns_context_from_fields
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -266,7 +266,8 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
     ):
         context = super().get_context_data(**kwargs)
         nomina_qs = self.object.nominas.select_related(
-            "ciudadano", "ciudadano__sexo"
+            "ciudadano",
+            "ciudadano__sexo",
         ).order_by("-fecha")
         intervenciones_qs = self.object.intervenciones.select_related(
             "tipo_intervencion", "subintervencion", "destinatario"
@@ -286,7 +287,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         for registro in nomina_qs:
             ciudadano = registro.ciudadano
             sexo = str(
-                getattr(getattr(ciudadano, "sexo", None), "sexo", "") or ""
+                registro.sexo or getattr(getattr(ciudadano, "sexo", None), "sexo", "") or ""
             ).lower()
 
             if registro.estado == NominaCentroInfancia.ESTADO_PENDIENTE:
@@ -297,7 +298,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             elif "femen" in sexo or sexo == "f":
                 mujeres += 1
 
-            fecha_nacimiento = getattr(ciudadano, "fecha_nacimiento", None)
+            fecha_nacimiento = registro.fecha_nacimiento or getattr(
+                ciudadano, "fecha_nacimiento", None
+            )
             if fecha_nacimiento:
                 edad = (
                     today.year
@@ -776,7 +779,10 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         centro = self._get_centro()
         return (
-            NominaCentroInfancia.objects.select_related("ciudadano", "ciudadano__sexo")
+            NominaCentroInfancia.objects.select_related(
+                "ciudadano",
+                "ciudadano__sexo",
+            )
             .filter(centro=centro)
             .order_by("-fecha")
         )
@@ -805,13 +811,11 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
             if registro.estado == NominaCentroInfancia.ESTADO_PENDIENTE:
                 resumen["espera"] += 1
 
-            sexo = (
-                str(
-                    getattr(getattr(registro.ciudadano, "sexo", None), "sexo", "") or ""
-                )
-                .strip()
-                .lower()
-            )
+            sexo = str(
+                registro.sexo
+                or getattr(getattr(registro.ciudadano, "sexo", None), "sexo", "")
+                or ""
+            ).strip().lower()
             if "mascul" in sexo or sexo == "m":
                 resumen["nomina_m"] += 1
             elif "femen" in sexo or sexo == "f":
@@ -819,7 +823,9 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
             elif sexo == "x" or "no bin" in sexo:
                 resumen["nomina_x"] += 1
 
-            fecha_nacimiento = getattr(registro.ciudadano, "fecha_nacimiento", None)
+            fecha_nacimiento = registro.fecha_nacimiento or getattr(
+                registro.ciudadano, "fecha_nacimiento", None
+            )
             if (
                 registro.estado != NominaCentroInfancia.ESTADO_ACTIVO
                 or not fecha_nacimiento
@@ -902,7 +908,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         return self._centro_cache
 
     @staticmethod
-    def _crear_nomina_con_bloqueo(centro, ciudadano, estado, observaciones):
+    def _crear_nomina_con_bloqueo(centro, ciudadano, cleaned_data):
         CentroDeInfancia.objects.select_for_update().filter(pk=centro.pk).exists()
         existente = NominaCentroInfancia.objects.filter(
             centro=centro,
@@ -912,63 +918,115 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         if existente:
             return False
 
+        nomina_data = {
+            field_name: cleaned_data.get(field_name)
+            for field_name in NominaCentroInfanciaCreateForm.Meta.fields
+            if field_name != "edad_calculada"
+        }
         NominaCentroInfancia.objects.create(
             centro=centro,
             ciudadano=ciudadano,
-            estado=estado,
-            observaciones=observaciones,
+            **nomina_data,
         )
         return True
 
     def get_success_url(self):
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
+    @staticmethod
+    def _build_nomina_initial_from_ciudadano(ciudadano):
+        return {
+            "dni": ciudadano.documento,
+            "apellido": ciudadano.apellido,
+            "nombre": ciudadano.nombre,
+            "fecha_nacimiento": ciudadano.fecha_nacimiento,
+            "sexo": getattr(getattr(ciudadano, "sexo", None), "sexo", None),
+            "nacionalidad": getattr(
+                getattr(ciudadano, "nacionalidad", None), "nacionalidad", None
+            ),
+            "calle_domicilio": ciudadano.calle,
+            "altura_domicilio": (
+                int(ciudadano.altura) if str(ciudadano.altura or "").isdigit() else None
+            ),
+            "provincia_domicilio": ciudadano.provincia_id,
+            "municipio_domicilio": ciudadano.municipio_id,
+            "localidad_domicilio": ciudadano.localidad_id,
+        }
+
+    @staticmethod
+    def _resolve_sexo_nombre(sexo_value):
+        if not sexo_value:
+            return None
+        if sexo_value in dict(NominaCentroInfancia.SexoChoices.choices):
+            return sexo_value
+        sexo_obj = Sexo.objects.filter(pk=sexo_value).first()
+        return getattr(sexo_obj, "sexo", None)
+
+    @staticmethod
+    def _resolve_nacionalidad_nombre(nacionalidad_value, datos_api=None):
+        if nacionalidad_value:
+            nacionalidad_obj = Nacionalidad.objects.filter(pk=nacionalidad_value).first()
+            if nacionalidad_obj:
+                return nacionalidad_obj.nacionalidad
+        return (datos_api or {}).get("pais") or None
+
+    @staticmethod
+    def _get_selected_ciudadano_from_request(request):
+        ciudadano_id = request.GET.get("ciudadano_id") or request.POST.get("ciudadano_id")
+        if not str(ciudadano_id or "").isdigit():
+            return None
+        return Ciudadano.objects.filter(pk=ciudadano_id).first()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["object"] = self._get_centro()
         query = (self.request.GET.get("query") or "").strip()
-        form_ciudadano = kwargs.get("form_ciudadano")
+        form = kwargs.get("form")
         ciudadanos = []
         renaper_data = None
+        selected_ciudadano = self._get_selected_ciudadano_from_request(self.request)
 
         if query and len(query) >= 4:
             ciudadanos = Ciudadano.buscar_por_documento(query, max_results=50)
-            if (
-                not ciudadanos
-                and query.isdigit()
-                and len(query) >= 7
-                and not form_ciudadano
-            ):
+            if not ciudadanos and query.isdigit() and len(query) >= 7 and not form:
                 renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(
                     query
                 )
                 if renaper_result.get("success"):
-                    renaper_data = self._prepare_renaper_initial_data(renaper_result)
+                    renaper_data = self._build_nomina_initial_from_renaper(
+                        renaper_result
+                    )
                     mensaje = renaper_result.get("message")
                     if mensaje:
                         messages.info(self.request, mensaje)
                 elif renaper_result.get("message"):
                     messages.warning(self.request, renaper_result["message"])
 
-        if not form_ciudadano:
-            if renaper_data:
-                form_ciudadano = CiudadanoFormParaNomina(initial=renaper_data)
+        if not form:
+            if selected_ciudadano:
+                form = self.form_class(
+                    initial=self._build_nomina_initial_from_ciudadano(selected_ciudadano)
+                )
+            elif renaper_data:
+                form = self.form_class(initial=renaper_data)
+            elif query and not ciudadanos:
+                form = self.form_class(
+                    initial={"dni": query if query.isdigit() else None}
+                )
             else:
-                form_ciudadano = CiudadanoFormParaNomina()
-
-        renaper_precarga = bool(renaper_data) or (
-            self.request.POST.get("origen_dato") == "renaper"
-        )
+                form = self.form_class()
 
         context["query"] = query
         context["ciudadanos"] = ciudadanos
+        context["selected_ciudadano"] = selected_ciudadano
         context["no_resultados"] = bool(query) and not ciudadanos
-        context["estados"] = NominaCentroInfancia.ESTADO_CHOICES
-        context["form_ciudadano"] = form_ciudadano
-        context["form_nomina_extra"] = (
-            kwargs.get("form_nomina_extra") or NominaExtraForm()
+        context["form"] = form
+        context["renaper_precarga"] = bool(renaper_data) or (
+            self.request.POST.get("origen_dato") == "renaper"
         )
-        context["renaper_precarga"] = renaper_precarga
+        context["mostrar_formulario"] = bool(
+            selected_ciudadano or context["no_resultados"] or form.is_bound
+        )
         return context
 
     @staticmethod
@@ -995,128 +1053,139 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
             return None
 
     @staticmethod
-    def _prepare_renaper_initial_data(renaper_result):
+    def _build_nomina_initial_from_renaper(renaper_result):
         renaper_data = dict(renaper_result.get("data") or {})
+        datos_api = renaper_result.get("datos_api") or {}
         if not renaper_data:
             return renaper_data
 
-        fecha_raw = renaper_data.get("fecha_nacimiento")
-        if not fecha_raw:
-            datos_api = renaper_result.get("datos_api") or {}
-            fecha_raw = datos_api.get("fechaNacimiento")
+        fecha_raw = renaper_data.get("fecha_nacimiento") or datos_api.get(
+            "fechaNacimiento"
+        )
+        fecha_nacimiento = NominaCentroInfanciaCreateView._parse_fecha_renaper(
+            fecha_raw
+        )
 
-        if fecha_raw:
-            parsed_fecha = NominaCentroInfanciaCreateView._parse_fecha_renaper(
-                fecha_raw
-            )
-            if parsed_fecha:
-                renaper_data["fecha_nacimiento"] = parsed_fecha.isoformat()
-
-        return renaper_data
-
-    def post(  # pylint: disable=too-many-return-statements
-        self, request, *args, **kwargs
-    ):
-        self.object = None
-        ciudadano_id = request.POST.get("ciudadano_id")
-
-        if ciudadano_id:
-            form_nomina_extra = NominaExtraForm(request.POST)
-            if not form_nomina_extra.is_valid():
-                messages.error(
-                    request, "Datos inválidos para agregar ciudadano a la nómina."
+        return {
+            "dni": renaper_data.get("documento") or renaper_data.get("dni"),
+            "apellido": renaper_data.get("apellido"),
+            "nombre": renaper_data.get("nombre"),
+            "fecha_nacimiento": fecha_nacimiento,
+            "sexo": NominaCentroInfanciaCreateView._resolve_sexo_nombre(
+                renaper_data.get("sexo")
+            ),
+            "nacionalidad": (
+                NominaCentroInfanciaCreateView._resolve_nacionalidad_nombre(
+                    renaper_data.get("nacionalidad"),
+                    datos_api=datos_api,
                 )
-                context = self.get_context_data()
-                return self.render_to_response(context)
+            ),
+            "calle_domicilio": renaper_data.get("calle"),
+            "altura_domicilio": renaper_data.get("altura"),
+            "piso_domicilio": renaper_data.get("piso_vivienda"),
+            "departamento_domicilio": renaper_data.get("departamento_vivienda"),
+            "provincia_domicilio": renaper_data.get("provincia"),
+            "municipio_domicilio": renaper_data.get("municipio"),
+            "localidad_domicilio": renaper_data.get("localidad"),
+        }
 
-            estado = form_nomina_extra.cleaned_data.get("estado")
-            observaciones = form_nomina_extra.cleaned_data.get("observaciones", "")
+    @staticmethod
+    def _build_piso_departamento_value(cleaned_data):
+        pieces = []
+        if cleaned_data.get("piso_domicilio"):
+            pieces.append(f'Piso {cleaned_data["piso_domicilio"]}')
+        if cleaned_data.get("departamento_domicilio"):
+            pieces.append(
+                f'Departamento {cleaned_data["departamento_domicilio"]}'
+            )
+        return " / ".join(pieces) or None
 
+    def post(self, request, *args, **kwargs):
+        self.object = None
+        form = self.form_class(request.POST)
+        centro = self._get_centro()
+        ciudadano_id = request.POST.get("ciudadano_id")
+        origen_dato = request.POST.get("origen_dato") or "manual"
+
+        if not form.is_valid():
+            messages.warning(request, "Hay errores en la ficha de la nómina.")
+            context = self.get_context_data(form=form)
+            return self.render_to_response(context)
+
+        ciudadano = None
+        if str(ciudadano_id or "").isdigit():
             ciudadano = Ciudadano.objects.filter(pk=ciudadano_id).first()
             if not ciudadano:
                 messages.error(request, "No se encontró el ciudadano seleccionado.")
-                context = self.get_context_data()
+                context = self.get_context_data(form=form)
                 return self.render_to_response(context)
 
-            centro = self._get_centro()
-            try:
-                with transaction.atomic():
-                    creado = self._crear_nomina_con_bloqueo(
-                        centro=centro,
-                        ciudadano=ciudadano,
-                        estado=estado,
-                        observaciones=observaciones,
+        try:
+            with transaction.atomic():
+                if ciudadano is None:
+                    sexo_obj = Sexo.objects.filter(
+                        sexo=form.cleaned_data.get("sexo")
+                    ).first()
+                    nacionalidad_obj = ComedorService._match_nacionalidad(
+                        form.cleaned_data.get("nacionalidad")
                     )
-            except Exception:  # noqa: BLE001
-                logger.exception(
-                    "Error al agregar ciudadano existente a nómina de CDI",
-                    extra={
-                        "centro_id": centro.id,
-                        "ciudadano_id": ciudadano.id,
-                        "user_id": getattr(request.user, "id", None),
-                    },
+                    ciudadano = Ciudadano.objects.filter(
+                        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+                        documento=form.cleaned_data.get("dni"),
+                    ).first()
+                    if ciudadano is None:
+                        ciudadano = Ciudadano.objects.create(
+                            apellido=form.cleaned_data.get("apellido"),
+                            nombre=form.cleaned_data.get("nombre"),
+                            fecha_nacimiento=form.cleaned_data.get("fecha_nacimiento"),
+                            tipo_documento=Ciudadano.DOCUMENTO_DNI,
+                            documento=form.cleaned_data.get("dni"),
+                            sexo=sexo_obj,
+                            nacionalidad=nacionalidad_obj,
+                            calle=form.cleaned_data.get("calle_domicilio"),
+                            altura=(
+                                str(form.cleaned_data.get("altura_domicilio"))
+                                if form.cleaned_data.get("altura_domicilio") is not None
+                                else None
+                            ),
+                            piso_departamento=self._build_piso_departamento_value(
+                                form.cleaned_data
+                            ),
+                            provincia=form.cleaned_data.get("provincia_domicilio"),
+                            municipio=form.cleaned_data.get("municipio_domicilio"),
+                            localidad=form.cleaned_data.get("localidad_domicilio"),
+                            origen_dato=origen_dato,
+                            creado_por=request.user,
+                            modificado_por=request.user,
+                        )
+
+                creado = self._crear_nomina_con_bloqueo(
+                    centro=centro,
+                    ciudadano=ciudadano,
+                    cleaned_data=form.cleaned_data,
                 )
-                messages.error(request, "No se pudo agregar la persona a la nómina.")
-                return redirect(self.get_success_url())
-            if not creado:
-                messages.warning(
-                    request,
-                    "El ciudadano ya se encuentra en la nómina de este centro.",
-                )
-                return redirect(self.get_success_url())
-            messages.success(request, "Persona agregada a la nómina.")
+        except Exception:  # noqa: BLE001
+            logger.exception(
+                "Error al guardar ficha en nómina de CDI",
+                extra={
+                    "centro_id": centro.id,
+                    "ciudadano_id": getattr(ciudadano, "id", None),
+                    "user_id": getattr(request.user, "id", None),
+                },
+            )
+            messages.error(request, "No se pudo guardar la ficha en la nómina.")
+            context = self.get_context_data(form=form)
+            return self.render_to_response(context)
+
+        if not creado:
+            messages.warning(
+                request,
+                "El ciudadano ya se encuentra en la nómina de este centro.",
+            )
             return redirect(self.get_success_url())
 
-        form_ciudadano = CiudadanoFormParaNomina(request.POST)
-        form_nomina_extra = NominaExtraForm(request.POST)
-
-        if form_ciudadano.is_valid() and form_nomina_extra.is_valid():
-            estado = form_nomina_extra.cleaned_data.get("estado")
-            observaciones = form_nomina_extra.cleaned_data.get("observaciones")
-            centro = self._get_centro()
-
-            try:
-                with transaction.atomic():
-                    ciudadano = form_ciudadano.save(commit=False)
-                    if request.POST.get("origen_dato") == "renaper":
-                        ciudadano.origen_dato = "renaper"
-                    ciudadano.creado_por = request.user
-                    ciudadano.modificado_por = request.user
-                    ciudadano.save()
-
-                    self._crear_nomina_con_bloqueo(
-                        centro=centro,
-                        ciudadano=ciudadano,
-                        estado=estado,
-                        observaciones=observaciones,
-                    )
-            except Exception:  # noqa: BLE001
-                logger.exception(
-                    "Error al crear ciudadano y agregarlo a la nómina de CDI",
-                    extra={
-                        "centro_id": centro.id,
-                        "user_id": getattr(request.user, "id", None),
-                    },
-                )
-                messages.error(
-                    request,
-                    "No se pudo crear el ciudadano y agregarlo a la nómina.",
-                )
-                context = self.get_context_data(
-                    form_ciudadano=form_ciudadano,
-                    form_nomina_extra=form_nomina_extra,
-                )
-                return self.render_to_response(context)
-
-            messages.success(request, "Ciudadano creado y agregado a la nómina.")
-            return redirect(self.get_success_url())
-
-        messages.warning(request, "Errores en el formulario de ciudadano.")
-        context = self.get_context_data(
-            form_ciudadano=form_ciudadano,
-            form_nomina_extra=form_nomina_extra,
-        )
-        return self.render_to_response(context)
+        messages.success(request, "Ficha creada y agregada a la nómina.")
+        return redirect(self.get_success_url())
 
 
 class NominaCentroInfanciaDeleteView(

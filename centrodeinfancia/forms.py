@@ -1,7 +1,7 @@
 from django import forms
 from django.core.validators import RegexValidator
+from django.utils.text import slugify
 
-from ciudadanos.models import Ciudadano
 from core.models import Localidad, Municipio, Provincia
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 from intervenciones.models.intervenciones import (
@@ -251,38 +251,313 @@ class CentroDeInfanciaForm(forms.ModelForm):
         }
 
 
-class NominaCentroInfanciaForm(forms.ModelForm):
+class NullableBooleanChoiceField(forms.TypedChoiceField):
     def __init__(self, *args, **kwargs):
+        kwargs.setdefault("required", False)
+        kwargs.setdefault(
+            "choices",
+            (
+                ("", "---------"),
+                ("true", "Si"),
+                ("false", "No"),
+            ),
+        )
+        kwargs.setdefault("coerce", lambda value: None if value == "" else value == "true")
+        kwargs.setdefault("empty_value", None)
         super().__init__(*args, **kwargs)
-        self.fields["estado"].widget.attrs["class"] = "form-select"
-        self.fields["observaciones"].widget.attrs["class"] = "form-control"
-
-    class Meta:
-        model = NominaCentroInfancia
-        fields = ["estado", "observaciones"]
-        widgets = {
-            "observaciones": forms.Textarea(attrs={"rows": 3}),
-        }
 
 
-class NominaCentroInfanciaCreateForm(forms.ModelForm):
-    ciudadano = forms.ModelChoiceField(
-        queryset=Ciudadano.objects.all().order_by("apellido", "nombre"),
-        empty_label="Seleccione un ciudadano",
+class NominaCentroInfanciaBaseForm(forms.ModelForm):
+    edad_calculada = forms.IntegerField(
+        label="Edad",
+        required=False,
+        disabled=True,
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["ciudadano"].widget.attrs["class"] = "form-select"
-        self.fields["estado"].widget.attrs["class"] = "form-select"
-        self.fields["observaciones"].widget.attrs["class"] = "form-control"
-
     class Meta:
         model = NominaCentroInfancia
-        fields = ["ciudadano", "estado", "observaciones"]
+        fields = [
+            "estado",
+            "dni",
+            "apellido",
+            "nombre",
+            "fecha_nacimiento",
+            "edad_calculada",
+            "sexo",
+            "nacionalidad",
+            "sala",
+            "pertenece_pueblo_originario",
+            "pueblo_originario_cual",
+            "habla_lengua_originaria_hogar",
+            "talla",
+            "peso",
+            "calendario_vacunacion_al_dia",
+            "tiene_discapacidad",
+            "discapacidad_tipo",
+            "recibe_apoyo_discapacidad",
+            "posee_cud",
+            "posee_obra_social",
+            "calle_domicilio",
+            "altura_domicilio",
+            "piso_domicilio",
+            "departamento_domicilio",
+            "provincia_domicilio",
+            "municipio_domicilio",
+            "localidad_domicilio",
+            "responsable_legal_1_apellido",
+            "responsable_legal_1_nombre",
+            "responsable_legal_1_dni",
+            "responsable_legal_1_telefono",
+            "responsable_legal_1_percibe_auh",
+            "responsable_legal_1_percibe_alimenta",
+            "responsable_legal_2_apellido",
+            "responsable_legal_2_nombre",
+            "responsable_legal_2_dni",
+            "responsable_legal_2_telefono",
+            "responsable_legal_2_percibe_auh",
+            "responsable_legal_2_percibe_alimenta",
+            "adulto_responsable_apellido",
+            "adulto_responsable_nombre",
+            "adulto_responsable_dni",
+            "adulto_responsable_telefono",
+            "adulto_responsable_parentesco",
+            "observaciones",
+        ]
         widgets = {
+            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
             "observaciones": forms.Textarea(attrs={"rows": 3}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._configure_boolean_fields()
+        self._configure_choice_fields()
+        self._configure_widgets()
+        self._configure_geography_fields()
+        self._configure_initial_age()
+        self._apply_required_flags()
+
+    def _configure_boolean_fields(self):
+        boolean_fields = {
+            "calendario_vacunacion_al_dia": {
+                "label": "Calendario de vacunación al día",
+            },
+            "recibe_apoyo_discapacidad": {
+                "label": (
+                    "Recibe actualmente algún tipo de apoyo, tratamiento o acompañamiento"
+                ),
+            },
+            "posee_cud": {
+                "label": "Posee Certificado Único de Discapacidad (CUD)",
+                "choices": (
+                    ("", "---------"),
+                    ("true", "Tiene"),
+                    ("false", "No tiene"),
+                ),
+            },
+            "posee_obra_social": {
+                "label": "Posee Obra Social",
+            },
+        }
+        for field_name, config in boolean_fields.items():
+            current_value = None
+            if self.instance.pk:
+                current_value = getattr(self.instance, field_name)
+            if current_value is True:
+                current_value = "true"
+            elif current_value is False:
+                current_value = "false"
+            field_kwargs = {
+                "label": config["label"],
+                "initial": current_value,
+            }
+            if "choices" in config:
+                field_kwargs["choices"] = config["choices"]
+            self.fields[field_name] = NullableBooleanChoiceField(**field_kwargs)
+
+    def _configure_choice_fields(self):
+        self.fields["sexo"].choices = [("", "---------")] + list(
+            NominaCentroInfancia.SexoChoices.choices
+        )
+
+    def _configure_widgets(self):
+        labels = {
+            "estado": "Estado",
+            "dni": "DNI",
+            "apellido": "Apellido",
+            "nombre": "Nombre",
+            "fecha_nacimiento": "Fecha de nacimiento",
+            "sexo": "Sexo",
+            "nacionalidad": "Nacionalidad",
+            "sala": "Sala",
+            "pertenece_pueblo_originario": (
+                "¿El niño pertenece o se reconoce como parte de un pueblo indígena u originario?"
+            ),
+            "pueblo_originario_cual": "¿Cuál?",
+            "habla_lengua_originaria_hogar": (
+                "¿En el hogar del niño se habla habitualmente alguna lengua indígena u originaria?"
+            ),
+            "talla": "Talla",
+            "peso": "Peso",
+            "tiene_discapacidad": (
+                "¿El niño tiene alguna discapacidad y/o requiere apoyos específicos?"
+            ),
+            "discapacidad_tipo": "En caso de responder Sí, indicar cuál",
+            "calle_domicilio": "Calle",
+            "altura_domicilio": "Altura",
+            "piso_domicilio": "Piso",
+            "departamento_domicilio": "Departamento",
+            "provincia_domicilio": "Provincia",
+            "municipio_domicilio": "Municipio",
+            "localidad_domicilio": "Localidad",
+            "responsable_legal_1_apellido": "Apellido",
+            "responsable_legal_1_nombre": "Nombre",
+            "responsable_legal_1_dni": "DNI",
+            "responsable_legal_1_telefono": "Teléfono",
+            "responsable_legal_1_percibe_auh": "Percibe AUH",
+            "responsable_legal_1_percibe_alimenta": "Percibe Alimenta",
+            "responsable_legal_2_apellido": "Apellido",
+            "responsable_legal_2_nombre": "Nombre",
+            "responsable_legal_2_dni": "DNI",
+            "responsable_legal_2_telefono": "Teléfono",
+            "responsable_legal_2_percibe_auh": "Percibe AUH",
+            "responsable_legal_2_percibe_alimenta": "Percibe Alimenta",
+            "adulto_responsable_apellido": "Apellido",
+            "adulto_responsable_nombre": "Nombre",
+            "adulto_responsable_dni": "DNI",
+            "adulto_responsable_telefono": "Teléfono",
+            "adulto_responsable_parentesco": "Relación de parentesco",
+            "observaciones": "Observaciones",
+        }
+        for field_name, field in self.fields.items():
+            if field_name in labels:
+                field.label = labels[field_name]
+            widget = field.widget
+            css_class = "form-control"
+            if isinstance(widget, forms.Select):
+                css_class = "form-select"
+            widget.attrs["class"] = f'{widget.attrs.get("class", "")} {css_class}'.strip()
+
+        for field_name in [
+            "dni",
+            "responsable_legal_1_dni",
+            "responsable_legal_1_telefono",
+            "responsable_legal_2_dni",
+            "responsable_legal_2_telefono",
+            "adulto_responsable_dni",
+            "altura_domicilio",
+            "peso",
+        ]:
+            if field_name in self.fields:
+                self.fields[field_name].widget.attrs["inputmode"] = "numeric"
+
+        self.fields["edad_calculada"].widget.attrs["readonly"] = True
+        self.fields["edad_calculada"].widget.attrs["tabindex"] = "-1"
+
+    def _configure_geography_fields(self):
+        def parse_pk(value):
+            return int(value) if value and str(value).isdigit() else None
+
+        def normalize_name(value):
+            return slugify(str(value or "").strip())
+
+        def resolve_by_name(queryset, value):
+            normalized = normalize_name(value)
+            if not normalized:
+                return None
+            for item in queryset.order_by("nombre"):
+                if normalize_name(item.nombre) == normalized:
+                    return item
+            return None
+
+        provincia_initial = self.initial.get("provincia_domicilio")
+        municipio_initial = self.initial.get("municipio_domicilio")
+        localidad_initial = self.initial.get("localidad_domicilio")
+
+        provincia = Provincia.objects.filter(
+            pk=parse_pk(self.data.get(self.add_prefix("provincia_domicilio")))
+        ).first() or getattr(self.instance, "provincia_domicilio", None)
+        if not provincia and provincia_initial and not isinstance(
+            provincia_initial, Provincia
+        ):
+            provincia = resolve_by_name(Provincia.objects.all(), provincia_initial)
+
+        municipio = Municipio.objects.filter(
+            pk=parse_pk(self.data.get(self.add_prefix("municipio_domicilio")))
+        ).first() or getattr(self.instance, "municipio_domicilio", None)
+        if not municipio and municipio_initial and not isinstance(
+            municipio_initial, Municipio
+        ):
+            municipio_queryset = Municipio.objects.filter(provincia=provincia)
+            if not provincia:
+                municipio_queryset = Municipio.objects.all()
+            municipio = resolve_by_name(municipio_queryset, municipio_initial)
+
+        localidad = Localidad.objects.filter(
+            pk=parse_pk(self.data.get(self.add_prefix("localidad_domicilio")))
+        ).first() or getattr(self.instance, "localidad_domicilio", None)
+        if not localidad and localidad_initial and not isinstance(
+            localidad_initial, Localidad
+        ):
+            localidad_queryset = Localidad.objects.filter(municipio=municipio)
+            if not municipio:
+                localidad_queryset = Localidad.objects.all()
+            localidad = resolve_by_name(localidad_queryset, localidad_initial)
+
+        self.fields["provincia_domicilio"].queryset = Provincia.objects.all().order_by(
+            "nombre"
+        )
+        if provincia:
+            self.fields["provincia_domicilio"].initial = provincia
+        if provincia:
+            self.fields["municipio_domicilio"].queryset = Municipio.objects.filter(
+                provincia=provincia
+            ).order_by("nombre")
+        else:
+            self.fields["municipio_domicilio"].queryset = Municipio.objects.none()
+        if municipio:
+            self.fields["municipio_domicilio"].initial = municipio
+
+        if municipio:
+            self.fields["localidad_domicilio"].queryset = Localidad.objects.filter(
+                municipio=municipio
+            ).order_by("nombre")
+        else:
+            self.fields["localidad_domicilio"].queryset = Localidad.objects.none()
+
+        if localidad:
+            self.fields["localidad_domicilio"].initial = localidad
+
+    def _configure_initial_age(self):
+        fecha_nacimiento = self.initial.get("fecha_nacimiento") or getattr(
+            self.instance, "fecha_nacimiento", None
+        )
+        if fecha_nacimiento:
+            temp_nomina = self.instance if self.instance.pk else NominaCentroInfancia(
+                fecha_nacimiento=fecha_nacimiento
+            )
+            self.fields["edad_calculada"].initial = temp_nomina.edad
+
+    def _apply_required_flags(self):
+        for field_name in ["estado", "dni", "apellido", "nombre", "fecha_nacimiento"]:
+            self.fields[field_name].required = True
+
+    def clean(self):
+        cleaned_data = super().clean()
+        fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
+        if fecha_nacimiento:
+            cleaned_data["edad_calculada"] = NominaCentroInfancia(
+                fecha_nacimiento=fecha_nacimiento
+            ).edad
+        return cleaned_data
+
+
+class NominaCentroInfanciaForm(NominaCentroInfanciaBaseForm):
+    pass
+
+
+class NominaCentroInfanciaCreateForm(NominaCentroInfanciaBaseForm):
+    pass
 
 
 class TrabajadorForm(forms.ModelForm):
