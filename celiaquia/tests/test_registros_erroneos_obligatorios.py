@@ -395,6 +395,7 @@ def test_actualizar_registro_erroneo_permite_borrar_ultimo_dato_responsable(clie
             "domicilio_responsable",
             "localidad_responsable",
             "email_responsable",
+            "contacto_responsable",
         )
     )
 
