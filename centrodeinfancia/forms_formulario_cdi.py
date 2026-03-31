@@ -59,7 +59,6 @@ class CampoBooleanoNulable(forms.TypedChoiceField):
 
 
 class FormularioCDIForm(forms.ModelForm):
-<<<<<<< mobile-v4
     CAMPOS_OTRA_OPCION = (
         ("tipo_jornada", "other", "tipo_jornada_otra"),
         ("modalidad_gestion", "otra", "modalidad_gestion_otra"),
@@ -74,9 +73,7 @@ class FormularioCDIForm(forms.ModelForm):
         "evaluacion_periodica_menu",
         "cobertura_capacitacion_manipulacion_alimentos",
     )
-=======
     DIAS_SEMANA = list(OPCIONES_DIAS_SEMANA)
->>>>>>> development
     meses_funcionamiento = forms.MultipleChoiceField(
         required=False,
         choices=CAMPOS_OPCIONES_MULTIPLES["meses_funcionamiento"],
