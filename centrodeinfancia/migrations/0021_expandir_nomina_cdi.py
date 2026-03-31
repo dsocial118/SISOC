@@ -4,7 +4,7 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("core", "0001_initial"),
+        ("core", "0008_programa_organismo_programa_descripcion"),
         ("centrodeinfancia", "0020_alter_formulariocdi_cobertura_educadora_titulo_habilitante_and_more"),
     ]
 
