@@ -349,13 +349,13 @@
                     </li>
                 {% endif %}
 
-                <!-- Centro de Infancia -->
+                <!-- Centros de Desarrollo Infantil -->
                 {% if request.user|has_perm_code:"centrodeinfancia.view_centrodeinfancia" %}
                     <li class="nav-item {% if 'centrodeinfancia' in pagina_actual %}menu-open{% endif %}">
                         <a href="#"
                            class="nav-link nav-dot ms-2 {% if 'centrodeinfancia' in pagina_actual %}active{% endif %}">
                             <p>
-                                Centro de Infancia
+                                Centros de Desarrollo Infantil
                                 <i class="nav-arrow bi bi-chevron-right"></i>
                             </p>
                         </a>
@@ -364,7 +364,7 @@
                                 <a href="{% url 'centrodeinfancia' %}"
                                    class="nav-link ms-4 {% if 'centrodeinfancia/listar' in pagina_actual %}active{% endif %}">
                                     <i class="nav-icon bi bi-arrow-return-right"></i>
-                                    <p>Ver Centros de Infancia</p>
+                                    <p>Ver Centros de Desarrollo Infantil</p>
                                 </a>
                             </li>
                         </ul>
