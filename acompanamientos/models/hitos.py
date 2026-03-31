@@ -1,9 +1,18 @@
 from django.db import models
-from comedores.models import Comedor
 from django.utils import timezone
+
+from acompanamientos.models.acompanamiento import Acompanamiento
+from comedores.models import Comedor
 
 
 class Hitos(models.Model):
+    acompanamiento = models.OneToOneField(
+        Acompanamiento,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="hitos",
+    )
     comedor = models.OneToOneField(Comedor, on_delete=models.SET_NULL, null=True)
     fecha = models.DateTimeField(default=timezone.now, blank=True)
     retiro_tarjeta = models.BooleanField(
