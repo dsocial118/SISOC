@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import Group, Permission, User
 from django.db import transaction
+from django.utils.crypto import get_random_string
 from django.utils import timezone
 
 from comedores.models import Comedor
@@ -418,10 +419,18 @@ class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
         self._setup_delegation_fields()
         self._scope_assignable_fields_for_actor()
         self.fields["email"].required = True
+        self.fields["password"].required = False
+        self.generated_password = None
+        self.password_was_auto_generated = False
 
     def clean(self):
         cleaned = super().clean()
         cleaned = self._validate_required_email(cleaned)
+        if (
+            not cleaned.get("es_representante_pwa")
+            and not (cleaned.get("password") or "").strip()
+        ):
+            self.add_error("password", "Este campo es obligatorio.")
         if cleaned.get("es_usuario_provincial") and not cleaned.get("provincia"):
             self.add_error("provincia", "Seleccione una provincia.")
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
@@ -435,13 +444,22 @@ class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
 
     def _save_atomic(self, commit=True):
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data["password"])
         user.email = self.cleaned_data.get("email", "")
 
         if self.cleaned_data.get("es_representante_pwa", False):
+            self.generated_password = get_random_string(12)
+            user.set_password(self.generated_password)
             user.is_staff = False
+            self.password_was_auto_generated = True
         elif self.cleaned_data.get("es_coordinador", False):
+            user.set_password(self.cleaned_data["password"])
             user.is_staff = True
+            self.generated_password = None
+            self.password_was_auto_generated = False
+        else:
+            user.set_password(self.cleaned_data["password"])
+            self.generated_password = None
+            self.password_was_auto_generated = False
 
         if commit:
             user.save()

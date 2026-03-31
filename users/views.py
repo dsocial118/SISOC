@@ -87,6 +87,21 @@ class UserCreateView(AdminRequiredMixin, CreateView):
         kwargs["actor"] = self.request.user
         return kwargs
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        generated_password = getattr(form, "generated_password", None)
+        if generated_password:
+            messages.success(
+                self.request,
+                (
+                    "Usuario mobile creado correctamente. "
+                    f"Contraseña inicial generada: {generated_password}"
+                ),
+            )
+            return response
+        messages.success(self.request, "Usuario creado correctamente.")
+        return response
+
 
 class UserUpdateView(AdminRequiredMixin, UpdateView):
     model = User
