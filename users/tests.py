@@ -123,6 +123,78 @@ def test_user_list_is_scoped_by_actor_delegation_scope():
 
 
 @pytest.mark.django_db
+def test_user_list_with_only_group_scope_does_not_hide_users_without_roles():
+    request_factory = RequestFactory()
+
+    actor = User.objects.create_user(username="delegador_grupos", password="secret")
+    allowed_group = Group.objects.create(name="Grupo VAT")
+    denied_group = Group.objects.create(name="Grupo externo")
+    direct_role = _create_role_permission("role_vat_direct", "Role VAT Direct")
+
+    actor.profile.grupos_asignables.set([allowed_group])
+
+    visible_user = User.objects.create_user(
+        username="visible_solo_grupo", password="secret"
+    )
+    visible_user.groups.set([allowed_group])
+    visible_user.user_permissions.set([direct_role])
+
+    hidden_user = User.objects.create_user(
+        username="oculto_solo_grupo", password="secret"
+    )
+    hidden_user.groups.set([denied_group])
+    hidden_user.user_permissions.set([direct_role])
+
+    request = request_factory.get("/usuarios/")
+    request.user = actor
+    usernames = set(
+        UsuariosService.get_filtered_usuarios(request).values_list(
+            "username", flat=True
+        )
+    )
+
+    assert "delegador_grupos" in usernames
+    assert "visible_solo_grupo" in usernames
+    assert "oculto_solo_grupo" not in usernames
+
+
+@pytest.mark.django_db
+def test_user_list_with_only_role_scope_does_not_hide_users_with_allowed_groups():
+    request_factory = RequestFactory()
+
+    actor = User.objects.create_user(username="delegador_roles", password="secret")
+    allowed_group = Group.objects.create(name="Grupo permitido roles")
+    denied_role = _create_role_permission("role_otro_scope", "Role Otro Scope")
+    allowed_role = _create_role_permission("role_vat_role_scope", "Role VAT Role Scope")
+
+    actor.profile.roles_asignables.set([allowed_role])
+
+    visible_user = User.objects.create_user(
+        username="visible_solo_role", password="secret"
+    )
+    visible_user.groups.set([allowed_group])
+    visible_user.user_permissions.set([allowed_role])
+
+    hidden_user = User.objects.create_user(
+        username="oculto_solo_role", password="secret"
+    )
+    hidden_user.groups.set([allowed_group])
+    hidden_user.user_permissions.set([denied_role])
+
+    request = request_factory.get("/usuarios/")
+    request.user = actor
+    usernames = set(
+        UsuariosService.get_filtered_usuarios(request).values_list(
+            "username", flat=True
+        )
+    )
+
+    assert "delegador_roles" in usernames
+    assert "visible_solo_role" in usernames
+    assert "oculto_solo_role" not in usernames
+
+
+@pytest.mark.django_db
 def test_user_list_without_delegation_scope_keeps_default_visibility():
     request_factory = RequestFactory()
     actor = User.objects.create_user(username="sin_scope", password="secret")

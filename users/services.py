@@ -92,13 +92,17 @@ class UsuariosService:
                 filter=Q(user_permissions__in=allowed_roles),
                 distinct=True,
             ),
-        ).filter(
-            Q(pk=actor.pk)
-            | (
-                Q(total_groups=F("allowed_groups_count"))
-                & Q(total_role_permissions=F("allowed_role_permissions_count"))
-            )
         )
+
+        scope_filter = Q()
+        if has_group_scope:
+            scope_filter &= Q(total_groups=F("allowed_groups_count"))
+        if has_role_scope:
+            scope_filter &= Q(
+                total_role_permissions=F("allowed_role_permissions_count")
+            )
+
+        scoped_qs = scoped_qs.filter(Q(pk=actor.pk) | scope_filter)
 
         return scoped_qs.distinct().order_by("-id")
 
