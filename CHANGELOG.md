@@ -10,7 +10,7 @@
 ## Actualizaciones
 
 - Unificación de flujos entre web y mobile/PWA para login y colaboradores, con acciones por usuario alineadas al estado activo y mejor consistencia en altas, bajas lógicas y permisos.
-- Fortalecimiento del trabajo asistido y la operación técnica con bootstrap de Codex Desktop para worktrees, checks de mojibake, ajustes de GitHub Actions y guías IA/lint más estrictas en la documentación.
+- Fortalecimiento del trabajo asistido y la operación técnica con bootstrap para worktrees, checks de mojibake, ajustes de GitHub Actions y guías IA/lint más estrictas en la documentación.
 - Mejoras transversales en layout y experiencia de uso en detalle de comedores, sidebar, relevamientos, usuarios y formularios CDI para sostener compatibilidad con los cambios recientes.
 
 ## Corrección de Errores
