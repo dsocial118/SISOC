@@ -12,7 +12,7 @@ from django.views.generic import (
     TemplateView,
 )
 from django.contrib import messages
-from django.db.models import Q, Count
+from django.db.models import Q
 from django.utils import timezone
 
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin

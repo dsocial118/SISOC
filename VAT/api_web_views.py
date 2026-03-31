@@ -230,9 +230,7 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
         if centro_id:
             queryset = queryset.filter(oferta__centro_id=centro_id)
         if titulo_id:
-            queryset = queryset.filter(
-                oferta__plan_curricular__titulos__id=titulo_id
-            )
+            queryset = queryset.filter(oferta__plan_curricular__titulos__id=titulo_id)
         if programa_id:
             queryset = queryset.filter(oferta__programa_id=programa_id)
         if ciclo_lectivo:

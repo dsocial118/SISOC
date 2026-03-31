@@ -223,66 +223,6 @@ class SubsectorDeleteView(LoginRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-# ============ MODALIDAD CURSADA ============
-
-
-class ModalidadCursadaListView(LoginRequiredMixin, ListView):
-    model = ModalidadCursada
-    template_name = "vat/catalogo/modalidadcursada_list.html"
-    context_object_name = "modalidades"
-    paginate_by = 50
-
-    def get_queryset(self):
-        return super().get_queryset().order_by("nombre")
-
-
-class ModalidadCursadaCreateView(LoginRequiredMixin, CreateView):
-    model = ModalidadCursada
-    form_class = ModalidadCursadaForm
-    template_name = "vat/catalogo/modalidadcursada_form.html"
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        messages.success(self.request, "Modalidad de cursado creada correctamente.")
-        return response
-
-    def get_success_url(self):
-        return reverse("vat_modalidadcursada_detail", kwargs={"pk": self.object.pk})
-
-
-class ModalidadCursadaDetailView(LoginRequiredMixin, DetailView):
-    model = ModalidadCursada
-    template_name = "vat/catalogo/modalidadcursada_detail.html"
-    context_object_name = "modalidad"
-
-
-class ModalidadCursadaUpdateView(LoginRequiredMixin, UpdateView):
-    model = ModalidadCursada
-    form_class = ModalidadCursadaForm
-    template_name = "vat/catalogo/modalidadcursada_form.html"
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        messages.success(
-            self.request, "Modalidad de cursado actualizada correctamente."
-        )
-        return response
-
-    def get_success_url(self):
-        return reverse("vat_modalidadcursada_detail", kwargs={"pk": self.object.pk})
-
-
-class ModalidadCursadaDeleteView(LoginRequiredMixin, DeleteView):
-    model = ModalidadCursada
-    template_name = "vat/catalogo/modalidadcursada_confirm_delete.html"
-    context_object_name = "modalidad"
-    success_url = reverse_lazy("vat_modalidadcursada_list")
-
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, "Modalidad de cursado eliminada correctamente.")
-        return super().delete(request, *args, **kwargs)
-
-
 # ============ TITULO REFERENCIA ============
 
 
@@ -296,7 +236,9 @@ class TituloReferenciaListView(LoginRequiredMixin, ListView):
         queryset = (
             super()
             .get_queryset()
-            .select_related("plan_estudio", "plan_estudio__sector", "plan_estudio__subsector")
+            .select_related(
+                "plan_estudio", "plan_estudio__sector", "plan_estudio__subsector"
+            )
             .order_by("nombre")
         )
         sector_id = self.request.GET.get("sector")
@@ -352,11 +294,15 @@ class TituloReferenciaDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "titulo"
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            "plan_estudio",
-            "plan_estudio__sector",
-            "plan_estudio__subsector",
-            "plan_estudio__modalidad_cursada",
+        return (
+            super()
+            .get_queryset()
+            .select_related(
+                "plan_estudio",
+                "plan_estudio__sector",
+                "plan_estudio__subsector",
+                "plan_estudio__modalidad_cursada",
+            )
         )
 
     def get_context_data(self, **kwargs):

@@ -940,15 +940,23 @@ class Curso(SoftDeleteModelMixin, models.Model):
 
         if self.fecha_inicio and self.fecha_fin and self.fecha_inicio > self.fecha_fin:
             raise ValidationError(
-                {"fecha_fin": "La fecha de fin debe ser mayor o igual a la fecha de inicio."}
+                {
+                    "fecha_fin": "La fecha de fin debe ser mayor o igual a la fecha de inicio."
+                }
             )
 
         if self.cupo_total is not None and self.cupo_total == 0:
             raise ValidationError({"cupo_total": "El cupo total debe ser mayor a 0."})
 
-        if self.ubicacion_id and self.centro_id and self.ubicacion.centro_id != self.centro_id:
+        if (
+            self.ubicacion_id
+            and self.centro_id
+            and self.ubicacion.centro_id != self.centro_id
+        ):
             raise ValidationError(
-                {"ubicacion": "La ubicación seleccionada no pertenece al centro del curso."}
+                {
+                    "ubicacion": "La ubicación seleccionada no pertenece al centro del curso."
+                }
             )
 
     def __str__(self):
@@ -959,7 +967,9 @@ class Curso(SoftDeleteModelMixin, models.Model):
         verbose_name_plural = "Cursos"
         ordering = ["-fecha_inicio", "nombre"]
         indexes = [
-            models.Index(fields=["centro", "estado"], name="vat_curso_centro_estado_idx"),
+            models.Index(
+                fields=["centro", "estado"], name="vat_curso_centro_estado_idx"
+            ),
             models.Index(fields=["estado"], name="vat_curso_estado_idx"),
         ]
 
@@ -1002,14 +1012,20 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
 
         if self.fecha_inicio and self.fecha_fin and self.fecha_inicio > self.fecha_fin:
             raise ValidationError(
-                {"fecha_fin": "La fecha de fin debe ser mayor o igual a la fecha de inicio."}
+                {
+                    "fecha_fin": "La fecha de fin debe ser mayor o igual a la fecha de inicio."
+                }
             )
 
         if self.cupo_total is not None and self.cupo_total == 0:
             raise ValidationError({"cupo_total": "El cupo total debe ser mayor a 0."})
 
         if self.curso_id:
-            if self.cupo_total and self.curso.cupo_total and self.cupo_total > self.curso.cupo_total:
+            if (
+                self.cupo_total
+                and self.curso.cupo_total
+                and self.cupo_total > self.curso.cupo_total
+            ):
                 raise ValidationError(
                     {
                         "cupo_total": (
@@ -1017,7 +1033,11 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
                         )
                     }
                 )
-            if self.fecha_inicio and self.curso.fecha_inicio and self.fecha_inicio < self.curso.fecha_inicio:
+            if (
+                self.fecha_inicio
+                and self.curso.fecha_inicio
+                and self.fecha_inicio < self.curso.fecha_inicio
+            ):
                 raise ValidationError(
                     {
                         "fecha_inicio": (
@@ -1025,7 +1045,11 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
                         )
                     }
                 )
-            if self.fecha_fin and self.curso.fecha_fin and self.fecha_fin > self.curso.fecha_fin:
+            if (
+                self.fecha_fin
+                and self.curso.fecha_fin
+                and self.fecha_fin > self.curso.fecha_fin
+            ):
                 raise ValidationError(
                     {
                         "fecha_fin": (
@@ -1043,7 +1067,9 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
         ordering = ["codigo_comision"]
         unique_together = ("curso", "codigo_comision")
         indexes = [
-            models.Index(fields=["curso", "estado"], name="vat_comcurso_curso_estado_idx"),
+            models.Index(
+                fields=["curso", "estado"], name="vat_comcurso_curso_estado_idx"
+            ),
         ]
 
 

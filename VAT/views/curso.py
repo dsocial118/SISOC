@@ -84,8 +84,8 @@ class CursoUpdateView(LoginRequiredMixin, UpdateView):
             Centro.objects.all(), self.request.user
         )
         form.fields["centro"].queryset = scoped_centros
-        form.fields["ubicacion"].queryset = self.object.centro.ubicaciones.select_related(
-            "localidad"
+        form.fields["ubicacion"].queryset = (
+            self.object.centro.ubicaciones.select_related("localidad")
         )
         return form
 
@@ -113,7 +113,9 @@ class CursoDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView)
         scoped_centros = filter_centros_queryset_for_user(
             Centro.objects.all(), self.request.user
         ).values_list("id", flat=True)
-        return Curso.objects.select_related("centro").filter(centro_id__in=scoped_centros)
+        return Curso.objects.select_related("centro").filter(
+            centro_id__in=scoped_centros
+        )
 
     def get_success_url(self):
         return f"{reverse('vat_centro_detail', kwargs={'pk': self.object.centro_id})}#cursos"

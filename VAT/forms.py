@@ -1257,7 +1257,9 @@ class OfertaInstitucionalForm(forms.ModelForm):
         help_text="Al inscribirse, se valida y descuenta un crédito del voucher del ciudadano.",
     )
     voucher_parametrias = forms.ModelMultipleChoiceField(
-        queryset=VoucherParametria.objects.filter(activa=True).select_related("programa"),
+        queryset=VoucherParametria.objects.filter(activa=True).select_related(
+            "programa"
+        ),
         label="Vouchers",
         required=False,
         widget=VoucherParametriaSelectMultiple(
@@ -1713,8 +1715,6 @@ class VoucherParametriaForm(forms.ModelForm):
         return fecha
 
     class Meta:
-        from VAT.models import VoucherParametria
-
         model = VoucherParametria
         fields = [
             "nombre",

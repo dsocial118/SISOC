@@ -49,15 +49,15 @@ from VAT.forms import (
     TituloReferenciaForm,
     PlanVersionCurricularForm,
 )
-from core.services.advanced_filters import AdvancedFilterEngine
-from core.services.favorite_filters import SeccionesFiltrosFavoritos
-from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from VAT.services.access_scope import (
     can_user_access_centro,
     can_user_add_vat_entities,
     filter_centros_queryset_for_user,
     is_vat_referente,
 )
+from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 
 BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
@@ -146,9 +146,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # annotate para evitar N+1 al contar comisiones por oferta
         ctx["ofertas"] = list(
-            centro.ofertas_institucionales.select_related(
-                "plan_curricular", "programa"
-            )
+            centro.ofertas_institucionales.select_related("plan_curricular", "programa")
             .annotate(comisiones_count=Count("comisiones"))
             .order_by("-ciclo_lectivo")
         )
@@ -191,9 +189,9 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             )
         )
         ctx["planes"] = list(
-            PlanVersionCurricular.objects.filter(activo=True).select_related(
-                "sector", "subsector", "modalidad_cursada"
-            ).prefetch_related("titulos")
+            PlanVersionCurricular.objects.filter(activo=True)
+            .select_related("sector", "subsector", "modalidad_cursada")
+            .prefetch_related("titulos")
         )
 
         # Forms para modales
