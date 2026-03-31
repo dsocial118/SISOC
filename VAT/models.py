@@ -275,12 +275,14 @@ class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
     @property
     def titulo_referencia(self):
         """Backward compat: devuelve el primer Título asociado a este plan."""
-        return self.titulos.first()
+        # pylint: disable=no-member
+        return self.tituloreferencia_set.first()
 
     @property
     def titulo_referencia_id(self):
         """Backward compat."""
-        t = self.titulos.first()
+        # pylint: disable=no-member
+        t = self.tituloreferencia_set.first()
         return t.id if t else None
 
 
