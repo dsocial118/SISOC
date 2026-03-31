@@ -193,20 +193,22 @@
 
 {% block customJS %}
     <style nonce="{{ request.csp_nonce }}">
-        .section-header-info-basica {
-            background: linear-gradient(135deg, #0f4c5c 0%, #146c7b 100%);
+        .section-card .section-header.section-header-info-basica {
+            background: linear-gradient(135deg, #0f4c5c 0%, #146c7b 100%) !important;
+            border-bottom-color: #67e8f9;
         }
 
-        .section-header-info-basica:hover {
-            background: linear-gradient(135deg, #146c7b 0%, #198694 100%);
+        .section-card .section-header.section-header-info-basica:hover {
+            background: linear-gradient(135deg, #146c7b 0%, #198694 100%) !important;
         }
 
-        .section-header-funcionamiento {
-            background: linear-gradient(135deg, #6b2737 0%, #8f3550 100%);
+        .section-card .section-header.section-header-funcionamiento {
+            background: linear-gradient(135deg, #6b2737 0%, #8f3550 100%) !important;
+            border-bottom-color: #f9a8d4;
         }
 
-        .section-header-funcionamiento:hover {
-            background: linear-gradient(135deg, #8f3550 0%, #aa4361 100%);
+        .section-card .section-header.section-header-funcionamiento:hover {
+            background: linear-gradient(135deg, #8f3550 0%, #aa4361 100%) !important;
         }
 
         .horarios-funcionamiento-card {
