@@ -38,10 +38,16 @@
                             <a href="{% url 'vat_centro_detail' form.instance.curso.centro_id %}#cursos"
                                class="btn btn-outline-secondary">Cancelar</a>
                         {% else %}
-                            <button type="button" onclick="history.back()" class="btn btn-outline-secondary">Cancelar</button>
+                            <button type="button"
+                                    onclick="history.back()"
+                                    class="btn btn-outline-secondary">Cancelar</button>
                         {% endif %}
                         <button type="submit" class="btn btn-primary">
-                            {% if form.instance.id %}Actualizar{% else %}Crear{% endif %}
+                            {% if form.instance.id %}
+                                Actualizar
+                            {% else %}
+                                Crear
+                            {% endif %}
                         </button>
                     </div>
                 </form>

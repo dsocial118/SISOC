@@ -12,8 +12,7 @@
 {% block content %}
     <div class="container-fluid py-4">
         <div class="d-flex align-items-center gap-2 mb-4">
-            <a href="{{ cancel_url }}"
-               class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+            <a href="{{ cancel_url }}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
             <h1 class="h3 mb-0" style="color: #1f3a93;">
                 {% if form.instance.id %}
                     <i class="bi bi-pencil-square me-2"></i>Editar Curso
@@ -41,10 +40,13 @@
                     </div>
 
                     <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a href="{{ cancel_url }}"
-                           class="btn btn-outline-secondary">Cancelar</a>
+                        <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Cancelar</a>
                         <button type="submit" class="btn btn-primary">
-                            {% if form.instance.id %}Actualizar{% else %}Crear{% endif %}
+                            {% if form.instance.id %}
+                                Actualizar
+                            {% else %}
+                                Crear
+                            {% endif %}
                         </button>
                     </div>
                 </form>
