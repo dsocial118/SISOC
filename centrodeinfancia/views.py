@@ -1029,11 +1029,13 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
             for field_name in NominaCentroInfanciaCreateForm.Meta.fields
             if field_name != "edad_calculada"
         }
-        NominaCentroInfancia.objects.create(
+        nomina = NominaCentroInfancia(
             centro=centro,
             ciudadano=ciudadano,
             **nomina_data,
         )
+        nomina.clean()
+        nomina.save()
         return True
 
     def get_success_url(self):
