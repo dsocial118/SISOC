@@ -1226,6 +1226,19 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
                 context = self.get_context_data(form=form)
                 return self.render_to_response(context)
 
+            # Validar que el DNI informado coincida con el del ciudadano seleccionado
+            form_dni = form.cleaned_data.get("dni")
+            if form_dni and str(form_dni) != str(ciudadano.documento):
+                form.add_error(
+                    "dni",
+                    "El DNI no coincide con el del ciudadano seleccionado.",
+                )
+                messages.error(
+                    request,
+                    "El DNI informado no coincide con el del ciudadano seleccionado.",
+                )
+                context = self.get_context_data(form=form)
+                return self.render_to_response(context)
         try:
             with transaction.atomic():
                 if ciudadano is None:
