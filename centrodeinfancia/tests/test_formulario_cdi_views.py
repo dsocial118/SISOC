@@ -102,6 +102,68 @@ def _construir_payload_creacion_formulario(centro, **overrides):
     return payload
 
 
+def _construir_payload_edicion_formulario(formulario, **overrides):
+    payload = {
+        "fecha_relevamiento": (
+            formulario.fecha_relevamiento.isoformat()
+            if formulario.fecha_relevamiento
+            else ""
+        ),
+        "nombre_completo_respondente": formulario.nombre_completo_respondente or "",
+        "rol_respondente": formulario.rol_respondente or "",
+        "email_respondente": formulario.email_respondente or "",
+        "nombre_cdi": formulario.nombre_cdi or "",
+        "codigo_cdi": formulario.codigo_cdi or "",
+        "distribucion_salas-TOTAL_FORMS": "6",
+        "distribucion_salas-INITIAL_FORMS": "6",
+        "distribucion_salas-MIN_NUM_FORMS": "0",
+        "distribucion_salas-MAX_NUM_FORMS": "1000",
+        "demanda_insatisfecha_por_grupo_etario-TOTAL_FORMS": "6",
+        "demanda_insatisfecha_por_grupo_etario-INITIAL_FORMS": "6",
+        "demanda_insatisfecha_por_grupo_etario-MIN_NUM_FORMS": "0",
+        "demanda_insatisfecha_por_grupo_etario-MAX_NUM_FORMS": "1000",
+        "frecuencia_articulacion-TOTAL_FORMS": "15",
+        "frecuencia_articulacion-INITIAL_FORMS": "15",
+        "frecuencia_articulacion-MIN_NUM_FORMS": "0",
+        "frecuencia_articulacion-MAX_NUM_FORMS": "1000",
+    }
+
+    for index, row in enumerate(formulario.filas_distribucion_salas.order_by("id")):
+        payload[f"distribucion_salas-{index}-id"] = str(row.id)
+        payload[f"distribucion_salas-{index}-grupo_etario"] = row.grupo_etario
+        payload[f"distribucion_salas-{index}-cantidad_salas"] = row.cantidad_salas or ""
+        payload[f"distribucion_salas-{index}-superficie_exclusiva_m2"] = (
+            row.superficie_exclusiva_m2 or ""
+        )
+        payload[f"distribucion_salas-{index}-cantidad_ninos"] = (
+            row.cantidad_ninos or ""
+        )
+        payload[f"distribucion_salas-{index}-cantidad_personal_sala"] = (
+            row.cantidad_personal_sala or ""
+        )
+
+    for index, row in enumerate(
+        formulario.filas_demanda_insatisfecha.order_by("id")
+    ):
+        payload[f"demanda_insatisfecha_por_grupo_etario-{index}-id"] = str(row.id)
+        payload[
+            f"demanda_insatisfecha_por_grupo_etario-{index}-grupo_etario"
+        ] = row.grupo_etario
+        payload[
+            f"demanda_insatisfecha_por_grupo_etario-{index}-cantidad_demanda_insatisfecha"
+        ] = (row.cantidad_demanda_insatisfecha or "")
+
+    for index, row in enumerate(formulario.filas_articulacion.order_by("id")):
+        payload[f"frecuencia_articulacion-{index}-id"] = str(row.id)
+        payload[
+            f"frecuencia_articulacion-{index}-tipo_institucion"
+        ] = row.tipo_institucion
+        payload[f"frecuencia_articulacion-{index}-frecuencia"] = row.frecuencia or ""
+
+    payload.update(overrides)
+    return payload
+
+
 @pytest.mark.django_db
 def test_formulario_cdi_listado_no_permite_centro_fuera_de_provincia():
     provincia_a = Provincia.objects.create(nombre="Buenos Aires")
@@ -311,6 +373,46 @@ def test_formulario_cdi_crear_guarda_telefonos_flexibles_autocompletados(client)
     assert formulario.telefono_referente_cdi == "11-2233-4455"
     assert formulario.telefono_organizacion == "22334455"
     assert formulario.telefono_referente_organizacion == "54-11-99887766"
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_editar_vacio_sin_cambios_guarda_correctamente(client):
+    user = _crear_usuario("super-form-empty-edit", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI Empty Edit")
+
+    response_create = client.post(
+        reverse("centrodeinfancia_formulario_crear", kwargs={"pk": centro.pk}),
+        _construir_payload_creacion_formulario(centro),
+    )
+
+    assert response_create.status_code == 302
+    formulario = FormularioCDI.objects.get(centro=centro)
+
+    response_get = client.get(
+        reverse(
+            "centrodeinfancia_formulario_editar",
+            kwargs={"pk": centro.pk, "form_pk": formulario.pk},
+        )
+    )
+
+    assert response_get.status_code == 200
+    content = response_get.content.decode("utf-8")
+    assert content.count('name="distribucion_salas-0-id"') == 1
+    assert content.count('name="demanda_insatisfecha_por_grupo_etario-0-id"') == 1
+    assert content.count('name="frecuencia_articulacion-0-id"') == 1
+
+    response_update = client.post(
+        reverse(
+            "centrodeinfancia_formulario_editar",
+            kwargs={"pk": centro.pk, "form_pk": formulario.pk},
+        ),
+        _construir_payload_edicion_formulario(formulario),
+    )
+
+    assert response_update.status_code == 302
+    formulario.refresh_from_db()
+    assert formulario.pk is not None
 
 
 @pytest.mark.django_db
