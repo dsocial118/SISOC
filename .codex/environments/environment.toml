@@ -1,0 +1,25 @@
+version = 1
+name = "SISOC Codex"
+
+[setup]
+script = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_bootstrap.ps1 -NoStart"
+
+[[actions]]
+name = "Bootstrap Codex"
+icon = "play"
+command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_bootstrap.ps1"
+
+[[actions]]
+name = "Diagnosticar Entorno"
+icon = "terminal"
+command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_doctor.ps1"
+
+[[actions]]
+name = "Tests Smoke"
+icon = "beaker"
+command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 smoke"
+
+[[actions]]
+name = "Abrir Shell Django"
+icon = "terminal"
+command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 shell"

@@ -28,6 +28,7 @@ from relevamientos.models import Relevamiento, ClasificacionComedor
 from ciudadanos.models import Ciudadano
 from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models import (
+    ColaboradorEspacio,
     Comedor,
     AuditComedorPrograma,
     ImagenComedor,
@@ -345,6 +346,7 @@ def _build_comedores_list_values_queryset(base_qs):
             "ultimo_estado__estado_general__estado_detalle",
             "estado_validacion",
             "fecha_validado",
+            "es_judicializado",
         )
         .order_by("-id")
     )
@@ -481,6 +483,13 @@ def _get_comedor_detail_prefetches():
             "programa_changes",
             queryset=_build_programa_changes_prefetch_queryset(),
             to_attr="programa_changes_optimized",
+        ),
+        Prefetch(
+            "colaboradores_espacio",
+            queryset=ColaboradorEspacio.objects.select_related(
+                "ciudadano__sexo"
+            ).prefetch_related("actividades"),
+            to_attr="colaboradores_espacio_optimized",
         ),
     )
 
@@ -1085,10 +1094,11 @@ class ComedorService:
             if resultado.get("success"):
                 return resultado
             last_error = resultado.get("error") or last_error
-            # Solo tiene sentido probar otro sexo cuando RENAPER respondió
-            # "sin coincidencia". Para errores de integración fallamos rápido.
-            if resultado.get("raw_response") is None:
-                break
+            if not resultado.get("raw_response"):
+                return {
+                    "success": False,
+                    "error": last_error or "No se encontraron datos en RENAPER.",
+                }
         return {
             "success": False,
             "error": last_error or "No se encontraron datos en RENAPER.",
@@ -1145,7 +1155,28 @@ class ComedorService:
             ciudadano_data["modificado_por"] = user
 
     @staticmethod
+    def _normalize_ciudadano_fk_ids_for_create(ciudadano_data):
+        fk_fields = (
+            "sexo",
+            "provincia",
+            "municipio",
+            "localidad",
+            "nacionalidad",
+        )
+        normalized_data = dict(ciudadano_data or {})
+        for field_name in fk_fields:
+            if (
+                field_name in normalized_data
+                and normalized_data[field_name] is not None
+            ):
+                normalized_data[f"{field_name}_id"] = normalized_data.pop(field_name)
+        return normalized_data
+
+    @staticmethod
     def _crear_ciudadano_desde_datos_renaper(dni_str, ciudadano_data):
+        ciudadano_data = ComedorService._normalize_ciudadano_fk_ids_for_create(
+            ciudadano_data
+        )
         try:
             ciudadano = Ciudadano.objects.create(**ciudadano_data)
         except Exception:
@@ -1219,6 +1250,7 @@ class ComedorService:
             "tipo_documento": datos.get("tipo_documento") or Ciudadano.DOCUMENTO_DNI,
             "fecha_nacimiento": fecha_nacimiento,
             "origen_dato": "renaper",
+            "cuil_cuit": str(datos.get("cuil")) if datos.get("cuil") else None,
         }
 
         if datos.get("sexo"):

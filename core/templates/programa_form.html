@@ -1,0 +1,62 @@
+{% extends "includes/main.html" %}
+{% block title %}
+    {% if form.instance.pk %}
+        Editar
+    {% else %}
+        Nuevo
+    {% endif %}
+    Programa
+{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'programa_listar' %}">Programas</a>
+        </li>
+        <li class="breadcrumb-item active">
+            {% if form.instance.pk %}
+                Editar
+            {% else %}
+                Nuevo
+            {% endif %}
+        </li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title">
+                        {% if form.instance.pk %}
+                            Editar Programa
+                        {% else %}
+                            Nuevo Programa
+                        {% endif %}
+                    </h3>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        {% for field in form %}
+                            <div class="form-group">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}<small class="text-danger">{{ field.errors }}</small>{% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary">
+                            {% if form.instance.pk %}
+                                Actualizar
+                            {% else %}
+                                Crear
+                            {% endif %}
+                        </button>
+                        <a href="{% url 'programa_listar' %}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

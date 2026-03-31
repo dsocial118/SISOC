@@ -9,8 +9,9 @@ class Command(BaseCommand):
     help = "Crea los grupos de usuario predeterminados"
 
     def handle(self, *args, **kwargs):
-        self.stdout.write(self.style.SUCCESS(f"Creando grupos de usuario..."))
+        self.stdout.write(self.style.SUCCESS("Creando grupos de usuario..."))
         bootstrap_groups = []
+
         for group_name in bootstrap_group_names():
             group, created = Group.objects.get_or_create(name=group_name)
             bootstrap_groups.append(group)

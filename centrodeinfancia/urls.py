@@ -22,6 +22,7 @@ from centrodeinfancia.views import (
     TrabajadorCentroInfanciaDeleteView,
     TrabajadorCentroInfanciaUpdateView,
     centrodeinfancia_ajax,
+    load_departamentos_ipi,
     eliminar_archivo_intervencion_centrodeinfancia,
     nomina_centrodeinfancia_editar_ajax,
     subir_archivo_intervencion_centrodeinfancia,
@@ -82,6 +83,13 @@ urlpatterns = [
         "centrodeinfancia/ajax/",
         centrodeinfancia_ajax,
         name="centrodeinfancia_ajax",
+    ),
+    path(
+        "centrodeinfancia/ajax/load-departamentos-ipi/",
+        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
+            load_departamentos_ipi
+        ),
+        name="centrodeinfancia_ajax_load_departamentos_ipi",
     ),
     path(
         "centrodeinfancia/<int:pk>/nomina/",

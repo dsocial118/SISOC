@@ -9,7 +9,25 @@
       "Bash(gh pr:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(ls -1 organizaciones/migrations/*.py)",
+      "Bash(ls -1 C:/Users/mkdir/Proyectos/BACKOFFICE/organizaciones/migrations/*.py)",
+      "Bash(ls -1 C:/Users/mkdir/Proyectos/BACKOFFICE/core/migrations/*.py)",
+      "Bash(git status:*)",
+      "Bash(python:*)",
+      "Bash(cut -d'\\(' -f1)",
+      "Bash(/tmp/IMPLEMENTACION_COMPLETA.txt:*)",
+      "Read(//tmp/**)",
+      "Bash(python3:*)",
+      "Bash(ls docker-compose*.yml)",
+      "Bash(ls compose*.yml)",
+      "Bash(.venv/Scripts/python manage.py makemigrations VAT --name=remove_actividades)",
+      "Bash(xargs basename:*)",
+      "Bash(source .venv/Scripts/activate)",
+      "Bash(source venv/Scripts/activate)",
+      "Read(//c/Users/mkdir/AppData/Local/Programs/**)",
+      "Bash(py -3.12 -m django --version)",
+      "Bash(docker-compose ps:*)"
     ]
   }
 }

@@ -1,0 +1,42 @@
+{% extends "includes/main.html" %}
+{% block title %}Detalle Subsector{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_centro_list' %}">VAT</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_subsector_list' %}">Subsectores</a>
+        </li>
+        <li class="breadcrumb-item active">{{ subsector.nombre }}</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title">{{ subsector.nombre }}</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'vat_subsector_update' subsector.id %}"
+                           class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                        <a href="{% url 'vat_subsector_delete' subsector.id %}"
+                           class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p>
+                        <strong>Sector:</strong> <a href="{% url 'vat_sector_detail' subsector.sector.id %}">{{ subsector.sector.nombre }}</a>
+                    </p>
+                    <p>
+                        <strong>Descripción:</strong>
+                    </p>
+                    <p>{{ subsector.descripcion|default:"Sin descripción" }}</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'vat_subsector_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

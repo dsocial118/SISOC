@@ -141,6 +141,13 @@
                                 {% endif %}
                             </button>
                         </li>
+                        {% if comedor.es_judicializado %}
+                            <li class="list-inline-item">
+                                <button class="btn btn-sm btn-judicializado mb-2">
+                                    <i class="bi bi-gavel me-1"></i>Judicializado
+                                </button>
+                            </li>
+                        {% endif %}
                     </ul>
                 </div>
                 {% with selected_admision|default:admision_activa as display_admision %}
@@ -952,47 +959,30 @@
                 </div>
                 <div class="col-md-3 mx-auto">
                     <div class="small-box bg-card text-center">
-
                         <div class="inner">
-
                             <h3 class="mb-1 mt-2">
                                 <i class="bi bi-graph-up-arrow"></i>
-
                             </h3>
 
                             {% with selected_convenio_numero|default_if_none:"" as convenio_numero %}
-
                                 {% with total_admisiones|default_if_none:0 as total_convenios %}
-
                                     <h4 class="fw-bold my-1">
-
                                         {% if total_convenios %}
-
                                             {% if convenio_numero != "" %}
                                                 {{ convenio_numero }}&deg; / {{ total_convenios }}
-
                                             {% else %}
                                                 - / {{ total_convenios }}
-
                                             {% endif %}
-
                                         {% else %}
                                             0
-
                                         {% endif %}
-
                                     </h4>
-
                                 {% endwith %}
-
                             {% endwith %}
 
                             <p class="fw-bold fs-7">Numero de Convenio</p>
-
                         </div>
-
                     </div>
-
                 </div>
             </div>
             <div class="row">
@@ -1254,6 +1244,97 @@
         <!-- /Nomina-->
     </div>
     <!-- /Bloque central-->
+    <div class="row relevamiento-container mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold me-3 pt-1">Colaboradores del espacio</h3>
+                    <div class="card-tools">
+                        {% if request.user|has_perm_code:'comedores.add_colaboradorespacio' %}
+                            <a href="{% url 'colaborador_espacio_crear' comedor.id %}"
+                               class="btn btn-primary me-2 btn-sm">Agregar</a>
+                        {% endif %}
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body card-comments p-0 pb-1">
+                    <div class="px-3 pt-3">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Apellido y nombre</th>
+                                        <th>DNI</th>
+                                        <th>CUIL</th>
+                                        <th>Sexo</th>
+                                        <th>Género</th>
+                                        <th>Teléfono</th>
+                                        <th>Fecha alta</th>
+                                        <th>Fecha baja</th>
+                                        <th>Actividades</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for colaborador in colaboradores_espacio %}
+                                        <tr>
+                                            <td>{{ colaborador.apellido|default:"-" }}, {{ colaborador.nombre|default:"-" }}</td>
+                                            <td>{{ colaborador.dni|default:"-" }}</td>
+                                            <td>{{ colaborador.cuil_cuit|default:"-" }}</td>
+                                            <td>{{ colaborador.sexo_display|default:"-" }}</td>
+                                            <td>{{ colaborador.get_genero_display|default:"-" }}</td>
+                                            <td>
+                                                {% if colaborador.codigo_telefono or colaborador.numero_telefono %}
+                                                    {{ colaborador.codigo_telefono|default:"-" }} {{ colaborador.numero_telefono|default:"" }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ colaborador.fecha_alta|date:"d/m/Y"|default:"-" }}</td>
+                                            <td>{{ colaborador.fecha_baja|date:"d/m/Y"|default:"-" }}</td>
+                                            <td>
+                                                {% for actividad in colaborador.actividades.all %}
+                                                    {{ actividad.nombre }}
+                                                    {% if not forloop.last %},{% endif %}
+                                                {% empty %}
+                                                    -
+                                                {% endfor %}
+                                            </td>
+                                            <td class="text-nowrap">
+                                                {% if request.user|has_perm_code:'comedores.change_colaboradorespacio' %}
+                                                    <a href="{% url 'colaborador_espacio_editar' comedor.id colaborador.id %}"
+                                                       class="btn btn-sm btn-primary me-1">Editar</a>
+                                                {% endif %}
+                                                {% if request.user|has_perm_code:'comedores.delete_colaboradorespacio' %}
+                                                    <form method="post"
+                                                          action="{% url 'colaborador_espacio_eliminar' comedor.id colaborador.id %}"
+                                                          class="d-inline"
+                                                          onsubmit="return confirm('¿Desea dar de baja a este colaborador?');">
+                                                        {% csrf_token %}
+                                                        <button type="submit"
+                                                                class="btn btn-sm btn-danger"
+                                                                {% if colaborador.fecha_baja %}disabled{% endif %}>
+                                                            Eliminar
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="10" class="text-center text-muted py-3">No hay colaboradores registrados para este espacio.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Intervenciones y Observaciones -->
     <div class="row mb-3">
         <div class="col-12 tabs-comedor-wrap">

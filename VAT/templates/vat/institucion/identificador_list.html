@@ -1,0 +1,100 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Identificadores Históricos{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+    {% url 'vat_institucion_identificador_list' as reset_url %}
+    {% include 'components/search_bar.html' with titulo="Buscar Identificador" placeholder="Buscar por centro, tipo o valor" help_text="Buscar por centro, tipo o valor" reset_url=reset_url add_url='vat_institucion_identificador_create' add_text='Agregar' query=request.GET.busqueda %}
+
+    <div class="row mt-5 max-width-100">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive-lg">
+                        <table class="table table-bordered table-striped projects">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-column="centro">
+                                        Centro
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th>Tipo</th>
+                                    <th>Valor</th>
+                                    <th>Rol</th>
+                                    <th>Actual</th>
+                                    <th class="notexport">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for identificador in identificadores %}
+                                    <tr>
+                                        <td data-centro="{{ identificador.centro.nombre }}">{{ identificador.centro.nombre }}</td>
+                                        <td>{{ identificador.get_tipo_identificador_display }}</td>
+                                        <td>{{ identificador.valor_identificador }}</td>
+                                        <td>{{ identificador.get_rol_institucional_display|default:"—" }}</td>
+                                        <td>
+                                            {% if identificador.es_actual %}
+                                                <span class="badge-validacion validado">
+                                                    <i class="fas fa-check-circle"></i> Sí
+                                                </span>
+                                            {% else %}
+                                                <span class="badge-validacion no-validado">
+                                                    <i class="fas fa-times-circle"></i> No
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="action-buttons" role="group">
+                                                <a href="{% url 'vat_institucion_identificador_detail' identificador.id %}"
+                                                   class="btn btn-primary link-handler"
+                                                   title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                    Ver
+                                                </a>
+                                                {% if perms.VAT.change_institucionidentificadorhist %}
+                                                    <a href="{% url 'vat_institucion_identificador_update' identificador.id %}"
+                                                       class="btn btn-editar link-handler"
+                                                       title="Editar identificador">
+                                                        <i class="fas fa-edit"></i>
+                                                        Editar
+                                                    </a>
+                                                {% endif %}
+                                                {% if perms.VAT.delete_institucionidentificadorhist %}
+                                                    <a href="{% url 'vat_institucion_identificador_delete' identificador.id %}"
+                                                       class="btn btn-eliminar link-handler"
+                                                       title="Eliminar identificador">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                        Eliminar
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6">
+                                            <div class="no-comedores-message">
+                                                <h3>No se encontraron identificadores</h3>
+                                                <p>No hay identificadores registrados.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+
+{% endblock %}
+
+{% block customJS %}
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}

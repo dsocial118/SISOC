@@ -27,6 +27,7 @@ from .forms import (
 )
 from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
 from .services import UsuariosService
+from .temporary_passwords import clear_temporary_password, get_temporary_password
 
 
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -72,6 +73,10 @@ class UserListView(AdminRequiredMixin, ListView):
 
         # Configuración para el componente data_table
         context.update(UsuariosService.get_usuarios_list_context(self.request))
+        context["user_table_items"] = UsuariosService.build_user_table_items(
+            context["users"],
+            context["table_fields"],
+        )
         return context
 
 
@@ -82,6 +87,33 @@ class UserCreateView(AdminRequiredMixin, CreateView):
     success_url = reverse_lazy("usuarios")
     required_permissions = ("auth.add_user",)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        self.object = form.save()
+        generated_password = getattr(form, "generated_password", None)
+        if generated_password:
+            messages.success(
+                self.request,
+                (
+                    "Usuario mobile creado correctamente. "
+                    f"Contraseña inicial generada: {generated_password}"
+                ),
+            )
+            self._redirect_to_user_edit = True
+            return HttpResponseRedirect(self.get_success_url())
+        messages.success(self.request, "Usuario creado correctamente.")
+        self._redirect_to_user_edit = False
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        if getattr(self, "_redirect_to_user_edit", False):
+            return reverse_lazy("usuario_editar", kwargs={"pk": self.object.pk})
+        return super().get_success_url()
+
 
 class UserUpdateView(AdminRequiredMixin, UpdateView):
     model = User
@@ -89,6 +121,34 @@ class UserUpdateView(AdminRequiredMixin, UpdateView):
     template_name = "user/user_form.html"
     success_url = reverse_lazy("usuarios")
     required_permissions = ("auth.change_user",)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        temporary_password_plaintext = get_temporary_password(
+            self.request.session,
+            user_id=self.object.pk,
+        )
+        if not temporary_password_plaintext:
+            profile = getattr(self.object, "profile", None)
+            temporary_password_plaintext = getattr(
+                profile,
+                "temporary_password_plaintext",
+                None,
+            )
+        context["temporary_password_plaintext"] = temporary_password_plaintext
+        context["temporary_password_visible"] = bool(temporary_password_plaintext)
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if form.cleaned_data.get("password"):
+            clear_temporary_password(self.request.session, user_id=self.object.pk)
+        return response
 
 
 class UserDeleteView(AdminRequiredMixin, DeleteView):
@@ -102,6 +162,21 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
         self.object.is_active = False
         self.object.save(update_fields=["is_active"])
         messages.success(request, "Usuario desactivado correctamente.")
+        return HttpResponseRedirect(self.success_url)
+
+
+class UserActiveView(AdminRequiredMixin, UpdateView):
+    model = User
+    template_name = "user/user_confirm_delete.html"
+    success_url = reverse_lazy("usuarios")
+    required_permissions = ("auth.delete_user",)
+    fields = []
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.is_active = True
+        self.object.save(update_fields=["is_active"])
+        messages.success(request, "Usuario activado correctamente.")
         return HttpResponseRedirect(self.success_url)
 
 
@@ -168,11 +243,13 @@ class FirstLoginPasswordChangeView(LoginRequiredMixin, FormView):
             profile.must_change_password = False
             profile.password_changed_at = timezone.now()
             profile.initial_password_expires_at = None
+            profile.temporary_password_plaintext = None
             profile.save(
                 update_fields=[
                     "must_change_password",
                     "password_changed_at",
                     "initial_password_expires_at",
+                    "temporary_password_plaintext",
                 ]
             )
         update_session_auth_hash(self.request, user)
@@ -213,11 +290,13 @@ class PasswordResetConfirmCustomView(PasswordResetConfirmView):
             profile.must_change_password = False
             profile.password_changed_at = timezone.now()
             profile.initial_password_expires_at = None
+            profile.temporary_password_plaintext = None
             profile.save(
                 update_fields=[
                     "must_change_password",
                     "password_changed_at",
                     "initial_password_expires_at",
+                    "temporary_password_plaintext",
                 ]
             )
 

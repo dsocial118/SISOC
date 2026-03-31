@@ -335,7 +335,7 @@ class Migration(migrations.Migration):
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("deleted_at", models.DateTimeField(blank=True, db_index=True, null=True)),
-                ("age_group", models.CharField(choices=[("lactantes", "Lactantes"), ("deambuladores", "Deambuladores"), ("dos_anos", "Dos anos"), ("tres_anos", "Tres anos"), ("cuatro_anos", "Cuatro anos"), ("multiedad", "Multiedad")], max_length=32)),
+                ("age_group", models.CharField(choices=[("lactantes", "Lactantes"), ("deambuladores", "Deambuladores"), ("dos_anos", "Dos años"), ("tres_anos", "Tres años"), ("cuatro_anos", "Cuatro años"), ("multiedad", "Multiedad")], max_length=32)),
                 ("room_count", models.PositiveIntegerField(blank=True, null=True)),
                 ("exclusive_area_m2", models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True)),
                 ("children_count", models.PositiveIntegerField(blank=True, null=True)),
@@ -357,7 +357,7 @@ class Migration(migrations.Migration):
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("deleted_at", models.DateTimeField(blank=True, db_index=True, null=True)),
-                ("age_group", models.CharField(choices=[("lactantes", "Lactantes"), ("deambuladores", "Deambuladores"), ("un_ano", "Un ano"), ("dos_anos", "Dos anos"), ("tres_anos", "Tres anos"), ("cuatro_anos", "Cuatro anos")], max_length=32)),
+                ("age_group", models.CharField(choices=[("lactantes", "Lactantes"), ("deambuladores", "Deambuladores"), ("un_ano", "Un año"), ("dos_anos", "Dos años"), ("tres_anos", "Tres años"), ("cuatro_anos", "Cuatro años")], max_length=32)),
                 ("waitlist_count", models.PositiveIntegerField(blank=True, null=True)),
                 ("deleted_by", models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="+", to=settings.AUTH_USER_MODEL)),
                 ("formulario", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="waitlist_rows", to="centrodeinfancia.formulariocdi")),
@@ -403,3 +403,4 @@ class Migration(migrations.Migration):
             constraint=models.UniqueConstraint(fields=("formulario", "institution_type"), name="uniq_formulario_cdi_articulation_institution"),
         ),
     ]
+

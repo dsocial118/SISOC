@@ -1,0 +1,50 @@
+{% extends "includes/main.html" %}
+{% block title %}Detalle Programa{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'programa_listar' %}">Programas</a>
+        </li>
+        <li class="breadcrumb-item active">{{ programa.nombre }}</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title">{{ programa.nombre }}</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'programa_editar' programa.pk %}"
+                           class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Editar</a>
+                        <a href="{% url 'programa_eliminar' programa.pk %}"
+                           class="btn btn-sm btn-danger"><i class="fas fa-trash"></i> Eliminar</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p>
+                        <strong>Estado:</strong>
+                        {% if programa.estado %}
+                            Activo
+                        {% else %}
+                            Inactivo
+                        {% endif %}
+                    </p>
+                    <p>
+                        <strong>Organismo:</strong> {{ programa.organismo|default:"-" }}
+                    </p>
+                    <p>
+                        <strong>Observaciones:</strong> {{ programa.observaciones|default:"-" }}
+                    </p>
+                    <p>
+                        <strong>Descripción:</strong>
+                    </p>
+                    <p>{{ programa.descripcion|default:"-" }}</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'programa_listar' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="{% static 'custom/css/nuevo_comedor.css' %}" />
 {% endblock %}
 
-{% block title %}Centro de Infancia: {{ centro.nombre }}{% endblock %}
+{% block title %}Centro de Desarrollo Infantil: {{ centro.nombre }}{% endblock %}
 
 {% block app-header %}
     <div class="row g-2 align-items-center">
@@ -67,7 +67,7 @@
                                 </h2>
                             </li>
                             <li class="list-inline-item">
-                                <button class="btn btn-sm btn-primary mb-2">Centro de Infancia</button>
+                                <button class="btn btn-sm btn-primary mb-2">Centro de Desarrollo Infantil</button>
                             </li>
                             <li class="list-inline-item">
                                 <button class="btn btn-sm btn-success mb-2">Activo</button>
@@ -89,6 +89,74 @@
             </div>
             <div class="accordion-horizontal border rounded shadow shadow-sm mb-3">
                 <div class="accordion-panel open">
+                    <button type="button"
+                            class="accordion-header h5 accordion-header--informacion">
+                        Informacion Basica
+                    </button>
+                    <div class="accordion-content">
+                        <div class="mb-3">
+                            <h4 class="mb-0">Informacion Basica</h4>
+                            <small class="text-muted">Datos principales y de gestión del centro de desarrollo infantil.</small>
+                        </div>
+                        <p class="mb-2">
+                            <i class="bi bi-diagram-3 me-2"></i><strong>Denominación de la organización:</strong> {{ centro_info_basica.organizacion }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-upc-scan me-2"></i><strong>CUIT:</strong> {{ centro_info_basica.cuit_organizacion_gestiona }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-bounding-box me-2"></i><strong>Ámbito:</strong> {{ centro_info_basica.ambito }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-envelope me-2"></i><strong>Mail:</strong> {{ centro_info_basica.mail }}
+                        </p>
+                        <p class="mb-0">
+                            <i class="bi bi-calendar-event me-2"></i><strong>Fecha de inicio:</strong> {{ centro_info_basica.fecha_inicio }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="accordion-panel">
+                    <button type="button"
+                            class="accordion-header h5 accordion-header--funcionamiento">Funcionamiento</button>
+                    <div class="accordion-content">
+                        <div class="mb-3">
+                            <h4 class="mb-0">Funcionamiento</h4>
+                            <small class="text-muted">Meses, días, horarios y modalidad operativa del centro.</small>
+                        </div>
+                        <p class="mb-2">
+                            <i class="bi bi-calendar3 me-2"></i><strong>Meses de funcionamiento:</strong> {{ centro_funcionamiento.meses_funcionamiento }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-calendar-week me-2"></i><strong>Días de funcionamiento:</strong> {{ centro_funcionamiento.dias_funcionamiento }}
+                        </p>
+                        <div class="mb-2">
+                            <i class="bi bi-clock me-2"></i><strong>Horarios por día:</strong>
+                            {% if centro_funcionamiento.horarios %}
+                                <ul class="mb-0 mt-2">
+                                    {% for horario in centro_funcionamiento.horarios %}
+                                        <li>{{ horario.dia }}: {{ horario.apertura }} a {{ horario.cierre }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span>-</span>
+                            {% endif %}
+                        </div>
+                        <p class="mb-2">
+                            <i class="bi bi-arrow-left-right me-2"></i><strong>Tipo de jornada:</strong> {{ centro_funcionamiento.tipo_jornada }}
+                            {% if centro_funcionamiento.tipo_jornada_otra %}({{ centro_funcionamiento.tipo_jornada_otra }}){% endif %}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-collection me-2"></i><strong>Oferta de servicios:</strong> {{ centro_funcionamiento.oferta_servicios }}
+                        </p>
+                        <p class="mb-0">
+                            <i class="bi bi-building me-2"></i><strong>Modalidad de gestión:</strong> {{ centro_funcionamiento.modalidad_gestion }}
+                            {% if centro_funcionamiento.modalidad_gestion_otra %}({{ centro_funcionamiento.modalidad_gestion_otra }}){% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="accordion-panel">
                     <button type="button" class="accordion-header h5 accordion-header--ubicacion">Ubicación</button>
                     <div class="accordion-content">
                         <div class="row">
@@ -123,10 +191,19 @@
                                     <i class="bi bi-map me-2"></i><strong>Provincia:</strong> {{ centro.provincia|default:"-" }}
                                 </p>
                                 <p class="mb-2">
+                                    <i class="bi bi-signpost-2 me-2"></i><strong>Departamento:</strong> {{ centro.departamento|default:"-" }}
+                                </p>
+                                <p class="mb-2">
+                                    <i class="bi bi-bar-chart me-2"></i><strong>Decil de IPI:</strong> {{ centro.departamento.decil_ipi|default:"-" }}
+                                </p>
+                                <p class="mb-2">
                                     <i class="bi bi-pin-map me-2"></i><strong>Municipio:</strong> {{ centro.municipio|default:"-" }}
                                 </p>
                                 <p class="mb-2">
                                     <i class="bi bi-geo-alt me-2"></i><strong>Localidad:</strong> {{ centro.localidad|default:"-" }}
+                                </p>
+                                <p class="mb-2">
+                                    <i class="bi bi-mailbox me-2"></i><strong>Código postal:</strong> {{ centro.codigo_postal|default:"-" }}
                                 </p>
                                 <p class="mb-2">
                                     <i class="bi bi-signpost me-2"></i><strong>Calle:</strong>
@@ -136,6 +213,12 @@
                                     {% else %}
                                         -
                                     {% endif %}
+                                </p>
+                                <p class="mb-2">
+                                    <i class="bi bi-crosshair me-2"></i><strong>Latitud:</strong> {{ centro.latitud|default:"-" }}
+                                </p>
+                                <p class="mb-2">
+                                    <i class="bi bi-crosshair2 me-2"></i><strong>Longitud:</strong> {{ centro.longitud|default:"-" }}
                                 </p>
                                 <p class="mb-0">
                                     <i class="bi bi-telephone me-2"></i><strong>Teléfono:</strong> {{ centro.telefono|default:"-" }}
@@ -151,7 +234,7 @@
                     <div class="accordion-content">
                         <div class="mb-3">
                             <h4 class="mb-0">Referente</h4>
-                            <small class="text-muted">Persona de referencia asociada al centro de infancia.</small>
+                            <small class="text-muted">Persona de referencia asociada al centro de desarrollo infantil.</small>
                         </div>
                         {% with nombre=centro.nombre_referente|default:"" apellido=centro.apellido_referente|default:"" %}
                             <p class="mb-2">
@@ -181,7 +264,7 @@
                         <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
                             <div>
                                 <h4 class="mb-0">Trabajadores</h4>
-                                <small class="text-muted">Personal asociado al centro de infancia.</small>
+                                <small class="text-muted">Personal asociado al centro de desarrollo infantil.</small>
                             </div>
                             {% if puede_editar_trabajadores %}
                                 <button type="button"
@@ -276,6 +359,19 @@
                             </div>
                         </div>
                         <div class="col-12">
+                            <div class="d-flex align-items-center px-3 py-2 rounded-3 mb-2"
+                                 style="background-color: #7c3aed">
+                                <div class="d-flex align-items-center justify-content-center text-white rounded-circle mx-2 me-3 comedor-icon-60"
+                                     style="background-color: rgba(255, 255, 255, 0.2)">
+                                    <i class="bi bi-gender-ambiguous fs-1"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_x|default:0 }}</div>
+                                    <p class="mb-0 text-white fw-bold">Género X</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
                             <div class="d-flex align-items-center bg-verde px-3 py-2 rounded-3 mb-2">
                                 <div class="d-flex align-items-center justify-content-center bg-verde-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                     <i class="bi bi-person-arms-up fs-1"></i>
@@ -323,8 +419,8 @@
                                         {% for item in formularios_recent %}
                                             <tr>
                                                 <td>{{ item.id }}</td>
-                                                <td>{{ item.survey_date|date:"d/m/Y"|default:"-" }}</td>
-                                                <td>{{ item.respondent_full_name|default:"-" }}</td>
+                                                <td>{{ item.fecha_relevamiento|date:"d/m/Y"|default:"-" }}</td>
+                                                <td>{{ item.nombre_completo_respondente|default:"-" }}</td>
                                                 <td>{{ item.updated_at|date:"d/m/Y H:i" }}</td>
                                                 <td class="d-flex gap-2">
                                                     <a href="{{ item.detail_url }}" class="btn btn-sm btn-primary">Ver</a>

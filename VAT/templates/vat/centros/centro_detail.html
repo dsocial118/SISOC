@@ -7,491 +7,1858 @@
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
 
-    <!-- 1) HEADER -->
-    <div class="card mb-3 page-header">
-        <div class="card-body d-flex justify-content-between align-items-start flex-wrap gap-2">
-            <div>
-                <div class="header-bar mb-2"></div>
-                <h1 class="header-title mb-1">{{ centro.nombre|capfirst }}</h1>
-                <p class="text-muted mb-0">
-                    <i class="fas fa-map-marker-alt mr-1"></i>{{ centro.localidad }}, {{ centro.provincia }}
-                    {% if centro.organizacion_asociada %}
-                        <span class="mx-2">·</span>
-                        <i class="fas fa-building mr-1"></i>{{ centro.organizacion_asociada }}
-                    {% endif %}
-                </p>
+    <style>
+        .ci-hero {
+            background: linear-gradient(135deg, #1a3a6e 0%, #1f3a93 50%, #3a6bc4 100%);
+            border-radius: 12px;
+            padding: 1.75rem 2rem;
+            color: #fff;
+            margin-bottom: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ci-hero::before {
+            content: "";
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 220px;
+            height: 220px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .ci-back {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            flex-shrink: 0;
+            transition: background 0.15s;
+        }
+
+        .ci-back:hover {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+        }
+
+        .ci-code-badge {
+            font-family: monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 0.2em 0.65em;
+            border-radius: 5px;
+            letter-spacing: 0.06em;
+        }
+
+        .ci-state-badge {
+            font-size: 0.71rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.2em 0.65em;
+            border-radius: 5px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .ci-hero-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin: 0.3rem 0 0.2rem;
+        }
+
+        .ci-hero-sub {
+            font-size: 0.83rem;
+            opacity: 0.75;
+        }
+
+        .ci-edit-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            border-radius: 8px;
+            font-size: 0.83rem;
+            padding: 0.38rem 0.9rem;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s;
+        }
+
+        .ci-edit-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+        }
+
+        .ci-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+            margin-top: 1.25rem;
+        }
+
+        .ci-stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ci-stat-val {
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .ci-stat-lbl {
+            font-size: 0.64rem;
+            opacity: 0.55;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .ci-stat-sep {
+            width: 1px;
+            background: rgba(255, 255, 255, 0.18);
+            align-self: stretch;
+        }
+
+        .ig-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.65rem;
+        }
+
+        .ig-row {
+            display: grid;
+            grid-template-columns: minmax(180px, 240px) 1fr;
+            align-items: center;
+            gap: 0.85rem;
+            background: linear-gradient(180deg, rgba(16, 35, 59, 0.94) 0%, rgba(20, 42, 70, 0.92) 100%) !important;
+            border: 1px solid rgba(126, 179, 255, 0.22);
+            border-left: 4px solid #4a8ddb;
+            border-radius: 10px;
+            padding: 0.7rem 0.85rem;
+        }
+
+        .ig-key {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.76rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #cfe1f8;
+        }
+
+        .ig-key i {
+            width: 18px;
+            text-align: center;
+            color: #7cb2f2;
+        }
+
+        .ig-data {
+            font-size: 0.97rem;
+            color: #f2f7ff;
+            font-weight: 600;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .ig-data a {
+            color: #9fcbff;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .ig-data a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 767.98px) {
+            .ig-row {
+                grid-template-columns: 1fr;
+                gap: 0.35rem;
+            }
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #183a67 0%, #25518b 55%, #3b74b8 100%);
+        }
+
+        .bg-gradient-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .bg-gradient-warning {
+            background: linear-gradient(135deg, #fcb045 0%, #fd1d1d 100%);
+        }
+
+        .bg-gradient-info {
+            background: linear-gradient(135deg, #183a67 0%, #25518b 55%, #3b74b8 100%);
+        }
+
+        .nav-pills .nav-link {
+            border-radius: 8px;
+            margin: 2px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-pills .nav-link {
+            color: #25426f;
+        }
+
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, #1f4d86 0%, #2f6db4 100%);
+            box-shadow: 0 4px 8px rgba(31, 77, 134, 0.35);
+            color: white !important;
+        }
+
+        .nav-pills .nav-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 26px rgba(7, 18, 34, 0.22);
+            transition: all 0.3s ease;
+            background: transparent;
+        }
+
+        .card:hover {
+            box-shadow: 0 12px 32px rgba(7, 18, 34, 0.3);
+        }
+
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            background: linear-gradient(135deg, #132c4d 0%, #1d446f 55%, #2d649e 100%);
+            color: #ffffff;
+        }
+
+        .card-body {
+            background: linear-gradient(180deg, rgba(14, 31, 53, 0.96) 0%, rgba(18, 38, 64, 0.95) 100%);
+            color: #e6f1ff;
+        }
+
+        .card-body a {
+            color: #9fcbff;
+        }
+
+        .card-body .text-muted,
+        .card-body small,
+        .card-body .form-label,
+        .card-body label {
+            color: #c9ddf6 !important;
+        }
+
+        .detalles-centro-header,
+        .info-general-header,
+        .referente-header,
+        .centro-section-header {
+            background: linear-gradient(135deg, #1f3b6d 0%, #2b4f8c 100%) !important;
+            color: #ffffff !important;
+        }
+
+        .detalles-centro-header h5,
+        .detalles-centro-header h6,
+        .detalles-centro-header i,
+        .detalles-centro-header span,
+        .detalles-centro-header strong,
+        .info-general-header h5,
+        .info-general-header h6,
+        .info-general-header i,
+        .info-general-header span,
+        .info-general-header strong,
+        .referente-header h5,
+        .referente-header h6,
+        .referente-header i,
+        .referente-header span,
+        .referente-header strong,
+        .centro-section-header h5,
+        .centro-section-header h6,
+        .centro-section-header i,
+        .centro-section-header span,
+        .centro-section-header strong {
+            color: #ffffff !important;
+        }
+
+        .card-header.d-flex {
+            gap: 0.75rem;
+        }
+
+        .card-header.d-flex > .btn,
+        .card-header.d-flex > .btn-group {
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .detalles-centro-header {
+            background: linear-gradient(135deg, #1f3b6d 0%, #2b4f8c 100%) !important;
+            color: #ffffff !important;
+        }
+
+        .info-general-header {
+            background: linear-gradient(135deg, #1f3b6d 0%, #2b4f8c 100%) !important;
+            color: #ffffff !important;
+        }
+
+        .referente-header {
+            background: linear-gradient(135deg, #1f3b6d 0%, #2b4f8c 100%) !important;
+            color: #ffffff !important;
+        }
+
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            color: #d5e7ff;
+            background-color: rgba(14, 31, 53, 0.88);
+        }
+
+        .table > :not(caption) > thead.table-light > tr > th {
+            background-color: rgba(20, 45, 74, 0.95);
+            color: #d8e8fb;
+            border-bottom: 1px solid rgba(126, 179, 255, 0.25);
+        }
+
+        .table td,
+        .table tbody th {
+            color: #f2f7ff;
+            border-color: rgba(126, 179, 255, 0.16);
+            background: rgba(17, 37, 62, 0.78);
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(74, 141, 219, 0.12);
+        }
+
+        .badge {
+            font-size: 0.75em;
+            font-weight: 500;
+        }
+
+        .btn-group-sm .btn {
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+        }
+
+        .modal-header {
+            border-radius: 12px 12px 0 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .modal-header .btn-close {
+            filter: invert(1);
+        }
+
+        .form-label {
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .text-muted {
+            color: #6c757d !important;
+        }
+
+        .info-card {
+            transition: all 0.3s ease;
+            border-radius: 12px;
+        }
+
+        .info-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .bg-primary.bg-gradient {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        }
+
+        .bg-success.bg-gradient {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        }
+
+        .bg-warning.bg-gradient {
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        }
+
+        .bg-info.bg-gradient {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        }
+
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .h1, .h3 {
+            font-weight: 700;
+        }
+
+        .section-separator {
+            border-top: 2px solid #e9ecef;
+            margin: 1.5rem 0;
+        }
+
+        .sub-section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #667eea;
+            display: inline-block;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.8rem;
+        }
+
+        .details-item {
+            border: 1px solid rgba(126, 179, 255, 0.24);
+            border-radius: 10px;
+            padding: 0.8rem 0.9rem;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(20, 44, 73, 0.82) 0%, rgba(18, 39, 65, 0.8) 100%);
+        }
+
+        .details-label {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            margin-bottom: 0.35rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #cfe1f8;
+        }
+
+        .details-label.text-muted {
+            color: #cfe1f8 !important;
+        }
+
+        .details-value {
+            margin: 0;
+            font-size: 0.96rem;
+            font-weight: 600;
+            line-height: 1.35;
+            word-break: break-word;
+            color: #f2f7ff;
+        }
+
+        .details-item--wide {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 575.98px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .details-item--wide {
+                grid-column: auto;
+            }
+        }
+    </style>
+
+    <div class="ci-hero d-print-none">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <a href="{% url 'vat_centro_list' %}" class="ci-back">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div>
+                    <div class="ci-hero-title" style="margin-top: 0">{{ centro.nombre }}</div>
+                    <div class="ci-hero-sub">
+                        <i class="bi bi-geo-alt me-1"></i>
+                        {{ centro.localidad|default:"Sin localidad" }}, {{ centro.municipio|default:"Sin municipio" }}, {{ centro.provincia|default:"Sin provincia" }}
+                    </div>
+                </div>
             </div>
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
                 {% if centro.activo %}
-                    <span class="badge badge-success px-3 py-2" style="font-size:.9rem;">Activo</span>
+                    <span class="ci-state-badge">Activo</span>
                 {% else %}
-                    <span class="badge badge-danger px-3 py-2" style="font-size:.9rem;">Inactivo</span>
+                    <span class="ci-state-badge">Inactivo</span>
+                {% endif %}
+                <span class="ci-code-badge">CENTRO</span>
+                {% if perms.VAT.change_centro %}
+                    <a href="{% url 'vat_centro_update' centro.id %}" class="ci-edit-btn">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </a>
+                {% endif %}
+                {% if perms.VAT.delete_centro %}
+                    <a href="{% url 'vat_centro_delete' centro.id %}" class="ci-edit-btn">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                    </a>
                 {% endif %}
             </div>
         </div>
-    </div>
 
-    <!-- 2) BOTONES -->
-    <div class="mb-4 d-flex justify-content-end">
-        <div class="btn-group btn-group-sm" role="group">
-            <a href="{% url 'vat_centro_list' %}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left mr-1"></i>Volver
-            </a>
-            <a href="{% url 'vat_centro_update' centro.id %}"
-               class="btn btn-outline-warning">
-                <i class="fas fa-edit mr-1"></i>Editar
-            </a>
-            <a href="{% url 'vat_actividadcentro_create' centro_id=centro.id %}"
-               class="btn btn-outline-success">
-                <i class="fas fa-plus mr-1"></i>Nueva Actividad
-            </a>
+        <div class="ci-stats">
+            <div class="ci-stat">
+                <span class="ci-stat-val">{{ count_ofertas }}</span>
+                <span class="ci-stat-lbl">Ofertas</span>
+            </div>
+            <div class="ci-stat-sep"></div>
+            <div class="ci-stat">
+                <span class="ci-stat-val">{{ count_comisiones }}</span>
+                <span class="ci-stat-lbl">Comisiones</span>
+            </div>
+            <div class="ci-stat-sep"></div>
+            <div class="ci-stat">
+                <span class="ci-stat-val">{{ count_autoridades }}</span>
+                <span class="ci-stat-lbl">Autoridades</span>
+            </div>
+            <div class="ci-stat-sep"></div>
+            <div class="ci-stat">
+                <span class="ci-stat-val">{{ count_identificadores }}</span>
+                <span class="ci-stat-lbl">Identificadores</span>
+            </div>
         </div>
     </div>
 
-    <!-- 3) ACORDEÓN: info del centro -->
-    <div class="accordion-horizontal rounded mb-4">
-        <!-- Ubicación -->
-        <div class="accordion-panel open">
-            <div class="accordion-header bg-panel1 rounded-end h6">Ubicación</div>
-            <div class="accordion-content">
-                <div class="row">
-                    <div class="col-12 col-lg-5">
-                        <div class="map-container" id="mapa-iframe">
-                            {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
-                                <iframe src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
-                                        width="100%"
+    <!-- TABS CONSOLIDADAS (3 tabs) -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-gradient-primary text-white detalles-centro-header">
+            <h5 class="mb-0">
+                <i class="fas fa-building me-2"></i>
+                Detalles del Centro
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <ul class="nav nav-pills nav-fill" id="centroTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active"
+                            id="datos-generales-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#datos-generales"
+                            type="button"
+                            role="tab">
+                        <i class="fas fa-info-circle me-1"></i>Datos Generales
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link"
+                            id="estructura-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#estructura"
+                            type="button"
+                            role="tab">
+                        <i class="fas fa-sitemap me-1"></i>Estructura Institucional
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link"
+                            id="catalogo-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#catalogo"
+                            type="button"
+                            role="tab">
+                        <i class="fas fa-graduation-cap me-1"></i>Catalogo y Ofertas
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="tab-content" id="centroTabContent">
+
+        {# ================================================================ #}
+        {# TAB 1: DATOS GENERALES                                           #}
+        {# Agrupa: Información + Referente + Contactos                      #}
+        {# ================================================================ #}
+        <div class="tab-pane fade show active"
+             id="datos-generales"
+             role="tabpanel">
+
+            <!-- Informacion General -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light info-general-header">
+                    <h6 class="mb-0 text-primary">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Informacion General
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="details-grid">
+                        <article class="details-item">
+                            <div class="details-label text-muted">
+                                <i class="fas fa-hashtag"></i>Codigo
+                            </div>
+                            <p class="details-value">{{ centro.codigo|default:"-" }}</p>
+                        </article>
+                        <article class="details-item">
+                            <div class="details-label text-muted">
+                                <i class="fas fa-layer-group"></i>Tipo de Gestion
+                            </div>
+                            <p class="details-value">{{ centro.tipo_gestion|default:"-" }}</p>
+                        </article>
+                        <article class="details-item">
+                            <div class="details-label text-muted">
+                                <i class="fas fa-sitemap"></i>Clase de Institucion
+                            </div>
+                            <p class="details-value">{{ centro.clase_institucion|default:"-" }}</p>
+                        </article>
+                        <article class="details-item">
+                            <div class="details-label text-muted">
+                                <i class="fas fa-clipboard-check"></i>Situacion
+                            </div>
+                            <p class="details-value">{{ centro.situacion|default:"-" }}</p>
+                        </article>
+                        <article class="details-item">
+                            <div class="details-label text-muted">
+                                <i class="fas fa-phone"></i>Telefono
+                            </div>
+                            <p class="details-value">{{ centro.telefono|default:"-" }}</p>
+                        </article>
+                        <article class="details-item">
+                            <div class="details-label text-muted">
+                                <i class="fas fa-mobile-alt"></i>Celular
+                            </div>
+                            <p class="details-value">{{ centro.celular|default:"-" }}</p>
+                        </article>
+                        <article class="details-item">
+                            <div class="details-label text-muted">
+                                <i class="fas fa-envelope"></i>Correo
+                            </div>
+                            <p class="details-value">
+                                {% if centro.correo %}
+                                    <a href="mailto:{{ centro.correo }}" class="text-decoration-none">{{ centro.correo }}</a>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </p>
+                        </article>
+                        <article class="details-item details-item--wide">
+                            <div class="details-label text-muted">
+                                <i class="fas fa-map-marker-alt"></i>Domicilio de Actividades
+                            </div>
+                            <p class="details-value">{{ centro.domicilio_actividad|default:"-" }}</p>
+                        </article>
+                        {% if centro.sitio_web %}
+                            <article class="details-item details-item--wide">
+                                <div class="details-label text-muted">
+                                    <i class="fas fa-globe"></i>Sitio Web
+                                </div>
+                                <p class="details-value">
+                                    <a href="{{ centro.sitio_web }}"
+                                       target="_blank"
+                                       class="text-decoration-none">{{ centro.sitio_web }}</a>
+                                </p>
+                            </article>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Referente del Centro -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light referente-header">
+                    <h6 class="mb-0 text-white">
+                        <i class="fas fa-user me-2"></i>
+                        Referente del Centro
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="details-grid">
+                        <article class="details-item">
+                            <div class="details-label text-muted">
+                                <i class="fas fa-id-badge"></i>Nombre y Apellido
+                            </div>
+                            <p class="details-value">
+                                {% if centro.nombre_referente or centro.apellido_referente %}
+                                    {{ centro.nombre_referente }} {{ centro.apellido_referente }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </p>
+                        </article>
+                        <article class="details-item">
+                            <div class="details-label text-muted">
+                                <i class="fas fa-user-cog"></i>Usuario del Sistema
+                            </div>
+                            <p class="details-value">{{ centro.referente.get_full_name|default:centro.referente.username }}</p>
+                        </article>
+                        <article class="details-item">
+                            <div class="details-label text-muted">
+                                <i class="fas fa-phone"></i>Telefono
+                            </div>
+                            <p class="details-value">{{ centro.telefono_referente|default:"-" }}</p>
+                        </article>
+                        <article class="details-item">
+                            <div class="details-label text-muted">
+                                <i class="fas fa-envelope"></i>Correo
+                            </div>
+                            <p class="details-value">
+                                {% if centro.correo_referente %}
+                                    <a href="mailto:{{ centro.correo_referente }}"
+                                       class="text-decoration-none">{{ centro.correo_referente }}</a>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </p>
+                        </article>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contactos Adicionales -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-primary">
+                        <i class="fas fa-phone me-2"></i>
+                        Contactos Adicionales
+                    </h6>
+                    {% if perms.VAT.add_institucioncontacto %}
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalContacto">
+                            <i class="fas fa-plus me-1"></i>Agregar
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if contactos %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>
+                                            <i class="fas fa-tag me-1"></i>Tipo
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-address-book me-1"></i>Valor
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-star me-1"></i>Principal
+                                        </th>
+                                        <th class="text-center">
+                                            <i class="fas fa-cogs me-1"></i>Acciones
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for c in contactos %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-info">{{ c.get_tipo_display }}</span>
+                                            </td>
+                                            <td class="fw-bold">{{ c.valor }}</td>
+                                            <td class="text-center">
+                                                {% if c.es_principal %}
+                                                    <i class="fas fa-star text-warning"></i>
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_institucioncontacto %}
+                                                        <button class="btn btn-outline-warning"
+                                                                onclick="editContacto({{ c.id }})"
+                                                                title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                    {% if perms.VAT.delete_institucioncontacto %}
+                                                        <button class="btn btn-outline-danger"
+                                                                onclick="deleteContacto({{ c.id }})"
+                                                                title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-phone fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No hay contactos adicionales registrados.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+        {# ================================================================ #}
+        {# TAB 2: ESTRUCTURA INSTITUCIONAL                                  #}
+        {# Agrupa: Ubicacion + Ubicaciones + Autoridades + Identificadores  #}
+        {# ================================================================ #}
+        <div class="tab-pane fade" id="estructura" role="tabpanel">
+
+            <!-- Ubicacion Principal -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light info-general-header">
+                    <h6 class="mb-0 text-primary">
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        Ubicacion Principal
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="location-card">
+                        <div class="left-tab">
+                            <div class="tab-text">UBICACION</div>
+                        </div>
+                        {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
+                            <div class="map-container">
+                                <iframe width="100%"
                                         height="100%"
                                         frameborder="0"
                                         style="border:0;
-                                               border-radius:8px"
+                                               border-radius: 12px"
+                                        src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
                                         allowfullscreen></iframe>
-                            {% else %}
-                                <div class="h-100 d-flex align-items-center justify-content-center text-muted">Sin mapa disponible</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-12 col-lg-7">
+                            </div>
+                        {% else %}
+                            <div class="map-container d-flex align-items-center justify-content-center text-white">
+                                <div class="text-center">
+                                    <i class="fas fa-map-marker-alt fa-3x mb-3 opacity-75"></i>
+                                    <h5>No hay datos suficientes para cargar el mapa</h5>
+                                </div>
+                            </div>
+                        {% endif %}
                         <div class="details-container">
-                            <div class="section-title">Ubicación</div>
+                            <h3 class="section-title">Ubicacion Principal</h3>
                             <hr class="section-divider" />
-                            <ul class="no-bullets">
+                            <ul>
                                 <li>
-                                    <i class="fas fa-road me-2 text-info"></i>{{ centro.calle }} {{ centro.numero }}
+                                    <i class="fas fa-map-marker-alt"></i><strong>Provincia:</strong> {{ centro.provincia|default:"-" }}
                                 </li>
                                 <li>
-                                    <i class="fas fa-globe-americas me-2 text-info"></i>{{ centro.localidad }}, {{ centro.provincia }}
+                                    <i class="fas fa-city"></i><strong>Municipio:</strong> {{ centro.municipio|default:"-" }}
                                 </li>
                                 <li>
-                                    <i class="fas fa-map-pin me-2 text-info"></i>{{ centro.domicilio_actividad }}
+                                    <i class="fas fa-building"></i><strong>Localidad:</strong> {{ centro.localidad|default:"-" }}
                                 </li>
                                 <li>
-                                    <i class="fas fa-phone me-2 text-info"></i>{{ centro.telefono }}
-                                </li>
-                                <li>
-                                    <i class="fas fa-mobile-alt me-2 text-info"></i>{{ centro.celular }}
+                                    <i class="fas fa-road"></i><strong>Domicilio:</strong>
+                                    {% if centro.calle %}
+                                        {{ centro.calle }}
+                                        {% if centro.numero %}{{ centro.numero }}{% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
                                 </li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <!-- Información Básica -->
-        <div class="accordion-panel">
-            <div class="accordion-header bg-panel2 h6">Información Básica</div>
-            <div class="accordion-content">
-                <div class="section-title">Información Básica</div>
-                <hr class="section-divider" />
-                <div class="row g-3 px-3">
-                    <div class="col-sm-6 d-flex">
-                        <i class="fas fa-barcode me-2 text-info mt-1"></i>
-                        <div>
-                            <div class="fw-bold">Código</div>
-                            <div>{{ centro.codigo }}</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 d-flex">
-                        <i class="fas fa-city me-2 text-info mt-1"></i>
-                        <div>
-                            <div class="fw-bold">Municipio</div>
-                            <div>{{ centro.municipio }}</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 d-flex">
-                        <i class="fas fa-building me-2 text-info mt-1"></i>
-                        <div>
-                            <div class="fw-bold">Organización</div>
-                            <div>{{ centro.organizacion_asociada|default:"—" }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Contacto -->
-        <div class="accordion-panel">
-            <div class="accordion-header bg-panel3 h6">Contacto</div>
-            <div class="accordion-content">
-                <div class="section-title">Contacto</div>
-                <hr class="section-divider" />
-                <div class="row g-3 px-3">
-                    <div class="col-sm-6 d-flex">
-                        <i class="fas fa-envelope me-2 text-info mt-1"></i>
-                        <div>
-                            <div class="fw-bold">Correo</div>
-                            <div>{{ centro.correo }}</div>
-                        </div>
-                    </div>
-                    {% if centro.sitio_web %}
-                        <div class="col-sm-6 d-flex">
-                            <i class="fas fa-globe me-2 text-info mt-1"></i>
-                            <div>
-                                <div class="fw-bold">Sitio web</div>
-                                <div>{{ centro.sitio_web }}</div>
-                            </div>
-                        </div>
-                    {% endif %}
-                    {% if centro.link_redes %}
-                        <div class="col-sm-6 d-flex">
-                            <i class="fas fa-share-alt me-2 text-info mt-1"></i>
-                            <div>
-                                <div class="fw-bold">Redes</div>
-                                <div>{{ centro.link_redes }}</div>
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        <!-- Referente -->
-        <div class="accordion-panel">
-            <div class="accordion-header bg-panel4 h6">Referente</div>
-            <div class="accordion-content">
-                <div class="section-title">Referente</div>
-                <hr class="section-divider" />
-                <div class="row g-3 px-3">
-                    <div class="col-sm-6 d-flex">
-                        <i class="fas fa-user-tie me-2 text-info mt-1"></i>
-                        <div>
-                            <div class="fw-bold">Responsable</div>
-                            <div>{{ centro.nombre_referente }} {{ centro.apellido_referente }}</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 d-flex">
-                        <i class="fas fa-phone me-2 text-info mt-1"></i>
-                        <div>
-                            <div class="fw-bold">Teléfono</div>
-                            <div>{{ centro.telefono_referente }}</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 d-flex">
-                        <i class="fas fa-envelope me-2 text-info mt-1"></i>
-                        <div>
-                            <div class="fw-bold">Correo</div>
-                            <div>{{ centro.correo_referente }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- 4) MÉTRICAS -->
-    <div class="d-flex gap-3 mb-4 flex-wrap">
-        <div class="flex-fill card bg-navy text-white text-center p-3">
-            <i class="fas fa-chalkboard-teacher fa-2x mb-2 text-info"></i>
-            <div class="small text-muted">Actividades</div>
-            <strong class="h4 mb-0">{{ metricas.actividades }}</strong>
-        </div>
-        <div class="flex-fill card bg-navy text-white text-center p-3">
-            <i class="fas fa-user-graduate fa-2x mb-2 text-success"></i>
-            <div class="small text-muted">Inscriptos</div>
-            <strong class="h4 mb-0">{{ metricas.inscriptos }}</strong>
-        </div>
-        <div class="flex-fill card bg-navy text-white text-center p-3">
-            <i class="fas fa-user-clock fa-2x mb-2 text-warning"></i>
-            <div class="small text-muted">En espera</div>
-            <strong class="h4 mb-0">{{ metricas.espera }}</strong>
-        </div>
-        <div class="flex-fill card bg-navy text-white text-center p-3">
-            <i class="fas fa-calendar-check fa-2x mb-2 text-primary"></i>
-            <div class="small text-muted">Encuentros próximos</div>
-            <strong class="h4 mb-0">{{ metricas.encuentros_proximos }}</strong>
-        </div>
-        <div class="flex-fill card bg-navy text-white text-center p-3">
-            <i class="fas fa-dollar-sign fa-2x mb-2 text-warning"></i>
-            <div class="small text-muted">Recaudación estimada</div>
-            <strong class="h4 mb-0">${{ metricas.recaudacion }}</strong>
-        </div>
-    </div>
+            <!-- Ubicaciones Adicionales -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-primary">
+                        <i class="fas fa-map me-2"></i>
+                        Ubicaciones Adicionales
+                    </h6>
+                    {% if perms.VAT.add_institucionubicacion %}
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalUbicacion">
+                            <i class="fas fa-plus me-1"></i>Agregar
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if ubicaciones %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Rol</th>
+                                        <th>Localidad</th>
+                                        <th>Domicilio</th>
+                                        <th>Principal</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for u in ubicaciones %}
+                                        <tr>
+                                            <td>{{ u.nombre_ubicacion|default:u.get_rol_ubicacion_display }}</td>
+                                            <td>{{ u.get_rol_ubicacion_display }}</td>
+                                            <td>{{ u.localidad }}</td>
+                                            <td>{{ u.domicilio|default:"\u2014" }}</td>
+                                            <td>
+                                                {% if u.es_principal %}
+                                                    <span class="badge bg-primary">Si</span>
+                                                {% else %}
+                                                    \u2014
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_institucionubicacion %}
+                                                        <button class="btn btn-outline-warning"
+                                                                onclick="editUbicacion({{ u.id }})"
+                                                                title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                    {% if perms.VAT.delete_institucionubicacion %}
+                                                        <button class="btn btn-outline-danger"
+                                                                onclick="deleteUbicacion({{ u.id }})"
+                                                                title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-map fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">Sin ubicaciones adicionales registradas.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
 
-    <!-- 5) GRÁFICOS E INDICADORES -->
-    <div class="row gx-3 mb-4">
-        <!-- Género -->
-        <div class="col-md-4 mb-3 mb-md-0">
-            <div class="card bg-dark text-white h-100">
-                <div class="card-header bg-secondary">
-                    <i class="fas fa-chart-pie mr-2"></i>Inscriptos por género
+            <!-- Autoridades Institucionales -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-primary">
+                        <i class="fas fa-user-tie me-2"></i>
+                        Autoridades Institucionales
+                    </h6>
+                    {% if perms.VAT.add_autoridadinstitucional %}
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalAutoridad">
+                            <i class="fas fa-plus me-1"></i>Agregar
+                        </button>
+                    {% endif %}
                 </div>
-                <div class="card-body d-flex align-items-center justify-content-center"
-                     style="min-height:210px">
-                    {% if metricas.inscriptos > 0 %}
-                        <canvas id="chartGenero"></canvas>
+                <div class="card-body p-0">
+                    {% if autoridades %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>
+                                            <i class="fas fa-user me-1"></i>Nombre
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-id-card me-1"></i>DNI
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-briefcase me-1"></i>Cargo
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-envelope me-1"></i>Email
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-phone me-1"></i>Telefono
+                                        </th>
+                                        <th class="text-center">
+                                            <i class="fas fa-cogs me-1"></i>Acciones
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for a in autoridades %}
+                                        <tr>
+                                            <td class="fw-bold">{{ a.nombre_completo }}</td>
+                                            <td>{{ a.dni }}</td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ a.cargo }}</span>
+                                            </td>
+                                            <td>
+                                                {% if a.email %}
+                                                    <a href="mailto:{{ a.email }}" class="text-decoration-none">{{ a.email }}</a>
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ a.telefono|default:"-" }}</td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_autoridadinstitucional %}
+                                                        <button class="btn btn-outline-warning"
+                                                                onclick="editAutoridad({{ a.id }})"
+                                                                title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                    {% if perms.VAT.delete_autoridadinstitucional %}
+                                                        <button class="btn btn-outline-danger"
+                                                                onclick="deleteAutoridad({{ a.id }})"
+                                                                title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     {% else %}
-                        <p class="text-muted mb-0 text-center">Sin inscriptos aún.</p>
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-user-tie fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No hay autoridades asociadas.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>
-        </div>
-        <!-- Estado actividades -->
-        <div class="col-md-4 mb-3 mb-md-0">
-            <div class="card bg-dark text-white h-100">
-                <div class="card-header bg-secondary">
-                    <i class="fas fa-chart-pie mr-2"></i>Estado de actividades
-                </div>
-                <div class="card-body d-flex align-items-center justify-content-center"
-                     style="min-height:210px">
-                    {% if metricas.actividades > 0 %}
-                        <canvas id="chartEstado"></canvas>
-                    {% else %}
-                        <p class="text-muted mb-0 text-center">Sin actividades aún.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        <!-- Inscriptos vs Cupo -->
-        <div class="col-md-4">
-            <div class="card bg-dark text-white h-100">
-                <div class="card-header bg-secondary">
-                    <i class="fas fa-chart-bar mr-2"></i>Inscriptos vs cupo
-                </div>
-                <div class="card-body" style="min-height:210px;">
-                    {% if actividades %}
-                        <canvas id="chartCapacidad"></canvas>
-                    {% else %}
-                        <p class="text-muted mb-0 text-center mt-4">Sin actividades aún.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- 6) TABLA DE ACTIVIDADES -->
-    <div id="actividades-container" class="card bg-dark text-white mb-4">
-        <div class="card-header bg-secondary d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-                <i class="fas fa-chalkboard-teacher mr-2"></i>Actividades del Centro
-            </h5>
-            <input id="searchActividades"
-                   value="{{ search_actividades_curso_val }}"
-                   class="form-control form-control-sm bg-dark text-white border-secondary"
-                   style="width:200px"
-                   placeholder="Buscar actividad…" />
+            <!-- Identificadores -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-primary">
+                        <i class="fas fa-id-card me-2"></i>
+                        Identificadores
+                    </h6>
+                    {% if perms.VAT.add_institucionidentificadorhist %}
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalIdentificador">
+                            <i class="fas fa-plus me-1"></i>Agregar
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if identificadores %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Valor</th>
+                                        <th>Rol</th>
+                                        <th>Ubicación</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for id in identificadores %}
+                                        <tr>
+                                            <td>{{ id.get_tipo_identificador_display }}</td>
+                                            <td>
+                                                <strong>{{ id.valor_identificador }}</strong>
+                                            </td>
+                                            <td>{{ id.get_rol_institucional_display|default:"\u2014" }}</td>
+                                            <td>{{ id.ubicacion|default:"\u2014" }}</td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_institucionidentificadorhist %}
+                                                        <button class="btn btn-outline-warning"
+                                                                onclick="editIdentificador({{ id.id }})"
+                                                                title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                    {% if perms.VAT.delete_institucionidentificadorhist %}
+                                                        <button class="btn btn-outline-danger"
+                                                                onclick="deleteIdentificador({{ id.id }})"
+                                                                title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-id-card fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">Sin identificadores registrados.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-dark table-striped mb-0">
-                    <thead>
-                        <tr>
-                            <th>Actividad</th>
-                            <th>Categoría</th>
-                            <th>Días y horario</th>
-                            <th class="text-center">Inscriptos / Cupo</th>
-                            <th class="text-center">Próximo encuentro</th>
-                            <th class="text-center">Estado</th>
-                            <th class="text-end">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for act in actividades_curso_paginadas %}
-                            <tr>
-                                <td>
-                                    <a href="{% url 'vat_actividadcentro_detail' pk=act.id %}"
-                                       class="text-info text-decoration-none font-weight-bold">
-                                        {{ act.actividad.nombre }}
-                                    </a>
-                                </td>
-                                <td>
-                                    <span class="badge badge-secondary">{{ act.actividad.categoria.nombre }}</span>
-                                </td>
-                                <td>
-                                    <div>
-                                        {% for dia in act.dias.all %}
-                                            {{ dia.nombre }}
-                                            {% if not forloop.last %},{% endif %}
-                                            {% empty %}<span class="text-muted">—</span>
-                                        {% endfor %}
-                                    </div>
-                                    <small class="text-muted">{{ act.horariosdesde }} — {{ act.horarioshasta }}</small>
-                                </td>
-                                <td class="text-center">
-                                    <span class="{% if act.inscritos >= act.cantidad_personas %}text-danger{% else %}text-success{% endif %} font-weight-bold">
-                                        {{ act.inscritos }}
+
+        {# ================================================================ #}
+        {# TAB 3: CATALOGO Y OFERTAS EDUCATIVAS                            #}
+        {# Agrupa: Titulos + Planes + Ofertas + Comisiones                  #}
+        {# ================================================================ #}
+        <div class="tab-pane fade" id="catalogo" role="tabpanel">
+
+            <!-- Titulos de Referencia del Centro -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 text-primary">
+                            <i class="fas fa-book me-2"></i>
+                            Titulos de Referencia
+                        </h6>
+                        <small class="text-muted">Titulos habilitados para este centro.</small>
+                    </div>
+                    {% if perms.VAT.add_titulorreferencia %}
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalTitulo">
+                            <i class="fas fa-plus me-1"></i>Nuevo Titulo
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if titulos %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Sector</th>
+                                        <th>Subsector</th>
+                                        <th>Titulo</th>
+                                        <th>Codigo Ref.</th>
+                                        <th>Planes</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for t in titulos %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ t.sector.nombre }}</span>
+                                            </td>
+                                            <td>{{ t.subsector.nombre|default:"\u2014" }}</td>
+                                            <td class="fw-bold">{{ t.nombre }}</td>
+                                            <td>{{ t.codigo_referencia|default:"\u2014" }}</td>
+                                            <td>
+                                                <span class="badge bg-info">{{ t.planes.count }} plan{{ t.planes.count|pluralize:"es" }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_titulorreferencia %}
+                                                        <button class="btn btn-outline-warning"
+                                                                onclick="editTitulo({{ t.id }})"
+                                                                title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-book fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No hay titulos de referencia registrados.</p>
+                            {% if perms.VAT.add_titulorreferencia %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary mt-2"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalTitulo">
+                                    <i class="fas fa-plus me-1"></i>Crear el primer titulo
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Planes Curriculares -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 text-primary">
+                            <i class="fas fa-clipboard-list me-2"></i>
+                            Planes Curriculares
+                        </h6>
+                        <small class="text-muted">Planes asociados a los titulos del centro.</small>
+                    </div>
+                    {% if perms.VAT.add_planversioncurricular %}
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalPlan">
+                            <i class="fas fa-plus me-1"></i>Nuevo Plan
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if planes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Titulo de Referencia</th>
+                                        <th>Modalidad de Cursado</th>
+                                        <th>Version</th>
+                                        <th>Horas Reloj</th>
+                                        <th>Normativa</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in planes %}
+                                        <tr>
+                                            <td class="fw-bold">{{ p.titulo_referencia.nombre }}</td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ p.modalidad_cursada.nombre }}</span>
+                                            </td>
+                                            <td>{{ p.version|default:"\u2014" }}</td>
+                                            <td>{{ p.horas_reloj|default:"\u2014" }}</td>
+                                            <td>{{ p.normativa|default:"\u2014" }}</td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_planversioncurricular %}
+                                                        <button class="btn btn-outline-warning"
+                                                                onclick="editPlan({{ p.id }})"
+                                                                title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-clipboard-list fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No hay planes curriculares registrados.</p>
+                            {% if titulos and perms.VAT.add_planversioncurricular %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary mt-2"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalPlan">
+                                    <i class="fas fa-plus me-1"></i>Crear el primer plan
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Ofertas Institucionales -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 text-primary">
+                            <i class="fas fa-graduation-cap me-2"></i>
+                            Ofertas Institucionales
+                        </h6>
+                        <small class="text-muted">Programas educativos ofrecidos.</small>
+                    </div>
+                    {% if perms.VAT.add_ofertainstitucional %}
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalOferta">
+                            <i class="fas fa-plus me-1"></i>Nueva Oferta
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if ofertas %}
+                        {% for oferta in ofertas %}
+                            <div class="{% if not forloop.first %}mt-3 pt-3 border-top{% endif %}">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <strong>{{ oferta.plan_curricular.titulo_referencia.nombre }}</strong>
+                                    <span class="badge bg-secondary">{{ oferta.ciclo_lectivo }}</span>
+                                    <span class="badge {% if oferta.estado == 'publicada' %}bg-success{% elif oferta.estado == 'aprobada' %}bg-primary{% elif oferta.estado == 'planificada' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                        {{ oferta.get_estado_display }}
                                     </span>
-                                    <span class="text-muted">/ {{ act.cantidad_personas }}</span>
-                                </td>
-                                <td class="text-center">
-                                    {% if act.proximo_encuentro %}
-                                        <span class="text-info">
-                                            <i class="fas fa-calendar-day mr-1"></i>
-                                            {{ act.proximo_encuentro.fecha|date:"d/m/Y" }}
-                                        </span>
+                                    {% if oferta.usa_voucher %}<span class="badge bg-info"><i class="fas fa-ticket-alt me-1"></i>Voucher</span>{% endif %}
+                                    <a href="{% url 'vat_oferta_institucional_detail' oferta.pk %}"
+                                       class="btn btn-sm btn-outline-secondary py-0 ms-auto">Ver oferta</a>
+                                </div>
+                                {% with comisiones=oferta.comisiones.all %}
+                                    {% if comisiones %}
+                                        <table class="table table-sm mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Codigo</th>
+                                                    <th>Nombre</th>
+                                                    <th>Periodo</th>
+                                                    <th>Cupo</th>
+                                                    <th>Estado</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for comision in comisiones %}
+                                                    <tr>
+                                                        <td>
+                                                            <strong>{{ comision.codigo_comision }}</strong>
+                                                        </td>
+                                                        <td>{{ comision.nombre }}</td>
+                                                        <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} \u2014 {{ comision.fecha_fin|date:"d/m/Y" }}</td>
+                                                        <td>{{ comision.cupo }}</td>
+                                                        <td>
+                                                            <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                                                {{ comision.get_estado_display }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <a href="{% url 'vat_comision_detail' comision.pk %}"
+                                                               class="btn btn-sm btn-outline-info py-0 px-1"><i class="fas fa-eye"></i></a>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
                                     {% else %}
-                                        <span class="text-muted">—</span>
+                                        <p class="text-muted small mb-0">
+                                            Sin comisiones.
+                                            {% if perms.VAT.add_comision %}
+                                                <a href="{% url 'vat_comision_create' %}?oferta={{ oferta.id }}">Crear una</a>
+                                            {% endif %}
+                                        </p>
                                     {% endif %}
-                                </td>
-                                <td class="text-center">
-                                    {% if act.estado == 'en_curso' %}
-                                        <span class="badge badge-success">En curso</span>
-                                    {% elif act.estado == 'planificada' %}
-                                        <span class="badge badge-warning">Planificada</span>
-                                    {% else %}
-                                        <span class="badge badge-secondary">Finalizada</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-end">
-                                    <a href="{% url 'vat_actividadcentro_detail' pk=act.id %}"
-                                       class="btn btn-sm btn-outline-info"
-                                       title="Ver detalle">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{% url 'vat_actividadcentro_edit' pk=act.id %}"
-                                       class="btn btn-sm btn-outline-warning"
-                                       title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{% url 'vat_participanteactividad_create' centro_id=centro.id actividad_id=act.id %}"
-                                       class="btn btn-sm btn-outline-success"
-                                       title="Inscribir participante">
-                                        <i class="fas fa-user-plus"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
-                                    No hay actividades registradas.
-                                    <a href="{% url 'vat_actividadcentro_create' centro_id=centro.id %}"
-                                       class="text-info ml-2">Agregar una</a>
-                                </td>
-                            </tr>
+                                {% endwith %}
+                            </div>
                         {% endfor %}
-                    </tbody>
-                </table>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-graduation-cap fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">Sin ofertas institucionales registradas.</p>
+                            {% if planes and perms.VAT.add_ofertainstitucional %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary mt-2"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalOferta">
+                                    <i class="fas fa-plus me-1"></i>Crear la primera oferta
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
             </div>
+
+            <!-- Comisiones -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 text-primary">
+                            <i class="fas fa-users me-2"></i>
+                            Comisiones
+                        </h6>
+                        <small class="text-muted">Comisiones asociadas a las ofertas institucionales del centro.</small>
+                    </div>
+                    {% if perms.VAT.add_comision %}
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalComision">
+                            <i class="fas fa-plus me-1"></i>Nueva Comision
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if comisiones %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Codigo</th>
+                                        <th>Comision</th>
+                                        <th>Oferta</th>
+                                        <th>Ciclo Lectivo</th>
+                                        <th>Periodo</th>
+                                        <th>Cupo</th>
+                                        <th>Estado</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for comision in comisiones %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ comision.codigo_comision }}</strong>
+                                            </td>
+                                            <td>{{ comision.nombre }}</td>
+                                            <td>{{ comision.oferta.plan_curricular.titulo_referencia.nombre }}</td>
+                                            <td>{{ comision.oferta.ciclo_lectivo }}</td>
+                                            <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} - {{ comision.fecha_fin|date:"d/m/Y" }}</td>
+                                            <td>{{ comision.cupo }}</td>
+                                            <td>
+                                                <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                                    {{ comision.get_estado_display }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="{% url 'vat_comision_detail' comision.pk %}"
+                                                   class="btn btn-sm btn-outline-info"
+                                                   title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-users fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No hay comisiones registradas para este centro.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
         </div>
-        <!-- Paginación -->
-        <div class="card-footer bg-dark text-center">
-            <ul class="pagination justify-content-center mb-0">
-                <li class="page-item {% if not actividades_curso_paginadas.has_previous %}disabled{% endif %}">
-                    {% if actividades_curso_paginadas.has_previous %}
-                        <a class="page-link bg-secondary text-white"
-                           href="?search_actividades_curso={{ search_actividades_curso_val|urlencode }}&page_actividades_curso={{ actividades_curso_paginadas.previous_page_number }}#actividades-container">Anterior</a>
-                    {% else %}
-                        <span class="page-link bg-secondary text-white">Anterior</span>
-                    {% endif %}
-                </li>
-                {% for i in actividades_curso_paginadas.paginator.page_range %}
-                    <li class="page-item {% if actividades_curso_paginadas.number == i %}active{% endif %}">
-                        <a class="page-link bg-secondary text-white"
-                           href="?search_actividades_curso={{ search_actividades_curso_val|urlencode }}&page_actividades_curso={{ i }}#actividades-container">{{ i }}</a>
-                    </li>
-                {% endfor %}
-                <li class="page-item {% if not actividades_curso_paginadas.has_next %}disabled{% endif %}">
-                    {% if actividades_curso_paginadas.has_next %}
-                        <a class="page-link bg-secondary text-white"
-                           href="?search_actividades_curso={{ search_actividades_curso_val|urlencode }}&page_actividades_curso={{ actividades_curso_paginadas.next_page_number }}#actividades-container">Siguiente</a>
-                    {% else %}
-                        <span class="page-link bg-secondary text-white">Siguiente</span>
-                    {% endif %}
-                </li>
-            </ul>
+
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- MODALES                                                          -->
+    <!-- ================================================================ -->
+
+    <!-- Modal Autoridad -->
+    <div class="modal fade"
+         id="modalAutoridad"
+         tabindex="-1"
+         aria-labelledby="modalAutoridadLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAutoridadLabel">Agregar Autoridad</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formAutoridad"
+                      method="post"
+                      action="{% url 'vat_autoridad_institucional_create' %}?centro={{ centro.id }}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="row">
+                            {% for field in autoridad_form %}
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                        {{ field.label }}
+                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Modal Contacto -->
+    <div class="modal fade"
+         id="modalContacto"
+         tabindex="-1"
+         aria-labelledby="modalContactoLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalContactoLabel">Agregar Contacto</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formContacto"
+                      method="post"
+                      action="{% url 'vat_institucion_contacto_create' %}?centro={{ centro.id }}">
+                    {% csrf_token %}
+                    <div class="modal-body">{{ contacto_form.as_p }}</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Identificador -->
+    <div class="modal fade"
+         id="modalIdentificador"
+         tabindex="-1"
+         aria-labelledby="modalIdentificadorLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalIdentificadorLabel">Agregar Identificador</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formIdentificador"
+                      method="post"
+                      action="{% url 'vat_institucion_identificador_create' %}?centro={{ centro.id }}">
+                    {% csrf_token %}
+                    <div class="modal-body">{{ identificador_form.as_p }}</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ubicacion -->
+    <div class="modal fade"
+         id="modalUbicacion"
+         tabindex="-1"
+         aria-labelledby="modalUbicacionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalUbicacionLabel">Agregar Ubicacion</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formUbicacion"
+                      method="post"
+                      action="{% url 'vat_institucion_ubicacion_create' %}?centro={{ centro.id }}">
+                    {% csrf_token %}
+                    <div class="modal-body">{{ ubicacion_form.as_p }}</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Oferta -->
+    <div class="modal fade"
+         id="modalOferta"
+         tabindex="-1"
+         aria-labelledby="modalOfertaLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalOfertaLabel">Nueva Oferta Institucional</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formOferta"
+                      method="post"
+                      action="{% url 'vat_oferta_institucional_create' %}?centro={{ centro.id }}">
+                    {% csrf_token %}
+                    <div class="modal-body">{{ oferta_form.as_p }}</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Comision -->
+    <div class="modal fade"
+         id="modalComision"
+         tabindex="-1"
+         aria-labelledby="modalComisionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalComisionLabel">Nueva Comision</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formComision"
+                      method="post"
+                      action="{% url 'vat_comision_create' %}">
+                    {% csrf_token %}
+                    <div class="modal-body">{{ comision_form.as_p }}</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Titulo de Referencia -->
+    <div class="modal fade"
+         id="modalTitulo"
+         tabindex="-1"
+         aria-labelledby="modalTituloLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTituloLabel">Nuevo Titulo de Referencia</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formTitulo"
+                      method="post"
+                      action="{% url 'vat_titulorreferencia_create' %}?centro={{ centro.id }}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="row">
+                            {% for field in titulo_form %}
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                        {{ field.label }}
+                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Plan Curricular -->
+    <div class="modal fade"
+         id="modalPlan"
+         tabindex="-1"
+         aria-labelledby="modalPlanLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalPlanLabel">Nuevo Plan Curricular</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formPlan"
+                      method="post"
+                      action="{% url 'vat_planversioncurricular_create' %}?centro={{ centro.id }}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="row">
+                            {% for field in plan_form %}
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                        {{ field.label }}
+                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="{% static 'custom/js/vat.js' %}"></script>
     <script nonce="{{ request.csp_nonce }}">
-        // Búsqueda inline en tabla de actividades
-        document.getElementById('searchActividades').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                var q = this.value;
-                window.location.href = '?search_actividades_curso=' + encodeURIComponent(q) + '#actividades-container';
-            }
-        });
-
-        Chart.defaults.color = '#9ca3af';
-        const gridColor = '#3d4f63';
-
-        {% if metricas.inscriptos > 0 %}
-        new Chart(document.getElementById('chartGenero'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Masculino', 'Femenino', 'Otro'],
-                datasets: [{
-                    data: [
-                        {{ metricas.hombres }},
-                        {{ metricas.mujeres }},
-                        Math.max(0, {{ metricas.inscriptos }} - {{ metricas.hombres }} - {{ metricas.mujeres }})
-                    ],
-                    backgroundColor: ['rgba(23,162,184,0.8)', 'rgba(220,53,69,0.8)', 'rgba(255,193,7,0.8)'],
-                    borderColor: ['#17a2b8', '#dc3545', '#ffc107'],
-                    borderWidth: 1,
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
-        {% endif %}
-
-        {% if metricas.actividades > 0 %}
-        new Chart(document.getElementById('chartEstado'), {
-            type: 'doughnut',
-            data: {
-                labels: ['En curso', 'Planificada', 'Finalizada'],
-                datasets: [{
-                    data: [{{ estado_counts.en_curso }}, {{ estado_counts.planificada }}, {{ estado_counts.finalizada }}],
-                    backgroundColor: ['rgba(40,167,69,0.8)', 'rgba(255,193,7,0.8)', 'rgba(108,117,125,0.8)'],
-                    borderColor: ['#28a745', '#ffc107', '#6c757d'],
-                    borderWidth: 1,
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
-        {% endif %}
-
-        {% if actividades %}
-        new Chart(document.getElementById('chartCapacidad'), {
-            type: 'bar',
-            data: {
-                labels: [{% for act in actividades|slice:":8" %}"{{ act.actividad.nombre|truncatechars:18 }}"{% if not forloop.last %},{% endif %}{% endfor %}],
-                datasets: [
-                    {
-                        label: 'Inscriptos',
-                        data: [{% for act in actividades|slice:":8" %}{{ act.inscritos }}{% if not forloop.last %},{% endif %}{% endfor %}],
-                        backgroundColor: 'rgba(40,167,69,0.75)',
-                    },
-                    {
-                        label: 'Cupo',
-                        data: [{% for act in actividades|slice:":8" %}{{ act.cantidad_personas }}{% if not forloop.last %},{% endif %}{% endfor %}],
-                        backgroundColor: 'rgba(23,162,184,0.3)',
+        // Funciones para editar (redirigir a pagina de edicion)
+        function editAutoridad(id) {
+            window.location.href = `/vat/institucion/autoridades/${id}/editar/`;
+        }
+        function deleteAutoridad(id) {
+            if (confirm('Eliminar autoridad?')) {
+                fetch(`/vat/institucion/autoridades/${id}/eliminar/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
                     }
-                ]
-            },
-            options: {
-                responsive: true,
-                indexAxis: 'y',
-                scales: {
-                    x: { ticks: { color: '#9ca3af' }, grid: { color: gridColor }, beginAtZero: true },
-                    y: { ticks: { color: '#9ca3af' }, grid: { color: gridColor } }
-                },
-                plugins: { legend: { position: 'bottom' } }
+                })
+                .then(() => location.reload());
             }
-        });
-        {% endif %}
+        }
+        function editContacto(id) {
+            window.location.href = `/vat/institucion/contactos/${id}/editar/`;
+        }
+        function deleteContacto(id) {
+            if (confirm('Eliminar contacto?')) {
+                fetch(`/vat/institucion/contactos/${id}/eliminar/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(() => location.reload());
+            }
+        }
+        function editIdentificador(id) {
+            window.location.href = `/vat/institucion/identificadores/${id}/editar/`;
+        }
+        function deleteIdentificador(id) {
+            if (confirm('Eliminar identificador?')) {
+                fetch(`/vat/institucion/identificadores/${id}/eliminar/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(() => location.reload());
+            }
+        }
+        function editUbicacion(id) {
+            window.location.href = `/vat/institucion/ubicaciones/${id}/editar/`;
+        }
+        function deleteUbicacion(id) {
+            if (confirm('Eliminar ubicacion?')) {
+                fetch(`/vat/institucion/ubicaciones/${id}/eliminar/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(() => location.reload());
+            }
+        }
+        function editTitulo(id) {
+            window.location.href = `/vat/catalogos/titulos-referencia/${id}/editar/`;
+        }
+        function editPlan(id) {
+            window.location.href = `/vat/catalogos/planes-curriculares/${id}/editar/`;
+        }
+
+        // AJAX para submits de modales - usa fetch nativo
+        function setupModalForm(formId, modalId) {
+            var form = document.getElementById(formId);
+            if (!form) return;
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
+                }
+                fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).then(function() {
+                    var modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+                    if (modal) modal.hide();
+                    location.reload();
+                }).catch(function() {
+                    alert('Error al guardar. Intente nuevamente.');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Guardar';
+                    }
+                });
+            });
+        }
+
+        setupModalForm('formAutoridad', 'modalAutoridad');
+        setupModalForm('formContacto', 'modalContacto');
+        setupModalForm('formIdentificador', 'modalIdentificador');
+        setupModalForm('formUbicacion', 'modalUbicacion');
+        setupModalForm('formOferta', 'modalOferta');
+        setupModalForm('formComision', 'modalComision');
+        setupModalForm('formTitulo', 'modalTitulo');
+        setupModalForm('formPlan', 'modalPlan');
+
+        // Cascading: Sector → Subsector en modalTitulo
+        var sectorSelect = document.getElementById('id_sector');
+        var subsectorSelect = document.getElementById('id_subsector');
+        if (sectorSelect && subsectorSelect) {
+            sectorSelect.addEventListener('change', function() {
+                var sectorId = this.value;
+                subsectorSelect.innerHTML = '<option value="">---------</option>';
+                if (!sectorId) return;
+                fetch('{% url "vat_subsectores_por_sector" %}?sector_id=' + sectorId, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    data.subsectores.forEach(function(s) {
+                        var opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = s.nombre;
+                        subsectorSelect.appendChild(opt);
+                    });
+                });
+            });
+        }
+
+        // Legacy compatibility - prevent any jQuery double-bind
+        if (typeof $ !== 'undefined') {
+            $('#formAutoridad, #formContacto, #formIdentificador, #formUbicacion, #formOferta, #formTitulo, #formPlan').off('submit');
+        }
     </script>
 {% endblock %}
