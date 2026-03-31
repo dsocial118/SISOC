@@ -1,9 +1,12 @@
+import importlib
+
 import pytest
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 
+from VAT import serializers as vat_serializers
 from VAT.models import (
     AutoridadInstitucional,
     Centro,
@@ -299,6 +302,52 @@ def test_plan_estudio_rechaza_sector_distinto_al_titulo(vat_plan_estudio_base):
         activo=True,
     )
     plan.full_clean()  # ya no debe lanzar error por sector del titulo
+
+
+@pytest.mark.django_db
+def test_plan_estudio_backward_compat_devuelve_primer_titulo(vat_plan_estudio_base):
+    _, _, _, _, titulo, _ = vat_plan_estudio_base
+
+    assert titulo.plan_estudio.titulo_referencia == titulo
+    assert titulo.plan_estudio.titulo_referencia_id == titulo.id
+
+
+@pytest.mark.django_db
+def test_titulo_referencia_serializer_expone_clasificacion_via_plan(
+    vat_plan_estudio_base,
+):
+    sector, subsector, _, _, titulo, _ = vat_plan_estudio_base
+
+    data = vat_serializers.TituloReferenciaSerializer(instance=titulo).data
+
+    assert data["plan_estudio"] == titulo.plan_estudio_id
+    assert data["sector"] == sector.id
+    assert data["sector_nombre"] == sector.nombre
+    assert data["subsector"] == subsector.id
+    assert data["subsector_nombre"] == subsector.nombre
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_serializer_omite_campos_eliminados(
+    vat_plan_estudio_base,
+):
+    _, _, _, _, titulo, _ = vat_plan_estudio_base
+
+    data = vat_serializers.PlanVersionCurricularSerializer(
+        instance=titulo.plan_estudio
+    ).data
+
+    assert data["titulo_referencia"] == titulo.id
+    assert data["titulo_referencia_nombre"] == titulo.nombre
+    assert "version" not in data
+    assert "frecuencia" not in data
+
+
+def test_migracion_0021_falla_si_un_titulo_tiene_multiples_planes():
+    migration = importlib.import_module("VAT.migrations.0021_invert_titulo_plan_relation")
+
+    with pytest.raises(RuntimeError, match="múltiples planes históricos"):
+        migration._raise_if_ambiguous_title_plan_rows([(7, 2, "11,12")])
 
 
 @pytest.fixture
