@@ -1,11 +1,24 @@
-<!-- AUTO-GENERATED RELEASE START: 2026-04-01 -->
-# Versión SISOC 01.04.2026
+<!-- AUTO-GENERATED RELEASE START: 2026-03-31 -->
+# Versión SISOC 31.03.2026
+
+## Nuevas Funcionalidades
+
+- Evolución funcional de VAT con APIs web documentadas en Swagger para centros, títulos, cursos e inscripciones, además de mejoras en el legajo ciudadano y en la gestión de vouchers.
+- Reorganización del módulo Comedores con legajo canonizado, solapa de responsables, soporte de nómina independiente por programa y visualización configurable del estado judicializado.
+- Ampliación del módulo Centro de Desarrollo Infantil con nueva nomenclatura, formularios y validaciones renovadas, departamentos IPI, teléfonos más flexibles y una nueva columna de nómina en listados.
 
 ## Actualizaciones
 
-- [sin-area] Codex/main cherrypick juanikitro no vat. (PR #1368)
-- [sin-area] Codex/main cherrypick renaper fail fast. (PR #1370)
-<!-- AUTO-GENERATED RELEASE END: 2026-04-01 -->
+- Unificación de flujos entre web y mobile/PWA para login y colaboradores, con acciones por usuario alineadas al estado activo y mejor consistencia en altas, bajas lógicas y permisos.
+- Fortalecimiento del trabajo asistido y la operación técnica con bootstrap de Codex Desktop para worktrees, checks de mojibake, ajustes de GitHub Actions y guías IA/lint más estrictas en la documentación.
+- Mejoras transversales en layout y experiencia de uso en detalle de comedores, sidebar, relevamientos, usuarios y formularios CDI para sostener compatibilidad con los cambios recientes.
+
+## Corrección de Errores
+
+- Correcciones acumuladas en Celiaquía para importación y reproceso de legajos: validación integral de Excel, obligatoriedad de responsables según edad, guardado parcial estable, limpieza del responsable al borrar el último dato y ajustes RENAPER.
+- Ajustes en Comedores y Ciudadanos para evitar timeouts por búsqueda de documento, cortar reintentos RENAPER ante errores de integración, restaurar el layout del detalle y corregir regresiones de alcance, tests y migraciones.
+- Estabilización de CI, encoding y suites automáticas con fixes de GitHub Actions, normalización UTF-8/mojibake, compatibilidad de migraciones y cobertura de regresión en users, VAT, CDI, Comedores y PWA.
+<!-- AUTO-GENERATED RELEASE END: 2026-03-31 -->
 
 # Versión SISOC 18.03.2026
 
