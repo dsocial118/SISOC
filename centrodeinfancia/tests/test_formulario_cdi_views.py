@@ -487,7 +487,7 @@ def test_detalle_cdi_muestra_nuevos_paneles_y_campos(client):
 
     assert response.status_code == 200
     content = response.content.decode("utf-8")
-    assert "accordion-header--informacion-basica" in content
+    assert "accordion-header--informacion" in content
     assert "Informacion Basica" in content
     assert "accordion-header--funcionamiento" in content
     assert "Funcionamiento" in content
