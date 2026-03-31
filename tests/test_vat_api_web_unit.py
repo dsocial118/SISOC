@@ -102,6 +102,46 @@ def test_inscripcion_service_crear_inscripcion_debita_voucher(mocker):
     assert debitar_mock.call_args.kwargs["cantidad"] == 12500
 
 
+def test_inscripcion_service_rechaza_costo_con_decimales_en_voucher(mocker):
+    ciudadano = SimpleNamespace(id=3, __str__=lambda self: "Ciudadano Demo")
+    programa = SimpleNamespace(id=7)
+    oferta = SimpleNamespace(
+        programa=programa,
+        programa_id=7,
+        usa_voucher=True,
+        costo=Decimal("10.50"),
+    )
+    comision = SimpleNamespace(id=8, oferta=oferta, __str__=lambda self: "COM-8")
+    inscripcion = SimpleNamespace(id=21, comision_id=8, comision=comision)
+    usuario = SimpleNamespace(is_authenticated=True)
+    voucher = SimpleNamespace(cantidad_disponible=20)
+
+    mocker.patch(
+        "VAT.services.inscripcion_service.Inscripcion.objects.create",
+        return_value=inscripcion,
+    )
+    mocker.patch(
+        "VAT.services.inscripcion_service.Voucher.objects.filter",
+        return_value=SimpleNamespace(
+            order_by=lambda *_a, **_k: SimpleNamespace(first=lambda: voucher)
+        ),
+    )
+    debitar_mock = mocker.patch(
+        "VAT.services.inscripcion_service.VoucherService.debitar_voucher",
+        return_value=(True, "ok"),
+    )
+
+    with pytest.raises(ValueError, match="numero entero de creditos"):
+        InscripcionService.crear_inscripcion(
+            ciudadano=ciudadano,
+            comision=comision,
+            programa=programa,
+            usuario=usuario,
+        )
+
+    debitar_mock.assert_not_called()
+
+
 # ============================================================================
 # Tests: Inscripción única activa
 # ============================================================================
