@@ -2,12 +2,14 @@ from datetime import timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from comunicados.models import (
     Comunicado,
+    ComunicadoAdjunto,
     EstadoComunicado,
     SubtipoComunicado,
     TipoComunicado,
@@ -117,6 +119,44 @@ def test_list_mensajes_por_espacio_filtra_por_scope_y_estado(espacios):
     assert "Para todos" in titulos
     assert "Solo espacio 2" not in titulos
     assert all(item["visto"] is False for item in response.data["results"])
+    assert response.data["unread_general_count"] == 0
+    assert response.data["unread_espacio_count"] == 2
+
+
+@pytest.mark.django_db
+def test_list_mensajes_por_espacio_incluye_notificaciones_generales(espacios):
+    espacio_1, _ = espacios
+    representante = _create_pwa_user(
+        comedor=espacio_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_mensajes_generales",
+    )
+    client = _auth_client_for_user(representante)
+
+    _create_comunicado(
+        creador=representante,
+        titulo="General Mobile",
+        subtipo=SubtipoComunicado.INSTITUCIONAL,
+    )
+    _create_comunicado(
+        creador=representante,
+        titulo="Para el espacio",
+        comedor=espacio_1,
+        subtipo=SubtipoComunicado.COMEDORES,
+    )
+
+    response = client.get(f"/api/pwa/espacios/{espacio_1.id}/mensajes/")
+
+    assert response.status_code == 200
+    assert response.data["count"] == 2
+    assert response.data["unread_general_count"] == 1
+    assert response.data["unread_espacio_count"] == 1
+    assert len(response.data["secciones"]["generales"]) == 1
+    assert response.data["secciones"]["generales"][0]["titulo"] == "General Mobile"
+    assert response.data["secciones"]["generales"][0]["seccion"] == "general"
+    assert len(response.data["secciones"]["espacios"]) == 1
+    assert response.data["secciones"]["espacios"][0]["titulo"] == "Para el espacio"
+    assert response.data["secciones"]["espacios"][0]["seccion"] == "espacio"
 
 
 @pytest.mark.django_db
@@ -236,6 +276,49 @@ def test_marcar_mensaje_como_visto_es_idempotente(espacios):
 
 
 @pytest.mark.django_db
+def test_mensaje_general_marcado_visto_se_refleja_en_todos_los_espacios_del_usuario(
+    espacios,
+):
+    espacio_1, espacio_2 = espacios
+    representante = _create_pwa_user(
+        comedor=espacio_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_seen_general",
+    )
+    AccesoComedorPWA.objects.create(
+        user=representante,
+        comedor=espacio_2,
+        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+        activo=True,
+    )
+    client = _auth_client_for_user(representante)
+    mensaje = _create_comunicado(
+        creador=representante,
+        titulo="General todos",
+        subtipo=SubtipoComunicado.INSTITUCIONAL,
+    )
+
+    mark_response = client.patch(
+        f"/api/pwa/espacios/{espacio_1.id}/mensajes/{mensaje.id}/marcar-visto/",
+        {},
+        format="json",
+    )
+    list_response_space_2 = client.get(f"/api/pwa/espacios/{espacio_2.id}/mensajes/")
+
+    assert mark_response.status_code == 200
+    assert list_response_space_2.status_code == 200
+    assert list_response_space_2.data["unread_general_count"] == 0
+    assert list_response_space_2.data["results"][0]["visto"] is True
+    assert (
+        LecturaMensajePWA.objects.filter(
+            comunicado=mensaje,
+            user=representante,
+        ).count()
+        == 2
+    )
+
+
+@pytest.mark.django_db
 def test_detalle_y_listado_reflejan_estado_visto(espacios):
     espacio_1, _ = espacios
     representante = _create_pwa_user(
@@ -268,3 +351,36 @@ def test_detalle_y_listado_reflejan_estado_visto(espacios):
     assert list_response.status_code == 200
     assert list_response.data["unread_count"] == 0
     assert list_response.data["results"][0]["visto"] is True
+
+
+@pytest.mark.django_db
+def test_detalle_mensaje_incluye_fecha_creacion_y_datos_de_adjuntos(espacios, settings, tmp_path):
+    settings.MEDIA_ROOT = str(tmp_path)
+    espacio_1, _ = espacios
+    representante = _create_pwa_user(
+        comedor=espacio_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_detail_adjuntos",
+    )
+    client = _auth_client_for_user(representante)
+    mensaje = _create_comunicado(
+        creador=representante,
+        titulo="Mensaje con adjunto",
+        comedor=espacio_1,
+    )
+    adjunto = ComunicadoAdjunto.objects.create(
+        comunicado=mensaje,
+        archivo=SimpleUploadedFile(
+            "archivo.pdf",
+            b"%PDF-1.4 fake content",
+            content_type="application/pdf",
+        ),
+    )
+
+    response = client.get(f"/api/pwa/espacios/{espacio_1.id}/mensajes/{mensaje.id}/")
+
+    assert response.status_code == 200
+    assert response.data["fecha_creacion"] is not None
+    assert response.data["adjuntos"][0]["nombre_original"] == adjunto.nombre_original
+    assert response.data["adjuntos"][0]["fecha_subida"] is not None
+    assert response.data["adjuntos"][0]["url"] is not None

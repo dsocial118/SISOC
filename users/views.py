@@ -17,6 +17,7 @@ from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView
 from django.views.decorators.csrf import ensure_csrf_cookie
 from core.services.column_preferences import build_columns_context
@@ -28,6 +29,7 @@ from .forms import (
 )
 from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
 from .services import UsuariosService
+from .services_auth import generate_temporary_password_for_user
 
 
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -70,7 +72,6 @@ class UserListView(AdminRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         # Configuración para el componente data_table
         context.update(UsuariosService.get_usuarios_list_context(self.request))
         return context
@@ -117,6 +118,9 @@ class UserUpdateView(AdminRequiredMixin, UpdateView):
             and getattr(profile, "must_change_password", False)
             and getattr(profile, "temporary_password_plaintext", None)
         )
+        context["password_reset_requested_at"] = (
+            getattr(profile, "password_reset_requested_at", None) if profile else None
+        )
         context["temporary_password_plaintext"] = (
             getattr(profile, "temporary_password_plaintext", None) if profile else None
         )
@@ -140,6 +144,34 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
         self.object.save(update_fields=["is_active"])
         messages.success(request, "Usuario desactivado correctamente.")
         return HttpResponseRedirect(self.success_url)
+
+
+class UserGenerateTemporaryPasswordView(AdminRequiredMixin, View):
+    required_permissions = ("auth.change_user",)
+
+    def post(self, request, *args, **kwargs):
+        user = User.objects.select_related("profile").filter(pk=kwargs["pk"]).first()
+        if not user:
+            messages.error(request, "Usuario inexistente.")
+            return HttpResponseRedirect(reverse("usuarios"))
+
+        profile = getattr(user, "profile", None)
+        if not getattr(profile, "password_reset_requested_at", None):
+            messages.warning(
+                request,
+                "El usuario no tiene una solicitud pendiente de reseteo de contraseña.",
+            )
+            return HttpResponseRedirect(reverse("usuarios"))
+
+        generate_temporary_password_for_user(user=user)
+        messages.success(
+            request,
+            (
+                "Se generó una nueva contraseña temporal. "
+                "Puede verla en la pantalla de edición del usuario."
+            ),
+        )
+        return HttpResponseRedirect(reverse("usuario_editar", kwargs={"pk": user.pk}))
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -205,12 +237,14 @@ class FirstLoginPasswordChangeView(LoginRequiredMixin, FormView):
             profile.must_change_password = False
             profile.password_changed_at = timezone.now()
             profile.initial_password_expires_at = None
+            profile.password_reset_requested_at = None
             profile.temporary_password_plaintext = None
             profile.save(
                 update_fields=[
                     "must_change_password",
                     "password_changed_at",
                     "initial_password_expires_at",
+                    "password_reset_requested_at",
                     "temporary_password_plaintext",
                 ]
             )
@@ -252,12 +286,14 @@ class PasswordResetConfirmCustomView(PasswordResetConfirmView):
             profile.must_change_password = False
             profile.password_changed_at = timezone.now()
             profile.initial_password_expires_at = None
+            profile.password_reset_requested_at = None
             profile.temporary_password_plaintext = None
             profile.save(
                 update_fields=[
                     "must_change_password",
                     "password_changed_at",
                     "initial_password_expires_at",
+                    "password_reset_requested_at",
                     "temporary_password_plaintext",
                 ]
             )

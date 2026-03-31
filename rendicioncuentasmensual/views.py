@@ -71,6 +71,26 @@ class RendicionCuentaMensualListView(LoginRequiredMixin, ListView):
         return context
 
 
+class RendicionCuentaMensualGlobalListView(LoginRequiredMixin, ListView):
+    model = RendicionCuentaMensual
+    template_name = "rendicioncuentasmensual_global_list.html"
+    context_object_name = "rendiciones_cuentas_mensuales"
+    paginate_by = 25
+
+    def get_queryset(self):
+        """Retorna todas las rendiciones activas para el listado global."""
+        return RendicionCuentaMensualService.obtener_todas_rendiciones_cuentas_mensuales()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["titulo_listado"] = "Rendiciones"
+        context["breadcrumb_items"] = [
+            {"text": "Comedores", "url": reverse_lazy("comedores")},
+            {"text": "Rendiciones", "active": True},
+        ]
+        return context
+
+
 class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_detail.html"
@@ -78,10 +98,15 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["rendicion"] = (
-            RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(
-                self.kwargs.get("pk")
-            )
+        rendicion = RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(
+            self.kwargs.get("pk")
+        )
+        context["rendicion"] = rendicion
+        context["documentacion_por_categoria"] = (
+            RendicionCuentaMensualService.obtener_documentacion_para_detalle(rendicion)
+        )
+        context["scope_proyecto"] = RendicionCuentaMensualService.obtener_scope_proyecto(
+            rendicion
         )
         return context
 

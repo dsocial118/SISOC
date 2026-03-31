@@ -24,12 +24,14 @@ from pwa.api_serializers import (
     NominaEspacioPWACreateUpdateSerializer,
     NominaEspacioPWAListSerializer,
     NominaRenaperPreviewSerializer,
+    RegistroAsistenciaNominaPWAListSerializer,
     SexoSerializer,
 )
 from pwa.models import (
     ActividadEspacioPWA,
     CatalogoActividadPWA,
     InscriptoActividadEspacioPWA,
+    RegistroAsistenciaNominaPWA,
 )
 from pwa.services.actividades_service import (
     create_actividad_espacio,
@@ -43,7 +45,9 @@ from pwa.services.mensajes_service import (
 )
 from pwa.services.nomina_service import (
     create_nomina_persona,
+    get_periodo_mensual_actual,
     is_menor,
+    registrar_asistencia_nomina_mes_actual,
     soft_delete_nomina_persona,
     split_gender_bucket,
     update_nomina_persona,
@@ -87,19 +91,35 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
                 "user": request.user,
             },
         )
-        unread_count = 0
-        for item in items:
-            lecturas = getattr(item, "lecturas_pwa_usuario_espacio", None) or []
-            lectura = lecturas[0] if lecturas else None
-            if not lectura or not lectura.visto:
-                unread_count += 1
+        serialized_items = serializer.data
+        unread_count = sum(1 for item in serialized_items if not item["visto"])
+        unread_general_count = sum(
+            1
+            for item in serialized_items
+            if item["seccion"] == "general" and not item["visto"]
+        )
+        unread_espacio_count = sum(
+            1
+            for item in serialized_items
+            if item["seccion"] == "espacio" and not item["visto"]
+        )
         return Response(
             {
                 "count": paginator.count,
                 "num_pages": paginator.num_pages,
                 "current_page": page_obj.number,
                 "unread_count": unread_count,
-                "results": serializer.data,
+                "unread_general_count": unread_general_count,
+                "unread_espacio_count": unread_espacio_count,
+                "results": serialized_items,
+                "secciones": {
+                    "generales": [
+                        item for item in serialized_items if item["seccion"] == "general"
+                    ],
+                    "espacios": [
+                        item for item in serialized_items if item["seccion"] == "espacio"
+                    ],
+                },
             },
             status=status.HTTP_200_OK,
         )
@@ -419,7 +439,7 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
                     filter=Q(inscriptos__activo=True),
                 )
             )
-            .order_by("-fecha_alta", "-id")
+            .order_by("dia_actividad_id", "hora_inicio", "hora_fin", "catalogo_actividad__actividad", "id")
         )
 
     def _get_object(self):
@@ -440,7 +460,10 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, comedor_id=None):
-        serializer = ActividadEspacioPWACreateUpdateSerializer(data=request.data)
+        serializer = ActividadEspacioPWACreateUpdateSerializer(
+            data=request.data,
+            context={"comedor_id": comedor_id},
+        )
         serializer.is_valid(raise_exception=True)
         actividad = create_actividad_espacio(
             comedor_id=comedor_id,
@@ -462,6 +485,7 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
             actividad,
             data=request.data,
             partial=True,
+            context={"comedor_id": comedor_id},
         )
         serializer.is_valid(raise_exception=True)
         actividad = update_actividad_espacio(
@@ -518,6 +542,7 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
 
     def _base_queryset(self):
         comedor_id = self.kwargs["comedor_id"]
+        periodo_actual = get_periodo_mensual_actual()
         return (
             Nomina.objects.filter(
                 admision__comedor_id=comedor_id,
@@ -525,20 +550,41 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
                 estado=Nomina.ESTADO_ACTIVO,
             )
             .select_related("ciudadano", "ciudadano__sexo", "perfil_pwa")
+            .annotate(
+                cantidad_actividades_pwa=Count(
+                    "inscripciones_actividad_pwa__actividad_espacio__catalogo_actividad_id",
+                    filter=Q(inscripciones_actividad_pwa__activo=True),
+                    distinct=True,
+                )
+            )
             .prefetch_related(
                 Prefetch(
-                    "inscripciones_actividad_pwa",
-                    queryset=InscriptoActividadEspacioPWA.objects.filter(activo=True)
-                    .select_related(
-                        "actividad_espacio",
-                        "actividad_espacio__catalogo_actividad",
-                        "actividad_espacio__dia_actividad",
+                    "registros_asistencia_pwa",
+                    queryset=RegistroAsistenciaNominaPWA.objects.filter(
+                        periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
+                        periodo_referencia=periodo_actual,
                     )
-                    .order_by("id"),
-                    to_attr="inscripciones_actividad_pwa_activas",
+                    .select_related("tomado_por")
+                    .order_by("-fecha_toma_asistencia", "-id"),
+                    to_attr="asistencia_mes_actual_pwa",
                 )
             )
             .order_by("ciudadano__apellido", "ciudadano__nombre", "id")
+        )
+
+    def _detail_queryset(self):
+        return self._base_queryset().prefetch_related(
+            Prefetch(
+                "inscripciones_actividad_pwa",
+                queryset=InscriptoActividadEspacioPWA.objects.filter(activo=True)
+                .select_related(
+                    "actividad_espacio",
+                    "actividad_espacio__catalogo_actividad",
+                    "actividad_espacio__dia_actividad",
+                )
+                .order_by("id"),
+                to_attr="inscripciones_actividad_pwa_activas",
+            )
         )
 
     def _apply_tab_filter(self, rows: list[Nomina], tab: str) -> list[Nomina]:
@@ -620,7 +666,11 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         q = request.query_params.get("q", "")
         rows = self._apply_tab_filter(rows, tab)
         rows = self._apply_search_filter(rows, q)
-        serializer = NominaEspacioPWAListSerializer(rows, many=True)
+        serializer = NominaEspacioPWAListSerializer(
+            rows,
+            many=True,
+            context={"include_details": False},
+        )
         return Response(
             {
                 "tab": tab,
@@ -647,7 +697,20 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
     def _get_object(self):
-        return self._base_queryset().filter(pk=self.kwargs["pk"]).first()
+        return self._detail_queryset().filter(pk=self.kwargs["pk"]).first()
+
+    def retrieve(self, request, comedor_id=None, pk=None):
+        nomina = self._get_object()
+        if not nomina:
+            return Response(
+                {"detail": "Registro de nómina no encontrado."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        response_serializer = NominaEspacioPWAListSerializer(
+            nomina,
+            context={"include_details": True},
+        )
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     def partial_update(self, request, comedor_id=None, pk=None):
         nomina = self._get_object()
@@ -686,6 +749,39 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
             detail = exc.message_dict if hasattr(exc, "message_dict") else exc.messages
             return Response({"detail": detail}, status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def registrar_asistencia(self, request, comedor_id=None, pk=None):
+        nomina = self._get_object()
+        if not nomina:
+            return Response(
+                {"detail": "Registro de nómina no encontrado."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        registro, created = registrar_asistencia_nomina_mes_actual(
+            nomina=nomina,
+            actor=request.user,
+        )
+        serializer = RegistroAsistenciaNominaPWAListSerializer(registro)
+        return Response(
+            {
+                "created": created,
+                "registro": serializer.data,
+            },
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    def historial_asistencia(self, request, comedor_id=None, pk=None):
+        nomina = self._get_object()
+        if not nomina:
+            return Response(
+                {"detail": "Registro de nómina no encontrado."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        registros = nomina.registros_asistencia_pwa.select_related("tomado_por").order_by(
+            "-periodo_referencia", "-fecha_toma_asistencia", "-id"
+        )
+        serializer = RegistroAsistenciaNominaPWAListSerializer(registros, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def generos(self, request, comedor_id=None):
         serializer = SexoSerializer(Sexo.objects.order_by("id"), many=True)

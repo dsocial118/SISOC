@@ -1,9 +1,10 @@
 import re
+from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
-from comunicados.models import Comunicado, ComunicadoAdjunto
+from comunicados.models import Comunicado, ComunicadoAdjunto, SubtipoComunicado
 from comedores.models import Nomina
 from comedores.models import ActividadColaboradorEspacio, ColaboradorEspacio
 from core.models import Dia, Sexo
@@ -13,10 +14,39 @@ from pwa.models import (
     CatalogoActividadPWA,
     ColaboradorEspacioPWA,
     InscriptoActividadEspacioPWA,
+    RegistroAsistenciaNominaPWA,
 )
 
 DNI_REGEX = re.compile(r"^\d{7,8}$")
 PHONE_REGEX = re.compile(r"^[\d+\-() ]{6,30}$")
+TIME_RANGE_REGEX = re.compile(
+    r"^(?P<start>\d{1,2}:\d{2})(?:\s*(?:a|-)\s*(?P<end>\d{1,2}:\d{2}))?$"
+)
+
+
+def _format_activity_schedule(start_time, end_time):
+    if start_time and end_time:
+        return f"{start_time:%H:%M} a {end_time:%H:%M}"
+    if start_time:
+        return start_time.strftime("%H:%M")
+    return ""
+
+
+def _parse_legacy_schedule(value):
+    raw_value = (value or "").strip()
+    if not raw_value:
+        return None, None
+
+    match = TIME_RANGE_REGEX.fullmatch(raw_value)
+    if not match:
+        return None, None
+
+    start_time = datetime.strptime(match.group("start"), "%H:%M").time()
+    end_raw = match.group("end")
+    if not end_raw:
+        return start_time, None
+    end_time = datetime.strptime(end_raw, "%H:%M").time()
+    return start_time, end_time
 
 
 class ColaboradorEspacioPWASerializer(serializers.ModelSerializer):
@@ -305,6 +335,7 @@ class ActividadEspacioPWAListSerializer(serializers.ModelSerializer):
         source="dia_actividad.nombre", read_only=True
     )
     cantidad_inscriptos = serializers.IntegerField(read_only=True)
+    horario_actividad = serializers.SerializerMethodField()
 
     class Meta:
         model = ActividadEspacioPWA
@@ -316,6 +347,8 @@ class ActividadEspacioPWAListSerializer(serializers.ModelSerializer):
             "actividad",
             "dia_actividad",
             "dia_actividad_nombre",
+            "hora_inicio",
+            "hora_fin",
             "horario_actividad",
             "cantidad_inscriptos",
             "activo",
@@ -324,6 +357,11 @@ class ActividadEspacioPWAListSerializer(serializers.ModelSerializer):
             "fecha_baja",
         )
         read_only_fields = fields
+
+    def get_horario_actividad(self, obj):
+        return _format_activity_schedule(obj.hora_inicio, obj.hora_fin) or (
+            obj.horario_actividad or ""
+        )
 
 
 class ActividadEspacioPWACreateUpdateSerializer(serializers.ModelSerializer):
@@ -334,6 +372,8 @@ class ActividadEspacioPWACreateUpdateSerializer(serializers.ModelSerializer):
             "comedor",
             "catalogo_actividad",
             "dia_actividad",
+            "hora_inicio",
+            "hora_fin",
             "horario_actividad",
             "activo",
             "fecha_alta",
@@ -348,6 +388,11 @@ class ActividadEspacioPWACreateUpdateSerializer(serializers.ModelSerializer):
             "fecha_actualizacion",
             "fecha_baja",
         )
+        extra_kwargs = {
+            "horario_actividad": {"required": False, "allow_blank": True},
+            "hora_inicio": {"required": False},
+            "hora_fin": {"required": False},
+        }
 
     def validate_catalogo_actividad(self, value):
         if value and not value.activo:
@@ -358,9 +403,80 @@ class ActividadEspacioPWACreateUpdateSerializer(serializers.ModelSerializer):
 
     def validate_horario_actividad(self, value):
         value = (value or "").strip()
-        if not value:
-            raise serializers.ValidationError("Este campo es obligatorio.")
         return value
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        hora_inicio = attrs.get(
+            "hora_inicio",
+            getattr(self.instance, "hora_inicio", None),
+        )
+        hora_fin = attrs.get(
+            "hora_fin",
+            getattr(self.instance, "hora_fin", None),
+        )
+        horario_actividad = attrs.get("horario_actividad")
+
+        if (hora_inicio is None or hora_fin is None) and horario_actividad:
+            parsed_start, parsed_end = _parse_legacy_schedule(horario_actividad)
+            hora_inicio = hora_inicio or parsed_start
+            hora_fin = hora_fin or parsed_end
+
+        if hora_inicio is None:
+            raise serializers.ValidationError(
+                {"hora_inicio": "Este campo es obligatorio."}
+            )
+
+        if hora_fin is None:
+            raise serializers.ValidationError(
+                {"hora_fin": "Este campo es obligatorio."}
+            )
+
+        if hora_fin <= hora_inicio:
+            raise serializers.ValidationError(
+                {
+                    "hora_fin": (
+                        "La hora de fin debe ser posterior a la hora de inicio."
+                    )
+                }
+            )
+
+        dia_actividad = attrs.get(
+            "dia_actividad",
+            getattr(self.instance, "dia_actividad", None),
+        )
+        catalogo_actividad = attrs.get(
+            "catalogo_actividad",
+            getattr(self.instance, "catalogo_actividad", None),
+        )
+        comedor_id = (
+            self.context.get("comedor_id")
+            or getattr(self.instance, "comedor_id", None)
+        )
+        if dia_actividad and comedor_id and catalogo_actividad:
+            overlapping = ActividadEspacioPWA.objects.filter(
+                comedor_id=comedor_id,
+                dia_actividad=dia_actividad,
+                catalogo_actividad=catalogo_actividad,
+                activo=True,
+                hora_inicio__lt=hora_fin,
+                hora_fin__gt=hora_inicio,
+            )
+            if self.instance:
+                overlapping = overlapping.exclude(pk=self.instance.pk)
+            if overlapping.exists():
+                raise serializers.ValidationError(
+                    {
+                        "hora_inicio": (
+                            "Ya existe la misma actividad con un horario que se pisa ese día."
+                        )
+                    }
+                )
+
+        attrs["hora_inicio"] = hora_inicio
+        attrs["hora_fin"] = hora_fin
+        attrs["horario_actividad"] = _format_activity_schedule(hora_inicio, hora_fin)
+        return attrs
 
 
 class InscriptoActividadPWAListSerializer(serializers.ModelSerializer):
@@ -431,8 +547,11 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
     fecha_nacimiento = serializers.SerializerMethodField()
     badges = serializers.SerializerMethodField()
     actividades = serializers.SerializerMethodField()
+    cantidad_actividades = serializers.SerializerMethodField()
     es_indocumentado = serializers.SerializerMethodField()
     identificador_interno = serializers.SerializerMethodField()
+    asistencia_mes_actual = serializers.SerializerMethodField()
+    historial_asistencias = serializers.SerializerMethodField()
 
     class Meta:
         model = Nomina
@@ -446,8 +565,11 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
             "estado",
             "badges",
             "actividades",
+            "cantidad_actividades",
             "es_indocumentado",
             "identificador_interno",
+            "asistencia_mes_actual",
+            "historial_asistencias",
         )
 
     def _get_ciudadano(self, obj):
@@ -496,6 +618,9 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
         return badges
 
     def get_actividades(self, obj):
+        include_details = self.context.get("include_details", False)
+        if not include_details:
+            return []
         items = []
         inscripciones_activas = getattr(
             obj, "inscripciones_actividad_pwa_activas", None
@@ -515,10 +640,31 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
                     "categoria": catalogo.categoria,
                     "actividad": catalogo.actividad,
                     "dia": getattr(actividad_espacio.dia_actividad, "nombre", ""),
-                    "horario": actividad_espacio.horario_actividad,
+                    "horario": _format_activity_schedule(
+                        actividad_espacio.hora_inicio,
+                        actividad_espacio.hora_fin,
+                    )
+                    or actividad_espacio.horario_actividad,
                 }
             )
         return items
+
+    def get_cantidad_actividades(self, obj):
+        include_details = self.context.get("include_details", False)
+        if include_details:
+            actividades = self.get_actividades(obj)
+            return len({item["actividad"] for item in actividades})
+
+        actividades_count = getattr(obj, "cantidad_actividades_pwa", None)
+        if actividades_count is not None:
+            return actividades_count
+
+        return (
+            obj.inscripciones_actividad_pwa.filter(activo=True)
+            .values("actividad_espacio__catalogo_actividad_id")
+            .distinct()
+            .count()
+        )
 
     def get_es_indocumentado(self, obj):
         profile = self._get_profile(obj)
@@ -527,6 +673,51 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
     def get_identificador_interno(self, obj):
         profile = self._get_profile(obj)
         return profile.identificador_interno if profile else None
+
+    def _serialize_registro_asistencia(self, registro):
+        if not registro:
+            return None
+        tomado_por = getattr(registro, "tomado_por", None)
+        return {
+            "id": registro.id,
+            "periodicidad": registro.periodicidad,
+            "periodo_referencia": registro.periodo_referencia,
+            "periodo_label": registro.periodo_referencia.strftime("%m/%Y"),
+            "fecha_toma_asistencia": registro.fecha_toma_asistencia,
+            "tomado_por": tomado_por.username if tomado_por else None,
+        }
+
+    def get_asistencia_mes_actual(self, obj):
+        registro = getattr(obj, "asistencia_mes_actual_pwa", None)
+        if isinstance(registro, list):
+            registro = registro[0] if registro else None
+        return self._serialize_registro_asistencia(registro)
+
+    def get_historial_asistencias(self, obj):
+        registros = getattr(obj, "historial_asistencias_pwa", None)
+        if registros is None:
+            return []
+        return [self._serialize_registro_asistencia(registro) for registro in registros]
+
+
+class RegistroAsistenciaNominaPWAListSerializer(serializers.ModelSerializer):
+    tomado_por = serializers.CharField(source="tomado_por.username", read_only=True)
+    periodo_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RegistroAsistenciaNominaPWA
+        fields = (
+            "id",
+            "periodicidad",
+            "periodo_referencia",
+            "periodo_label",
+            "fecha_toma_asistencia",
+            "tomado_por",
+        )
+        read_only_fields = fields
+
+    def get_periodo_label(self, obj):
+        return obj.periodo_referencia.strftime("%m/%Y")
 
 
 class NominaEspacioPWACreateUpdateSerializer(serializers.Serializer):
@@ -609,7 +800,7 @@ class MensajeAdjuntoPWASerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ComunicadoAdjunto
-        fields = ("id", "nombre_original", "url")
+        fields = ("id", "nombre_original", "fecha_subida", "url")
 
     def get_url(self, obj):
         if not obj.archivo:
@@ -623,6 +814,7 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
     adjuntos = MensajeAdjuntoPWASerializer(many=True, read_only=True)
     visto = serializers.SerializerMethodField()
     fecha_visto = serializers.SerializerMethodField()
+    seccion = serializers.SerializerMethodField()
 
     class Meta:
         model = Comunicado
@@ -632,6 +824,8 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
             "cuerpo",
             "destacado",
             "subtipo",
+            "seccion",
+            "fecha_creacion",
             "fecha_publicacion",
             "fecha_vencimiento",
             "visto",
@@ -642,17 +836,22 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
     def _get_lectura(self, obj):
         lecturas = getattr(obj, "lecturas_pwa_usuario_espacio", None)
         if lecturas is not None:
-            return lecturas[0] if lecturas else None
+            comedor_id = self.context.get("comedor_id")
+            if obj.subtipo == SubtipoComunicado.INSTITUCIONAL:
+                return lecturas[0] if lecturas else None
+            for lectura in lecturas:
+                if getattr(lectura, "comedor_id", None) == comedor_id:
+                    return lectura
+            return None
 
         comedor_id = self.context.get("comedor_id")
         user = self.context.get("user")
         if not comedor_id or not user:
             return None
-        return (
-            obj.lecturas_pwa.filter(comedor_id=comedor_id, user=user)
-            .order_by("-fecha_visto", "-id")
-            .first()
-        )
+        lecturas = obj.lecturas_pwa.filter(user=user)
+        if obj.subtipo == SubtipoComunicado.INSTITUCIONAL:
+            return lecturas.order_by("-fecha_visto", "-id").first()
+        return lecturas.filter(comedor_id=comedor_id).order_by("-fecha_visto", "-id").first()
 
     def get_visto(self, obj):
         lectura = self._get_lectura(obj)
@@ -661,3 +860,8 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
     def get_fecha_visto(self, obj):
         lectura = self._get_lectura(obj)
         return lectura.fecha_visto if lectura and lectura.visto else None
+
+    def get_seccion(self, obj):
+        if obj.subtipo == SubtipoComunicado.INSTITUCIONAL:
+            return "general"
+        return "espacio"

@@ -13,6 +13,7 @@ from pwa.models import (
     ActividadEspacioPWA,
     InscriptoActividadEspacioPWA,
     NominaEspacioPWA,
+    RegistroAsistenciaNominaPWA,
 )
 from pwa.services.auditoria_operacion_service import registrar_evento_operacion
 
@@ -59,11 +60,29 @@ def _snapshot_inscripto(inscripto: InscriptoActividadEspacioPWA) -> dict:
     }
 
 
+def _snapshot_registro_asistencia(
+    registro: RegistroAsistenciaNominaPWA,
+) -> dict:
+    return {
+        "id": registro.id,
+        "nomina_id": registro.nomina_id,
+        "periodicidad": registro.periodicidad,
+        "periodo_referencia": registro.periodo_referencia,
+        "fecha_toma_asistencia": registro.fecha_toma_asistencia,
+        "tomado_por_id": registro.tomado_por_id,
+    }
+
+
 def _active_nomina_queryset(*, comedor_id: int):
     return Nomina.objects.filter(
         admision__comedor_id=comedor_id,
         deleted_at__isnull=True,
     ).exclude(estado=Nomina.ESTADO_BAJA)
+
+
+def get_periodo_mensual_actual() -> date:
+    today = timezone.localdate()
+    return today.replace(day=1)
 
 
 def _resolve_admision_para_comedor(*, comedor_id: int):
@@ -698,3 +717,32 @@ def is_menor(fecha_nacimiento: date | None) -> bool:
         - ((today.month, today.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
     )
     return age < 18
+
+
+@transaction.atomic
+def registrar_asistencia_nomina_mes_actual(*, nomina: Nomina, actor):
+    comedor_id = _nomina_comedor_id(nomina)
+    periodo_referencia = get_periodo_mensual_actual()
+    registro, created = RegistroAsistenciaNominaPWA.objects.get_or_create(
+        nomina=nomina,
+        periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
+        periodo_referencia=periodo_referencia,
+        defaults={
+            "tomado_por": actor if getattr(actor, "is_authenticated", False) else None,
+            "metadata": {"origen": "mobile"},
+        },
+    )
+    if created:
+        registrar_evento_operacion(
+            actor=actor,
+            comedor_id=comedor_id,
+            entidad="nomina_asistencia",
+            entidad_id=registro.id,
+            accion="create",
+            snapshot_despues=_snapshot_registro_asistencia(registro),
+            metadata={
+                "periodicidad": registro.periodicidad,
+                "periodo_referencia": registro.periodo_referencia,
+            },
+        )
+    return registro, created

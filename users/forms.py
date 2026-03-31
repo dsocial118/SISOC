@@ -20,6 +20,8 @@ from users.services_pwa import (
     sync_representante_accesses,
 )
 
+MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
+
 
 class BackofficeAuthenticationForm(AuthenticationForm):
     """Bloquea login web para usuarios de uso exclusivo PWA."""
@@ -70,11 +72,19 @@ class ComedorPWASelectMultiple(forms.SelectMultiple):
 
 class PWAAccessMixin:
     @staticmethod
+    def _get_mobile_rendicion_permission():
+        return Permission.objects.get(
+            content_type__app_label="rendicioncuentasmensual",
+            codename="manage_mobile_rendicion",
+        )
+
+    @staticmethod
     def _set_initial_password_flags(
         profile,
         *,
         must_change_password: bool,
         temporary_password_plaintext: str | None = None,
+        password_reset_requested_at=None,
     ):
         profile.must_change_password = must_change_password
         profile.password_changed_at = None if must_change_password else profile.password_changed_at
@@ -83,12 +93,18 @@ class PWAAccessMixin:
             if must_change_password
             else None
         )
+        profile.password_reset_requested_at = password_reset_requested_at
         profile.temporary_password_plaintext = temporary_password_plaintext
 
     def _setup_pwa_fields(self):
         self.fields["es_representante_pwa"] = forms.BooleanField(
             required=False,
             label="Habilitar acceso a SISOC - Mobile",
+        )
+        self.fields["puede_gestionar_rendiciones_mobile"] = forms.BooleanField(
+            required=False,
+            label="Puede gestionar rendiciones mobile",
+            help_text="Habilita el módulo Rendición de Cuentas en SISOC - Mobile.",
         )
         self.fields["tipo_asociacion_pwa"] = forms.ChoiceField(
             required=False,
@@ -145,11 +161,21 @@ class PWAAccessMixin:
             }
         )
         self.fields["es_representante_pwa"].initial = bool(comedor_ids)
+        self.fields["puede_gestionar_rendiciones_mobile"].initial = (
+            self.instance.has_perm(MOBILE_RENDICION_PERMISSION_CODE)
+        )
         self.fields["tipo_asociacion_pwa"].initial = (
             tipos_asociacion[0] if len(tipos_asociacion) == 1 else ""
         )
         self.fields["organizaciones_pwa"].initial = organizacion_ids
         self.fields["comedores_pwa"].initial = comedor_ids
+
+    def _sync_mobile_rendicion_permission(self, user):
+        permission = self._get_mobile_rendicion_permission()
+        if self.cleaned_data.get("puede_gestionar_rendiciones_mobile"):
+            user.user_permissions.add(permission)
+            return
+        user.user_permissions.remove(permission)
 
     def _clean_pwa_fields(self, cleaned):
         es_representante_pwa = cleaned.get("es_representante_pwa", False)
@@ -361,6 +387,7 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
             else:
                 user.groups.set(self.cleaned_data.get("groups", []))
                 user.user_permissions.set(self.cleaned_data.get("user_permissions", []))
+            self._sync_mobile_rendicion_permission(user)
 
             profile, _ = Profile.objects.get_or_create(user=user)
             profile.es_usuario_provincial = self.cleaned_data.get(
@@ -513,6 +540,7 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
             else:
                 user.groups.set(self.cleaned_data.get("groups", []))
                 user.user_permissions.set(self.cleaned_data.get("user_permissions", []))
+            self._sync_mobile_rendicion_permission(user)
 
             profile, _ = Profile.objects.get_or_create(user=user)
             profile.es_usuario_provincial = self.cleaned_data.get(
@@ -530,8 +558,10 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
                     profile,
                     must_change_password=True,
                     temporary_password_plaintext=None,
+                    password_reset_requested_at=None,
                 )
             elif not self.cleaned_data.get("es_representante_pwa", False):
+                profile.password_reset_requested_at = None
                 profile.temporary_password_plaintext = None
             profile.save()
             user.refresh_from_db()

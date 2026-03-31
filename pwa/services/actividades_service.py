@@ -12,6 +12,8 @@ def _snapshot_actividad(actividad: ActividadEspacioPWA) -> dict:
         "comedor_id": actividad.comedor_id,
         "catalogo_actividad_id": actividad.catalogo_actividad_id,
         "dia_actividad_id": actividad.dia_actividad_id,
+        "hora_inicio": actividad.hora_inicio.isoformat() if actividad.hora_inicio else None,
+        "hora_fin": actividad.hora_fin.isoformat() if actividad.hora_fin else None,
         "horario_actividad": actividad.horario_actividad,
         "activo": actividad.activo,
         "fecha_baja": actividad.fecha_baja,
@@ -36,6 +38,8 @@ def create_actividad_espacio(
         comedor_id=comedor_id,
         catalogo_actividad=data["catalogo_actividad"],
         dia_actividad=data["dia_actividad"],
+        hora_inicio=data["hora_inicio"],
+        hora_fin=data["hora_fin"],
         horario_actividad=data["horario_actividad"],
         creado_por=actor,
         actualizado_por=actor,
@@ -55,7 +59,13 @@ def create_actividad_espacio(
 def update_actividad_espacio(*, actividad: ActividadEspacioPWA, actor, data: dict):
     snapshot_antes = _snapshot_actividad(actividad)
     fields_updated = []
-    for field in ("catalogo_actividad", "dia_actividad", "horario_actividad"):
+    for field in (
+        "catalogo_actividad",
+        "dia_actividad",
+        "hora_inicio",
+        "hora_fin",
+        "horario_actividad",
+    ):
         if field in data:
             setattr(actividad, field, data[field])
             fields_updated.append(field)

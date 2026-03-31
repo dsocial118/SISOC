@@ -81,24 +81,27 @@ def test_create_update_delete_actividad_ok(comedor, dia):
         {
             "catalogo_actividad": catalogo.id,
             "dia_actividad": dia.id,
-            "horario_actividad": "18:00 a 19:00",
+            "hora_inicio": "18:00",
+            "hora_fin": "19:00",
         },
         format="json",
     )
 
     assert create_response.status_code == 201
     actividad_id = create_response.data["id"]
+    assert create_response.data["horario_actividad"] == "18:00 a 19:00"
 
     patch_response = client.patch(
         f"/api/pwa/espacios/{comedor.id}/actividades/{actividad_id}/",
         {
-            "horario_actividad": "19:00 a 20:00",
+            "hora_inicio": "19:00",
+            "hora_fin": "20:30",
         },
         format="json",
     )
 
     assert patch_response.status_code == 200
-    assert patch_response.data["horario_actividad"] == "19:00 a 20:00"
+    assert patch_response.data["horario_actividad"] == "19:00 a 20:30"
 
     delete_response = client.delete(
         f"/api/pwa/espacios/{comedor.id}/actividades/{actividad_id}/"
@@ -128,6 +131,8 @@ def test_delete_actividad_impacta_inscriptos(comedor, dia, admision):
         catalogo_actividad=catalogo,
         dia_actividad=dia,
         horario_actividad="16:00 a 17:00",
+        hora_inicio="16:00",
+        hora_fin="17:00",
         creado_por=representante,
         actualizado_por=representante,
     )
@@ -178,6 +183,8 @@ def test_list_actividades_e_inscriptos_ok(comedor, dia, admision):
         catalogo_actividad=catalogo,
         dia_actividad=dia,
         horario_actividad="10:00 a 11:00",
+        hora_inicio="10:00",
+        hora_fin="11:00",
         creado_por=representante,
         actualizado_por=representante,
     )
@@ -205,6 +212,8 @@ def test_list_actividades_e_inscriptos_ok(comedor, dia, admision):
     list_response = client.get(f"/api/pwa/espacios/{comedor.id}/actividades/")
     assert list_response.status_code == 200
     assert list_response.data[0]["cantidad_inscriptos"] == 1
+    assert list_response.data[0]["hora_inicio"] == "10:00:00"
+    assert list_response.data[0]["hora_fin"] == "11:00:00"
 
     inscriptos_response = client.get(
         f"/api/pwa/espacios/{comedor.id}/actividades/{actividad.id}/inscriptos/"
@@ -215,6 +224,7 @@ def test_list_actividades_e_inscriptos_ok(comedor, dia, admision):
     assert inscriptos_response.data[0]["apellido"] == "Lopez"
     assert inscriptos_response.data[0]["dni"] == "33444555"
     assert inscriptos_response.data[0]["genero"] == "Masculino"
+    assert str(inscriptos_response.data[0]["fecha_nacimiento"]) == "2011-02-02"
 
 
 @pytest.mark.django_db
@@ -230,3 +240,68 @@ def test_actividades_requiere_representante_del_espacio(comedor):
     response = client.get(f"/api/pwa/espacios/{comedor.id}/actividades/")
 
     assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_create_actividad_rejects_overlapping_schedule(comedor, dia):
+    representante = _create_representante(comedor=comedor, username="rep_act_overlap")
+    client = _auth_client_for_user(representante)
+    catalogo = CatalogoActividadPWA.objects.filter(activo=True).first()
+    ActividadEspacioPWA.objects.create(
+        comedor=comedor,
+        catalogo_actividad=catalogo,
+        dia_actividad=dia,
+        horario_actividad="18:00 a 19:00",
+        hora_inicio="18:00",
+        hora_fin="19:00",
+        creado_por=representante,
+        actualizado_por=representante,
+    )
+
+    response = client.post(
+        f"/api/pwa/espacios/{comedor.id}/actividades/",
+        {
+            "catalogo_actividad": catalogo.id,
+            "dia_actividad": dia.id,
+            "hora_inicio": "18:30",
+            "hora_fin": "19:30",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "hora_inicio" in response.data
+
+
+@pytest.mark.django_db
+def test_create_actividad_allows_same_schedule_for_different_activity(comedor, dia):
+    representante = _create_representante(
+        comedor=comedor, username="rep_act_overlap_allowed"
+    )
+    client = _auth_client_for_user(representante)
+    catalogos = list(CatalogoActividadPWA.objects.filter(activo=True)[:2])
+    assert len(catalogos) == 2
+
+    ActividadEspacioPWA.objects.create(
+        comedor=comedor,
+        catalogo_actividad=catalogos[0],
+        dia_actividad=dia,
+        horario_actividad="18:00 a 19:00",
+        hora_inicio="18:00",
+        hora_fin="19:00",
+        creado_por=representante,
+        actualizado_por=representante,
+    )
+
+    response = client.post(
+        f"/api/pwa/espacios/{comedor.id}/actividades/",
+        {
+            "catalogo_actividad": catalogos[1].id,
+            "dia_actividad": dia.id,
+            "hora_inicio": "18:30",
+            "hora_fin": "19:30",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201

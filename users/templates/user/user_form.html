@@ -79,7 +79,29 @@
                         </h5>
                     </div>
                     <div class="card-body">
+                        {% if password_reset_requested_at %}
+                            <div class="alert alert-info" role="alert">
+                                <strong>El usuario pidió el blanqueamiento de contraseña.</strong>
+                                <div class="small mt-2">
+                                    Solicitud registrada en {{ password_reset_requested_at }}.
+                                </div>
+                            </div>
+                            {% if object.pk %}
+                                <div class="mb-3">
+                                    <button type="submit"
+                                            formaction="{% url 'usuario_generar_password_temporal' object.pk %}"
+                                            formmethod="post"
+                                            class="btn btn-warning"
+                                            onclick="return confirm('Se generará una nueva contraseña temporal para este usuario.');">
+                                        <i class="fas fa-key mr-2"></i>Resetear contraseña
+                                    </button>
+                                </div>
+                            {% endif %}
+                        {% endif %}
                         <div id="mobile-toggle-wrapper">{{ form.es_representante_pwa | as_crispy_field }}</div>
+                        <div id="mobile-rendicion-permission-wrapper" style="display: none">
+                            {{ form.puede_gestionar_rendiciones_mobile|as_crispy_field }}
+                        </div>
                         <div id="mobile-association-type-wrapper" style="display: none">
                             {{ form.tipo_asociacion_pwa | as_crispy_field }}
                         </div>
@@ -265,6 +287,7 @@
     const comedoresSelect = document.getElementById('id_comedores_pwa');
     const mobileTabs = document.getElementById('mobile-tabs');
     const permisosCard = document.getElementById('backoffice-permisos-card');
+    const mobileRendicionPermissionWrapper = document.getElementById('mobile-rendicion-permission-wrapper');
     const configCard = document.getElementById('backoffice-config-card');
     const passwordFieldWrapper = document.getElementById('password-field-wrapper');
     const mobilePasswordHelp = document.getElementById('mobile-password-help');
@@ -568,6 +591,9 @@
       const isPwaRep = repCheckbox.checked;
       if (permisosCard) {
         permisosCard.style.display = isPwaRep ? 'none' : '';
+      }
+      if (mobileRendicionPermissionWrapper) {
+        mobileRendicionPermissionWrapper.style.display = isPwaRep ? '' : 'none';
       }
       if (configCard) {
         configCard.style.display = isPwaRep ? 'none' : '';
