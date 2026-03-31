@@ -170,20 +170,6 @@ class Subsector(SoftDeleteModelMixin, models.Model):
 
 
 class TituloReferencia(SoftDeleteModelMixin, models.Model):
-    sector = models.ForeignKey(
-        Sector,
-        on_delete=models.PROTECT,
-        related_name="titulos",
-        verbose_name="Sector",
-    )
-    subsector = models.ForeignKey(
-        Subsector,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="titulos",
-        verbose_name="Subsector",
-    )
     codigo_referencia = models.CharField(
         max_length=50, blank=True, null=True, verbose_name="Código de Referencia"
     )
@@ -193,6 +179,15 @@ class TituloReferencia(SoftDeleteModelMixin, models.Model):
 
     def __str__(self):
         return self.nombre
+
+    plan_estudio = models.ForeignKey(
+        "PlanVersionCurricular",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="titulos",
+        verbose_name="Plan de Estudio",
+    )
 
     class Meta:
         verbose_name = "Título de Referencia"
@@ -221,11 +216,19 @@ class ModalidadCursada(models.Model):
 
 
 class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
-    titulo_referencia = models.ForeignKey(
-        TituloReferencia,
+    sector = models.ForeignKey(
+        Sector,
         on_delete=models.PROTECT,
-        related_name="planes",
-        verbose_name="Título de Referencia",
+        related_name="planes_estudio",
+        verbose_name="Sector",
+    )
+    subsector = models.ForeignKey(
+        Subsector,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="planes_estudio",
+        verbose_name="Subsector",
     )
     modalidad_cursada = models.ForeignKey(
         ModalidadCursada,
@@ -236,9 +239,6 @@ class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
     normativa = models.CharField(
         max_length=200, blank=True, null=True, verbose_name="Normativa"
     )
-    version = models.CharField(
-        max_length=50, blank=True, null=True, verbose_name="Versión"
-    )
     horas_reloj = models.PositiveIntegerField(
         null=True, blank=True, verbose_name="Horas Reloj"
     )
@@ -248,19 +248,40 @@ class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
     nivel_certifica = models.CharField(
         max_length=100, blank=True, null=True, verbose_name="Nivel que Certifica"
     )
-    frecuencia = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name="Frecuencia"
-    )
     activo = models.BooleanField(default=True, verbose_name="Activo")
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        errors = {}
+
+        if self.subsector_id and self.sector_id:
+            if self.subsector.sector_id != self.sector_id:
+                errors["subsector"] = (
+                    "El subsector seleccionado no pertenece al sector indicado."
+                )
+
+        if errors:
+            raise ValidationError(errors)
+
     def __str__(self):
-        return f"{self.titulo_referencia.nombre} - {self.modalidad_cursada.nombre}"
+        return f"{self.sector.nombre} - {self.modalidad_cursada.nombre}"
 
     class Meta:
-        verbose_name = "Plan / Versión Curricular"
-        verbose_name_plural = "Planes / Versiones Curriculares"
-        ordering = ["titulo_referencia", "modalidad_cursada"]
-        unique_together = ("titulo_referencia", "modalidad_cursada", "version")
+        verbose_name = "Plan de Estudio"
+        verbose_name_plural = "Planes de Estudio"
+        ordering = ["sector", "modalidad_cursada"]
+
+    @property
+    def titulo_referencia(self):
+        """Backward compat: devuelve el primer Título asociado a este plan."""
+        return self.titulos.first()
+
+    @property
+    def titulo_referencia_id(self):
+        """Backward compat."""
+        t = self.titulos.first()
+        return t.id if t else None
 
 
 class InscripcionOferta(SoftDeleteModelMixin, models.Model):
@@ -866,13 +887,174 @@ class InstitucionUbicacion(models.Model):
 
 
 # ============================================================================
+# CURSOS (NUEVA CAPA OPERATIVA POR CENTRO)
+# ============================================================================
+
+
+class Curso(SoftDeleteModelMixin, models.Model):
+    """Curso operativo de un centro con ubicación y modalidad."""
+
+    ESTADO_CURSO_CHOICES = [
+        ("planificado", "Planificado"),
+        ("activo", "Activo"),
+        ("finalizado", "Finalizado"),
+        ("cancelado", "Cancelado"),
+    ]
+
+    centro = models.ForeignKey(
+        Centro,
+        on_delete=models.CASCADE,
+        related_name="cursos",
+        verbose_name="Centro",
+    )
+    ubicacion = models.ForeignKey(
+        InstitucionUbicacion,
+        on_delete=models.PROTECT,
+        related_name="cursos",
+        verbose_name="Ubicación",
+    )
+    nombre = models.CharField(max_length=255, verbose_name="Nombre")
+    modalidad = models.ForeignKey(
+        ModalidadCursada,
+        on_delete=models.PROTECT,
+        related_name="cursos",
+        verbose_name="Modalidad",
+    )
+    fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
+    fecha_fin = models.DateField(verbose_name="Fecha de Fin")
+    cupo_total = models.PositiveIntegerField(verbose_name="Cupo Total")
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CURSO_CHOICES,
+        default="planificado",
+        verbose_name="Estado",
+    )
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.fecha_inicio and self.fecha_fin and self.fecha_inicio > self.fecha_fin:
+            raise ValidationError(
+                {"fecha_fin": "La fecha de fin debe ser mayor o igual a la fecha de inicio."}
+            )
+
+        if self.cupo_total is not None and self.cupo_total == 0:
+            raise ValidationError({"cupo_total": "El cupo total debe ser mayor a 0."})
+
+        if self.ubicacion_id and self.centro_id and self.ubicacion.centro_id != self.centro_id:
+            raise ValidationError(
+                {"ubicacion": "La ubicación seleccionada no pertenece al centro del curso."}
+            )
+
+    def __str__(self):
+        return f"{self.nombre} - {self.centro}"
+
+    class Meta:
+        verbose_name = "Curso"
+        verbose_name_plural = "Cursos"
+        ordering = ["-fecha_inicio", "nombre"]
+        indexes = [
+            models.Index(fields=["centro", "estado"], name="vat_curso_centro_estado_idx"),
+            models.Index(fields=["estado"], name="vat_curso_estado_idx"),
+        ]
+
+
+class ComisionCurso(SoftDeleteModelMixin, models.Model):
+    """Comisión asociada a un curso."""
+
+    ESTADO_COMISION_CURSO_CHOICES = [
+        ("planificada", "Planificada"),
+        ("activa", "Activa"),
+        ("cerrada", "Cerrada"),
+        ("suspendida", "Suspendida"),
+    ]
+
+    curso = models.ForeignKey(
+        Curso,
+        on_delete=models.CASCADE,
+        related_name="comisiones",
+        verbose_name="Curso",
+    )
+    codigo_comision = models.CharField(max_length=50, verbose_name="Código de Comisión")
+    nombre = models.CharField(max_length=255, verbose_name="Nombre")
+    cupo_total = models.PositiveIntegerField(verbose_name="Cupo Total")
+    fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
+    fecha_fin = models.DateField(verbose_name="Fecha de Fin")
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_COMISION_CURSO_CHOICES,
+        default="planificada",
+        verbose_name="Estado",
+    )
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.fecha_inicio and self.fecha_fin and self.fecha_inicio > self.fecha_fin:
+            raise ValidationError(
+                {"fecha_fin": "La fecha de fin debe ser mayor o igual a la fecha de inicio."}
+            )
+
+        if self.cupo_total is not None and self.cupo_total == 0:
+            raise ValidationError({"cupo_total": "El cupo total debe ser mayor a 0."})
+
+        if self.curso_id:
+            if self.cupo_total and self.curso.cupo_total and self.cupo_total > self.curso.cupo_total:
+                raise ValidationError(
+                    {
+                        "cupo_total": (
+                            "El cupo total de la comisión no puede superar el cupo total del curso."
+                        )
+                    }
+                )
+            if self.fecha_inicio and self.curso.fecha_inicio and self.fecha_inicio < self.curso.fecha_inicio:
+                raise ValidationError(
+                    {
+                        "fecha_inicio": (
+                            "La fecha de inicio de la comisión debe estar dentro del rango del curso."
+                        )
+                    }
+                )
+            if self.fecha_fin and self.curso.fecha_fin and self.fecha_fin > self.curso.fecha_fin:
+                raise ValidationError(
+                    {
+                        "fecha_fin": (
+                            "La fecha de fin de la comisión debe estar dentro del rango del curso."
+                        )
+                    }
+                )
+
+    def __str__(self):
+        return f"{self.codigo_comision} - {self.nombre}"
+
+    class Meta:
+        verbose_name = "Comisión de Curso"
+        verbose_name_plural = "Comisiones de Curso"
+        ordering = ["codigo_comision"]
+        unique_together = ("curso", "codigo_comision")
+        indexes = [
+            models.Index(fields=["curso", "estado"], name="vat_comcurso_curso_estado_idx"),
+        ]
+
+
+# ============================================================================
 # FASE 4 (COMPLETA): OFERTA INSTITUCIONAL - COMISIONES
 # ============================================================================
 
 
 class OfertaInstitucional(SoftDeleteModelMixin, models.Model):
     """
-    Oferta educativa de una institución basada en un plan curricular.
+    Oferta educativa de una institución basada en un plan de estudio.
     Representa la intención de ofertar una carrera/programa en un período.
     """
 
@@ -894,7 +1076,7 @@ class OfertaInstitucional(SoftDeleteModelMixin, models.Model):
         PlanVersionCurricular,
         on_delete=models.PROTECT,
         related_name="ofertas_institucionales",
-        verbose_name="Plan Curricular",
+        verbose_name="Plan de Estudio",
     )
     programa = models.ForeignKey(
         Programa,
@@ -932,6 +1114,13 @@ class OfertaInstitucional(SoftDeleteModelMixin, models.Model):
         default=False,
         verbose_name="Usa Voucher",
         help_text="Si está activo, al inscribirse un ciudadano se valida y descuenta un crédito de su voucher.",
+    )
+    voucher_parametrias = models.ManyToManyField(
+        "VoucherParametria",
+        related_name="ofertas_institucionales",
+        blank=True,
+        verbose_name="Vouchers habilitados",
+        help_text="Parametrías de voucher permitidas para esta oferta.",
     )
     fecha_publicacion = models.DateField(
         blank=True, null=True, verbose_name="Fecha de Publicación"

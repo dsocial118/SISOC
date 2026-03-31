@@ -120,7 +120,7 @@ class VatWebTituloViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = TituloReferencia.objects.select_related(
-            "sector", "subsector"
+            "plan_estudio", "plan_estudio__sector", "plan_estudio__subsector"
         ).order_by("nombre")
 
         activo = self.request.query_params.get("activo")
@@ -138,9 +138,9 @@ class VatWebTituloViewSet(viewsets.ReadOnlyModelViewSet):
         sector_id = self.request.query_params.get("sector_id")
         subsector_id = self.request.query_params.get("subsector_id")
         if sector_id:
-            queryset = queryset.filter(sector_id=sector_id)
+            queryset = queryset.filter(plan_estudio__sector_id=sector_id)
         if subsector_id:
-            queryset = queryset.filter(subsector_id=subsector_id)
+            queryset = queryset.filter(plan_estudio__subsector_id=subsector_id)
 
         return queryset
 
@@ -201,7 +201,7 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = (
             Comision.objects.select_related(
                 "oferta__centro",
-                "oferta__plan_curricular__titulo_referencia",
+                "oferta__plan_curricular",
                 "oferta__programa",
             )
             .prefetch_related("horarios__dia_semana")
@@ -217,7 +217,7 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
                 Q(nombre__icontains=q)
                 | Q(codigo_comision__icontains=q)
                 | Q(oferta__centro__nombre__icontains=q)
-                | Q(oferta__plan_curricular__titulo_referencia__nombre__icontains=q)
+                | Q(oferta__plan_curricular__titulos__nombre__icontains=q)
             )
 
         centro_id = self.request.query_params.get("centro_id")
@@ -231,7 +231,7 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(oferta__centro_id=centro_id)
         if titulo_id:
             queryset = queryset.filter(
-                oferta__plan_curricular__titulo_referencia_id=titulo_id
+                oferta__plan_curricular__titulos__id=titulo_id
             )
         if programa_id:
             queryset = queryset.filter(oferta__programa_id=programa_id)
@@ -262,7 +262,7 @@ class VatWebInscripcionViewSet(
                 "ciudadano",
                 "programa",
                 "comision__oferta__centro",
-                "comision__oferta__plan_curricular__titulo_referencia",
+                "comision__oferta__plan_curricular",
             )
             .prefetch_related("comision__horarios__dia_semana")
             .annotate(total_inscriptos=Count("comision__inscripciones", distinct=True))

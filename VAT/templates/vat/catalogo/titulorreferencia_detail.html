@@ -30,13 +30,9 @@
                 </div>
                 <div class="card-body">
                     <dl class="row">
-                        <dt class="col-sm-3">Sector:</dt>
+                        <dt class="col-sm-3">Plan de Estudio:</dt>
                         <dd class="col-sm-9">
-                            {{ titulo.sector.nombre }}
-                        </dd>
-                        <dt class="col-sm-3">Subsector:</dt>
-                        <dd class="col-sm-9">
-                            {{ titulo.subsector.nombre|default:"-" }}
+                            {{ titulo.plan_estudio|default:"-" }}
                         </dd>
                         <dt class="col-sm-3">Código:</dt>
                         <dd class="col-sm-9">
@@ -52,10 +48,16 @@
                         </dd>
                     </dl>
                     <hr />
-                    <h5>Planes Curriculares ({{ planes.count }})</h5>
+                    <h5>Planes de Estudio ({{ planes.count }})</h5>
                     {% if planes %}
                         <ul>
-                            {% for plan in planes %}<li>{{ plan.modalidad_cursada.nombre }} - v{{ plan.version|default:"—" }}</li>{% endfor %}
+                            {% for plan in planes %}
+                                <li>
+                                    {{ plan.sector.nombre }}
+                                    {% if plan.subsector %}/ {{ plan.subsector.nombre }}{% endif %}
+                                    - {{ plan.modalidad_cursada.nombre }}
+                                </li>
+                            {% endfor %}
                         </ul>
                     {% else %}
                         <p class="text-muted">Sin planes</p>

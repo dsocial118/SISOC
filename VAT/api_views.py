@@ -180,9 +180,9 @@ class SubsectorViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 @extend_schema(tags=["VAT - Catálogos Académicos"])
 class TituloReferenciaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = TituloReferencia.objects.select_related("sector", "subsector").order_by(
-        "nombre"
-    )
+    queryset = TituloReferencia.objects.select_related(
+        "plan_estudio", "plan_estudio__sector", "plan_estudio__subsector"
+    ).order_by("nombre")
     serializer_class = TituloReferenciaSerializer
     permission_classes = [HasAPIKey]
 
@@ -192,9 +192,9 @@ class TituloReferenciaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         subsector_id = self.request.query_params.get("subsector_id")
         activo = self.request.query_params.get("activo")
         if sector_id:
-            queryset = queryset.filter(sector_id=sector_id)
+            queryset = queryset.filter(plan_estudio__sector_id=sector_id)
         if subsector_id:
-            queryset = queryset.filter(subsector_id=subsector_id)
+            queryset = queryset.filter(plan_estudio__subsector_id=subsector_id)
         if activo is not None:
             queryset = queryset.filter(activo=activo.lower() == "true")
         return queryset
@@ -217,18 +217,24 @@ class ModalidadCursadaViewSet(viewsets.ModelViewSet):
 @extend_schema(tags=["VAT - Catálogos Académicos"])
 class PlanVersionCurricularViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     queryset = PlanVersionCurricular.objects.select_related(
-        "titulo_referencia", "modalidad_cursada"
-    ).order_by("titulo_referencia", "modalidad_cursada")
+        "sector", "subsector", "modalidad_cursada"
+    ).order_by("sector", "modalidad_cursada")
     serializer_class = PlanVersionCurricularSerializer
     permission_classes = [HasAPIKey]
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        sector_id = self.request.query_params.get("sector_id")
+        subsector_id = self.request.query_params.get("subsector_id")
         titulo_referencia_id = self.request.query_params.get("titulo_referencia_id")
         modalidad_cursada_id = self.request.query_params.get("modalidad_cursada_id")
         activo = self.request.query_params.get("activo")
+        if sector_id:
+            queryset = queryset.filter(sector_id=sector_id)
+        if subsector_id:
+            queryset = queryset.filter(subsector_id=subsector_id)
         if titulo_referencia_id:
-            queryset = queryset.filter(titulo_referencia_id=titulo_referencia_id)
+            queryset = queryset.filter(titulos__id=titulo_referencia_id)
         if modalidad_cursada_id:
             queryset = queryset.filter(modalidad_cursada_id=modalidad_cursada_id)
         if activo is not None:

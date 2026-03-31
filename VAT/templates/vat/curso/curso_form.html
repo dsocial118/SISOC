@@ -1,0 +1,54 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.id %}
+        Editar Curso
+    {% else %}
+        Nuevo Curso
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid py-4">
+        <div class="d-flex align-items-center gap-2 mb-4">
+            <a href="{{ cancel_url }}"
+               class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+            <h1 class="h3 mb-0" style="color: #1f3a93;">
+                {% if form.instance.id %}
+                    <i class="bi bi-pencil-square me-2"></i>Editar Curso
+                {% else %}
+                    <i class="bi bi-plus-circle me-2"></i>Nuevo Curso
+                {% endif %}
+            </h1>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        {% for field in form %}
+                            <div class="col-md-6">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-600">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                {{ field }}
+                                {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{{ cancel_url }}"
+                           class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if form.instance.id %}Actualizar{% else %}Crear{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Eliminar Curso{% endblock %}
+
+{% block content %}
+    <div class="container-fluid py-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3">Eliminar curso</h1>
+                <p>¿Seguro que querés eliminar el curso <strong>{{ curso.nombre }}</strong>?</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{% url 'vat_centro_detail' curso.centro_id %}#cursos"
+                           class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

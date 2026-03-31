@@ -542,6 +542,11 @@
                 <span class="ci-stat-val">{{ count_identificadores }}</span>
                 <span class="ci-stat-lbl">Identificadores</span>
             </div>
+            <div class="ci-stat-sep"></div>
+            <div class="ci-stat">
+                <span class="ci-stat-val">{{ count_cursos }}</span>
+                <span class="ci-stat-lbl">Cursos</span>
+            </div>
         </div>
     </div>
 
@@ -582,7 +587,17 @@
                             data-bs-target="#catalogo"
                             type="button"
                             role="tab">
-                        <i class="fas fa-graduation-cap me-1"></i>Catalogo y Ofertas
+                        <i class="fas fa-graduation-cap me-1"></i>Carrera
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link"
+                            id="cursos-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#cursos"
+                            type="button"
+                            role="tab">
+                        <i class="fas fa-chalkboard-teacher me-1"></i>Cursos
                     </button>
                 </li>
             </ul>
@@ -1123,6 +1138,96 @@
         {# ================================================================ #}
         <div class="tab-pane fade" id="catalogo" role="tabpanel">
 
+            <!-- Planes de Estudio -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 text-primary">
+                            <i class="fas fa-clipboard-list me-2"></i>
+                            Planes de Estudio
+                        </h6>
+                        <small class="text-muted">Planes de estudio asociados a los títulos del centro.</small>
+                    </div>
+                    {% if perms.VAT.add_planversioncurricular %}
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalPlan">
+                            <i class="fas fa-plus me-1"></i>Nuevo Plan de Estudio
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if planes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Sector</th>
+                                        <th>Subsector</th>
+                                        <th>Títulos de Referencia</th>
+                                        <th>Modalidad</th>
+                                        <th>Horas Reloj</th>
+                                        <th>Normativa</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in planes %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ p.sector.nombre }}</span>
+                                            </td>
+                                            <td>{{ p.subsector.nombre|default:"\u2014" }}</td>
+                                            <td>
+                                                {% with titulos_plan=p.titulos.all %}
+                                                    {% if titulos_plan %}
+                                                        {% for titulo in titulos_plan %}
+                                                            <span class="badge bg-info text-dark me-1 mb-1">{{ titulo.nombre }}</span>
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <span class="text-muted">\u2014</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ p.modalidad_cursada.nombre }}</span>
+                                            </td>
+                                            <td>{{ p.horas_reloj|default:"\u2014" }}</td>
+                                            <td>{{ p.normativa|default:"\u2014" }}</td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_planversioncurricular %}
+                                                        <button class="btn btn-outline-warning"
+                                                                onclick="editPlan({{ p.id }})"
+                                                                title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-clipboard-list fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No hay planes de estudio registrados.</p>
+                            {% if titulos and perms.VAT.add_planversioncurricular %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary mt-2"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalPlan">
+                                    <i class="fas fa-plus me-1"></i>Crear el primer plan de estudio
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Titulos de Referencia del Centro -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
@@ -1148,11 +1253,9 @@
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Sector</th>
-                                        <th>Subsector</th>
                                         <th>Titulo</th>
                                         <th>Codigo Ref.</th>
-                                        <th>Planes</th>
+                                        <th>Plan de Estudio</th>
                                         <th class="text-center">Acciones</th>
                                     </tr>
                                 </thead>
@@ -1160,13 +1263,15 @@
                                     {% for t in titulos %}
                                         <tr>
                                             <td>
-                                                <span class="badge bg-secondary">{{ t.sector.nombre }}</span>
+                                                <span class="fw-bold">{{ t.nombre }}</span>
                                             </td>
-                                            <td>{{ t.subsector.nombre|default:"\u2014" }}</td>
-                                            <td class="fw-bold">{{ t.nombre }}</td>
                                             <td>{{ t.codigo_referencia|default:"\u2014" }}</td>
                                             <td>
-                                                <span class="badge bg-info">{{ t.planes.count }} plan{{ t.planes.count|pluralize:"es" }}</span>
+                                                {% if t.plan_estudio %}
+                                                    <span class="badge bg-info text-dark">{{ t.plan_estudio }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">\u2014</span>
+                                                {% endif %}
                                             </td>
                                             <td class="text-center">
                                                 <div class="btn-group btn-group-sm" role="group">
@@ -1201,89 +1306,13 @@
                 </div>
             </div>
 
-            <!-- Planes Curriculares -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0 text-primary">
-                            <i class="fas fa-clipboard-list me-2"></i>
-                            Planes Curriculares
-                        </h6>
-                        <small class="text-muted">Planes asociados a los titulos del centro.</small>
-                    </div>
-                    {% if perms.VAT.add_planversioncurricular %}
-                        <button type="button"
-                                class="btn btn-sm btn-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modalPlan">
-                            <i class="fas fa-plus me-1"></i>Nuevo Plan
-                        </button>
-                    {% endif %}
-                </div>
-                <div class="card-body p-0">
-                    {% if planes %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Titulo de Referencia</th>
-                                        <th>Modalidad de Cursado</th>
-                                        <th>Version</th>
-                                        <th>Horas Reloj</th>
-                                        <th>Normativa</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for p in planes %}
-                                        <tr>
-                                            <td class="fw-bold">{{ p.titulo_referencia.nombre }}</td>
-                                            <td>
-                                                <span class="badge bg-secondary">{{ p.modalidad_cursada.nombre }}</span>
-                                            </td>
-                                            <td>{{ p.version|default:"\u2014" }}</td>
-                                            <td>{{ p.horas_reloj|default:"\u2014" }}</td>
-                                            <td>{{ p.normativa|default:"\u2014" }}</td>
-                                            <td class="text-center">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    {% if perms.VAT.change_planversioncurricular %}
-                                                        <button class="btn btn-outline-warning"
-                                                                onclick="editPlan({{ p.id }})"
-                                                                title="Editar">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-clipboard-list fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">No hay planes curriculares registrados.</p>
-                            {% if titulos and perms.VAT.add_planversioncurricular %}
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-primary mt-2"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#modalPlan">
-                                    <i class="fas fa-plus me-1"></i>Crear el primer plan
-                                </button>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
             <!-- Ofertas Institucionales -->
             <div class="card shadow-sm">
                 <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="mb-0 text-primary">
                             <i class="fas fa-graduation-cap me-2"></i>
-                            Ofertas Institucionales
+                            Ofertas Materia
                         </h6>
                         <small class="text-muted">Programas educativos ofrecidos.</small>
                     </div>
@@ -1296,70 +1325,57 @@
                         </button>
                     {% endif %}
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     {% if ofertas %}
-                        {% for oferta in ofertas %}
-                            <div class="{% if not forloop.first %}mt-3 pt-3 border-top{% endif %}">
-                                <div class="d-flex align-items-center gap-2 mb-2">
-                                    <strong>{{ oferta.plan_curricular.titulo_referencia.nombre }}</strong>
-                                    <span class="badge bg-secondary">{{ oferta.ciclo_lectivo }}</span>
-                                    <span class="badge {% if oferta.estado == 'publicada' %}bg-success{% elif oferta.estado == 'aprobada' %}bg-primary{% elif oferta.estado == 'planificada' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                                        {{ oferta.get_estado_display }}
-                                    </span>
-                                    {% if oferta.usa_voucher %}<span class="badge bg-info"><i class="fas fa-ticket-alt me-1"></i>Voucher</span>{% endif %}
-                                    <a href="{% url 'vat_oferta_institucional_detail' oferta.pk %}"
-                                       class="btn btn-sm btn-outline-secondary py-0 ms-auto">Ver oferta</a>
-                                </div>
-                                {% with comisiones=oferta.comisiones.all %}
-                                    {% if comisiones %}
-                                        <table class="table table-sm mb-0">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th>Codigo</th>
-                                                    <th>Nombre</th>
-                                                    <th>Periodo</th>
-                                                    <th>Cupo</th>
-                                                    <th>Estado</th>
-                                                    <th></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {% for comision in comisiones %}
-                                                    <tr>
-                                                        <td>
-                                                            <strong>{{ comision.codigo_comision }}</strong>
-                                                        </td>
-                                                        <td>{{ comision.nombre }}</td>
-                                                        <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} \u2014 {{ comision.fecha_fin|date:"d/m/Y" }}</td>
-                                                        <td>{{ comision.cupo }}</td>
-                                                        <td>
-                                                            <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
-                                                                {{ comision.get_estado_display }}
-                                                            </span>
-                                                        </td>
-                                                        <td class="text-end">
-                                                            <a href="{% url 'vat_comision_detail' comision.pk %}"
-                                                               class="btn btn-sm btn-outline-info py-0 px-1"><i class="fas fa-eye"></i></a>
-                                                        </td>
-                                                    </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                        </table>
-                                    {% else %}
-                                        <p class="text-muted small mb-0">
-                                            Sin comisiones.
-                                            {% if perms.VAT.add_comision %}
-                                                <a href="{% url 'vat_comision_create' %}?oferta={{ oferta.id }}">Crear una</a>
-                                            {% endif %}
-                                        </p>
-                                    {% endif %}
-                                {% endwith %}
-                            </div>
-                        {% endfor %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Oferta</th>
+                                        <th>Título de Referencia</th>
+                                        <th>Ciclo Lectivo</th>
+                                        <th>Costo Referencial</th>
+                                        <th>Comisiones</th>
+                                        <th>Estado</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for oferta in ofertas %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ oferta.nombre_local|default:oferta.plan_curricular.titulo_referencia }}</strong>
+                                                {% if oferta.usa_voucher %}
+                                                    <span class="badge bg-info ms-1">
+                                                        <i class="fas fa-ticket-alt me-1"></i>Voucher
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ oferta.plan_curricular.titulo_referencia|default:"-" }}</td>
+                                            <td>{{ oferta.ciclo_lectivo }}</td>
+                                            <td>{{ oferta.costo_referencial|default:"-" }}</td>
+                                            <td>{{ oferta.comisiones.count }}</td>
+                                            <td>
+                                                <span class="badge {% if oferta.estado == 'publicada' %}bg-success{% elif oferta.estado == 'aprobada' %}bg-primary{% elif oferta.estado == 'planificada' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                                    {{ oferta.get_estado_display }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="{% url 'vat_oferta_institucional_detail' oferta.pk %}"
+                                                   class="btn btn-sm btn-outline-info"
+                                                   title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     {% else %}
                         <div class="text-center py-4 text-muted">
                             <i class="fas fa-graduation-cap fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">Sin ofertas institucionales registradas.</p>
+                            <p class="mb-0">Sin ofertas materia registradas.</p>
                             {% if planes and perms.VAT.add_ofertainstitucional %}
                                 <button type="button"
                                         class="btn btn-sm btn-outline-primary mt-2"
@@ -1445,6 +1461,170 @@
                 </div>
             </div>
 
+        </div>
+
+        {# ================================================================ #}
+        {# TAB 4: CURSOS                                                    #}
+        {# ================================================================ #}
+        <div class="tab-pane fade" id="cursos" role="tabpanel">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 text-primary">
+                            <i class="fas fa-chalkboard-teacher me-2"></i>
+                            Cursos
+                        </h6>
+                        <small class="text-muted">Cursos configurados para este centro.</small>
+                    </div>
+                    {% if perms.VAT.add_curso %}
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalCurso">
+                            <i class="fas fa-plus me-1"></i>Nuevo Curso
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if cursos %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Ubicación</th>
+                                        <th>Modalidad</th>
+                                        <th>Periodo</th>
+                                        <th>Cupo Total</th>
+                                        <th>Estado</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for curso in cursos %}
+                                        <tr>
+                                            <td class="fw-bold">{{ curso.nombre }}</td>
+                                            <td>{{ curso.ubicacion }}</td>
+                                            <td>{{ curso.modalidad.nombre }}</td>
+                                            <td class="text-muted small">{{ curso.fecha_inicio|date:"d/m/Y" }} - {{ curso.fecha_fin|date:"d/m/Y" }}</td>
+                                            <td>{{ curso.cupo_total }}</td>
+                                            <td>
+                                                <span class="badge {% if curso.estado == 'activo' %}bg-success{% elif curso.estado == 'planificado' %}bg-warning text-dark{% elif curso.estado == 'finalizado' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                                    {{ curso.get_estado_display }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.add_comisioncurso %}
+                                                        <button type="button"
+                                                                class="btn btn-outline-primary"
+                                                                title="Nueva Comisión"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#modalComisionCurso"
+                                                                data-curso-id="{{ curso.id }}"
+                                                                data-curso-nombre="{{ curso.nombre }}">
+                                                            <i class="fas fa-plus"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                    {% if perms.VAT.change_curso %}
+                                                        <a href="{% url 'vat_curso_update' curso.id %}"
+                                                           class="btn btn-outline-warning"
+                                                           title="Editar Curso">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                    {% if perms.VAT.delete_curso %}
+                                                        <a href="{% url 'vat_curso_delete' curso.id %}"
+                                                           class="btn btn-outline-danger"
+                                                           title="Eliminar Curso">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-chalkboard-teacher fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">Sin cursos registrados para este centro.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 text-primary">
+                            <i class="fas fa-users me-2"></i>
+                            Comisiones de Curso
+                        </h6>
+                        <small class="text-muted">Comisiones vinculadas a cursos del centro.</small>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if comisiones_curso %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Curso</th>
+                                        <th>Periodo</th>
+                                        <th>Cupo Total</th>
+                                        <th>Estado</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for comision in comisiones_curso %}
+                                        <tr>
+                                            <td><strong>{{ comision.codigo_comision }}</strong></td>
+                                            <td>{{ comision.nombre }}</td>
+                                            <td>{{ comision.curso.nombre }}</td>
+                                            <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} - {{ comision.fecha_fin|date:"d/m/Y" }}</td>
+                                            <td>{{ comision.cupo_total }}</td>
+                                            <td>
+                                                <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                                    {{ comision.get_estado_display }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.change_comisioncurso %}
+                                                        <a href="{% url 'vat_comision_curso_update' comision.id %}"
+                                                           class="btn btn-outline-warning"
+                                                           title="Editar Comisión">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                    {% if perms.VAT.delete_comisioncurso %}
+                                                        <a href="{% url 'vat_comision_curso_delete' comision.id %}"
+                                                           class="btn btn-outline-danger"
+                                                           title="Eliminar Comisión">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-users fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No hay comisiones de curso para este centro.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
     </div>
@@ -1592,7 +1772,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalOfertaLabel">Nueva Oferta Institucional</h5>
+                    <h5 class="modal-title" id="modalOfertaLabel">Nueva Oferta Materia</h5>
                     <button type="button"
                             class="btn-close"
                             data-bs-dismiss="modal"
@@ -1632,6 +1812,93 @@
                       action="{% url 'vat_comision_create' %}">
                     {% csrf_token %}
                     <div class="modal-body">{{ comision_form.as_p }}</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Curso -->
+    <div class="modal fade"
+         id="modalCurso"
+         tabindex="-1"
+         aria-labelledby="modalCursoLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalCursoLabel">Nuevo Curso</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formCurso"
+                      method="post"
+                      action="{% url 'vat_curso_create' %}?centro={{ centro.id }}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="row">
+                            {% for field in curso_form %}
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                        {{ field.label }}
+                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Comisión de Curso -->
+    <div class="modal fade"
+         id="modalComisionCurso"
+         tabindex="-1"
+         aria-labelledby="modalComisionCursoLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalComisionCursoLabel">Nueva Comisión de Curso</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formComisionCurso"
+                      method="post"
+                      action="{% url 'vat_comision_curso_create' %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="alert alert-light border small mb-3 d-none" id="cursoSeleccionadoInfo"></div>
+                        <div class="row">
+                            {% for field in comision_curso_form %}
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                        {{ field.label }}
+                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Guardar</button>
@@ -1684,7 +1951,7 @@
         </div>
     </div>
 
-    <!-- Modal Plan Curricular -->
+    <!-- Modal Plan de Estudio -->
     <div class="modal fade"
          id="modalPlan"
          tabindex="-1"
@@ -1693,7 +1960,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalPlanLabel">Nuevo Plan Curricular</h5>
+                    <h5 class="modal-title" id="modalPlanLabel">Nuevo Plan de Estudio</h5>
                     <button type="button"
                             class="btn-close"
                             data-bs-dismiss="modal"
@@ -1727,6 +1994,69 @@
         </div>
     </div>
 
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* Select2 multiple dark mode para #modalOferta */
+        #modalOferta .select2-container--default .select2-selection--multiple {
+            background-color: #1e2a3a !important;
+            border: 1px solid #3d4f63 !important;
+            border-radius: 0.25rem;
+            min-height: 38px;
+        }
+        #modalOferta .select2-container--default.select2-container--focus .select2-selection--multiple {
+            background-color: #253446 !important;
+            border-color: #f39c12 !important;
+            box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15) !important;
+        }
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: #2c3e50 !important;
+            color: #f39c12 !important;
+            border: 1px solid #3d4f63 !important;
+            border-radius: 3px;
+        }
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: #9ca3af !important;
+            border-right: 1px solid #3d4f63 !important;
+        }
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #ef4444 !important;
+            background-color: transparent !important;
+        }
+        #modalOferta .select2-container--default .select2-search--inline .select2-search__field {
+            color: #e5e7eb !important;
+        }
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+            color: #e5e7eb !important;
+        }
+        /* Dropdown (se renderiza dentro de .modal-body por dropdownParent) */
+        #formOferta .select2-dropdown {
+            background-color: #1e2a3a !important;
+            border: 1px solid #3d4f63;
+        }
+        #formOferta .select2-search--dropdown .select2-search__field {
+            background-color: #253446 !important;
+            border: 1px solid #3d4f63 !important;
+            border-radius: 0.25rem;
+            color: #e5e7eb !important;
+        }
+        #formOferta .select2-results__option {
+            background-color: #1e2a3a !important;
+            color: #e5e7eb !important;
+            padding: 8px 12px !important;
+        }
+        #formOferta .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #f39c12 !important;
+            color: #1e2a3a !important;
+        }
+        #formOferta .select2-container--default .select2-results__option[aria-selected=true] {
+            background-color: #2c3e50 !important;
+            color: #f39c12 !important;
+        }
+        #formOferta .select2-container--default .select2-results__option--highlighted[aria-selected=true] {
+            background-color: #f39c12 !important;
+            color: #1e2a3a !important;
+        }
+    </style>
     <script src="{% static 'custom/js/vat.js' %}"></script>
     <script nonce="{{ request.csp_nonce }}">
         // Funciones para editar (redirigir a pagina de edicion)
@@ -1830,17 +2160,49 @@
         setupModalForm('formUbicacion', 'modalUbicacion');
         setupModalForm('formOferta', 'modalOferta');
         setupModalForm('formComision', 'modalComision');
+        setupModalForm('formCurso', 'modalCurso');
+        setupModalForm('formComisionCurso', 'modalComisionCurso');
         setupModalForm('formTitulo', 'modalTitulo');
         setupModalForm('formPlan', 'modalPlan');
 
-        // Cascading: Sector → Subsector en modalTitulo
-        var sectorSelect = document.getElementById('id_sector');
-        var subsectorSelect = document.getElementById('id_subsector');
-        if (sectorSelect && subsectorSelect) {
-            sectorSelect.addEventListener('change', function() {
-                var sectorId = this.value;
+        var modalComisionCurso = document.getElementById('modalComisionCurso');
+        if (modalComisionCurso) {
+            modalComisionCurso.addEventListener('show.bs.modal', function(event) {
+                var trigger = event.relatedTarget;
+                var cursoId = trigger ? trigger.getAttribute('data-curso-id') : '';
+                var cursoNombre = trigger ? trigger.getAttribute('data-curso-nombre') : '';
+                var cursoSelect = document.getElementById('id_curso');
+                var cursoInfo = document.getElementById('cursoSeleccionadoInfo');
+
+                if (cursoSelect && cursoId) {
+                    cursoSelect.value = cursoId;
+                }
+
+                if (cursoInfo && cursoNombre) {
+                    cursoInfo.textContent = 'Curso seleccionado: ' + cursoNombre;
+                    cursoInfo.classList.remove('d-none');
+                } else if (cursoInfo) {
+                    cursoInfo.textContent = '';
+                    cursoInfo.classList.add('d-none');
+                }
+            });
+        }
+
+        function setupSectorSubsectorCascade(formId) {
+            var form = document.getElementById(formId);
+            if (!form) return;
+
+            var sectorSelect = form.querySelector('select[name="sector"]');
+            var subsectorSelect = form.querySelector('select[name="subsector"]');
+
+            if (!sectorSelect || !subsectorSelect) return;
+
+            function loadSubsectores(selectedSubsectorId) {
+                var sectorId = sectorSelect.value;
                 subsectorSelect.innerHTML = '<option value="">---------</option>';
+
                 if (!sectorId) return;
+
                 fetch('{% url "vat_subsectores_por_sector" %}?sector_id=' + sectorId, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
@@ -1850,15 +2212,175 @@
                         var opt = document.createElement('option');
                         opt.value = s.id;
                         opt.textContent = s.nombre;
+                        if (selectedSubsectorId && String(selectedSubsectorId) === String(s.id)) {
+                            opt.selected = true;
+                        }
                         subsectorSelect.appendChild(opt);
                     });
                 });
+            }
+
+            sectorSelect.addEventListener('change', function() {
+                loadSubsectores('');
             });
+
+            if (sectorSelect.value) {
+                loadSubsectores(subsectorSelect.value);
+            }
         }
+
+        setupSectorSubsectorCascade('formTitulo');
+        setupSectorSubsectorCascade('formPlan');
+
+        function setupOfertaVoucherSelector(formId) {
+            var form = document.getElementById(formId);
+            if (!form) return;
+
+            var usaVoucherInput = form.querySelector('input[name="usa_voucher"]');
+            var programaSelect = form.querySelector('select[name="programa"]');
+            var vouchersSelect = form.querySelector('select[name="voucher_parametrias"]');
+
+            if (!usaVoucherInput || !programaSelect || !vouchersSelect) return;
+
+            function getFieldContainer(field) {
+                return field.closest('p') || field.closest('.mb-3') || field.parentElement;
+            }
+
+            var vouchersContainer = getFieldContainer(vouchersSelect);
+            var selectedInfo = document.createElement('div');
+            selectedInfo.className = 'form-text mt-1';
+            selectedInfo.textContent = 'Seleccionados: 0';
+            if (vouchersContainer) {
+                vouchersContainer.appendChild(selectedInfo);
+            }
+
+            function refreshSelectedInfo() {
+                var selectedCount = Array.from(vouchersSelect.options).filter(function(option) {
+                    return option.selected;
+                }).length;
+                selectedInfo.textContent = 'Seleccionados: ' + selectedCount;
+            }
+
+            function filtrarVouchersPorPrograma() {
+                var programaId = programaSelect.value;
+                Array.from(vouchersSelect.options).forEach(function(option) {
+                    var optionProgramaId = option.getAttribute('data-programa-id');
+                    var visible = !programaId || optionProgramaId === programaId;
+                    option.hidden = !visible;
+                    option.disabled = !visible;
+                    if (!visible) option.selected = false;
+                });
+                refreshSelectedInfo();
+            }
+
+            function toggleVoucherField() {
+                var container = getFieldContainer(vouchersSelect);
+                if (!container) return;
+                if (usaVoucherInput.checked) {
+                    container.classList.remove('d-none');
+                    filtrarVouchersPorPrograma();
+                } else {
+                    container.classList.add('d-none');
+                    Array.from(vouchersSelect.options).forEach(function(option) {
+                        option.selected = false;
+                    });
+                    refreshSelectedInfo();
+                }
+            }
+
+            usaVoucherInput.addEventListener('change', toggleVoucherField);
+            programaSelect.addEventListener('change', function() {
+                if (usaVoucherInput.checked) {
+                    filtrarVouchersPorPrograma();
+                }
+            });
+            vouchersSelect.addEventListener('change', refreshSelectedInfo);
+
+            toggleVoucherField();
+        }
+
+        setupOfertaVoucherSelector('formOferta');
 
         // Legacy compatibility - prevent any jQuery double-bind
         if (typeof $ !== 'undefined') {
-            $('#formAutoridad, #formContacto, #formIdentificador, #formUbicacion, #formOferta, #formTitulo, #formPlan').off('submit');
+            $('#formAutoridad, #formContacto, #formIdentificador, #formUbicacion, #formOferta, #formCurso, #formComisionCurso, #formTitulo, #formPlan').off('submit');
         }
+
+        function activateTabFromHash() {
+            if (!window.location.hash) return;
+            var tabButton = document.querySelector('[data-bs-target="' + window.location.hash + '"]');
+            if (!tabButton) return;
+            var tab = new bootstrap.Tab(tabButton);
+            tab.show();
+        }
+
+        activateTabFromHash();
+        window.addEventListener('hashchange', activateTabFromHash);
+    </script>
+{% endblock %}
+
+{% block customJS %}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script nonce="{{ request.csp_nonce }}">
+        // Select2 se carga aquí (después de jQuery via mainscripts)
+        // Re-bind setupOfertaVoucherSelector ahora que Select2 está disponible
+        (function() {
+            var form = document.getElementById('formOferta');
+            if (!form || typeof $ === 'undefined') return;
+
+            var usaVoucherInput = form.querySelector('input[name="usa_voucher"]');
+            var programaSelect = form.querySelector('select[name="programa"]');
+            var vouchersSelect = form.querySelector('select[name="voucher_parametrias"]');
+            if (!usaVoucherInput || !programaSelect || !vouchersSelect) return;
+
+            var $vouchers = $(vouchersSelect);
+            var select2Active = false;
+
+            function isModalVisible() {
+                var modal = document.getElementById('modalOferta');
+                return modal && modal.classList.contains('show');
+            }
+
+            function initSelect2() {
+                if (select2Active) return;
+                if (!isModalVisible()) return;
+                $vouchers.select2({
+                    dropdownParent: $(vouchersSelect).closest('.modal-body'),
+                    placeholder: 'Buscar voucher...',
+                    allowClear: true,
+                    width: '100%'
+                });
+                select2Active = true;
+            }
+
+            function destroySelect2() {
+                if (!select2Active) return;
+                $vouchers.select2('destroy');
+                select2Active = false;
+            }
+
+            // Cuando el modal se abre: inicializar si el campo está visible
+            document.getElementById('modalOferta').addEventListener('shown.bs.modal', function() {
+                if (usaVoucherInput.checked) {
+                    initSelect2();
+                }
+            });
+
+            // Cuando se marca/desmarca usa_voucher
+            usaVoucherInput.addEventListener('change', function() {
+                if (usaVoucherInput.checked && isModalVisible()) {
+                    initSelect2();
+                } else if (!usaVoucherInput.checked) {
+                    destroySelect2();
+                }
+            });
+
+            // Cuando cambia programa, refrescar Select2
+            programaSelect.addEventListener('change', function() {
+                if (select2Active) {
+                    $vouchers.trigger('change.select2');
+                }
+            });
+        })();
     </script>
 {% endblock %}

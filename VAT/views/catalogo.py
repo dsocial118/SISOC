@@ -296,13 +296,13 @@ class TituloReferenciaListView(LoginRequiredMixin, ListView):
         queryset = (
             super()
             .get_queryset()
-            .select_related("sector", "subsector")
+            .select_related("plan_estudio", "plan_estudio__sector", "plan_estudio__subsector")
             .order_by("nombre")
         )
         sector_id = self.request.GET.get("sector")
         activo = self.request.GET.get("activo")
         if sector_id:
-            queryset = queryset.filter(sector_id=sector_id)
+            queryset = queryset.filter(plan_estudio__sector_id=sector_id)
         if activo == "true":
             queryset = queryset.filter(activo=True)
         elif activo == "false":
@@ -351,13 +351,19 @@ class TituloReferenciaDetailView(LoginRequiredMixin, DetailView):
     template_name = "vat/catalogo/titulorreferencia_detail.html"
     context_object_name = "titulo"
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "plan_estudio",
+            "plan_estudio__sector",
+            "plan_estudio__subsector",
+            "plan_estudio__modalidad_cursada",
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["planes"] = (
-            self.object.planes.all()
-            .select_related("modalidad_cursada")
-            .order_by("modalidad_cursada")
-        )
+        context["planes"] = PlanVersionCurricular.objects.filter(
+            titulos=self.object
+        ).select_related("sector", "subsector", "modalidad_cursada")
         return context
 
 
@@ -401,13 +407,13 @@ class PlanVersionCurricularListView(LoginRequiredMixin, ListView):
         queryset = (
             super()
             .get_queryset()
-            .select_related("titulo_referencia", "modalidad_cursada")
-            .order_by("titulo_referencia", "modalidad_cursada")
+            .select_related("sector", "subsector", "modalidad_cursada")
+            .prefetch_related("titulos")
         )
         titulo_id = self.request.GET.get("titulo")
         activo = self.request.GET.get("activo")
         if titulo_id:
-            queryset = queryset.filter(titulo_referencia_id=titulo_id)
+            queryset = queryset.filter(titulos__id=titulo_id)
         if activo == "true":
             queryset = queryset.filter(activo=True)
         elif activo == "false":
@@ -429,7 +435,7 @@ class PlanVersionCurricularCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, "Plan curricular creado correctamente.")
+        messages.success(self.request, "Plan de estudio creado correctamente.")
         return response
 
     def get_success_url(self):
@@ -451,7 +457,7 @@ class PlanVersionCurricularUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, "Plan curricular actualizado correctamente.")
+        messages.success(self.request, "Plan de estudio actualizado correctamente.")
         return response
 
     def get_success_url(self):
@@ -467,5 +473,5 @@ class PlanVersionCurricularDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy("vat_planversioncurricular_list")
 
     def delete(self, request, *args, **kwargs):
-        messages.success(request, "Plan curricular eliminado correctamente.")
+        messages.success(request, "Plan de estudio eliminado correctamente.")
         return super().delete(request, *args, **kwargs)
