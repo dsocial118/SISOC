@@ -1,4 +1,4 @@
-﻿from datetime import date, timedelta
+from datetime import date, timedelta
 
 import pytest
 from django.contrib.auth.models import Permission, User
@@ -266,6 +266,47 @@ def test_formulario_cdi_crear_guarda_y_limpia_campos_ocultos(client):
     assert formulario.combustible_cocinar in ("", None)
     assert formulario.tiene_juegos_exteriores in ("", None)
     assert formulario.calidad_elaboracion_menu in ("", None)
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_crear_guarda_telefonos_flexibles_autocompletados(client):
+    user = _crear_usuario("super-form-phone", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Telefonos Flex",
+        telefono="12345678",
+        telefono_referente="11-2233-4455",
+    )
+
+    response_get = client.get(
+        reverse("centrodeinfancia_formulario_crear", kwargs={"pk": centro.pk})
+    )
+
+    assert response_get.status_code == 200
+    assert response_get.context["form"]["telefono_cdi"].value() == "12345678"
+    assert (
+        response_get.context["form"]["telefono_referente_cdi"].value() == "11-2233-4455"
+    )
+
+    payload = _construir_payload_creacion_formulario(
+        centro,
+        telefono_cdi="12345678",
+        telefono_referente_cdi="11-2233-4455",
+        telefono_organizacion="22334455",
+        telefono_referente_organizacion="54-11-99887766",
+    )
+
+    response_post = client.post(
+        reverse("centrodeinfancia_formulario_crear", kwargs={"pk": centro.pk}),
+        payload,
+    )
+
+    assert response_post.status_code == 302
+    formulario = FormularioCDI.objects.get(centro=centro)
+    assert formulario.telefono_cdi == "12345678"
+    assert formulario.telefono_referente_cdi == "11-2233-4455"
+    assert formulario.telefono_organizacion == "22334455"
+    assert formulario.telefono_referente_organizacion == "54-11-99887766"
 
 
 @pytest.mark.django_db

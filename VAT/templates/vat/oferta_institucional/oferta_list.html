@@ -4,124 +4,127 @@
 {% block title %}Ofertas Institucionales{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
 
-{% url 'vat_oferta_institucional_list' as reset_url %}
-{% include 'components/search_bar.html' with titulo="Buscar Oferta Institucional" placeholder="Buscar por centro, plan curricular o nombre" help_text="Buscar por centro, plan curricular o nombre" reset_url=reset_url add_url='vat_oferta_institucional_create' add_text='Agregar' query=request.GET.busqueda %}
+    {% url 'vat_oferta_institucional_list' as reset_url %}
+    {% include 'components/search_bar.html' with titulo="Buscar Oferta Institucional" placeholder="Buscar por centro, plan curricular o nombre" help_text="Buscar por centro, plan curricular o nombre" reset_url=reset_url add_url='vat_oferta_institucional_create' add_text='Agregar' query=request.GET.busqueda %}
 
-<div class="row mt-5 max-width-100">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive-lg">
-                    <table class="table table-bordered table-striped projects">
-                        <thead>
-                            <tr>
-                                <th class="sortable" data-column="centro">
-                                    Centro
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th class="sortable" data-column="plan">
-                                    Plan Curricular
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th>Ciclo</th>
-                                <th>Estado</th>
-                                <th>Voucher</th>
-                                <th class="notexport">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for oferta in ofertas %}
-                            <tr>
-                                <td data-centro="{{ oferta.centro.nombre }}">
-                                    <a href="{% url 'vat_oferta_institucional_detail' oferta.id %}"
-                                       class="link-handler"
-                                       title="Ver detalles">{{ oferta.centro.nombre }}</a>
-                                </td>
-                                <td data-plan="{{ oferta.plan_curricular }}">{{ oferta.plan_curricular }}</td>
-                                <td>{{ oferta.ciclo_lectivo }}</td>
-                                <td>
-                                    {% if oferta.estado == 'activa' %}
-                                        <span class="badge-validacion validado">
-                                            <i class="fas fa-check-circle"></i>
-                                            {{ oferta.get_estado_display }}
-                                        </span>
-                                    {% elif oferta.estado == 'cancelada' %}
-                                        <span class="badge-validacion no-validado">
-                                            <i class="fas fa-times-circle"></i>
-                                            {{ oferta.get_estado_display }}
-                                        </span>
-                                    {% elif oferta.estado == 'finalizada' %}
-                                        <span class="badge-validacion" style="background:#4b5563;color:#e5e7eb;border-color:#6b7280;">
-                                            <i class="fas fa-flag-checkered"></i>
-                                            {{ oferta.get_estado_display }}
-                                        </span>
-                                    {% else %}
-                                        <span class="badge-validacion pendiente">
-                                            <i class="fas fa-clock"></i>
-                                            {{ oferta.get_estado_display }}
-                                        </span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if oferta.usa_voucher %}
-                                        <span class="badge-validacion validado">
-                                            <i class="fas fa-ticket-alt"></i> Sí
-                                        </span>
-                                    {% else %}
-                                        <span class="badge-validacion pendiente">—</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="action-buttons" role="group">
-                                        <a href="{% url 'vat_oferta_institucional_detail' oferta.id %}"
-                                           class="btn btn-primary link-handler"
-                                           title="Ver detalle">
-                                            <i class="fas fa-eye"></i>
-                                            Ver
-                                        </a>
-                                        {% if perms.VAT.change_ofertainstitucional %}
-                                        <a href="{% url 'vat_oferta_institucional_update' oferta.id %}"
-                                           class="btn btn-editar link-handler"
-                                           title="Editar oferta">
-                                            <i class="fas fa-edit"></i>
-                                            Editar
-                                        </a>
-                                        {% endif %}
-                                        {% if perms.VAT.delete_ofertainstitucional %}
-                                        <a href="{% url 'vat_oferta_institucional_delete' oferta.id %}"
-                                           class="btn btn-eliminar link-handler"
-                                           title="Eliminar oferta">
-                                            <i class="fas fa-trash-alt"></i>
-                                            Eliminar
-                                        </a>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="6">
-                                    <div class="no-comedores-message">
-                                        <h3>No se encontraron ofertas institucionales</h3>
-                                        <p>No hay ofertas que coincidan con los criterios de búsqueda.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+    <div class="row mt-5 max-width-100">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive-lg">
+                        <table class="table table-bordered table-striped projects">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-column="centro">
+                                        Centro
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-column="plan">
+                                        Plan Curricular
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th>Ciclo</th>
+                                    <th>Estado</th>
+                                    <th>Voucher</th>
+                                    <th class="notexport">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for oferta in ofertas %}
+                                    <tr>
+                                        <td data-centro="{{ oferta.centro.nombre }}">
+                                            <a href="{% url 'vat_oferta_institucional_detail' oferta.id %}"
+                                               class="link-handler"
+                                               title="Ver detalles">{{ oferta.centro.nombre }}</a>
+                                        </td>
+                                        <td data-plan="{{ oferta.plan_curricular }}">{{ oferta.plan_curricular }}</td>
+                                        <td>{{ oferta.ciclo_lectivo }}</td>
+                                        <td>
+                                            {% if oferta.estado == 'activa' %}
+                                                <span class="badge-validacion validado">
+                                                    <i class="fas fa-check-circle"></i>
+                                                    {{ oferta.get_estado_display }}
+                                                </span>
+                                            {% elif oferta.estado == 'cancelada' %}
+                                                <span class="badge-validacion no-validado">
+                                                    <i class="fas fa-times-circle"></i>
+                                                    {{ oferta.get_estado_display }}
+                                                </span>
+                                            {% elif oferta.estado == 'finalizada' %}
+                                                <span class="badge-validacion"
+                                                      style="background:#4b5563;
+                                                             color:#e5e7eb;
+                                                             border-color:#6b7280">
+                                                    <i class="fas fa-flag-checkered"></i>
+                                                    {{ oferta.get_estado_display }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge-validacion pendiente">
+                                                    <i class="fas fa-clock"></i>
+                                                    {{ oferta.get_estado_display }}
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if oferta.usa_voucher %}
+                                                <span class="badge-validacion validado">
+                                                    <i class="fas fa-ticket-alt"></i> Sí
+                                                </span>
+                                            {% else %}
+                                                <span class="badge-validacion pendiente">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="action-buttons" role="group">
+                                                <a href="{% url 'vat_oferta_institucional_detail' oferta.id %}"
+                                                   class="btn btn-primary link-handler"
+                                                   title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                    Ver
+                                                </a>
+                                                {% if perms.VAT.change_ofertainstitucional %}
+                                                    <a href="{% url 'vat_oferta_institucional_update' oferta.id %}"
+                                                       class="btn btn-editar link-handler"
+                                                       title="Editar oferta">
+                                                        <i class="fas fa-edit"></i>
+                                                        Editar
+                                                    </a>
+                                                {% endif %}
+                                                {% if perms.VAT.delete_ofertainstitucional %}
+                                                    <a href="{% url 'vat_oferta_institucional_delete' oferta.id %}"
+                                                       class="btn btn-eliminar link-handler"
+                                                       title="Eliminar oferta">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                        Eliminar
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6">
+                                            <div class="no-comedores-message">
+                                                <h3>No se encontraron ofertas institucionales</h3>
+                                                <p>No hay ofertas que coincidan con los criterios de búsqueda.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-{% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
 
 {% endblock %}
 
 {% block customJS %}
-<script src="{% static 'custom/js/listSort.js' %}"></script>
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
 {% endblock %}

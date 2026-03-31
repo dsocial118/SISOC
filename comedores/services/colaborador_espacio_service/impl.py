@@ -135,12 +135,16 @@ class ColaboradorEspacioService:
             ciudadano=colaborador.ciudadano,
             changed_by=actor if getattr(actor, "is_authenticated", False) else None,
             accion=accion,
-            snapshot_antes=ColaboradorEspacioService._json_safe(snapshot_antes)
-            if snapshot_antes
-            else None,
-            snapshot_despues=ColaboradorEspacioService._json_safe(snapshot_despues)
-            if snapshot_despues
-            else None,
+            snapshot_antes=(
+                ColaboradorEspacioService._json_safe(snapshot_antes)
+                if snapshot_antes
+                else None
+            ),
+            snapshot_despues=(
+                ColaboradorEspacioService._json_safe(snapshot_despues)
+                if snapshot_despues
+                else None
+            ),
             metadata=ColaboradorEspacioService._json_safe(metadata) if metadata else {},
         )
 
@@ -152,14 +156,15 @@ class ColaboradorEspacioService:
             .get(pk=colaborador.pk)
         )
         snapshot_antes = ColaboradorEspacioService._snapshot(colaborador_antes)
-        actividades = cleaned_data.pop("actividades", [])
+        actividades = cleaned_data.pop("actividades", None)
         for field_name, value in cleaned_data.items():
             setattr(colaborador, field_name, value)
         colaborador.modificado_por = (
             actor if getattr(actor, "is_authenticated", False) else None
         )
         colaborador.save()
-        colaborador.actividades.set(actividades)
+        if actividades is not None:
+            colaborador.actividades.set(actividades)
         snapshot_despues = ColaboradorEspacioService._snapshot(colaborador)
         ColaboradorEspacioService._registrar_auditoria(
             colaborador=colaborador,
@@ -186,8 +191,12 @@ class ColaboradorEspacioService:
             )
         snapshot_antes = ColaboradorEspacioService._snapshot(colaborador)
         colaborador.fecha_baja = timezone.now().date()
-        colaborador.modificado_por = actor if getattr(actor, "is_authenticated", False) else None
-        colaborador.save(update_fields=["fecha_baja", "modificado_por", "fecha_modificado"])
+        colaborador.modificado_por = (
+            actor if getattr(actor, "is_authenticated", False) else None
+        )
+        colaborador.save(
+            update_fields=["fecha_baja", "modificado_por", "fecha_modificado"]
+        )
         snapshot_despues = ColaboradorEspacioService._snapshot(colaborador)
         ColaboradorEspacioService._registrar_auditoria(
             colaborador=colaborador,
@@ -205,7 +214,9 @@ class ColaboradorEspacioService:
 
     @staticmethod
     @transaction.atomic
-    def create_for_comedor(*, comedor, actor, cleaned_data, ciudadano_id=None, dni=None):
+    def create_for_comedor(
+        *, comedor, actor, cleaned_data, ciudadano_id=None, dni=None
+    ):
         ciudadano = None
         if ciudadano_id:
             ciudadano = Ciudadano.objects.filter(pk=ciudadano_id).first()

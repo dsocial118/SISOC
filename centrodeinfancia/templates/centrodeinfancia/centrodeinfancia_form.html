@@ -1,4 +1,4 @@
-﻿{% extends "includes/main.html" %}
+{% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
 
 {% block title %}Centro de Desarrollo Infantil{% endblock %}
@@ -22,8 +22,17 @@
             </div>
         </div>
 
-        <form method="post" class="w-100" id="centrodesarrolloinfantil-form">
+        <form method="post"
+              class="w-100"
+              id="centrodesarrolloinfantil-form"
+              novalidate>
             {% csrf_token %}
+
+            {% if form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    No se pudo guardar el legajo. Revisá los campos marcados.
+                </div>
+            {% endif %}
 
             <div class="section-card mb-3">
                 <div class="section-header">
@@ -57,13 +66,20 @@
                         </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Ubicación</h3>
-                            <p class="section-subtitle">Provincia, municipio, localidad y calle</p>
+                            <p class="section-subtitle">Provincia, departamento, municipio, localidad y calle</p>
                         </div>
                     </div>
                 </div>
                 <div class="section-body show">
                     <div class="form-group row">
                         <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
+                        <div class="col-md-4">
+                            <div id="departamento-loader" class="skeleton-loader d-none"></div>
+                            <div id="departamento-field">{{ form.departamento|as_crispy_field }}</div>
+                        </div>
+                        <div class="col-md-4">{{ form.decil_ipi|as_crispy_field }}</div>
+                    </div>
+                    <div class="form-group row">
                         <div class="col-md-4">
                             <div id="municipio-loader" class="skeleton-loader d-none"></div>
                             <div id="municipio-field">{{ form.municipio|as_crispy_field }}</div>
@@ -72,6 +88,7 @@
                             <div id="localidad-loader" class="skeleton-loader d-none"></div>
                             <div id="localidad-field">{{ form.localidad|as_crispy_field }}</div>
                         </div>
+                        <div class="col-md-4"></div>
                     </div>
                     <div class="form-group row">
                         <div class="col-md-8">{{ form.calle|as_crispy_field }}</div>
@@ -117,6 +134,7 @@
 
 {% block customJS %}
     <script nonce="{{ request.csp_nonce }}">
+        var ajaxLoadDepartamentosIpiUrl = "{% url 'centrodeinfancia_ajax_load_departamentos_ipi' %}";
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>
@@ -125,9 +143,12 @@
     <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", async function() {
             const provinciaSelect = document.getElementById("id_provincia");
+            const departamentoSelect = document.getElementById("id_departamento");
+            const decilIpiInput = document.getElementById("id_decil_ipi");
             const municipioSelect = document.getElementById("id_municipio");
             const localidadSelect = document.getElementById("id_localidad");
 
+            const departamentoInicial = departamentoSelect ? departamentoSelect.value : "";
             const municipioInicial = municipioSelect ? municipioSelect.value : "";
             const localidadInicial = localidadSelect ? localidadSelect.value : "";
 
@@ -164,12 +185,33 @@
                     const option = document.createElement("option");
                     option.value = item.id;
                     option.textContent = item.nombre || item.nombre_region || "";
+                    if (item.decil_ipi !== null && item.decil_ipi !== undefined) {
+                        option.dataset.decilIpi = item.decil_ipi;
+                    }
                     selectEl.appendChild(option);
                 });
 
                 if (selectedValue) {
                     selectEl.value = String(selectedValue);
                 }
+            }
+
+            function setDecilIpi(value) {
+                if (!decilIpiInput) {
+                    return;
+                }
+                decilIpiInput.value = value === null || value === undefined ? "" : String(value);
+            }
+
+            function syncDecilIpiFromDepartamentoData(data, selectedDepartamento) {
+                if (!selectedDepartamento) {
+                    setDecilIpi("");
+                    return;
+                }
+                const selected = data.find(function(item) {
+                    return String(item.id) === String(selectedDepartamento);
+                });
+                setDecilIpi(selected ? selected.decil_ipi : "");
             }
 
             async function loadMunicipiosFallback(provinciaId, selectedMunicipio) {
@@ -189,6 +231,29 @@
                 replaceOptions(municipioSelect, data, selectedMunicipio, "Seleccione un municipio");
             }
 
+            async function loadDepartamentosFallback(provinciaId, selectedDepartamento) {
+                if (!departamentoSelect) {
+                    return;
+                }
+                if (!provinciaId) {
+                    replaceOptions(departamentoSelect, [], "", "Seleccione un departamento");
+                    setDecilIpi("");
+                    return;
+                }
+                const response = await fetch(`${ajaxLoadDepartamentosIpiUrl}?provincia_id=${encodeURIComponent(provinciaId)}`, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    credentials: "same-origin",
+                });
+                const data = response.ok ? await response.json() : [];
+                replaceOptions(
+                    departamentoSelect,
+                    data,
+                    selectedDepartamento,
+                    "Seleccione un departamento",
+                );
+                syncDecilIpiFromDepartamentoData(data, selectedDepartamento);
+            }
+
             async function loadLocalidadesFallback(municipioId, selectedLocalidad) {
                 if (!localidadSelect) {
                     return;
@@ -205,6 +270,7 @@
                 replaceOptions(localidadSelect, data, selectedLocalidad, "Seleccione una localidad");
             }
 
+            ensurePlaceholder(departamentoSelect, "Seleccione un departamento");
             ensurePlaceholder(municipioSelect, "Seleccione un municipio");
             ensurePlaceholder(localidadSelect, "Seleccione una localidad");
 
@@ -291,16 +357,25 @@
                 });
             }
 
-            if (provinciaSelect && municipioSelect && localidadSelect) {
+            if (provinciaSelect && departamentoSelect && municipioSelect && localidadSelect) {
                 provinciaSelect.addEventListener("change", async function() {
+                    await loadDepartamentosFallback(this.value, "");
                     await loadMunicipiosFallback(this.value, "");
                     replaceOptions(localidadSelect, [], "", "Seleccione una localidad");
+                });
+
+                departamentoSelect.addEventListener("change", function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    setDecilIpi(selectedOption && selectedOption.value ? selectedOption.dataset.decilIpi || "" : "");
                 });
 
                 municipioSelect.addEventListener("change", async function() {
                     await loadLocalidadesFallback(this.value, "");
                 });
 
+                if (provinciaSelect.value && departamentoSelect.options.length <= 1) {
+                    await loadDepartamentosFallback(provinciaSelect.value, departamentoInicial);
+                }
                 if (provinciaSelect.value && municipioSelect.options.length <= 1) {
                     await loadMunicipiosFallback(provinciaSelect.value, municipioInicial);
                 }

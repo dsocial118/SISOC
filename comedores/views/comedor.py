@@ -817,6 +817,7 @@ class ComedorListView(LoginRequiredMixin, ListView):
             {"title": "Referente celular"},
             {"title": "Validación"},
             {"title": "Fecha validación"},
+            {"title": "Judicializado"},
         ]
         fields = [
             {"name": "id"},
@@ -842,6 +843,7 @@ class ComedorListView(LoginRequiredMixin, ListView):
             {"name": "referente_celular"},
             {"name": "validacion"},
             {"name": "fecha_validado"},
+            {"name": "judicializado"},
         ]
         columns_context = build_columns_context_from_fields(
             self.request,
@@ -1015,13 +1017,14 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             and self.object.clasificaciones_optimized
             else None
         )
-        colaboradores_espacio = (
-            self.object.colaboradores_espacio_optimized
-            if hasattr(self.object, "colaboradores_espacio_optimized")
-            else self.object.colaboradores_espacio.select_related(
+        if hasattr(self.object, "colaboradores_espacio_optimized"):
+            colaboradores_espacio = self.object.colaboradores_espacio_optimized
+        elif hasattr(self.object, "colaboradores_espacio"):
+            colaboradores_espacio = self.object.colaboradores_espacio.select_related(
                 "ciudadano__sexo"
             ).prefetch_related("actividades")
-        )
+        else:
+            colaboradores_espacio = []
         return {
             "relevamientos": relevamientos,
             "observaciones": observaciones,

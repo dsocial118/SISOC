@@ -1,4 +1,4 @@
-﻿{% extends "includes/main.html" %}
+{% extends "includes/main.html" %}
 {% load static %}
 
 {% block title %}Centros de Desarrollo Infantil{% endblock %}
@@ -98,9 +98,19 @@
                                                     Organización
                                                     <i class="fas fa-sort sort-icon"></i>
                                                 </th>
+                                            {% elif column_key == "tiene_nomina" %}
+                                                <th class="sortable" data-column="tiene_nomina">
+                                                    Tiene nómina
+                                                    <i class="fas fa-sort sort-icon"></i>
+                                                </th>
                                             {% elif column_key == "provincia" %}
                                                 <th class="sortable" data-column="provincia">
                                                     Provincia
+                                                    <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                            {% elif column_key == "departamento" %}
+                                                <th class="sortable" data-column="departamento">
+                                                    Departamento
                                                     <i class="fas fa-sort sort-icon"></i>
                                                 </th>
                                             {% elif column_key == "municipio" %}

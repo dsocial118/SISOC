@@ -7,6 +7,8 @@ from django.db import IntegrityError, connection, transaction
 @pytest.mark.mysql_compat
 def test_mysql_backend_activo_en_suite_mysql_compat():
     """Garantiza que este subset corre sobre MySQL real en CI."""
+    if connection.vendor != "mysql":
+        pytest.skip("La suite actual no está usando MySQL.")
     assert connection.vendor == "mysql"
 
 

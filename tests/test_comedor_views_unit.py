@@ -60,6 +60,7 @@ def test_comedor_list_queryset_and_context(mocker):
     assert ctx["add_url"] == "/comedor_crear/"
     assert ctx["filters_mode"] is True
     assert ctx["active_columns"] == ["nombre"]
+    assert "judicializado" in ctx["column_keys_all"]
 
 
 def test_comedor_create_helpers_and_form_valid_paths(mocker):

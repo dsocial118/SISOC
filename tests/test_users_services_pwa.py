@@ -70,7 +70,9 @@ def test_is_pwa_user_and_accessible_comedores(comedores):
 
 
 @pytest.mark.django_db
-def test_accessible_comedores_ignores_space_removed_from_selected_organization(comedores):
+def test_accessible_comedores_ignores_space_removed_from_selected_organization(
+    comedores,
+):
     comedor_1, comedor_2 = comedores
     user = _create_user("rep_org_scope")
     sync_representante_accesses(

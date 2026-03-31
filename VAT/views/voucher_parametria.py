@@ -68,7 +68,9 @@ def _asignar_desde_parametria(ciudadano, parametria, usuario):
             # Actualizar vencimiento y parametria en el mismo atomic para evitar estado inconsistente
             voucher_previo.fecha_vencimiento = parametria.fecha_vencimiento
             voucher_previo.parametria = parametria
-            voucher_previo.save(update_fields=["fecha_vencimiento", "parametria", "fecha_modificacion"])
+            voucher_previo.save(
+                update_fields=["fecha_vencimiento", "parametria", "fecha_modificacion"]
+            )
         return _REACTIVADO if ok else _ERROR
 
     # No existe ninguno → crear
@@ -90,7 +92,9 @@ class VoucherParametriaListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        return VoucherParametria.objects.select_related("programa", "creado_por").order_by("-fecha_creacion")
+        return VoucherParametria.objects.select_related(
+            "programa", "creado_por"
+        ).order_by("-fecha_creacion")
 
 
 class VoucherParametriaCreateView(LoginRequiredMixin, CreateView):
@@ -102,8 +106,12 @@ class VoucherParametriaCreateView(LoginRequiredMixin, CreateView):
         parametria = form.save(commit=False)
         parametria.creado_por = self.request.user
         parametria.save()
-        messages.success(self.request, f"Parametría '{parametria.nombre}' creada correctamente.")
-        return redirect(reverse("vat_voucher_parametria_detail", kwargs={"pk": parametria.pk}))
+        messages.success(
+            self.request, f"Parametría '{parametria.nombre}' creada correctamente."
+        )
+        return redirect(
+            reverse("vat_voucher_parametria_detail", kwargs={"pk": parametria.pk})
+        )
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -136,11 +144,11 @@ class VoucherParametriaDetailView(LoginRequiredMixin, DetailView):
         ctx["creditos_disponibles"] = agg["total_disponibles"] or 0
         ctx["pct_uso"] = (
             round(ctx["creditos_usados"] / ctx["creditos_emitidos"] * 100)
-            if ctx["creditos_emitidos"] else 0
+            if ctx["creditos_emitidos"]
+            else 0
         )
         ctx["pct_activos"] = (
-            round(ctx["activos"] / ctx["total"] * 100)
-            if ctx["total"] else 0
+            round(ctx["activos"] / ctx["total"] * 100) if ctx["total"] else 0
         )
         ctx["ultimas"] = qs.order_by("-fecha_asignacion")[:5]
         return ctx
@@ -174,9 +182,13 @@ class VoucherParametriaAsignarView(LoginRequiredMixin, View):
         if resultado == _CREADO:
             messages.success(request, f"Voucher creado y asignado a {nombre}.")
         elif resultado == _REACTIVADO:
-            messages.success(request, f"Voucher anterior de {nombre} reactivado con nuevos créditos.")
+            messages.success(
+                request, f"Voucher anterior de {nombre} reactivado con nuevos créditos."
+            )
         elif resultado == _YA_ACTIVO:
-            messages.warning(request, f"{nombre} ya tiene un voucher activo para este programa.")
+            messages.warning(
+                request, f"{nombre} ya tiene un voucher activo para este programa."
+            )
         else:
             messages.error(request, f"No se pudo asignar el voucher a {nombre}.")
 
@@ -198,7 +210,13 @@ class VoucherParametriaAsignarMasivoView(LoginRequiredMixin, View):
             messages.error(request, "Máximo 500 DNIs por operación.")
             return redirect(reverse("vat_voucher_parametria_detail", kwargs={"pk": pk}))
 
-        contadores = {_CREADO: [], _REACTIVADO: [], _YA_ACTIVO: [], _NO_ENCONTRADO: [], _ERROR: []}
+        contadores = {
+            _CREADO: [],
+            _REACTIVADO: [],
+            _YA_ACTIVO: [],
+            _NO_ENCONTRADO: [],
+            _ERROR: [],
+        }
 
         for dni in dnis:
             try:
@@ -207,7 +225,9 @@ class VoucherParametriaAsignarMasivoView(LoginRequiredMixin, View):
                 contadores[_NO_ENCONTRADO].append(dni)
                 continue
             try:
-                resultado = _asignar_desde_parametria(ciudadano, parametria, request.user)
+                resultado = _asignar_desde_parametria(
+                    ciudadano, parametria, request.user
+                )
                 contadores[resultado].append(dni)
             except Exception:
                 logger.exception(f"Error procesando DNI {dni} en asignación masiva")
@@ -227,8 +247,12 @@ class VoucherParametriaAsignarMasivoView(LoginRequiredMixin, View):
 
         exitosos = contadores[_CREADO] + contadores[_REACTIVADO]
         if exitosos:
-            messages.success(request, "Asignación masiva completada: " + ", ".join(partes) + ".")
+            messages.success(
+                request, "Asignación masiva completada: " + ", ".join(partes) + "."
+            )
         else:
-            messages.warning(request, "No se procesó ningún voucher: " + ", ".join(partes) + ".")
+            messages.warning(
+                request, "No se procesó ningún voucher: " + ", ".join(partes) + "."
+            )
 
         return redirect(reverse("vat_voucher_parametria_detail", kwargs={"pk": pk}))

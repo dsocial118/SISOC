@@ -21,7 +21,9 @@ from iam.services import user_has_permission_code
 from organizaciones.models import Organizacion
 from users.forms import CustomUserChangeForm, GroupForm, UserCreationForm
 from users.models import AccesoComedorPWA
+from users.services import UsuariosService
 from users.services_group_permissions import sync_permissions_for_group
+from users.temporary_passwords import store_temporary_password
 
 User = get_user_model()
 
@@ -151,7 +153,6 @@ def test_mobile_user_creation_generates_password_automatically():
     assert form.generated_password
     assert user.check_password(form.generated_password) is True
     assert user.profile.must_change_password is True
-    assert user.profile.temporary_password_plaintext == form.generated_password
 
 
 @pytest.mark.django_db
@@ -189,7 +190,6 @@ def test_existing_user_keeps_password_when_gaining_mobile_access():
     saved_user.refresh_from_db()
     assert saved_user.password == original_password_hash
     assert saved_user.check_password("ClaveOriginal123!") is True
-    assert saved_user.profile.temporary_password_plaintext is None
     assert saved_user.profile.must_change_password is False
 
 
@@ -201,10 +201,7 @@ def test_first_login_password_change_view_clears_flags(client):
         password="Secreta123!",
     )
     user.profile.must_change_password = True
-    user.profile.temporary_password_plaintext = "Temporal123!"
-    user.profile.save(
-        update_fields=["must_change_password", "temporary_password_plaintext"]
-    )
+    user.profile.save(update_fields=["must_change_password"])
 
     client.force_login(user)
     response = client.post(
@@ -219,7 +216,6 @@ def test_first_login_password_change_view_clears_flags(client):
     user.refresh_from_db()
     assert user.profile.must_change_password is False
     assert user.profile.initial_password_expires_at is None
-    assert user.profile.temporary_password_plaintext is None
     assert user.check_password("NuevaClave123!") is True
 
 
@@ -346,10 +342,7 @@ def test_password_reset_confirm_changes_password_and_clears_flags():
         password="Anterior123!",
     )
     user.profile.must_change_password = True
-    user.profile.temporary_password_plaintext = "Temporal123!"
-    user.profile.save(
-        update_fields=["must_change_password", "temporary_password_plaintext"]
-    )
+    user.profile.save(update_fields=["must_change_password"])
 
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
@@ -369,7 +362,6 @@ def test_password_reset_confirm_changes_password_and_clears_flags():
     user.refresh_from_db()
     assert user.check_password("NuevaClave123!") is True
     assert user.profile.must_change_password is False
-    assert user.profile.temporary_password_plaintext is None
 
 
 @pytest.mark.django_db
@@ -380,10 +372,7 @@ def test_web_password_reset_confirm_clears_flags(client):
         password="Anterior123!",
     )
     user.profile.must_change_password = True
-    user.profile.temporary_password_plaintext = "Temporal123!"
-    user.profile.save(
-        update_fields=["must_change_password", "temporary_password_plaintext"]
-    )
+    user.profile.save(update_fields=["must_change_password"])
 
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
@@ -399,7 +388,6 @@ def test_web_password_reset_confirm_clears_flags(client):
     user.refresh_from_db()
     assert user.check_password("NuevaClave123!") is True
     assert user.profile.must_change_password is False
-    assert user.profile.temporary_password_plaintext is None
 
 
 @pytest.mark.django_db
@@ -421,12 +409,12 @@ def test_user_update_view_shows_temporary_password(client):
         password="Secreta123!",
     )
     user.profile.must_change_password = True
-    user.profile.temporary_password_plaintext = "Temporal123!"
-    user.profile.save(
-        update_fields=["must_change_password", "temporary_password_plaintext"]
-    )
+    user.profile.save(update_fields=["must_change_password"])
 
     client.force_login(admin)
+    session = client.session
+    store_temporary_password(session, user_id=user.pk, password="Temporal123!")
+    session.save()
     response = client.get(reverse("usuario_editar", kwargs={"pk": user.pk}))
 
     assert response.status_code == 200
@@ -443,6 +431,24 @@ def test_user_list_shows_reset_pending_indicator_when_reset_pending(client):
     view_user_permission = Permission.objects.get(
         content_type__app_label="auth",
         codename="view_user",
+def test_user_create_view_redirects_with_temporary_password_visible(
+    client, monkeypatch
+):
+    provincia = Provincia.objects.create(nombre="Salta")
+    organizacion = Organizacion.objects.create(nombre="Organización Visible")
+    comedor = Comedor.objects.create(
+        nombre="Espacio Visible",
+        provincia=provincia,
+        organizacion=organizacion,
+    )
+    admin = User.objects.create_user(
+        username="users_creator",
+        email="users_creator@example.com",
+        password="Secreta123!",
+    )
+    add_user_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="add_user",
     )
     change_user_permission = Permission.objects.get(
         content_type__app_label="auth",
@@ -503,6 +509,37 @@ def test_user_update_view_shows_reset_alert_and_button_inside_mobile_card(client
     admin = User.objects.create_user(
         username="users_admin_edit_reset",
         email="users_admin_edit_reset@example.com",
+    admin.user_permissions.add(add_user_permission, change_user_permission)
+    monkeypatch.setattr("users.forms.get_random_string", lambda _: "Temporal123!")
+
+    client.force_login(admin)
+    response = client.post(
+        reverse("usuario_crear"),
+        data={
+            "username": "mobile_visible",
+            "email": "mobile_visible@example.com",
+            "es_representante_pwa": True,
+            "tipo_asociacion_pwa": "organizacion",
+            "organizaciones_pwa": [organizacion.id],
+            "comedores_pwa": [comedor.id],
+        },
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    created_user = User.objects.get(username="mobile_visible")
+    assert created_user.check_password("Temporal123!") is True
+    assert "Contraseña inicial generada: Temporal123!" in response.content.decode(
+        "utf-8"
+    )
+    assert "Contraseña temporal vigente:" in response.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_user_update_view_handles_user_without_profile(client):
+    admin = User.objects.create_user(
+        username="users_editor_legacy",
+        email="users_editor_legacy@example.com",
         password="Secreta123!",
     )
     change_user_permission = Permission.objects.get(
@@ -518,6 +555,11 @@ def test_user_update_view_shows_reset_alert_and_button_inside_mobile_card(client
     )
     user.profile.password_reset_requested_at = user.profile.fecha_creacion
     user.profile.save(update_fields=["password_reset_requested_at"])
+        username="legacy_without_profile",
+        email="legacy_without_profile@example.com",
+        password="Secreta123!",
+    )
+    user.profile.delete()
 
     client.force_login(admin)
     response = client.get(reverse("usuario_editar", kwargs={"pk": user.pk}))
@@ -690,3 +732,125 @@ def test_user_export_requires_view_and_export_permissions(client):
     user.user_permissions.add(export_permission)
     response = client.get(reverse("usuarios_exportar"))
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_user_list_view_shows_actions_according_to_is_active(client):
+    user = User.objects.create_user(
+        username="users_reader_actions",
+        email="users_reader_actions@example.com",
+        password="Secreta123!",
+    )
+    view_user_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="view_user",
+    )
+    user.user_permissions.add(view_user_permission)
+
+    active_user = User.objects.create_user(
+        username="active_target",
+        email="active_target@example.com",
+        password="Secreta123!",
+        is_active=True,
+    )
+    inactive_user = User.objects.create_user(
+        username="inactive_target",
+        email="inactive_target@example.com",
+        password="Secreta123!",
+        is_active=False,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("usuarios"))
+    items_by_username = {
+        item["cells"][2]["content"]: item
+        for item in response.context["user_table_items"]
+    }
+
+    active_item = items_by_username[active_user.username]
+    inactive_item = items_by_username[inactive_user.username]
+
+    assert [action["label"] for action in active_item["actions"]] == [
+        "Editar",
+        "Desactivar",
+    ]
+    assert [action["label"] for action in inactive_item["actions"]] == [
+        "Editar",
+        "Activar",
+    ]
+
+
+@pytest.mark.django_db
+def test_usuarios_service_annotates_is_active_display_as_true_false():
+    active_user = User.objects.create_user(
+        username="active_display_user",
+        email="active_display_user@example.com",
+        password="Secreta123!",
+        is_active=True,
+    )
+    inactive_user = User.objects.create_user(
+        username="inactive_display_user",
+        email="inactive_display_user@example.com",
+        password="Secreta123!",
+        is_active=False,
+    )
+
+    queryset = UsuariosService.get_usuarios_queryset()
+
+    assert queryset.get(pk=active_user.pk).is_active_display == "true"
+    assert queryset.get(pk=inactive_user.pk).is_active_display == "false"
+
+
+@pytest.mark.django_db
+def test_user_activate_view_reactivates_user_with_delete_permission(client):
+    user = User.objects.create_user(
+        username="users_admin_activate",
+        email="users_admin_activate@example.com",
+        password="Secreta123!",
+    )
+    delete_user_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="delete_user",
+    )
+    user.user_permissions.add(delete_user_permission)
+    inactive_user = User.objects.create_user(
+        username="inactive_to_activate",
+        email="inactive_to_activate@example.com",
+        password="Secreta123!",
+        is_active=False,
+    )
+
+    client.force_login(user)
+    get_response = client.get(
+        reverse("usuario_activar", kwargs={"pk": inactive_user.pk})
+    )
+    post_response = client.post(
+        reverse("usuario_activar", kwargs={"pk": inactive_user.pk})
+    )
+
+    assert get_response.status_code == 200
+    assert post_response.status_code in {302, 303}
+    inactive_user.refresh_from_db()
+    assert inactive_user.is_active is True
+
+
+@pytest.mark.django_db
+def test_user_activate_view_returns_403_without_delete_permission(client):
+    user = User.objects.create_user(
+        username="users_without_delete_permission",
+        email="users_without_delete_permission@example.com",
+        password="Secreta123!",
+    )
+    inactive_user = User.objects.create_user(
+        username="inactive_forbidden",
+        email="inactive_forbidden@example.com",
+        password="Secreta123!",
+        is_active=False,
+    )
+
+    client.force_login(user)
+    response = client.post(reverse("usuario_activar", kwargs={"pk": inactive_user.pk}))
+
+    assert response.status_code == 403
+    inactive_user.refresh_from_db()
+    assert inactive_user.is_active is False

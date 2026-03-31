@@ -2,87 +2,86 @@
 {% load static %}
 
 {% block title %}
-{% if form.instance.pk %}
-VAT - Editar Modalidad Institucional
-{% else %}
-VAT - Nueva Modalidad Institucional
-{% endif %}
+    {% if form.instance.pk %}
+        VAT - Editar Modalidad Institucional
+    {% else %}
+        VAT - Nueva Modalidad Institucional
+    {% endif %}
 {% endblock %}
 
 {% block breadcrumb %}
-<ol class="breadcrumb float-sm-right">
-    <li class="breadcrumb-item">
-        <a href="{% url 'vat_centro_list' %}">VAT</a>
-    </li>
-    <li class="breadcrumb-item">
-        <a href="{% url 'vat_modalidad_institucional_list' %}">Modalidades Institucionales</a>
-    </li>
-    <li class="breadcrumb-item active">
-        {% if form.instance.pk %}Editar{% else %}Nueva{% endif %}
-    </li>
-</ol>
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_centro_list' %}">VAT</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_modalidad_institucional_list' %}">Modalidades Institucionales</a>
+        </li>
+        <li class="breadcrumb-item active">
+            {% if form.instance.pk %}
+                Editar
+            {% else %}
+                Nueva
+            {% endif %}
+        </li>
+    </ol>
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h3 class="card-title">
-                    {% if form.instance.pk %}
-                    Editar Modalidad Institucional
-                    {% else %}
-                    Nueva Modalidad Institucional
-                    {% endif %}
-                </h3>
-            </div>
-            <form method="post" class="form-horizontal">
-                {% csrf_token %}
-                <div class="card-body">
-                    {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {% for error in form.non_field_errors %}
-                        <p>{{ error }}</p>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-
-                    <div class="form-group">
-                        <label for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }}</label>
-                        {{ form.nombre }}
-                        {% if form.nombre.errors %}
-                        <small class="text-danger">{{ form.nombre.errors }}</small>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title">
+                        {% if form.instance.pk %}
+                            Editar Modalidad Institucional
+                        {% else %}
+                            Nueva Modalidad Institucional
                         {% endif %}
-                    </div>
-
-                    <div class="form-group">
-                        <label for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
-                        {{ form.descripcion }}
-                        {% if form.descripcion.errors %}
-                        <small class="text-danger">{{ form.descripcion.errors }}</small>
+                    </h3>
+                </div>
+                <form method="post" class="form-horizontal">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                            </div>
                         {% endif %}
-                    </div>
 
-                    <div class="form-group">
-                        <div class="form-check">
-                            {{ form.activo }}
-                            <label class="form-check-label" for="{{ form.activo.id_for_label }}">
-                                {{ form.activo.label }}
-                            </label>
+                        <div class="form-group">
+                            <label for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }}</label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}<small class="text-danger">{{ form.nombre.errors }}</small>{% endif %}
                         </div>
-                        {% if form.activo.errors %}
-                        <small class="text-danger">{{ form.activo.errors }}</small>
-                        {% endif %}
+
+                        <div class="form-group">
+                            <label for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.errors %}<small class="text-danger">{{ form.descripcion.errors }}</small>{% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-check">
+                                {{ form.activo }}
+                                <label class="form-check-label" for="{{ form.activo.id_for_label }}">{{ form.activo.label }}</label>
+                            </div>
+                            {% if form.activo.errors %}<small class="text-danger">{{ form.activo.errors }}</small>{% endif %}
+                        </div>
                     </div>
-                </div>
-                <div class="card-footer">
-                    <button type="submit" class="btn btn-primary">
-                        {% if form.instance.pk %}Actualizar{% else %}Crear{% endif %}
-                    </button>
-                    <a href="{% url 'vat_modalidad_institucional_list' %}" class="btn btn-secondary">Cancelar</a>
-                </div>
-            </form>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary">
+                            {% if form.instance.pk %}
+                                Actualizar
+                            {% else %}
+                                Crear
+                            {% endif %}
+                        </button>
+                        <a href="{% url 'vat_modalidad_institucional_list' %}"
+                           class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}

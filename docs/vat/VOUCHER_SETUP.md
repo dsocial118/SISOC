@@ -203,7 +203,8 @@ GET /api/vat/vouchers/por_ciudadano/?ciudadano_id=1
 ### Ejemplo: Consultar Voucher
 
 ```bash
-curl -H "Authorization: Bearer YOUR_API_KEY" \
+AUTH_HEADER="Authorization: Bearer <tu_api_key>"
+curl -H "$AUTH_HEADER" \
   "http://localhost/api/vat/vouchers/?ciudadano_id=123"
 ```
 

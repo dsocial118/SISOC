@@ -38,7 +38,7 @@ Para trabajar en SISOC con asistentes, la documentación en `docs/` es fuente de
 ## Tooling real detectado (obligatorio respetar)
 
 - Formato Python: `black` (config en `pyproject.toml`).
-- Lint Python: `pylint` (config en `.pylintrc`, con `pylint_django`).
+- Lint Python: `pylint` (config en `.pylintrc`, con `pylint_django`). Tomar `.pylintrc` como contrato real: primero ajustar el código para cumplir la regla y dejar `ignore`/`disable` como último recurso, local y justificado.
 - Templates: `djlint` (config en `.djlintrc`).
 - Tests: `pytest`, `pytest-django`, `pytest-xdist`.
 - CI: `.github/workflows/lint.yml` y `.github/workflows/tests.yml`.
@@ -51,6 +51,8 @@ No imponer como obligatorio si no fue pedido: `ruff`, `mypy`, `eslint`, `prettie
 - Preferir construcciones que `black` resuelve bien: paréntesis implícitos, literales multilínea y llamadas partidas por argumentos. Evitar alinear manualmente, columnas “bonitas” o wraps ad hoc que después `black` desarma.
 - Mantener imports en bloques consistentes: standard library, terceros y código local. No reordenar imports no relacionados fuera del archivo tocado.
 - Escribir nombres, firmas y variables alineados con `.pylintrc`: `snake_case` para funciones/variables, `PascalCase` para clases y helpers privados con prefijo `_` cuando aplique.
+- Cuando `pylint` marque una violación, intentar resolverla con mejores prácticas antes que con una supresión: simplificar funciones, extraer helpers, ajustar nombres, mover lógica al boundary correcto o hacer más explícito el código.
+- Evitar `# pylint: disable=...`, `# pylint: skip-file`, `ignore-paths` nuevos o ampliaciones de `ignore` como atajo. Si una supresión es inevitable por una falsa positiva o por dinámica del framework, limitarla al menor scope posible y documentar la razón.
 - En templates, escribir HTML/Django template tags pensando en `djlint`: indentación de 4 espacios, tags anidados legibles y sin compactar bloques en una sola línea si el formatter los va a expandir.
 - Validar primero sobre archivos modificados para reducir fricción y ruido. Escalar a checks más amplios solo si el impacto del cambio lo justifica o el pedido lo exige.
 

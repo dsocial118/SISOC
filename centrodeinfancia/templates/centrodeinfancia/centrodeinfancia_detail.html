@@ -1,4 +1,4 @@
-﻿{% extends "includes/main.html" %}
+{% extends "includes/main.html" %}
 {% load static custom_filters %}
 
 {% block head %}
@@ -121,6 +121,12 @@
                                 </p>
                                 <p class="mb-2">
                                     <i class="bi bi-map me-2"></i><strong>Provincia:</strong> {{ centro.provincia|default:"-" }}
+                                </p>
+                                <p class="mb-2">
+                                    <i class="bi bi-signpost-2 me-2"></i><strong>Departamento:</strong> {{ centro.departamento|default:"-" }}
+                                </p>
+                                <p class="mb-2">
+                                    <i class="bi bi-bar-chart me-2"></i><strong>Decil de IPI:</strong> {{ centro.departamento.decil_ipi|default:"-" }}
                                 </p>
                                 <p class="mb-2">
                                     <i class="bi bi-pin-map me-2"></i><strong>Municipio:</strong> {{ centro.municipio|default:"-" }}

@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 
 from iam.services import get_effective_permission_codes, get_effective_role_names
 from users.models import AccesoComedorPWA
+from users.profile_utils import get_profile_or_none
 from users.services import UserPermissionService
 from users.services_pwa import get_pwa_context
 from users.services_auth import get_user_by_uid
@@ -39,7 +40,7 @@ class UserContextSerializer(serializers.Serializer):
         return list(obj.groups.values_list("name", flat=True))
 
     def get_profile(self, obj):
-        profile = getattr(obj, "profile", None)
+        profile = get_profile_or_none(obj)
         if not profile:
             return None
         return {
@@ -56,7 +57,7 @@ class UserContextSerializer(serializers.Serializer):
         if not getattr(obj, "is_authenticated", False):
             return {}
         is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(obj)
-        profile = getattr(obj, "profile", None)
+        profile = get_profile_or_none(obj)
         return {
             "is_coordinador": is_coordinador,
             "duplas_ids": duplas_ids,

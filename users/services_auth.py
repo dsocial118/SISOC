@@ -18,6 +18,8 @@ from rest_framework.authtoken.models import Token
 
 from users.services_pwa import is_pwa_user
 
+from users.profile_utils import get_profile_or_none
+
 User = get_user_model()
 logger = logging.getLogger("django")
 
@@ -128,7 +130,7 @@ def confirm_password_reset(
     user.set_password(new_password)
     user.save(update_fields=["password"])
 
-    profile = getattr(user, "profile", None)
+    profile = get_profile_or_none(user)
     if profile:
         profile.must_change_password = False
         profile.password_changed_at = timezone.now()

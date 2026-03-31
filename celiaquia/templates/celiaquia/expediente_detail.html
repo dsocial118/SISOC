@@ -811,7 +811,7 @@
     {% else %}
         <p class="text-muted">No hay legajos cargados.</p>
     {% endif %}
-    <!-- Confirmar EnvÃ­o: solo Provincia en EN_ESPERA -->
+    <!-- Confirmar Envío: solo Provincia en EN_ESPERA -->
     {% if legajos and is_prov and expediente.estado.nombre == 'EN_ESPERA' %}
         <div class="text-end mt-3">
             {% if registros_erroneos.count > 0 %}
@@ -1111,9 +1111,7 @@
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label class="form-label">Localidad Responsable *</label>
-                                                    <select class="form-select"
-                                                            name="localidad_responsable"
-                                                            required>
+                                                    <select class="form-select" name="localidad_responsable" required>
                                                         <option value="">Seleccionar...</option>
                                                         {% for loc in localidades %}
                                                             <option value="{{ loc.id }}"
@@ -1141,7 +1139,7 @@
 {% endif %}
 
 
-<!-- Asignar TÃ©cnico: solo Coordinador (segÃºn tu condiciÃ³n actual por id) -->
+<!-- Asignar Técnico: solo Coordinador (según tu condición actual por id) -->
 {% if expediente.estado.id == 2 and is_coord %}
     <div class="card mb-4">
         <div class="card-header bg-body-tertiary">
@@ -1165,7 +1163,7 @@
     </div>
 {% endif %}
 
-<!-- Modal: pedir SUBSANACIÃ“N -->
+<!-- Modal: pedir SUBSANACIÓN -->
 <div class="modal fade"
      id="modalSubsanar"
      tabindex="-1"

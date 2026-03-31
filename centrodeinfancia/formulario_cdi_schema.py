@@ -1,4 +1,4 @@
-﻿"""Definiciones compartidas para FormularioCDI."""
+"""Definiciones compartidas para FormularioCDI."""
 
 from __future__ import annotations
 
@@ -65,9 +65,9 @@ OPCIONES_GRUPO_ETARIO_DEMANDA = [
     ("lactantes", "Lactantes"),
     ("deambuladores", "Deambuladores"),
     ("un_ano", "Un año"),
-    ("dos_anos", "dos años"),
-    ("tres_anos", "tres años"),
-    ("cuatro_anos", "cuatro años"),
+    ("dos_anos", "Dos años"),
+    ("tres_anos", "Tres años"),
+    ("cuatro_anos", "Cuatro años"),
 ]
 
 OPCIONES_INSTITUCIONES_ARTICULACION = [

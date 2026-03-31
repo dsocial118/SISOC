@@ -1,10 +1,10 @@
+# pylint: disable=too-many-lines
+
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
 from ciudadanos.models import Ciudadano
-from core.models import Dia, Localidad, Municipio, Provincia, Sexo, Programa
+from core.models import Dia, Localidad, Municipio, Provincia, Programa
 from core.soft_delete import SoftDeleteModelMixin
-from organizaciones.models import Organizacion
 
 
 class Centro(SoftDeleteModelMixin, models.Model):
@@ -18,15 +18,7 @@ class Centro(SoftDeleteModelMixin, models.Model):
         blank=False,
     )
     codigo = models.CharField(max_length=20, unique=True)
-    foto = models.ImageField(upload_to="vat_centros/", blank=True, null=True)
     activo = models.BooleanField(default=True)
-    organizacion_asociada = models.ForeignKey(
-        Organizacion,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        related_name="vat_centros",
-    )
     provincia = models.ForeignKey(
         to=Provincia,
         on_delete=models.PROTECT,
@@ -52,14 +44,35 @@ class Centro(SoftDeleteModelMixin, models.Model):
     domicilio_actividad = models.CharField(
         max_length=255, verbose_name="Domicilio de actividades"
     )
+    codigo_postal = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="Código Postal",
+    )
+    lote = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Lote",
+    )
+    manzana = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Manzana",
+    )
+    entre_calles = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Entre Calles",
+    )
     telefono = models.CharField(max_length=50, verbose_name="Teléfono")
     celular = models.CharField(max_length=50, verbose_name="Celular")
     correo = models.EmailField(max_length=100, verbose_name="Correo electrónico")
     sitio_web = models.URLField(
         max_length=200, blank=True, null=True, verbose_name="Sitio web"
-    )
-    link_redes = models.URLField(
-        max_length=200, blank=True, null=True, verbose_name="Redes sociales"
     )
     nombre_referente = models.CharField(
         max_length=100, verbose_name="Nombre del responsable"
@@ -73,14 +86,6 @@ class Centro(SoftDeleteModelMixin, models.Model):
     correo_referente = models.EmailField(
         max_length=100, verbose_name="Correo del responsable"
     )
-    modalidad_institucional = models.ForeignKey(
-        "ModalidadInstitucional",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="vat_centros",
-        verbose_name="Modalidad Institucional",
-    )
     tipo_gestion = models.CharField(
         max_length=50, null=True, blank=True, verbose_name="Tipo de Gestión"
     )
@@ -89,9 +94,6 @@ class Centro(SoftDeleteModelMixin, models.Model):
     )
     situacion = models.CharField(
         max_length=50, null=True, blank=True, verbose_name="Situación"
-    )
-    fecha_alta = models.DateField(
-        null=True, blank=True, verbose_name="Fecha de Alta"
     )
 
     def __str__(self):
@@ -418,9 +420,7 @@ class Voucher(SoftDeleteModelMixin, models.Model):
         verbose_name="Programa",
     )
 
-    cantidad_inicial = models.PositiveIntegerField(
-        verbose_name="Cantidad Inicial"
-    )
+    cantidad_inicial = models.PositiveIntegerField(verbose_name="Cantidad Inicial")
     cantidad_usada = models.PositiveIntegerField(
         default=0, verbose_name="Cantidad Usada"
     )
@@ -594,7 +594,9 @@ class VoucherLog(models.Model):
     )
 
     def __str__(self):
-        return f"{self.get_tipo_evento_display()} - {self.voucher} ({self.fecha_evento})"
+        return (
+            f"{self.get_tipo_evento_display()} - {self.voucher} ({self.fecha_evento})"
+        )
 
     class Meta:
         verbose_name = "Log de Voucher"
@@ -605,9 +607,7 @@ class VoucherLog(models.Model):
                 fields=["voucher", "fecha_evento"],
                 name="vat_vlog_vouch_fecha_idx",
             ),
-            models.Index(
-                fields=["tipo_evento"], name="vat_vlog_tipo_evt_idx"
-            ),
+            models.Index(fields=["tipo_evento"], name="vat_vlog_tipo_evt_idx"),
         ]
 
 
@@ -642,15 +642,34 @@ class InstitucionContacto(models.Model):
         verbose_name="Tipo de Contacto",
     )
     valor = models.CharField(max_length=255, verbose_name="Valor")
-    es_principal = models.BooleanField(
-        default=False, verbose_name="Es Principal"
+    nombre_contacto = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Nombre del Contacto",
     )
+    rol_area = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Rol / Área",
+    )
+    telefono_contacto = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="Teléfono del Contacto",
+    )
+    email_contacto = models.EmailField(
+        blank=True,
+        null=True,
+        verbose_name="Correo del Contacto",
+    )
+    es_principal = models.BooleanField(default=False, verbose_name="Es Principal")
     observaciones = models.TextField(
         blank=True, null=True, verbose_name="Observaciones"
     )
-    vigencia_desde = models.DateField(
-        auto_now_add=True, verbose_name="Vigencia Desde"
-    )
+    vigencia_desde = models.DateField(auto_now_add=True, verbose_name="Vigencia Desde")
     vigencia_hasta = models.DateField(
         blank=True, null=True, verbose_name="Vigencia Hasta"
     )
@@ -678,19 +697,13 @@ class AutoridadInstitucional(models.Model):
         related_name="autoridades",
         verbose_name="Centro",
     )
-    nombre_completo = models.CharField(
-        max_length=255, verbose_name="Nombre Completo"
-    )
+    nombre_completo = models.CharField(max_length=255, verbose_name="Nombre Completo")
     dni = models.CharField(max_length=20, verbose_name="DNI")
     cargo = models.CharField(max_length=100, verbose_name="Cargo")
     email = models.EmailField(blank=True, null=True)
     telefono = models.CharField(max_length=50, blank=True, null=True)
-    es_actual = models.BooleanField(
-        default=True, verbose_name="Es la Autoridad Actual"
-    )
-    vigencia_desde = models.DateField(
-        auto_now_add=True, verbose_name="Vigencia Desde"
-    )
+    es_actual = models.BooleanField(default=True, verbose_name="Es la Autoridad Actual")
+    vigencia_desde = models.DateField(auto_now_add=True, verbose_name="Vigencia Desde")
     vigencia_hasta = models.DateField(
         blank=True, null=True, verbose_name="Vigencia Hasta"
     )
@@ -749,12 +762,16 @@ class InstitucionIdentificadorHist(models.Model):
         null=True,
         verbose_name="Rol Institucional",
     )
-    es_actual = models.BooleanField(
-        default=True, verbose_name="Es Actual"
+    ubicacion = models.ForeignKey(
+        "InstitucionUbicacion",
+        on_delete=models.SET_NULL,
+        related_name="identificadores_hist",
+        blank=True,
+        null=True,
+        verbose_name="Ubicación asociada",
     )
-    vigencia_desde = models.DateField(
-        auto_now_add=True, verbose_name="Vigencia Desde"
-    )
+    es_actual = models.BooleanField(default=True, verbose_name="Es Actual")
+    vigencia_desde = models.DateField(auto_now_add=True, verbose_name="Vigencia Desde")
     vigencia_hasta = models.DateField(
         blank=True, null=True, verbose_name="Vigencia Hasta"
     )
@@ -768,6 +785,11 @@ class InstitucionIdentificadorHist(models.Model):
     fecha_modificacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+        if self.ubicacion_id:
+            return (
+                f"{self.centro} - {self.get_tipo_identificador_display()}: "
+                f"{self.valor_identificador} ({self.ubicacion})"
+            )
         return f"{self.centro} - {self.get_tipo_identificador_display()}: {self.valor_identificador}"
 
     class Meta:
@@ -807,24 +829,25 @@ class InstitucionUbicacion(models.Model):
         choices=ROL_UBICACION_CHOICES,
         verbose_name="Rol de Ubicación",
     )
+    nombre_ubicacion = models.CharField(
+        max_length=120,
+        blank=True,
+        null=True,
+        verbose_name="Nombre de Ubicación",
+        help_text="Ejemplo: Sede Centro, Anexo Norte, Punto Barrio Sur.",
+    )
     domicilio = models.CharField(
         max_length=255, blank=True, null=True, verbose_name="Domicilio"
     )
-    es_principal = models.BooleanField(
-        default=False, verbose_name="Es Principal"
-    )
-    latitud = models.DecimalField(
-        max_digits=9, decimal_places=6, blank=True, null=True
-    )
+    es_principal = models.BooleanField(default=False, verbose_name="Es Principal")
+    latitud = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
     longitud = models.DecimalField(
         max_digits=9, decimal_places=6, blank=True, null=True
     )
     observaciones = models.TextField(
         blank=True, null=True, verbose_name="Observaciones"
     )
-    vigencia_desde = models.DateField(
-        auto_now_add=True, verbose_name="Vigencia Desde"
-    )
+    vigencia_desde = models.DateField(auto_now_add=True, verbose_name="Vigencia Desde")
     vigencia_hasta = models.DateField(
         blank=True, null=True, verbose_name="Vigencia Hasta"
     )
@@ -832,7 +855,8 @@ class InstitucionUbicacion(models.Model):
     fecha_modificacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.centro} - {self.get_rol_ubicacion_display()} ({self.localidad})"
+        nombre = self.nombre_ubicacion or self.get_rol_ubicacion_display()
+        return f"{self.centro} - {nombre} ({self.localidad})"
 
     class Meta:
         verbose_name = "Ubicación de Institución"
@@ -934,9 +958,7 @@ class OfertaInstitucional(SoftDeleteModelMixin, models.Model):
                 fields=["centro", "estado"],
                 name="vat_ofeinst_ce_est_idx",
             ),
-            models.Index(
-                fields=["estado"], name="vat_ofeinst_estado_idx"
-            ),
+            models.Index(fields=["estado"], name="vat_ofeinst_estado_idx"),
         ]
 
 
@@ -990,6 +1012,7 @@ class Comision(SoftDeleteModelMixin, models.Model):
 
     def clean(self):
         from django.core.exceptions import ValidationError
+
         if self.cupo is not None and self.cupo == 0:
             raise ValidationError({"cupo": "El cupo debe ser mayor a 0."})
 
@@ -1034,14 +1057,14 @@ class ComisionHorario(models.Model):
         null=True,
         verbose_name="Aula/Espacio",
     )
-    vigente = models.BooleanField(
-        default=True, verbose_name="Vigente"
-    )
+    vigente = models.BooleanField(default=True, verbose_name="Vigente")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.comision} - {self.dia_semana} {self.hora_desde}-{self.hora_hasta}"
+        return (
+            f"{self.comision} - {self.dia_semana} {self.hora_desde}-{self.hora_hasta}"
+        )
 
     class Meta:
         verbose_name = "Horario de Comisión"
@@ -1053,7 +1076,6 @@ class ComisionHorario(models.Model):
             "hora_desde",
             "hora_hasta",
         )
-
 
 
 class SesionComision(models.Model):
@@ -1091,7 +1113,9 @@ class SesionComision(models.Model):
         default="programada",
         verbose_name="Estado",
     )
-    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -1103,7 +1127,9 @@ class SesionComision(models.Model):
         ordering = ["fecha", "horario__hora_desde"]
         unique_together = ("comision", "horario", "fecha")
         indexes = [
-            models.Index(fields=["comision", "estado"], name="vat_sesion_comision_estado_idx"),
+            models.Index(
+                fields=["comision", "estado"], name="vat_sesion_comision_estado_idx"
+            ),
         ]
 
 
@@ -1225,18 +1251,24 @@ class AsistenciaSesion(models.Model):
         verbose_name="Inscripción",
     )
     presente = models.BooleanField(default=False, verbose_name="Presente")
-    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
     registrado_por = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
         related_name="asistencias_registradas",
         verbose_name="Registrado por",
     )
-    fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
+    fecha_registro = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de Registro"
+    )
 
     def __str__(self):
         estado = "Presente" if self.presente else "Ausente"
-        return f"{self.inscripcion.ciudadano.nombre_completo} — {self.sesion} [{estado}]"
+        return (
+            f"{self.inscripcion.ciudadano.nombre_completo} — {self.sesion} [{estado}]"
+        )
 
     class Meta:
         verbose_name = "Asistencia a Sesión"
@@ -1276,16 +1308,10 @@ class Evaluacion(models.Model):
         choices=TIPO_EVALUACION_CHOICES,
         verbose_name="Tipo de Evaluación",
     )
-    nombre = models.CharField(
-        max_length=255, verbose_name="Nombre de la Evaluación"
-    )
-    descripcion = models.TextField(
-        blank=True, null=True, verbose_name="Descripción"
-    )
+    nombre = models.CharField(max_length=255, verbose_name="Nombre de la Evaluación")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
     fecha = models.DateField(verbose_name="Fecha de la Evaluación")
-    es_final = models.BooleanField(
-        default=False, verbose_name="Es Evaluación Final"
-    )
+    es_final = models.BooleanField(default=False, verbose_name="Es Evaluación Final")
     ponderacion = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -1341,9 +1367,7 @@ class ResultadoEvaluacion(SoftDeleteModelMixin, models.Model):
         null=True,
         verbose_name="Calificación",
     )
-    aprobo = models.BooleanField(
-        null=True, blank=True, verbose_name="¿Aprobó?"
-    )
+    aprobo = models.BooleanField(null=True, blank=True, verbose_name="¿Aprobó?")
     observaciones = models.TextField(
         blank=True, null=True, verbose_name="Observaciones"
     )
@@ -1375,5 +1399,3 @@ class ResultadoEvaluacion(SoftDeleteModelMixin, models.Model):
                 name="vat_reseval_eval_apr_idx",
             ),
         ]
-
-

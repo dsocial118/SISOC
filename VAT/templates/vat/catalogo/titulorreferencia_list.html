@@ -4,99 +4,99 @@
 {% block title %}Títulos de Referencia{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
 
-{% url 'vat_titulorreferencia_list' as reset_url %}
-{% include 'components/search_bar.html' with titulo="Buscar Título de Referencia" placeholder="Buscar por nombre, sector o código" help_text="Buscar por nombre, sector o código" reset_url=reset_url add_url='vat_titulorreferencia_create' add_text='Agregar' query=request.GET.busqueda %}
+    {% url 'vat_titulorreferencia_list' as reset_url %}
+    {% include 'components/search_bar.html' with titulo="Buscar Título de Referencia" placeholder="Buscar por nombre, sector o código" help_text="Buscar por nombre, sector o código" reset_url=reset_url add_url='vat_titulorreferencia_create' add_text='Agregar' query=request.GET.busqueda %}
 
-<div class="row mt-5 max-width-100">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive-lg">
-                    <table class="table table-bordered table-striped projects">
-                        <thead>
-                            <tr>
-                                <th class="sortable" data-column="nombre">
-                                    Nombre
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th>Sector</th>
-                                <th>Código</th>
-                                <th>Estado</th>
-                                <th class="notexport">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for titulo in titulos %}
-                            <tr>
-                                <td data-nombre="{{ titulo.nombre }}">
-                                    <a href="{% url 'vat_titulorreferencia_detail' titulo.id %}"
-                                       class="link-handler"
-                                       title="Ver detalles">{{ titulo.nombre }}</a>
-                                </td>
-                                <td>{{ titulo.sector.nombre }}</td>
-                                <td>{{ titulo.codigo_referencia|default:"—" }}</td>
-                                <td>
-                                    {% if titulo.activo %}
-                                        <span class="badge-validacion validado">
-                                            <i class="fas fa-check-circle"></i> Activo
-                                        </span>
-                                    {% else %}
-                                        <span class="badge-validacion no-validado">
-                                            <i class="fas fa-times-circle"></i> Inactivo
-                                        </span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="action-buttons" role="group">
-                                        <a href="{% url 'vat_titulorreferencia_detail' titulo.id %}"
-                                           class="btn btn-primary link-handler"
-                                           title="Ver detalle">
-                                            <i class="fas fa-eye"></i>
-                                            Ver
-                                        </a>
-                                        {% if perms.VAT.change_tituloreferencia %}
-                                        <a href="{% url 'vat_titulorreferencia_update' titulo.id %}"
-                                           class="btn btn-editar link-handler"
-                                           title="Editar título">
-                                            <i class="fas fa-edit"></i>
-                                            Editar
-                                        </a>
-                                        {% endif %}
-                                        {% if perms.VAT.delete_tituloreferencia %}
-                                        <a href="{% url 'vat_titulorreferencia_delete' titulo.id %}"
-                                           class="btn btn-eliminar link-handler"
-                                           title="Eliminar título">
-                                            <i class="fas fa-trash-alt"></i>
-                                            Eliminar
-                                        </a>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5">
-                                    <div class="no-comedores-message">
-                                        <h3>No se encontraron títulos de referencia</h3>
-                                        <p>No hay títulos registrados.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+    <div class="row mt-5 max-width-100">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive-lg">
+                        <table class="table table-bordered table-striped projects">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-column="nombre">
+                                        Nombre
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th>Sector</th>
+                                    <th>Código</th>
+                                    <th>Estado</th>
+                                    <th class="notexport">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for titulo in titulos %}
+                                    <tr>
+                                        <td data-nombre="{{ titulo.nombre }}">
+                                            <a href="{% url 'vat_titulorreferencia_detail' titulo.id %}"
+                                               class="link-handler"
+                                               title="Ver detalles">{{ titulo.nombre }}</a>
+                                        </td>
+                                        <td>{{ titulo.sector.nombre }}</td>
+                                        <td>{{ titulo.codigo_referencia|default:"—" }}</td>
+                                        <td>
+                                            {% if titulo.activo %}
+                                                <span class="badge-validacion validado">
+                                                    <i class="fas fa-check-circle"></i> Activo
+                                                </span>
+                                            {% else %}
+                                                <span class="badge-validacion no-validado">
+                                                    <i class="fas fa-times-circle"></i> Inactivo
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="action-buttons" role="group">
+                                                <a href="{% url 'vat_titulorreferencia_detail' titulo.id %}"
+                                                   class="btn btn-primary link-handler"
+                                                   title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                    Ver
+                                                </a>
+                                                {% if perms.VAT.change_tituloreferencia %}
+                                                    <a href="{% url 'vat_titulorreferencia_update' titulo.id %}"
+                                                       class="btn btn-editar link-handler"
+                                                       title="Editar título">
+                                                        <i class="fas fa-edit"></i>
+                                                        Editar
+                                                    </a>
+                                                {% endif %}
+                                                {% if perms.VAT.delete_tituloreferencia %}
+                                                    <a href="{% url 'vat_titulorreferencia_delete' titulo.id %}"
+                                                       class="btn btn-eliminar link-handler"
+                                                       title="Eliminar título">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                        Eliminar
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5">
+                                            <div class="no-comedores-message">
+                                                <h3>No se encontraron títulos de referencia</h3>
+                                                <p>No hay títulos registrados.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-{% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
 
 {% endblock %}
 
 {% block customJS %}
-<script src="{% static 'custom/js/listSort.js' %}"></script>
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
 {% endblock %}

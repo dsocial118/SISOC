@@ -1,9 +1,9 @@
-﻿import pytest
+import pytest
 from django.contrib.auth.models import User
 
 from centrodeinfancia.forms import FormularioCDIForm
 from centrodeinfancia.formulario_cdi_schema import CAMPOS_OPCIONES, ETIQUETAS_CAMPOS
-from centrodeinfancia.models import CentroDeInfancia
+from centrodeinfancia.models import CentroDeInfancia, DepartamentoIpi, FormularioCDI
 from core.models import Localidad, Municipio, Provincia
 
 
@@ -63,6 +63,51 @@ def test_formulario_cdi_form_acepta_payload_minimo():
 
 
 @pytest.mark.django_db
+def test_formulario_cdi_acepta_telefonos_con_formato_flexible():
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Telefonos",
+        telefono="12345678",
+        telefono_referente="1122334455",
+    )
+    form = FormularioCDIForm(
+        data={
+            "fecha_relevamiento": "2026-03-13",
+            "nombre_completo_respondente": "Ana Perez",
+            "rol_respondente": "Coordinacion",
+            "nombre_cdi": centro.nombre,
+            "codigo_cdi": centro.codigo_cdi,
+            "telefono_cdi": "12345678",
+            "telefono_referente_cdi": "11-2233-4455",
+            "telefono_organizacion": "22334455",
+            "telefono_referente_organizacion": "54-11-99887766",
+            "source_form_version": 1,
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["telefono_cdi"] == "12345678"
+    assert form.cleaned_data["telefono_referente_cdi"] == "11-2233-4455"
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_rechaza_telefonos_con_caracteres_invalidos():
+    centro = CentroDeInfancia.objects.create(nombre="CDI Telefono Invalido")
+    form = FormularioCDIForm(
+        data={
+            "nombre_cdi": centro.nombre,
+            "codigo_cdi": centro.codigo_cdi,
+            "telefono_cdi": "11-ABCD-1234",
+            "telefono_referente_cdi": "abc",
+            "source_form_version": 1,
+        }
+    )
+
+    assert not form.is_valid()
+    assert "telefono_cdi" in form.errors
+    assert "telefono_referente_cdi" in form.errors
+
+
+@pytest.mark.django_db
 def test_formulario_cdi_filtra_municipio_y_localidad_por_ubicacion_seleccionada():
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     provincia_sf = Provincia.objects.create(nombre="Santa Fe")
@@ -91,6 +136,98 @@ def test_formulario_cdi_filtra_municipio_y_localidad_por_ubicacion_seleccionada(
 
     assert municipio_ids == {municipio_ba.id}
     assert localidad_ids == {localidad_ba.id}
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_filtra_departamentos_por_provincia():
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
+    departamento_ba = DepartamentoIpi.objects.create(
+        codigo_departamento="02001",
+        provincia=provincia_ba,
+        nombre="Comuna 1",
+    )
+    DepartamentoIpi.objects.create(
+        codigo_departamento="82001",
+        provincia=provincia_sf,
+        nombre="Rosario",
+    )
+
+    form = FormularioCDIForm(data={"provincia_cdi": provincia_ba.pk})
+
+    departamento_ids = set(
+        form.fields["departamento_cdi"].queryset.values_list("id", flat=True)
+    )
+
+    assert departamento_ids == {departamento_ba.id}
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_rechaza_departamento_que_no_pertenece_a_la_provincia():
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
+    departamento_sf = DepartamentoIpi.objects.create(
+        codigo_departamento="82001",
+        provincia=provincia_sf,
+        nombre="Rosario",
+    )
+
+    form = FormularioCDIForm(
+        data={
+            "nombre_cdi": "CDI Invalido",
+            "codigo_cdi": "CDI-000001",
+            "provincia_cdi": provincia_ba.pk,
+            "departamento_cdi": departamento_sf.pk,
+            "source_form_version": 1,
+        }
+    )
+
+    assert not form.is_valid()
+    assert "departamento_cdi" in form.errors
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_rechaza_departamento_organizacion_invalido():
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
+    departamento_sf = DepartamentoIpi.objects.create(
+        codigo_departamento="82001",
+        provincia=provincia_sf,
+        nombre="Rosario",
+    )
+
+    form = FormularioCDIForm(
+        data={
+            "nombre_cdi": "CDI Invalido",
+            "codigo_cdi": "CDI-000001",
+            "provincia_organizacion": provincia_ba.pk,
+            "departamento_organizacion": departamento_sf.pk,
+            "source_form_version": 1,
+        }
+    )
+
+    assert not form.is_valid()
+    assert "departamento_organizacion" in form.errors
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_inicializa_departamento_desde_la_instancia():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    departamento = DepartamentoIpi.objects.create(
+        codigo_departamento="02001",
+        provincia=provincia,
+        nombre="Comuna 1",
+    )
+    centro = CentroDeInfancia.objects.create(nombre="CDI Inicializacion")
+    formulario = FormularioCDI.objects.create(
+        centro=centro,
+        provincia_cdi=provincia,
+        departamento_cdi=departamento,
+    )
+
+    form = FormularioCDIForm(instance=formulario)
+
+    assert form.fields["departamento_cdi"].initial == departamento
 
 
 @pytest.mark.django_db
@@ -166,7 +303,6 @@ def test_formulario_cdi_aplica_textos_actualizados_en_labels_y_opciones():
         ]
         == "El CDI cuenta con un servicio de internet relativamente estable al que accede el personal"
     )
-
 
 
 @pytest.mark.django_db

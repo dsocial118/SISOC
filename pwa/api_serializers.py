@@ -313,6 +313,16 @@ class ColaboradorGeneroPWAListSerializer(serializers.Serializer):
     id = serializers.CharField()
     label = serializers.CharField()
 
+    def create(self, validated_data):
+        raise NotImplementedError(
+            "ColaboradorGeneroPWAListSerializer no implementa create()."
+        )
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError(
+            "ColaboradorGeneroPWAListSerializer no implementa update()."
+        )
+
 
 class CatalogoActividadPWASerializer(serializers.ModelSerializer):
     class Meta:

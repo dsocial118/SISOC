@@ -3,24 +3,40 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import View
-from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView, TemplateView
+from django.views.generic import (
+    ListView,
+    CreateView,
+    DetailView,
+    UpdateView,
+    DeleteView,
+    TemplateView,
+)
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.utils import timezone
 
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from VAT.models import (
+    Centro,
     OfertaInstitucional,
     Comision,
     ComisionHorario,
     Inscripcion,
     SesionComision,
     AsistenciaSesion,
+    InstitucionUbicacion,
 )
 from VAT.forms import (
     OfertaInstitucionalForm,
     ComisionForm,
     ComisionHorarioForm,
+    CiudadanoInscripcionRapidaForm,
+)
+from VAT.services.access_scope import (
+    filter_centros_queryset_for_user,
+    filter_comisiones_queryset_for_user,
+    filter_ofertas_queryset_for_user,
+    filter_sesiones_queryset_for_user,
 )
 
 logger = logging.getLogger("django")
@@ -29,6 +45,7 @@ logger = logging.getLogger("django")
 # ============================================================================
 # OFERTA INSTITUCIONAL VIEWS
 # ============================================================================
+
 
 class OfertaInstitucionalListView(LoginRequiredMixin, ListView):
     model = OfertaInstitucional
@@ -40,6 +57,7 @@ class OfertaInstitucionalListView(LoginRequiredMixin, ListView):
         queryset = OfertaInstitucional.objects.select_related(
             "centro", "plan_curricular", "programa"
         ).order_by("-ciclo_lectivo")
+        queryset = filter_ofertas_queryset_for_user(queryset, self.request.user)
 
         centro_id = self.request.GET.get("centro_id")
         estado = self.request.GET.get("estado")
@@ -73,9 +91,21 @@ class OfertaInstitucionalCreateView(LoginRequiredMixin, CreateView):
     def get_initial(self):
         initial = super().get_initial()
         centro_id = self.request.GET.get("centro")
-        if centro_id:
+        if (
+            centro_id
+            and filter_centros_queryset_for_user(
+                Centro.objects.filter(pk=centro_id), self.request.user
+            ).exists()
+        ):
             initial["centro"] = centro_id
         return initial
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["centro"].queryset = filter_centros_queryset_for_user(
+            Centro.objects.all(), self.request.user
+        ).order_by("nombre")
+        return form
 
     def form_valid(self, form):
         messages.success(self.request, "Oferta institucional creada exitosamente.")
@@ -88,9 +118,10 @@ class OfertaInstitucionalDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "oferta"
 
     def get_queryset(self):
-        return OfertaInstitucional.objects.select_related(
+        queryset = OfertaInstitucional.objects.select_related(
             "centro", "plan_curricular__titulo_referencia", "programa"
         )
+        return filter_ofertas_queryset_for_user(queryset, self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -107,21 +138,41 @@ class OfertaInstitucionalUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "vat/oferta_institucional/oferta_form.html"
     success_url = reverse_lazy("vat_oferta_institucional_list")
 
+    def get_queryset(self):
+        queryset = OfertaInstitucional.objects.select_related(
+            "centro", "plan_curricular", "programa"
+        )
+        return filter_ofertas_queryset_for_user(queryset, self.request.user)
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["centro"].queryset = filter_centros_queryset_for_user(
+            Centro.objects.all(), self.request.user
+        ).order_by("nombre")
+        return form
+
     def form_valid(self, form):
         messages.success(self.request, "Oferta institucional actualizada exitosamente.")
         return super().form_valid(form)
 
 
-class OfertaInstitucionalDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+class OfertaInstitucionalDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     model = OfertaInstitucional
     template_name = "vat/oferta_institucional/oferta_confirm_delete.html"
     context_object_name = "oferta"
     success_url = reverse_lazy("vat_oferta_institucional_list")
 
+    def get_queryset(self):
+        queryset = OfertaInstitucional.objects.select_related("centro")
+        return filter_ofertas_queryset_for_user(queryset, self.request.user)
+
 
 # ============================================================================
 # COMISIÓN VIEWS
 # ============================================================================
+
 
 class ComisionListView(LoginRequiredMixin, ListView):
     model = Comision
@@ -130,7 +181,12 @@ class ComisionListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = Comision.objects.select_related("oferta").prefetch_related("horarios").order_by("codigo_comision")
+        queryset = (
+            Comision.objects.select_related("oferta")
+            .prefetch_related("horarios")
+            .order_by("codigo_comision")
+        )
+        queryset = filter_comisiones_queryset_for_user(queryset, self.request.user)
 
         oferta_id = self.request.GET.get("oferta_id")
         estado = self.request.GET.get("estado")
@@ -163,9 +219,28 @@ class ComisionCreateView(LoginRequiredMixin, CreateView):
     def get_initial(self):
         initial = super().get_initial()
         oferta_id = self.request.GET.get("oferta")
-        if oferta_id:
+        if (
+            oferta_id
+            and filter_ofertas_queryset_for_user(
+                OfertaInstitucional.objects.filter(pk=oferta_id), self.request.user
+            ).exists()
+        ):
             initial["oferta"] = oferta_id
         return initial
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        scoped_ofertas = filter_ofertas_queryset_for_user(
+            OfertaInstitucional.objects.select_related("centro"), self.request.user
+        ).order_by("-ciclo_lectivo")
+        scoped_centros_ids = scoped_ofertas.values_list(
+            "centro_id", flat=True
+        ).distinct()
+        form.fields["oferta"].queryset = scoped_ofertas
+        form.fields["ubicacion"].queryset = InstitucionUbicacion.objects.filter(
+            centro_id__in=scoped_centros_ids
+        ).select_related("localidad")
+        return form
 
     def form_valid(self, form):
         messages.success(self.request, "Comisión creada exitosamente.")
@@ -181,13 +256,26 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "comision"
 
     def get_queryset(self):
-        return Comision.objects.select_related("oferta__centro", "oferta__plan_curricular__titulo_referencia")
+        queryset = Comision.objects.select_related(
+            "oferta__centro", "oferta__plan_curricular__titulo_referencia"
+        )
+        return filter_comisiones_queryset_for_user(queryset, self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comision = self.object
+        horario_form = ComisionHorarioForm(initial={"comision": comision.id})
+        horario_form.fields["comision"].queryset = Comision.objects.filter(
+            pk=comision.pk
+        )
+        context["horario_form"] = horario_form
+        context["ciudadano_rapido_form"] = CiudadanoInscripcionRapidaForm(
+            initial={"documento": "", "tipo_documento": "DNI"}
+        )
         context["horarios"] = list(
-            ComisionHorario.objects.filter(comision=comision).select_related("dia_semana")
+            ComisionHorario.objects.filter(comision=comision).select_related(
+                "dia_semana"
+            )
         )
         context["sesiones"] = list(
             SesionComision.objects.filter(comision=comision)
@@ -207,7 +295,14 @@ class InscripcionCambiarEstadoView(LoginRequiredMixin, View):
     """Cambia el estado de una Inscripcion. POST: {estado: <nuevo_estado>}."""
 
     def post(self, request, pk):
-        inscripcion = get_object_or_404(Inscripcion, pk=pk)
+        scoped_inscripciones = filter_comisiones_queryset_for_user(
+            Comision.objects.all(), request.user
+        ).values_list("id", flat=True)
+        inscripcion = get_object_or_404(
+            Inscripcion,
+            pk=pk,
+            comision_id__in=scoped_inscripciones,
+        )
         nuevo_estado = request.POST.get("estado")
         estados_validos = dict(Inscripcion.ESTADO_INSCRIPCION_CHOICES)
         if nuevo_estado not in estados_validos:
@@ -236,13 +331,14 @@ class AsistenciaSesionView(LoginRequiredMixin, TemplateView):
     template_name = "vat/oferta_institucional/asistencia_sesion.html"
 
     def get_sesion(self, sesion_pk):
-        return get_object_or_404(
+        scoped_qs = filter_sesiones_queryset_for_user(
             SesionComision.objects.select_related(
                 "comision__oferta__centro",
                 "horario__dia_semana",
             ),
-            pk=sesion_pk,
+            self.request.user,
         )
+        return get_object_or_404(scoped_qs, pk=sesion_pk)
 
     def _inscripciones_activas(self, comision):
         return list(
@@ -266,11 +362,13 @@ class AsistenciaSesionView(LoginRequiredMixin, TemplateView):
         filas = []
         for insc in inscripciones:
             asist = asistencias_existentes.get(insc.pk)
-            filas.append({
-                "inscripcion": insc,
-                "presente": asist.presente if asist else None,
-                "observaciones": asist.observaciones if asist else "",
-            })
+            filas.append(
+                {
+                    "inscripcion": insc,
+                    "presente": asist.presente if asist else None,
+                    "observaciones": asist.observaciones if asist else "",
+                }
+            )
         context["sesion"] = sesion
         context["filas"] = filas
         context["ya_tomada"] = bool(asistencias_existentes)
@@ -308,6 +406,24 @@ class ComisionUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "vat/oferta_institucional/comision_form.html"
     success_url = reverse_lazy("vat_comision_list")
 
+    def get_queryset(self):
+        queryset = Comision.objects.select_related("oferta__centro")
+        return filter_comisiones_queryset_for_user(queryset, self.request.user)
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        scoped_ofertas = filter_ofertas_queryset_for_user(
+            OfertaInstitucional.objects.select_related("centro"), self.request.user
+        ).order_by("-ciclo_lectivo")
+        scoped_centros_ids = scoped_ofertas.values_list(
+            "centro_id", flat=True
+        ).distinct()
+        form.fields["oferta"].queryset = scoped_ofertas
+        form.fields["ubicacion"].queryset = InstitucionUbicacion.objects.filter(
+            centro_id__in=scoped_centros_ids
+        ).select_related("localidad")
+        return form
+
     def form_valid(self, form):
         messages.success(self.request, "Comisión actualizada exitosamente.")
         return super().form_valid(form)
@@ -319,10 +435,15 @@ class ComisionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteVi
     context_object_name = "comision"
     success_url = reverse_lazy("vat_comision_list")
 
+    def get_queryset(self):
+        queryset = Comision.objects.select_related("oferta__centro")
+        return filter_comisiones_queryset_for_user(queryset, self.request.user)
+
 
 # ============================================================================
 # COMISIÓN HORARIO VIEWS
 # ============================================================================
+
 
 class ComisionHorarioListView(LoginRequiredMixin, ListView):
     model = ComisionHorario
@@ -331,7 +452,14 @@ class ComisionHorarioListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = ComisionHorario.objects.select_related("comision", "dia_semana").order_by("comision", "dia_semana", "hora_desde")
+        queryset = ComisionHorario.objects.select_related(
+            "comision", "dia_semana"
+        ).order_by("comision", "dia_semana", "hora_desde")
+        queryset = queryset.filter(
+            comision_id__in=filter_comisiones_queryset_for_user(
+                Comision.objects.all(), self.request.user
+            ).values("id")
+        )
 
         comision_id = self.request.GET.get("comision_id")
         dia = self.request.GET.get("dia_semana")
@@ -352,16 +480,31 @@ class ComisionHorarioCreateView(LoginRequiredMixin, CreateView):
     def get_initial(self):
         initial = super().get_initial()
         comision_id = self.request.GET.get("comision")
-        if comision_id:
+        if (
+            comision_id
+            and filter_comisiones_queryset_for_user(
+                Comision.objects.filter(pk=comision_id), self.request.user
+            ).exists()
+        ):
             initial["comision"] = comision_id
         return initial
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["comision"].queryset = filter_comisiones_queryset_for_user(
+            Comision.objects.select_related("oferta__centro"), self.request.user
+        ).order_by("codigo_comision")
+        return form
 
     def form_valid(self, form):
         response = super().form_valid(form)
         from VAT.services.sesion_comision_service.impl import SesionComisionService
+
         cantidad = SesionComisionService.generar_para_horario(self.object)
         if cantidad:
-            messages.success(self.request, f"Horario creado. Se generaron {cantidad} sesiones.")
+            messages.success(
+                self.request, f"Horario creado. Se generaron {cantidad} sesiones."
+            )
         else:
             messages.success(self.request, "Horario creado exitosamente.")
         return response
@@ -375,17 +518,43 @@ class ComisionHorarioDetailView(LoginRequiredMixin, DetailView):
     template_name = "vat/oferta_institucional/horario_detail.html"
     context_object_name = "horario"
 
+    def get_queryset(self):
+        scoped_comisiones = filter_comisiones_queryset_for_user(
+            Comision.objects.all(), self.request.user
+        )
+        return ComisionHorario.objects.select_related("comision", "dia_semana").filter(
+            comision_id__in=scoped_comisiones.values("id")
+        )
+
 
 class ComisionHorarioUpdateView(LoginRequiredMixin, UpdateView):
     model = ComisionHorario
     form_class = ComisionHorarioForm
     template_name = "vat/oferta_institucional/horario_form.html"
 
+    def get_queryset(self):
+        scoped_comisiones = filter_comisiones_queryset_for_user(
+            Comision.objects.all(), self.request.user
+        )
+        return ComisionHorario.objects.select_related("comision", "dia_semana").filter(
+            comision_id__in=scoped_comisiones.values("id")
+        )
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["comision"].queryset = filter_comisiones_queryset_for_user(
+            Comision.objects.select_related("oferta__centro"), self.request.user
+        ).order_by("codigo_comision")
+        return form
+
     def form_valid(self, form):
         response = super().form_valid(form)
         from VAT.services.sesion_comision_service.impl import SesionComisionService
+
         cantidad = SesionComisionService.regenerar_para_horario(self.object)
-        messages.success(self.request, f"Horario actualizado. {cantidad} sesiones regeneradas.")
+        messages.success(
+            self.request, f"Horario actualizado. {cantidad} sesiones regeneradas."
+        )
         return response
 
     def get_success_url(self):
@@ -397,8 +566,17 @@ class ComisionHorarioDeleteView(LoginRequiredMixin, DeleteView):
     template_name = "vat/oferta_institucional/horario_confirm_delete.html"
     context_object_name = "horario"
 
+    def get_queryset(self):
+        scoped_comisiones = filter_comisiones_queryset_for_user(
+            Comision.objects.all(), self.request.user
+        )
+        return ComisionHorario.objects.select_related("comision", "dia_semana").filter(
+            comision_id__in=scoped_comisiones.values("id")
+        )
+
     def form_valid(self, form):
         from VAT.services.sesion_comision_service.impl import SesionComisionService
+
         SesionComisionService.eliminar_para_horario(self.object)
         return super().form_valid(form)
 

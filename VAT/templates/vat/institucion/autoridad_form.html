@@ -1,137 +1,181 @@
 {% extends "includes/main.html" %}
 {% load static %}
 
-{% block title %}{% if form.instance.id %}Editar{% else %}Nueva{% endif %} Autoridad{% endblock %}
+{% block title %}
+    {% if form.instance.id %}
+        Editar
+    {% else %}
+        Nueva
+    {% endif %}
+    Autoridad
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex align-items-center gap-2 mb-4">
-                <a href="{% url 'vat_autoridad_institucional_list' %}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
-                <div>
-                    <h1 class="h2 mb-0" style="color: #1f3a93;">
-                        {% if form.instance.id %}<i class="bi bi-pencil-square me-2"></i>Editar Autoridad
-                        {% else %}<i class="bi bi-plus-circle me-2"></i>Nueva Autoridad{% endif %}
-                    </h1>
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <a href="{% url 'vat_autoridad_institucional_list' %}"
+                       class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+                    <div>
+                        <h1 class="h2 mb-0" style="color: #1f3a93;">
+                            {% if form.instance.id %}
+                                <i class="bi bi-pencil-square me-2"></i>Editar Autoridad
+                            {% else %}
+                                <i class="bi bi-plus-circle me-2"></i>Nueva Autoridad
+                            {% endif %}
+                        </h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light border-bottom">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información General
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <label for="{{ form.centro.id_for_label }}" class="form-label fw-600">
+                                        {{ form.centro.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-building" style="color: #1f3a93;"></i></span>
+                                        {{ form.centro }}
+                                    </div>
+                                    {% if form.centro.errors %}<div class="text-danger small mt-1">{{ form.centro.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.nombre_completo.id_for_label }}"
+                                           class="form-label fw-600">
+                                        {{ form.nombre_completo.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-person" style="color: #1f3a93;"></i></span>
+                                        {{ form.nombre_completo }}
+                                    </div>
+                                    {% if form.nombre_completo.errors %}
+                                        <div class="text-danger small mt-1">{{ form.nombre_completo.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.dni.id_for_label }}" class="form-label fw-600">
+                                        {{ form.dni.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-card-text" style="color: #1f3a93;"></i></span>
+                                        {{ form.dni }}
+                                    </div>
+                                    {% if form.dni.errors %}<div class="text-danger small mt-1">{{ form.dni.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.cargo.id_for_label }}" class="form-label fw-600">
+                                        {{ form.cargo.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-briefcase" style="color: #1f3a93;"></i></span>
+                                        {{ form.cargo }}
+                                    </div>
+                                    {% if form.cargo.errors %}<div class="text-danger small mt-1">{{ form.cargo.errors.0 }}</div>{% endif %}
+                                    <div id="cargo_otro_wrapper" class="mt-2" style="display:none;">
+                                        <label for="{{ form.cargo_otro.id_for_label }}" class="form-label fw-600">
+                                            {{ form.cargo_otro.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.cargo_otro }}
+                                        {% if form.cargo_otro.errors %}<div class="text-danger small mt-1">{{ form.cargo_otro.errors.0 }}</div>{% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label fw-600">{{ form.email.label }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-envelope" style="color: #1f3a93;"></i></span>
+                                        {{ form.email }}
+                                    </div>
+                                    {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.telefono.id_for_label }}" class="form-label fw-600">{{ form.telefono.label }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-telephone" style="color: #1f3a93;"></i></span>
+                                        {{ form.telefono }}
+                                    </div>
+                                    {% if form.telefono.errors %}<div class="text-danger small mt-1">{{ form.telefono.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        {{ form.es_actual }}
+                                        <label class="form-check-label fw-600"
+                                               for="{{ form.es_actual.id_for_label }}">
+                                            {{ form.es_actual.label }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.vigencia_hasta.id_for_label }}"
+                                           class="form-label fw-600">{{ form.vigencia_hasta.label }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-calendar" style="color: #1f3a93;"></i></span>
+                                        {{ form.vigencia_hasta }}
+                                    </div>
+                                    {% if form.vigencia_hasta.errors %}
+                                        <div class="text-danger small mt-1">{{ form.vigencia_hasta.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <hr class="my-4" />
+                            <div class="d-flex gap-2 justify-content-end">
+                                <a href="{% url 'vat_autoridad_institucional_list' %}"
+                                   class="btn btn-outline-secondary"><i class="bi bi-x-lg me-2"></i>Cancelar</a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>
+                                    {% if form.instance.id %}
+                                        Actualizar
+                                    {% else %}
+                                        Crear
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title fw-600" style="color: #1f3a93;">
+                            <i class="bi bi-info-circle me-2"></i>Información
+                        </h6>
+                        <div class="small text-muted">
+                            <p>Representante legal o administrativo del centro.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-light border-bottom">
-                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información General</h5>
-                </div>
-                <div class="card-body p-4">
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-                        <div class="row mb-4">
-                            <div class="col-md-12">
-                                <label for="{{ form.centro.id_for_label }}" class="form-label fw-600">{{ form.centro.label }} <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-building" style="color: #1f3a93;"></i></span>
-                                    {{ form.centro }}
-                                </div>
-                                {% if form.centro.errors %}<div class="text-danger small mt-1">{{ form.centro.errors.0 }}</div>{% endif %}
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="{{ form.nombre_completo.id_for_label }}" class="form-label fw-600">{{ form.nombre_completo.label }} <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-person" style="color: #1f3a93;"></i></span>
-                                    {{ form.nombre_completo }}
-                                </div>
-                                {% if form.nombre_completo.errors %}<div class="text-danger small mt-1">{{ form.nombre_completo.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.dni.id_for_label }}" class="form-label fw-600">{{ form.dni.label }} <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-card-text" style="color: #1f3a93;"></i></span>
-                                    {{ form.dni }}
-                                </div>
-                                {% if form.dni.errors %}<div class="text-danger small mt-1">{{ form.dni.errors.0 }}</div>{% endif %}
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="{{ form.cargo.id_for_label }}" class="form-label fw-600">{{ form.cargo.label }} <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-briefcase" style="color: #1f3a93;"></i></span>
-                                    {{ form.cargo }}
-                                </div>
-                                {% if form.cargo.errors %}<div class="text-danger small mt-1">{{ form.cargo.errors.0 }}</div>{% endif %}
-                                <div id="cargo_otro_wrapper" class="mt-2" style="display:none;">
-                                    <label for="{{ form.cargo_otro.id_for_label }}" class="form-label fw-600">{{ form.cargo_otro.label }} <span class="text-danger">*</span></label>
-                                    {{ form.cargo_otro }}
-                                    {% if form.cargo_otro.errors %}<div class="text-danger small mt-1">{{ form.cargo_otro.errors.0 }}</div>{% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.email.id_for_label }}" class="form-label fw-600">{{ form.email.label }}</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-envelope" style="color: #1f3a93;"></i></span>
-                                    {{ form.email }}
-                                </div>
-                                {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="{{ form.telefono.id_for_label }}" class="form-label fw-600">{{ form.telefono.label }}</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-telephone" style="color: #1f3a93;"></i></span>
-                                    {{ form.telefono }}
-                                </div>
-                                {% if form.telefono.errors %}<div class="text-danger small mt-1">{{ form.telefono.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-check form-switch">
-                                    {{ form.es_actual }}
-                                    <label class="form-check-label fw-600" for="{{ form.es_actual.id_for_label }}">{{ form.es_actual.label }}</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="{{ form.vigencia_hasta.id_for_label }}" class="form-label fw-600">{{ form.vigencia_hasta.label }}</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0"><i class="bi-calendar" style="color: #1f3a93;"></i></span>
-                                    {{ form.vigencia_hasta }}
-                                </div>
-                                {% if form.vigencia_hasta.errors %}<div class="text-danger small mt-1">{{ form.vigencia_hasta.errors.0 }}</div>{% endif %}
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-                        <div class="d-flex gap-2 justify-content-end">
-                            <a href="{% url 'vat_autoridad_institucional_list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-2"></i>Cancelar</a>
-                            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>{% if form.instance.id %}Actualizar{% else %}Crear{% endif %}</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm bg-light">
-                <div class="card-body">
-                    <h6 class="card-title fw-600" style="color: #1f3a93;"><i class="bi bi-info-circle me-2"></i>Información</h6>
-                    <div class="small text-muted"><p>Representante legal o administrativo del centro.</p></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<style>
+    <style>
     .form-control, .form-select { border: 1px solid #e0e0e0; border-radius: 0.5rem; padding: 0.75rem 1rem; }
     .form-control:focus, .form-select:focus { border-color: #1f3a93; box-shadow: 0 0 0 0.2rem rgba(31, 58, 147, 0.15); }
     .input-group-text { border: 1px solid #e0e0e0 !important; }
     .fw-600 { font-weight: 600 !important; }
-</style>
-<script>
+    </style>
+    <script nonce="{{ request.csp_nonce }}">
 (function () {
     const cargoSelect = document.getElementById('id_cargo');
     const wrapper = document.getElementById('cargo_otro_wrapper');
@@ -143,5 +187,5 @@
     cargoSelect.addEventListener('change', toggleOtro);
     toggleOtro();  // ejecutar al cargar (para edición con valor "otro")
 })();
-</script>
+    </script>
 {% endblock %}

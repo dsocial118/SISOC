@@ -4,7 +4,7 @@
 {% block title %}Asistencia — Sesión #{{ sesion.numero_sesion }}{% endblock %}
 
 {% block content %}
-<style>
+    <style>
 /* ── Hero ─────────────────────────────────────── */
 .ci-hero {
     background: linear-gradient(135deg, #1a3a6e 0%, #1f3a93 50%, #3a6bc4 100%);
@@ -145,157 +145,216 @@
     border-top: 1px solid var(--bs-border-color);
     background: var(--bs-tertiary-bg);
 }
-</style>
+    </style>
 
-{# ── HERO ───────────────────────────────────────────────────────── #}
-<div class="ci-hero">
-    {# ── Fila superior: back + título + badges ── #}
-    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
-        <div class="d-flex align-items-center gap-3">
-            <a href="{% url 'vat_comision_detail' sesion.comision_id %}" class="ci-back"><i class="bi bi-arrow-left"></i></a>
-            <div>
-                <div class="ci-hero-title" style="margin-top:0;"><i class="bi bi-check2-square me-2"></i>Tomar Asistencia</div>
-                <div class="ci-hero-sub" style="opacity:.75;font-size:.88rem;"><i class="bi bi-book me-1"></i>{{ sesion.comision }}</div>
-            </div>
-        </div>
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <span class="ci-code-badge">Sesión #{{ sesion.numero_sesion }}</span>
-            <span class="ci-state-badge">
-                {% if sesion.estado == 'realizada' %}Realizada
-                {% elif sesion.estado == 'cancelada' %}Cancelada
-                {% else %}Programada{% endif %}
-            </span>
-            {% if ya_tomada %}
-            <span class="ci-state-badge"><i class="bi bi-pencil-square me-1"></i>Modificando</span>
-            {% endif %}
-        </div>
-    </div>
-
-    {# ── Fila inferior: stats bien distribuidos ── #}
-    <div style="background:rgba(255,255,255,.08);border-radius:8px;padding:.85rem 1.15rem;display:flex;flex-wrap:wrap;gap:0;">
-        <div style="flex:1;min-width:120px;padding:.25rem .5rem;">
-            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Fecha</span>
-            <span class="ci-stat-val"><i class="bi bi-calendar3 me-1" style="font-size:.8rem;opacity:.6;"></i>{{ sesion.fecha|date:"d/m/Y" }}</span>
-        </div>
-        <div style="flex:1;min-width:100px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);">
-            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Día</span>
-            <span class="ci-stat-val">{{ sesion.horario.dia_semana }}</span>
-        </div>
-        <div style="flex:1;min-width:140px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);">
-            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Horario</span>
-            <span class="ci-stat-val"><i class="bi bi-clock me-1" style="font-size:.8rem;opacity:.6;"></i>{{ sesion.horario.hora_desde|time:"H:i" }} – {{ sesion.horario.hora_hasta|time:"H:i" }}</span>
-        </div>
-        {% if sesion.horario.aula_espacio %}
-        <div style="flex:1;min-width:100px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);">
-            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Aula / Espacio</span>
-            <span class="ci-stat-val"><i class="bi bi-geo-alt me-1" style="font-size:.8rem;opacity:.6;"></i>{{ sesion.horario.aula_espacio }}</span>
-        </div>
-        {% endif %}
-        <div style="flex:0 0 auto;min-width:80px;padding:.25rem .5rem;border-left:1px solid rgba(255,255,255,.12);text-align:center;">
-            <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Inscriptos</span>
-            <span class="ci-stat-val" style="font-size:1.15rem;">{{ filas|length }}</span>
-        </div>
-    </div>
-</div>
-
-{# ── BODY ───────────────────────────────────────────────────────── #}
-<div class="row g-3 align-items-start">
-
-    {# ── MAIN ── #}
-    <div class="col-xl-8">
-        <div class="ci-panel">
-            <div class="ci-sec-head">
-                <span class="ci-sec-title"><i class="bi bi-people me-2"></i>Inscriptos activos ({{ filas|length }})</span>
-            </div>
-
-            {% if filas %}
-            <form method="post">
-                {% csrf_token %}
-                {% for fila in filas %}
-                <div class="ci-row">
-                    <div class="ci-av ci-av-{{ forloop.counter|divisibleby:5|yesno:'5,' }}{{ forloop.counter|divisibleby:4|yesno:'4,' }}{{ forloop.counter|divisibleby:3|yesno:'3,' }}{{ forloop.counter|divisibleby:2|yesno:'2,1' }}">{{ fila.inscripcion.ciudadano.nombre_completo|slice:":2"|upper }}</div>
-                    <div style="flex:1;min-width:0;">
-                        <span class="d-block fw-semibold" style="font-size:.87rem;color:var(--bs-body-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ fila.inscripcion.ciudadano.nombre_completo }}</span>
-                        <input type="text"
-                               class="ci-obs-input w-100 mt-1"
-                               name="obs_{{ fila.inscripcion.pk }}"
-                               value="{{ fila.observaciones|default:'' }}"
-                               placeholder="Observaciones (opcional)">
+    {# ── HERO ───────────────────────────────────────────────────────── #}
+    <div class="ci-hero">
+        {# ── Fila superior: back + título + badges ── #}
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <a href="{% url 'vat_comision_detail' sesion.comision_id %}"
+                   class="ci-back"><i class="bi bi-arrow-left"></i></a>
+                <div>
+                    <div class="ci-hero-title" style="margin-top:0;">
+                        <i class="bi bi-check2-square me-2"></i>Tomar Asistencia
                     </div>
-                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                        <span class="ci-pill {% if fila.presente %}ci-pill-green{% elif fila.presente == None %}ci-pill-gray{% else %}ci-pill-red{% endif %}" id="lbl_{{ fila.inscripcion.pk }}">
-                            {% if fila.presente %}Presente{% elif fila.presente == None %}Sin registrar{% else %}Ausente{% endif %}
-                        </span>
-                        <div class="form-check form-switch ci-switch mb-0">
-                            <input class="form-check-input"
-                                   type="checkbox"
-                                   name="presente_{{ fila.inscripcion.pk }}"
-                                   id="pres_{{ fila.inscripcion.pk }}"
-                                   value="1"
-                                   {% if fila.presente %}checked{% endif %}
-                                   onchange="
-                                       var lbl=document.getElementById('lbl_{{ fila.inscripcion.pk }}');
-                                       if(this.checked){lbl.textContent='Presente';lbl.className='ci-pill ci-pill-green';}
-                                       else{lbl.textContent='Ausente';lbl.className='ci-pill ci-pill-red';}
-                                   ">
+                    <div class="ci-hero-sub" style="opacity:.75;font-size:.88rem;">
+                        <i class="bi bi-book me-1"></i>{{ sesion.comision }}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="ci-code-badge">Sesión #{{ sesion.numero_sesion }}</span>
+                <span class="ci-state-badge">
+                    {% if sesion.estado == 'realizada' %}
+                        Realizada
+                    {% elif sesion.estado == 'cancelada' %}
+                        Cancelada
+                    {% else %}
+                        Programada
+                    {% endif %}
+                </span>
+                {% if ya_tomada %}<span class="ci-state-badge"><i class="bi bi-pencil-square me-1"></i>Modificando</span>{% endif %}
+            </div>
+        </div>
+
+        {# ── Fila inferior: stats bien distribuidos ── #}
+        <div style="background:rgba(255,255,255,.08);
+                    border-radius:8px;
+                    padding:.85rem 1.15rem;
+                    display:flex;
+                    flex-wrap:wrap;
+                    gap:0">
+            <div style="flex:1;min-width:120px;padding:.25rem .5rem;">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Fecha</span>
+                <span class="ci-stat-val"><i class="bi bi-calendar3 me-1" style="font-size:.8rem;opacity:.6;"></i>{{ sesion.fecha|date:"d/m/Y" }}</span>
+            </div>
+            <div style="flex:1;
+                        min-width:100px;
+                        padding:.25rem .5rem;
+                        border-left:1px solid rgba(255,255,255,.12)">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Día</span>
+                <span class="ci-stat-val">{{ sesion.horario.dia_semana }}</span>
+            </div>
+            <div style="flex:1;
+                        min-width:140px;
+                        padding:.25rem .5rem;
+                        border-left:1px solid rgba(255,255,255,.12)">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Horario</span>
+                <span class="ci-stat-val"><i class="bi bi-clock me-1" style="font-size:.8rem;opacity:.6;"></i>{{ sesion.horario.hora_desde|time:"H:i" }} – {{ sesion.horario.hora_hasta|time:"H:i" }}</span>
+            </div>
+            {% if sesion.horario.aula_espacio %}
+                <div style="flex:1;
+                            min-width:100px;
+                            padding:.25rem .5rem;
+                            border-left:1px solid rgba(255,255,255,.12)">
+                    <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Aula / Espacio</span>
+                    <span class="ci-stat-val"><i class="bi bi-geo-alt me-1" style="font-size:.8rem;opacity:.6;"></i>{{ sesion.horario.aula_espacio }}</span>
+                </div>
+            {% endif %}
+            <div style="flex:0 0 auto;
+                        min-width:80px;
+                        padding:.25rem .5rem;
+                        border-left:1px solid rgba(255,255,255,.12);
+                        text-align:center">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Inscriptos</span>
+                <span class="ci-stat-val" style="font-size:1.15rem;">{{ filas|length }}</span>
+            </div>
+        </div>
+    </div>
+
+    {# ── BODY ───────────────────────────────────────────────────────── #}
+    <div class="row g-3 align-items-start">
+
+        {# ── MAIN ── #}
+        <div class="col-xl-8">
+            <div class="ci-panel">
+                <div class="ci-sec-head">
+                    <span class="ci-sec-title"><i class="bi bi-people me-2"></i>Inscriptos activos ({{ filas|length }})</span>
+                </div>
+
+                {% if filas %}
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for fila in filas %}
+                            <div class="ci-row">
+                                <div class="ci-av ci-av-{{ forloop.counter|divisibleby:5|yesno:'5,' }}{{ forloop.counter|divisibleby:4|yesno:'4,' }}{{ forloop.counter|divisibleby:3|yesno:'3,' }}{{ forloop.counter|divisibleby:2|yesno:'2,1' }}">
+                                    {{ fila.inscripcion.ciudadano.nombre_completo|slice:":2"|upper }}
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <span class="d-block fw-semibold"
+                                          style="font-size:.87rem;
+                                                 color:var(--bs-body-color);
+                                                 white-space:nowrap;
+                                                 overflow:hidden;
+                                                 text-overflow:ellipsis">{{ fila.inscripcion.ciudadano.nombre_completo }}</span>
+                                    <input type="text"
+                                           class="ci-obs-input w-100 mt-1"
+                                           name="obs_{{ fila.inscripcion.pk }}"
+                                           value="{{ fila.observaciones|default:'' }}"
+                                           placeholder="Observaciones (opcional)" />
+                                </div>
+                                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                    <span class="ci-pill {% if fila.presente %}ci-pill-green{% elif fila.presente == None %}ci-pill-gray{% else %}ci-pill-red{% endif %}"
+                                          id="lbl_{{ fila.inscripcion.pk }}">
+                                        {% if fila.presente %}
+                                            Presente
+                                        {% elif fila.presente == None %}
+                                            Sin registrar
+                                        {% else %}
+                                            Ausente
+                                        {% endif %}
+                                    </span>
+                                    <div class="form-check form-switch ci-switch mb-0">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               name="presente_{{ fila.inscripcion.pk }}"
+                                               id="pres_{{ fila.inscripcion.pk }}"
+                                               value="1"
+                                               {% if fila.presente %}checked{% endif %}
+                                               onchange=" var lbl=document.getElementById('lbl_{{ fila.inscripcion.pk }}'); if(this.checked){lbl.textContent='Presente';lbl.className='ci-pill ci-pill-green';} else{lbl.textContent='Ausente';lbl.className='ci-pill ci-pill-red';} " />
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+
+                        <div class="ci-footer">
+                            <a href="{% url 'vat_comision_detail' sesion.comision_id %}"
+                               class="btn btn-sm btn-outline-secondary rounded-3">
+                                <i class="bi bi-x-lg me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-sm btn-primary rounded-3">
+                                <i class="bi bi-check-lg me-1"></i>Guardar Asistencia
+                            </button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="ci-empty">
+                        <i class="bi bi-person-plus"></i>
+                        <p class="ci-empty-t">Sin inscriptos aceptados</p>
+                        <p class="ci-empty-s">Aceptá inscripciones desde el detalle de la comisión para poder tomar asistencia.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# ── SIDEBAR ── #}
+        <div class="col-xl-4">
+            <div style="position:sticky;top:1rem;">
+
+                <div class="ci-scard">
+                    <p class="ci-sc-title">Sesión</p>
+                    <div class="d-flex flex-column gap-2">
+                        <div>
+                            <span style="font-size:.65rem;
+                                         font-weight:700;
+                                         text-transform:uppercase;
+                                         letter-spacing:.06em;
+                                         color:var(--bs-secondary-color);
+                                         display:block;
+                                         margin-bottom:.15rem">Comisión</span>
+                            <a href="{% url 'vat_comision_detail' sesion.comision_id %}"
+                               class="text-decoration-none"
+                               style="font-size:.86rem;
+                                      font-weight:600;
+                                      color:var(--bs-body-color)">{{ sesion.comision }}</a>
+                        </div>
+                        <div>
+                            <span style="font-size:.65rem;
+                                         font-weight:700;
+                                         text-transform:uppercase;
+                                         letter-spacing:.06em;
+                                         color:var(--bs-secondary-color);
+                                         display:block;
+                                         margin-bottom:.15rem">Estado de la sesión</span>
+                            <span class="ci-pill {% if sesion.estado == 'realizada' %}ci-pill-green{% elif sesion.estado == 'cancelada' %}ci-pill-red{% else %}ci-pill-blue{% endif %}">{{ sesion.get_estado_display }}</span>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
 
-                <div class="ci-footer">
-                    <a href="{% url 'vat_comision_detail' sesion.comision_id %}" class="btn btn-sm btn-outline-secondary rounded-3">
-                        <i class="bi bi-x-lg me-1"></i>Cancelar
-                    </a>
-                    <button type="submit" class="btn btn-sm btn-primary rounded-3">
-                        <i class="bi bi-check-lg me-1"></i>Guardar Asistencia
-                    </button>
-                </div>
-            </form>
-            {% else %}
-            <div class="ci-empty">
-                <i class="bi bi-person-plus"></i>
-                <p class="ci-empty-t">Sin inscriptos aceptados</p>
-                <p class="ci-empty-s">Aceptá inscripciones desde el detalle de la comisión para poder tomar asistencia.</p>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    {# ── SIDEBAR ── #}
-    <div class="col-xl-4">
-        <div style="position:sticky;top:1rem;">
-
-            <div class="ci-scard">
-                <p class="ci-sc-title">Sesión</p>
-                <div class="d-flex flex-column gap-2">
-                    <div>
-                        <span style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--bs-secondary-color);display:block;margin-bottom:.15rem;">Comisión</span>
-                        <a href="{% url 'vat_comision_detail' sesion.comision_id %}" class="text-decoration-none" style="font-size:.86rem;font-weight:600;color:var(--bs-body-color);">{{ sesion.comision }}</a>
+                {% if ya_tomada %}
+                    <div class="ci-scard" style="border-color: rgba(74,127,232,.3);">
+                        <p class="ci-sc-title">
+                            <i class="bi bi-info-circle me-1"></i>Asistencia registrada
+                        </p>
+                        <p class="mb-0"
+                           style="font-size:.82rem;
+                                  color:var(--bs-secondary-color)">
+                            Esta sesión ya tiene asistencia. Podés modificarla y guardar nuevamente.
+                        </p>
                     </div>
-                    <div>
-                        <span style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--bs-secondary-color);display:block;margin-bottom:.15rem;">Estado de la sesión</span>
-                        <span class="ci-pill {% if sesion.estado == 'realizada' %}ci-pill-green{% elif sesion.estado == 'cancelada' %}ci-pill-red{% else %}ci-pill-blue{% endif %}">{{ sesion.get_estado_display }}</span>
+                {% endif %}
+
+                <div class="ci-scard">
+                    <p class="ci-sc-title">Acciones rápidas</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'vat_comision_detail' sesion.comision_id %}"
+                           class="btn btn-outline-secondary btn-sm rounded-3"><i class="bi bi-arrow-left me-2"></i>Volver a comisión</a>
                     </div>
                 </div>
-            </div>
 
-            {% if ya_tomada %}
-            <div class="ci-scard" style="border-color: rgba(74,127,232,.3);">
-                <p class="ci-sc-title"><i class="bi bi-info-circle me-1"></i>Asistencia registrada</p>
-                <p class="mb-0" style="font-size:.82rem;color:var(--bs-secondary-color);">Esta sesión ya tiene asistencia. Podés modificarla y guardar nuevamente.</p>
             </div>
-            {% endif %}
-
-            <div class="ci-scard">
-                <p class="ci-sc-title">Acciones rápidas</p>
-                <div class="d-grid gap-2">
-                    <a href="{% url 'vat_comision_detail' sesion.comision_id %}" class="btn btn-outline-secondary btn-sm rounded-3"><i class="bi bi-arrow-left me-2"></i>Volver a comisión</a>
-                </div>
-            </div>
-
         </div>
-    </div>
 
-</div>
+    </div>
 {% endblock %}
