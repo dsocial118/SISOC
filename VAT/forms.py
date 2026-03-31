@@ -908,9 +908,9 @@ class InstitucionUbicacionForm(forms.ModelForm):
             centro = self.instance.centro
         elif "centro" in self.data:
             try:
-                centro = Centro.objects.select_related(
-                    "municipio", "provincia"
-                ).get(pk=self.data["centro"])
+                centro = Centro.objects.select_related("municipio", "provincia").get(
+                    pk=self.data["centro"]
+                )
             except (Centro.DoesNotExist, ValueError):
                 pass
         elif self.initial.get("centro"):

@@ -135,29 +135,25 @@ def _construir_payload_edicion_formulario(formulario, **overrides):
         payload[f"distribucion_salas-{index}-superficie_exclusiva_m2"] = (
             row.superficie_exclusiva_m2 or ""
         )
-        payload[f"distribucion_salas-{index}-cantidad_ninos"] = (
-            row.cantidad_ninos or ""
-        )
+        payload[f"distribucion_salas-{index}-cantidad_ninos"] = row.cantidad_ninos or ""
         payload[f"distribucion_salas-{index}-cantidad_personal_sala"] = (
             row.cantidad_personal_sala or ""
         )
 
-    for index, row in enumerate(
-        formulario.filas_demanda_insatisfecha.order_by("id")
-    ):
+    for index, row in enumerate(formulario.filas_demanda_insatisfecha.order_by("id")):
         payload[f"demanda_insatisfecha_por_grupo_etario-{index}-id"] = str(row.id)
-        payload[
-            f"demanda_insatisfecha_por_grupo_etario-{index}-grupo_etario"
-        ] = row.grupo_etario
+        payload[f"demanda_insatisfecha_por_grupo_etario-{index}-grupo_etario"] = (
+            row.grupo_etario
+        )
         payload[
             f"demanda_insatisfecha_por_grupo_etario-{index}-cantidad_demanda_insatisfecha"
         ] = (row.cantidad_demanda_insatisfecha or "")
 
     for index, row in enumerate(formulario.filas_articulacion.order_by("id")):
         payload[f"frecuencia_articulacion-{index}-id"] = str(row.id)
-        payload[
-            f"frecuencia_articulacion-{index}-tipo_institucion"
-        ] = row.tipo_institucion
+        payload[f"frecuencia_articulacion-{index}-tipo_institucion"] = (
+            row.tipo_institucion
+        )
         payload[f"frecuencia_articulacion-{index}-frecuencia"] = row.frecuencia or ""
 
     payload.update(overrides)
