@@ -65,7 +65,7 @@ def _obtener_queryset_formularios_cdi_filtrado(user):
 
 def _obtener_centro_filtrado_o_404(user, pk):
     queryset = CentroDeInfancia.objects.select_related(
-        "organizacion", "provincia", "departamento", "municipio", "localidad"
+        "provincia", "departamento", "municipio", "localidad"
     )
     queryset = aplicar_filtro_provincia_usuario(queryset, user)
     return get_object_or_404(queryset, pk=pk)
@@ -206,6 +206,9 @@ class FormularioCDIDetailView(LoginRequiredMixin, DetailView):
             self.object.filas_demanda_insatisfecha.order_by("id")
         )
         context["filas_articulacion"] = self.object.filas_articulacion.order_by("id")
+        context["horarios_funcionamiento"] = (
+            self.object.horarios_funcionamiento.order_by("id")
+        )
         context["totales_salas"] = self._sum_numeric_rows(
             context["filas_salas"],
             [
@@ -258,21 +261,39 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
 
     def get_initial(self):
         centro = self.get_centro()
-        return {
+        initial = {
             "nombre_cdi": centro.nombre,
             "codigo_cdi": centro.codigo_cdi,
+            "ambito": centro.ambito,
             "provincia_cdi": centro.provincia,
             "departamento_cdi": centro.departamento,
             "municipio_cdi": centro.municipio,
             "localidad_cdi": centro.localidad,
             "calle_cdi": centro.calle,
             "numero_puerta_cdi": centro.numero,
+            "codigo_postal_cdi": centro.codigo_postal,
+            "latitud_geografica_cdi": centro.latitud,
+            "longitud_geografica_cdi": centro.longitud,
             "telefono_cdi": centro.telefono,
+            "email_cdi": centro.mail,
             "nombre_referente_cdi": centro.nombre_referente,
             "apellido_referente_cdi": centro.apellido_referente,
             "telefono_referente_cdi": centro.telefono_referente,
             "email_referente_cdi": centro.email_referente,
+            "meses_funcionamiento": centro.meses_funcionamiento,
+            "dias_funcionamiento": centro.dias_funcionamiento,
+            "tipo_jornada": centro.tipo_jornada,
+            "tipo_jornada_otra": centro.tipo_jornada_otra,
+            "oferta_servicios": centro.oferta_servicios,
+            "modalidad_gestion": centro.modalidad_gestion,
+            "modalidad_gestion_otra": centro.modalidad_gestion_otra,
+            "nombre_organizacion_gestora": centro.organizacion,
+            "cuit_organizacion_gestora": centro.cuit_organizacion_gestiona,
         }
+        for horario in centro.horarios_funcionamiento.all():
+            initial[f"horario_{horario.dia}_apertura"] = horario.hora_apertura
+            initial[f"horario_{horario.dia}_cierre"] = horario.hora_cierre
+        return initial
 
     def construir_formulario(self, data=None, instance=None):
         initial = None
@@ -427,6 +448,15 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
             "form": form,
             "centro": centro,
             "section_fields": self.construir_secciones_formulario(form),
+            "horario_fields": [
+                {
+                    "dia": dia,
+                    "etiqueta": etiqueta,
+                    "apertura": form[f"horario_{dia}_apertura"],
+                    "cierre": form[f"horario_{dia}_cierre"],
+                }
+                for dia, etiqueta in form.DIAS_SEMANA
+            ],
             "formset_distribucion_salas": formsets["formset_distribucion_salas"],
             "formset_demanda_insatisfecha": formsets["formset_demanda_insatisfecha"],
             "formset_articulacion": formsets["formset_articulacion"],
