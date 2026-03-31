@@ -90,6 +90,67 @@ def test_formulario_cdi_acepta_telefonos_con_formato_flexible():
 
 
 @pytest.mark.django_db
+def test_formulario_cdi_normaliza_cuit_y_guarda_horarios_relacionados():
+    centro = CentroDeInfancia.objects.create(nombre="CDI Horarios")
+    formulario = FormularioCDI.objects.create(centro=centro, codigo_cdi="CDI-000001")
+    form = FormularioCDIForm(
+        data={
+            "nombre_cdi": centro.nombre,
+            "codigo_cdi": formulario.codigo_cdi,
+            "cuit_organizacion_gestora": "20-44535030-4",
+            "dias_funcionamiento": ["lunes", "martes"],
+            "horario_lunes_apertura": "08:00",
+            "horario_lunes_cierre": "12:00",
+            "horario_martes_apertura": "09:00",
+            "horario_martes_cierre": "13:00",
+            "source_form_version": 1,
+        },
+        instance=formulario,
+    )
+
+    assert form.is_valid(), form.errors
+    saved = form.save()
+
+    assert saved.cuit_organizacion_gestora == "20445350304"
+    assert list(
+        saved.horarios_funcionamiento.order_by("dia").values_list(
+            "dia", "hora_apertura", "hora_cierre"
+        )
+    ) == [
+        (
+            "lunes",
+            form.cleaned_data["horario_lunes_apertura"],
+            form.cleaned_data["horario_lunes_cierre"],
+        ),
+        (
+            "martes",
+            form.cleaned_data["horario_martes_apertura"],
+            form.cleaned_data["horario_martes_cierre"],
+        ),
+    ]
+    assert saved.horario_apertura == form.cleaned_data["horario_lunes_apertura"]
+    assert saved.horario_cierre == form.cleaned_data["horario_lunes_cierre"]
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_rechaza_horarios_para_dias_no_seleccionados():
+    centro = CentroDeInfancia.objects.create(nombre="CDI Horario Invalido")
+    form = FormularioCDIForm(
+        data={
+            "nombre_cdi": centro.nombre,
+            "codigo_cdi": "CDI-000001",
+            "dias_funcionamiento": ["lunes"],
+            "horario_martes_apertura": "08:00",
+            "horario_martes_cierre": "12:00",
+            "source_form_version": 1,
+        }
+    )
+
+    assert not form.is_valid()
+    assert "horario_martes_cierre" in form.errors
+
+
+@pytest.mark.django_db
 def test_formulario_cdi_rechaza_telefonos_con_caracteres_invalidos():
     centro = CentroDeInfancia.objects.create(nombre="CDI Telefono Invalido")
     form = FormularioCDIForm(
@@ -322,6 +383,7 @@ def test_schema_cdi_aplica_matriz_de_textos():
     first_aid_choices = dict(CAMPOS_OPCIONES["estado_botiquin_primeros_auxilios"])
     water_access_choices = dict(CAMPOS_OPCIONES["acceso_agua"])
     internet_choices = dict(CAMPOS_OPCIONES["acceso_internet_personal"])
+    month_choices = dict(FormularioCDIForm.base_fields["meses_funcionamiento"].choices)
 
     assert (
         workday_choices["simple_single_shift"]
@@ -336,4 +398,5 @@ def test_schema_cdi_aplica_matriz_de_textos():
         internet_choices["estable_sin_acceso_personal"]
         == "El CDI cuenta con un servicio de internet relativamente estable al que accede el personal"
     )
+    assert month_choices["enero"] == "Enero"
     assert ETIQUETAS_CAMPOS["fecha_relevamiento"] == "Fecha de Relevamiento"

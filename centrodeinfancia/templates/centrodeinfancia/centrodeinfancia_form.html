@@ -22,17 +22,26 @@
             </div>
         </div>
 
-        <form method="post" class="w-100" id="centrodesarrolloinfantil-form">
+        <form method="post"
+              class="w-100"
+              id="centrodesarrolloinfantil-form"
+              novalidate>
             {% csrf_token %}
 
+            {% if form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    No se pudo guardar el legajo. Revisá los campos marcados.
+                </div>
+            {% endif %}
+
             <div class="section-card mb-3">
-                <div class="section-header">
+                <div class="section-header section-header-info-basica">
                     <div class="section-header-left">
                         <div class="section-icon">
                             <i class="fas fa-child"></i>
                         </div>
                         <div class="section-title-group">
-                            <h3 class="section-title">Información Básica</h3>
+                            <h3 class="section-title">Información básica</h3>
                             <p class="section-subtitle">Datos principales del centro de desarrollo infantil</p>
                         </div>
                     </div>
@@ -43,8 +52,13 @@
                         <div class="col-md-6">{{ form.organizacion|as_crispy_field }}</div>
                     </div>
                     <div class="form-group row">
-                        <div class="col-md-6">{{ form.telefono|as_crispy_field }}</div>
-                        <div class="col-md-6">{{ form.fecha_inicio|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.cuit_organizacion_gestiona|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.ambito|as_crispy_field }}</div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-4">{{ form.telefono|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.mail|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.fecha_inicio|as_crispy_field }}</div>
                     </div>
                 </div>
             </div>
@@ -57,7 +71,7 @@
                         </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Ubicación</h3>
-                            <p class="section-subtitle">Provincia, departamento, municipio, localidad y calle</p>
+                            <p class="section-subtitle">Provincia, departamento, municipio, localidad y coordenadas</p>
                         </div>
                     </div>
                 </div>
@@ -79,11 +93,65 @@
                             <div id="localidad-loader" class="skeleton-loader d-none"></div>
                             <div id="localidad-field">{{ form.localidad|as_crispy_field }}</div>
                         </div>
-                        <div class="col-md-4"></div>
+                        <div class="col-md-4">{{ form.codigo_postal|as_crispy_field }}</div>
                     </div>
                     <div class="form-group row">
                         <div class="col-md-8">{{ form.calle|as_crispy_field }}</div>
                         <div class="col-md-4">{{ form.numero|as_crispy_field }}</div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-6">{{ form.latitud|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.longitud|as_crispy_field }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card mb-3">
+                <div class="section-header section-header-funcionamiento">
+                    <div class="section-header-left">
+                        <div class="section-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="section-title-group">
+                            <h3 class="section-title">Funcionamiento</h3>
+                            <p class="section-subtitle">Meses, días, horarios y modalidad operativa</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-body show">
+                    <div class="form-group row">
+                        <div class="col-md-6">{{ form.meses_funcionamiento|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.dias_funcionamiento|as_crispy_field }}</div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-12">
+                            <div class="card border-0 horarios-funcionamiento-card">
+                                <div class="card-body">
+                                    <h5 class="mb-3">Horarios por día</h5>
+                                    {% for horario in horario_fields %}
+                                        <div class="row align-items-start mb-3 horario-row d-none"
+                                             data-dia="{{ horario.dia }}">
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold">{{ horario.etiqueta }}</label>
+                                            </div>
+                                            <div class="col-md-4">{{ horario.apertura|as_crispy_field }}</div>
+                                            <div class="col-md-4">{{ horario.cierre|as_crispy_field }}</div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-6">{{ form.tipo_jornada|as_crispy_field }}</div>
+                        <div class="col-md-6 tipo-jornada-otra-wrapper">{{ form.tipo_jornada_otra|as_crispy_field }}</div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-6">{{ form.oferta_servicios|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.modalidad_gestion|as_crispy_field }}</div>
+                    </div>
+                    <div class="form-group row modalidad-gestion-otra-wrapper">
+                        <div class="col-md-6">{{ form.modalidad_gestion_otra|as_crispy_field }}</div>
                     </div>
                 </div>
             </div>
@@ -124,6 +192,37 @@
 {% endblock %}
 
 {% block customJS %}
+    <style nonce="{{ request.csp_nonce }}">
+        .section-card .section-header.section-header-info-basica {
+            background: linear-gradient(135deg, #0f4c5c 0%, #146c7b 100%) !important;
+            border-bottom-color: #67e8f9;
+        }
+
+        .section-card .section-header.section-header-info-basica:hover {
+            background: linear-gradient(135deg, #146c7b 0%, #198694 100%) !important;
+        }
+
+        .section-card .section-header.section-header-funcionamiento {
+            background: linear-gradient(135deg, #6b2737 0%, #8f3550 100%) !important;
+            border-bottom-color: #f9a8d4;
+        }
+
+        .section-card .section-header.section-header-funcionamiento:hover {
+            background: linear-gradient(135deg, #8f3550 0%, #aa4361 100%) !important;
+        }
+
+        .horarios-funcionamiento-card {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            border: 1px solid #3d566e;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        }
+
+        .horarios-funcionamiento-card .card-body,
+        .horarios-funcionamiento-card h5,
+        .horarios-funcionamiento-card .form-label {
+            color: #e5e7eb;
+        }
+    </style>
     <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadDepartamentosIpiUrl = "{% url 'centrodeinfancia_ajax_load_departamentos_ipi' %}";
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
@@ -138,6 +237,125 @@
             const decilIpiInput = document.getElementById("id_decil_ipi");
             const municipioSelect = document.getElementById("id_municipio");
             const localidadSelect = document.getElementById("id_localidad");
+            const diasInputs = Array.from(document.querySelectorAll("input[name='dias_funcionamiento']"));
+            const horarioRows = Array.from(document.querySelectorAll(".horario-row"));
+            const tipoJornadaSelect = document.getElementById("id_tipo_jornada");
+            const tipoJornadaOtraWrapper = document.querySelector(".tipo-jornada-otra-wrapper");
+            const modalidadGestionSelect = document.getElementById("id_modalidad_gestion");
+            const modalidadGestionOtraWrapper = document.querySelector(".modalidad-gestion-otra-wrapper");
+            const cuitInput = document.getElementById("id_cuit_organizacion_gestiona");
+
+            const horarioTouched = {};
+
+            function formatCuit(value) {
+                const digits = (value || "").replace(/\D/g, "").slice(0, 11);
+                if (digits.length <= 2) {
+                    return digits;
+                }
+                if (digits.length <= 10) {
+                    return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+                }
+                return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10)}`;
+            }
+
+            function getSelectedDias() {
+                return diasInputs
+                    .filter(function(input) { return input.checked; })
+                    .map(function(input) { return input.value; });
+            }
+
+            function getRowByDia(dia) {
+                return horarioRows.find(function(row) {
+                    return row.dataset.dia === dia;
+                });
+            }
+
+            function markHorarioTouched(dia) {
+                horarioTouched[dia] = true;
+            }
+
+            function copyFirstScheduleToOthers() {
+                const dias = getSelectedDias();
+                if (!dias.length) {
+                    return;
+                }
+                const firstRow = dias
+                    .map(getRowByDia)
+                    .find(function(row) {
+                        if (!row) {
+                            return false;
+                        }
+                        const openInput = row.querySelector("input[id$='_apertura']");
+                        const closeInput = row.querySelector("input[id$='_cierre']");
+                        return openInput && closeInput && (openInput.value || closeInput.value);
+                    });
+                if (!firstRow) {
+                    return;
+                }
+                const firstOpen = firstRow.querySelector("input[id$='_apertura']");
+                const firstClose = firstRow.querySelector("input[id$='_cierre']");
+                if (!firstOpen || !firstClose || (!firstOpen.value && !firstClose.value)) {
+                    return;
+                }
+
+                dias.slice(1).forEach(function(dia) {
+                    if (horarioTouched[dia]) {
+                        return;
+                    }
+                    const row = getRowByDia(dia);
+                    if (!row) {
+                        return;
+                    }
+                    const openInput = row.querySelector("input[id$='_apertura']");
+                    const closeInput = row.querySelector("input[id$='_cierre']");
+                    if (openInput && !openInput.value) {
+                        openInput.value = firstOpen.value;
+                    }
+                    if (closeInput && !closeInput.value) {
+                        closeInput.value = firstClose.value;
+                    }
+                });
+            }
+
+            function refreshHorarioRows() {
+                const dias = getSelectedDias();
+                horarioRows.forEach(function(row) {
+                    const visible = dias.includes(row.dataset.dia);
+                    row.classList.toggle("d-none", !visible);
+                    row.querySelectorAll("input").forEach(function(input) {
+                        input.disabled = !visible;
+                        if (!visible) {
+                            input.value = "";
+                            horarioTouched[row.dataset.dia] = false;
+                        }
+                    });
+                });
+                copyFirstScheduleToOthers();
+            }
+
+            function refreshConditionalFields() {
+                const showTipoOtra = tipoJornadaSelect && tipoJornadaSelect.value === "other";
+                if (tipoJornadaOtraWrapper) {
+                    tipoJornadaOtraWrapper.classList.toggle("d-none", !showTipoOtra);
+                    tipoJornadaOtraWrapper.querySelectorAll("input").forEach(function(input) {
+                        input.disabled = !showTipoOtra;
+                        if (!showTipoOtra) {
+                            input.value = "";
+                        }
+                    });
+                }
+
+                const showGestionOtra = modalidadGestionSelect && modalidadGestionSelect.value === "otra";
+                if (modalidadGestionOtraWrapper) {
+                    modalidadGestionOtraWrapper.classList.toggle("d-none", !showGestionOtra);
+                    modalidadGestionOtraWrapper.querySelectorAll("input").forEach(function(input) {
+                        input.disabled = !showGestionOtra;
+                        if (!showGestionOtra) {
+                            input.value = "";
+                        }
+                    });
+                }
+            }
 
             const departamentoInicial = departamentoSelect ? departamentoSelect.value : "";
             const municipioInicial = municipioSelect ? municipioSelect.value : "";
@@ -236,12 +454,7 @@
                     credentials: "same-origin",
                 });
                 const data = response.ok ? await response.json() : [];
-                replaceOptions(
-                    departamentoSelect,
-                    data,
-                    selectedDepartamento,
-                    "Seleccione un departamento",
-                );
+                replaceOptions(departamentoSelect, data, selectedDepartamento, "Seleccione un departamento");
                 syncDecilIpiFromDepartamentoData(data, selectedDepartamento);
             }
 
@@ -265,69 +478,21 @@
             ensurePlaceholder(municipioSelect, "Seleccione un municipio");
             ensurePlaceholder(localidadSelect, "Seleccione una localidad");
 
-            function applySelect2ErrorState(selectEl, isInvalid) {
-                if (!selectEl || typeof $ === "undefined") {
-                    return;
-                }
-                const $selection = $(selectEl)
-                    .next(".select2")
-                    .find(".select2-selection");
-                $selection.toggleClass("border border-danger", isInvalid);
-            }
-
             function validateRequiredField(field) {
-                if (!field || !field.required) {
+                if (!field || !field.required || field.disabled) {
                     return true;
                 }
                 const value = (field.value || "").trim();
                 const isValid = value !== "";
                 field.classList.toggle("is-invalid", !isValid);
-                applySelect2ErrorState(field, !isValid);
                 return isValid;
             }
 
-            function initOrganizacionSelect2() {
-                const organizacionSelect = document.getElementById("id_organizacion");
-                if (
-                    !organizacionSelect ||
-                    typeof $ === "undefined" ||
-                    !$.fn ||
-                    !$.fn.select2
-                ) {
-                    return;
-                }
-                const $organizacion = $(organizacionSelect);
-                if ($organizacion.data("select2")) {
-                    $organizacion.select2("destroy");
-                }
-
-                $organizacion.select2({
-                    placeholder: "Seleccione una organizacion",
-                    allowClear: true,
-                    width: "100%",
-                });
-
-                $organizacion.on("select2:select select2:clear", function() {
-                    validateRequiredField(organizacionSelect);
-                });
-            }
-
-            initOrganizacionSelect2();
-
             const formEl = document.getElementById("centrodesarrolloinfantil-form");
-            const requiredFields = formEl
-                ? Array.from(formEl.querySelectorAll("[required]"))
-                : [];
+            const requiredFields = formEl ? Array.from(formEl.querySelectorAll("[required]")) : [];
 
             requiredFields.forEach(function(field) {
-                if (field.classList.contains("is-invalid")) {
-                    applySelect2ErrorState(field, true);
-                }
-            });
-
-            requiredFields.forEach(function(field) {
-                const eventName =
-                    field.tagName === "SELECT" ? "change" : "input";
+                const eventName = field.tagName === "SELECT" ? "change" : "input";
                 field.addEventListener(eventName, function() {
                     validateRequiredField(field);
                 });
@@ -347,6 +512,39 @@
                     }
                 });
             }
+
+            if (cuitInput) {
+                cuitInput.addEventListener("input", function() {
+                    cuitInput.value = formatCuit(cuitInput.value);
+                });
+                cuitInput.value = formatCuit(cuitInput.value);
+            }
+
+            diasInputs.forEach(function(input) {
+                input.addEventListener("change", refreshHorarioRows);
+            });
+
+            horarioRows.forEach(function(row) {
+                const dia = row.dataset.dia;
+                row.querySelectorAll("input").forEach(function(input) {
+                    input.addEventListener("input", function() {
+                        markHorarioTouched(dia);
+                        if (getSelectedDias()[0] === dia) {
+                            copyFirstScheduleToOthers();
+                        }
+                    });
+                });
+            });
+
+            if (tipoJornadaSelect) {
+                tipoJornadaSelect.addEventListener("change", refreshConditionalFields);
+            }
+            if (modalidadGestionSelect) {
+                modalidadGestionSelect.addEventListener("change", refreshConditionalFields);
+            }
+
+            refreshHorarioRows();
+            refreshConditionalFields();
 
             if (provinciaSelect && departamentoSelect && municipioSelect && localidadSelect) {
                 provinciaSelect.addEventListener("change", async function() {

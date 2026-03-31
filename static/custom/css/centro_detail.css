@@ -198,7 +198,7 @@
     position: relative;
     display: flex;
     flex-direction: row;
-    width: 60px; 
+    width: 60px;
     height: 100%;
     cursor: pointer;
     overflow: visible;
@@ -294,6 +294,7 @@
 /* Colores de headers VAT (gradientes) */
 .accordion-header--informacion { background: linear-gradient(180deg, #0b756d, #095e58); color: #fff; }
 .accordion-header--ubicacion   { background: linear-gradient(180deg, #f79d00, #d98800); color: #fff; }
+.accordion-header--funcionamiento   { background: linear-gradient(180deg, #ef00f7, #d90086); color: #fff; }
 .accordion-header--referente   { background: linear-gradient(180deg, #6a1b99, #531578); color: #fff; }
 .accordion-header--autoridades { background: linear-gradient(180deg, #1565c0, #0d4f9a); color: #fff; }
 .accordion-header--contactos   { background: linear-gradient(180deg, #00897b, #006b60); color: #fff; }
@@ -301,6 +302,7 @@
 /* Glow sutil en panel activo */
 .accordion-panel.open .accordion-header--informacion { box-shadow: inset 0 0 18px rgba(11,117,109,.35); }
 .accordion-panel.open .accordion-header--ubicacion   { box-shadow: inset 0 0 18px rgba(247,157,0,.35); }
+.accordion-panel.open .accordion-header--funcionamiento   { box-shadow: inset 0 0 18px rgba(239, 0, 247, 0.35); }
 .accordion-panel.open .accordion-header--referente   { box-shadow: inset 0 0 18px rgba(106,27,153,.35); }
 .accordion-panel.open .accordion-header--autoridades { box-shadow: inset 0 0 18px rgba(21,101,192,.35); }
 .accordion-panel.open .accordion-header--contactos   { box-shadow: inset 0 0 18px rgba(0,137,123,.35); }

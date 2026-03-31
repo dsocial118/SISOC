@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 
 from VAT.models import Inscripcion, Voucher
-from VAT.services.voucher_service.impl import VoucherService
+from VAT.services.voucher_service import VoucherService
 
 User = get_user_model()
 
@@ -47,6 +47,16 @@ class InscripcionService:
             User.objects.filter(is_staff=True).first()
             or User.objects.filter(is_superuser=True).first()
         )
+
+    @staticmethod
+    def _resolver_cantidad_debito(costo) -> int:
+        monto = Decimal(costo or 0)
+        if monto != monto.to_integral_value():
+            raise ValueError(
+                "El costo de la oferta debe ser un numero entero de creditos "
+                "para poder debitarse del voucher."
+            )
+        return int(monto)
 
     @staticmethod
     def validar_inscripcion_unica(ciudadano, programa) -> tuple[bool, str]:
@@ -157,7 +167,9 @@ class InscripcionService:
                         f"{ciudadano} no tiene voucher activo para el programa {oferta.programa}."
                     )
 
-                cantidad_debito = int(Decimal(oferta.costo or 0))
+                cantidad_debito = InscripcionService._resolver_cantidad_debito(
+                    oferta.costo
+                )
                 usuario_auditoria = InscripcionService._resolver_usuario_auditoria(
                     usuario
                 )

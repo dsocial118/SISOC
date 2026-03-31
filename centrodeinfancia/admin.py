@@ -24,10 +24,10 @@ class CentroDeInfanciaAdmin(admin.ModelAdmin):
         "departamento",
         "fecha_creacion",
     )
-    list_select_related = ("organizacion", "provincia", "departamento")
+    list_select_related = ("provincia", "departamento")
     search_fields = (
         "nombre",
-        "organizacion__nombre",
+        "organizacion",
         "provincia__nombre",
         "departamento__nombre",
     )

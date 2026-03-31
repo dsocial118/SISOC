@@ -45,6 +45,38 @@
 
         <div class="card mb-3">
             <div class="card-header">
+                <strong>Horarios de funcionamiento por día</strong>
+            </div>
+            <div class="card-body">
+                {% if horarios_funcionamiento %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Día</th>
+                                    <th>Horario de apertura</th>
+                                    <th>Horario de cierre</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for horario in horarios_funcionamiento %}
+                                    <tr>
+                                        <td>{{ horario.get_dia_display }}</td>
+                                        <td>{{ horario.hora_apertura|time:"H:i"|default:"-" }}</td>
+                                        <td>{{ horario.hora_cierre|time:"H:i"|default:"-" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="mb-0 text-muted">Sin horarios cargados.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
                 <strong>Organización de Salas: ¿Cómo se distribuyen los niños y niñas en las salas dentro del CDI? Complete la siguiente tabla consignando para cada grupo existente, la cantidad de salas, la superficie exclusiva en m², la cantidad de niñas y niños que concurren y la cantidad de personal de sala disponible.</strong>
             </div>
             <div class="card-body">

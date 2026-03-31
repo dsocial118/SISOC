@@ -7,7 +7,7 @@ por cada ocurrencia de ese día dentro del rango fecha_inicio/fecha_fin de la Co
 Ejemplo:
   Comision: 22/03/2026 → 22/04/2026
   Horario: Lunes 10:00-12:00
-  Resultado: 4 sesiones (23/03, 30/03, 06/04, 13/04, 20/04... según el rango)
+  Resultado: 5 sesiones (23/03, 30/03, 06/04, 13/04, 20/04... según el rango)
 """
 
 from datetime import timedelta
