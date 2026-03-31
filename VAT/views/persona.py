@@ -2,9 +2,12 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -15,8 +18,8 @@ from django.views.generic import (
 
 from ciudadanos.models import Ciudadano
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
-from VAT.forms import InscripcionForm
-from VAT.models import Inscripcion
+from VAT.forms import InscripcionForm, CiudadanoInscripcionRapidaForm
+from VAT.models import Comision, Inscripcion
 from VAT.services.inscripcion_service import InscripcionService
 
 logger = logging.getLogger("django")
@@ -107,6 +110,78 @@ class InscripcionCreateView(LoginRequiredMixin, CreateView):
             messages.success(self.request, "Inscripción creada exitosamente.")
 
         return HttpResponseRedirect(self.get_success_url())
+
+
+class InscripcionRapidaComisionView(LoginRequiredMixin, View):
+    """Alta rápida de inscripción desde el detalle de comisión vía AJAX."""
+
+    def post(self, request, *args, **kwargs):
+        comision = get_object_or_404(
+            Comision.objects.select_related("oferta__programa"),
+            pk=request.POST.get("comision"),
+        )
+        ciudadano_id = (request.POST.get("ciudadano_id") or "").strip()
+        observaciones = (request.POST.get("observaciones") or "").strip()
+        ciudadano_form = None
+
+        if ciudadano_id:
+            ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
+        else:
+            ciudadano_form = CiudadanoInscripcionRapidaForm(request.POST)
+            if not ciudadano_form.is_valid():
+                return JsonResponse(
+                    {
+                        "ok": False,
+                        "message": "Errores en el formulario de ciudadano.",
+                        "errors": ciudadano_form.errors,
+                    },
+                    status=400,
+                )
+            ciudadano = ciudadano_form.save(commit=False)
+            ciudadano.creado_por = request.user
+            ciudadano.modificado_por = request.user
+            ciudadano.origen_dato = "manual"
+
+        if (
+            ciudadano_id
+            and Inscripcion.objects.filter(
+                ciudadano=ciudadano, comision=comision
+            ).exists()
+        ):
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": "El ciudadano ya está inscripto en esta comisión.",
+                },
+                status=400,
+            )
+
+        try:
+            with transaction.atomic():
+                if ciudadano_form is not None:
+                    ciudadano.save()
+                inscripcion = InscripcionService.crear_inscripcion(
+                    ciudadano=ciudadano,
+                    comision=comision,
+                    programa=comision.oferta.programa,
+                    estado="inscripta",
+                    origen_canal="backoffice",
+                    observaciones=observaciones,
+                    usuario=request.user,
+                )
+        except ValueError as exc:
+            return JsonResponse(
+                {"ok": False, "message": str(exc)},
+                status=400,
+            )
+
+        return JsonResponse(
+            {
+                "ok": True,
+                "message": f"Inscripción creada para {inscripcion.ciudadano.nombre_completo}.",
+                "inscripcion_id": inscripcion.pk,
+            }
+        )
 
 
 class InscripcionDetailView(LoginRequiredMixin, DetailView):

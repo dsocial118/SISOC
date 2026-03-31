@@ -2,160 +2,434 @@
 {% load static %}
 {% load crispy_forms_tags %}
 {% block title %}{{ page_title }}{% endblock %}
-{% block breadcrumb %}
-    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
-{% endblock %}
+{% block titulo-pagina %}{{ page_title }}{% endblock %}
 {% block head %}
-    <link rel="stylesheet"
-          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <style>
+        .vp-shell {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .vp-hero {
+            background: linear-gradient(135deg, #183a67 0%, #25518b 55%, #3b74b8 100%);
+            color: #fff;
+            border-radius: 18px;
+            padding: 1.75rem 2rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 18px 45px rgba(24, 58, 103, 0.18);
+        }
+
+        .vp-hero h1 {
+            margin: 0 0 .35rem;
+            font-size: 1.9rem;
+            font-weight: 700;
+        }
+
+        .vp-hero p {
+            margin: 0;
+            max-width: 760px;
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .vp-panel {
+            border: 0;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+        }
+
+        .vp-panel-header {
+            padding: 1.15rem 1.35rem;
+            border-bottom: 1px solid rgba(126, 179, 255, 0.18);
+            background: linear-gradient(135deg, #132c4d 0%, #1d446f 55%, #2d649e 100%);
+            color: #f8fbff;
+        }
+
+        .vp-panel-header .card-title {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .vp-panel-header .text-muted,
+        .vp-panel-header .small {
+            color: rgba(240, 247, 255, 0.82) !important;
+        }
+
+        .vp-section {
+            padding: 1.35rem;
+            border-bottom: 1px solid #edf1f6;
+        }
+
+        .vp-section:last-child {
+            border-bottom: 0;
+        }
+
+        .vp-section-title {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e3558;
+            margin-bottom: .3rem;
+        }
+
+        .vp-section-text {
+            color: #64748b;
+            font-size: .92rem;
+            margin-bottom: 1rem;
+        }
+
+        .vp-badge {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #e7effb;
+            color: #25518b;
+            flex-shrink: 0;
+        }
+
+        .vp-field label {
+            font-weight: 600;
+            color: #243b5e;
+            margin-bottom: .35rem;
+        }
+
+        .vp-field .form-control,
+        .vp-field .form-select,
+        .vp-field textarea {
+            border-radius: 12px;
+            border: 1px solid #d8e1ee;
+            padding: .75rem .95rem;
+            box-shadow: none;
+            color: #243b5e;
+            background-color: #fff;
+        }
+
+        .vp-field .form-control:focus,
+        .vp-field .form-select:focus,
+        .vp-field textarea:focus {
+            border-color: #3b74b8;
+            box-shadow: 0 0 0 .2rem rgba(59, 116, 184, 0.12);
+            color: #243b5e;
+        }
+
+        .vp-help {
+            color: #a9bdd6;
+            font-size: .82rem;
+            margin-top: .35rem;
+        }
+
+        .vp-actions {
+            display: flex;
+            gap: .75rem;
+            justify-content: flex-end;
+            padding: 1.25rem 1.35rem 1.35rem;
+            background: linear-gradient(180deg, rgba(10, 21, 37, 0.98) 0%, rgba(15, 30, 50, 0.98) 100%);
+            border-top: 1px solid rgba(126, 179, 255, 0.18);
+            margin-top: 1.5rem;
+        }
+
+        .vp-actions .btn-secondary {
+            color: #d8e7f8;
+            border-color: rgba(179, 206, 237, 0.38);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .vp-actions .btn-secondary:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(179, 206, 237, 0.5);
+        }
+
+        .vp-actions .btn-primary {
+            background: linear-gradient(135deg, #2e6fbc 0%, #4a8ddb 100%);
+            border-color: #4a8ddb;
+            box-shadow: 0 10px 20px rgba(46, 111, 188, 0.28);
+        }
+
+        .vp-actions .btn-primary:hover {
+            background: linear-gradient(135deg, #255d9f 0%, #3d7bc3 100%);
+            border-color: #3d7bc3;
+        }
+
+        .form-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .fieldWrapper {
+            margin-bottom: 0.75rem;
+        }
+
+        .errorlist {
+            color: #dc3545;
+            font-size: .85rem;
+        }
+
+        .helptext {
+            color: #a9bdd6;
+            font-size: .82rem;
+            display: block;
+            margin-top: .35rem;
+        }
+
+        .form-check-label {
+            font-weight: 500;
+            color: #243b5e;
+        }
+
+        .row .col-md-6:last-child:odd,
+        .row .col-md-4:last-child:nth-child(3n+1),
+        .row .col-md-3:last-child:nth-child(4n+1) {
+            margin-bottom: 0;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .header-section h2 {
+            margin: 0;
+            color: #1f3a67;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header-section .btn-group {
+            display: flex;
+            gap: .5rem;
+        }
+
+        @media (max-width: 991px) {
+            .vp-hero {
+                padding: 1.4rem 1.25rem;
+            }
+            
+            .header-section {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .header-section .btn-group {
+                width: 100%;
+                flex-direction: column;
+            }
+            
+            .header-section .btn-group .btn {
+                width: 100%;
+            }
+        }
+    </style>
 {% endblock %}
 {% block content %}
     {% include 'components/alert_message.html' with show_django_messages=True %}
-    <form method="post"
-          enctype="multipart/form-data"
-          id="centro-form"
-          novalidate>
-        {% csrf_token %}
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0">{{ page_title }}</h2>
-            <div>
-                <a href="{{ cancel_url }}" class="btn btn-secondary mr-2">
-                    <i class="fas fa-arrow-left mr-1"></i>Volver
+ 
+    <div class="vp-shell">
+        <div class="vp-hero">
+            <h1>
+                <i class="fas fa-building me-2"></i>{{ page_title }}
+            </h1>
+            <p>Administrá la información general del centro, incluyendo ubicación, contacto y datos del referente responsable.</p>
+        </div>
+
+        <form method="post"
+              enctype="multipart/form-data"
+              id="centro-form"
+              novalidate>
+            {% csrf_token %}
+ 
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+            <!-- SECCIÓN 1: Información Básica -->
+            <div class="card vp-panel mb-4">
+                <div class="vp-panel-header">
+                    <h3 class="card-title mb-1">
+                        <i class="fas fa-info-circle mr-2"></i>Información Básica
+                    </h3>
+                    <div class="text-muted small">Nombre, código y estado operativo del centro.</div>
+                </div>
+                <div class="vp-section">
+                    <div class="row g-3">
+                        <div class="col-md-6 vp-field">
+                            <label for="{{ form.nombre.id_for_label }}">
+                                {{ form.nombre.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}<div class="text-danger small mt-1">{{ form.nombre.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3 vp-field">
+                            <label for="{{ form.codigo.id_for_label }}">{{ form.codigo.label }}</label>
+                            {{ form.codigo }}
+                            {% if form.codigo.errors %}<div class="text-danger small mt-1">{{ form.codigo.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3 vp-field">
+                            <label class="form-label">Estado</label>
+                            <div class="form-check">
+                                {{ form.activo }}
+                                <label class="form-check-label" for="{{ form.activo.id_for_label }}">Centro activo</label>
+                            </div>
+                            {% if form.activo.errors %}<div class="text-danger small mt-1">{{ form.activo.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6 vp-field">
+                            <label for="{{ form.referente.id_for_label }}">{{ form.referente.label }}</label>
+                            {{ form.referente }}
+                            {% if form.referente.errors %}
+                                <div class="text-danger small mt-1">{{ form.referente.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: Ubicación -->
+            <div class="card vp-panel mb-4">
+                <div class="vp-panel-header">
+                    <h3 class="card-title mb-1">
+                        <i class="fas fa-map-marker-alt mr-2"></i>Ubicación
+                    </h3>
+                    <div class="text-muted small">Provincia, municipio, localidad y domicilio del centro.</div>
+                </div>
+                <div class="vp-section">
+                    <div class="row g-3">
+                        <div class="col-md-4 vp-field">
+                            <label for="{{ form.provincia.id_for_label }}">{{ form.provincia.label }}</label>
+                            {{ form.provincia }}
+                            {% if form.provincia.errors %}
+                                <div class="text-danger small mt-1">{{ form.provincia.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 vp-field">
+                            <label for="{{ form.municipio.id_for_label }}">{{ form.municipio.label }}</label>
+                            {{ form.municipio }}
+                            {% if form.municipio.errors %}
+                                <div class="text-danger small mt-1">{{ form.municipio.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 vp-field">
+                            <label for="{{ form.localidad.id_for_label }}">{{ form.localidad.label }}</label>
+                            {{ form.localidad }}
+                            {% if form.localidad.errors %}
+                                <div class="text-danger small mt-1">{{ form.localidad.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8 vp-field">
+                            <label for="{{ form.calle.id_for_label }}">{{ form.calle.label }}</label>
+                            {{ form.calle }}
+                            {% if form.calle.errors %}<div class="text-danger small mt-1">{{ form.calle.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4 vp-field">
+                            <label for="{{ form.numero.id_for_label }}">{{ form.numero.label }}</label>
+                            {{ form.numero }}
+                            {% if form.numero.errors %}<div class="text-danger small mt-1">{{ form.numero.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-12 vp-field">
+                            <label for="{{ form.domicilio_actividad.id_for_label }}">{{ form.domicilio_actividad.label }}</label>
+                            {{ form.domicilio_actividad }}
+                            {% if form.domicilio_actividad.errors %}
+                                <div class="text-danger small mt-1">{{ form.domicilio_actividad.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 3: Contacto -->
+            <div class="card vp-panel mb-4">
+                <div class="vp-panel-header">
+                    <h3 class="card-title mb-1">
+                        <i class="fas fa-phone-alt mr-2"></i>Contacto
+                    </h3>
+                    <div class="text-muted small">Teléfono, celular, correo y sitio web del centro.</div>
+                </div>
+                <div class="vp-section">
+                    <div class="row g-3">
+                        <div class="col-md-4 vp-field">
+                            <label for="{{ form.telefono.id_for_label }}">{{ form.telefono.label }}</label>
+                            {{ form.telefono }}
+                            {% if form.telefono.errors %}<div class="text-danger small mt-1">{{ form.telefono.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4 vp-field">
+                            <label for="{{ form.celular.id_for_label }}">{{ form.celular.label }}</label>
+                            {{ form.celular }}
+                            {% if form.celular.errors %}<div class="text-danger small mt-1">{{ form.celular.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4 vp-field">
+                            <label for="{{ form.correo.id_for_label }}">{{ form.correo.label }}</label>
+                            {{ form.correo }}
+                            {% if form.correo.errors %}<div class="text-danger small mt-1">{{ form.correo.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-12 vp-field">
+                            <label for="{{ form.sitio_web.id_for_label }}">{{ form.sitio_web.label }}</label>
+                            {{ form.sitio_web }}
+                            {% if form.sitio_web.errors %}
+                                <div class="text-danger small mt-1">{{ form.sitio_web.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 4: Datos del Referente -->
+            <div class="card vp-panel mb-4">
+                <div class="vp-panel-header">
+                    <h3 class="card-title mb-1">
+                        <i class="fas fa-user-tie mr-2"></i>Datos del Referente
+                    </h3>
+                    <div class="text-muted small">Información de contacto del referente responsable del centro.</div>
+                </div>
+                <div class="vp-section">
+                    <div class="row g-3">
+                        <div class="col-md-3 vp-field">
+                            <label for="{{ form.nombre_referente.id_for_label }}">{{ form.nombre_referente.label }}</label>
+                            {{ form.nombre_referente }}
+                            {% if form.nombre_referente.errors %}
+                                <div class="text-danger small mt-1">{{ form.nombre_referente.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3 vp-field">
+                            <label for="{{ form.apellido_referente.id_for_label }}">{{ form.apellido_referente.label }}</label>
+                            {{ form.apellido_referente }}
+                            {% if form.apellido_referente.errors %}
+                                <div class="text-danger small mt-1">{{ form.apellido_referente.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3 vp-field">
+                            <label for="{{ form.telefono_referente.id_for_label }}">{{ form.telefono_referente.label }}</label>
+                            {{ form.telefono_referente }}
+                            {% if form.telefono_referente.errors %}
+                                <div class="text-danger small mt-1">{{ form.telefono_referente.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3 vp-field">
+                            <label for="{{ form.correo_referente.id_for_label }}">{{ form.correo_referente.label }}</label>
+                            {{ form.correo_referente }}
+                            {% if form.correo_referente.errors %}
+                                <div class="text-danger small mt-1">{{ form.correo_referente.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="vp-actions">
+                <a href="{{ cancel_url }}" class="btn btn-secondary">
+                    <i class="fas fa-times mr-1"></i>Cancelar
                 </a>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save mr-1"></i>{{ submit_text|default:"Guardar" }}
                 </button>
             </div>
-        </div>
-        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
-
-        <!-- SECCIÓN 1: Información Básica -->
-        <div class="card bg-dark text-white mb-3">
-            <div class="card-header bg-panel1 d-flex justify-content-between align-items-center"
-                 style="cursor:pointer"
-                 data-toggle="collapse"
-                 data-target="#sec-basica"
-                 aria-expanded="true">
-                <span><i class="fas fa-info-circle mr-2"></i><strong>1. Información Básica</strong></span>
-                <i class="fas fa-chevron-up toggle-icon"></i>
-            </div>
-            <div id="sec-basica" class="collapse show">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">{{ form.nombre|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.codigo|as_crispy_field }}</div>
-                        <div class="col-md-3">
-                            <div class="form-group mt-4 pt-2">
-                                {{ form.activo }}
-                                <label for="{{ form.activo.id_for_label }}" class="ml-2">Centro activo</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">{{ form.organizacion_asociada|as_crispy_field }}</div>
-                        <div class="col-md-6">{{ form.referente|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SECCIÓN 2: Ubicación -->
-        <div class="card bg-dark text-white mb-3">
-            <div class="card-header bg-panel2 d-flex justify-content-between align-items-center"
-                 style="cursor:pointer"
-                 data-toggle="collapse"
-                 data-target="#sec-ubicacion"
-                 aria-expanded="true">
-                <span><i class="fas fa-map-marker-alt mr-2"></i><strong>2. Ubicación</strong></span>
-                <i class="fas fa-chevron-up toggle-icon"></i>
-            </div>
-            <div id="sec-ubicacion" class="collapse show">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
-                        <div class="col-md-4">{{ form.municipio|as_crispy_field }}</div>
-                        <div class="col-md-4">{{ form.localidad|as_crispy_field }}</div>
-                        <div class="col-md-8">{{ form.calle|as_crispy_field }}</div>
-                        <div class="col-md-4">{{ form.numero|as_crispy_field }}</div>
-                        <div class="col-md-12">{{ form.domicilio_actividad|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SECCIÓN 3: Contacto -->
-        <div class="card bg-dark text-white mb-3">
-            <div class="card-header bg-panel3 d-flex justify-content-between align-items-center"
-                 style="cursor:pointer"
-                 data-toggle="collapse"
-                 data-target="#sec-contacto"
-                 aria-expanded="true">
-                <span><i class="fas fa-phone-alt mr-2"></i><strong>3. Contacto</strong></span>
-                <i class="fas fa-chevron-up toggle-icon"></i>
-            </div>
-            <div id="sec-contacto" class="collapse show">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">{{ form.telefono|as_crispy_field }}</div>
-                        <div class="col-md-4">{{ form.celular|as_crispy_field }}</div>
-                        <div class="col-md-4">{{ form.correo|as_crispy_field }}</div>
-                        <div class="col-md-6">{{ form.sitio_web|as_crispy_field }}</div>
-                        <div class="col-md-6">{{ form.link_redes|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SECCIÓN 4: Datos del Referente -->
-        <div class="card bg-dark text-white mb-3">
-            <div class="card-header bg-panel4 d-flex justify-content-between align-items-center"
-                 style="cursor:pointer"
-                 data-toggle="collapse"
-                 data-target="#sec-referente"
-                 aria-expanded="true">
-                <span><i class="fas fa-user-tie mr-2"></i><strong>4. Datos del Referente</strong></span>
-                <i class="fas fa-chevron-up toggle-icon"></i>
-            </div>
-            <div id="sec-referente" class="collapse show">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">{{ form.nombre_referente|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.apellido_referente|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.telefono_referente|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.correo_referente|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SECCIÓN 5: Multimedia -->
-        <div class="card bg-dark text-white mb-4">
-            <div class="card-header bg-panel5 d-flex justify-content-between align-items-center"
-                 style="cursor:pointer"
-                 data-toggle="collapse"
-                 data-target="#sec-media"
-                 aria-expanded="false">
-                <span><i class="fas fa-image mr-2"></i><strong>5. Foto</strong></span>
-                <i class="fas fa-chevron-down toggle-icon"></i>
-            </div>
-            <div id="sec-media" class="collapse">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">{{ form.foto|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Botones pie -->
-        <div class="d-flex justify-content-end mb-4">
-            <a href="{{ cancel_url }}" class="btn btn-secondary mr-2">
-                <i class="fas fa-times mr-1"></i>Cancelar
-            </a>
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save mr-1"></i>{{ submit_text|default:"Guardar" }}
-            </button>
-        </div>
-    </form>
+        </form>
+    </div>
 {% endblock %}
 {% block customJS %}
     <script nonce="{{ request.csp_nonce }}">
@@ -163,19 +437,4 @@
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>
     <script src="{% static 'custom/js/centro_form.js' %}"></script>
-    <script nonce="{{ request.csp_nonce }}">
-        // Toggle chevron al colapsar/expandir
-        document.querySelectorAll('[data-toggle="collapse"]').forEach(function (header) {
-            var target = document.querySelector(header.getAttribute('data-target'));
-            var icon = header.querySelector('.toggle-icon');
-            if (target) {
-                target.addEventListener('show.bs.collapse', function () {
-                    icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
-                });
-                target.addEventListener('hide.bs.collapse', function () {
-                    icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
-                });
-            }
-        });
-    </script>
 {% endblock %}

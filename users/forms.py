@@ -14,11 +14,20 @@ from core.models import Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
 from users.models import AccesoComedorPWA, Profile
-from users.profile_utils import get_profile_or_none
 from users.services_pwa import (
     deactivate_representante_accesses,
     is_pwa_user,
     sync_representante_accesses,
+)
+
+
+ROLE_PERMISSION_QUERYSET = (
+    Permission.objects.select_related("content_type")
+    .filter(
+        content_type__app_label="auth",
+        codename__startswith="role_",
+    )
+    .order_by("name")
 )
 
 
@@ -32,7 +41,7 @@ class BackofficeAuthenticationForm(AuthenticationForm):
                 "Este usuario solo puede ingresar desde la PWA.",
                 code="pwa_only",
             )
-        profile = get_profile_or_none(user)
+        profile = getattr(user, "profile", None)
         expires_at = getattr(profile, "initial_password_expires_at", None)
         if (
             getattr(profile, "must_change_password", False)
@@ -70,18 +79,6 @@ class ComedorPWASelectMultiple(forms.SelectMultiple):
 
 
 class PWAAccessMixin:
-    @staticmethod
-    def _set_initial_password_flags(profile, *, must_change_password: bool):
-        profile.must_change_password = must_change_password
-        profile.password_changed_at = (
-            None if must_change_password else profile.password_changed_at
-        )
-        profile.initial_password_expires_at = (
-            timezone.now() + timedelta(hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS)
-            if must_change_password
-            else None
-        )
-
     def _setup_pwa_fields(self):
         self.fields["es_representante_pwa"] = forms.BooleanField(
             required=False,
@@ -116,8 +113,8 @@ class PWAAccessMixin:
             ),
             required=False,
             widget=ComedorPWASelectMultiple(attrs={"class": "select2"}),
-            label="Espacios",
-            help_text="Espacios visibles para este usuario en SISOC - Mobile.",
+            label="Comedores PWA",
+            help_text="Comedores que este usuario representa en la PWA.",
         )
 
     def _init_pwa_fields(self):
@@ -128,7 +125,6 @@ class PWAAccessMixin:
             rol=AccesoComedorPWA.ROL_REPRESENTANTE,
             activo=True,
         )
-        comedor_ids = list(accesos.values_list("comedor_id", flat=True))
         organizacion_ids = list(
             accesos.exclude(organizacion_id__isnull=True)
             .values_list("organizacion_id", flat=True)
@@ -137,6 +133,7 @@ class PWAAccessMixin:
         tipos_asociacion = sorted(
             {tipo for tipo in accesos.values_list("tipo_asociacion", flat=True) if tipo}
         )
+        comedor_ids = list(accesos.values_list("comedor_id", flat=True))
         self.fields["es_representante_pwa"].initial = bool(comedor_ids)
         self.fields["tipo_asociacion_pwa"].initial = (
             tipos_asociacion[0] if len(tipos_asociacion) == 1 else ""
@@ -159,27 +156,22 @@ class PWAAccessMixin:
             organizaciones_pwa = cleaned["organizaciones_pwa"]
             comedores_pwa = cleaned["comedores_pwa"]
 
-        if es_representante_pwa and not organizaciones_pwa and not comedores_pwa:
+        if es_representante_pwa and not comedores_pwa:
             self.add_error(
                 "comedores_pwa",
-                "Debe seleccionar al menos una organizaci?n o un espacio para un usuario mobile.",
-            )
-        elif es_representante_pwa and not comedores_pwa:
-            self.add_error(
-                "comedores_pwa",
-                "Debe seleccionar al menos un espacio visible para un usuario mobile.",
+                "Debe seleccionar al menos un comedor para un representante PWA.",
             )
         if not es_representante_pwa and (
             comedores_pwa or organizaciones_pwa or tipo_asociacion_pwa
         ):
             self.add_error(
                 "es_representante_pwa",
-                "Marque este campo para configurar el acceso mobile.",
+                "Marque este campo para asignar comedores PWA.",
             )
         if es_representante_pwa and es_coordinador:
             self.add_error(
                 "es_coordinador",
-                "Un usuario mobile no puede ser coordinador de equipo t?cnico.",
+                "Un representante PWA no puede ser coordinador de equipo técnico.",
             )
         if es_representante_pwa and self.instance and self.instance.pk:
             if AccesoComedorPWA.objects.filter(
@@ -243,7 +235,128 @@ class PWAAccessMixin:
         return cleaned
 
 
-class UserCreationForm(PWAAccessMixin, forms.ModelForm):
+class DelegationScopeMixin:
+    actor = None
+
+    def _setup_delegation_fields(self):
+        self.fields["grupos_asignables"] = forms.ModelMultipleChoiceField(
+            queryset=Group.objects.all().order_by("name"),
+            required=False,
+            widget=forms.SelectMultiple(attrs={"class": "select2"}),
+            label="Grupos que puede asignar",
+            help_text=(
+                "Define qué grupos podrá asignar este usuario al crear/editar "
+                "otros usuarios."
+            ),
+        )
+        self.fields["roles_asignables"] = forms.ModelMultipleChoiceField(
+            queryset=ROLE_PERMISSION_QUERYSET,
+            required=False,
+            widget=forms.SelectMultiple(attrs={"class": "select2"}),
+            label="Roles que puede asignar",
+            help_text="Permisos auth.role_* delegables a terceros.",
+        )
+
+    def _is_unrestricted_actor(self):
+        return not self.actor or self.actor.is_superuser
+
+    def _allowed_groups_for_actor(self):
+        if self._is_unrestricted_actor():
+            return Group.objects.all().order_by("name")
+
+        profile = getattr(self.actor, "profile", None)
+        if not profile:
+            return Group.objects.none()
+        return profile.grupos_asignables.all().order_by("name")
+
+    def _allowed_roles_for_actor(self):
+        if self._is_unrestricted_actor():
+            return ROLE_PERMISSION_QUERYSET
+
+        profile = getattr(self.actor, "profile", None)
+        if not profile:
+            return Permission.objects.none()
+        return profile.roles_asignables.filter(
+            content_type__app_label="auth",
+            codename__startswith="role_",
+        ).order_by("name")
+
+    def _scope_assignable_fields_for_actor(self):
+        allowed_groups = self._allowed_groups_for_actor()
+        allowed_roles = self._allowed_roles_for_actor()
+        all_permissions = Permission.objects.select_related("content_type").order_by(
+            "content_type__app_label",
+            "name",
+        )
+
+        self.fields["groups"].queryset = allowed_groups
+        self.fields["user_permissions"].queryset = all_permissions
+        self.fields["grupos_asignables"].queryset = allowed_groups
+        self.fields["roles_asignables"].queryset = allowed_roles
+
+    def _init_delegation_fields(self, profile):
+        if not profile:
+            return
+        self.fields["grupos_asignables"].initial = profile.grupos_asignables.all()
+        self.fields["roles_asignables"].initial = profile.roles_asignables.filter(
+            content_type__app_label="auth",
+            codename__startswith="role_",
+        )
+
+    def _validate_selected_within_allowed(self, cleaned):
+        if self._is_unrestricted_actor():
+            return
+
+        allowed_group_ids = set(
+            self._allowed_groups_for_actor().values_list("id", flat=True)
+        )
+        selected_group_ids = set(
+            cleaned.get("groups", Group.objects.none()).values_list("id", flat=True)
+        )
+        selected_assignable_group_ids = set(
+            cleaned.get("grupos_asignables", Group.objects.none()).values_list(
+                "id", flat=True
+            )
+        )
+
+        if not selected_group_ids.issubset(allowed_group_ids):
+            self.add_error(
+                "groups",
+                "Solo puede asignar grupos habilitados para su usuario.",
+            )
+        if not selected_assignable_group_ids.issubset(allowed_group_ids):
+            self.add_error(
+                "grupos_asignables",
+                "Solo puede delegar grupos que usted mismo puede asignar.",
+            )
+
+        allowed_role_ids = set(
+            self._allowed_roles_for_actor().values_list("id", flat=True)
+        )
+        selected_role_ids = set(
+            cleaned.get("user_permissions", Permission.objects.none()).values_list(
+                "id", flat=True
+            )
+        )
+        selected_assignable_role_ids = set(
+            cleaned.get("roles_asignables", Permission.objects.none()).values_list(
+                "id", flat=True
+            )
+        )
+
+        if not selected_role_ids.issubset(allowed_role_ids):
+            self.add_error(
+                "user_permissions",
+                "Solo puede asignar roles habilitados para su usuario.",
+            )
+        if not selected_assignable_role_ids.issubset(allowed_role_ids):
+            self.add_error(
+                "roles_asignables",
+                "Solo puede delegar roles que usted mismo puede asignar.",
+            )
+
+
+class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
@@ -304,8 +417,11 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
+        self.actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
         self._setup_pwa_fields()
+        self._setup_delegation_fields()
+        self._scope_assignable_fields_for_actor()
         self.fields["email"].required = True
         self.fields["password"].required = False
         self.generated_password = None
@@ -323,6 +439,7 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
             self.add_error("provincia", "Seleccione una provincia.")
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
+        self._validate_selected_within_allowed(cleaned)
         return self._clean_pwa_fields(cleaned)
 
     def save(self, commit=True):
@@ -338,12 +455,15 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
             user.set_password(self.generated_password)
             user.is_staff = False
             self.password_was_auto_generated = True
+        elif self.cleaned_data.get("es_coordinador", False):
+            user.set_password(self.cleaned_data["password"])
+            user.is_staff = True
+            self.generated_password = None
+            self.password_was_auto_generated = False
         else:
             user.set_password(self.cleaned_data["password"])
             self.generated_password = None
             self.password_was_auto_generated = False
-            if self.cleaned_data.get("es_coordinador", False):
-                user.is_staff = True
 
         if commit:
             user.save()
@@ -365,10 +485,19 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
             )
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
             profile.rol = self.cleaned_data.get("rol")
-            self._set_initial_password_flags(profile, must_change_password=True)
+            profile.must_change_password = True
+            profile.password_changed_at = None
+            profile.initial_password_expires_at = timezone.now() + timedelta(
+                hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
+            )
+            profile.temporary_password_plaintext = self.generated_password
             profile.save()
             # Evita devolver un profile cacheado con valores viejos tras el signal de User.
             user.refresh_from_db()
+            profile.grupos_asignables.set(
+                self.cleaned_data.get("grupos_asignables", [])
+            )
+            profile.roles_asignables.set(self.cleaned_data.get("roles_asignables", []))
 
             duplas = self.cleaned_data.get("duplas_asignadas", [])
             if profile.es_coordinador and duplas:
@@ -381,7 +510,7 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
         return user
 
 
-class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
+class CustomUserChangeForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput,
         label="Contraseña (dejar en blanco para no cambiarla)",
@@ -446,8 +575,11 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
+        self.actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
         self._setup_pwa_fields()
+        self._setup_delegation_fields()
+        self._scope_assignable_fields_for_actor()
         self.fields["email"].required = True
         self._original_password_hash = self.instance.password
         self.fields["password"].initial = ""
@@ -464,6 +596,7 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
             self.fields["es_coordinador"].initial = prof.es_coordinador
             self.fields["duplas_asignadas"].initial = prof.duplas_asignadas.all()
             self.fields["rol"].initial = prof.rol
+            self._init_delegation_fields(prof)
 
     def clean(self):
         cleaned = super().clean()
@@ -472,6 +605,7 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
             self.add_error("provincia", "Seleccione una provincia.")
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
+        self._validate_selected_within_allowed(cleaned)
         return self._clean_pwa_fields(cleaned)
 
     def save(self, commit=True):
@@ -514,9 +648,18 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
             profile.rol = self.cleaned_data.get("rol")
             if new_pwd:
-                self._set_initial_password_flags(profile, must_change_password=True)
+                profile.must_change_password = True
+                profile.password_changed_at = None
+                profile.initial_password_expires_at = timezone.now() + timedelta(
+                    hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
+                )
+                profile.temporary_password_plaintext = None
             profile.save()
             user.refresh_from_db()
+            profile.grupos_asignables.set(
+                self.cleaned_data.get("grupos_asignables", [])
+            )
+            profile.roles_asignables.set(self.cleaned_data.get("roles_asignables", []))
 
             duplas = self.cleaned_data.get("duplas_asignadas", [])
             if profile.es_coordinador and duplas:

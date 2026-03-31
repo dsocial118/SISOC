@@ -33,14 +33,11 @@ from .models import (
 
 @admin.register(Centro)
 class CentroAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "modalidad_institucional", "tipo_gestion", "activo")
-    list_filter = ("activo", "modalidad_institucional", "tipo_gestion")
+    list_display = ("nombre", "tipo_gestion", "activo")
+    list_filter = ("activo", "tipo_gestion")
     search_fields = ("nombre",)
     fieldsets = (
-        (
-            "Información General",
-            {"fields": ("nombre", "codigo", "organizacion_asociada", "referente")},
-        ),
+        ("Información General", {"fields": ("nombre", "codigo", "referente")}),
         (
             "Ubicación",
             {
@@ -54,10 +51,7 @@ class CentroAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        (
-            "Contacto",
-            {"fields": ("telefono", "celular", "correo", "sitio_web", "link_redes")},
-        ),
+        ("Contacto", {"fields": ("telefono", "celular", "correo", "sitio_web")}),
         (
             "Responsable",
             {
@@ -70,18 +64,10 @@ class CentroAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Información DER v4",
-            {
-                "fields": (
-                    "modalidad_institucional",
-                    "tipo_gestion",
-                    "clase_institucion",
-                    "situacion",
-                    "fecha_alta",
-                )
-            },
+            "Clasificación",
+            {"fields": ("tipo_gestion", "clase_institucion", "situacion")},
         ),
-        ("Estado", {"fields": ("foto", "activo")}),
+        ("Estado", {"fields": ("activo",)}),
     )
 
 
@@ -589,8 +575,8 @@ class ResultadoEvaluacionAdmin(admin.ModelAdmin):
     )
     list_filter = ("aprobo", "evaluacion__tipo", "fecha_registro")
     search_fields = (
-        "inscripcion__ciudadano__nombre",
-        "inscripcion__ciudadano__apellido",
+        "inscripcion__persona__nombre",
+        "inscripcion__persona__apellido",
         "evaluacion__nombre",
     )
     readonly_fields = ("fecha_registro", "fecha_creacion", "fecha_modificacion")

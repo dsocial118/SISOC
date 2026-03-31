@@ -2,7 +2,7 @@ import logging
 from typing import Tuple, List
 
 from django.contrib.auth.models import User
-from django.db.models import Case, CharField, F, Value, When
+from django.db.models import Case, CharField, Count, F, Q, Value, When
 from django.urls import reverse
 
 from iam.services import user_has_any_permission_codes, user_has_permission_code
@@ -36,55 +36,75 @@ BENEFICIARIO_ADVANCED_FILTER = AdvancedFilterEngine(
 
 class UsuariosService:
     @staticmethod
-    def build_table_items(users, table_fields):
-        """Arma filas con acciones dependientes del estado actual del usuario."""
-        items = []
-        fields = list(table_fields)
-
-        for user in users:
-            cells = [
-                {
-                    "content": getattr(user, field["name"], ""),
-                }
-                for field in fields
-            ]
-            actions = [
-                {
-                    "label": "Editar",
-                    "url": reverse("usuario_editar", args=[user.pk]),
-                    "type": "editar",
-                    "icon": "edit",
-                }
-            ]
-
-            if user.is_active:
-                actions.append(
-                    {
-                        "label": "Desactivar",
-                        "url": reverse("usuario_borrar", args=[user.pk]),
-                        "type": "desactivar",
-                        "icon": "times-circle",
-                    }
-                )
-            else:
-                actions.append(
-                    {
-                        "label": "Activar",
-                        "url": reverse("usuario_activar", args=[user.pk]),
-                        "type": "activar",
-                        "icon": "check-circle",
-                    }
-                )
-
-            items.append({"cells": cells, "actions": actions})
-
-        return items
-
-    @staticmethod
     def get_filtered_usuarios(request_or_get):
         """Aplica filtros combinables sobre el listado de usuarios."""
         base_qs = UsuariosService.get_usuarios_queryset()
+        base_qs = UsuariosService._apply_actor_scope(base_qs, request_or_get)
         return BENEFICIARIO_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
+
+    @staticmethod
+    def _apply_actor_scope(base_qs, request_or_get):
+        """
+        Restringe visibilidad de usuarios según el alcance delegable del actor.
+
+        Regla: si el actor tiene configurado `grupos_asignables` y/o
+        `roles_asignables` (auth.role_*), solo puede ver usuarios cuyos grupos
+        y roles directos sean un subconjunto de ese alcance.
+        """
+        actor = getattr(request_or_get, "user", None)
+        if not actor or not getattr(actor, "is_authenticated", False):
+            return base_qs
+        if actor.is_superuser:
+            return base_qs
+
+        profile = getattr(actor, "profile", None)
+        if not profile:
+            return base_qs
+
+        allowed_groups = profile.grupos_asignables.all()
+        allowed_roles = profile.roles_asignables.filter(
+            content_type__app_label="auth",
+            codename__startswith="role_",
+        )
+
+        has_group_scope = allowed_groups.exists()
+        has_role_scope = allowed_roles.exists()
+        if not has_group_scope and not has_role_scope:
+            return base_qs
+
+        scoped_qs = base_qs.annotate(
+            total_groups=Count("groups", distinct=True),
+            allowed_groups_count=Count(
+                "groups",
+                filter=Q(groups__in=allowed_groups),
+                distinct=True,
+            ),
+            total_role_permissions=Count(
+                "user_permissions",
+                filter=Q(
+                    user_permissions__content_type__app_label="auth",
+                    user_permissions__codename__startswith="role_",
+                ),
+                distinct=True,
+            ),
+            allowed_role_permissions_count=Count(
+                "user_permissions",
+                filter=Q(user_permissions__in=allowed_roles),
+                distinct=True,
+            ),
+        )
+
+        scope_filter = Q()
+        if has_group_scope:
+            scope_filter &= Q(total_groups=F("allowed_groups_count"))
+        if has_role_scope:
+            scope_filter &= Q(
+                total_role_permissions=F("allowed_role_permissions_count")
+            )
+
+        scoped_qs = scoped_qs.filter(Q(pk=actor.pk) | scope_filter)
+
+        return scoped_qs.distinct().order_by("-id")
 
     @staticmethod
     def get_usuarios_queryset():
@@ -113,6 +133,20 @@ class UsuariosService:
         )
         return {
             **columns_context,
+            "table_actions": [
+                {
+                    "label": "Editar",
+                    "url_name": "usuario_editar",
+                    "type": "editar",
+                    "icon": "edit",
+                },
+                {
+                    "label": "Eliminar",
+                    "url_name": "usuario_borrar",
+                    "type": "eliminar",
+                    "icon": "trash-alt",
+                },
+            ],
             "breadcrumb_items": [
                 {"text": "Usuarios", "url": reverse("usuarios")},
                 {"text": "Listar", "active": True},
@@ -125,6 +159,51 @@ class UsuariosService:
             "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.USUARIOS,
             "show_add_button": True,
         }
+
+    @staticmethod
+    def build_user_table_items(users, table_fields):
+        """Construye filas para la tabla personalizada del listado de usuarios."""
+        field_names = [field.get("name") for field in table_fields]
+        items = []
+
+        for user in users:
+            cells = []
+            for field_name in field_names:
+                value = getattr(user, field_name, "")
+                if value is None:
+                    value = "-"
+                cells.append({"content": value})
+
+            actions = [
+                {
+                    "label": "Editar",
+                    "url": reverse("usuario_editar", kwargs={"pk": user.pk}),
+                    "type": "primary",
+                    "icon": "edit",
+                }
+            ]
+            if user.is_active:
+                actions.append(
+                    {
+                        "label": "Desactivar",
+                        "url": reverse("usuario_borrar", kwargs={"pk": user.pk}),
+                        "type": "danger",
+                        "icon": "trash-alt",
+                    }
+                )
+            else:
+                actions.append(
+                    {
+                        "label": "Activar",
+                        "url": reverse("usuario_activar", kwargs={"pk": user.pk}),
+                        "type": "success",
+                        "icon": "check-circle",
+                    }
+                )
+
+            items.append({"cells": cells, "actions": actions})
+
+        return items
 
 
 class UserPermissionService:
