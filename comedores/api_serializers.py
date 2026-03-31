@@ -1,3 +1,7 @@
+"""Serializers de API para comedores y flujos mobile/PWA."""
+
+# pylint: disable=too-many-lines
+
 from rest_framework import serializers
 
 from comedores.models import Comedor, Nomina
@@ -339,7 +343,9 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
         values = [label for label, enabled in pairs if enabled]
         return ", ".join(values) if values else "Sin dato"
 
-    def _build_relevamiento_mobile_items(self, relevamiento):
+    def _build_relevamiento_mobile_items(  # pylint: disable=too-many-locals
+        self, relevamiento
+    ):
         if not relevamiento:
             return []
 

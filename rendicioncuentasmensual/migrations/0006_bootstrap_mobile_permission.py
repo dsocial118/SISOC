@@ -5,7 +5,7 @@ def create_mobile_rendicion_permission(apps, schema_editor):
     permission_model = apps.get_model("auth", "Permission")
     content_type_model = apps.get_model("contenttypes", "ContentType")
 
-    content_type = content_type_model.objects.get(
+    content_type, _ = content_type_model.objects.get_or_create(
         app_label="rendicioncuentasmensual",
         model="rendicioncuentamensual",
     )

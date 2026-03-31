@@ -141,6 +141,22 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     def update(self, instance, validated_data):
         return self._raise_read_only()
 
+    def validate(self, attrs):
+        email = (attrs.get("email") or "").strip()
+        username = (attrs.get("username") or "").strip()
+
+        if bool(email) == bool(username):
+            raise serializers.ValidationError(
+                {"detail": ("Debe enviar email o username para solicitar el reseteo.")}
+            )
+
+        if username:
+            attrs["username"] = username
+            attrs.pop("email", None)
+        else:
+            attrs["email"] = email
+        return attrs
+
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     uid = serializers.CharField()
@@ -182,22 +198,6 @@ class PasswordChangeRequiredSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         return self._raise_read_only()
-
-    def validate(self, attrs):
-        email = (attrs.get("email") or "").strip()
-        username = (attrs.get("username") or "").strip()
-
-        if bool(email) == bool(username):
-            raise serializers.ValidationError(
-                {"detail": ("Debe enviar email o username para solicitar el reseteo.")}
-            )
-
-        if username:
-            attrs["username"] = username
-            attrs.pop("email", None)
-        else:
-            attrs["email"] = email
-        return attrs
 
     def validate(self, attrs):
         user = self.context["request"].user

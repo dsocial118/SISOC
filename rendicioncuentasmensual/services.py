@@ -60,10 +60,10 @@ class RendicionCuentaMensualService:
         comedor,
         convenio,
         numero_rendicion,
-        periodo_inicio,
-        periodo_fin,
+        periodo,
         exclude_id=None,
     ):
+        periodo_inicio, periodo_fin = periodo
         queryset = RendicionCuentaMensualService._get_project_queryset(comedor)
         if exclude_id:
             queryset = queryset.exclude(id=exclude_id)
@@ -214,8 +214,7 @@ class RendicionCuentaMensualService:
             comedor=comedor,
             convenio=convenio,
             numero_rendicion=numero_rendicion,
-            periodo_inicio=periodo_inicio,
-            periodo_fin=periodo_fin,
+            periodo=(periodo_inicio, periodo_fin),
         )
 
         return RendicionCuentaMensual.objects.create(

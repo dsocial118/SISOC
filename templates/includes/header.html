@@ -52,18 +52,17 @@
                 <img src="{% static 'custom/img/iconos_navbar/chat.svg' %}" alt="Chat" />
             </a>
         </li -->
-                <li class="nav-item circle-btn">
-                    <a class="nav-link nav-link-rounded" href="{% url 'logout' %}">
-                        <img src="{% static 'custom/img/iconos_navbar/exit.svg' %}" alt="Salir" />
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </header>
-    <style nonce="{{ request.csp_nonce }}">
-    </style>
+<li class="nav-item circle-btn">
+<a class="nav-link nav-link-rounded" href="{% url 'logout' %}">
+<img src="{% static 'custom/img/iconos_navbar/exit.svg' %}" alt="Salir" />
+</a>
+</li>
+</ul>
+</nav>
+</header>
+<style nonce="{{ request.csp_nonce }}"></style>
 <script nonce="{{ request.csp_nonce }}">
-    (() => {
+        (() => {
         "use strict";
 
         const setDarkTheme = () => {
@@ -83,6 +82,6 @@
         }
 
         window.addEventListener("DOMContentLoaded", setDarkTheme);
-    })();
+        })();
 </script>
 {% endwith %}

@@ -80,9 +80,7 @@
                         {% if password_reset_requested_at %}
                             <div class="alert alert-info" role="alert">
                                 <strong>El usuario pidió el blanqueamiento de contraseña.</strong>
-                                <div class="small mt-2">
-                                    Solicitud registrada en {{ password_reset_requested_at }}.
-                                </div>
+                                <div class="small mt-2">Solicitud registrada en {{ password_reset_requested_at }}.</div>
                             </div>
                             {% if object.pk %}
                                 <div class="mb-3">
@@ -100,9 +98,7 @@
                         <div id="mobile-rendicion-permission-wrapper" style="display: none">
                             {{ form.puede_gestionar_rendiciones_mobile|as_crispy_field }}
                         </div>
-                        <div id="mobile-association-type-wrapper" style="display: none">
-                            {{ form.tipo_asociacion_pwa | as_crispy_field }}
-                        </div>
+                        <div id="mobile-association-type-wrapper" style="display: none">{{ form.tipo_asociacion_pwa | as_crispy_field }}</div>
                         <div id="mobile-association-choice-wrapper" class="mb-3">
                             <div class="mobile-selector-intro">
                                 <div>
