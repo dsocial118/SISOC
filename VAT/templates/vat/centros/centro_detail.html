@@ -1182,9 +1182,7 @@
                                             <td>
                                                 {% with titulos_plan=p.titulos.all %}
                                                     {% if titulos_plan %}
-                                                        {% for titulo in titulos_plan %}
-                                                            <span class="badge bg-info text-dark me-1 mb-1">{{ titulo.nombre }}</span>
-                                                        {% endfor %}
+                                                        {% for titulo in titulos_plan %}<span class="badge bg-info text-dark me-1 mb-1">{{ titulo.nombre }}</span>{% endfor %}
                                                     {% else %}
                                                         <span class="text-muted">\u2014</span>
                                                     {% endif %}
@@ -1584,7 +1582,9 @@
                                 <tbody>
                                     {% for comision in comisiones_curso %}
                                         <tr>
-                                            <td><strong>{{ comision.codigo_comision }}</strong></td>
+                                            <td>
+                                                <strong>{{ comision.codigo_comision }}</strong>
+                                            </td>
                                             <td>{{ comision.nombre }}</td>
                                             <td>{{ comision.curso.nombre }}</td>
                                             <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} - {{ comision.fecha_fin|date:"d/m/Y" }}</td>
@@ -1884,7 +1884,8 @@
                       action="{% url 'vat_comision_curso_create' %}">
                     {% csrf_token %}
                     <div class="modal-body">
-                        <div class="alert alert-light border small mb-3 d-none" id="cursoSeleccionadoInfo"></div>
+                        <div class="alert alert-light border small mb-3 d-none"
+                             id="cursoSeleccionadoInfo"></div>
                         <div class="row">
                             {% for field in comision_curso_form %}
                                 <div class="col-md-6 mb-3">
@@ -1994,7 +1995,8 @@
         </div>
     </div>
 
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+          rel="stylesheet" />
     <style>
         /* Select2 multiple dark mode para #modalOferta */
         #modalOferta .select2-container--default .select2-selection--multiple {

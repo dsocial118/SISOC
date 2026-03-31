@@ -153,9 +153,12 @@ class InscripcionService:
                     estado="activo",
                 )
 
-                ids_parametrias_habilitadas = list(
-                    oferta.voucher_parametrias.values_list("id", flat=True)
-                )
+                voucher_parametrias = getattr(oferta, "voucher_parametrias", None)
+                ids_parametrias_habilitadas = []
+                if hasattr(voucher_parametrias, "values_list"):
+                    ids_parametrias_habilitadas = list(
+                        voucher_parametrias.values_list("id", flat=True)
+                    )
                 if ids_parametrias_habilitadas:
                     vouchers_qs = vouchers_qs.filter(
                         parametria_id__in=ids_parametrias_habilitadas

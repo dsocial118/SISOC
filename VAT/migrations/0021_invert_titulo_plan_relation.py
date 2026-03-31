@@ -2,6 +2,21 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def _raise_if_ambiguous_title_plan_rows(ambiguous_rows):
+    if not ambiguous_rows:
+        return
+
+    detalles = ", ".join(
+        f"titulo={titulo_id} planes=[{plan_ids}]"
+        for titulo_id, _count, plan_ids in ambiguous_rows
+    )
+    raise RuntimeError(
+        "No se puede invertir automáticamente la relación título-plan porque "
+        "existen títulos asociados a múltiples planes históricos. "
+        f"Requiere resolución manual antes de aplicar la migración: {detalles}."
+    )
+
+
 def _add_plan_estudio_column(apps, schema_editor):
     db = schema_editor.connection
     cursor = db.cursor()
@@ -51,7 +66,7 @@ def _add_plan_estudio_column(apps, schema_editor):
 
 
 def _backfill_plan_estudio(apps, schema_editor):
-    """Para cada TituloReferencia, asigna el primer Plan que la referenciaba."""
+    """Backfill seguro cuando cada título tiene a lo sumo un plan histórico."""
     db = schema_editor.connection
     cursor = db.cursor()
     # Verificar que aún existe titulo_referencia_id en planversioncurricular
@@ -65,16 +80,25 @@ def _backfill_plan_estudio(apps, schema_editor):
     )
     if cursor.fetchone()[0] == 0:
         return  # Ya fue removida, skip backfill
+
+    cursor.execute(
+        """
+        SELECT titulo_referencia_id, COUNT(*) AS total_planes,
+               GROUP_CONCAT(id ORDER BY id) AS plan_ids
+        FROM `VAT_planversioncurricular`
+        WHERE titulo_referencia_id IS NOT NULL
+        GROUP BY titulo_referencia_id
+        HAVING COUNT(*) > 1
+        """
+    )
+    _raise_if_ambiguous_title_plan_rows(cursor.fetchall())
+
     cursor.execute(
         """
         UPDATE `VAT_tituloreferencia` t
-        INNER JOIN (
-            SELECT titulo_referencia_id, MIN(id) AS plan_id
-            FROM `VAT_planversioncurricular`
-            WHERE titulo_referencia_id IS NOT NULL
-            GROUP BY titulo_referencia_id
-        ) p ON t.id = p.titulo_referencia_id
-        SET t.plan_estudio_id = p.plan_id
+        INNER JOIN `VAT_planversioncurricular` p
+            ON t.id = p.titulo_referencia_id
+        SET t.plan_estudio_id = p.id
         WHERE t.plan_estudio_id IS NULL
         """
     )
