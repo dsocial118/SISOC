@@ -307,6 +307,16 @@ def test_form_guarda_horarios_y_normaliza_cuit():
 
 
 @pytest.mark.django_db
+def test_form_no_publica_pattern_html_incompatible_para_cuit():
+    form = CentroDeInfanciaForm()
+
+    cuit_attrs = form.fields["cuit_organizacion_gestiona"].widget.attrs
+
+    assert cuit_attrs["inputmode"] == "numeric"
+    assert "pattern" not in cuit_attrs
+
+
+@pytest.mark.django_db
 def test_form_rechaza_horarios_para_dias_no_seleccionados():
     form = CentroDeInfanciaForm(
         data={

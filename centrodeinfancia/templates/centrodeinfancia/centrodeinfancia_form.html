@@ -116,7 +116,7 @@
                     </div>
                     <div class="form-group row">
                         <div class="col-12">
-                            <div class="card border-0 bg-light">
+                            <div class="card border-0 horarios-funcionamiento-card">
                                 <div class="card-body">
                                     <h5 class="mb-3">Horarios por día</h5>
                                     {% for horario in horario_fields %}
@@ -183,6 +183,19 @@
 {% endblock %}
 
 {% block customJS %}
+    <style nonce="{{ request.csp_nonce }}">
+        .horarios-funcionamiento-card {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            border: 1px solid #3d566e;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        }
+
+        .horarios-funcionamiento-card .card-body,
+        .horarios-funcionamiento-card h5,
+        .horarios-funcionamiento-card .form-label {
+            color: #e5e7eb;
+        }
+    </style>
     <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadDepartamentosIpiUrl = "{% url 'centrodeinfancia_ajax_load_departamentos_ipi' %}";
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";

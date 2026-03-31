@@ -136,10 +136,14 @@ class CentroDeInfanciaForm(forms.ModelForm):
 
     def _aplicar_atributos_numericos(self):
         # Campos estrictamente numéricos
-        for field_name in ["numero", "codigo_postal", "cuit_organizacion_gestiona"]:
+        for field_name in ["numero", "codigo_postal"]:
             attrs = self.fields[field_name].widget.attrs
             attrs["inputmode"] = "numeric"
             attrs["pattern"] = r"\d*"
+
+        cuit_attrs = self.fields["cuit_organizacion_gestiona"].widget.attrs
+        cuit_attrs["inputmode"] = "numeric"
+        cuit_attrs.pop("pattern", None)
 
         # Campos de teléfono: permitir guiones y usar inputmode="tel"
         for field_name in ["telefono", "telefono_referente"]:
