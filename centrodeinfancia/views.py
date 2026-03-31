@@ -327,6 +327,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         today = timezone.now().date()
         hombres = 0
         mujeres = 0
+        genero_x = 0
         menores = 0
         nomina_espera = 0
 
@@ -348,6 +349,8 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
                 hombres += 1
             elif "femen" in sexo or sexo == "f":
                 mujeres += 1
+            elif sexo == "x" or "no bin" in sexo:
+                genero_x += 1
 
             fecha_nacimiento = getattr(ciudadano, "fecha_nacimiento", None)
             if fecha_nacimiento:
@@ -536,11 +539,13 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["nomina_total"] = nomina_qs.count()
         context["nomina_hombres"] = hombres
         context["nomina_mujeres"] = mujeres
+        context["nomina_x"] = genero_x
         context["nomina_menores"] = menores
         context["nomina_espera"] = nomina_espera
         context["nomina_resumen"] = {
             "hombres": hombres,
             "mujeres": mujeres,
+            "x": genero_x,
             "menores": menores,
         }
         context["intervenciones_total"] = intervenciones_qs.count()
