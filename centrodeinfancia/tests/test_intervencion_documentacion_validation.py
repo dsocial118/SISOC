@@ -1,4 +1,4 @@
-﻿import json
+import json
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile

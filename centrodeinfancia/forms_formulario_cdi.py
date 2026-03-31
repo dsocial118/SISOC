@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django import forms
+from django.core.validators import RegexValidator
 from django.forms import inlineformset_factory
 
 from core.models import Localidad, Municipio, Provincia
@@ -17,6 +18,7 @@ from centrodeinfancia.formulario_cdi_schema import (
     OPCIONES_GRUPO_ETARIO_DEMANDA,
 )
 from centrodeinfancia.models import (
+    DepartamentoIpi,
     FormularioCDI,
     FormularioCDIArticulationFrequency,
     FormularioCDIRoomDistribution,
@@ -25,6 +27,13 @@ from centrodeinfancia.models import (
 
 
 OPCIONES_BOOLEANAS = [("", "---------"), ("true", "Si"), ("false", "No")]
+TELEFONO_FORMATO_FLEXIBLE_ERROR = (
+    "Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones."
+)
+TELEFONO_FORMATO_FLEXIBLE_VALIDATOR = RegexValidator(
+    regex=r"^\d+(?:-\d+)*$",
+    message=TELEFONO_FORMATO_FLEXIBLE_ERROR,
+)
 
 
 def construir_filas_iniciales_fijas(options, key_name):
@@ -100,6 +109,12 @@ class FormularioCDIForm(forms.ModelForm):
         }
 
     definiciones_secciones = SECCIONES_FORMULARIO_CDI
+    phone_field_names = (
+        "telefono_cdi",
+        "telefono_referente_cdi",
+        "telefono_organizacion",
+        "telefono_referente_organizacion",
+    )
 
     @staticmethod
     def _parsear_pk(value):
@@ -118,50 +133,61 @@ class FormularioCDIForm(forms.ModelForm):
         return instance_value
 
     def _configurar_grupo_geo(self, sufijo):
-        province_field = f"provincia_{sufijo}"
-        municipality_field = f"municipio_{sufijo}"
-        locality_field = f"localidad_{sufijo}"
+        campos = {
+            "provincia": f"provincia_{sufijo}",
+            "departamento": f"departamento_{sufijo}",
+            "municipio": f"municipio_{sufijo}",
+            "localidad": f"localidad_{sufijo}",
+        }
+        instancias = {
+            nombre: getattr(self.instance, campo, None)
+            for nombre, campo in campos.items()
+        }
+        valores = {
+            nombre: self._obtener_valor_enlazado_o_inicial(campo, instancias[nombre])
+            for nombre, campo in campos.items()
+        }
 
-        province_instance = getattr(self.instance, province_field, None)
-        municipality_instance = getattr(self.instance, municipality_field, None)
-        locality_instance = getattr(self.instance, locality_field, None)
-
-        province_value = self._obtener_valor_enlazado_o_inicial(
-            province_field, province_instance
-        )
-        municipality_value = self._obtener_valor_enlazado_o_inicial(
-            municipality_field, municipality_instance
-        )
-        locality_value = self._obtener_valor_enlazado_o_inicial(
-            locality_field, locality_instance
-        )
-
-        province = Provincia.objects.filter(pk=self._parsear_pk(province_value)).first()
-        municipality = Municipio.objects.filter(
-            pk=self._parsear_pk(municipality_value)
+        provincia = Provincia.objects.filter(
+            pk=self._parsear_pk(valores["provincia"])
         ).first()
-        locality = Localidad.objects.filter(pk=self._parsear_pk(locality_value)).first()
+        departamento = DepartamentoIpi.objects.filter(
+            pk=self._parsear_pk(valores["departamento"])
+        ).first()
+        municipio = Municipio.objects.filter(
+            pk=self._parsear_pk(valores["municipio"])
+        ).first()
+        localidad = Localidad.objects.filter(
+            pk=self._parsear_pk(valores["localidad"])
+        ).first()
 
-        self.fields[province_field].queryset = Provincia.objects.all().order_by(
+        self.fields[campos["provincia"]].queryset = Provincia.objects.all().order_by(
             "nombre"
         )
-        self.fields[municipality_field].queryset = (
-            Municipio.objects.filter(provincia=province).order_by("nombre")
-            if province
+        self.fields[campos["departamento"]].queryset = (
+            DepartamentoIpi.objects.filter(provincia=provincia).order_by("nombre")
+            if provincia
+            else DepartamentoIpi.objects.none()
+        )
+        self.fields[campos["municipio"]].queryset = (
+            Municipio.objects.filter(provincia=provincia).order_by("nombre")
+            if provincia
             else Municipio.objects.none()
         )
-        self.fields[locality_field].queryset = (
-            Localidad.objects.filter(municipio=municipality).order_by("nombre")
-            if municipality
+        self.fields[campos["localidad"]].queryset = (
+            Localidad.objects.filter(municipio=municipio).order_by("nombre")
+            if municipio
             else Localidad.objects.none()
         )
 
-        if province:
-            self.fields[province_field].initial = province
-        if municipality:
-            self.fields[municipality_field].initial = municipality
-        if locality:
-            self.fields[locality_field].initial = locality
+        if provincia:
+            self.fields[campos["provincia"]].initial = provincia
+        if departamento:
+            self.fields[campos["departamento"]].initial = departamento
+        if municipio:
+            self.fields[campos["municipio"]].initial = municipio
+        if localidad:
+            self.fields[campos["localidad"]].initial = localidad
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -169,6 +195,7 @@ class FormularioCDIForm(forms.ModelForm):
         self.fields["codigo_cdi"].disabled = True
         self._configurar_grupo_geo("cdi")
         self._configurar_grupo_geo("organizacion")
+        self._aplicar_validacion_flexible_telefonos()
 
         for field_name, options in CAMPOS_OPCIONES.items():
             if field_name in self.fields:
@@ -193,6 +220,15 @@ class FormularioCDIForm(forms.ModelForm):
                 else "form-control"
             )
             field.widget.attrs["class"] = f"{existing} {widget_class}".strip()
+
+    def _aplicar_validacion_flexible_telefonos(self):
+        for field_name in self.phone_field_names:
+            if field_name not in self.fields:
+                continue
+            field = self.fields[field_name]
+            field.validators = [TELEFONO_FORMATO_FLEXIBLE_VALIDATOR]
+            field.widget.attrs["inputmode"] = "tel"
+            field.widget.attrs["pattern"] = r"\d+(?:-\d+)*"
 
     def clean(self):
         cleaned_data = super().clean()

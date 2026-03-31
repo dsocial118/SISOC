@@ -1,26 +1,25 @@
-﻿from django.conf import settings
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
-from django.utils import timezone
 
 from ciudadanos.models import Ciudadano
 from core.models import Localidad, Municipio, Provincia
 from core.soft_delete import SoftDeleteModelMixin
-from intervenciones.models.intervenciones import (
-    SubIntervencion,
-    TipoContacto,
-    TipoDestinatario,
-    TipoIntervencion,
-)
 from organizaciones.models import Organizacion
 from centrodeinfancia.formulario_cdi_schema import (
-    OPCIONES_INSTITUCIONES_ARTICULACION,
     CAMPOS_OPCIONES,
     CAMPOS_OPCIONES_MULTIPLES,
-    OPCIONES_GRUPO_ETARIO_SALAS,
-    OPCIONES_GRUPO_ETARIO_DEMANDA,
 )
+import centrodeinfancia.models_cdi_relaciones as _models_cdi_relaciones
+
+FormularioCDIArticulationFrequency = (
+    _models_cdi_relaciones.FormularioCDIArticulationFrequency
+)
+FormularioCDIRoomDistribution = _models_cdi_relaciones.FormularioCDIRoomDistribution
+FormularioCDIWaitlistByAgeGroup = _models_cdi_relaciones.FormularioCDIWaitlistByAgeGroup
+IntervencionCentroInfancia = _models_cdi_relaciones.IntervencionCentroInfancia
+ObservacionCentroInfancia = _models_cdi_relaciones.ObservacionCentroInfancia
 
 
 CUIT_VALIDATOR = RegexValidator(
@@ -28,8 +27,11 @@ CUIT_VALIDATOR = RegexValidator(
     message="Ingrese un CUIT valido con formato 20-12345678-3.",
 )
 PHONE_VALIDATOR = RegexValidator(
-    regex=r"^\d{2,4}-\d{2,4}-\d{6,8}$",
-    message="Ingrese un telefono valido con formato 054-011-40333588.",
+    regex=r"^\d+(?:-\d+)*$",
+    message=(
+        "Ingrese un teléfono válido: solo números o grupos numéricos separados por "
+        "guiones."
+    ),
 )
 
 
@@ -53,6 +55,13 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         on_delete=models.PROTECT,
         null=True,
         blank=True,
+    )
+    departamento = models.ForeignKey(
+        "DepartamentoIpi",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name="Departamento",
     )
     municipio = models.ForeignKey(
         Municipio,
@@ -84,12 +93,127 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
     def __str__(self):
         return str(self.nombre)
 
+    def clean(self):
+        super().clean()
+        if (
+            self.departamento_id
+            and self.provincia_id
+            and self.departamento.provincia_id != self.provincia_id
+        ):
+            raise ValidationError(
+                {
+                    "departamento": (
+                        "El departamento no pertenece a la provincia seleccionada."
+                    )
+                }
+            )
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if not self.codigo_cdi:
             codigo_cdi = f"CDI-{self.pk:06d}"
             type(self).objects.filter(pk=self.pk).update(codigo_cdi=codigo_cdi)
             self.codigo_cdi = codigo_cdi
+
+
+class DepartamentoIpi(models.Model):
+    codigo_departamento = models.CharField(max_length=10, unique=True)
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.PROTECT,
+        related_name="departamentos_ipi",
+    )
+    nombre = models.CharField(max_length=255)
+    tamano_demografico = models.CharField(max_length=255, blank=True, null=True)
+    decil_ipi = models.PositiveSmallIntegerField(blank=True, null=True)
+    nivel_inequidad_ipi = models.CharField(max_length=64, blank=True, null=True)
+    porcentaje_ninos_lista_espera_cdi = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    poblacion_0_a_4_anios = models.PositiveIntegerField(blank=True, null=True)
+    porcentaje_poblacion_0_a_4_anios = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    porcentaje_poblacion_0_a_4_anios_con_nbi = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    porcentaje_poblacion_0_a_4_anios_hogares_monoparentales = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    tasa_natalidad_2018 = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    tasa_mortalidad_infantil_2018 = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    porcentaje_familias_barrios_populares = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    cantidad_barrios_populares = models.PositiveIntegerField(blank=True, null=True)
+    cantidad_asistentes_cdi = models.PositiveIntegerField(blank=True, null=True)
+    cantidad_ninos_lista_espera_cdi = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    poblacion_0_a_4_anios_hogares_monoparentales = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    poblacion_0_a_4_anios_con_nbi = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    total_hogares_censo_2010 = models.PositiveIntegerField(blank=True, null=True)
+    poblacion_total = models.PositiveIntegerField(blank=True, null=True)
+    cantidad_familias_barrios_populares = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    cantidad_establecimientos_nivel_inicial = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    tasa_establecimientos_cada_mil_ninos = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ["provincia__nombre", "nombre"]
+        verbose_name = "Departamento IPI"
+        verbose_name_plural = "Departamentos IPI"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["provincia", "nombre"],
+                name="uniq_departamento_ipi_provincia_nombre",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.nombre} ({self.provincia})"
 
 
 class Trabajador(SoftDeleteModelMixin, models.Model):
@@ -155,75 +279,6 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         return f"{self.ciudadano} en {self.centro} ({self.get_estado_display()})"
 
 
-class IntervencionCentroInfancia(SoftDeleteModelMixin, models.Model):
-    centro = models.ForeignKey(
-        CentroDeInfancia,
-        on_delete=models.CASCADE,
-        related_name="intervenciones",
-    )
-    tipo_intervencion = models.ForeignKey(
-        TipoIntervencion,
-        on_delete=models.SET_NULL,
-        null=True,
-        verbose_name="Tipo de intervención",
-    )
-    subintervencion = models.ForeignKey(
-        SubIntervencion,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name="Sub-tipo de intervención",
-    )
-    destinatario = models.ForeignKey(
-        TipoDestinatario,
-        on_delete=models.SET_NULL,
-        null=True,
-        verbose_name="Destinatario",
-    )
-    forma_contacto = models.ForeignKey(
-        TipoContacto,
-        on_delete=models.SET_NULL,
-        null=True,
-        verbose_name="Forma de contacto",
-    )
-    fecha = models.DateTimeField(default=timezone.now)
-    observaciones = models.TextField(blank=True, null=True)
-    tiene_documentacion = models.BooleanField(default=False)
-    documentacion = models.FileField(upload_to="documentacion/", blank=True, null=True)
-
-    class Meta:
-        verbose_name = "Intervención Centro de Desarrollo Infantil"
-        verbose_name_plural = "Intervenciones Centro de Desarrollo Infantil"
-        ordering = ["-fecha"]
-
-    def __str__(self):
-        fecha = self.fecha.strftime("%Y-%m-%d") if self.fecha else "sin fecha"
-        return f"Intervención en {self.centro} - {fecha}"
-
-
-class ObservacionCentroInfancia(SoftDeleteModelMixin, models.Model):
-    observador = models.CharField(max_length=255, blank=True)
-    centro = models.ForeignKey(
-        to=CentroDeInfancia,
-        on_delete=models.CASCADE,
-        related_name="observaciones",
-    )
-    fecha_visita = models.DateTimeField(default=timezone.now, blank=True)
-    observacion = models.TextField()
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["centro"]),
-        ]
-        verbose_name = "Observación Centro de Desarrollo Infantil"
-        verbose_name_plural = "Observaciones Centro de Desarrollo Infantil"
-
-    def __str__(self):
-        centro = self.centro.nombre if self.centro else "Centro sin nombre"
-        fecha = self.fecha_visita.date() if self.fecha_visita else "sin fecha"
-        return f"Observación {fecha} - {centro}"
-
-
 class FormularioCDI(SoftDeleteModelMixin, models.Model):
     centro = models.ForeignKey(
         CentroDeInfancia,
@@ -257,7 +312,13 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
         related_name="+",
     )
-    departamento_cdi = models.CharField(max_length=255, blank=True, null=True)
+    departamento_cdi = models.ForeignKey(
+        DepartamentoIpi,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
     municipio_cdi = models.ForeignKey(
         Municipio,
         on_delete=models.SET_NULL,
@@ -342,7 +403,13 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
         related_name="+",
     )
-    departamento_organizacion = models.CharField(max_length=255, blank=True, null=True)
+    departamento_organizacion = models.ForeignKey(
+        DepartamentoIpi,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
     municipio_organizacion = models.ForeignKey(
         Municipio,
         on_delete=models.SET_NULL,
@@ -808,6 +875,12 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         errors = {}
         relation_rules = (
             (
+                "departamento_cdi",
+                "provincia_cdi",
+                "provincia_id",
+                "El departamento no pertenece a la provincia indicada.",
+            ),
+            (
                 "municipio_cdi",
                 "provincia_cdi",
                 "provincia_id",
@@ -818,6 +891,12 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
                 "municipio_cdi",
                 "municipio_id",
                 "La localidad no pertenece al municipio indicado.",
+            ),
+            (
+                "departamento_organizacion",
+                "provincia_organizacion",
+                "provincia_id",
+                "El departamento no pertenece a la provincia indicada.",
             ),
             (
                 "municipio_organizacion",
@@ -860,94 +939,3 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         if not self.codigo_cdi and self.centro_id:
             self.codigo_cdi = self.centro.codigo_cdi
         super().save(*args, **kwargs)
-
-
-class FormularioCDIRoomDistribution(SoftDeleteModelMixin, models.Model):
-    formulario = models.ForeignKey(
-        FormularioCDI,
-        on_delete=models.CASCADE,
-        related_name="filas_distribucion_salas",
-    )
-    grupo_etario = models.CharField(max_length=32, choices=OPCIONES_GRUPO_ETARIO_SALAS)
-    cantidad_salas = models.PositiveIntegerField(blank=True, null=True)
-    superficie_exclusiva_m2 = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        blank=True,
-        null=True,
-    )
-    cantidad_ninos = models.PositiveIntegerField(blank=True, null=True)
-    cantidad_personal_sala = models.PositiveIntegerField(blank=True, null=True)
-
-    class Meta:
-        verbose_name = "Formulario CDI - Distribucion de salas"
-        verbose_name_plural = "Formulario CDI - Distribucion de salas"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["formulario", "grupo_etario"],
-                name="uniq_formulario_cdi_distribucion_salas_grupo_etario",
-            )
-        ]
-
-    @property
-    def personal_por_sala(self):
-        if not self.cantidad_salas:
-            return None
-        if self.cantidad_personal_sala is None:
-            return None
-        return self.cantidad_personal_sala / self.cantidad_salas
-
-
-class FormularioCDIWaitlistByAgeGroup(SoftDeleteModelMixin, models.Model):
-    formulario = models.ForeignKey(
-        FormularioCDI,
-        on_delete=models.CASCADE,
-        related_name="filas_demanda_insatisfecha",
-    )
-    grupo_etario = models.CharField(
-        max_length=32, choices=OPCIONES_GRUPO_ETARIO_DEMANDA
-    )
-    cantidad_demanda_insatisfecha = models.PositiveIntegerField(blank=True, null=True)
-
-    class Meta:
-        verbose_name = "Formulario CDI - Lista de espera"
-        verbose_name_plural = "Formulario CDI - Lista de espera"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["formulario", "grupo_etario"],
-                name="uniq_formulario_cdi_waitlist_grupo_etario",
-            )
-        ]
-
-
-class FormularioCDIArticulationFrequency(SoftDeleteModelMixin, models.Model):
-    formulario = models.ForeignKey(
-        FormularioCDI,
-        on_delete=models.CASCADE,
-        related_name="filas_articulacion",
-    )
-    tipo_institucion = models.CharField(
-        max_length=64,
-        choices=OPCIONES_INSTITUCIONES_ARTICULACION,
-    )
-    frecuencia = models.CharField(
-        max_length=32,
-        choices=[
-            ("trimestral", "Trimestral"),
-            ("semestral", "Semestral"),
-            ("anual", "Anual"),
-            ("no_se_articula", "No se articula"),
-        ],
-        blank=True,
-        null=True,
-    )
-
-    class Meta:
-        verbose_name = "Formulario CDI - Articulacion institucional"
-        verbose_name_plural = "Formulario CDI - Articulacion institucional"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["formulario", "tipo_institucion"],
-                name="uniq_formulario_cdi_articulacion_tipo_institucion",
-            )
-        ]

@@ -1,4 +1,4 @@
-﻿from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.views.generic import View
 
@@ -16,6 +16,7 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
             {"title": "Nombre"},
             {"title": "Organización"},
             {"title": "Provincia"},
+            {"title": "Departamento"},
             {"title": "Municipio"},
             {"title": "Localidad"},
             {"title": "Calle"},
@@ -28,6 +29,7 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
             {"name": "nombre"},
             {"name": "organizacion"},
             {"name": "provincia"},
+            {"name": "departamento"},
             {"name": "municipio"},
             {"name": "localidad"},
             {"name": "calle"},
@@ -47,6 +49,7 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
             "nombre": ("Nombre", "nombre"),
             "organizacion": ("Organización", "organizacion.nombre"),
             "provincia": ("Provincia", "provincia.nombre"),
+            "departamento": ("Departamento", "departamento.nombre"),
             "municipio": ("Municipio", "municipio.nombre"),
             "localidad": ("Localidad", "localidad.nombre"),
             "calle": ("Calle", "calle"),
@@ -64,7 +67,11 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
         queryset = CentroDeInfancia.objects.select_related(
-            "organizacion", "provincia", "municipio", "localidad"
+            "organizacion",
+            "provincia",
+            "departamento",
+            "municipio",
+            "localidad",
         )
         queryset = aplicar_filtro_provincia_usuario(queryset, self.request.user)
         if query:

@@ -1,4 +1,4 @@
-﻿# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines
 import logging
 import os
 from datetime import date, datetime
@@ -11,7 +11,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -19,7 +19,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.html import escape, format_html, format_html_join
 from django.utils.text import Truncator
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -51,6 +51,7 @@ from centrodeinfancia.forms import (
 )
 from centrodeinfancia.models import (
     CentroDeInfancia,
+    DepartamentoIpi,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     ObservacionCentroInfancia,
@@ -63,7 +64,9 @@ from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 CDI_LIST_HEADERS = [
     {"title": "Nombre"},
     {"title": "Organización"},
+    {"title": "Tiene nómina"},
     {"title": "Provincia"},
+    {"title": "Departamento"},
     {"title": "Municipio"},
     {"title": "Localidad"},
     {"title": "Calle"},
@@ -74,7 +77,9 @@ CDI_LIST_HEADERS = [
 CDI_LIST_FIELDS = [
     {"name": "nombre"},
     {"name": "organizacion"},
+    {"name": "tiene_nomina"},
     {"name": "provincia"},
+    {"name": "departamento"},
     {"name": "municipio"},
     {"name": "localidad"},
     {"name": "calle"},
@@ -90,7 +95,11 @@ DOCUMENTACION_INTERVENCION_EXTS_PERMITIDAS = {".pdf", ".jpg", ".jpeg", ".png"}
 
 def _centros_cdi_queryset_detalle():
     return CentroDeInfancia.objects.select_related(
-        "organizacion", "provincia", "municipio", "localidad"
+        "organizacion",
+        "provincia",
+        "departamento",
+        "municipio",
+        "localidad",
     )
 
 
@@ -182,9 +191,14 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
+        nomina_subquery = NominaCentroInfancia.objects.filter(centro_id=OuterRef("pk"))
         queryset = CentroDeInfancia.objects.select_related(
-            "organizacion", "provincia", "municipio", "localidad"
-        )
+            "organizacion",
+            "provincia",
+            "departamento",
+            "municipio",
+            "localidad",
+        ).annotate(tiene_nomina=Exists(nomina_subquery))
         queryset = _aplicar_filtro_provincia_usuario(queryset, self.request.user)
         if query:
             queryset = queryset.filter(
@@ -199,7 +213,14 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             "centrodeinfancia_list",
             CDI_LIST_HEADERS,
             CDI_LIST_FIELDS,
-            default_keys=["nombre", "organizacion", "provincia", "municipio"],
+            default_keys=[
+                "nombre",
+                "organizacion",
+                "tiene_nomina",
+                "provincia",
+                "departamento",
+                "municipio",
+            ],
             required_keys=["nombre"],
         )
         context["breadcrumb_items"] = [
@@ -672,7 +693,13 @@ def centrodeinfancia_ajax(request):
             "centrodeinfancia_list",
             CDI_LIST_HEADERS,
             CDI_LIST_FIELDS,
-            default_keys=["nombre", "organizacion", "provincia", "municipio"],
+            default_keys=[
+                "nombre",
+                "organizacion",
+                "provincia",
+                "departamento",
+                "municipio",
+            ],
             required_keys=["nombre"],
         )
         active_columns = columns_context.get("column_active_keys") or [
@@ -680,7 +707,11 @@ def centrodeinfancia_ajax(request):
         ]
 
         queryset = CentroDeInfancia.objects.select_related(
-            "organizacion", "provincia", "municipio", "localidad"
+            "organizacion",
+            "provincia",
+            "departamento",
+            "municipio",
+            "localidad",
         )
         queryset = _aplicar_filtro_provincia_usuario(queryset, req.user)
         if query:
@@ -709,6 +740,23 @@ def centrodeinfancia_ajax(request):
         )
 
     return _centrodeinfancia_ajax(request)
+
+
+@login_required
+@require_GET
+def load_departamentos_ipi(request):
+    departamentos = DepartamentoIpi.objects.none()
+
+    try:
+        provincia_id = int(request.GET.get("provincia_id", ""))
+        departamentos = DepartamentoIpi.objects.filter(provincia_id=provincia_id)
+    except (ValueError, TypeError):
+        pass
+
+    return JsonResponse(
+        list(departamentos.order_by("nombre").values("id", "nombre", "decil_ipi")),
+        safe=False,
+    )
 
 
 class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):

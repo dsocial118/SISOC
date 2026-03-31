@@ -57,23 +57,61 @@ class UserLoginForm(BackofficeAuthenticationForm):
     """Compatibilidad para configuraciones existentes."""
 
 
+class ComedorPWASelectMultiple(forms.SelectMultiple):
+    """Agrega metadata de organización en las opciones para filtrado dinámico."""
+
+    def create_option(  # pylint: disable=too-many-arguments
+        self, name, value, label, selected, index, subindex=None, attrs=None
+    ):
+        option = super().create_option(
+            name, value, label, selected, index, subindex=subindex, attrs=attrs
+        )
+        instance = getattr(value, "instance", None)
+        if instance is not None:
+            option["attrs"]["data-organizacion-id"] = str(
+                instance.organizacion_id or ""
+            )
+            option["attrs"]["data-organizacion-nombre"] = (
+                instance.organizacion.nombre if instance.organizacion_id else ""
+            )
+        return option
+
+
 class PWAAccessMixin:
     def _setup_pwa_fields(self):
         self.fields["es_representante_pwa"] = forms.BooleanField(
             required=False,
-            label="Es representante PWA",
+            label="Habilitar acceso a SISOC - Mobile",
+        )
+        self.fields["tipo_asociacion_pwa"] = forms.ChoiceField(
+            required=False,
+            choices=(
+                ("", "Seleccione una opción"),
+                (
+                    AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+                    "Usuario asociado a Organización",
+                ),
+                (
+                    AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO,
+                    "Usuario asociado a Espacio",
+                ),
+            ),
+            widget=forms.Select(attrs={"class": "select2"}),
+            label="Tipo de asociación mobile",
         )
         self.fields["organizaciones_pwa"] = forms.ModelMultipleChoiceField(
             queryset=Organizacion.objects.all().order_by("nombre"),
             required=False,
             widget=forms.SelectMultiple(attrs={"class": "select2"}),
-            label="Organizaciones PWA",
-            help_text="Organizaciones habilitadas para construir el alcance en la PWA.",
+            label="Organizaciones",
+            help_text="Seleccione una o más organizaciones registradas en el sistema.",
         )
         self.fields["comedores_pwa"] = forms.ModelMultipleChoiceField(
-            queryset=Comedor.objects.all().order_by("nombre"),
+            queryset=Comedor.objects.select_related("organizacion").order_by(
+                "organizacion__nombre", "nombre"
+            ),
             required=False,
-            widget=forms.SelectMultiple(attrs={"class": "select2"}),
+            widget=ComedorPWASelectMultiple(attrs={"class": "select2"}),
             label="Comedores PWA",
             help_text="Comedores que este usuario representa en la PWA.",
         )
@@ -91,22 +129,40 @@ class PWAAccessMixin:
             .values_list("organizacion_id", flat=True)
             .distinct()
         )
+        tipos_asociacion = sorted(
+            {tipo for tipo in accesos.values_list("tipo_asociacion", flat=True) if tipo}
+        )
         comedor_ids = list(accesos.values_list("comedor_id", flat=True))
         self.fields["es_representante_pwa"].initial = bool(comedor_ids)
+        self.fields["tipo_asociacion_pwa"].initial = (
+            tipos_asociacion[0] if len(tipos_asociacion) == 1 else ""
+        )
         self.fields["organizaciones_pwa"].initial = organizacion_ids
         self.fields["comedores_pwa"].initial = comedor_ids
 
     def _clean_pwa_fields(self, cleaned):
         es_representante_pwa = cleaned.get("es_representante_pwa", False)
+        tipo_asociacion_pwa = cleaned.get("tipo_asociacion_pwa")
+        organizaciones_pwa = cleaned.get("organizaciones_pwa")
         comedores_pwa = cleaned.get("comedores_pwa")
         es_coordinador = cleaned.get("es_coordinador", False)
+
+        if not es_representante_pwa:
+            cleaned["tipo_asociacion_pwa"] = ""
+            cleaned["organizaciones_pwa"] = Organizacion.objects.none()
+            cleaned["comedores_pwa"] = Comedor.objects.none()
+            tipo_asociacion_pwa = ""
+            organizaciones_pwa = cleaned["organizaciones_pwa"]
+            comedores_pwa = cleaned["comedores_pwa"]
 
         if es_representante_pwa and not comedores_pwa:
             self.add_error(
                 "comedores_pwa",
                 "Debe seleccionar al menos un comedor para un representante PWA.",
             )
-        if not es_representante_pwa and comedores_pwa:
+        if not es_representante_pwa and (
+            comedores_pwa or organizaciones_pwa or tipo_asociacion_pwa
+        ):
             self.add_error(
                 "es_representante_pwa",
                 "Marque este campo para asignar comedores PWA.",
@@ -131,11 +187,31 @@ class PWAAccessMixin:
 
     def _sync_pwa_access(self, user):
         if self.cleaned_data.get("es_representante_pwa"):
+            organization_ids = set(
+                self.cleaned_data["organizaciones_pwa"].values_list("id", flat=True)
+            )
+            access_specs = []
+            for comedor in self.cleaned_data["comedores_pwa"]:
+                association_type = (
+                    AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
+                    if comedor.organizacion_id in organization_ids
+                    else AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO
+                )
+                access_specs.append(
+                    {
+                        "comedor_id": comedor.id,
+                        "tipo_asociacion": association_type,
+                        "organizacion_id": (
+                            comedor.organizacion_id
+                            if association_type
+                            == AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
+                            else None
+                        ),
+                    }
+                )
             sync_representante_accesses(
                 user=user,
-                comedor_ids=self.cleaned_data["comedores_pwa"].values_list(
-                    "id", flat=True
-                ),
+                access_specs=access_specs,
                 actor=None,
             )
             return
