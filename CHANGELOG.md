@@ -3,13 +3,15 @@
 
 ## Nuevas Funcionalidades
 
-- Evolución funcional de VAT con APIs web documentadas en Swagger para centros, títulos, cursos e inscripciones, además de mejoras en el legajo ciudadano y en la gestión de vouchers.
+- Evolución funcional de VAT con APIs web documentadas en Swagger para centros, títulos, cursos e inscripciones, rediseño del detalle de centros y comisiones, navegación contextual corregida y mejoras en la gestión de vouchers.
+- Nuevo alcance de delegación en Usuarios para definir qué grupos y roles puede asignar cada operador, manteniendo filtros y validaciones por scope en alta y edición.
 - Reorganización del módulo Comedores con legajo canonizado, solapa de responsables, soporte de nómina independiente por programa y visualización configurable del estado judicializado.
-- Ampliación del módulo Centro de Desarrollo Infantil con nueva nomenclatura, formularios y validaciones renovadas, departamentos IPI, teléfonos más flexibles y una nueva columna de nómina en listados.
+- Ampliación del módulo Centro de Desarrollo Infantil con nueva nomenclatura, formularios y validaciones renovadas, departamentos IPI, teléfonos más flexibles, nuevos campos de funcionamiento/ubicación y una ficha de nómina mucho más completa.
 
 ## Actualizaciones
 
 - Unificación de flujos entre web y mobile/PWA para login y colaboradores, con acciones por usuario alineadas al estado activo y mejor consistencia en altas, bajas lógicas y permisos.
+- Refinamiento continuo de CDI con resaltado correcto de errores en edición, colores y jerarquías visuales más claros en formularios, y nuevas métricas visibles para género X en detalle y nómina.
 - Fortalecimiento del trabajo asistido y la operación técnica con bootstrap para worktrees, checks de mojibake, ajustes de GitHub Actions y guías IA/lint más estrictas en la documentación.
 - Mejoras transversales en layout y experiencia de uso en detalle de comedores, sidebar, relevamientos, usuarios y formularios CDI para sostener compatibilidad con los cambios recientes.
 
@@ -17,7 +19,8 @@
 
 - Correcciones acumuladas en Celiaquía para importación y reproceso de legajos: validación integral de Excel, obligatoriedad de responsables según edad, guardado parcial estable, limpieza del responsable al borrar el último dato y ajustes RENAPER.
 - Ajustes en Comedores y Ciudadanos para evitar timeouts por búsqueda de documento, cortar reintentos RENAPER ante errores de integración, restaurar el layout del detalle y corregir regresiones de alcance, tests y migraciones.
-- Estabilización de CI, encoding y suites automáticas con fixes de GitHub Actions, normalización UTF-8/mojibake, compatibilidad de migraciones y cobertura de regresión en users, VAT, CDI, Comedores y PWA.
+- Estabilización de CI, encoding y suites automáticas con fixes de GitHub Actions, normalización UTF-8/mojibake, compatibilidad de migraciones y cobertura de regresión en Users, VAT, CDI, Comedores y PWA.
+- Correcciones puntuales en Users y VAT para preservar contraseña temporal, respetar scope parcial de delegación, alinear seeds de grupos y resolver scripts inline bajo CSP y formularios del admin.
 <!-- AUTO-GENERATED RELEASE END: 2026-03-31 -->
 
 # Versión SISOC 18.03.2026
