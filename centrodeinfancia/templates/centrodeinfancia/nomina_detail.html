@@ -243,8 +243,10 @@
                         <th>Fecha</th>
                         <th>Nombre</th>
                         <th>Apellido</th>
-                        <th>CUIT</th>
-                        <th>Género</th>
+                        <th>DNI</th>
+                        <th>Sexo</th>
+                        <th>Edad</th>
+                        <th>Sala</th>
                         <th>Estado</th>
                         <th></th>
                     </tr>
@@ -256,14 +258,16 @@
                                 <i class="far fa-calendar-alt" style="margin-right: 5px; color: #7f8c8d"></i>
                                 {{ e.fecha|date:"d/m/Y" }}
                             </td>
-                            <td>{{ e.ciudadano.nombre }}</td>
+                            <td>{{ e.nombre|default:e.ciudadano.nombre }}</td>
                             <td>
                                 <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}"
                                    style="color: #3498db;
-                                          text-decoration: none">{{ e.ciudadano.apellido }}</a>
+                                           text-decoration: none">{{ e.apellido|default:e.ciudadano.apellido }}</a>
                             </td>
-                            <td>{{ e.ciudadano.documento|default:"-" }}</td>
-                            <td>{{ e.ciudadano.sexo.sexo|default:"-" }}</td>
+                            <td>{{ e.dni|default:e.ciudadano.documento|default:"-" }}</td>
+                            <td>{{ e.sexo|default:e.ciudadano.sexo.sexo|default:"-" }}</td>
+                            <td>{{ e.edad|default:e.ciudadano.edad|default:"-" }}</td>
+                            <td>{{ e.sala|default:"-" }}</td>
                             <td>
                                 {% if e.estado == "activo" %}
                                     <span class="nomina-badge activo">Activo</span>
@@ -305,7 +309,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="7" class="nomina-empty-message">No hay registros en la nómina.</td>
+                            <td colspan="9" class="nomina-empty-message">No hay registros en la nómina.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
