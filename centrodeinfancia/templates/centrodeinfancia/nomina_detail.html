@@ -266,7 +266,7 @@
                             </td>
                             <td>{{ e.dni|default:e.ciudadano.documento|default:"-" }}</td>
                             <td>{{ e.sexo|default:e.ciudadano.sexo.sexo|default:"-" }}</td>
-                            <td>{{ e.edad|default:"-" }}</td>
+                            <td>{{ e.edad|default:e.ciudadano.edad|default:"-" }}</td>
                             <td>{{ e.sala|default:"-" }}</td>
                             <td>
                                 {% if e.estado == "activo" %}
