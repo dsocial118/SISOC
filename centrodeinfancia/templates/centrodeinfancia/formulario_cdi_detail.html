@@ -1,0 +1,148 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Formulario CDI #{{ formulario.id }}{% endblock %}
+{% block titulo-pagina %}Formulario CDI #{{ formulario.id }}{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between mb-3">
+            <a href="{% url 'centrodeinfancia_formulario_listado' centro.id %}"
+               class="btn btn-secondary">Volver al listado</a>
+            <a href="{% url 'centrodeinfancia_formulario_editar' centro.id formulario.id %}"
+               class="btn btn-warning">Editar</a>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3 class="mb-1">{{ centro.nombre }}</h3>
+                <p class="text-muted mb-1">Formulario #{{ formulario.id }} | Código CDI {{ formulario.codigo_cdi|default:"-" }}</p>
+                <p class="text-muted mb-0">
+                    Creado {{ formulario.created_at|date:"d/m/Y H:i" }}
+                    {% if formulario.created_by %}
+                        por {{ formulario.created_by.get_full_name|default:formulario.created_by.username }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        {% for section in detail_sections %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>{{ section.title }}</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for item in section.items %}
+                            <div class="col-md-6 mb-3">
+                                <div class="text-muted small">{{ item.label }}</div>
+                                <div>{{ item.value }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <strong>Organización de Salas: ¿Cómo se distribuyen los niños y niñas en las salas dentro del CDI? Complete la siguiente tabla consignando para cada grupo existente, la cantidad de salas, la superficie exclusiva en m², la cantidad de niñas y niños que concurren y la cantidad de personal de sala disponible.</strong>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Grupo etario</th>
+                                <th>Cantidad de Salas (A)</th>
+                                <th>Superficie m2</th>
+                                <th>Niñas y niños</th>
+                                <th>Cantidad de Personal de Sala (B)</th>
+                                <th>Cantidad de personal por sala (B/A)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in filas_salas %}
+                                <tr>
+                                    <td>{{ row.get_grupo_etario_display }}</td>
+                                    <td>{{ row.cantidad_salas|default:"-" }}</td>
+                                    <td>{{ row.superficie_exclusiva_m2|default:"-" }}</td>
+                                    <td>{{ row.cantidad_ninos|default:"-" }}</td>
+                                    <td>{{ row.cantidad_personal_sala|default:"-" }}</td>
+                                    <td>{{ row.personal_por_sala|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th>Totales</th>
+                                <th>{{ totales_salas.cantidad_salas }}</th>
+                                <th>{{ totales_salas.superficie_exclusiva_m2 }}</th>
+                                <th>{{ totales_salas.cantidad_ninos }}</th>
+                                <th>{{ totales_salas.cantidad_personal_sala }}</th>
+                                <th>-</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <strong>Demanda insatisfecha por sala</strong>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Grupo etario</th>
+                                <th>Lista de espera</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in filas_demanda_insatisfecha %}
+                                <tr>
+                                    <td>{{ row.get_grupo_etario_display }}</td>
+                                    <td>{{ row.cantidad_demanda_insatisfecha|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th>Total</th>
+                                <th>{{ total_demanda_insatisfecha }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>Articulaciones institucionales</strong>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Institucion</th>
+                                <th>Frecuencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in filas_articulacion %}
+                                <tr>
+                                    <td>{{ row.get_tipo_institucion_display }}</td>
+                                    <td>{{ row.get_frecuencia_display|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

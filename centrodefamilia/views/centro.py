@@ -64,9 +64,7 @@ class CentroListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        base_qs = Centro.objects.select_related("faro_asociado", "referente").order_by(
-            "nombre"
-        )
+        base_qs = Centro.objects.select_related("referente").order_by("nombre")
 
         user = self.request.user
         busq = self.request.GET.get("busqueda", "").strip()
@@ -79,9 +77,7 @@ class CentroListView(LoginRequiredMixin, ListView):
             return Centro.objects.none()
 
         if busq:
-            base_qs = base_qs.filter(
-                Q(nombre__icontains=busq) | Q(tipo__icontains=busq)
-            )
+            base_qs = base_qs.filter(Q(nombre__icontains=busq))
 
         return BOOL_ADVANCED_FILTER.filter_queryset(base_qs, self.request.GET)
 
@@ -141,13 +137,8 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         obj = super().get_object(queryset)
         user = self.request.user
         es_ref = obj.referente_id == user.id
-        es_adherido = (
-            obj.tipo == "adherido"
-            and obj.faro_asociado
-            and obj.faro_asociado.referente_id == user.id
-        )
         es_cdf_sse = _has_permission(user, ROLE_CDF_SSE_PERMISSION)
-        if not (es_ref or es_adherido or user.is_superuser or es_cdf_sse):
+        if not (es_ref or user.is_superuser or es_cdf_sse):
             raise PermissionDenied
         return obj
 
@@ -217,18 +208,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             self.request.GET.get("page_act")
         )
 
-        # 4) Centros adheridos
-        if centro.tipo == "faro":
-            adheridos = Centro.objects.filter(
-                faro_asociado=centro, activo=True
-            ).order_by("nombre")
-        else:
-            adheridos = Centro.objects.none()
-        ctx["centros_adheridos_paginados"] = Paginator(adheridos, 5).get_page(
-            self.request.GET.get("page")
-        )
-        ctx["centros_adheridos_total"] = adheridos.count()
-
         total_part = sum(a.inscritos for a in qs_acts)
         qs_inscritos = ParticipanteActividad.objects.filter(
             estado="inscrito", actividad_centro__centro=centro
@@ -241,7 +220,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         ).count()
 
         ctx["metricas"] = {
-            "centros_faro": ctx["centros_adheridos_total"],
             "categorias": Categoria.objects.count(),
             "actividades": ctx["total_actividades"],
             "interacciones": total_part,
@@ -287,9 +265,13 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
-        user = self.request.user
-        if form.cleaned_data.get("tipo") == "adherido":
-            form.instance.faro_asociado_id = self.request.GET.get("faro")
+        faro_id = self.request.GET.get("faro")
+        if (
+            faro_id
+            and form.cleaned_data.get("tipo") == "adherido"
+            and not form.instance.faro_asociado_id
+        ):
+            form.instance.faro_asociado_id = faro_id
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
 
@@ -390,7 +372,7 @@ def centros_ajax(request):
         page = request.GET.get("page", 1)
         user = request.user
 
-        qs = Centro.objects.select_related("faro_asociado", "referente")
+        qs = Centro.objects.select_related("referente")
 
         if user.is_superuser:
             pass
@@ -403,7 +385,7 @@ def centros_ajax(request):
 
         busq = query.strip()
         if busq:
-            qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
+            qs = qs.filter(Q(nombre__icontains=busq))
 
         qs = qs.order_by("nombre")
 

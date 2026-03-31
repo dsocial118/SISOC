@@ -79,7 +79,7 @@ class EditarLegajoView(View):
                     else ""
                 ),
                 "sexo": ciudadano.sexo_id if ciudadano.sexo else "",
-                "nacionalidad": ciudadano.nacionalidad_id or "",
+                "nacionalidad": getattr(ciudadano, "nacionalidad_id", "") or "",
                 "telefono": ciudadano.telefono or "",
                 "email": ciudadano.email or "",
                 "calle": ciudadano.calle or "",
@@ -176,23 +176,23 @@ class EditarLegajoView(View):
 
                 # Teléfono (opcional)
                 telefono = request.POST.get("telefono", "").strip()
-                ciudadano.telefono = telefono
+                ciudadano.telefono = telefono or None
 
                 # Email (opcional)
                 email = request.POST.get("email", "").strip()
-                ciudadano.email = email
+                ciudadano.email = email or None
 
                 # Calle (opcional)
                 calle = request.POST.get("calle", "").strip()
-                ciudadano.calle = calle
+                ciudadano.calle = calle or None
 
                 # Altura (opcional)
                 altura = request.POST.get("altura", "").strip()
-                ciudadano.altura = altura
+                ciudadano.altura = altura or None
 
                 # Código postal (opcional)
                 codigo_postal = request.POST.get("codigo_postal", "").strip()
-                ciudadano.codigo_postal = codigo_postal
+                ciudadano.codigo_postal = codigo_postal or None
 
                 # Municipio y Localidad (obligatorio)
                 municipio_id = request.POST.get("municipio", "").strip()

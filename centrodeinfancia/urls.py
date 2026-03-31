@@ -18,10 +18,20 @@ from centrodeinfancia.views import (
     ObservacionCentroInfanciaDeleteView,
     ObservacionCentroInfanciaDetailView,
     ObservacionCentroInfanciaUpdateView,
+    TrabajadorCentroInfanciaCreateView,
+    TrabajadorCentroInfanciaDeleteView,
+    TrabajadorCentroInfanciaUpdateView,
     centrodeinfancia_ajax,
+    load_departamentos_ipi,
     eliminar_archivo_intervencion_centrodeinfancia,
     nomina_centrodeinfancia_editar_ajax,
     subir_archivo_intervencion_centrodeinfancia,
+)
+from centrodeinfancia.views_formulario_cdi import (
+    FormularioCDICreateView,
+    FormularioCDIDetailView,
+    FormularioCDIListView,
+    FormularioCDIUpdateView,
 )
 from centrodeinfancia.views_export import CentroDeInfanciaExportView
 
@@ -75,11 +85,39 @@ urlpatterns = [
         name="centrodeinfancia_ajax",
     ),
     path(
+        "centrodeinfancia/ajax/load-departamentos-ipi/",
+        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
+            load_departamentos_ipi
+        ),
+        name="centrodeinfancia_ajax_load_departamentos_ipi",
+    ),
+    path(
         "centrodeinfancia/<int:pk>/nomina/",
         permissions_any_required(["centrodeinfancia.view_nominacentroinfancia"])(
             NominaCentroInfanciaDetailView.as_view()
         ),
         name="centrodeinfancia_nomina_ver",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/trabajadores/crear/",
+        permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
+            TrabajadorCentroInfanciaCreateView.as_view()
+        ),
+        name="centrodeinfancia_trabajador_crear",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/trabajadores/<int:trabajador_id>/editar/",
+        permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
+            TrabajadorCentroInfanciaUpdateView.as_view()
+        ),
+        name="centrodeinfancia_trabajador_editar",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/trabajadores/<int:trabajador_id>/eliminar/",
+        permissions_any_required(["centrodeinfancia.delete_centrodeinfancia"])(
+            TrabajadorCentroInfanciaDeleteView.as_view()
+        ),
+        name="centrodeinfancia_trabajador_eliminar",
     ),
     path(
         "centrodeinfancia/<int:pk>/nomina/crear/",
@@ -171,5 +209,33 @@ urlpatterns = [
             ["centrodeinfancia.delete_intervencioncentroinfancia"]
         )(ObservacionCentroInfanciaDeleteView.as_view()),
         name="centrodeinfancia_observacion_eliminar",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/formularios/",
+        permissions_any_required(["centrodeinfancia.view_formulariocdi"])(
+            FormularioCDIListView.as_view()
+        ),
+        name="centrodeinfancia_formulario_listado",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/formularios/crear/",
+        permissions_any_required(["centrodeinfancia.add_formulariocdi"])(
+            FormularioCDICreateView.as_view()
+        ),
+        name="centrodeinfancia_formulario_crear",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/formularios/<int:form_pk>/",
+        permissions_any_required(["centrodeinfancia.view_formulariocdi"])(
+            FormularioCDIDetailView.as_view()
+        ),
+        name="centrodeinfancia_formulario_detalle",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/formularios/<int:form_pk>/editar/",
+        permissions_any_required(["centrodeinfancia.change_formulariocdi"])(
+            FormularioCDIUpdateView.as_view()
+        ),
+        name="centrodeinfancia_formulario_editar",
     ),
 ]

@@ -1,7 +1,16 @@
 from django.db import transaction
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
-from comedores.models import Observacion, Referente, Comedor, AuditComedorPrograma
+
+from admisiones.models.admisiones import Admision
+from comedores.models import (
+    AuditComedorPrograma,
+    Comedor,
+    Nomina,
+    Observacion,
+    Referente,
+)
+from comedores.utils import comedor_usa_admision_para_nomina
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
 from comedores.tasks import (
     AsyncRemoveComedorToGestionar,
@@ -12,14 +21,14 @@ from comedores.tasks import (
     build_observacion_payload,
     build_referente_payload,
 )
+from config.middlewares.threadlocals import get_current_user
+from core.soft_delete.signals import post_soft_delete
 from relevamientos.models import Relevamiento
 from rendicioncuentasfinal.models import (
     DocumentoRendicionFinal,
     RendicionCuentasFinal,
     TipoDocumentoRendicionFinal,
 )
-from config.middlewares.threadlocals import get_current_user
-from core.soft_delete.signals import post_soft_delete
 
 
 @receiver(post_save, sender=Comedor)
@@ -59,7 +68,9 @@ def update_comedor_in_gestionar(sender, instance, **kwargs):
     if not changed:
         return
 
-    payload = build_comedor_payload(instance)  # usa los NEW values de la instancia
+    payload = build_comedor_payload(
+        instance, action="Update"
+    )  # usa los NEW values de la instancia
     AsyncSendComedorToGestionar(payload).start()
 
 
@@ -93,3 +104,23 @@ def crear_documentos_por_defecto(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Relevamiento)
 def clasificacion_relevamiento(sender, instance, **kwargs):
     ClasificacionComedorService.create_clasificacion_relevamiento(instance)
+
+
+@receiver(post_save, sender=Admision)
+def asignar_nominas_directas_a_admision(sender, instance, created, **kwargs):
+    """
+    Al crear una admisión para comedores que usan ese flujo, reasigna las
+    nóminas directas al nuevo convenio.
+
+    Los programas con nómina directa nunca pasan por este camino; el helper
+    centralizado evita que una admisión accidental reconfigure su nómina.
+    """
+    if not created:
+        return
+    comedor = instance.comedor
+    if not comedor or not comedor_usa_admision_para_nomina(comedor):
+        return
+    Nomina.objects.filter(
+        comedor=comedor,
+        admision__isnull=True,
+    ).update(admision=instance, comedor=None)

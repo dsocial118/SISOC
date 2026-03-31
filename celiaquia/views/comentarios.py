@@ -183,15 +183,29 @@ class LegajoComentarioListView(View):
         # Provincia: debe pertenecer a la misma provincia
         if is_prov and not (is_admin or is_coord):
             owner = getattr(legajo.expediente, "usuario_provincia", None)
-            up = _safe_profile(user)
-            op = _safe_profile(owner) if owner else None
-            if (
-                not owner
-                or not up
-                or not op
-                or getattr(up, "provincia_id", None)
-                != getattr(op, "provincia_id", None)
-            ):
+            if not owner:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "No se pudo validar la provincia del expediente.",
+                    },
+                    status=403,
+                )
+
+            user_profile = _safe_profile(user)
+            owner_profile = _safe_profile(owner)
+            if not user_profile:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "No se pudo validar tu provincia.",
+                    },
+                    status=403,
+                )
+
+            user_provincia = getattr(user_profile, "provincia_id", None)
+            owner_provincia = getattr(owner_profile, "provincia_id", None)
+            if user_provincia and owner_provincia and user_provincia != owner_provincia:
                 return JsonResponse(
                     {
                         "success": False,

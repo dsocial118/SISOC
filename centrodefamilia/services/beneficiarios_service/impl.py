@@ -76,8 +76,7 @@ def obtener_o_crear_responsable(responsable_data, usuario):
             return responsable_existente, responsable_form, False
         else:
             return None, responsable_form, False
-    except Responsable.DoesNotExist as e:
-        logger.exception(f"Error al obtener o crear responsable: {str(e)}")
+    except Responsable.DoesNotExist:
         responsable_form = ResponsableForm(responsable_data)
         if responsable_form.is_valid():
             responsable = responsable_form.save(commit=False)
@@ -386,8 +385,8 @@ def buscar_responsable_renaper(request, dni, sexo):
                 }
             )
 
-        except Responsable.DoesNotExist as e:
-            logger.exception(f"Error al buscar responsable renaper: {str(e)}")
+        except Responsable.DoesNotExist:
+            pass
 
         resultado = consultar_datos_renaper(dni, sexo)
         if not resultado["success"]:

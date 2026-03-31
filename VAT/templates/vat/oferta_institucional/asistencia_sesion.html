@@ -1,0 +1,360 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Asistencia — Sesión #{{ sesion.numero_sesion }}{% endblock %}
+
+{% block content %}
+    <style>
+/* ── Hero ─────────────────────────────────────── */
+.ci-hero {
+    background: linear-gradient(135deg, #1a3a6e 0%, #1f3a93 50%, #3a6bc4 100%);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    color: #fff;
+    margin-bottom: 1.25rem;
+    position: relative;
+    overflow: hidden;
+}
+.ci-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 220px; height: 220px;
+    background: rgba(255,255,255,.06);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.ci-back {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 8px;
+    color: #fff; text-decoration: none;
+    flex-shrink: 0;
+    transition: background .15s;
+}
+.ci-back:hover { background: rgba(255,255,255,.25); color: #fff; }
+.ci-hero-title { font-size: 1.5rem; font-weight: 700; line-height: 1.2; margin: .3rem 0 .2rem; }
+.ci-hero-sub   { font-size: .83rem; opacity: .65; }
+.ci-code-badge {
+    font-family: monospace; font-size: .75rem; font-weight: 700;
+    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
+    padding: .2em .65em; border-radius: 5px; letter-spacing: .06em;
+}
+.ci-state-badge {
+    font-size: .71rem; font-weight: 600;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+    padding: .2em .65em; border-radius: 5px; color: rgba(255,255,255,.85);
+}
+.ci-stats { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: 1.25rem; }
+.ci-stat { display: flex; flex-direction: column; }
+.ci-stat-val { font-size: 1rem; font-weight: 700; line-height: 1.1; }
+.ci-stat-lbl { font-size: .64rem; opacity: .55; text-transform: uppercase; letter-spacing: .05em; }
+.ci-stat-sep { width: 1px; background: rgba(255,255,255,.18); align-self: stretch; }
+
+/* ── Panel ────────────────────────────────────── */
+.ci-panel {
+    background: var(--bs-card-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* ── Section header ───────────────────────────── */
+.ci-sec-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .8rem 1.25rem;
+    background: var(--bs-tertiary-bg);
+    border-bottom: 1px solid var(--bs-border-color);
+}
+.ci-sec-title { font-weight: 600; font-size: .9rem; color: var(--bs-body-color); }
+
+/* ── List rows ────────────────────────────────── */
+.ci-row {
+    display: flex; align-items: center; gap: .85rem;
+    padding: .8rem 1.25rem;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+    transition: background .1s;
+}
+.ci-row:last-child { border-bottom: none; }
+.ci-row:hover { background: var(--bs-tertiary-bg); }
+
+/* ── Avatars ──────────────────────────────────── */
+.ci-av {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .65rem; font-weight: 700; flex-shrink: 0; color: #fff;
+}
+.ci-av-1 { background: #3b5bdb; }
+.ci-av-2 { background: #7048e8; }
+.ci-av-3 { background: #1098ad; }
+.ci-av-4 { background: #2f9e44; }
+.ci-av-5 { background: #e8590c; }
+
+/* ── Pills ────────────────────────────────────── */
+.ci-pill { display: inline-block; border-radius: 99px; font-size: .69rem; font-weight: 600; padding: .17em .65em; white-space: nowrap; }
+.ci-pill-green  { background: rgba(34,197,94,.18)  !important; color: #4ade80 !important; }
+.ci-pill-yellow { background: rgba(234,179,8,.18)  !important; color: #facc15 !important; }
+.ci-pill-blue   { background: rgba(74,127,232,.2)  !important; color: #7eb3ff !important; }
+.ci-pill-red    { background: rgba(239,68,68,.18)  !important; color: #f87171 !important; }
+.ci-pill-gray   { background: rgba(148,163,184,.15)!important; color: var(--bs-secondary-color) !important; }
+
+/* ── Empty state ──────────────────────────────── */
+.ci-empty { display: flex; flex-direction: column; align-items: center; padding: 3rem 1rem; color: var(--bs-secondary-color); text-align: center; }
+.ci-empty i { font-size: 2.2rem; margin-bottom: .65rem; opacity: .4; }
+.ci-empty-t { font-weight: 600; font-size: .9rem; color: var(--bs-body-color); margin-bottom: .2rem; }
+.ci-empty-s { font-size: .8rem; max-width: 250px; }
+
+/* ── Sidebar cards ────────────────────────────── */
+.ci-scard {
+    background: var(--bs-card-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: .85rem;
+}
+.ci-scard:last-child { margin-bottom: 0; }
+.ci-sc-title { font-size: .67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--bs-secondary-color); margin: 0 0 .8rem; }
+
+/* ── Switch personalizado ─────────────────────── */
+.ci-switch { cursor: pointer; }
+.ci-switch .form-check-input { width: 2.4em; height: 1.3em; cursor: pointer; }
+.ci-switch .form-check-input:checked { background-color: #22c55e; border-color: #22c55e; }
+
+/* ── Obs input ────────────────────────────────── */
+.ci-obs-input {
+    background: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 7px;
+    font-size: .82rem;
+    padding: .35rem .65rem;
+    color: var(--bs-body-color);
+    transition: border-color .15s;
+}
+.ci-obs-input:focus {
+    border-color: #4a7fe8;
+    box-shadow: 0 0 0 2px rgba(74,127,232,.15);
+    outline: none;
+}
+
+/* ── Footer actions ───────────────────────────── */
+.ci-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .85rem 1.25rem;
+    border-top: 1px solid var(--bs-border-color);
+    background: var(--bs-tertiary-bg);
+}
+    </style>
+
+    {# ── HERO ───────────────────────────────────────────────────────── #}
+    <div class="ci-hero">
+        {# ── Fila superior: back + título + badges ── #}
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <a href="{% url 'vat_comision_detail' sesion.comision_id %}"
+                   class="ci-back"><i class="bi bi-arrow-left"></i></a>
+                <div>
+                    <div class="ci-hero-title" style="margin-top:0;">
+                        <i class="bi bi-check2-square me-2"></i>Tomar Asistencia
+                    </div>
+                    <div class="ci-hero-sub" style="opacity:.75;font-size:.88rem;">
+                        <i class="bi bi-book me-1"></i>{{ sesion.comision }}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="ci-code-badge">Sesión #{{ sesion.numero_sesion }}</span>
+                <span class="ci-state-badge">
+                    {% if sesion.estado == 'realizada' %}
+                        Realizada
+                    {% elif sesion.estado == 'cancelada' %}
+                        Cancelada
+                    {% else %}
+                        Programada
+                    {% endif %}
+                </span>
+                {% if ya_tomada %}<span class="ci-state-badge"><i class="bi bi-pencil-square me-1"></i>Modificando</span>{% endif %}
+            </div>
+        </div>
+
+        {# ── Fila inferior: stats bien distribuidos ── #}
+        <div style="background:rgba(255,255,255,.08);
+                    border-radius:8px;
+                    padding:.85rem 1.15rem;
+                    display:flex;
+                    flex-wrap:wrap;
+                    gap:0">
+            <div style="flex:1;min-width:120px;padding:.25rem .5rem;">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Fecha</span>
+                <span class="ci-stat-val"><i class="bi bi-calendar3 me-1" style="font-size:.8rem;opacity:.6;"></i>{{ sesion.fecha|date:"d/m/Y" }}</span>
+            </div>
+            <div style="flex:1;
+                        min-width:100px;
+                        padding:.25rem .5rem;
+                        border-left:1px solid rgba(255,255,255,.12)">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Día</span>
+                <span class="ci-stat-val">{{ sesion.horario.dia_semana }}</span>
+            </div>
+            <div style="flex:1;
+                        min-width:140px;
+                        padding:.25rem .5rem;
+                        border-left:1px solid rgba(255,255,255,.12)">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Horario</span>
+                <span class="ci-stat-val"><i class="bi bi-clock me-1" style="font-size:.8rem;opacity:.6;"></i>{{ sesion.horario.hora_desde|time:"H:i" }} – {{ sesion.horario.hora_hasta|time:"H:i" }}</span>
+            </div>
+            {% if sesion.horario.aula_espacio %}
+                <div style="flex:1;
+                            min-width:100px;
+                            padding:.25rem .5rem;
+                            border-left:1px solid rgba(255,255,255,.12)">
+                    <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Aula / Espacio</span>
+                    <span class="ci-stat-val"><i class="bi bi-geo-alt me-1" style="font-size:.8rem;opacity:.6;"></i>{{ sesion.horario.aula_espacio }}</span>
+                </div>
+            {% endif %}
+            <div style="flex:0 0 auto;
+                        min-width:80px;
+                        padding:.25rem .5rem;
+                        border-left:1px solid rgba(255,255,255,.12);
+                        text-align:center">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Inscriptos</span>
+                <span class="ci-stat-val" style="font-size:1.15rem;">{{ filas|length }}</span>
+            </div>
+        </div>
+    </div>
+
+    {# ── BODY ───────────────────────────────────────────────────────── #}
+    <div class="row g-3 align-items-start">
+
+        {# ── MAIN ── #}
+        <div class="col-xl-8">
+            <div class="ci-panel">
+                <div class="ci-sec-head">
+                    <span class="ci-sec-title"><i class="bi bi-people me-2"></i>Inscriptos activos ({{ filas|length }})</span>
+                </div>
+
+                {% if filas %}
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for fila in filas %}
+                            <div class="ci-row">
+                                <div class="ci-av ci-av-{{ forloop.counter|divisibleby:5|yesno:'5,' }}{{ forloop.counter|divisibleby:4|yesno:'4,' }}{{ forloop.counter|divisibleby:3|yesno:'3,' }}{{ forloop.counter|divisibleby:2|yesno:'2,1' }}">
+                                    {{ fila.inscripcion.ciudadano.nombre_completo|slice:":2"|upper }}
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <span class="d-block fw-semibold"
+                                          style="font-size:.87rem;
+                                                 color:var(--bs-body-color);
+                                                 white-space:nowrap;
+                                                 overflow:hidden;
+                                                 text-overflow:ellipsis">{{ fila.inscripcion.ciudadano.nombre_completo }}</span>
+                                    <input type="text"
+                                           class="ci-obs-input w-100 mt-1"
+                                           name="obs_{{ fila.inscripcion.pk }}"
+                                           value="{{ fila.observaciones|default:'' }}"
+                                           placeholder="Observaciones (opcional)" />
+                                </div>
+                                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                    <span class="ci-pill {% if fila.presente %}ci-pill-green{% elif fila.presente == None %}ci-pill-gray{% else %}ci-pill-red{% endif %}"
+                                          id="lbl_{{ fila.inscripcion.pk }}">
+                                        {% if fila.presente %}
+                                            Presente
+                                        {% elif fila.presente == None %}
+                                            Sin registrar
+                                        {% else %}
+                                            Ausente
+                                        {% endif %}
+                                    </span>
+                                    <div class="form-check form-switch ci-switch mb-0">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               name="presente_{{ fila.inscripcion.pk }}"
+                                               id="pres_{{ fila.inscripcion.pk }}"
+                                               value="1"
+                                               {% if fila.presente %}checked{% endif %}
+                                               onchange=" var lbl=document.getElementById('lbl_{{ fila.inscripcion.pk }}'); if(this.checked){lbl.textContent='Presente';lbl.className='ci-pill ci-pill-green';} else{lbl.textContent='Ausente';lbl.className='ci-pill ci-pill-red';} " />
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+
+                        <div class="ci-footer">
+                            <a href="{% url 'vat_comision_detail' sesion.comision_id %}"
+                               class="btn btn-sm btn-outline-secondary rounded-3">
+                                <i class="bi bi-x-lg me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-sm btn-primary rounded-3">
+                                <i class="bi bi-check-lg me-1"></i>Guardar Asistencia
+                            </button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="ci-empty">
+                        <i class="bi bi-person-plus"></i>
+                        <p class="ci-empty-t">Sin inscriptos aceptados</p>
+                        <p class="ci-empty-s">Aceptá inscripciones desde el detalle de la comisión para poder tomar asistencia.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# ── SIDEBAR ── #}
+        <div class="col-xl-4">
+            <div style="position:sticky;top:1rem;">
+
+                <div class="ci-scard">
+                    <p class="ci-sc-title">Sesión</p>
+                    <div class="d-flex flex-column gap-2">
+                        <div>
+                            <span style="font-size:.65rem;
+                                         font-weight:700;
+                                         text-transform:uppercase;
+                                         letter-spacing:.06em;
+                                         color:var(--bs-secondary-color);
+                                         display:block;
+                                         margin-bottom:.15rem">Comisión</span>
+                            <a href="{% url 'vat_comision_detail' sesion.comision_id %}"
+                               class="text-decoration-none"
+                               style="font-size:.86rem;
+                                      font-weight:600;
+                                      color:var(--bs-body-color)">{{ sesion.comision }}</a>
+                        </div>
+                        <div>
+                            <span style="font-size:.65rem;
+                                         font-weight:700;
+                                         text-transform:uppercase;
+                                         letter-spacing:.06em;
+                                         color:var(--bs-secondary-color);
+                                         display:block;
+                                         margin-bottom:.15rem">Estado de la sesión</span>
+                            <span class="ci-pill {% if sesion.estado == 'realizada' %}ci-pill-green{% elif sesion.estado == 'cancelada' %}ci-pill-red{% else %}ci-pill-blue{% endif %}">{{ sesion.get_estado_display }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {% if ya_tomada %}
+                    <div class="ci-scard" style="border-color: rgba(74,127,232,.3);">
+                        <p class="ci-sc-title">
+                            <i class="bi bi-info-circle me-1"></i>Asistencia registrada
+                        </p>
+                        <p class="mb-0"
+                           style="font-size:.82rem;
+                                  color:var(--bs-secondary-color)">
+                            Esta sesión ya tiene asistencia. Podés modificarla y guardar nuevamente.
+                        </p>
+                    </div>
+                {% endif %}
+
+                <div class="ci-scard">
+                    <p class="ci-sc-title">Acciones rápidas</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'vat_comision_detail' sesion.comision_id %}"
+                           class="btn btn-outline-secondary btn-sm rounded-3"><i class="bi bi-arrow-left me-2"></i>Volver a comisión</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+{% endblock %}

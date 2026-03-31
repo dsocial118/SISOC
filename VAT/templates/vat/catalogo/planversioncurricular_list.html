@@ -1,0 +1,104 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Planes Curriculares{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+    {% url 'vat_planversioncurricular_list' as reset_url %}
+    {% include 'components/search_bar.html' with titulo="Buscar Plan Curricular" placeholder="Buscar por título, modalidad o versión" help_text="Buscar por título, modalidad o versión" reset_url=reset_url add_url='vat_planversioncurricular_create' add_text='Agregar' query=request.GET.busqueda %}
+
+    <div class="row mt-5 max-width-100">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive-lg">
+                        <table class="table table-bordered table-striped projects">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-column="titulo">
+                                        Título
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th>Modalidad</th>
+                                    <th>Versión</th>
+                                    <th>Horas</th>
+                                    <th>Estado</th>
+                                    <th class="notexport">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for plan in planes %}
+                                    <tr>
+                                        <td data-titulo="{{ plan.titulo_referencia.nombre }}">
+                                            <a href="{% url 'vat_planversioncurricular_detail' plan.id %}"
+                                               class="link-handler"
+                                               title="Ver detalles">{{ plan.titulo_referencia.nombre }}</a>
+                                        </td>
+                                        <td>{{ plan.modalidad_cursada.nombre }}</td>
+                                        <td>{{ plan.version|default:"—" }}</td>
+                                        <td>{{ plan.horas_reloj|default:"—" }}</td>
+                                        <td>
+                                            {% if plan.activo %}
+                                                <span class="badge-validacion validado">
+                                                    <i class="fas fa-check-circle"></i> Activo
+                                                </span>
+                                            {% else %}
+                                                <span class="badge-validacion no-validado">
+                                                    <i class="fas fa-times-circle"></i> Inactivo
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="action-buttons" role="group">
+                                                <a href="{% url 'vat_planversioncurricular_detail' plan.id %}"
+                                                   class="btn btn-primary link-handler"
+                                                   title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                    Ver
+                                                </a>
+                                                {% if perms.VAT.change_planversioncurricular %}
+                                                    <a href="{% url 'vat_planversioncurricular_update' plan.id %}"
+                                                       class="btn btn-editar link-handler"
+                                                       title="Editar plan">
+                                                        <i class="fas fa-edit"></i>
+                                                        Editar
+                                                    </a>
+                                                {% endif %}
+                                                {% if perms.VAT.delete_planversioncurricular %}
+                                                    <a href="{% url 'vat_planversioncurricular_delete' plan.id %}"
+                                                       class="btn btn-eliminar link-handler"
+                                                       title="Eliminar plan">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                        Eliminar
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6">
+                                            <div class="no-comedores-message">
+                                                <h3>No se encontraron planes curriculares</h3>
+                                                <p>No hay planes registrados.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+
+{% endblock %}
+
+{% block customJS %}
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}

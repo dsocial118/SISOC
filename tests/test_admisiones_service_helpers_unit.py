@@ -562,11 +562,19 @@ def test_permiso_helpers_y_botones_disponibles():
     """Verifica permisos técnicos/dupla y cálculo de botones en estados clave."""
     user = SimpleNamespace(
         id=9,
+        is_authenticated=True,
         groups=SimpleNamespace(
             filter=lambda **k: SimpleNamespace(
                 exists=lambda: k.get("name") == "Tecnico Comedor"
             )
         ),
+        has_perm=lambda perm, obj=None: perm
+        in {
+            "comedores.view_comedor",
+            "admisiones.view_admision",
+            "acompanamientos.view_informacionrelevante",
+            "auth.role_tecnico_comedor",
+        },
     )
     comedor = SimpleNamespace(
         dupla=SimpleNamespace(
@@ -898,6 +906,26 @@ def test_helpers_contexto_instancia_y_create_admision_error(mocker):
     assert module.AdmisionService.get_admision_create_context(2) == {}
     assert module.AdmisionService.create_admision(2, 3) is None
     assert module.AdmisionService.get_admision_instance(4) is None
+
+
+def test_create_admision_rechaza_comedor_con_nomina_directa(mocker):
+    """Un comedor que usa nómina directa no debe crear admisiones."""
+    comedor = SimpleNamespace(id=11, programa=SimpleNamespace())
+
+    mocker.patch(
+        "admisiones.services.admisiones_service.get_object_or_404",
+        return_value=comedor,
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.comedor_usa_admision_para_nomina",
+        return_value=False,
+    )
+    create_mock = mocker.patch(
+        "admisiones.services.admisiones_service.Admision.objects.create"
+    )
+
+    assert module.AdmisionService.create_admision(11, 3) is None
+    assert not create_mock.called
 
 
 def test_generar_documento_admision_devuelve_none_en_paths_no_exitosos(mocker):

@@ -76,8 +76,16 @@ Podés proponer mejoras cercanas: sí/no
 ## 4) Validar
 
 - Ejecutar checks puntuales primero (tests del módulo afectado).
+- Ejecutar formato/lint sobre archivos tocados antes de probar comandos globales.
 - Ejecutar checks más amplios si el impacto lo requiere.
 - Si no se pudo validar, dejarlo explícito.
+- Si `pylint` marca algo, el orden correcto es corregir el código, volver a correr `pylint` sobre el archivo tocado y recién después evaluar una excepción documentada. No usar `ignore` ni `disable` como atajo para cerrar el cambio.
+
+Secuencia recomendada para reducir fricción:
+
+1. Formatear o chequear solo archivos editados (`black path.py`, `djlint template.html --reformat`, `pylint app/archivo.py`).
+2. Correr tests puntuales del módulo o flujo afectado.
+3. Escalar a checks globales solo si el cambio toca superficies compartidas, varios archivos o fue pedido explícitamente.
 
 ## 5) Entregar
 
@@ -206,9 +214,20 @@ docker compose up
 docker compose exec django pytest -n auto
 docker compose exec django pytest -m smoke
 black .
+black path/al/archivo.py --config pyproject.toml
 djlint . --configuration=.djlintrc --reformat
+djlint templates/ruta.html --reformat --configuration=.djlintrc
 pylint **/*.py --rcfile=.pylintrc
+pylint app/archivo.py --rcfile=.pylintrc
 ```
+
+### Reglas operativas para escribir con menos fricción
+
+- Python nuevo o modificado debe escribirse ya compatible con `black`; evitar “después lo formateo”.
+- `pylint` se usa contra la configuración real del repo. No introducir patrones que generen warnings obvios y después compensarlos con cambios de formato.
+- Tratar las advertencias de `pylint` como señales de diseño o legibilidad: primero intentar resolver la causa raíz con mejores prácticas y dejar las supresiones como último recurso, localizadas y justificadas.
+- En templates, preferir estructura clara para que `djlint` haga ajustes mínimos y no rehaga bloques completos.
+- Evitar ejecutar `black .`, `djlint .` o `pylint **/*.py` como primer paso si el cambio está acotado a uno o pocos archivos.
 
 ### CI (referencia)
 

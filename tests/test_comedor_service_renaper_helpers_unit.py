@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from comedores.services import comedor_service as module
+from comedores.views import comedor as comedor_views_module
 
 
 class _QS(list):
@@ -177,7 +178,7 @@ def test_consultar_renaper_and_build_data(mocker):
     mocker.patch(
         "comedores.services.comedor_service.impl.consultar_datos_renaper",
         side_effect=[
-            {"success": False, "error": "x"},
+            {"success": False, "error": "x", "raw_response": {"coincidencias": 0}},
             {"success": True, "data": {"dni": "123"}},
         ],
     )
@@ -187,9 +188,9 @@ def test_consultar_renaper_and_build_data(mocker):
     mocker.patch(
         "comedores.services.comedor_service.impl.consultar_datos_renaper",
         side_effect=[
-            {"success": False, "error": "x"},
-            {"success": False, "error": "y"},
-            {"success": False, "error": "z"},
+            {"success": False, "error": "x", "raw_response": {"coincidencias": 0}},
+            {"success": False, "error": "y", "raw_response": {"coincidencias": 0}},
+            {"success": False, "error": "z", "raw_response": {"coincidencias": 0}},
         ],
     )
     fail = module.ComedorService._consultar_renaper_por_dni("123")
@@ -223,6 +224,22 @@ def test_consultar_renaper_and_build_data(mocker):
     data2, err2 = module.ComedorService._build_ciudadano_data_from_renaper({}, "abc")
     assert data2 is None
     assert err2
+
+
+def test_consultar_renaper_por_dni_corta_reintentos_en_error_integracion(mocker):
+    consultar_mock = mocker.patch(
+        "comedores.services.comedor_service.impl.consultar_datos_renaper",
+        return_value={
+            "success": False,
+            "error": "Error inesperado: Read timed out",
+        },
+    )
+
+    out = module.ComedorService._consultar_renaper_por_dni("12345678")
+
+    assert out["success"] is False
+    assert out["error"] == "Error inesperado: Read timed out"
+    consultar_mock.assert_called_once_with("12345678", "M")
 
 
 def test_obtener_datos_ciudadano_desde_renaper_and_crear(mocker):
@@ -297,7 +314,9 @@ def test_agregar_nomina_and_crear_y_agregar(mocker):
         "comedores.services.comedor_service.impl.Nomina.objects.filter",
         return_value=SimpleNamespace(exists=lambda: True),
     )
-    ok, _msg = module.ComedorService.agregar_ciudadano_a_nomina(1, 1, user="u")
+    ok, _msg = module.ComedorService.agregar_ciudadano_a_nomina(
+        ciudadano_id=1, user="u"
+    )
     assert ok is False
 
     mocker.patch(
@@ -309,7 +328,9 @@ def test_agregar_nomina_and_crear_y_agregar(mocker):
         return_value=nullcontext(),
     )
     mocker.patch("comedores.services.comedor_service.impl.Nomina.objects.create")
-    ok2, _msg2 = module.ComedorService.agregar_ciudadano_a_nomina(1, 1, user="u")
+    ok2, _msg2 = module.ComedorService.agregar_ciudadano_a_nomina(
+        ciudadano_id=1, user="u"
+    )
     assert ok2 is True
 
     c = SimpleNamespace(id=9, delete=mocker.Mock())
@@ -508,35 +529,29 @@ def test_relevamiento_resumen_presupuestos_and_aprobadas(mocker):
     )
 
 
-def test_post_comedor_relevamiento_branches(mocker):
-    comedor = SimpleNamespace(id=22)
+def test_handle_legacy_relevamiento_post_branches(mocker):
+    view = comedor_views_module.ComedorDetailView()
+    view.object = SimpleNamespace(pk=22)
     req = SimpleNamespace(POST={"territorial": "1"})
-    mocker.patch("comedores.services.comedor_service.impl.reverse", return_value="/r/1")
-    ok_redirect = mocker.patch(
-        "comedores.services.comedor_service.impl.redirect",
+    redirect_mock = mocker.patch(
+        "comedores.views.comedor.redirect",
         side_effect=lambda *args, **kwargs: (args, kwargs),
     )
-    mocker.patch(
-        "comedores.services.comedor_service.impl.RelevamientoService.create_pendiente",
-        return_value=SimpleNamespace(pk=9, comedor=SimpleNamespace(pk=22)),
-    )
-    out = module.ComedorService.post_comedor_relevamiento(req, comedor)
-    assert out[0][0] == "/r/1"
+    msg_error = mocker.patch("comedores.views.comedor.messages.error")
+
+    out = view._handle_legacy_relevamiento_post(req)
+    assert out[0][0] == "relevamientos"
+    assert out[1]["comedor_pk"] == 22
+    msg_error.assert_called_once()
 
     req2 = SimpleNamespace(POST={"territorial_editar": "1"})
-    msg_error = mocker.patch("comedores.services.comedor_service.impl.messages.error")
-    mocker.patch(
-        "comedores.services.comedor_service.impl.RelevamientoService.update_territorial",
-        return_value=SimpleNamespace(pk=1, comedor=None),
-    )
-    out2 = module.ComedorService.post_comedor_relevamiento(req2, comedor)
-    assert out2[0][0] == "comedor_detalle"
-    assert msg_error.called
+    out2 = view._handle_legacy_relevamiento_post(req2)
+    assert out2[0][0] == "relevamientos"
+    assert out2[1]["comedor_pk"] == 22
 
     req3 = SimpleNamespace(POST={})
-    out3 = module.ComedorService.post_comedor_relevamiento(req3, comedor)
-    assert out3[0][0] == "comedor_detalle"
-    assert ok_redirect.called
+    assert view._handle_legacy_relevamiento_post(req3) is None
+    assert redirect_mock.call_count == 2
 
 
 def test_get_presupuestos_queries_finalizado_y_fallback(mocker):
@@ -825,7 +840,7 @@ def test_get_nomina_detail_calcula_resumen_y_porcentajes(mocker):
         return_value=SimpleNamespace(get_page=lambda _page: page_obj),
     )
 
-    out = module.ComedorService.get_nomina_detail(comedor_pk=99, page=2, per_page=25)
+    out = module.ComedorService.get_nomina_detail(99, page=2, per_page=25)
 
     assert out[0] is page_obj
     assert out[1:6] == (3, 4, 1, 2, 10)

@@ -12,6 +12,7 @@ from users.views import (
     UserListView,
     UserUpdateView,
     UsuariosLoginView,
+    UserActiveView,
 )
 from users.views_export import UserExportView, GroupExportView
 
@@ -55,6 +56,11 @@ urlpatterns = [
         "usuarios/borrar/<int:pk>/",
         permissions_any_required(["auth.delete_user"])(UserDeleteView.as_view()),
         name="usuario_borrar",
+    ),
+    path(
+        "usuarios/activar/<int:pk>/",
+        permissions_any_required(["auth.delete_user"])(UserActiveView.as_view()),
+        name="usuario_activar",
     ),
     path(
         "grupos/",

@@ -25,12 +25,18 @@ def _user(auth=True, superuser=False, groups=None, provincial=False):
     profile = SimpleNamespace(
         es_usuario_provincial=provincial, provincia_id=1 if provincial else None
     )
+    perms = set()
+    if groups and "TecnicoCeliaquia" in groups:
+        perms.add("auth.role_tecnicoceliaquia")
+    if groups and "CoordinadorCeliaquia" in groups:
+        perms.add("auth.role_coordinadorceliaquia")
     return SimpleNamespace(
         is_authenticated=auth,
         is_superuser=superuser,
         groups=_Groups(groups),
         profile=profile,
         username="tester",
+        has_perm=lambda perm, obj=None: perm in perms,
     )
 
 
@@ -58,8 +64,6 @@ def _build_legajo():
 
 
 def test_helpers_user_group_admin_provincial():
-    u = _user(groups={"TecnicoCeliaquia"})
-    assert module._user_in_group(u, "TecnicoCeliaquia") is True
     assert module._is_admin(_user(superuser=True)) is True
     assert module._is_provincial(_user(provincial=True)) is True
     assert module._is_provincial(SimpleNamespace()) is False

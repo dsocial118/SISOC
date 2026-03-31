@@ -1,9 +1,11 @@
 """Tests de regresión para el comando load_fixtures."""
 
 import json
+from argparse import ArgumentParser
 
 import pytest
 from django.apps import apps
+from unittest.mock import patch
 
 from core.management.commands.load_fixtures import Command
 
@@ -43,3 +45,32 @@ def test_upsert_fixture_reintenta_fk_hijo_antes_de_padre(tmp_path):
     sub = sub_model.objects.get(pk=sub_pk)
 
     assert sub.tipo_intervencion_id == tipo.pk
+
+
+def test_handle_sincroniza_catalogo_cdi_despues_de_cargar():
+    command = Command()
+
+    with (
+        patch.object(command, "load_fixtures") as load_mock,
+        patch(
+            "core.management.commands.load_fixtures.sync_catalogo_intervenciones",
+            return_value={
+                "tipos_sincronizados": 1,
+                "subtipos_sincronizados": 2,
+                "subtipos_vacios_eliminados": 3,
+            },
+        ) as sync_mock,
+    ):
+        command.handle(force=False)
+
+    load_mock.assert_called_once_with()
+    sync_mock.assert_called_once_with()
+
+
+def test_add_arguments_reconoce_overwrite():
+    parser = ArgumentParser()
+    Command().add_arguments(parser)
+
+    options = parser.parse_args(["--overwrite"])
+
+    assert options.force is True

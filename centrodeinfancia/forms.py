@@ -1,20 +1,58 @@
 from django import forms
+from django.core.validators import RegexValidator
 
 from ciudadanos.models import Ciudadano
 from core.models import Localidad, Municipio, Provincia
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
-from intervenciones.models.intervenciones import TipoDestinatario, TipoIntervencion
+from intervenciones.models.intervenciones import (
+    SubIntervencion,
+    TipoDestinatario,
+    TipoIntervencion,
+)
 from organizaciones.models import Organizacion
 from users.models import Profile
 from centrodeinfancia.models import (
     CentroDeInfancia,
+    DepartamentoIpi,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     ObservacionCentroInfancia,
+    Trabajador,
 )
+from centrodeinfancia.forms_formulario_cdi import (
+    FormularioCDIForm,
+    construir_filas_iniciales_fijas,
+    construir_clase_formset_articulacion,
+    construir_clase_formset_distribucion_salas,
+    construir_clase_formset_demanda_insatisfecha,
+)
+
+__all__ = [
+    "CentroDeInfanciaForm",
+    "NominaCentroInfanciaForm",
+    "NominaCentroInfanciaCreateForm",
+    "IntervencionCentroInfanciaForm",
+    "TrabajadorForm",
+    "FormularioCDIForm",
+    "construir_filas_iniciales_fijas",
+    "construir_clase_formset_articulacion",
+    "construir_clase_formset_distribucion_salas",
+    "construir_clase_formset_demanda_insatisfecha",
+]
 
 
 class CentroDeInfanciaForm(forms.ModelForm):
+    SOLO_DIGITOS_ERROR = "Ingrese solo números (sin espacios ni signos)."
+    TELEFONO_FORMATO_ERROR = "Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones."
+    TELEFONO_REGEX = RegexValidator(
+        regex=r"^\d+(?:-\d+)*$",
+        message=TELEFONO_FORMATO_ERROR,
+    )
+    decil_ipi = forms.CharField(
+        label="Decil de IPI",
+        required=False,
+        disabled=True,
+    )
 
     @staticmethod
     def _obtener_provincia_usuario(user):
@@ -39,6 +77,44 @@ class CentroDeInfanciaForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self._popular_campos_ubicacion()
         self._aplicar_provincia_usuario()
+        self._aplicar_requeridos()
+        self._aplicar_atributos_numericos()
+        self._aplicar_campo_decil_ipi()
+
+    def _aplicar_requeridos(self):
+        for field_name in ["telefono", "telefono_referente"]:
+            self.fields[field_name].required = True
+            self.fields[field_name].error_messages[
+                "required"
+            ] = "Este campo es obligatorio."
+
+    def _aplicar_atributos_numericos(self):
+        # Campos estrictamente numéricos
+        for field_name in ["numero"]:
+            attrs = self.fields[field_name].widget.attrs
+            attrs["inputmode"] = "numeric"
+            attrs["pattern"] = r"\d*"
+
+        # Campos de teléfono: permitir guiones y usar inputmode="tel"
+        for field_name in ["telefono", "telefono_referente"]:
+            if field_name not in self.fields:
+                continue
+            attrs = self.fields[field_name].widget.attrs
+            attrs["inputmode"] = "tel"
+            # Patrón alineado con TELEFONO_REGEX/validación backend: dígitos con grupos separados por guiones
+            attrs["pattern"] = r"\d+(?:-\d+)*"
+
+    def _aplicar_campo_decil_ipi(self):
+        self.fields["decil_ipi"].widget.attrs["readonly"] = True
+        self.fields["decil_ipi"].widget.attrs["tabindex"] = "-1"
+
+    def _clean_solo_digitos(self, field_name):
+        value = (self.cleaned_data.get(field_name) or "").strip()
+        if not value:
+            return value
+        if not value.isdigit():
+            raise forms.ValidationError(self.SOLO_DIGITOS_ERROR)
+        return value
 
     def _popular_campos_ubicacion(self):
         def parse_pk(value):
@@ -47,6 +123,9 @@ class CentroDeInfanciaForm(forms.ModelForm):
         provincia = Provincia.objects.filter(
             pk=parse_pk(self.data.get(self.add_prefix("provincia")))
         ).first() or getattr(self.instance, "provincia", None)
+        departamento = DepartamentoIpi.objects.filter(
+            pk=parse_pk(self.data.get(self.add_prefix("departamento")))
+        ).first() or getattr(self.instance, "departamento", None)
         municipio = Municipio.objects.filter(
             pk=parse_pk(self.data.get(self.add_prefix("municipio")))
         ).first() or getattr(self.instance, "municipio", None)
@@ -64,15 +143,29 @@ class CentroDeInfanciaForm(forms.ModelForm):
 
         if provincia:
             self.fields["provincia"].initial = provincia
+            self.fields["departamento"].queryset = DepartamentoIpi.objects.filter(
+                provincia=provincia
+            ).order_by("nombre")
             self.fields["municipio"].queryset = Municipio.objects.filter(
                 provincia=provincia
             ).order_by("nombre")
         else:
+            self.fields["departamento"].queryset = (
+                DepartamentoIpi.objects.all().order_by("nombre")
+            )
             self.fields["municipio"].queryset = Municipio.objects.all().order_by(
                 "nombre"
             )
             self.fields["localidad"].queryset = Localidad.objects.all().order_by(
                 "nombre"
+            )
+
+        if departamento:
+            self.fields["departamento"].initial = departamento
+            self.fields["decil_ipi"].initial = (
+                str(departamento.decil_ipi)
+                if departamento.decil_ipi is not None
+                else ""
             )
 
         if municipio:
@@ -99,6 +192,9 @@ class CentroDeInfanciaForm(forms.ModelForm):
             )
             self.fields["provincia"].initial = provincia_usuario
             self.fields["provincia"].disabled = True
+            self.fields["departamento"].queryset = DepartamentoIpi.objects.filter(
+                provincia=provincia_usuario
+            ).order_by("nombre")
             self.fields["municipio"].queryset = Municipio.objects.filter(
                 provincia=provincia_usuario
             ).order_by("nombre")
@@ -115,12 +211,30 @@ class CentroDeInfanciaForm(forms.ModelForm):
                 return provincia_usuario
         return self.cleaned_data.get("provincia")
 
+    def clean_numero(self):
+        return self._clean_solo_digitos("numero")
+
+    def clean_telefono(self):
+        value = (self.cleaned_data.get("telefono") or "").strip()
+        if not value:
+            return value
+        self.TELEFONO_REGEX(value)
+        return value
+
+    def clean_telefono_referente(self):
+        value = (self.cleaned_data.get("telefono_referente") or "").strip()
+        if not value:
+            return value
+        self.TELEFONO_REGEX(value)
+        return value
+
     class Meta:
         model = CentroDeInfancia
         fields = [
             "nombre",
             "organizacion",
             "provincia",
+            "departamento",
             "municipio",
             "localidad",
             "calle",
@@ -171,15 +285,44 @@ class NominaCentroInfanciaCreateForm(forms.ModelForm):
         }
 
 
+class TrabajadorForm(forms.ModelForm):
+    class Meta:
+        model = Trabajador
+        fields = ["nombre", "apellido", "telefono", "rol"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in ["nombre", "apellido", "telefono"]:
+            self.fields[field_name].widget.attrs["class"] = "form-control"
+        self.fields["rol"].widget.attrs["class"] = "form-select"
+
+
 class IntervencionCentroInfanciaForm(forms.ModelForm):
+    @staticmethod
+    def _parse_selected_id(raw_value):
+        return int(raw_value) if raw_value and str(raw_value).isdigit() else None
+
     def __init__(self, *args, **kwargs):
         destinatario_fijo_nombre = kwargs.pop("destinatario_fijo_nombre", None)
         hide_destinatario = kwargs.pop("hide_destinatario", False)
         super().__init__(*args, **kwargs)
         selected_tipo_id = getattr(self.instance, "tipo_intervencion_id", None)
+        if self.is_bound:
+            selected_tipo_id = self._parse_selected_id(
+                self.data.get(self.add_prefix("tipo_intervencion"))
+            )
+        selected_subtipo_id = getattr(self.instance, "subintervencion_id", None)
+        if self.is_bound:
+            selected_subtipo_id = self._parse_selected_id(
+                self.data.get(self.add_prefix("subintervencion"))
+            )
         self.fields["tipo_intervencion"].queryset = TipoIntervencion.para_programas(
             *PROGRAMA_ALIASES_CENTRO_INFANCIA,
             include_ids=[selected_tipo_id] if selected_tipo_id else None,
+        )
+        self.fields["subintervencion"].queryset = SubIntervencion.para_tipo(
+            selected_tipo_id,
+            include_ids=[selected_subtipo_id] if selected_subtipo_id else None,
         )
 
         self.destinatario_fijo_instance = None

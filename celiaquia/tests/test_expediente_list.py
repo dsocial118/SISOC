@@ -2,7 +2,7 @@
 
 import pytest
 from django.urls import reverse
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Permission, User
 
 from users.models import Profile
 from core.models import Provincia
@@ -11,20 +11,24 @@ from celiaquia.models import Expediente, EstadoExpediente
 
 @pytest.mark.django_db
 def test_expediente_list_displays_id_and_provincia(client):
-    grupo = Group.objects.create(name="ProvinciaCeliaquia")
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_user(username="prov", password="pass")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
     profile, _ = Profile.objects.get_or_create(user=user)
     profile.es_usuario_provincial = True
     profile.provincia = provincia
     profile.save()
-    user.groups.add(grupo)
     estado = EstadoExpediente.objects.create(nombre="CREADO")
     expediente = Expediente.objects.create(usuario_provincia=user, estado=estado)
 
     client.force_login(user)
     response = client.get(reverse("expediente_list"))
 
+    assert response.status_code == 200
     content = response.content.decode()
     assert str(expediente.pk) in content
     assert provincia.nombre in content

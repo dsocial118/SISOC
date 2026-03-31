@@ -275,6 +275,28 @@ def test_consultar_renaper_remote_error_fallecido_and_success(mocker):
     assert body["datos_renaper"]["provincia"] == "Buenos Aires"
 
 
+def test_formatear_datos_renaper_usa_provincia_api_cuando_no_hay_pk():
+    datos = {
+        "dni": 12345678,
+        "nombre": "ANA",
+        "apellido": "PEREZ",
+        "fecha_nacimiento": "2000-01-02",
+        "calle": "MITRE",
+        "altura": 10,
+        "piso_vivienda": "1A",
+        "localidad_api": "LA PLATA",
+        "provincia_api": "buenos aires",
+        "codigo_postal": 1900,
+    }
+
+    out = module._formatear_datos_renaper(datos, "F", documento_consulta="12345678")
+
+    assert out["documento"] == "12345678"
+    assert out["provincia"] == "Buenos Aires"
+    assert out["ciudad"] == "La Plata"
+    assert out["piso_departamento"] == "1A"
+
+
 def test_post_routes_to_save_or_consulta(mocker):
     view = module.ValidacionRenaperView()
     req_save = SimpleNamespace(POST={"validacion_estado": "1"})

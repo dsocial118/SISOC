@@ -20,7 +20,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from admisiones.models.admisiones import InformeTecnico
+from admisiones.models.admisiones import Admision, InformeTecnico
 from comedores.api_serializers import (
     APROBADAS_FIELDS,
     ComedorDetailSerializer,
@@ -470,10 +470,10 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         except FileNotFoundError as exc:
             raise Http404("Archivo no encontrado.") from exc
 
-    def _nomina_get(self, request, comedor):
+    def _nomina_get(self, request, admision):
         page = request.query_params.get("page", 1)
         page_obj, _, _, _, _, total, rangos = ComedorService.get_nomina_detail(
-            comedor.pk, page
+            admision.pk, page
         )
         return Response(
             {
@@ -486,7 +486,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             status=status.HTTP_200_OK,
         )
 
-    def _nomina_post(self, request, comedor):
+    def _nomina_post(self, request, admision):
         serializer = NominaCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -505,7 +505,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
         if data.get("ciudadano_id"):
             ok, msg = ComedorService.agregar_ciudadano_a_nomina(
-                comedor_id=comedor.pk,
+                admision_id=admision.pk,
                 ciudadano_id=data["ciudadano_id"],
                 user=request.user,
                 estado=estado,
@@ -527,7 +527,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             )
         ok, msg = ComedorService.crear_ciudadano_y_agregar_a_nomina(
             ciudadano_data=ciudadano_form.cleaned_data,
-            comedor_id=comedor.pk,
+            admision_id=admision.pk,
             user=request.user,
             estado=estado,
             observaciones=observaciones,
@@ -547,9 +547,20 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     @action(detail=True, methods=["get", "post"], url_path="nomina")
     def nomina(self, request, pk=None):
         comedor = self.get_object()
+        admision = (
+            Admision.objects.filter(comedor=comedor, activa=True)
+            .order_by("-id")
+            .first()
+            or Admision.objects.filter(comedor=comedor).order_by("-id").first()
+        )
+        if not admision:
+            return Response(
+                {"detail": "No hay admisión para este comedor."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
         if request.method.lower() == "get":
-            return self._nomina_get(request, comedor)
-        return self._nomina_post(request, comedor)
+            return self._nomina_get(request, admision)
+        return self._nomina_post(request, admision)
 
     def _format_validation_error(self, exc: ValidationError):
         if hasattr(exc, "message_dict"):
@@ -980,7 +991,9 @@ class NominaViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     serializer_class = NominaUpdateSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    queryset = Nomina.objects.select_related("ciudadano", "ciudadano__sexo", "comedor")
+    queryset = Nomina.objects.select_related(
+        "ciudadano", "ciudadano__sexo", "admision__comedor"
+    )
     http_method_names = ["patch", "head", "options"]
 
     def get_queryset(self):
@@ -992,7 +1005,7 @@ class NominaViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
                 self.request, user=user
             )
             comedor_ids = [row["id"] for row in filtered_rows]
-        return self.queryset.filter(comedor_id__in=comedor_ids)
+        return self.queryset.filter(admision__comedor_id__in=comedor_ids)
 
     @extend_schema(request=NominaUpdateSerializer)
     def partial_update(self, request, *args, **kwargs):

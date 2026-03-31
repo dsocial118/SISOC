@@ -1,0 +1,38 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Asignar Voucher{% endblock %}
+{% block titulo-pagina %}{{ titulo }}{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-ticket-perforated me-2"></i>{{ titulo }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                {% if field.help_text %}<div class="text-muted small mt-1">{{ field.help_text }}</div>{% endif %}
+                            </div>
+                        {% endfor %}
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>Asignar
+                            </button>
+                            <a href="{% url 'vat_voucher_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

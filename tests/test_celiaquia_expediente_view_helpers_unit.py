@@ -7,6 +7,20 @@ from django.http import JsonResponse
 from celiaquia.views import expediente as module
 
 
+def _user_stub(*, user_id=1, is_admin=False, tec=False, coord=False):
+    perms = set()
+    if tec:
+        perms.add("auth.role_tecnicoceliaquia")
+    if coord:
+        perms.add("auth.role_coordinadorceliaquia")
+    return SimpleNamespace(
+        id=user_id,
+        is_authenticated=True,
+        is_superuser=is_admin,
+        has_perm=lambda perm, obj=None: perm in perms,
+    )
+
+
 def test_helper_functions_for_user_and_request(mocker):
     groups_filter = mocker.Mock()
     groups_filter.exists.side_effect = [True, False]
@@ -16,11 +30,16 @@ def test_helper_functions_for_user_and_request(mocker):
         groups=SimpleNamespace(filter=mocker.Mock(return_value=groups_filter)),
     )
 
-    assert module._user_in_group(user, "X") is True
+    assert module._user_has_permission(
+        _user_stub(tec=True), "auth.role_tecnicoceliaquia"
+    )
     assert module._is_admin(user) is True
 
     req = SimpleNamespace(headers={"X-Requested-With": "XMLHttpRequest"})
     assert module._is_ajax(req) is True
+    assert module._can_manage_registros_erroneos(_user_stub(coord=True)) is True
+    assert module._can_manage_registros_erroneos(_user_stub(is_admin=True)) is True
+    assert module._can_manage_registros_erroneos(_user_stub()) is False
 
 
 def test_provincial_helpers_and_parse_limit():
@@ -40,6 +59,17 @@ def test_provincial_helpers_and_parse_limit():
     assert module._parse_limit("-1", default=10) is None
     assert module._parse_limit("7", default=10, max_cap=5) == 5
     assert module._parse_limit("x", default=10) == 10
+
+
+def test_resolver_provincia_registro_erroneo_fallback_a_usuario_expediente():
+    expediente_user = SimpleNamespace(
+        profile=SimpleNamespace(provincia=SimpleNamespace(id=33))
+    )
+    expediente = SimpleNamespace(provincia=None, usuario_provincia=expediente_user)
+    user = SimpleNamespace(is_authenticated=True)
+
+    provincia_id = module._resolver_provincia_id_registro_erroneo(user, expediente)
+    assert provincia_id == 33
 
 
 def test_provincial_helpers_object_does_not_exist_branches(mocker):
@@ -83,7 +113,7 @@ def test_localidades_lookup_view_filters_and_returns_json(mocker):
         "celiaquia.views.expediente.Localidad.objects.select_related", return_value=qs
     )
 
-    mocker.patch("celiaquia.views.expediente._user_in_group", return_value=False)
+    mocker.patch("celiaquia.views.expediente._user_has_permission", return_value=False)
     mocker.patch("celiaquia.views.expediente._is_provincial", return_value=True)
     mocker.patch("celiaquia.views.expediente._user_provincia", return_value="prov_obj")
 
@@ -197,11 +227,11 @@ def test_recepcionar_view_permission_and_success_paths(mocker):
     view = module.RecepcionarExpedienteView()
 
     req_forbidden = SimpleNamespace(
-        user=SimpleNamespace(), headers={"X-Requested-With": "XMLHttpRequest"}
+        user=_user_stub(), headers={"X-Requested-With": "XMLHttpRequest"}
     )
     view.request = req_forbidden
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
-    mocker.patch("celiaquia.views.expediente._user_in_group", return_value=False)
+    mocker.patch("celiaquia.views.expediente._user_has_permission", return_value=False)
     resp_forbidden = view.post(req_forbidden, pk=1)
     assert resp_forbidden.status_code == 403
 
@@ -276,7 +306,9 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     """Cruce and review endpoints should return expected JSON for core actions."""
     subir = module.SubirCruceExcelView()
 
-    req_no_file = SimpleNamespace(user=SimpleNamespace(id=1), FILES={}, headers={})
+    req_no_file = SimpleNamespace(
+        user=_user_stub(user_id=1, tec=True), FILES={}, headers={}
+    )
     subir.request = req_no_file
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
     mocker.patch(
@@ -289,7 +321,7 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     assert resp_no_file.status_code == 400
 
     req_ok = SimpleNamespace(
-        user=SimpleNamespace(id=1), FILES={"archivo": object()}, headers={}
+        user=_user_stub(user_id=1, tec=True), FILES={"archivo": object()}, headers={}
     )
     subir.request = req_ok
     mocker.patch(
@@ -320,21 +352,19 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
         return leg
 
     mocker.patch("celiaquia.views.expediente.get_object_or_404", side_effect=_go404)
-    mocker.patch(
-        "celiaquia.views.expediente._user_in_group",
-        side_effect=lambda _u, g: g == "TecnicoCeliaquia",
-    )
+    mocker.patch("celiaquia.views.expediente._user_has_permission", return_value=True)
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
     mocker.patch("celiaquia.views.expediente.HistorialValidacionTecnica.objects.create")
 
     req_aprobar = SimpleNamespace(
-        user=SimpleNamespace(id=1), POST={"accion": "APROBAR"}
+        user=_user_stub(user_id=1, tec=True), POST={"accion": "APROBAR"}
     )
     resp_ap = revisar.post(req_aprobar, pk=1, legajo_id=3)
     assert resp_ap.status_code == 200
 
     req_subs = SimpleNamespace(
-        user=SimpleNamespace(id=1), POST={"accion": "SUBSANAR", "motivo": "faltan docs"}
+        user=_user_stub(user_id=1, tec=True),
+        POST={"accion": "SUBSANAR", "motivo": "faltan docs"},
     )
     resp_sub = revisar.post(req_subs, pk=1, legajo_id=3)
     assert resp_sub.status_code == 200
@@ -515,17 +545,16 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
 
     mocker.patch("celiaquia.views.expediente.get_object_or_404", side_effect=_go404)
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
-    mocker.patch(
-        "celiaquia.views.expediente._user_in_group",
-        side_effect=lambda _u, g: g == "TecnicoCeliaquia",
-    )
+    mocker.patch("celiaquia.views.expediente._user_has_permission", return_value=True)
 
-    invalid_req = SimpleNamespace(user=SimpleNamespace(id=1), POST={"accion": "foo"})
+    invalid_req = SimpleNamespace(
+        user=_user_stub(user_id=1, tec=True), POST={"accion": "foo"}
+    )
     invalid = view.post(invalid_req, pk=1, legajo_id=3)
     assert invalid.status_code == 400
 
     no_motivo_req = SimpleNamespace(
-        user=SimpleNamespace(id=1), POST={"accion": "SUBSANAR", "motivo": ""}
+        user=_user_stub(user_id=1, tec=True), POST={"accion": "SUBSANAR", "motivo": ""}
     )
     no_motivo = view.post(no_motivo_req, pk=1, legajo_id=3)
     assert no_motivo.status_code == 400
@@ -533,7 +562,7 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
     liberar = mocker.patch("celiaquia.views.expediente.CupoService.liberar_slot")
     mocker.patch("celiaquia.views.expediente.HistorialValidacionTecnica.objects.create")
     rechazar_req = SimpleNamespace(
-        user=SimpleNamespace(id=1), POST={"accion": "RECHAZAR"}
+        user=_user_stub(user_id=1, tec=True), POST={"accion": "RECHAZAR"}
     )
     rechazar = view.post(rechazar_req, pk=1, legajo_id=3)
     assert rechazar.status_code == 200
@@ -541,7 +570,7 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
 
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
     eliminar_req = SimpleNamespace(
-        user=SimpleNamespace(id=1), POST={"accion": "ELIMINAR"}
+        user=_user_stub(user_id=1, is_admin=True), POST={"accion": "ELIMINAR"}
     )
     eliminar = view.post(eliminar_req, pk=1, legajo_id=3)
     assert eliminar.status_code == 200
@@ -683,7 +712,30 @@ def test_expediente_nomina_sintys_export_view(mocker):
 def test_actualizar_registro_erroneo_view_paths(mocker):
     view = module.ActualizarRegistroErroneoView()
     expediente = SimpleNamespace()
-    registro = SimpleNamespace(datos_raw={}, save=mocker.Mock())
+    registro = SimpleNamespace(
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "123",
+            "fecha_nacimiento": "01/01/2010",
+            "sexo": "1",
+            "nacionalidad": "1",
+            "municipio": "1",
+            "localidad": "1",
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+            "apellido_responsable": "Gomez",
+            "nombre_responsable": "Laura",
+            "documento_responsable": "20123456789",
+            "fecha_nacimiento_responsable": "01/01/1980",
+            "sexo_responsable": "2",
+            "domicilio_responsable": "Calle Resp 123",
+            "localidad_responsable": "Centro",
+        },
+        fila_excel=2,
+        save=mocker.Mock(),
+    )
 
     # Sin permisos
     mocker.patch(
@@ -702,12 +754,57 @@ def test_actualizar_registro_erroneo_view_paths(mocker):
     )
     req_ok = SimpleNamespace(
         user=SimpleNamespace(),
-        body=b'{"apellido":"Perez","nombre":"","documento":"123"}',
+        body=(
+            b'{"apellido":"Perez","nombre":"Ana","documento":"123","fecha_nacimiento":"01/01/2010",'
+            b'"sexo":"1","nacionalidad":"1","municipio":"1","localidad":"1","calle":"Calle 1",'
+            b'"altura":"123","codigo_postal":"1000","apellido_responsable":"Gomez",'
+            b'"nombre_responsable":"Laura","documento_responsable":"20123456789",'
+            b'"fecha_nacimiento_responsable":"01/01/1980","sexo_responsable":"2",'
+            b'"domicilio_responsable":"Calle Resp 123","localidad_responsable":"Centro"}'
+        ),
     )
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch(
+        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        return_value=1,
+    )
+    mocker.patch("celiaquia.views.expediente._validar_datos_registro_erroneo")
     ok = view.post(req_ok, pk=1, registro_id=2)
     assert ok.status_code == 200
-    assert registro.datos_raw == {"apellido": "Perez", "documento": "123"}
+    assert registro.datos_raw["apellido"] == "Perez"
+    assert registro.datos_raw["sexo"] == "1"
+
+    mocker.patch(
+        "celiaquia.views.expediente.get_object_or_404",
+        side_effect=[expediente, registro],
+    )
+    req_partial = SimpleNamespace(
+        user=SimpleNamespace(),
+        body=b'{"localidad":"99"}',
+    )
+    partial = view.post(req_partial, pk=1, registro_id=2)
+    assert partial.status_code == 200
+    assert registro.datos_raw["localidad"] == "99"
+    assert registro.datos_raw["sexo"] == "1"
+
+    mocker.patch(
+        "celiaquia.views.expediente.get_object_or_404",
+        side_effect=[expediente, registro],
+    )
+    req_invalid = SimpleNamespace(
+        user=SimpleNamespace(),
+        body=b'{"apellido":"Perez","documento":"123"}',
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        return_value=1,
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._validar_datos_registro_erroneo",
+        side_effect=module.ValidationError("sexo invalido"),
+    )
+    invalid = view.post(req_invalid, pk=1, registro_id=2)
+    assert invalid.status_code == 400
 
     # Error interno
     mocker.patch(
@@ -761,6 +858,10 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
     mocker.patch(
         "celiaquia.views.expediente.EstadoLegajo.objects.get",
         return_value=SimpleNamespace(),
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        return_value=None,
     )
     no_prov = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
         view, req_no_prov, pk=1

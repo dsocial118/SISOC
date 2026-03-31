@@ -1,0 +1,497 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags static %}
+
+{% block title %}
+    {% if is_edit %}
+        Editar
+    {% else %}
+        Nuevo
+    {% endif %}
+    Formulario CDI
+{% endblock %}
+{% block titulo-pagina %}
+    {% if is_edit %}
+        Editar
+    {% else %}
+        Nuevo
+    {% endif %}
+    Formulario CDI
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between mb-3">
+            <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
+               class="btn btn-secondary">Volver al CDI</a>
+            <a href="{% url 'centrodeinfancia_formulario_listado' centro.id %}"
+               class="btn btn-outline-secondary">Ver formularios</a>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3 class="mb-1">{{ centro.nombre }}</h3>
+                <p class="text-muted mb-0">
+                    Formulario vinculado al centro #{{ centro.id }} ({{ centro.codigo_cdi|default:"Sin codigo" }})
+                </p>
+            </div>
+        </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.errors or formset_distribucion_salas.errors or formset_distribucion_salas.non_form_errors or formset_demanda_insatisfecha.errors or formset_demanda_insatisfecha.non_form_errors or formset_articulacion.errors or formset_articulacion.non_form_errors %}
+                <div class="alert alert-danger">
+                    No se pudo guardar el formulario. Revisá los campos marcados.
+                    {% if form.non_field_errors %}<div class="mt-2">{{ form.non_field_errors }}</div>{% endif %}
+                </div>
+            {% endif %}
+
+            {% for section in section_fields %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <strong>{{ section.title }}</strong>
+                    </div>
+                    <div class="card-body">
+                        {% for row in section.rows %}
+                            <div class="row">
+                                {% for field in row %}
+                                    <div class="{{ field.col_class }} mb-3 form-field-wrapper"
+                                         data-field-name="{{ field.name }}">
+                                        {{ field.bound_field|as_crispy_field }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>Organización de Salas: ¿Cómo se distribuyen los niños y niñas en las salas dentro del CDI? Complete la siguiente tabla consignando para cada grupo existente, la cantidad de salas, la superficie exclusiva en m², la cantidad de niñas y niños que concurren y la cantidad de personal de sala disponible.</strong>
+                </div>
+                <div class="card-body">
+                    {{ formset_distribucion_salas.management_form }}
+                    {% if formset_distribucion_salas.non_form_errors %}
+                        <div class="alert alert-danger">{{ formset_distribucion_salas.non_form_errors }}</div>
+                    {% endif %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Grupo etario</th>
+                                    <th>Cantidad de Salas (A)</th>
+                                    <th>Superficie m2</th>
+                                    <th>Niñas y niños</th>
+                                    <th>Cantidad de Personal de Sala (B)</th>
+                                    <th>Cantidad de personal por sala (B/A)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row_form in formset_distribucion_salas.forms %}
+                                    <tr>
+                                        <td>
+                                            {{ row_form.grupo_etario }}
+                                            {{ row_form.etiqueta_fila }}
+                                        </td>
+                                        <td>
+                                            {{ row_form.cantidad_salas }}
+                                            {% for error in row_form.cantidad_salas.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                        </td>
+                                        <td>
+                                            {{ row_form.superficie_exclusiva_m2 }}
+                                            {% for error in row_form.superficie_exclusiva_m2.errors %}
+                                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            {{ row_form.cantidad_ninos }}
+                                            {% for error in row_form.cantidad_ninos.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                        </td>
+                                        <td>
+                                            {{ row_form.cantidad_personal_sala }}
+                                            {% for error in row_form.cantidad_personal_sala.errors %}
+                                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </td>
+                                        <td class="room-staff-ratio">-</td>
+                                    </tr>
+                                {% endfor %}
+                                <tr class="table-secondary fw-semibold">
+                                    <td>Totales</td>
+                                    <td id="room-total-count">0</td>
+                                    <td id="room-total-area">0</td>
+                                    <td id="room-total-children">0</td>
+                                    <td id="room-total-staff">0</td>
+                                    <td id="room-total-ratio">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>Demanda insatisfecha por sala</strong>
+                </div>
+                <div class="card-body">
+                    {{ formset_demanda_insatisfecha.management_form }}
+                    {% if formset_demanda_insatisfecha.non_form_errors %}
+                        <div class="alert alert-danger">{{ formset_demanda_insatisfecha.non_form_errors }}</div>
+                    {% endif %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Grupo etario</th>
+                                    <th>Lista de espera</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row_form in formset_demanda_insatisfecha.forms %}
+                                    <tr>
+                                        <td>
+                                            {{ row_form.grupo_etario }}
+                                            {{ row_form.etiqueta_fila }}
+                                        </td>
+                                        <td>
+                                            {{ row_form.cantidad_demanda_insatisfecha }}
+                                            {% for error in row_form.cantidad_demanda_insatisfecha.errors %}
+                                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>Articulaciones institucionales</strong>
+                </div>
+                <div class="card-body">
+                    {{ formset_articulacion.management_form }}
+                    {% if formset_articulacion.non_form_errors %}
+                        <div class="alert alert-danger">{{ formset_articulacion.non_form_errors }}</div>
+                    {% endif %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Institucion</th>
+                                    <th>Frecuencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row_form in formset_articulacion.forms %}
+                                    <tr>
+                                        <td>
+                                            {{ row_form.tipo_institucion }}
+                                            {{ row_form.etiqueta_fila }}
+                                        </td>
+                                        <td>
+                                            {{ row_form.frecuencia }}
+                                            {% for error in row_form.frecuencia.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end mb-4">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+                {% if is_edit %}
+                    <a href="{% url 'centrodeinfancia_formulario_detalle' centro.id form.instance.pk %}"
+                       class="btn btn-secondary">Cancelar</a>
+                {% else %}
+                    <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
+                       class="btn btn-secondary">Cancelar</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        var ajaxLoadDepartamentosIpiUrl = "{% url 'centrodeinfancia_ajax_load_departamentos_ipi' %}";
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
+    <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("DOMContentLoaded", function() {
+            const wrappers = Array.from(document.querySelectorAll("[data-field-name]"));
+            const showWhen = {
+                tipo_jornada_otra: function() {
+                    return document.getElementById("id_tipo_jornada")?.value === "other";
+                },
+                seguridad_electrica: function() {
+                    return document.getElementById("id_acceso_energia")?.value !== "sin_electricidad";
+                },
+                modalidad_gestion_otra: function() {
+                    return document.getElementById("id_modalidad_gestion")?.value === "otra";
+                },
+                modalidad_tenencia_otra: function() {
+                    return document.getElementById("id_modalidad_tenencia")?.value === "otra";
+                },
+                combustible_cocinar: function() {
+                    return document.getElementById("id_tiene_espacio_cocina")?.value === "si";
+                },
+                tiene_juegos_exteriores: function() {
+                    return document.getElementById("id_tiene_espacio_exterior")?.value === "si";
+                },
+                prestaciones_alimentarias_otra: function() {
+                    return Array.from(document.querySelectorAll("input[name='prestaciones_alimentarias']:checked")).some(function(input) {
+                        return input.value === "otra";
+                    });
+                },
+                calidad_elaboracion_menu: function() {
+                    return !Array.from(document.querySelectorAll("input[name='prestaciones_alimentarias']:checked")).some(function(input) {
+                        return input.value === "ninguna";
+                    });
+                },
+                evaluacion_periodica_menu: function() {
+                    return !Array.from(document.querySelectorAll("input[name='prestaciones_alimentarias']:checked")).some(function(input) {
+                        return input.value === "ninguna";
+                    });
+                },
+                cobertura_capacitacion_manipulacion_alimentos: function() {
+                    return !Array.from(document.querySelectorAll("input[name='prestaciones_alimentarias']:checked")).some(function(input) {
+                        return input.value === "ninguna";
+                    });
+                },
+            };
+
+            function refreshVisibility() {
+                wrappers.forEach(function(wrapper) {
+                    const fieldName = wrapper.dataset.fieldName;
+                    const resolver = showWhen[fieldName];
+                    if (!resolver) {
+                        wrapper.querySelectorAll("input, select, textarea").forEach(function(element) {
+                            element.disabled = false;
+                        });
+                        wrapper.classList.remove("d-none");
+                        return;
+                    }
+                    const isVisible = resolver();
+                    wrapper.classList.toggle("d-none", !isVisible);
+                    wrapper.querySelectorAll("input, select, textarea").forEach(function(element) {
+                        if (element.type === "hidden") {
+                            return;
+                        }
+                        element.disabled = !isVisible;
+                        if (isVisible) {
+                            return;
+                        }
+                        if (element.type === "checkbox" || element.type === "radio") {
+                            element.checked = false;
+                            return;
+                        }
+                        element.value = "";
+                    });
+                });
+            }
+
+            function replaceOptions(selectEl, items, placeholder, selectedValue) {
+                if (!selectEl) {
+                    return;
+                }
+                selectEl.innerHTML = "";
+                const emptyOption = document.createElement("option");
+                emptyOption.value = "";
+                emptyOption.textContent = placeholder || "---------";
+                selectEl.appendChild(emptyOption);
+
+                items.forEach(function(item) {
+                    const option = document.createElement("option");
+                    option.value = item.id;
+                    option.textContent = item.nombre || "";
+                    selectEl.appendChild(option);
+                });
+
+                if (selectedValue) {
+                    selectEl.value = String(selectedValue);
+                }
+            }
+
+            async function fetchOptions(url) {
+                const response = await fetch(url, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    credentials: "same-origin",
+                });
+                if (!response.ok) {
+                    throw new Error("No se pudieron cargar opciones");
+                }
+                return response.json();
+            }
+
+            function setupGeoCascade(config) {
+                const provincia = document.querySelector(config.provincia);
+                const departamento = document.querySelector(config.departamento);
+                const municipio = document.querySelector(config.municipio);
+                const localidad = document.querySelector(config.localidad);
+                if (!provincia || !departamento || !municipio || !localidad) {
+                    return;
+                }
+
+                async function loadDepartamentos(selectedDepartamento) {
+                    if (!provincia.value) {
+                        replaceOptions(
+                            departamento,
+                            [],
+                            "Seleccione un departamento",
+                            "",
+                        );
+                        return;
+                    }
+                    const departamentos = await fetchOptions(
+                        `${ajaxLoadDepartamentosIpiUrl}?provincia_id=${encodeURIComponent(provincia.value)}`
+                    );
+                    replaceOptions(
+                        departamento,
+                        departamentos,
+                        "Seleccione un departamento",
+                        selectedDepartamento || ""
+                    );
+                }
+
+                async function loadMunicipios(selectedMunicipio, selectedLocalidad) {
+                    if (!provincia.value) {
+                        replaceOptions(municipio, [], "Seleccione un municipio", "");
+                        replaceOptions(localidad, [], "Seleccione una localidad", "");
+                        return;
+                    }
+                    const municipios = await fetchOptions(
+                        `${ajaxLoadMunicipiosUrl}?provincia_id=${encodeURIComponent(provincia.value)}`
+                    );
+                    replaceOptions(
+                        municipio,
+                        municipios,
+                        "Seleccione un municipio",
+                        selectedMunicipio || ""
+                    );
+                    await loadLocalidades(selectedLocalidad);
+                }
+
+                async function loadLocalidades(selectedLocalidad) {
+                    if (!municipio.value) {
+                        replaceOptions(localidad, [], "Seleccione una localidad", "");
+                        return;
+                    }
+                    const localidades = await fetchOptions(
+                        `${ajaxLoadLocalidadesUrl}?municipio_id=${encodeURIComponent(municipio.value)}`
+                    );
+                    replaceOptions(
+                        localidad,
+                        localidades,
+                        "Seleccione una localidad",
+                        selectedLocalidad || ""
+                    );
+                }
+
+                provincia.addEventListener("change", function() {
+                    loadDepartamentos("");
+                    loadMunicipios("", "");
+                });
+                municipio.addEventListener("change", function() {
+                    loadLocalidades("");
+                });
+
+                if (provincia.value) {
+                    loadDepartamentos(departamento.value);
+                    loadMunicipios(municipio.value, localidad.value);
+                }
+            }
+
+            document.addEventListener("change", refreshVisibility);
+            refreshVisibility();
+
+            function toNumber(inputElement) {
+                if (!inputElement) {
+                    return 0;
+                }
+                const rawValue = (inputElement.value || "0").replace(",", ".");
+                const value = parseFloat(rawValue);
+                return Number.isFinite(value) ? value : 0;
+            }
+
+            function refreshRoomDistributionTotals() {
+                const roomRows = Array.from(document.querySelectorAll("tbody tr")).filter(function(row) {
+                    return row.querySelector("input[id$='-cantidad_salas']");
+                });
+
+                let totalRooms = 0;
+                let totalArea = 0;
+                let totalChildren = 0;
+                let totalStaff = 0;
+
+                roomRows.forEach(function(row) {
+                    const roomCount = toNumber(row.querySelector("input[id$='-cantidad_salas']"));
+                    const area = toNumber(row.querySelector("input[id$='-superficie_exclusiva_m2']"));
+                    const children = toNumber(row.querySelector("input[id$='-cantidad_ninos']"));
+                    const staff = toNumber(row.querySelector("input[id$='-cantidad_personal_sala']"));
+
+                    totalRooms += roomCount;
+                    totalArea += area;
+                    totalChildren += children;
+                    totalStaff += staff;
+
+                    const ratioCell = row.querySelector(".room-staff-ratio");
+                    if (ratioCell) {
+                        ratioCell.textContent = roomCount > 0 ? (staff / roomCount).toFixed(2) : "-";
+                    }
+                });
+
+                const setTotal = function(id, value) {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.textContent = value;
+                    }
+                };
+
+                setTotal("room-total-count", totalRooms);
+                setTotal("room-total-area", totalArea.toFixed(2));
+                setTotal("room-total-children", totalChildren);
+                setTotal("room-total-staff", totalStaff);
+                setTotal(
+                    "room-total-ratio",
+                    totalRooms > 0 ? (totalStaff / totalRooms).toFixed(2) : "-",
+                );
+            }
+
+            document.addEventListener("input", function(event) {
+                const targetId = event.target?.id || "";
+                if (
+                    targetId.includes("-cantidad_salas") ||
+                    targetId.includes("-superficie_exclusiva_m2") ||
+                    targetId.includes("-cantidad_ninos") ||
+                    targetId.includes("-cantidad_personal_sala")
+                ) {
+                    refreshRoomDistributionTotals();
+                }
+            });
+            refreshRoomDistributionTotals();
+
+            setupGeoCascade({
+                provincia: "#id_provincia_cdi",
+                departamento: "#id_departamento_cdi",
+                municipio: "#id_municipio_cdi",
+                localidad: "#id_localidad_cdi",
+            });
+            setupGeoCascade({
+                provincia: "#id_provincia_organizacion",
+                departamento: "#id_departamento_organizacion",
+                municipio: "#id_municipio_organizacion",
+                localidad: "#id_localidad_organizacion",
+            });
+        });
+    </script>
+{% endblock %}

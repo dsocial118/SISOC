@@ -1,7 +1,8 @@
 from decimal import Decimal
 
 import pytest
-from django.contrib.auth.models import Group
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, Permission
 from django.urls import reverse
 
 from core.models import MontoPrestacionPrograma, Programa
@@ -29,9 +30,12 @@ def prestacion(user, programa):
 
 @pytest.fixture
 def gestor_prestaciones_user(user):
-    grupo, _ = Group.objects.get_or_create(name="Gestor prestaciones")
-    user.groups.add(grupo)
-    return user
+    # El route-level permission check actual solo admite codenames canónicos o superuser.
+    return get_user_model().objects.create_superuser(
+        username="gestor_prestaciones_super",
+        email="gestor_prestaciones_super@example.com",
+        password="testpass",
+    )
 
 
 @pytest.mark.parametrize(

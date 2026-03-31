@@ -11,7 +11,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -19,7 +19,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.html import escape, format_html, format_html_join
 from django.utils.text import Truncator
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -35,6 +35,7 @@ from core.decorators import permissions_any_required
 from core.security import safe_redirect
 from core.services.column_preferences import build_columns_context_from_fields
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from iam.services import user_has_permission_code
 
 from centrodeinfancia.access import (
     aplicar_filtro_provincia_usuario as _aplicar_filtro_provincia_usuario,
@@ -46,20 +47,26 @@ from centrodeinfancia.forms import (
     NominaCentroInfanciaCreateForm,
     NominaCentroInfanciaForm,
     ObservacionCentroInfanciaForm,
+    TrabajadorForm,
 )
 from centrodeinfancia.models import (
     CentroDeInfancia,
+    DepartamentoIpi,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     ObservacionCentroInfancia,
+    Trabajador,
 )
+from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 
 
 CDI_LIST_HEADERS = [
     {"title": "Nombre"},
     {"title": "Organización"},
+    {"title": "Tiene nómina"},
     {"title": "Provincia"},
+    {"title": "Departamento"},
     {"title": "Municipio"},
     {"title": "Localidad"},
     {"title": "Calle"},
@@ -70,7 +77,9 @@ CDI_LIST_HEADERS = [
 CDI_LIST_FIELDS = [
     {"name": "nombre"},
     {"name": "organizacion"},
+    {"name": "tiene_nomina"},
     {"name": "provincia"},
+    {"name": "departamento"},
     {"name": "municipio"},
     {"name": "localidad"},
     {"name": "calle"},
@@ -86,7 +95,11 @@ DOCUMENTACION_INTERVENCION_EXTS_PERMITIDAS = {".pdf", ".jpg", ".jpeg", ".png"}
 
 def _centros_cdi_queryset_detalle():
     return CentroDeInfancia.objects.select_related(
-        "organizacion", "provincia", "municipio", "localidad"
+        "organizacion",
+        "provincia",
+        "departamento",
+        "municipio",
+        "localidad",
     )
 
 
@@ -121,9 +134,39 @@ def _nomina_cdi_queryset_scoped(user):
     return _aplicar_scope_provincia_centro_relacion(queryset, user)
 
 
+def _trabajadores_cdi_queryset_scoped(user):
+    queryset = Trabajador.objects.select_related("centro")
+    return _aplicar_scope_provincia_centro_relacion(queryset, user)
+
+
 def _observaciones_cdi_queryset_scoped(user):
     queryset = ObservacionCentroInfancia.objects.select_related("centro")
     return _aplicar_scope_provincia_centro_relacion(queryset, user)
+
+
+def _build_trabajadores_context(
+    request,
+    centro,
+    form=None,
+    *,
+    modal=None,
+):
+    form = form or TrabajadorForm()
+    modal = modal or {}
+    return {
+        "trabajadores": centro.trabajadores.order_by("apellido", "nombre"),
+        "trabajador_form": form,
+        "trabajador_modal_open": modal.get("open", False),
+        "trabajador_modal_mode": modal.get("mode", "create"),
+        "trabajador_form_action": modal.get("action")
+        or reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk}),
+        "puede_editar_trabajadores": request.user.has_perm(
+            "centrodeinfancia.change_centrodeinfancia"
+        ),
+        "puede_eliminar_trabajadores": request.user.has_perm(
+            "centrodeinfancia.delete_centrodeinfancia"
+        ),
+    }
 
 
 def _validar_archivo_documentacion_intervencion(file_obj):
@@ -148,9 +191,14 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
+        nomina_subquery = NominaCentroInfancia.objects.filter(centro_id=OuterRef("pk"))
         queryset = CentroDeInfancia.objects.select_related(
-            "organizacion", "provincia", "municipio", "localidad"
-        )
+            "organizacion",
+            "provincia",
+            "departamento",
+            "municipio",
+            "localidad",
+        ).annotate(tiene_nomina=Exists(nomina_subquery))
         queryset = _aplicar_filtro_provincia_usuario(queryset, self.request.user)
         if query:
             queryset = queryset.filter(
@@ -165,11 +213,21 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             "centrodeinfancia_list",
             CDI_LIST_HEADERS,
             CDI_LIST_FIELDS,
-            default_keys=["nombre", "organizacion", "provincia", "municipio"],
+            default_keys=[
+                "nombre",
+                "organizacion",
+                "tiene_nomina",
+                "provincia",
+                "departamento",
+                "municipio",
+            ],
             required_keys=["nombre"],
         )
         context["breadcrumb_items"] = [
-            {"text": "Centro de Infancia", "url": reverse("centrodeinfancia")},
+            {
+                "text": "Centro de Desarrollo Infantil",
+                "url": reverse("centrodeinfancia"),
+            },
             {"text": "Listar", "active": True},
         ]
         context["query"] = self.request.GET.get("busqueda", "")
@@ -452,6 +510,19 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         )
         context["intervencion_form"] = intervencion_form
         context["observacion_form"] = ObservacionCentroInfanciaForm()
+        if user_has_permission_code(
+            self.request.user, "centrodeinfancia.view_formulariocdi"
+        ):
+            formularios_qs = self.object.formularios.select_related(
+                "created_by"
+            ).order_by("-fecha_relevamiento", "-created_at", "-id")
+            context["formularios_total"] = formularios_qs.count()
+            context["formularios_recent"] = construir_resumenes_formularios(
+                list(formularios_qs[:3])
+            )
+        else:
+            context["formularios_total"] = 0
+            context["formularios_recent"] = []
 
         tipo_intervencion_queryset = list(
             intervencion_form.fields["tipo_intervencion"].queryset
@@ -465,6 +536,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["tipo_intervencion_programa_aliases"] = alias_list
         context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)
         context["tipo_intervencion_programa_aliases_json"] = json.dumps(alias_list)
+        context.update(_build_trabajadores_context(self.request, self.object))
         return context
 
 
@@ -495,10 +567,119 @@ class CentroDeInfanciaDeleteView(
     template_name = "centrodeinfancia/centrodeinfancia_confirm_delete.html"
     context_object_name = "centro"
     success_url = reverse_lazy("centrodeinfancia")
-    success_message = "Centro de infancia dado de baja correctamente."
+    success_message = "Centro de Desarrollo Infantil dado de baja correctamente."
 
     def get_queryset(self):
         return _centros_cdi_queryset_scoped(self.request.user)
+
+
+class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
+    model = Trabajador
+    form_class = TrabajadorForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.centro = _get_centro_cdi_scoped_or_404(request.user, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.centro = self.centro
+        response = super().form_valid(form)
+        messages.success(self.request, "Trabajador agregado correctamente.")
+        return response
+
+    def form_invalid(self, form):
+        detail_view = CentroDeInfanciaDetailView()
+        detail_view.setup(self.request, pk=self.centro.pk)
+        detail_view.object = self.centro
+        context = detail_view.get_context_data(object=self.centro)
+        context.update(
+            _build_trabajadores_context(
+                self.request,
+                self.centro,
+                form=form,
+                modal={
+                    "open": True,
+                    "mode": "create",
+                    "action": self.request.path,
+                },
+            )
+        )
+        return render(
+            self.request,
+            "centrodeinfancia/centrodeinfancia_detail.html",
+            context,
+            status=400,
+        )
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_detalle", kwargs={"pk": self.centro.pk})
+
+
+class TrabajadorCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
+    model = Trabajador
+    form_class = TrabajadorForm
+    pk_url_kwarg = "trabajador_id"
+
+    def get_queryset(self):
+        return _trabajadores_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Trabajador actualizado correctamente.")
+        return response
+
+    def form_invalid(self, form):
+        centro = self.object.centro
+        detail_view = CentroDeInfanciaDetailView()
+        detail_view.setup(self.request, pk=centro.pk)
+        detail_view.object = centro
+        context = detail_view.get_context_data(object=centro)
+        context.update(
+            _build_trabajadores_context(
+                self.request,
+                centro,
+                form=form,
+                modal={
+                    "open": True,
+                    "mode": "edit",
+                    "action": self.request.path,
+                },
+            )
+        )
+        return render(
+            self.request,
+            "centrodeinfancia/centrodeinfancia_detail.html",
+            context,
+            status=400,
+        )
+
+    def get_success_url(self):
+        return reverse(
+            "centrodeinfancia_detalle",
+            kwargs={"pk": self.object.centro_id},
+        )
+
+
+class TrabajadorCentroInfanciaDeleteView(
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
+):
+    model = Trabajador
+    pk_url_kwarg = "trabajador_id"
+    template_name = "centrodeinfancia/trabajador_confirm_delete.html"
+    context_object_name = "trabajador"
+    success_message = "Trabajador eliminado correctamente."
+
+    def get_queryset(self):
+        return _trabajadores_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_detalle", kwargs={"pk": self.kwargs["pk"]})
 
 
 @login_required
@@ -512,7 +693,13 @@ def centrodeinfancia_ajax(request):
             "centrodeinfancia_list",
             CDI_LIST_HEADERS,
             CDI_LIST_FIELDS,
-            default_keys=["nombre", "organizacion", "provincia", "municipio"],
+            default_keys=[
+                "nombre",
+                "organizacion",
+                "provincia",
+                "departamento",
+                "municipio",
+            ],
             required_keys=["nombre"],
         )
         active_columns = columns_context.get("column_active_keys") or [
@@ -520,7 +707,11 @@ def centrodeinfancia_ajax(request):
         ]
 
         queryset = CentroDeInfancia.objects.select_related(
-            "organizacion", "provincia", "municipio", "localidad"
+            "organizacion",
+            "provincia",
+            "departamento",
+            "municipio",
+            "localidad",
         )
         queryset = _aplicar_filtro_provincia_usuario(queryset, req.user)
         if query:
@@ -549,6 +740,23 @@ def centrodeinfancia_ajax(request):
         )
 
     return _centrodeinfancia_ajax(request)
+
+
+@login_required
+@require_GET
+def load_departamentos_ipi(request):
+    departamentos = DepartamentoIpi.objects.none()
+
+    try:
+        provincia_id = int(request.GET.get("provincia_id", ""))
+        departamentos = DepartamentoIpi.objects.filter(provincia_id=provincia_id)
+    except (ValueError, TypeError):
+        pass
+
+    return JsonResponse(
+        list(departamentos.order_by("nombre").values("id", "nombre", "decil_ipi")),
+        safe=False,
+    )
 
 
 class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):

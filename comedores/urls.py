@@ -1,6 +1,10 @@
-from django.urls import path
 from django.contrib.auth.decorators import login_required
+from django.urls import path
+from django.views.generic.base import RedirectView
 from comedores.views import (
+    ColaboradorEspacioCreateView,
+    ColaboradorEspacioDeleteView,
+    ColaboradorEspacioUpdateView,
     ComedorCreateView,
     ComedorDeleteView,
     ComedorDetailView,
@@ -13,9 +17,14 @@ from comedores.views import (
     NominaDetailView,
     NominaCreateView,
     NominaDeleteView,
+    NominaDirectaCreateView,
+    NominaDirectaDeleteView,
+    NominaDirectaDetailView,
+    NominaImportarView,
     AsignarDuplaListView,
     relevamiento_crear_editar_ajax,
     nomina_editar_ajax,
+    nomina_cambiar_estado,
     validar_comedor,
 )
 from comedores.views.export import ComedorExportView
@@ -26,9 +35,6 @@ from comedores.views_territorial import (
     sincronizar_territoriales_api,
     estadisticas_cache_territoriales,
 )
-
-# Views de prueba eliminadas
-
 from intervenciones.views import (
     sub_estados_intervenciones_ajax,
     IntervencionCreateView,
@@ -98,6 +104,27 @@ urlpatterns = [
             ObservacionCreateView.as_view()
         ),
         name="observacion_crear",
+    ),
+    path(
+        "comedores/<int:pk>/colaboradores/crear/",
+        permissions_any_required(["comedores.add_colaboradorespacio"])(
+            ColaboradorEspacioCreateView.as_view()
+        ),
+        name="colaborador_espacio_crear",
+    ),
+    path(
+        "comedores/<int:pk>/colaboradores/<int:pk2>/editar/",
+        permissions_any_required(["comedores.change_colaboradorespacio"])(
+            ColaboradorEspacioUpdateView.as_view()
+        ),
+        name="colaborador_espacio_editar",
+    ),
+    path(
+        "comedores/<int:pk>/colaboradores/<int:pk2>/eliminar/",
+        permissions_any_required(["comedores.delete_colaboradorespacio"])(
+            ColaboradorEspacioDeleteView.as_view()
+        ),
+        name="colaborador_espacio_eliminar",
     ),
     path(
         "comedores/observacion/<int:pk>",
@@ -192,7 +219,7 @@ urlpatterns = [
         name="intervencion_detalle",
     ),
     path(
-        "comedores/<int:pk>/nomina/",
+        "comedores/<int:pk>/admision/<int:admision_pk>/nomina/",
         permissions_any_required(["comedores.view_nomina"])(NominaDetailView.as_view()),
         name="nomina_ver",
     ),
@@ -202,23 +229,56 @@ urlpatterns = [
         name="nomina_editar_ajax",
     ),
     path(
-        "comedores/<int:pk>/nomina/crear/",
+        "comedores/nomina/<int:pk>/cambiar-estado/",
+        permissions_any_required(["comedores.change_nomina"])(nomina_cambiar_estado),
+        name="nomina_cambiar_estado",
+    ),
+    path(
+        "comedores/<int:pk>/admision/<int:admision_pk>/nomina/crear/",
         permissions_any_required(["comedores.add_nomina"])(NominaCreateView.as_view()),
         name="nomina_crear",
     ),
     path(
-        "comedores/<int:pk>/nomina/<int:pk2>/eliminar/",
+        "comedores/<int:pk>/admision/<int:admision_pk>/nomina/<int:pk2>/eliminar/",
         permissions_any_required(["comedores.delete_nomina"])(
             NominaDeleteView.as_view()
         ),
         name="nomina_borrar",
     ),
     path(
+        "comedores/<int:pk>/admision/<int:admision_pk>/nomina/importar/",
+        permissions_any_required(["comedores.add_nomina"])(
+            NominaImportarView.as_view()
+        ),
+        name="nomina_importar",
+    ),
+    # Nómina directa — programas 3/4 (Abordaje comunitario, sin admisión)
+    path(
+        "comedores/<int:pk>/nomina/",
+        permissions_any_required(["comedores.view_nomina"])(
+            NominaDirectaDetailView.as_view()
+        ),
+        name="nomina_directa_ver",
+    ),
+    path(
+        "comedores/<int:pk>/nomina/crear/",
+        permissions_any_required(["comedores.add_nomina"])(
+            NominaDirectaCreateView.as_view()
+        ),
+        name="nomina_directa_crear",
+    ),
+    path(
+        "comedores/<int:pk>/nomina/<int:pk2>/eliminar/",
+        permissions_any_required(["comedores.delete_nomina"])(
+            NominaDirectaDeleteView.as_view()
+        ),
+        name="nomina_directa_borrar",
+    ),
+    path(
         "comedores/ajax/<int:pk>/relevamiento/",
         relevamiento_crear_editar_ajax,
         name="relevamiento_create_edit_ajax",
     ),
-    # esto es prueba de nuevo front para el comedor
     path(
         "comedores_nuevo/<int:pk>",
         permissions_any_required(
@@ -227,7 +287,13 @@ urlpatterns = [
                 "admisiones.view_admision",
                 "acompanamientos.view_informacionrelevante",
             ]
-        )(ComedorDetailView.as_view(template_name="comedor/new_comedor_detail.html")),
+        )(
+            RedirectView.as_view(
+                pattern_name="comedor_detalle",
+                permanent=True,
+                query_string=True,
+            )
+        ),
         name="nuevo_comedor_detalle",
     ),
     path(

@@ -171,9 +171,28 @@ def _formatear_fecha_renaper(fecha_renaper):
     return fecha_renaper
 
 
+def _resolver_provincia_renaper(datos_renaper):
+    provincia_valor = datos_renaper.get("provincia")
+    if provincia_valor not in (None, ""):
+        try:
+            from core.models import Provincia
+
+            provincia_obj = Provincia.objects.get(pk=provincia_valor)
+            return provincia_obj.nombre
+        except (Provincia.DoesNotExist, ValueError, TypeError):
+            return "Provincia no encontrada"
+
+    provincia_api = (datos_renaper.get("provincia_api") or "").strip()
+    return provincia_api.title() if provincia_api else None
+
+
 def _formatear_datos_renaper(datos_renaper, sexo_renaper, documento_consulta=None):
+    documento_renaper = (
+        datos_renaper.get("dni") or datos_renaper.get("documento") or documento_consulta
+    )
+
     datos_renaper_formateados = {
-        "documento": datos_renaper.get("documento") or documento_consulta,
+        "documento": str(documento_renaper or ""),
         "nombre": (datos_renaper.get("nombre") or "").title(),
         "apellido": (datos_renaper.get("apellido") or "").title(),
         "fecha_nacimiento": _formatear_fecha_renaper(
@@ -182,20 +201,17 @@ def _formatear_datos_renaper(datos_renaper, sexo_renaper, documento_consulta=Non
         "sexo": "Masculino" if sexo_renaper == "M" else "Femenino",
         "calle": (datos_renaper.get("calle") or "").title(),
         "altura": str(datos_renaper.get("altura") or ""),
-        "piso_departamento": (datos_renaper.get("piso_departamento") or "").title(),
-        "ciudad": (datos_renaper.get("ciudad") or "").title(),
-        "provincia": None,
+        "piso_departamento": (
+            datos_renaper.get("piso_departamento")
+            or datos_renaper.get("piso_vivienda")
+            or ""
+        ).title(),
+        "ciudad": (
+            datos_renaper.get("ciudad") or datos_renaper.get("localidad_api") or ""
+        ).title(),
+        "provincia": _resolver_provincia_renaper(datos_renaper),
         "codigo_postal": str(datos_renaper.get("codigo_postal") or ""),
     }
-
-    if datos_renaper.get("provincia"):
-        try:
-            from core.models import Provincia
-
-            provincia_obj = Provincia.objects.get(pk=datos_renaper["provincia"])
-            datos_renaper_formateados["provincia"] = provincia_obj.nombre
-        except (Provincia.DoesNotExist, ValueError, TypeError):
-            datos_renaper_formateados["provincia"] = "Provincia no encontrada"
 
     return datos_renaper_formateados
 

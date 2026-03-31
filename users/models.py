@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, Permission, User
 from django.db import models
 
 from core.models import Provincia
@@ -98,6 +98,12 @@ class Profile(models.Model):
         blank=True,
         verbose_name="Expira contraseña inicial en",
     )
+    temporary_password_plaintext = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        verbose_name="Contraseña temporal visible",
+    )
     es_coordinador = models.BooleanField(
         default=False,
         verbose_name="Es Coordinador de Gestión",
@@ -110,6 +116,20 @@ class Profile(models.Model):
         verbose_name="Duplas asignadas",
         help_text="Duplas (equipos técnicos) asignadas a este coordinador",
     )
+    grupos_asignables = models.ManyToManyField(
+        Group,
+        blank=True,
+        related_name="perfiles_delegadores",
+        verbose_name="Grupos que puede asignar",
+        help_text="Define qué grupos puede asignar este usuario al crear/editar otros usuarios.",
+    )
+    roles_asignables = models.ManyToManyField(
+        Permission,
+        blank=True,
+        related_name="perfiles_roles_delegables",
+        verbose_name="Roles que puede asignar",
+        help_text="Permisos auth.role_* que este usuario puede asignar a terceros.",
+    )
 
     def __str__(self):
         return f"Perfil de {self.user.username}"
@@ -120,9 +140,15 @@ class AccesoComedorPWA(models.Model):
 
     ROL_REPRESENTANTE = "representante"
     ROL_OPERADOR = "operador"
+    TIPO_ASOCIACION_ORGANIZACION = "organizacion"
+    TIPO_ASOCIACION_ESPACIO = "espacio"
     ROL_CHOICES = (
         (ROL_REPRESENTANTE, "Representante"),
         (ROL_OPERADOR, "Operador"),
+    )
+    TIPO_ASOCIACION_CHOICES = (
+        (TIPO_ASOCIACION_ORGANIZACION, "Organización"),
+        (TIPO_ASOCIACION_ESPACIO, "Espacio"),
     )
 
     user = models.ForeignKey(
@@ -135,7 +161,19 @@ class AccesoComedorPWA(models.Model):
         on_delete=models.CASCADE,
         related_name="accesos_pwa",
     )
+    organizacion = models.ForeignKey(
+        "organizaciones.Organizacion",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="accesos_pwa",
+    )
     rol = models.CharField(max_length=20, choices=ROL_CHOICES)
+    tipo_asociacion = models.CharField(
+        max_length=20,
+        choices=TIPO_ASOCIACION_CHOICES,
+        default=TIPO_ASOCIACION_ESPACIO,
+    )
     creado_por = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -145,6 +183,7 @@ class AccesoComedorPWA(models.Model):
     )
     activo = models.BooleanField(default=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_baja = models.DateTimeField(null=True, blank=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -159,8 +198,75 @@ class AccesoComedorPWA(models.Model):
         indexes = [
             models.Index(fields=["user", "activo"]),
             models.Index(fields=["comedor", "rol", "activo"]),
+            models.Index(fields=["organizacion", "activo"]),
             models.Index(fields=["creado_por", "activo"]),
         ]
 
     def __str__(self):
         return f"{self.user.username} - {self.comedor_id} - {self.rol}"
+
+
+class AuditAccesoComedorPWA(models.Model):
+    ACCION_CREATE = "create"
+    ACCION_REACTIVATE = "reactivate"
+    ACCION_DEACTIVATE = "deactivate"
+
+    ACCION_CHOICES = (
+        (ACCION_CREATE, "Alta"),
+        (ACCION_REACTIVATE, "Reactivación"),
+        (ACCION_DEACTIVATE, "Baja"),
+    )
+
+    acceso = models.ForeignKey(
+        AccesoComedorPWA,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="audit_logs",
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_pwa_audit_logs",
+    )
+    comedor = models.ForeignKey(
+        "comedores.Comedor",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_pwa_audit_logs",
+    )
+    organizacion = models.ForeignKey(
+        "organizaciones.Organizacion",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_pwa_audit_logs",
+    )
+    accion = models.CharField(max_length=20, choices=ACCION_CHOICES, db_index=True)
+    fecha_evento = models.DateTimeField(auto_now_add=True, db_index=True)
+    actor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_pwa_audit_eventos",
+    )
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ["-fecha_evento", "-id"]
+        verbose_name = "Auditoría de acceso PWA"
+        verbose_name_plural = "Auditorías de accesos PWA"
+        indexes = [
+            models.Index(fields=["user", "fecha_evento"]),
+            models.Index(fields=["comedor", "fecha_evento"]),
+            models.Index(fields=["accion", "fecha_evento"]),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.user_id or '-'} {self.accion} {self.fecha_evento:%Y-%m-%d %H:%M:%S}"
+        )

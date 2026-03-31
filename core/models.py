@@ -99,6 +99,15 @@ class Programa(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
     estado = models.BooleanField(default=True)
     observaciones = models.CharField(max_length=500, null=True, blank=True)
+    organismo = models.ForeignKey(
+        "organizaciones.Organizacion",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="programas",
+        verbose_name="Organismo",
+    )
+    descripcion = models.TextField(null=True, blank=True, verbose_name="Descripción")
 
     def __str__(self):
         return self.nombre

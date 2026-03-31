@@ -1,3 +1,45 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-03-31 -->
+# Versión SISOC 31.03.2026
+
+## Nuevas Funcionalidades
+
+- Evolución funcional de VAT con APIs web documentadas en Swagger para centros, títulos, cursos e inscripciones, además de mejoras en el legajo ciudadano y en la gestión de vouchers.
+- Reorganización del módulo Comedores con legajo canonizado, solapa de responsables, soporte de nómina independiente por programa y visualización configurable del estado judicializado.
+- Ampliación del módulo Centro de Desarrollo Infantil con nueva nomenclatura, formularios y validaciones renovadas, departamentos IPI, teléfonos más flexibles y una nueva columna de nómina en listados.
+
+## Actualizaciones
+
+- Unificación de flujos entre web y mobile/PWA para login y colaboradores, con acciones por usuario alineadas al estado activo y mejor consistencia en altas, bajas lógicas y permisos.
+- Fortalecimiento del trabajo asistido y la operación técnica con bootstrap para worktrees, checks de mojibake, ajustes de GitHub Actions y guías IA/lint más estrictas en la documentación.
+- Mejoras transversales en layout y experiencia de uso en detalle de comedores, sidebar, relevamientos, usuarios y formularios CDI para sostener compatibilidad con los cambios recientes.
+
+## Corrección de Errores
+
+- Correcciones acumuladas en Celiaquía para importación y reproceso de legajos: validación integral de Excel, obligatoriedad de responsables según edad, guardado parcial estable, limpieza del responsable al borrar el último dato y ajustes RENAPER.
+- Ajustes en Comedores y Ciudadanos para evitar timeouts por búsqueda de documento, cortar reintentos RENAPER ante errores de integración, restaurar el layout del detalle y corregir regresiones de alcance, tests y migraciones.
+- Estabilización de CI, encoding y suites automáticas con fixes de GitHub Actions, normalización UTF-8/mojibake, compatibilidad de migraciones y cobertura de regresión en users, VAT, CDI, Comedores y PWA.
+<!-- AUTO-GENERATED RELEASE END: 2026-03-31 -->
+
+# Versión SISOC 18.03.2026
+
+## Nuevas Funcionalidades
+
+- Nuevo módulo VAT para gestionar centros territoriales, actividades, beneficiarios, responsables y encuentros con servicios, formularios, filtros avanzados, vistas y endpoints API autorizados por roles específicos.
+- Evolución profunda del módulo Centro de Infancia: nuevos formularios acordeón, detalle renovado, modelo de trabajadores, vistas CRUD y cobertura de tests para documentación, nominas y permisos.
+- Automatización de bootstrap de grupos IAM junto con scripts para generación automática de documentación y changelog/PRs en CI, lo que garantiza que ambientes nuevos migren los permisos correctos.
+
+## Actualizaciones
+
+- Consolidación de GitHub Actions y scripts de CI: nuevos workflows para lint, pruebas, documentación y secretos, plus scripts en `scripts/ci/pr_doc_automation.py` y seeds en `users/bootstrap` para sincronizar entornos con el mismo catálogo de permisos.
+- Mejoras de seguridad y permisos (gitleaks allowlist, categorías de filtros booleanos y ajustes en `core.permissions`) que refuerzan el filtrado en Comedores, Ciudadanos, Celiaquía y PWA sin romper compatibilidad.
+- Documentación y registros actualizados en `docs/` para explicar decisiones de formularios CDI, pruebas, workflows de CI y despliegue, facilitando trazabilidad de los cambios recientes.
+
+## Corrección de Errores
+
+- Varios ajustes en Celiaquía, Ciudadanos, Comedores y Comunicados (filtros booleanos, rendiciones de listas, permisos de detalle y renderizado de expedientes) que cerraron regresiones reportadas en PRs recientes.
+- Limpieza de servicios críticos como auditoría, consulta RENAPER y APIs de PWA para evitar warnings de pylint y mantener los datos sincronizados con los nuevos modelos.
+- Estabilización de suites de tests y fixtures (Pytest, GH Actions, cobertura y seeds) que recuperan la compatibilidad tras cambios en formularios, CI y permisos.
+
 # Versión SISOC 04.03.2026
 
 ## Nuevas Funcionalidades

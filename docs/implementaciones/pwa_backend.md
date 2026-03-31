@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Documentar el estado actual de la API usada por la PWA, el modelo de acceso por comedor y los contratos principales de autenticación y alcance.
+Documentar el estado actual de la API usada por la PWA, el modelo de acceso mobile y los contratos principales de autenticación y alcance.
 
 ## Resumen de implementación
 
@@ -11,8 +11,8 @@ Documentar el estado actual de la API usada por la PWA, el modelo de acceso por 
   - `GET /api/users/me/`
   - `POST /api/users/logout/`
 - Contexto de usuario en `/api/users/me/` con bloque `pwa`.
-- Alcance por comedor aplicado en endpoints PWA de comedores y nómina:
-  - si el usuario tiene accesos PWA activos, solo ve/gestiona esos comedores;
+- Alcance por espacio aplicado en endpoints PWA de comedores y nómina:
+  - si el usuario tiene accesos PWA activos, solo ve/gestiona esos espacios;
   - si no es PWA, se mantiene el filtrado legacy de backoffice.
 - Gestión de usuarios de comedor desde PWA:
   - representantes crean/listan/desactivan operadores por comedor.
@@ -27,13 +27,36 @@ Modelo: `users.AccesoComedorPWA`
 - Campos principales:
   - `user`
   - `comedor`
+  - `organizacion` (nullable; se usa cuando la asociación mobile es por organización)
   - `rol` (`representante` | `operador`)
+  - `tipo_asociacion` (`organizacion` | `espacio`)
   - `creado_por`
   - `activo`
   - timestamps
 - Restricciones:
   - unicidad por `user + comedor`
   - índices para lookup por usuario/comedor/actor.
+
+### Asociación mobile de usuarios creada desde Web
+
+- El checkbox de acceso mobile sigue existiendo en el ABM web de usuarios.
+- Al marcarlo, el formulario obliga a definir el tipo de asociación:
+  - `organizacion`: selecciona una o más organizaciones y luego los espacios visibles dentro de esas organizaciones.
+  - `espacio`: selecciona directamente uno o más espacios.
+- Regla de negocio: un usuario mobile no puede quedar asociado simultáneamente por organización y por espacio.
+- Regla de negocio: un usuario mobile siempre debe tener al menos un espacio visible seleccionado.
+- Para usuarios mobile creados desde web:
+  - la contraseña inicial se genera automáticamente;
+  - el perfil queda marcado con `must_change_password=True`;
+  - el acceso web se mantiene bloqueado por `BackofficeAuthenticationForm`.
+
+### Alcance efectivo por organización
+
+- Cuando `tipo_asociacion=organizacion`, el alcance final sigue resolviéndose por espacios.
+- Cada fila conserva:
+  - el espacio visible (`comedor_id`)
+  - la organización desde la que fue habilitado (`organizacion_id`)
+- Si un espacio deja de pertenecer a esa organización, deja automáticamente de ser visible en Mobile aunque exista una fila histórica activa.
 
 Servicios de dominio: `users/services_pwa.py`
 
@@ -59,6 +82,9 @@ Servicios de dominio: `users/services_pwa.py`
     - `roles`
     - `comedores_representados`
     - `comedor_operador_id`
+    - `tipo_asociacion`
+    - `organizaciones_ids`
+    - `must_change_password`
 - `POST /api/users/logout/`
   - invalida token actual.
 
@@ -111,13 +137,24 @@ Se exponen campos de aprobadas del informe técnico (`aprobadas_*`), tomando inf
 
 - `GET /api/pwa/espacios/{comedor_id}/colaboradores/`
 - `POST /api/pwa/espacios/{comedor_id}/colaboradores/`
+- `GET /api/pwa/espacios/{comedor_id}/colaboradores/generos/`
+- `GET /api/pwa/espacios/{comedor_id}/colaboradores/actividades/`
+- `POST /api/pwa/espacios/{comedor_id}/colaboradores/preview-dni/`
 - `PATCH /api/pwa/espacios/{comedor_id}/colaboradores/{id}/`
 - `DELETE /api/pwa/espacios/{comedor_id}/colaboradores/{id}/`
 
 Reglas:
-- baja lógica (`activo=False`, `fecha_baja`) en `DELETE`
-- no se permite duplicar `dni` activo dentro del mismo espacio
-- validaciones de formato para `dni`, `email` y `telefono`
+- usa la misma fuente de verdad que web/backoffice: `comedores.ColaboradorEspacio`
+- el alta sigue la misma regla que en web:
+  - primero busca por DNI en ciudadanos SISOC;
+  - si no existe, consulta RENAPER;
+  - si RENAPER responde correctamente, crea/recupera el `Ciudadano` y luego crea el colaborador del espacio;
+- `preview-dni` devuelve el prefill de SISOC/RENAPER antes de guardar;
+- `generos` expone el catálogo cerrado de género del colaborador del espacio;
+- `actividades` expone el catálogo cerrado de actividades múltiples del colaborador del espacio;
+- baja lógica en `DELETE` completando `fecha_baja` sin borrar el registro;
+- no se permite duplicar un colaborador activo del mismo ciudadano dentro del mismo espacio;
+- se conservan históricos, por lo que la API lista registros activos e inactivos.
 
 ### 9) Mensajes del espacio (comunicados a comedores)
 
@@ -139,7 +176,7 @@ Lectura y auditoria:
 ## Reglas de permisos y alcance
 
 - `TokenAuthentication` + `IsAuthenticated` en API PWA.
-- Scope por comedor:
+- Scope por espacio:
   - usuarios PWA: `AccesoComedorPWA.activo=True`.
   - usuarios no PWA: filtros existentes de `ComedorService`.
 - Gestión de `/usuarios/` protegida con `IsPWARepresentativeForComedor`.

@@ -60,6 +60,7 @@ def test_comedor_list_queryset_and_context(mocker):
     assert ctx["add_url"] == "/comedor_crear/"
     assert ctx["filters_mode"] is True
     assert ctx["active_columns"] == ["nombre"]
+    assert "judicializado" in ctx["column_keys_all"]
 
 
 def test_comedor_create_helpers_and_form_valid_paths(mocker):
@@ -120,13 +121,14 @@ def test_comedor_create_helpers_and_form_valid_paths(mocker):
 def test_comedor_detail_get_object_presupuestos_and_post_paths(mocker):
     view = module.ComedorDetailView()
     view.kwargs = {"pk": 7}
+    view.request = SimpleNamespace(user=SimpleNamespace())
 
     get_obj = mocker.patch(
         "comedores.views.comedor.ComedorService.get_comedor_detail_object",
         return_value="obj",
     )
     assert view.get_object() == "obj"
-    get_obj.assert_called_once_with(7)
+    get_obj.assert_called_once_with(7, user=view.request.user)
 
     # get_presupuestos_data cache hit
     view.object = SimpleNamespace(id=1, relevamientos_optimized=[1])
@@ -174,6 +176,17 @@ def test_comedor_detail_get_object_presupuestos_and_post_paths(mocker):
     assert view.post(req2) == "redir2"
     assert success.called
 
+    req3 = _Req(user=SimpleNamespace(is_superuser=False), post={"territorial": "1"})
+    view.get_object = lambda: SimpleNamespace(pk=7)
+    view.object = SimpleNamespace(pk=7)
+    err_legacy = mocker.patch("comedores.views.comedor.messages.error")
+    redirect_legacy = mocker.patch(
+        "comedores.views.comedor.redirect", return_value="redir3"
+    )
+    assert view.post(req3) == "redir3"
+    err_legacy.assert_called_once()
+    redirect_legacy.assert_called_with("relevamientos", comedor_pk=7)
+
 
 def test_comedor_detail_helpers_nomina_chart_and_safe_cell():
     metrics = module._build_nomina_metrics(
@@ -204,6 +217,73 @@ def test_comedor_detail_helpers_nomina_chart_and_safe_cell():
 
     assert module._safe_cell_content(None) == "-"
     assert str(module._safe_cell_content("<b>x</b>")) == "&lt;b&gt;x&lt;/b&gt;"
+
+
+def test_build_organizacion_responsables_context_filtra_y_formatea():
+    class _RelatedList:
+        def __init__(self, items):
+            self._items = items
+
+        def all(self):
+            return self._items
+
+    organizacion = SimpleNamespace(
+        nombre="Org Centro",
+        cuit=20333444556,
+        tipo_entidad="Asociacion Civil",
+        subtipo_entidad=None,
+        email="org@example.com",
+        telefono=None,
+        fecha_vencimiento=datetime(2026, 5, 2, 10, 0, 0),
+        firmantes=_RelatedList(
+            [
+                SimpleNamespace(
+                    nombre="Ana Perez",
+                    cuit=27111222333,
+                    rol=SimpleNamespace(nombre="Presidenta"),
+                ),
+                SimpleNamespace(
+                    nombre="Luis Gomez",
+                    cuit=None,
+                    rol=None,
+                ),
+                SimpleNamespace(
+                    nombre="",
+                    cuit=None,
+                    rol=None,
+                ),
+            ]
+        ),
+        avales=_RelatedList(
+            [
+                SimpleNamespace(nombre="Carlos Aval", cuit=20999888777),
+                SimpleNamespace(nombre=None, cuit=None),
+            ]
+        ),
+    )
+
+    context = module._build_organizacion_responsables_context(
+        SimpleNamespace(organizacion=organizacion)
+    )
+
+    assert [item["label"] for item in context["responsables_organizacion_items"]] == [
+        "Nombre",
+        "CUIT",
+        "Tipo de entidad",
+        "Email",
+        "Fecha de vencimiento de mandatos",
+    ]
+    assert [firmante["text"] for firmante in context["responsables_firmantes"]] == [
+        "Presidenta: Ana Perez 27111222333",
+        "Luis Gomez",
+    ]
+    assert context["responsables_avales"] == [
+        {
+            "icon": "bi bi-shield-check",
+            "label": "Aval 1",
+            "value": "Carlos Aval 20999888777",
+        }
+    ]
 
 
 def test_comedor_detail_selected_admision_helpers_and_prestaciones(mocker):
@@ -276,7 +356,6 @@ def test_comedor_detail_get_context_data_selected_admision_flow(mocker):
         "get_relaciones_optimizadas",
         return_value={"admision": admisiones_qs},
     )
-    mocker.patch.object(view, "_get_environment_config", return_value={"ENV_X": "1"})
     mocker.patch(
         "comedores.views.comedor._get_informe_tecnico_finalizado_from_admision",
         return_value=SimpleNamespace(id=90),
@@ -342,6 +421,7 @@ def test_comedor_detail_get_relaciones_optimizadas_compone_contextos(mocker):
             "nomina_total": 10,
             "nomina_hombres": 4,
             "nomina_mujeres": 6,
+            "nomina_rangos": {},
             "nomina_menores": 2,
             "nomina_espera": 1,
             "nomina_pct_sin_dato": 0,
@@ -714,7 +794,10 @@ def test_build_admisiones_y_nomina_context(mocker):
     )
     timeline_mock = mocker.patch(
         "comedores.views.comedor.ComedorService.get_admision_timeline_context",
-        return_value={"timeline_steps": ["x"], "admision_activa": 2},
+        return_value={
+            "timeline_steps": ["x"],
+            "admision_activa": SimpleNamespace(id=2),
+        },
     )
     nomina_mock = mocker.patch(
         "comedores.views.comedor.ComedorService.get_nomina_detail",
@@ -740,7 +823,7 @@ def test_build_admisiones_y_nomina_context(mocker):
     ctx = module._build_admisiones_y_nomina_context(comedor_obj)
 
     assert ctx["admisiones_qs"] is admisiones_qs
-    assert ctx["timeline_context"]["admision_activa"] == 2
+    assert ctx["timeline_context"]["admision_activa"].id == 2
     assert ctx["nomina_total"] == 30
     assert ctx["nomina_hombres"] == 10
     assert ctx["nomina_mujeres"] == 15
@@ -748,4 +831,4 @@ def test_build_admisiones_y_nomina_context(mocker):
     assert ctx["nomina_menores"] == 9
     assert ctx["nomina_pct_adultos"] == 40
     timeline_mock.assert_called_once_with(admisiones_qs)
-    nomina_mock.assert_called_once_with(99, page=1, per_page=1)
+    nomina_mock.assert_called_once_with(2, page=1, per_page=1)

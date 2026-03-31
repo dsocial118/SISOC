@@ -1,0 +1,436 @@
+[
+{
+  "model": "VAT.categoria",
+  "pk": 6,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Educación Básica"
+  }
+},
+{
+  "model": "VAT.categoria",
+  "pk": 7,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Formación Profesional"
+  }
+},
+{
+  "model": "VAT.categoria",
+  "pk": 8,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Tecnología e Informática"
+  }
+},
+{
+  "model": "VAT.categoria",
+  "pk": 9,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Idiomas"
+  }
+},
+{
+  "model": "VAT.categoria",
+  "pk": 10,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Arte y Expresión"
+  }
+},
+{
+  "model": "VAT.categoria",
+  "pk": 11,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Desarrollo Personal y Ciudadanía"
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 26,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Alfabetización",
+    "categoria": 6
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 27,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Primaria acelerada",
+    "categoria": 6
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 28,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Apoyo escolar primario",
+    "categoria": 6
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 29,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Apoyo escolar secundario",
+    "categoria": 6
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 30,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Terminalidad primaria",
+    "categoria": 6
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 31,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Terminalidad secundaria",
+    "categoria": 6
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 32,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Carpintería",
+    "categoria": 7
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 33,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Electricidad",
+    "categoria": 7
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 34,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Plomería",
+    "categoria": 7
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 35,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Gastronomía",
+    "categoria": 7
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 36,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Panadería y repostería",
+    "categoria": 7
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 37,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Costura y confección",
+    "categoria": 7
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 38,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Peluquería y estética",
+    "categoria": 7
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 39,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Soldadura",
+    "categoria": 7
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 40,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Refrigeración y aire acondicionado",
+    "categoria": 7
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 41,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Construcción",
+    "categoria": 7
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 42,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Informática básica",
+    "categoria": 8
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 43,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Ofimática",
+    "categoria": 8
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 44,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Programación introductoria",
+    "categoria": 8
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 45,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Redes y conectividad",
+    "categoria": 8
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 46,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Diseño gráfico",
+    "categoria": 8
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 47,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Inglés nivel inicial",
+    "categoria": 9
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 48,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Inglés nivel intermedio",
+    "categoria": 9
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 49,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Portugués",
+    "categoria": 9
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 50,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Lengua de señas",
+    "categoria": 9
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 51,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Taller de teatro",
+    "categoria": 10
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 52,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Taller de música",
+    "categoria": 10
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 53,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Taller de danza",
+    "categoria": 10
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 54,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Taller de pintura y dibujo",
+    "categoria": 10
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 55,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Fotografía",
+    "categoria": 10
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 56,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Cerámica y alfarería",
+    "categoria": 10
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 57,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Literatura y escritura creativa",
+    "categoria": 10
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 58,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Educación para el trabajo",
+    "categoria": 11
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 59,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Orientación vocacional",
+    "categoria": 11
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 60,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Educación sexual integral (ESI)",
+    "categoria": 11
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 61,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Derechos y ciudadanía",
+    "categoria": 11
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 62,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Convivencia y resolución de conflictos",
+    "categoria": 11
+  }
+},
+{
+  "model": "VAT.actividad",
+  "pk": 63,
+  "fields": {
+    "deleted_at": null,
+    "deleted_by": null,
+    "nombre": "Emprendedurismo",
+    "categoria": 11
+  }
+}
+]

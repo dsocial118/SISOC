@@ -448,6 +448,9 @@
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="tab" href="#aduana">Aduana</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#vat">VAT</a>
+            </li>
         </ul>
 
         <div class="tab-content px-4">
@@ -1123,68 +1126,76 @@
                                 {% endif %}
                             </h5>
                             {% if nomina_actual %}
-                                <div style="display: grid;
-                                            grid-template-columns: 1fr 1fr;
-                                            gap: 1rem;
-                                            margin-bottom: 1.5rem">
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Comedor</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">
-                                            <a href="{% url 'comedor_detalle' nomina_actual.comedor.id %}"
-                                               style="color: #F5A623;
-                                                      text-decoration: underline">
-                                                {{ nomina_actual.comedor.nombre }}
-                                            </a>
+                                {% with comedor_actual=nomina_actual.admision.comedor %}
+                                    <div style="display: grid;
+                                                grid-template-columns: 1fr 1fr;
+                                                gap: 1rem;
+                                                margin-bottom: 1.5rem">
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);">Comedor</small>
+                                            <div style="font-size: 0.95rem;
+                                                        color: rgba(255,255,255,0.95);
+                                                        margin-top: 0.25rem">
+                                                {% if comedor_actual and comedor_actual.id %}
+                                                    <a href="{% url 'comedor_detalle' comedor_actual.id %}"
+                                                       style="color: #F5A623;
+                                                              text-decoration: underline">
+                                                        {{ comedor_actual.nombre }}
+                                                    </a>
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);">Tipo</small>
+                                            <div style="font-size: 0.95rem;
+                                                        color: rgba(255,255,255,0.95);
+                                                        margin-top: 0.25rem">
+                                                {{ comedor_actual.tipocomedor.nombre|default:"-" }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);">Provincia</small>
+                                            <div style="font-size: 0.95rem;
+                                                        color: rgba(255,255,255,0.95);
+                                                        margin-top: 0.25rem">
+                                                {{ comedor_actual.provincia.nombre|default:"-" }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);">Municipio</small>
+                                            <div style="font-size: 0.95rem;
+                                                        color: rgba(255,255,255,0.95);
+                                                        margin-top: 0.25rem">
+                                                {{ comedor_actual.municipio.nombre|default:"-" }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);">Estado</small>
+                                            <div style="font-size: 0.95rem;
+                                                        color: rgba(255,255,255,0.95);
+                                                        margin-top: 0.25rem">
+                                                {% if nomina_actual.estado == 'activo' %}
+                                                    <span class="badge" style="background: var(--green);">Activo</span>
+                                                {% elif nomina_actual.estado == 'espera' %}
+                                                    <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En espera</span>
+                                                {% else %}
+                                                    <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);">Fecha Registro</small>
+                                            <div style="font-size: 0.95rem;
+                                                        color: rgba(255,255,255,0.95);
+                                                        margin-top: 0.25rem">
+                                                {{ nomina_actual.fecha|date:"d/m/Y" }}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Tipo</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">
-                                            {{ nomina_actual.comedor.tipocomedor.nombre|default:"-" }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Provincia</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">
-                                            {{ nomina_actual.comedor.provincia.nombre|default:"-" }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Municipio</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">
-                                            {{ nomina_actual.comedor.municipio.nombre|default:"-" }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Estado</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">
-                                            {% if nomina_actual.estado == 'activo' %}
-                                                <span class="badge" style="background: var(--green);">Activo</span>
-                                            {% elif nomina_actual.estado == 'pendiente' %}
-                                                <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Pendiente</span>
-                                            {% else %}
-                                                <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Fecha Registro</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">{{ nomina_actual.fecha|date:"d/m/Y" }}</div>
-                                    </div>
-                                </div>
-                                {% if nominas_comedor.count > 1 %}
+                                {% endwith %}
+                                {% if nominas_comedor|length > 1 %}
                                     <h6 style="margin-top: 1.5rem;
                                                margin-bottom: 1rem;
                                                border-top: 1px solid rgba(255,255,255,0.1);
@@ -1201,17 +1212,23 @@
                                             {% for nomina in nominas_comedor %}
                                                 <tr>
                                                     <td>
-                                                        <a href="{% url 'comedor_detalle' nomina.comedor.id %}"
-                                                           style="color: #F5A623;
-                                                                  text-decoration: underline">
-                                                            {{ nomina.comedor.nombre }}
-                                                        </a>
+                                                        {% with comedor=nomina.admision.comedor %}
+                                                            {% if comedor and comedor.id %}
+                                                                <a href="{% url 'comedor_detalle' comedor.id %}"
+                                                                   style="color: #F5A623;
+                                                                          text-decoration: underline">
+                                                                    {{ comedor.nombre }}
+                                                                </a>
+                                                            {% else %}
+                                                                -
+                                                            {% endif %}
+                                                        {% endwith %}
                                                     </td>
                                                     <td>
                                                         {% if nomina.estado == 'activo' %}
                                                             <span class="badge" style="background: var(--green);">Activo</span>
-                                                        {% elif nomina.estado == 'pendiente' %}
-                                                            <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Pendiente</span>
+                                                        {% elif nomina.estado == 'espera' %}
+                                                            <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En espera</span>
                                                         {% else %}
                                                             <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
                                                         {% endif %}
@@ -1946,8 +1963,244 @@
                     </div>
                 </div>
             </div>
+
+            <div class="tab-pane fade" id="vat">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                            <h5 class="mb-3">
+                                <span>Programa VAT</span>
+                                {% if vat_programas %}
+                                    <span class="badge"
+                                          style="background: rgba(46, 125, 51, 0.6);
+                                                 color: white;
+                                                 padding: 0.35rem 0.75rem;
+                                                 font-size: 0.75rem;
+                                                 margin-left: 0.5rem">{{ vat_programas|length }} programa{{ vat_programas|length|pluralize }}</span>
+                                {% endif %}
+                            </h5>
+                            {% if vat_programas %}
+                                <div style="display: grid; gap: 1rem;">
+                                    {% for programa_vat in vat_programas %}
+                                        <div style="border: 1px solid rgba(255,255,255,0.12);
+                                                    border-radius: 12px;
+                                                    padding: 1rem;
+                                                    background: rgba(255,255,255,0.03)">
+                                            <div style="display: flex;
+                                                        justify-content: space-between;
+                                                        align-items: flex-start;
+                                                        gap: 1rem;
+                                                        margin-bottom: 1rem;
+                                                        flex-wrap: wrap">
+                                                <div>
+                                                    <h6 style="margin: 0; color: white;">{{ programa_vat.programa }}</h6>
+                                                    <small style="color: rgba(255,255,255,0.65);">Detalle del legajo dentro del programa</small>
+                                                </div>
+                                                <div>
+                                                    {% if programa_vat.voucher_activo %}
+                                                        <span class="badge" style="background: var(--green);">Voucher activo</span>
+                                                    {% elif programa_vat.voucher_referencia %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Voucher {{ programa_vat.voucher_referencia.get_estado_display|lower }}</span>
+                                                    {% else %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Sin voucher</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <div style="display: grid;
+                                                        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                                                        gap: 1rem;
+                                                        margin-bottom: 1rem">
+                                                <div>
+                                                    <small style="color: rgba(255,255,255,0.7);">Voucher asignado</small>
+                                                    <div style="font-size: 0.95rem;
+                                                                color: rgba(255,255,255,0.95);
+                                                                margin-top: 0.25rem">
+                                                        {% with voucher_ref=programa_vat.voucher_activo|default:programa_vat.voucher_referencia %}
+                                                            {% if voucher_ref %}
+                                                                <a href="{% url 'vat_voucher_detail' voucher_ref.pk %}"
+                                                                   style="color: #F5A623;
+                                                                          text-decoration: underline">
+                                                                    #{{ voucher_ref.pk }}
+                                                                </a>
+                                                                <span style="color: rgba(255,255,255,0.7);">({{ voucher_ref.get_estado_display }})</span>
+                                                            {% else %}
+                                                                -
+                                                            {% endif %}
+                                                        {% endwith %}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <small style="color: rgba(255,255,255,0.7);">Créditos totales</small>
+                                                    <div style="font-size: 0.95rem;
+                                                                color: rgba(255,255,255,0.95);
+                                                                margin-top: 0.25rem">
+                                                        {{ programa_vat.creditos_totales }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <small style="color: rgba(255,255,255,0.7);">Créditos actuales</small>
+                                                    <div style="font-size: 0.95rem;
+                                                                color: rgba(255,255,255,0.95);
+                                                                margin-top: 0.25rem">
+                                                        {{ programa_vat.creditos_actuales }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <small style="color: rgba(255,255,255,0.7);">Cursos asignados</small>
+                                                    <div style="font-size: 0.95rem;
+                                                                color: rgba(255,255,255,0.95);
+                                                                margin-top: 0.25rem">
+                                                        {{ programa_vat.cursos_asignados }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <small style="color: rgba(255,255,255,0.7);">Asistencia</small>
+                                                    <div style="font-size: 0.95rem;
+                                                                color: rgba(255,255,255,0.95);
+                                                                margin-top: 0.25rem">
+                                                        {{ programa_vat.asistencias_presentes }}/{{ programa_vat.asistencias_registradas }} sesiones
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {% if programa_vat.inscripciones %}
+                                                <h6 style="margin-top: 1rem;
+                                                           margin-bottom: 0.75rem;
+                                                           color: rgba(255,255,255,0.92)">Cursos asignados</h6>
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Curso</th>
+                                                            <th>Comisión</th>
+                                                            <th>Estado</th>
+                                                            <th>Asistencia</th>
+                                                            <th>Detalle</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for inscripcion in programa_vat.inscripciones %}
+                                                            <tr>
+                                                                <td>{{ inscripcion.comision.oferta.plan_curricular.titulo_referencia.nombre|default:"-" }}</td>
+                                                                <td>
+                                                                    <a href="{% url 'vat_comision_detail' inscripcion.comision.pk %}"
+                                                                       style="color: #F5A623;
+                                                                              text-decoration: underline">
+                                                                        {{ inscripcion.comision.codigo_comision }}
+                                                                    </a>
+                                                                </td>
+                                                                <td>{{ inscripcion.get_estado_display }}</td>
+                                                                <td>
+                                                                    {{ inscripcion.asistencias_presentes }}/{{ inscripcion.asistencias_registradas }}
+                                                                    {% if inscripcion.asistencias_registradas %}
+                                                                        <span style="color: rgba(255,255,255,0.65);">({{ inscripcion.asistencia_porcentaje }}%)</span>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td>
+                                                                    <a href="{% url 'vat_inscripcion_detail' inscripcion.pk %}"
+                                                                       style="color: #F5A623;
+                                                                              text-decoration: underline">Ver inscripción</a>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            {% endif %}
+
+                                            {% if programa_vat.inscripciones_oferta %}
+                                                <h6 style="margin-top: 1rem;
+                                                           margin-bottom: 0.75rem;
+                                                           color: rgba(255,255,255,0.92)">Inscripciones de oferta</h6>
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Curso</th>
+                                                            <th>Comisión</th>
+                                                            <th>Estado</th>
+                                                            <th>Detalle</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for inscripcion_oferta in programa_vat.inscripciones_oferta %}
+                                                            <tr>
+                                                                <td>{{ inscripcion_oferta.oferta.oferta.plan_curricular.titulo_referencia.nombre|default:"-" }}</td>
+                                                                <td>
+                                                                    <a href="{% url 'vat_comision_detail' inscripcion_oferta.oferta.pk %}"
+                                                                       style="color: #F5A623;
+                                                                              text-decoration: underline">
+                                                                        {{ inscripcion_oferta.oferta.codigo_comision }}
+                                                                    </a>
+                                                                </td>
+                                                                <td>{{ inscripcion_oferta.get_estado_display }}</td>
+                                                                <td>
+                                                                    <a href="{% url 'vat_inscripcion_oferta_detail' inscripcion_oferta.pk %}"
+                                                                       style="color: #F5A623;
+                                                                              text-decoration: underline">Ver inscripción</a>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay registros VAT para este ciudadano.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
+
+        {% if colaboraciones_comedor %}
+            <div class="row px-4 mt-3">
+                <div class="col-12">
+                    <div class="tabla-legajo">
+                        <h5 class="mb-3">Colaboraciones en comedores</h5>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Comedor</th>
+                                    <th>Fecha alta</th>
+                                    <th>Fecha baja</th>
+                                    <th>Actividades</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for colaboracion in colaboraciones_comedor %}
+                                    <tr>
+                                        <td>
+                                            {% if colaboracion.comedor and colaboracion.comedor.id %}
+                                                <a href="{% url 'comedor_detalle' colaboracion.comedor.id %}"
+                                                   style="color: #F5A623;
+                                                          text-decoration: underline">
+                                                    {{ colaboracion.comedor.nombre }}
+                                                </a>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ colaboracion.fecha_alta|date:"d/m/Y"|default:"-" }}</td>
+                                        <td>{{ colaboracion.fecha_baja|date:"d/m/Y"|default:"-" }}</td>
+                                        <td>
+                                            {% for actividad in colaboracion.actividades.all %}
+                                                {{ actividad.nombre }}
+                                                {% if not forloop.last %},{% endif %}
+                                            {% empty %}
+                                                -
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
 
     </div>
 
@@ -1974,12 +2227,12 @@ function cambiarMes(direccion) {
 
 function actualizarGrafico() {
     document.getElementById('mes-actual').textContent = mesActual + ' ' + mesesNombres[mesActual] + ' ' + anioActual;
-    
+
     const ctx = document.getElementById('historialChart').getContext('2d');
     if (window.historialChartInstance) {
         window.historialChartInstance.destroy();
     }
-    
+
     window.historialChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -2047,7 +2300,7 @@ function actualizarGrafico() {
 
 document.addEventListener('DOMContentLoaded', function() {
     actualizarGrafico();
-    
+
     {% if ciudadano.latitud and ciudadano.longitud %}
     const mapElement = document.getElementById('map');
     if (mapElement) {
@@ -2061,7 +2314,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fullscreenControl: false,
             streetViewControl: false
         });
-        
+
         new google.maps.Marker({
             position: {
                 lat: {{ ciudadano.latitud }},

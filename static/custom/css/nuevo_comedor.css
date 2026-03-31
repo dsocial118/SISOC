@@ -1,5 +1,5 @@
 /*------------------------------------
- - Nuevo front Comedores CSS
+ - Estilos de detalle y navegación
  ------------------------------------*/
 
  /* Header y sidebar-brand */
@@ -445,7 +445,7 @@ body.sidebar-collapse .sidebar-user-name {
 }
 
 /* ------------------------------------
- - Comedor detail (new_comedor_detail.html)
+ - Comedor detail
  ------------------------------------ */
 
 .timeline::before,
@@ -568,8 +568,18 @@ body.sidebar-collapse .sidebar-user-name {
   color: #ffffff;
 }
 
+.accordion-header--trabajadores {
+  background-color: #991b1b;
+  color: #ffffff;
+}
+
 .accordion-header--nomina {
   background-color: #1565c0;
+  color: #ffffff;
+}
+
+.accordion-header--formularios {
+  background-color: #00897b;
   color: #ffffff;
 }
 

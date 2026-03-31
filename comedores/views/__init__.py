@@ -5,11 +5,21 @@ from .comedor import (
     ComedorListView,
     ComedorUpdateView,
 )
+from .colaborador import (
+    ColaboradorEspacioCreateView,
+    ColaboradorEspacioDeleteView,
+    ColaboradorEspacioUpdateView,
+)
 from .dupla import AsignarDuplaListView
 from .nomina import (
     NominaCreateView,
     NominaDeleteView,
     NominaDetailView,
+    NominaDirectaCreateView,
+    NominaDirectaDeleteView,
+    NominaDirectaDetailView,
+    NominaImportarView,
+    nomina_cambiar_estado,
     nomina_editar_ajax,
 )
 from .observacion import (
@@ -23,6 +33,9 @@ from .validacion import validar_comedor
 
 __all__ = [
     "AsignarDuplaListView",
+    "ColaboradorEspacioCreateView",
+    "ColaboradorEspacioDeleteView",
+    "ColaboradorEspacioUpdateView",
     "ComedorCreateView",
     "ComedorDeleteView",
     "ComedorDetailView",
@@ -31,10 +44,15 @@ __all__ = [
     "NominaCreateView",
     "NominaDeleteView",
     "NominaDetailView",
+    "NominaDirectaCreateView",
+    "NominaDirectaDeleteView",
+    "NominaDirectaDetailView",
+    "NominaImportarView",
     "ObservacionCreateView",
     "ObservacionDeleteView",
     "ObservacionDetailView",
     "ObservacionUpdateView",
+    "nomina_cambiar_estado",
     "nomina_editar_ajax",
     "relevamiento_crear_editar_ajax",
     "validar_comedor",

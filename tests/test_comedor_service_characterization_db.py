@@ -6,6 +6,7 @@ from datetime import date, timedelta
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.http import Http404
 from django.test import RequestFactory
 from django.utils import timezone
 
@@ -249,6 +250,37 @@ def test_get_comedor_detail_object_limita_y_ordena_observaciones_prefetch():
     assert [o.id for o in obj.observaciones_optimized] == obs_ids[:3]
 
 
+def test_get_comedor_detail_object_con_scope_usuario_fuera_de_dupla_devuelve_404():
+    provincia = Provincia.objects.create(nombre="Scope Fuera")
+    abogado = _create_user("abogado_scope_fuera")
+    tecnico_dupla = _create_user("tecnico_dupla_scope_fuera")
+    tecnico_ajeno = _create_user("tecnico_ajeno_scope_fuera")
+    _ensure_group(tecnico_dupla, UserGroups.TECNICO_COMEDOR)
+    _ensure_group(tecnico_ajeno, UserGroups.TECNICO_COMEDOR)
+
+    dupla = _create_dupla("Dupla Scope Fuera", abogado=abogado, tecnico=tecnico_dupla)
+    comedor = _create_comedor("Comedor Scope Fuera", provincia, dupla)
+
+    with pytest.raises(Http404):
+        module.ComedorService.get_comedor_detail_object(comedor.id, user=tecnico_ajeno)
+
+
+def test_get_comedor_detail_object_con_scope_usuario_en_dupla_retorna_objeto():
+    provincia = Provincia.objects.create(nombre="Scope Dentro")
+    abogado = _create_user("abogado_scope_dentro")
+    tecnico_dupla = _create_user("tecnico_dupla_scope_dentro")
+    _ensure_group(tecnico_dupla, UserGroups.TECNICO_COMEDOR)
+
+    dupla = _create_dupla("Dupla Scope Dentro", abogado=abogado, tecnico=tecnico_dupla)
+    comedor = _create_comedor("Comedor Scope Dentro", provincia, dupla)
+
+    obj = module.ComedorService.get_comedor_detail_object(
+        comedor.id, user=tecnico_dupla
+    )
+
+    assert obj.id == comedor.id
+
+
 def test_get_nomina_detail_con_db_real_calcula_resumen_y_rangos():
     provincia = Provincia.objects.create(nombre="Entre Rios")
     comedor = Comedor.objects.create(nombre="Comedor Nomina", provincia=provincia)
@@ -275,19 +307,21 @@ def test_get_nomina_detail_con_db_real_calcula_resumen_y_rangos():
     c_mayor_avanzado = _ciudadano(1005, 70, sexo_m)
     c_pendiente = _ciudadano(1006, 40, sexo_m)
 
+    admision = Admision.objects.create(comedor=comedor)
+
     for ciudadano, estado in [
         (c_nino, Nomina.ESTADO_ACTIVO),
         (c_ado, Nomina.ESTADO_ACTIVO),
         (c_adulto, Nomina.ESTADO_ACTIVO),
         (c_adulto_mayor, Nomina.ESTADO_ACTIVO),
         (c_mayor_avanzado, Nomina.ESTADO_ACTIVO),
-        (c_pendiente, Nomina.ESTADO_PENDIENTE),
+        (c_pendiente, Nomina.ESTADO_ESPERA),
     ]:
-        Nomina.objects.create(comedor=comedor, ciudadano=ciudadano, estado=estado)
+        Nomina.objects.create(admision=admision, ciudadano=ciudadano, estado=estado)
 
     page_obj, cant_m, cant_f, cant_x, espera, total, rangos = (
         module.ComedorService.get_nomina_detail(
-            comedor_pk=comedor.pk,
+            admision_pk=admision.pk,
             page=1,
             per_page=10,
         )
@@ -320,13 +354,14 @@ def test_get_nomina_detail_con_db_real_sin_activos_no_divide_por_cero():
         fecha_nacimiento=date(1990, 1, 1),
         sexo=sexo_m,
     )
+    admision = Admision.objects.create(comedor=comedor)
     Nomina.objects.create(
-        comedor=comedor, ciudadano=ciudadano, estado=Nomina.ESTADO_PENDIENTE
+        admision=admision, ciudadano=ciudadano, estado=Nomina.ESTADO_ESPERA
     )
 
     _page_obj, _m, _f, _x, espera, total, rangos = (
         module.ComedorService.get_nomina_detail(
-            comedor_pk=comedor.pk,
+            admision_pk=admision.pk,
             page=1,
             per_page=10,
         )

@@ -1,0 +1,1033 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}{{ comision.codigo_comision }} — Comisión{% endblock %}
+
+{% block content %}
+    <style>
+/* ── Hero ─────────────────────────────────────── */
+.ci-hero {
+    background: linear-gradient(135deg, #1a3a6e 0%, #1f3a93 50%, #3a6bc4 100%);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    color: #fff;
+    margin-bottom: 1.25rem;
+    position: relative;
+    overflow: hidden;
+}
+.ci-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 220px; height: 220px;
+    background: rgba(255,255,255,.06);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.ci-back {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 8px;
+    color: #fff; text-decoration: none;
+    flex-shrink: 0;
+    transition: background .15s;
+}
+.ci-back:hover { background: rgba(255,255,255,.25); color: #fff; }
+.ci-code-badge {
+    font-family: monospace; font-size: .75rem; font-weight: 700;
+    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
+    padding: .2em .65em; border-radius: 5px; letter-spacing: .06em;
+}
+.ci-state-badge {
+    font-size: .71rem; font-weight: 600;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+    padding: .2em .65em; border-radius: 5px; color: rgba(255,255,255,.85);
+}
+.ci-hero-title { font-size: 1.5rem; font-weight: 700; line-height: 1.2; margin: .3rem 0 .2rem; }
+.ci-hero-sub   { font-size: .83rem; opacity: .65; }
+.ci-edit-btn {
+    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+    color: #fff; border-radius: 8px; font-size: .83rem;
+    padding: .38rem .9rem; text-decoration: none; white-space: nowrap;
+    transition: background .15s;
+}
+.ci-edit-btn:hover { background: rgba(255,255,255,.25); color: #fff; }
+.ci-stats { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: 1.25rem; }
+.ci-stat { display: flex; flex-direction: column; }
+.ci-stat-val { font-size: 1rem; font-weight: 700; line-height: 1.1; }
+.ci-stat-lbl { font-size: .64rem; opacity: .55; text-transform: uppercase; letter-spacing: .05em; }
+.ci-stat-sep { width: 1px; background: rgba(255,255,255,.18); align-self: stretch; }
+
+/* ── Tabs ─────────────────────────────────────── */
+.ci-tabbar {
+    display: flex;
+    border-bottom: 1px solid var(--bs-border-color);
+    background: var(--bs-tertiary-bg);
+    border-radius: 10px 10px 0 0;
+    overflow: hidden;
+}
+.ci-tab {
+    flex: 1;
+    padding: .65rem .75rem;
+    border: none;
+    background: transparent;
+    font-size: .82rem;
+    font-weight: 500;
+    color: var(--bs-secondary-color);
+    cursor: pointer;
+    transition: all .15s;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    display: flex; align-items: center; justify-content: center; gap: .3rem;
+}
+.ci-tab:hover { color: var(--bs-body-color); background: var(--bs-secondary-bg); }
+.ci-tab.active {
+    color: #4a7fe8;
+    border-bottom-color: #4a7fe8;
+    background: var(--bs-card-bg);
+    font-weight: 600;
+}
+.ci-cnt {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(74,127,232,.25); color: #4a7fe8;
+    border-radius: 99px; font-size: .6rem; font-weight: 700;
+    min-width: 17px; height: 17px; padding: 0 4px;
+}
+.ci-tab.active .ci-cnt { background: rgba(74,127,232,.3); }
+
+/* ── Panel ────────────────────────────────────── */
+.ci-panel {
+    background: var(--bs-card-bg);
+    border: 1px solid var(--bs-border-color);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    overflow: hidden;
+}
+
+/* ── Section header ───────────────────────────── */
+.ci-sec-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .8rem 1.25rem;
+    background: var(--bs-tertiary-bg);
+    border-bottom: 1px solid var(--bs-border-color);
+}
+.ci-sec-title { font-weight: 600; font-size: .9rem; color: var(--bs-body-color); }
+
+/* ── Info grid ────────────────────────────────── */
+.ci-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: .75rem;
+    padding: 1.25rem;
+}
+.ci-info-item {
+    background: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    padding: .65rem .85rem;
+}
+.ci-lbl { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--bs-secondary-color); display: block; margin-bottom: .2rem; }
+.ci-val { font-size: .9rem; color: var(--bs-body-color); }
+
+/* ── List rows ────────────────────────────────── */
+.ci-row {
+    display: flex; align-items: center; gap: .85rem;
+    padding: .8rem 1.25rem;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+    transition: background .1s;
+}
+.ci-row:last-child { border-bottom: none; }
+.ci-row:hover { background: var(--bs-tertiary-bg); }
+
+/* ── Avatars ──────────────────────────────────── */
+.ci-av {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .65rem; font-weight: 700; flex-shrink: 0; color: #fff;
+}
+.ci-av-1 { background: #3b5bdb; }
+.ci-av-2 { background: #7048e8; }
+.ci-av-3 { background: #1098ad; }
+.ci-av-4 { background: #2f9e44; }
+.ci-av-5 { background: #e8590c; }
+
+/* ── Pills ────────────────────────────────────── */
+.ci-pill { display: inline-block; border-radius: 99px; font-size: .69rem; font-weight: 600; padding: .17em .65em; white-space: nowrap; }
+.ci-pill-green  { background: rgba(34,197,94,.18)  !important; color: #4ade80 !important; }
+.ci-pill-yellow { background: rgba(234,179,8,.18)  !important; color: #facc15 !important; }
+.ci-pill-blue   { background: rgba(74,127,232,.2)  !important; color: #7eb3ff !important; }
+.ci-pill-teal   { background: rgba(20,184,166,.18) !important; color: #2dd4bf !important; }
+.ci-pill-red    { background: rgba(239,68,68,.18)  !important; color: #f87171 !important; }
+.ci-pill-gray   { background: rgba(148,163,184,.15)!important; color: var(--bs-secondary-color) !important; }
+
+/* ── Sessions ─────────────────────────────────── */
+.ci-sesnum { font-size: .67rem; font-weight: 700; color: var(--bs-secondary-color); width: 22px; text-align: right; flex-shrink: 0; }
+.ci-datetile {
+    display: flex; flex-direction: column; align-items: center;
+    background: rgba(74,127,232,.15); color: #7eb3ff;
+    border-radius: 7px; padding: .3rem .5rem;
+    min-width: 34px; flex-shrink: 0;
+}
+.ci-datetile .d  { font-size: .9rem; font-weight: 700; line-height: 1; }
+.ci-datetile .m  { font-size: .56rem; text-transform: uppercase; letter-spacing: .04em; }
+.ci-asist {
+    font-size: .76rem; font-weight: 500; border-radius: 6px;
+    padding: .26rem .6rem; white-space: nowrap;
+    background: rgba(74,127,232,.15); color: #7eb3ff;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+    transition: background .12s;
+}
+.ci-asist:hover { background: rgba(74,127,232,.25); color: #7eb3ff; }
+.ci-asist-done { background: rgba(34,197,94,.15) !important; color: #4ade80 !important; }
+.ci-asist-done:hover { background: rgba(34,197,94,.25) !important; }
+
+/* ── Horarios ─────────────────────────────────── */
+.ci-dia {
+    background: rgba(74,127,232,.18); color: #7eb3ff;
+    border-radius: 6px; font-size: .73rem; font-weight: 700;
+    padding: .25rem .6rem; white-space: nowrap; flex-shrink: 0;
+}
+
+/* ── Icon btns ────────────────────────────────── */
+.ci-iconbtn {
+    width: 28px; height: 28px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 6px; font-size: .78rem;
+    background: var(--bs-secondary-bg); color: var(--bs-secondary-color);
+    text-decoration: none; border: none; cursor: pointer;
+    transition: background .1s;
+}
+.ci-iconbtn:hover { background: var(--bs-tertiary-bg); color: var(--bs-body-color); }
+.ci-iconbtn-danger:hover { background: rgba(239,68,68,.15) !important; color: #f87171 !important; }
+.ci-dots { background: transparent; border: none; padding: 3px 5px; color: var(--bs-secondary-color); cursor: pointer; border-radius: 5px; transition: background .1s; }
+.ci-dots:hover { background: var(--bs-secondary-bg); color: var(--bs-body-color); }
+.ci-dots::after { display: none !important; }
+
+/* ── Sidebar cards ────────────────────────────── */
+.ci-scard {
+    background: var(--bs-card-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: .85rem;
+}
+.ci-scard:last-child { margin-bottom: 0; }
+.ci-sc-title { font-size: .67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--bs-secondary-color); margin: 0 0 .8rem; }
+.ci-cupo-num { font-size: 2rem; font-weight: 700; color: #7eb3ff; line-height: 1; }
+.ci-cupo-sep { font-size: 1.4rem; color: var(--bs-border-color); font-weight: 300; }
+.ci-cupo-tot { font-size: 1.4rem; color: var(--bs-secondary-color); font-weight: 400; }
+.ci-cupo-lbl { font-size: .76rem; color: var(--bs-secondary-color); align-self: center; }
+.ci-prog { height: 7px; border-radius: 99px; background: var(--bs-secondary-bg); overflow: hidden; }
+.ci-prog-bar { height: 100%; border-radius: 99px; transition: width .4s; }
+
+/* ── Empty state ──────────────────────────────── */
+.ci-empty { display: flex; flex-direction: column; align-items: center; padding: 3rem 1rem; color: var(--bs-secondary-color); text-align: center; }
+.ci-empty i { font-size: 2.2rem; margin-bottom: .65rem; opacity: .4; }
+.ci-empty-t { font-weight: 600; font-size: .9rem; color: var(--bs-body-color); margin-bottom: .2rem; }
+.ci-empty-s { font-size: .8rem; max-width: 250px; }
+
+/* ── Audit row ────────────────────────────────── */
+.ci-audit { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .73rem; color: var(--bs-secondary-color); border-top: 1px solid var(--bs-border-color-translucent); padding: .75rem 1.25rem 1.25rem; }
+
+/* ── Modals ───────────────────────────────────── */
+.ci-modal .modal-content {
+    border-radius: 12px;
+    border: 1px solid var(--bs-border-color);
+    overflow: hidden;
+}
+.ci-modal .modal-header {
+    padding: .85rem 1rem;
+    background: #1f3b6d;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+.ci-modal .modal-title {
+    font-size: .98rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+.ci-modal .btn-close {
+    filter: invert(1);
+}
+.ci-modal .modal-body {
+    padding: 1rem;
+}
+.ci-modal .modal-footer {
+    padding: .75rem 1rem;
+    border-top: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+}
+    </style>
+
+    {# ── HERO ───────────────────────────────────────────────────────── #}
+    <div class="ci-hero">
+        {# ── Fila superior: back + título + editar ── #}
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <a href="{% url 'vat_centro_detail' comision.oferta.centro.id %}"
+                   class="ci-back"><i class="bi bi-arrow-left"></i></a>
+                <div>
+                    <div class="ci-hero-title" style="margin-top:0;">{{ comision.nombre|default:comision.codigo_comision }}</div>
+                    <div class="ci-hero-sub" style="opacity:.75;font-size:.88rem;">
+                        <i class="bi bi-book me-1"></i>{{ comision.oferta }}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="ci-code-badge">{{ comision.codigo_comision }}</span>
+                <span class="ci-state-badge">{{ comision.get_estado_display }}</span>
+                {% if perms.VAT.change_comision %}
+                    <a href="{% url 'vat_comision_update' comision.id %}"
+                       class="ci-edit-btn"><i class="bi bi-pencil me-1"></i>Editar</a>
+                {% endif %}
+            </div>
+        </div>
+
+        {# ── Fila inferior: stats distribuidos ── #}
+        <div style="background:rgba(255,255,255,.08);
+                    border-radius:8px;
+                    padding:.85rem 1.15rem;
+                    display:flex;
+                    flex-wrap:wrap;
+                    gap:0">
+            <div style="flex:1;min-width:80px;padding:.25rem .5rem;">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Cupo</span>
+                <span class="ci-stat-val" style="font-size:1.15rem;">{{ comision.cupo }}</span>
+            </div>
+            <div style="flex:1;
+                        min-width:90px;
+                        padding:.25rem .5rem;
+                        border-left:1px solid rgba(255,255,255,.12)">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Inscriptos</span>
+                <span class="ci-stat-val" style="font-size:1.15rem;">{{ inscripciones|length }}</span>
+            </div>
+            <div style="flex:1;
+                        min-width:80px;
+                        padding:.25rem .5rem;
+                        border-left:1px solid rgba(255,255,255,.12)">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Sesiones</span>
+                <span class="ci-stat-val" style="font-size:1.15rem;">{{ sesiones|length }}</span>
+            </div>
+            <div style="flex:1;
+                        min-width:80px;
+                        padding:.25rem .5rem;
+                        border-left:1px solid rgba(255,255,255,.12)">
+                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Horarios</span>
+                <span class="ci-stat-val" style="font-size:1.15rem;">{{ horarios|length }}</span>
+            </div>
+            {% if comision.fecha_inicio %}
+                <div style="flex:1;
+                            min-width:100px;
+                            padding:.25rem .5rem;
+                            border-left:1px solid rgba(255,255,255,.12)">
+                    <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Inicio</span>
+                    <span class="ci-stat-val"><i class="bi bi-calendar3 me-1" style="font-size:.8rem;opacity:.6;"></i>{{ comision.fecha_inicio|date:"d/m/Y" }}</span>
+                </div>
+            {% endif %}
+            {% if comision.fecha_fin %}
+                <div style="flex:1;
+                            min-width:100px;
+                            padding:.25rem .5rem;
+                            border-left:1px solid rgba(255,255,255,.12)">
+                    <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Fin</span>
+                    <span class="ci-stat-val"><i class="bi bi-calendar3 me-1" style="font-size:.8rem;opacity:.6;"></i>{{ comision.fecha_fin|date:"d/m/Y" }}</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── BODY ───────────────────────────────────────────────────────── #}
+    <div class="row g-3 align-items-start">
+
+        {# ── MAIN ── #}
+        <div class="col-xl-8">
+
+            {# TAB BAR #}
+            <div class="ci-tabbar" role="tablist">
+                <button class="ci-tab active"
+                        data-bs-toggle="tab"
+                        data-bs-target="#ci-info"
+                        type="button"
+                        role="tab"
+                        aria-selected="true">
+                    <i class="bi bi-info-circle"></i>Información
+                </button>
+                <button class="ci-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#ci-inscriptos"
+                        type="button"
+                        role="tab"
+                        aria-selected="false">
+                    <i class="bi bi-people"></i>Inscriptos
+                    {% if inscripciones %}<span class="ci-cnt">{{ inscripciones|length }}</span>{% endif %}
+                </button>
+                <button class="ci-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#ci-sesiones"
+                        type="button"
+                        role="tab"
+                        aria-selected="false">
+                    <i class="bi bi-calendar-check"></i>Sesiones
+                    {% if sesiones %}<span class="ci-cnt">{{ sesiones|length }}</span>{% endif %}
+                </button>
+                <button class="ci-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#ci-horarios"
+                        type="button"
+                        role="tab"
+                        aria-selected="false">
+                    <i class="bi bi-clock"></i>Horarios
+                    {% if horarios %}<span class="ci-cnt">{{ horarios|length }}</span>{% endif %}
+                </button>
+            </div>
+
+            <div class="tab-content">
+
+                {# INFO #}
+                <div class="tab-pane fade show active" id="ci-info" role="tabpanel">
+                    <div class="ci-panel">
+                        <div class="ci-info-grid">
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Código</span><span class="ci-val" style="font-family:monospace;">{{ comision.codigo_comision }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Nombre</span><span class="ci-val">{{ comision.nombre|default:"—" }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Oferta</span><span class="ci-val">{{ comision.oferta }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Ubicación</span><span class="ci-val">{{ comision.ubicacion|default:"—" }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Fecha inicio</span><span class="ci-val">{{ comision.fecha_inicio|date:"d/m/Y"|default:"—" }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Fecha fin</span><span class="ci-val">{{ comision.fecha_fin|date:"d/m/Y"|default:"—" }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Cupo</span><span class="ci-val">{{ comision.cupo }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Estado</span><span class="ci-val"><span class="ci-pill ci-pill-blue">{{ comision.get_estado_display }}</span></span>
+                            </div>
+                        </div>
+                        {% if comision.observaciones %}
+                            <div style="margin: 0 1.25rem;
+                                        padding: .75rem 1rem;
+                                        background: var(--bs-tertiary-bg);
+                                        border: 1px solid var(--bs-border-color);
+                                        border-radius: 8px;
+                                        margin-bottom: .5rem">
+                                <span class="ci-lbl">Observaciones</span>
+                                <p class="mb-0 small" style="color:var(--bs-body-color);">{{ comision.observaciones }}</p>
+                            </div>
+                        {% endif %}
+                        <div class="ci-audit">
+                            <span><i class="bi bi-clock me-1"></i>Creado {{ comision.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                            <span><i class="bi bi-pencil me-1"></i>Modificado {{ comision.fecha_modificacion|date:"d/m/Y H:i" }}</span>
+                            <span class="ms-auto">#{{ comision.id }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {# INSCRIPTOS #}
+                <div class="tab-pane fade" id="ci-inscriptos" role="tabpanel">
+                    <div class="ci-panel">
+                        <div class="ci-sec-head">
+                            <span class="ci-sec-title"><i class="bi bi-people me-2"></i>Inscriptos</span>
+                            {% if perms.VAT.add_inscripcion %}
+                                <button type="button"
+                                        class="btn btn-sm btn-primary rounded-3"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalInscripcionRapida">
+                                    <i class="bi bi-plus-lg me-1"></i>Inscribir
+                                </button>
+                            {% endif %}
+                        </div>
+                        {% if inscripciones %}
+                            {% for insc in inscripciones %}
+                                <div class="ci-row">
+                                    <div class="ci-av ci-av-{{ forloop.counter|divisibleby:5|yesno:'5,' }}{{ forloop.counter|divisibleby:4|yesno:'4,' }}{{ forloop.counter|divisibleby:3|yesno:'3,' }}{{ forloop.counter|divisibleby:2|yesno:'2,1' }}">
+                                        {{ insc.ciudadano.nombre_completo|slice:":2"|upper }}
+                                    </div>
+                                    <div style="flex:1;min-width:0;">
+                                        <a href="{% url 'vat_inscripcion_detail' insc.pk %}"
+                                           class="d-block fw-semibold text-decoration-none"
+                                           style="font-size:.87rem;
+                                                  color:var(--bs-body-color);
+                                                  white-space:nowrap;
+                                                  overflow:hidden;
+                                                  text-overflow:ellipsis">{{ insc.ciudadano.nombre_completo }}</a>
+                                        <span class="d-block"
+                                              style="font-size:.74rem;
+                                                     color:var(--bs-secondary-color);
+                                                     white-space:nowrap;
+                                                     overflow:hidden;
+                                                     text-overflow:ellipsis">{{ insc.programa }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        <span style="font-size:.7rem;
+                                                     color:var(--bs-secondary-color);
+                                                     white-space:nowrap">{{ insc.fecha_inscripcion|date:"d/m/Y" }}</span>
+                                        <span class="ci-pill {% if insc.estado == 'inscripta' %}ci-pill-green{% elif insc.estado == 'pre_inscripta' %}ci-pill-yellow{% elif insc.estado == 'validada_presencial' %}ci-pill-blue{% elif insc.estado == 'completada' %}ci-pill-teal{% elif insc.estado == 'abandonada' %}ci-pill-gray{% elif insc.estado == 'rechazada' %}ci-pill-red{% else %}ci-pill-gray{% endif %}">{{ insc.get_estado_display }}</span>
+                                        {% if perms.VAT.change_inscripcion and insc.estado == 'pre_inscripta' %}
+                                            <form method="post"
+                                                  action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}"
+                                                  class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="estado" value="inscripta" />
+                                                <button type="submit"
+                                                        class="ci-pill ci-pill-green border-0 cursor-pointer"
+                                                        style="cursor:pointer;
+                                                               font-size:.69rem"
+                                                        title="Aceptar inscripción">
+                                                    <i class="bi bi-check-lg me-1"></i>Aceptar
+                                                </button>
+                                            </form>
+                                            <form method="post"
+                                                  action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}"
+                                                  class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="estado" value="rechazada" />
+                                                <button type="submit"
+                                                        class="ci-pill ci-pill-red border-0"
+                                                        style="cursor:pointer;
+                                                               font-size:.69rem"
+                                                        title="Rechazar inscripción">
+                                                    <i class="bi bi-x-lg me-1"></i>Rechazar
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        {% if perms.VAT.change_inscripcion %}
+                                            <div class="dropdown">
+                                                <button class="ci-dots dropdown-toggle" data-bs-toggle="dropdown">
+                                                    <i class="bi bi-three-dots-vertical"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3"
+                                                    style="font-size:.84rem">
+                                                    {% for val, lbl in estado_choices %}
+                                                        {% if val != insc.estado %}
+                                                            <li>
+                                                                <form method="post"
+                                                                      action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}">
+                                                                    {% csrf_token %}
+                                                                    <input type="hidden" name="estado" value="{{ val }}" />
+                                                                    <button type="submit" class="dropdown-item rounded-2">{{ lbl }}</button>
+                                                                </form>
+                                                            </li>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="ci-empty">
+                                <i class="bi bi-person-plus"></i>
+                                <p class="ci-empty-t">Sin inscriptos aún</p>
+                                <p class="ci-empty-s">Inscribí ciudadanos a esta comisión para verlos aquí.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# SESIONES #}
+                <div class="tab-pane fade" id="ci-sesiones" role="tabpanel">
+                    <div class="ci-panel">
+                        <div class="ci-sec-head">
+                            <span class="ci-sec-title"><i class="bi bi-calendar-check me-2"></i>Sesiones</span>
+                        </div>
+                        {% if sesiones %}
+                            {% for sesion in sesiones %}
+                                <div class="ci-row"
+                                     style="border-left: 3px solid {% if sesion.estado == 'realizada' %}rgba(34,197,94,.5){% elif sesion.estado == 'cancelada' %}rgba(239,68,68,.5){% else %}transparent{% endif %};
+                                            padding-left: calc(1.25rem - 3px)">
+                                    <span class="ci-sesnum">#{{ sesion.numero_sesion }}</span>
+                                    <div class="ci-datetile">
+                                        <span class="d">{{ sesion.fecha|date:"d" }}</span><span class="m">{{ sesion.fecha|date:"M" }}</span>
+                                    </div>
+                                    <div style="flex:1;">
+                                        <div style="font-size:.85rem;font-weight:600;color:var(--bs-body-color);">{{ sesion.horario.dia_semana }}</div>
+                                        <div style="font-size:.77rem;color:var(--bs-secondary-color);">
+                                            <i class="bi bi-clock me-1"></i>{{ sesion.horario.hora_desde|time:"H:i" }} – {{ sesion.horario.hora_hasta|time:"H:i" }}
+                                            {% if sesion.horario.aula_espacio %}
+                                                &nbsp;·&nbsp; <i class="bi bi-geo-alt me-1"></i>{{ sesion.horario.aula_espacio }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        <span class="ci-pill {% if sesion.estado == 'realizada' %}ci-pill-green{% elif sesion.estado == 'cancelada' %}ci-pill-red{% else %}ci-pill-blue{% endif %}">{{ sesion.get_estado_display }}</span>
+                                        <a href="{% url 'vat_asistencia_sesion' sesion.pk %}"
+                                           class="ci-asist {% if sesion.estado == 'realizada' %}ci-asist-done{% endif %}"><i class="bi bi-check2-square"></i>Asistencia</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="ci-empty">
+                                <i class="bi bi-calendar-x"></i>
+                                <p class="ci-empty-t">Sin sesiones generadas</p>
+                                <p class="ci-empty-s">Agregá un horario para generar las sesiones automáticamente.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# HORARIOS #}
+                <div class="tab-pane fade" id="ci-horarios" role="tabpanel">
+                    <div class="ci-panel">
+                        <div class="ci-sec-head">
+                            <span class="ci-sec-title"><i class="bi bi-clock me-2"></i>Horarios</span>
+                            {% if perms.VAT.add_comisionhorario %}
+                                <button type="button"
+                                        class="btn btn-sm btn-primary rounded-3"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalComisionHorario">
+                                    <i class="bi bi-plus-lg me-1"></i>Agregar
+                                </button>
+                            {% endif %}
+                        </div>
+                        {% if horarios %}
+                            {% for horario in horarios %}
+                                <div class="ci-row">
+                                    <span class="ci-dia">{{ horario.dia_semana }}</span>
+                                    <div style="flex:1;
+                                                font-size:.86rem;
+                                                font-weight:500;
+                                                color:var(--bs-body-color)">
+                                        <i class="bi bi-clock me-1" style="color:var(--bs-secondary-color);"></i>{{ horario.hora_desde|time:"H:i" }} – {{ horario.hora_hasta|time:"H:i" }}
+                                        {% if horario.aula_espacio %}
+                                            <span style="font-size:.8rem;
+                                                         color:var(--bs-secondary-color);
+                                                         margin-left:.85rem"><i class="bi bi-geo-alt me-1"></i>{{ horario.aula_espacio }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        <span class="ci-pill {% if horario.vigente %}ci-pill-green{% else %}ci-pill-gray{% endif %}">
+                                            {% if horario.vigente %}
+                                                Vigente
+                                            {% else %}
+                                                Inactivo
+                                            {% endif %}
+                                        </span>
+                                        {% if perms.VAT.change_comisionhorario %}
+                                            <a href="{% url 'vat_comision_horario_update' horario.pk %}"
+                                               class="ci-iconbtn"><i class="bi bi-pencil"></i></a>
+                                        {% endif %}
+                                        {% if perms.VAT.delete_comisionhorario %}
+                                            <a href="{% url 'vat_comision_horario_delete' horario.pk %}"
+                                               class="ci-iconbtn ci-iconbtn-danger"><i class="bi bi-trash"></i></a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="ci-empty">
+                                <i class="bi bi-clock-history"></i>
+                                <p class="ci-empty-t">Sin horarios cargados</p>
+                                <p class="ci-empty-s">Agregá un horario para esta comisión.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        {# ── SIDEBAR ── #}
+        <div class="col-xl-4">
+            <div style="position:sticky;top:1rem;">
+
+                <div class="ci-scard">
+                    <p class="ci-sc-title">Acciones rápidas</p>
+                    <div class="d-grid gap-2">
+                        {% if perms.VAT.change_comision %}
+                            <a href="{% url 'vat_comision_update' comision.id %}"
+                               class="btn btn-primary rounded-3"><i class="bi bi-pencil me-2"></i>Editar comisión</a>
+                        {% endif %}
+                        {% if perms.VAT.add_inscripcion %}
+                            <button type="button"
+                                    class="btn btn-outline-primary rounded-3"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalInscripcionRapida">
+                                <i class="bi bi-person-plus me-2"></i>Inscribir ciudadano
+                            </button>
+                        {% endif %}
+                        {% if perms.VAT.add_comisionhorario %}
+                            <button type="button"
+                                    class="btn btn-outline-secondary rounded-3"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalComisionHorario">
+                                <i class="bi bi-plus-circle me-2"></i>Agregar horario
+                            </button>
+                        {% endif %}
+                        {% if perms.VAT.delete_comision %}
+                            <a href="{% url 'vat_comision_delete' comision.id %}"
+                               class="btn btn-outline-danger rounded-3"><i class="bi bi-trash me-2"></i>Eliminar</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="ci-scard">
+                    <p class="ci-sc-title">Ocupación de cupo</p>
+                    <div class="d-flex align-items-baseline gap-1 mb-2">
+                        <span class="ci-cupo-num">{{ inscripciones|length }}</span>
+                        <span class="ci-cupo-sep">/</span>
+                        <span class="ci-cupo-tot">{{ comision.cupo }}</span>
+                        <span class="ci-cupo-lbl">inscriptos</span>
+                    </div>
+                    {% if comision.cupo %}
+                        {% widthratio inscripciones|length comision.cupo 100 as pct %}
+                        <div class="ci-prog">
+                            <div class="ci-prog-bar"
+                                 style="width:{% widthratio inscripciones|length comision.cupo 100 %}%;
+                                        background:{% if pct >= 90 %}#f87171{% elif pct >= 60 %}#facc15{% else %}#4a7fe8{% endif %}">
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="ci-scard">
+                    <p class="ci-sc-title">Oferta asociada</p>
+                    <p class="mb-2"
+                       style="font-size:.86rem;
+                              font-weight:600;
+                              color:var(--bs-body-color)">{{ comision.oferta }}</p>
+                    <a href="{% url 'vat_oferta_institucional_detail' comision.oferta_id %}"
+                       class="btn btn-outline-secondary btn-sm rounded-3 w-100"><i class="bi bi-box-arrow-up-right me-1"></i>Ver oferta</a>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    {% if perms.VAT.add_inscripcion %}
+        <div class="modal fade ci-modal"
+             id="modalInscripcionRapida"
+             tabindex="-1"
+             aria-labelledby="modalInscripcionRapidaLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalInscripcionRapidaLabel">Inscribir ciudadano</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <form id="formInscripcionRapida"
+                          method="post"
+                          novalidate
+                          action="{% url 'vat_inscripcion_rapida_comision' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="comision" value="{{ comision.id }}" />
+                        <input type="hidden" name="ciudadano_id" id="inscripcionCiudadanoId" />
+                        <div class="modal-body">
+                            <div id="inscripcionRapidaAlert" class="alert d-none" role="alert"></div>
+
+                            <div class="border rounded-3 p-3 mb-3">
+                                <label for="inscripcionDocumentoSearch" class="form-label fw-semibold">Buscar por documento</label>
+                                <div class="input-group">
+                                    <input type="text"
+                                           class="form-control"
+                                           id="inscripcionDocumentoSearch"
+                                           placeholder="Ingrese DNI (mín. 7 dígitos)"
+                                           inputmode="numeric" />
+                                    <button type="button"
+                                            class="btn btn-outline-secondary"
+                                            id="inscripcionBuscarBtn">Buscar</button>
+                                </div>
+                                <div class="form-text">Se buscará en ciudadanos.ciudadano por número de documento.</div>
+                            </div>
+
+                            <div id="inscripcionSelectedCitizen" class="alert alert-success d-none"></div>
+                            <div id="inscripcionSearchResults" class="list-group mb-3 d-none"></div>
+
+                            <div id="inscripcionNoResults" class="alert alert-info d-none mb-3">
+                                No se encontraron coincidencias. Completá el formulario corto para crear el ciudadano e inscribirlo.
+                            </div>
+
+                            <div id="inscripcionQuickCitizenSection"
+                                 class="border rounded-3 p-3 d-none">
+                                <h6 class="mb-3">Crear ciudadano nuevo</h6>
+                                {{ ciudadano_rapido_form.tipo_documento }}
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ ciudadano_rapido_form.apellido.id_for_label }}"
+                                               class="form-label">Apellido</label>
+                                        {{ ciudadano_rapido_form.apellido }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ ciudadano_rapido_form.nombre.id_for_label }}"
+                                               class="form-label">Nombre</label>
+                                        {{ ciudadano_rapido_form.nombre }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ ciudadano_rapido_form.documento.id_for_label }}"
+                                               class="form-label">Documento</label>
+                                        {{ ciudadano_rapido_form.documento }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ ciudadano_rapido_form.fecha_nacimiento.id_for_label }}"
+                                               class="form-label">Fecha de Nacimiento</label>
+                                        {{ ciudadano_rapido_form.fecha_nacimiento }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ ciudadano_rapido_form.sexo.id_for_label }}"
+                                               class="form-label">Sexo</label>
+                                        {{ ciudadano_rapido_form.sexo }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <label for="inscripcionObservaciones" class="form-label">Observaciones</label>
+                                <textarea class="form-control"
+                                          id="inscripcionObservaciones"
+                                          name="observaciones"
+                                          rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Inscribir</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if perms.VAT.add_comisionhorario %}
+        <div class="modal fade ci-modal"
+             id="modalComisionHorario"
+             tabindex="-1"
+             aria-labelledby="modalComisionHorarioLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalComisionHorarioLabel">Agregar Horario</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <form id="formComisionHorario"
+                          method="post"
+                          action="{% url 'vat_comision_horario_create' %}?comision={{ comision.id }}">
+                        {% csrf_token %}
+                        <div class="modal-body">{{ horario_form.as_p }}</div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var form = document.getElementById('formComisionHorario');
+        if (!form) return;
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Guardando...';
+            }
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(function() {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('modalComisionHorario'));
+                if (modal) modal.hide();
+                location.reload();
+            }).catch(function() {
+                alert('Error al guardar el horario.');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Guardar';
+                }
+            });
+        });
+    })();
+        </script>
+    {% endif %}
+
+    {% if perms.VAT.add_inscripcion %}
+        <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var form = document.getElementById('formInscripcionRapida');
+        if (!form) return;
+
+        var searchInput = document.getElementById('inscripcionDocumentoSearch');
+        var searchBtn = document.getElementById('inscripcionBuscarBtn');
+        var resultsBox = document.getElementById('inscripcionSearchResults');
+        var selectedBox = document.getElementById('inscripcionSelectedCitizen');
+        var noResultsBox = document.getElementById('inscripcionNoResults');
+        var quickSection = document.getElementById('inscripcionQuickCitizenSection');
+        var ciudadanoIdInput = document.getElementById('inscripcionCiudadanoId');
+        var alertBox = document.getElementById('inscripcionRapidaAlert');
+        var documentoField = document.getElementById('{{ ciudadano_rapido_form.documento.id_for_label }}');
+
+        function resetAlert() {
+            alertBox.className = 'alert d-none';
+            alertBox.textContent = '';
+        }
+
+        function showAlert(message, level) {
+            alertBox.className = 'alert alert-' + level;
+            alertBox.textContent = message;
+        }
+
+        function clearSelection() {
+            ciudadanoIdInput.value = '';
+            selectedBox.classList.add('d-none');
+            selectedBox.textContent = '';
+        }
+
+        function clearResults() {
+            resultsBox.innerHTML = '';
+            resultsBox.classList.add('d-none');
+        }
+
+        function hideQuickForm() {
+            noResultsBox.classList.add('d-none');
+            quickSection.classList.add('d-none');
+        }
+
+        function showQuickForm(documento) {
+            noResultsBox.classList.remove('d-none');
+            quickSection.classList.remove('d-none');
+            if (documentoField) documentoField.value = documento || '';
+        }
+
+        function renderResults(results) {
+            clearResults();
+            results.forEach(function(item) {
+                var button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'list-group-item list-group-item-action';
+                button.textContent = item.text;
+                button.addEventListener('click', function() {
+                    ciudadanoIdInput.value = item.id;
+                    selectedBox.textContent = 'Ciudadano seleccionado: ' + item.text;
+                    selectedBox.classList.remove('d-none');
+                    hideQuickForm();
+                    clearResults();
+                    resetAlert();
+                });
+                resultsBox.appendChild(button);
+            });
+            resultsBox.classList.remove('d-none');
+        }
+
+        function buscarCiudadano() {
+            var query = (searchInput.value || '').trim();
+            clearSelection();
+            clearResults();
+            hideQuickForm();
+            resetAlert();
+
+            if (!/^\d{7,}$/.test(query)) {
+                showAlert('Ingrese un documento numérico de al menos 7 dígitos.', 'warning');
+                return;
+            }
+
+            fetch('{% url "api_buscar_ciudadanos" %}?q=' + encodeURIComponent(query), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                var results = data.results || [];
+                if (results.length) {
+                    renderResults(results);
+                } else {
+                    showQuickForm(query);
+                }
+            })
+            .catch(function() {
+                showAlert('No se pudo buscar ciudadanos en este momento.', 'danger');
+            });
+        }
+
+        searchBtn.addEventListener('click', buscarCiudadano);
+        searchInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                buscarCiudadano();
+            }
+        });
+        searchInput.addEventListener('input', function() {
+            clearSelection();
+            clearResults();
+            hideQuickForm();
+            resetAlert();
+        });
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            resetAlert();
+
+            var submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Inscribiendo...';
+            }
+
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(response) {
+                return response.json().then(function(data) {
+                    if (!response.ok) {
+                        throw data;
+                    }
+                    return data;
+                });
+            })
+            .then(function() {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('modalInscripcionRapida'));
+                if (modal) modal.hide();
+                location.reload();
+            })
+            .catch(function(error) {
+                var message = error.message || 'No se pudo completar la inscripción.';
+                if (error.errors) {
+                    var fieldMessages = [];
+                    Object.keys(error.errors).forEach(function(key) {
+                        fieldMessages.push(error.errors[key].join(' '));
+                    });
+                    if (fieldMessages.length) {
+                        message = fieldMessages.join(' ');
+                    }
+                }
+                showAlert(message, 'danger');
+            })
+            .finally(function() {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Inscribir';
+                }
+            });
+        });
+    })();
+        </script>
+    {% endif %}
+{% endblock %}

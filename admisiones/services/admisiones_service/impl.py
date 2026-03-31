@@ -35,6 +35,7 @@ from admisiones.services.admisiones_filter_config import (
     DATE_OPS as ADMISION_DATE_OPS,
     CHOICE_OPS as ADMISION_CHOICE_OPS,
 )
+from comedores.utils import comedor_usa_admision_para_nomina
 
 from django.db.models import Q
 import logging
@@ -1386,7 +1387,15 @@ class AdmisionService:
         try:
             from comedores.models import Comedor
 
-            comedor = get_object_or_404(Comedor, id=comedor_id)
+            comedor = get_object_or_404(
+                Comedor.objects.select_related("programa"), id=comedor_id
+            )
+            if not comedor_usa_admision_para_nomina(comedor):
+                logger.warning(
+                    "Se intentó crear una admisión en un comedor con nómina directa",
+                    extra={"comedor_id": comedor_id},
+                )
+                return None
             tipo_convenio = get_object_or_404(TipoConvenio, id=tipo_convenio_id)
             estado_inicial = EstadoAdmision.objects.first()
 
@@ -1753,7 +1762,11 @@ class AdmisionService:
         # Determinar grupo del usuario
         es_tecnico, es_abogado = AdmisionService._resolver_roles_para_botones(user)
 
-        AdmisionService._append_botones_generales_admision(botones, admision)
+        AdmisionService._append_botones_generales_admision(
+            botones,
+            admision,
+            es_tecnico,
+        )
         AdmisionService._append_botones_tecnico_admision(
             botones,
             admision,
@@ -1809,8 +1822,12 @@ class AdmisionService:
         )
 
     @staticmethod
-    def _append_botones_generales_admision(botones, admision):
-        if admision.numero_disposicion and not admision.enviado_acompaniamiento:
+    def _append_botones_generales_admision(botones, admision, es_tecnico):
+        if (
+            es_tecnico
+            and admision.numero_disposicion
+            and not admision.enviado_acompaniamiento
+        ):
             botones.append("comenzar_acompaniamiento")
 
         if admision.estado_legales == "A Rectificar":

@@ -95,6 +95,14 @@ class Referente(models.Model):
 
 class Programas(models.Model):
     nombre = models.CharField(max_length=255)
+    usa_admision_para_nomina = models.BooleanField(
+        default=True,
+        verbose_name="¿Usa admisión para nómina?",
+        help_text=(
+            "Cuando es False, la nómina del comedor se gestiona de forma directa "
+            "sin depender de admisiones."
+        ),
+    )
 
     def __str__(self):
         return str(self.nombre)
@@ -243,6 +251,11 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         verbose_name="Código de Proyecto",
         blank=True,
         null=True,
+    )
+    es_judicializado = models.BooleanField(
+        null=True,
+        blank=True,
+        verbose_name="¿Es judicializado?",
     )
     comienzo = models.IntegerField(
         validators=[
@@ -451,17 +464,31 @@ class AuditComedorPrograma(models.Model):
 
 
 class Nomina(SoftDeleteModelMixin, models.Model):
-    ESTADO_PENDIENTE = "pendiente"
     ESTADO_ACTIVO = "activo"
+    ESTADO_ESPERA = "espera"
     ESTADO_BAJA = "baja"
 
     ESTADO_CHOICES = [
         (ESTADO_ACTIVO, "Activo"),
-        (ESTADO_PENDIENTE, "Pendiente"),
+        (ESTADO_ESPERA, "En espera"),
         (ESTADO_BAJA, "Baja"),
     ]
 
-    comedor = models.ForeignKey("Comedor", on_delete=models.SET_NULL, null=True)
+    admision = models.ForeignKey(
+        "admisiones.Admision",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nominas",
+    )
+    comedor = models.ForeignKey(
+        "Comedor",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nominas_directas",
+        verbose_name="Comedor (acceso directo)",
+    )
     ciudadano = models.ForeignKey(
         Ciudadano,
         on_delete=models.CASCADE,
@@ -473,7 +500,7 @@ class Nomina(SoftDeleteModelMixin, models.Model):
     estado = models.CharField(
         max_length=20,
         choices=ESTADO_CHOICES,
-        default=ESTADO_PENDIENTE,
+        default=ESTADO_ACTIVO,
     )
     observaciones = models.TextField(blank=True, null=True)
 
@@ -481,12 +508,220 @@ class Nomina(SoftDeleteModelMixin, models.Model):
         ordering = ["-fecha"]
         verbose_name = "Nomina"
         verbose_name_plural = "Nominas"
-        indexes = [models.Index(fields=["comedor"])]
 
     def __str__(self):
-        comedor = self.comedor.nombre if self.comedor else "Comedor sin nombre"
+        if self.admision and self.admision.comedor:
+            comedor_nombre = self.admision.comedor.nombre
+        elif self.comedor:
+            comedor_nombre = self.comedor.nombre
+        else:
+            comedor_nombre = "Comedor sin nombre"
         ciudadano = str(self.ciudadano) if self.ciudadano else "Ciudadano no asignado"
-        return f"{ciudadano} en {comedor} ({self.get_estado_display()})"
+        return f"{ciudadano} en {comedor_nombre} ({self.get_estado_display()})"
+
+
+class ActividadColaboradorEspacio(models.Model):
+    alias = models.CharField(max_length=10)
+    nombre = models.CharField(max_length=255)
+    orden = models.PositiveSmallIntegerField(default=0)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["orden", "id"]
+        verbose_name = "Actividad de colaborador del espacio"
+        verbose_name_plural = "Actividades de colaboradores del espacio"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["alias", "nombre"],
+                name="uniq_actividad_colaborador_espacio_alias_nombre",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.alias} - {self.nombre}"
+
+
+class ColaboradorEspacio(models.Model):
+    class GeneroChoices(models.TextChoices):
+        VARON = "V", "Varón"
+        MUJER = "M", "Mujer"
+        VARON_TRANS = "VT", "Varón Trans"
+        MUJER_TRANS = "MT", "Mujer Trans"
+        TRAVESTI = "TR", "Travesti"
+        OTROS = "OT", "Otros"
+        NO_DECLARA = "ND", "No declara"
+
+    comedor = models.ForeignKey(
+        "Comedor",
+        on_delete=models.CASCADE,
+        related_name="colaboradores_espacio",
+    )
+    ciudadano = models.ForeignKey(
+        Ciudadano,
+        on_delete=models.CASCADE,
+        related_name="colaboraciones_espacio",
+    )
+    genero = models.CharField(
+        max_length=2,
+        choices=GeneroChoices.choices,
+        default=GeneroChoices.NO_DECLARA,
+    )
+    codigo_telefono = models.CharField(max_length=10, blank=True, null=True)
+    numero_telefono = models.CharField(max_length=20, blank=True, null=True)
+    fecha_alta = models.DateField()
+    fecha_baja = models.DateField(blank=True, null=True)
+    actividades = models.ManyToManyField(
+        ActividadColaboradorEspacio,
+        related_name="colaboradores",
+        blank=True,
+    )
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="colaboradores_espacio_creados",
+    )
+    modificado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="colaboradores_espacio_modificados",
+    )
+    fecha_creado = models.DateTimeField(auto_now_add=True)
+    fecha_modificado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["ciudadano__apellido", "ciudadano__nombre", "-id"]
+        verbose_name = "Colaborador del espacio"
+        verbose_name_plural = "Colaboradores del espacio"
+        indexes = [
+            models.Index(fields=["comedor", "fecha_baja"]),
+            models.Index(fields=["ciudadano"]),
+        ]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        for field_name in ("codigo_telefono", "numero_telefono"):
+            value = getattr(self, field_name)
+            if value and not str(value).isdigit():
+                errors[field_name] = ValidationError("Debe contener solo números.")
+        if self.fecha_baja and self.fecha_alta and self.fecha_baja < self.fecha_alta:
+            errors["fecha_baja"] = ValidationError(
+                "La fecha de baja no puede ser anterior a la fecha de alta."
+            )
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.ciudadano} - {self.comedor.nombre}"
+
+    @property
+    def apellido(self):
+        return getattr(self.ciudadano, "apellido", None)
+
+    @property
+    def nombre(self):
+        return getattr(self.ciudadano, "nombre", None)
+
+    @property
+    def dni(self):
+        return getattr(self.ciudadano, "documento", None)
+
+    @property
+    def sexo_display(self):
+        sexo = getattr(self.ciudadano, "sexo", None)
+        return getattr(sexo, "sexo", None)
+
+    @property
+    def fecha_nacimiento(self):
+        return getattr(self.ciudadano, "fecha_nacimiento", None)
+
+    @property
+    def edad(self):
+        return getattr(self.ciudadano, "edad", None)
+
+    @property
+    def cuil_cuit(self):
+        return getattr(self.ciudadano, "cuil_cuit", None)
+
+    @property
+    def prefijo_cuil(self):
+        cuil = "".join(ch for ch in str(self.cuil_cuit or "") if ch.isdigit())
+        return cuil[:2] if len(cuil) == 11 else None
+
+    @property
+    def sufijo_cuil(self):
+        cuil = "".join(ch for ch in str(self.cuil_cuit or "") if ch.isdigit())
+        return cuil[-1] if len(cuil) == 11 else None
+
+
+class AuditColaboradorEspacio(models.Model):
+    ACCION_CREATE = "create"
+    ACCION_UPDATE = "update"
+    ACCION_DELETE = "delete"
+
+    ACCION_CHOICES = (
+        (ACCION_CREATE, "Alta"),
+        (ACCION_UPDATE, "Edición"),
+        (ACCION_DELETE, "Baja"),
+    )
+
+    colaborador = models.ForeignKey(
+        ColaboradorEspacio,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="audit_logs",
+    )
+    comedor = models.ForeignKey(
+        Comedor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="colaboradores_audit_logs",
+    )
+    ciudadano = models.ForeignKey(
+        Ciudadano,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="colaboraciones_audit_logs",
+    )
+    accion = models.CharField(max_length=20, choices=ACCION_CHOICES, db_index=True)
+    changed_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="colaboradores_espacio_audit_logs",
+    )
+    snapshot_antes = models.JSONField(null=True, blank=True)
+    snapshot_despues = models.JSONField(null=True, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ["-changed_at", "-id"]
+        verbose_name = "Auditoría de colaborador del espacio"
+        verbose_name_plural = "Auditorías de colaboradores del espacio"
+        indexes = [
+            models.Index(fields=["comedor", "changed_at"]),
+            models.Index(fields=["ciudadano", "changed_at"]),
+            models.Index(fields=["accion", "changed_at"]),
+        ]
+
+    def __str__(self):
+        return (
+            f"Colaborador espacio {self.colaborador_id or '-'} "
+            f"{self.accion} {self.changed_at:%Y-%m-%d %H:%M:%S}"
+        )
 
 
 class ImagenComedor(models.Model):

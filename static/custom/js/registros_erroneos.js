@@ -46,13 +46,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (btnConfirmarReprocesar) {
-        btnConfirmarReprocesar.addEventListener('click', function() {
+        btnConfirmarReprocesar.addEventListener('click', async function() {
             const url = document.querySelector('meta[name="reprocesar-errores-url"]')?.content;
             if (!url) return;
-            
+
             const modal = bootstrap.Modal.getInstance(modalConfirmar);
             modal.hide();
-            
+
+            const guardadoPrevio = await guardarCambiosPendientesAntesDeReprocesar();
+            if (guardadoPrevio.fallidos > 0) {
+                showAlert(
+                    'warning',
+                    `Se guardaron ${guardadoPrevio.exitosos} registros antes de reprocesar y ${guardadoPrevio.fallidos} siguen con errores de validacion.`
+                );
+            }
+
             btnReprocesar.disabled = true;
             btnReprocesar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
             
@@ -100,64 +108,71 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Guardar automáticamente al cambiar campos (con debounce)
     const saveTimers = {};
+    const registrosConCambios = new Set();
     document.querySelectorAll('.form-editar-error').forEach(form => {
         const registroId = form.dataset.registroId;
         const inputs = form.querySelectorAll('input, select, textarea');
-        
+
+        function programarGuardado() {
+            registrosConCambios.add(registroId);
+            clearTimeout(saveTimers[registroId]);
+            saveTimers[registroId] = setTimeout(() => {
+                guardarRegistro(form, registroId);
+            }, 500);
+        }
+
         inputs.forEach(input => {
-            input.addEventListener('change', function() {
-                clearTimeout(saveTimers[registroId]);
-                saveTimers[registroId] = setTimeout(() => {
-                    guardarRegistro(form, registroId);
-                }, 500);
-            });
+            input.addEventListener('change', programarGuardado);
+            input.addEventListener('input', programarGuardado);
         });
     });
     
-    function guardarRegistro(form, registroId) {
+    function mostrarErrorValidacion(form, message) {
+        if (form.dataset.validationMessage === message) return;
+        form.dataset.validationMessage = message;
+        showAlert('danger', message);
+    }
+
+    function limpiarErrorValidacion(form) {
+        delete form.dataset.validationMessage;
+    }
+
+    async function guardarCambiosPendientesAntesDeReprocesar() {
+        const forms = Array.from(document.querySelectorAll('.form-editar-error'));
+        if (forms.length === 0) return { exitosos: 0, fallidos: 0 };
+
+        let exitosos = 0;
+        let fallidos = 0;
+
+        for (const form of forms) {
+            const registroId = form.dataset.registroId;
+            clearTimeout(saveTimers[registroId]);
+            const guardadoOk = await guardarRegistro(form, registroId, { mostrarErrores: false });
+            if (guardadoOk) {
+                exitosos += 1;
+            } else {
+                fallidos += 1;
+            }
+        }
+
+        return { exitosos, fallidos };
+    }
+
+    function guardarRegistro(form, registroId, options = {}) {
+        const { mostrarErrores = true } = options;
         const urlTemplate = document.querySelector('meta[name="actualizar-error-url-template"]')?.content;
-        if (!urlTemplate) return;
-        
-        const apellido = (form.querySelector('input[name="apellido"]')?.value || '').trim();
-        const nombre = (form.querySelector('input[name="nombre"]')?.value || '').trim();
-        const documento = (form.querySelector('input[name="documento"]')?.value || '').trim();
-        const fecha_nacimiento = (form.querySelector('input[name="fecha_nacimiento"]')?.value || '').trim();
-        const sexo = (form.querySelector('select[name="sexo"]')?.value || '').trim();
-        const nacionalidad = (form.querySelector('select[name="nacionalidad"]')?.value || '').trim();
-        const telefono = (form.querySelector('input[name="telefono"]')?.value || '').trim();
-        const email = (form.querySelector('input[name="email"]')?.value || '').trim();
-        const calle = (form.querySelector('input[name="calle"]')?.value || '').trim();
-        const altura = (form.querySelector('input[name="altura"]')?.value || '').trim();
-        const municipio = (form.querySelector('select[name="municipio"]')?.value || '').trim();
-        const localidad = (form.querySelector('select[name="localidad"]')?.value || '').trim();
-        
-        if (!apellido || !nombre || !documento || !fecha_nacimiento || !sexo || !nacionalidad || !municipio || !localidad) {
-            return;
-        }
-        
-        if (telefono && telefono.length < 8) {
-            return;
-        }
-        
-        const apellido_responsable = (form.querySelector('input[name="apellido_responsable"]')?.value || '').trim();
-        const nombre_responsable = (form.querySelector('input[name="nombre_responsable"]')?.value || '').trim();
-        const documento_responsable = (form.querySelector('input[name="documento_responsable"]')?.value || '').trim();
-        const email_responsable = (form.querySelector('input[name="email_responsable"]')?.value || '').trim();
-        const tiene_responsable = apellido_responsable || nombre_responsable || documento_responsable;
-        
-        if (tiene_responsable && (!apellido_responsable || !nombre_responsable || !documento_responsable || !email_responsable)) {
-            return;
-        }
-        
+        if (!urlTemplate) return Promise.resolve(false);
+
         const url = urlTemplate.replace('/0/', `/${registroId}/`);
-        
         const formData = new FormData(form);
         const datos = {};
         formData.forEach((value, key) => {
-            if (value) datos[key] = value;
+            datos[key] = typeof value === 'string' ? value.trim() : value;
         });
-        
-        fetch(url, {
+
+        limpiarErrorValidacion(form);
+
+        return fetch(url, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': csrfToken,
@@ -168,6 +183,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                limpiarErrorValidacion(form);
+                registrosConCambios.delete(String(registroId));
                 const row = document.querySelector(`.registro-erroneo-row[data-registro-id="${registroId}"]`);
                 if (row) {
                     row.style.borderLeft = '4px solid #28a745';
@@ -175,13 +192,30 @@ document.addEventListener('DOMContentLoaded', function() {
                         row.style.borderLeft = '4px solid #dc3545';
                     }, 1000);
                 }
+                return true;
+            }
+            if (data.saved_partial) {
+                registrosConCambios.delete(String(registroId));
+                if (mostrarErrores) {
+                    mostrarErrorValidacion(
+                        form,
+                        data.error || 'Se guardaron cambios parciales, pero quedan validaciones pendientes.'
+                    );
+                }
+                return true;
             } else {
-                showAlert('danger', 'Error: ' + (data.error || 'Error desconocido'));
+                if (mostrarErrores) {
+                    showAlert('danger', 'Error: ' + (data.error || 'Error desconocido'));
+                }
+                return false;
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('danger', 'Error al guardar registro');
+            if (mostrarErrores) {
+                showAlert('danger', 'Error al guardar registro');
+            }
+            return false;
         });
     }
     

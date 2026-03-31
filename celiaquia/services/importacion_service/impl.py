@@ -12,6 +12,7 @@ from django.db.models import Q
 from ciudadanos.models import Ciudadano
 from core.models import Provincia, Municipio, Localidad, Sexo
 from celiaquia.models import EstadoCupo, EstadoLegajo, ExpedienteCiudadano
+from celiaquia.services.validacion_edad_service import ValidacionEdadService
 
 logger = logging.getLogger("django")
 
@@ -62,6 +63,7 @@ IMPORTACION_COLUMN_MAP = {
     "fecha_nacimiento": "fecha_nacimiento",
     "fecha_de_nacimiento": "fecha_nacimiento",
     "sexo": "sexo",
+    "sexo_1": "sexo_responsable",
     "nacionalidad": "nacionalidad",
     "municipio": "municipio",
     "localidad": "localidad",
@@ -78,6 +80,7 @@ IMPORTACION_COLUMN_MAP = {
     "sexo_responsable": "sexo_responsable",
     "domicilio_responsable": "domicilio_responsable",
     "localidad_responsable": "localidad_responsable",
+    "celular_responsable": "telefono_responsable",
     "contacto_responsable": "contacto_responsable",
     "telefono_celular_responsable": "telefono_responsable",
     "telefono_responsable": "telefono_responsable",
@@ -99,6 +102,60 @@ IMPORTACION_COLUMN_MAP = {
     "CORREO_RESPONSABLE": "email_responsable",
     "EMAIL_RESPONSABLE": "email_responsable",
 }
+
+IMPORTACION_BENEFICIARIO_REQUIRED_FIELDS = (
+    "apellido",
+    "nombre",
+    "documento",
+    "fecha_nacimiento",
+    "sexo",
+    "nacionalidad",
+    "municipio",
+    "localidad",
+    "calle",
+    "altura",
+    "codigo_postal",
+)
+
+IMPORTACION_REQUIRED_FIELDS = (
+    *IMPORTACION_BENEFICIARIO_REQUIRED_FIELDS,
+    "apellido_responsable",
+    "nombre_responsable",
+    "documento_responsable",
+    "fecha_nacimiento_responsable",
+    "sexo_responsable",
+    "domicilio_responsable",
+    "localidad_responsable",
+)
+
+IMPORTACION_OPTIONAL_FIELDS = (
+    "telefono",
+    "email",
+    "telefono_responsable",
+    "email_responsable",
+)
+
+IMPORTACION_RESPONSABLE_REQUIRED_FIELDS = (
+    "apellido_responsable",
+    "nombre_responsable",
+    "documento_responsable",
+    "fecha_nacimiento_responsable",
+    "sexo_responsable",
+    "domicilio_responsable",
+    "localidad_responsable",
+)
+
+IMPORTACION_RESPONSABLE_FIELDS = (
+    *IMPORTACION_RESPONSABLE_REQUIRED_FIELDS,
+    "telefono_responsable",
+    "email_responsable",
+    "contacto_responsable",
+)
+
+IMPORTACION_EDITABLE_FIELDS = (
+    *IMPORTACION_REQUIRED_FIELDS,
+    *IMPORTACION_OPTIONAL_FIELDS,
+)
 
 
 def validar_edad_responsable(fecha_nac_responsable, fecha_nac_beneficiario):
@@ -135,7 +192,17 @@ def _leer_excel_importacion(data: bytes) -> pd.DataFrame:
 
 def _normalizar_dataframe_importacion(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-    df.columns = [_norm_col(col) for col in df.columns]
+    normalized_cols = [_norm_col(col) for col in df.columns]
+    seen = {}
+    unique_cols = []
+    for col in normalized_cols:
+        if col in seen:
+            seen[col] += 1
+            unique_cols.append(f"{col}_{seen[col]}")
+        else:
+            seen[col] = 0
+            unique_cols.append(col)
+    df.columns = unique_cols
 
     present = [c for c in df.columns if c in IMPORTACION_COLUMN_MAP]
     df = (
@@ -157,12 +224,19 @@ def _normalizar_dataframe_importacion(df: pd.DataFrame) -> pd.DataFrame:
 def _obtener_provincia_usuario_id(usuario):
     provincia_usuario_id = None
     try:
-        if (
-            hasattr(usuario, "profile")
-            and usuario.profile
-            and usuario.profile.provincia_id
-        ):
-            provincia_usuario_id = usuario.profile.provincia_id
+        profile = getattr(usuario, "profile", None)
+        if profile and profile.provincia_id:
+            provincia_usuario_id = profile.provincia_id
+        elif getattr(usuario, "id", None):
+            from users.models import Profile
+
+            profile = (
+                Profile.objects.select_related("provincia")
+                .filter(user_id=usuario.id)
+                .first()
+            )
+            if profile and profile.provincia_id:
+                provincia_usuario_id = profile.provincia_id
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.warning("No se pudo obtener provincia del usuario: %s", exc)
 
@@ -332,6 +406,7 @@ def _persistir_legajos_importacion(
         _crear_relaciones_familiares_importacion(relaciones_familiares, warnings)
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.error("Error en bulk_create de legajos: %s", exc)
+        raise
 
 
 def _serializar_datos_importacion_para_json(datos):
@@ -421,6 +496,9 @@ def _consolidar_roles_cruzados_importacion(expediente, warnings):
             ):
                 relaciones_cruzadas_creadas += 1
 
+        # Consolidar beneficiarios que son responsables de otros
+        _consolidar_beneficiarios_que_son_responsables(expediente, warnings)
+
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.error("Error en post-procesamiento de relaciones cruzadas: %s", exc)
         _agregar_warning_general_importacion(
@@ -432,13 +510,50 @@ def _consolidar_roles_cruzados_importacion(expediente, warnings):
     return relaciones_cruzadas_creadas
 
 
+def _consolidar_beneficiarios_que_son_responsables(expediente, warnings):
+    """Actualiza beneficiarios que también son responsables de otros a doble rol."""
+    from ciudadanos.models import GrupoFamiliar
+
+    # Obtener todos los responsables (ciudadanos que tienen hijos)
+    responsables_ids = set(
+        GrupoFamiliar.objects.filter(vinculo=GrupoFamiliar.RELACION_PADRE).values_list(
+            "ciudadano_1_id", flat=True
+        )
+    )
+
+    # Buscar legajos beneficiarios cuyo ciudadano es responsable de otros
+    legajos_beneficiarios = ExpedienteCiudadano.objects.filter(
+        expediente=expediente,
+        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
+        ciudadano_id__in=responsables_ids,
+    )
+
+    actualizados = 0
+    for legajo in legajos_beneficiarios:
+        legajo.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+        legajo.save(update_fields=["rol"])
+        actualizados += 1
+        logger.info(
+            "Actualizado legajo %s a BENEFICIARIO_Y_RESPONSABLE (doc: %s)",
+            legajo.id,
+            legajo.ciudadano.documento,
+        )
+
+    if actualizados > 0:
+        _agregar_warning_general_importacion(
+            warnings,
+            "consolidacion_roles",
+            f"Se actualizaron {actualizados} beneficiarios a doble rol",
+        )
+
+
 def _parse_numeric_field_importacion(
     *, field, value_str, offset, validar_documento, add_warning
 ):
     cleaned = re.sub(r"\D", "", value_str)
     if not cleaned:
         if value_str:
-            add_warning(offset, field, "valor numerico vacio")
+            raise ValidationError(f"{field} debe contener solo dígitos")
         return None
 
     try:
@@ -475,22 +590,58 @@ def _build_payload_importacion_from_row(
     return payload
 
 
+def _valor_tiene_contenido_importacion(value):
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    return True
+
+
+def listar_campos_faltantes_importacion(
+    payload, required_fields=IMPORTACION_REQUIRED_FIELDS
+):
+    return [
+        field
+        for field in required_fields
+        if not _valor_tiene_contenido_importacion(payload.get(field))
+    ]
+
+
+def validar_campos_obligatorios_importacion(
+    payload, required_fields=IMPORTACION_REQUIRED_FIELDS
+):
+    faltantes = listar_campos_faltantes_importacion(
+        payload=payload,
+        required_fields=required_fields,
+    )
+    if faltantes:
+        raise ValidationError(f"Faltan campos obligatorios: {', '.join(faltantes)}")
+
+
 def _aplicar_defaults_y_validar_payload_importacion(payload, provincia_usuario_id):
     payload["tipo_documento"] = _get_tipo_documento(payload.get("documento", ""))
 
     if provincia_usuario_id:
         payload["provincia"] = provincia_usuario_id
 
-    required = ["apellido", "nombre", "documento", "fecha_nacimiento"]
-    for req in required:
-        if not payload.get(req):
-            raise ValidationError(f"Campo obligatorio faltante: {req}")
+    validar_campos_obligatorios_importacion(
+        payload,
+        required_fields=IMPORTACION_BENEFICIARIO_REQUIRED_FIELDS,
+    )
 
     doc = payload.get("documento")
     if not doc:
         raise ValidationError("Documento es obligatorio")
     if not str(doc).isdigit():
         raise ValidationError("Documento debe contener sólo dígitos")
+
+
+def _validar_beneficiario_menor_con_responsable_importacion(payload):
+    ValidacionEdadService.validar_beneficiario_menor_con_responsable(
+        payload.get("fecha_nacimiento"),
+        tiene_responsable=_tiene_datos_responsable_importacion(payload),
+    )
 
 
 def _payload_sin_nulos(payload):
@@ -526,11 +677,6 @@ def _convertir_fecha_nacimiento_payload_importacion(
     try:
         payload["fecha_nacimiento"] = to_date(payload.get("fecha_nacimiento"))
     except ValidationError as exc:
-        add_warning(
-            offset,
-            "fecha_nacimiento",
-            f"Fecha inválida: {payload.get('fecha_nacimiento')} - {str(exc)}",
-        )
         raise ValidationError(
             f"Fecha de nacimiento inválida: {payload.get('fecha_nacimiento')}"
         ) from exc
@@ -543,13 +689,17 @@ def _resolver_campo_lookup_importacion(payload, field_name, cache, offset, add_w
         return
 
     field_str = str(field_value).strip()
-    if field_str and field_str != "nan" and field_str.replace(".0", "").isdigit():
-        field_id = int(float(field_str))
-        if field_id in cache:
-            payload[field_name] = cache[field_id]
-        else:
-            add_warning(offset, field_name, f"{field_id} no encontrado")
-            payload.pop(field_name, None)
+    if not field_str or field_str == "nan":
+        payload.pop(field_name, None)
+        return
+
+    if not field_str.replace(".0", "").isdigit():
+        raise ValidationError(f"{field_name} debe ser un ID válido")
+
+    field_id = int(float(field_str))
+    if field_id not in cache:
+        raise ValidationError(f"{field_name} {field_id} no encontrado")
+    payload[field_name] = cache[field_id]
 
 
 def _resolver_municipio_y_localidad_payload_importacion(
@@ -577,6 +727,11 @@ def _resolver_sexo_payload_importacion(payload, normalizar_sexo):
         payload.pop("sexo", None)
         return
 
+    sexo_str = str(sexo_val).strip()
+    if sexo_str.isdigit() and Sexo.objects.filter(pk=int(sexo_str)).exists():
+        payload["sexo"] = int(sexo_str)
+        return
+
     sexo_id = normalizar_sexo(sexo_val)
     if not sexo_id:
         raise ValidationError(
@@ -593,32 +748,51 @@ def _resolver_nacionalidad_payload_importacion(payload):
 
     from core.models import Nacionalidad
 
-    nacionalidad_obj = Nacionalidad.objects.filter(
-        nacionalidad__iexact=str(nacionalidad_val).strip()
-    ).first()
-    if nacionalidad_obj:
-        payload["nacionalidad"] = nacionalidad_obj.pk
-        return
-
-    argentina = Nacionalidad.objects.filter(nacionalidad__iexact="Argentina").first()
-    if argentina:
-        payload["nacionalidad"] = argentina.pk
+    nacionalidad_str = str(nacionalidad_val).strip()
+    if nacionalidad_str.isdigit():
+        nacionalidad_obj = Nacionalidad.objects.filter(pk=int(nacionalidad_str)).first()
     else:
-        payload.pop("nacionalidad", None)
+        nacionalidad_obj = Nacionalidad.objects.filter(
+            nacionalidad__iexact=nacionalidad_str
+        ).first()
+
+    if not nacionalidad_obj:
+        raise ValidationError(f"Nacionalidad inválida: {nacionalidad_val}")
+    payload["nacionalidad"] = nacionalidad_obj.pk
 
 
-def _validar_contacto_payload_importacion(payload, offset, add_warning):
-    email = payload.get("email")
+def _validar_contacto_payload_importacion(
+    payload,
+    offset,
+    add_warning,
+    *,
+    email_field="email",
+    telefono_field="telefono",
+    email_label=None,
+    telefono_label=None,
+):
+    del offset, add_warning
+    email = payload.get(email_field)
     if email:
         try:
             EmailValidator()(email)
-        except ValidationError:
-            add_warning(offset, "email", f"Email inválido: {email}")
-            payload.pop("email", None)
+        except ValidationError as exc:
+            raise ValidationError(
+                f"{email_label or email_field} inválido: {email}"
+            ) from exc
 
-    telefono = payload.get("telefono")
+    telefono = payload.get(telefono_field)
     if telefono and len(telefono) < 8:
-        raise ValidationError(f"Teléfono '{telefono}' debe tener al menos 8 dígitos")
+        raise ValidationError(
+            f"{telefono_label or telefono_field} debe tener al menos 8 dígitos"
+        )
+
+
+def _validar_campos_resueltos_payload_importacion(payload):
+    validar_campos_obligatorios_importacion(
+        payload=payload,
+        required_fields=("sexo", "nacionalidad", "municipio", "localidad"),
+    )
 
 
 def _normalizar_enriquecer_payload_importacion(
@@ -650,23 +824,43 @@ def _normalizar_enriquecer_payload_importacion(
         offset=offset,
         add_warning=add_warning,
     )
+    _validar_campos_resueltos_payload_importacion(payload)
+
+
+def _extraer_lookup_id_importacion(value):
+    if value in (None, ""):
+        return None
+
+    value_str = str(value).strip()
+    if not value_str or value_str.lower() in {"nan", "nat", "none"}:
+        return None
+    if not value_str.replace(".0", "").isdigit():
+        return None
+    return int(float(value_str))
+
+
+def _build_lookup_caches_payload_importacion(payload, provincia_usuario_id):
+    municipio_id = _extraer_lookup_id_importacion(payload.get("municipio"))
+    localidad_id = _extraer_lookup_id_importacion(payload.get("localidad"))
+    return (
+        _cargar_municipios_cache(
+            {municipio_id} if municipio_id is not None else set(),
+            provincia_usuario_id,
+        ),
+        _cargar_localidades_cache(
+            {localidad_id} if localidad_id is not None else set()
+        ),
+    )
 
 
 def _build_responsable_payload_importacion(
     payload, provincia_usuario_id, offset, add_error
 ):
-    if not payload.get("documento_responsable"):
-        add_error(
-            offset,
-            "documento_responsable",
-            "Documento del responsable obligatorio",
-        )
-    if not payload.get("nombre_responsable"):
-        add_error(
-            offset,
-            "nombre_responsable",
-            "Nombre del responsable obligatorio",
-        )
+    del offset, add_error
+    validar_campos_obligatorios_importacion(
+        payload=payload,
+        required_fields=IMPORTACION_RESPONSABLE_REQUIRED_FIELDS,
+    )
 
     return {
         "apellido": payload.get("apellido_responsable"),
@@ -680,6 +874,114 @@ def _build_responsable_payload_importacion(
     }
 
 
+def _validar_y_normalizar_responsable_payload_importacion(
+    *,
+    payload,
+    provincia_usuario_id,
+    offset,
+    normalizar_sexo,
+    to_date,
+    add_warning,
+    add_error,
+    validar_edad_responsable_fn,
+):
+    responsable_payload = _build_responsable_payload_importacion(
+        payload=payload,
+        provincia_usuario_id=provincia_usuario_id,
+        offset=offset,
+        add_error=add_error,
+    )
+    _agregar_sexo_responsable_payload_importacion(
+        responsable_payload=responsable_payload,
+        payload=payload,
+        normalizar_sexo=normalizar_sexo,
+    )
+    _enriquecer_responsable_payload_importacion(
+        responsable_payload=responsable_payload,
+        payload=payload,
+        provincia_usuario_id=provincia_usuario_id,
+        offset=offset,
+        add_warning=add_warning,
+        to_date=to_date,
+    )
+    _validar_contacto_payload_importacion(
+        payload=responsable_payload,
+        offset=offset,
+        add_warning=add_warning,
+        email_label="email_responsable",
+        telefono_label="telefono_responsable",
+    )
+    _emitir_warnings_edad_responsable_importacion(
+        responsable_payload=responsable_payload,
+        payload_beneficiario=payload,
+        offset=offset,
+        add_warning=add_warning,
+        validar_edad_responsable_fn=validar_edad_responsable_fn,
+    )
+    return responsable_payload, _es_mismo_documento_responsable_importacion(payload)
+
+
+def validar_y_normalizar_payloads_importacion(
+    *,
+    payload,
+    provincia_usuario_id,
+    offset=0,
+    municipios_cache=None,
+    localidades_cache=None,
+    normalizar_sexo=None,
+    to_date=None,
+    add_warning=None,
+    add_error=None,
+):
+    payload_normalizado = dict(payload)
+    add_warning = add_warning or (lambda *_args, **_kwargs: None)
+    add_error = add_error or (lambda *_args, **_kwargs: None)
+
+    if normalizar_sexo is None:
+        normalizar_sexo = _build_normalizar_sexo_importacion(_cargar_sexos_cache())
+    if to_date is None:
+        from celiaquia.services.ciudadano_service import CiudadanoService
+
+        to_date = CiudadanoService._to_date
+    if municipios_cache is None or localidades_cache is None:
+        municipios_cache, localidades_cache = _build_lookup_caches_payload_importacion(
+            payload_normalizado, provincia_usuario_id
+        )
+
+    _aplicar_defaults_y_validar_payload_importacion(
+        payload_normalizado, provincia_usuario_id
+    )
+    _normalizar_enriquecer_payload_importacion(
+        payload=payload_normalizado,
+        offset=offset,
+        add_warning=add_warning,
+        to_date=to_date,
+        municipios_cache=municipios_cache,
+        localidades_cache=localidades_cache,
+        normalizar_sexo=normalizar_sexo,
+    )
+    _validar_beneficiario_menor_con_responsable_importacion(payload_normalizado)
+
+    responsable_payload = None
+    es_mismo_documento_resp = False
+    if _debe_validarse_responsable_importacion(payload_normalizado):
+        (
+            responsable_payload,
+            es_mismo_documento_resp,
+        ) = _validar_y_normalizar_responsable_payload_importacion(
+            payload=payload_normalizado,
+            provincia_usuario_id=provincia_usuario_id,
+            offset=offset,
+            normalizar_sexo=normalizar_sexo,
+            to_date=to_date,
+            add_warning=add_warning,
+            add_error=add_error,
+            validar_edad_responsable_fn=validar_edad_responsable,
+        )
+
+    return payload_normalizado, responsable_payload, es_mismo_documento_resp
+
+
 def _agregar_sexo_responsable_payload_importacion(
     responsable_payload, payload, normalizar_sexo
 ):
@@ -687,9 +989,17 @@ def _agregar_sexo_responsable_payload_importacion(
     if not sexo_resp_val:
         return
 
+    sexo_resp_str = str(sexo_resp_val).strip()
+    if sexo_resp_str.isdigit() and Sexo.objects.filter(pk=int(sexo_resp_str)).exists():
+        responsable_payload["sexo"] = int(sexo_resp_str)
+        return
+
     sexo_resp_id = normalizar_sexo(sexo_resp_val)
-    if sexo_resp_id:
-        responsable_payload["sexo"] = sexo_resp_id
+    if not sexo_resp_id:
+        raise ValidationError(
+            "Sexo responsable invalido. Use M/F, Masculino/Femenino, etc."
+        )
+    responsable_payload["sexo"] = sexo_resp_id
 
 
 def _es_mismo_documento_responsable_importacion(payload):
@@ -738,22 +1048,44 @@ def _aplicar_domicilio_responsable_payload_importacion(responsable_payload, payl
 def _resolver_localidad_responsable_payload_importacion(
     *, responsable_payload, payload, provincia_usuario_id, offset, add_warning
 ):
+    del offset, add_warning
     localidad_resp = payload.get("localidad_responsable")
     if localidad_resp:
         try:
-            localidad_obj = Localidad.objects.filter(
-                nombre__icontains=localidad_resp,
-                municipio__provincia_id=provincia_usuario_id,
-            ).first()
-            if localidad_obj:
+            localidad_resp_str = str(localidad_resp).strip()
+            if "(" in localidad_resp_str:
+                localidad_resp_str = localidad_resp_str.split("(", 1)[0].strip()
+            localidades_qs = Localidad.objects.select_related("municipio").filter(
+                municipio__provincia_id=provincia_usuario_id
+            )
+            if localidad_resp_str.isdigit():
+                coincidencias = list(
+                    localidades_qs.filter(pk=int(localidad_resp_str))[:2]
+                )
+            else:
+                coincidencias = list(
+                    localidades_qs.filter(nombre__iexact=localidad_resp_str)[:2]
+                )
+                if len(coincidencias) != 1 and localidad_resp_str:
+                    coincidencias = list(
+                        localidades_qs.filter(nombre__icontains=localidad_resp_str)[:2]
+                    )
+
+            if len(coincidencias) == 1:
+                localidad_obj = coincidencias[0]
                 responsable_payload["localidad"] = localidad_obj.pk
                 responsable_payload["municipio"] = localidad_obj.municipio.pk
+                return
+            if len(coincidencias) > 1:
+                raise ValidationError(
+                    f"Localidad responsable ambigua: {localidad_resp}"
+                )
         except Exception as exc:  # pylint: disable=broad-exception-caught
-            add_warning(
-                offset,
-                "localidad_responsable",
-                f"No se pudo procesar: {exc}",
-            )
+            raise ValidationError(
+                f"Localidad responsable invalida: {localidad_resp}"
+            ) from exc
+
+        raise ValidationError(f"Localidad responsable invalida: {localidad_resp}")
 
 
 def _convertir_fecha_nacimiento_responsable_payload_importacion(
@@ -765,15 +1097,10 @@ def _convertir_fecha_nacimiento_responsable_payload_importacion(
                 responsable_payload["fecha_nacimiento"]
             )
         except ValidationError as exc:
-            add_warning(
-                offset,
-                "fecha_nacimiento_responsable",
-                (
-                    "Fecha inválida: "
-                    f"{responsable_payload.get('fecha_nacimiento')} - {str(exc)}"
-                ),
-            )
-            responsable_payload.pop("fecha_nacimiento", None)
+            raise ValidationError(
+                "Fecha de nacimiento responsable inválida: "
+                f"{responsable_payload.get('fecha_nacimiento')}"
+            ) from exc
 
 
 def _crear_responsable_y_legajo_importacion(
@@ -789,6 +1116,7 @@ def _crear_responsable_y_legajo_importacion(
     validar_edad_responsable_fn,
     get_or_create_ciudadano,
 ):
+    del payload_beneficiario, offset, add_warning, validar_edad_responsable_fn
     ciudadano_responsable = get_or_create_ciudadano(
         datos=responsable_payload,
         usuario=usuario,
@@ -796,20 +1124,11 @@ def _crear_responsable_y_legajo_importacion(
     )
 
     if not (ciudadano_responsable and ciudadano_responsable.pk):
-        return None
+        return None, False
 
     cid_resp = ciudadano_responsable.pk
 
-    if responsable_payload.get("fecha_nacimiento"):
-        _emitir_warnings_edad_responsable_importacion(
-            responsable_payload=responsable_payload,
-            payload_beneficiario=payload_beneficiario,
-            offset=offset,
-            add_warning=add_warning,
-            validar_edad_responsable_fn=validar_edad_responsable_fn,
-        )
-
-    _registrar_legajo_responsable_importacion_si_corresponde(
+    legajo_agregado = _registrar_legajo_responsable_importacion_si_corresponde(
         cid_resp=cid_resp,
         ciudadano_responsable=ciudadano_responsable,
         expediente=expediente,
@@ -818,7 +1137,7 @@ def _crear_responsable_y_legajo_importacion(
         legajos_crear=legajos_crear,
     )
 
-    return cid_resp
+    return cid_resp, legajo_agregado
 
 
 def _emitir_warnings_edad_responsable_importacion(
@@ -836,7 +1155,7 @@ def _emitir_warnings_edad_responsable_importacion(
     for warning in edad_warnings:
         add_warning(offset, "edad", warning)
     if error_edad:
-        add_warning(offset, "edad_responsable", error_edad)
+        raise ValidationError(error_edad)
 
 
 def _registrar_legajo_responsable_importacion_si_corresponde(
@@ -849,7 +1168,7 @@ def _registrar_legajo_responsable_importacion_si_corresponde(
     legajos_crear,
 ):
     if cid_resp in existentes_ids:
-        return
+        return False
 
     legajos_crear.append(
         ExpedienteCiudadano(
@@ -860,6 +1179,7 @@ def _registrar_legajo_responsable_importacion_si_corresponde(
         )
     )
     existentes_ids.add(cid_resp)
+    return True
 
 
 def _registrar_relacion_familiar_importacion(
@@ -871,7 +1191,7 @@ def _registrar_relacion_familiar_importacion(
 ):
     pair = (cid_resp, cid_beneficiario)
     if pair in relaciones_familiares_pairs:
-        return
+        return False
 
     relaciones_familiares_pairs.add(pair)
     relaciones_familiares.append(
@@ -881,6 +1201,7 @@ def _registrar_relacion_familiar_importacion(
             "fila": offset,
         }
     )
+    return True
 
 
 def _agregar_exclusion_beneficiario_importacion(
@@ -1075,11 +1396,7 @@ def _resolver_cid_responsable_importacion(
     legajos_crear,
     get_or_create_ciudadano,
 ):
-    _agregar_sexo_responsable_payload_importacion(
-        responsable_payload=responsable_payload,
-        payload=payload,
-        normalizar_sexo=normalizar_sexo,
-    )
+    del provincia_usuario_id, normalizar_sexo, to_date
     es_mismo_documento_resp = _es_mismo_documento_responsable_importacion(payload)
 
     if es_mismo_documento_resp:
@@ -1088,17 +1405,9 @@ def _resolver_cid_responsable_importacion(
             "responsable",
             "Responsable es el mismo beneficiario - no se duplica legajo",
         )
-        return cid_beneficiario, True
+        return cid_beneficiario, True, False
 
-    _enriquecer_responsable_payload_importacion(
-        responsable_payload=responsable_payload,
-        payload=payload,
-        provincia_usuario_id=provincia_usuario_id,
-        offset=offset,
-        add_warning=add_warning,
-        to_date=to_date,
-    )
-    cid_resp = _crear_responsable_y_legajo_importacion(
+    cid_resp, legajo_agregado = _crear_responsable_y_legajo_importacion(
         responsable_payload=responsable_payload,
         payload_beneficiario=payload,
         usuario=usuario,
@@ -1111,7 +1420,7 @@ def _resolver_cid_responsable_importacion(
         validar_edad_responsable_fn=validar_edad_responsable_fn,
         get_or_create_ciudadano=get_or_create_ciudadano,
     )
-    return cid_resp, False
+    return cid_resp, False, legajo_agregado
 
 
 def _vincular_responsable_a_beneficiario_importacion_si_corresponde(
@@ -1124,24 +1433,15 @@ def _vincular_responsable_a_beneficiario_importacion_si_corresponde(
     relaciones_familiares,
 ):
     if es_mismo_documento_resp or not cid_resp:
-        return
+        return False
 
-    _registrar_relacion_familiar_importacion(
+    return _registrar_relacion_familiar_importacion(
         cid_resp=cid_resp,
         cid_beneficiario=cid_beneficiario,
         offset=offset,
         relaciones_familiares_pairs=relaciones_familiares_pairs,
         relaciones_familiares=relaciones_familiares,
     )
-
-
-def _registrar_warning_error_responsable_importacion(offset, add_warning, exc):
-    add_warning(
-        offset,
-        "responsable",
-        f"Error creando responsable: {str(exc)}",
-    )
-    logger.error("Error creando responsable en fila %s: %s", offset, exc)
 
 
 def _procesar_responsable_importacion(
@@ -1162,15 +1462,24 @@ def _procesar_responsable_importacion(
     relaciones_familiares_pairs,
     relaciones_familiares,
     get_or_create_ciudadano,
+    responsable_payload=None,
 ):
-    try:
-        responsable_payload = _build_responsable_payload_importacion(
-            payload=payload,
-            provincia_usuario_id=provincia_usuario_id,
-            offset=offset,
-            add_error=add_error,
+    if responsable_payload is None:
+        responsable_payload, _es_mismo_documento_resp = (
+            _validar_y_normalizar_responsable_payload_importacion(
+                payload=payload,
+                provincia_usuario_id=provincia_usuario_id,
+                offset=offset,
+                normalizar_sexo=normalizar_sexo,
+                to_date=to_date,
+                add_warning=add_warning,
+                add_error=add_error,
+                validar_edad_responsable_fn=validar_edad_responsable_fn,
+            )
         )
-        cid_resp, es_mismo_documento_resp = _resolver_cid_responsable_importacion(
+
+    cid_resp, es_mismo_documento_resp, legajo_agregado = (
+        _resolver_cid_responsable_importacion(
             payload=payload,
             responsable_payload=responsable_payload,
             cid_beneficiario=cid_beneficiario,
@@ -1187,17 +1496,17 @@ def _procesar_responsable_importacion(
             legajos_crear=legajos_crear,
             get_or_create_ciudadano=get_or_create_ciudadano,
         )
+    )
 
-        _vincular_responsable_a_beneficiario_importacion_si_corresponde(
-            cid_resp=cid_resp,
-            es_mismo_documento_resp=es_mismo_documento_resp,
-            cid_beneficiario=cid_beneficiario,
-            offset=offset,
-            relaciones_familiares_pairs=relaciones_familiares_pairs,
-            relaciones_familiares=relaciones_familiares,
-        )
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        _registrar_warning_error_responsable_importacion(offset, add_warning, exc)
+    relacion_agregada = _vincular_responsable_a_beneficiario_importacion_si_corresponde(
+        cid_resp=cid_resp,
+        es_mismo_documento_resp=es_mismo_documento_resp,
+        cid_beneficiario=cid_beneficiario,
+        offset=offset,
+        relaciones_familiares_pairs=relaciones_familiares_pairs,
+        relaciones_familiares=relaciones_familiares,
+    )
+    return cid_resp, legajo_agregado, relacion_agregada
 
 
 def _construir_payload_fila_importacion(
@@ -1232,6 +1541,7 @@ def _construir_payload_fila_importacion(
         localidades_cache=localidades_cache,
         normalizar_sexo=normalizar_sexo,
     )
+    _validar_beneficiario_menor_con_responsable_importacion(payload)
     return payload
 
 
@@ -1285,12 +1595,13 @@ def _procesar_beneficiario_importacion(
 
 def _tiene_datos_responsable_importacion(payload):
     return any(
-        [
-            payload.get("apellido_responsable"),
-            payload.get("nombre_responsable"),
-            payload.get("fecha_nacimiento_responsable"),
-        ]
+        _valor_tiene_contenido_importacion(payload.get(field))
+        for field in IMPORTACION_RESPONSABLE_FIELDS
     )
+
+
+def _debe_validarse_responsable_importacion(payload):
+    return _tiene_datos_responsable_importacion(payload)
 
 
 IMPORTACION_NUMERIC_FIELDS = {
@@ -1313,16 +1624,30 @@ def _leer_bytes_archivo_importacion(archivo_excel):
     return archivo_excel.read()
 
 
+def _expediente_id(expediente):
+    if expediente is None:
+        return None
+    for attr in ("pk", "id"):
+        value = getattr(expediente, attr, None)
+        if value is not None:
+            return value
+    return expediente
+
+
 def _precargar_conflictos_y_existentes_importacion(expediente):
+    # Usar all_objects para incluir legajos soft-deleted: si un ciudadano fue eliminado
+    # lógicamente de este expediente, su fila aún existe en BD y el unique_together
+    # bloquearía un bulk_create duplicado.
+    expediente_id = _expediente_id(expediente)
     existentes_ids = set(
-        ExpedienteCiudadano.objects.filter(expediente=expediente).values_list(
+        ExpedienteCiudadano.all_objects.filter(expediente_id=expediente_id).values_list(
             "ciudadano_id", flat=True
         )
     )
 
     conflictos_qs = (
         ExpedienteCiudadano.objects.select_related("expediente", "expediente__estado")
-        .exclude(expediente=expediente)
+        .exclude(expediente_id=expediente_id)
         .filter(
             Q(estado_cupo=EstadoCupo.DENTRO)
             | Q(expediente__estado__nombre__in=ESTADOS_PRE_CUPO)
@@ -1429,7 +1754,6 @@ def _procesar_beneficiario_desde_row_importacion(
     legajos_crear,
     doble_rol_docs,
 ):
-    del add_error  # Compatibilidad de firma con contexto de fila; no se usa en este paso.
     payload = _construir_payload_fila_importacion(
         row=row,
         offset=offset,
@@ -1443,8 +1767,24 @@ def _procesar_beneficiario_desde_row_importacion(
         normalizar_sexo=normalizar_sexo,
     )
 
+    responsable_payload = None
+    es_mismo_documento_resp = False
+    if _debe_validarse_responsable_importacion(payload):
+        (
+            responsable_payload,
+            es_mismo_documento_resp,
+        ) = _validar_y_normalizar_responsable_payload_importacion(
+            payload=payload,
+            provincia_usuario_id=provincia_usuario_id,
+            offset=offset,
+            normalizar_sexo=normalizar_sexo,
+            to_date=to_date,
+            add_warning=add_warning,
+            add_error=add_error,
+            validar_edad_responsable_fn=validar_edad_responsable,
+        )
+
     # Detectar doble rol: mismo documento O documento en lista de doble rol
-    es_mismo_documento_resp = _es_mismo_documento_responsable_importacion(payload)
     doc_beneficiario = str(payload.get("documento", "")).strip()
     es_doble_rol = es_mismo_documento_resp or (doc_beneficiario in doble_rol_docs)
 
@@ -1470,7 +1810,13 @@ def _procesar_beneficiario_desde_row_importacion(
         get_or_create_ciudadano=get_or_create_ciudadano,
         es_mismo_documento_resp=es_doble_rol,
     )
-    return payload, resultado_beneficiario, cid
+    return (
+        payload,
+        responsable_payload,
+        es_mismo_documento_resp,
+        resultado_beneficiario,
+        cid,
+    )
 
 
 def _procesar_responsable_si_corresponde_importacion(
@@ -1491,11 +1837,13 @@ def _procesar_responsable_si_corresponde_importacion(
     legajos_crear,
     relaciones_familiares_pairs,
     relaciones_familiares,
+    responsable_payload=None,
 ):
-    if not _tiene_datos_responsable_importacion(payload):
-        return
+    if responsable_payload is None:
+        if not _debe_validarse_responsable_importacion(payload):
+            return None, False, False
 
-    _procesar_responsable_importacion(
+    return _procesar_responsable_importacion(
         payload=payload,
         cid_beneficiario=cid_beneficiario,
         usuario=usuario,
@@ -1513,6 +1861,7 @@ def _procesar_responsable_si_corresponde_importacion(
         relaciones_familiares_pairs=relaciones_familiares_pairs,
         relaciones_familiares=relaciones_familiares,
         get_or_create_ciudadano=get_or_create_ciudadano,
+        responsable_payload=responsable_payload,
     )
 
 
@@ -1541,10 +1890,25 @@ def _procesar_fila_legajo_importacion(
     relaciones_familiares_pairs,
     relaciones_familiares,
     doble_rol_docs,
+    warnings,
 ):
+    cid = None
+    cid_resp = None
+    legajo_responsable_agregado = False
+    relacion_agregada = False
+    warnings_len = len(warnings)
+    legajos_len = len(legajos_crear)
+    relaciones_len = len(relaciones_familiares)
+
     try:
-        payload, resultado_beneficiario, cid = (
-            _procesar_beneficiario_desde_row_importacion(
+        with transaction.atomic():
+            (
+                payload,
+                responsable_payload,
+                es_mismo_documento_resp,
+                resultado_beneficiario,
+                cid,
+            ) = _procesar_beneficiario_desde_row_importacion(
                 row=row,
                 offset=offset,
                 usuario=usuario,
@@ -1567,33 +1931,48 @@ def _procesar_fila_legajo_importacion(
                 legajos_crear=legajos_crear,
                 doble_rol_docs=doble_rol_docs,
             )
-        )
-        if resultado_beneficiario == "error":
-            return 0, 1
-        if resultado_beneficiario == "excluido":
-            return 0, 0
+            if resultado_beneficiario == "error":
+                del warnings[warnings_len:]
+                return 0, 1
+            if resultado_beneficiario == "excluido":
+                return 0, 0
 
-        _procesar_responsable_si_corresponde_importacion(
-            payload=payload,
-            cid_beneficiario=cid,
-            usuario=usuario,
-            expediente=expediente,
-            estado_id=estado_id,
-            provincia_usuario_id=provincia_usuario_id,
-            offset=offset,
-            normalizar_sexo=normalizar_sexo,
-            to_date=to_date,
-            add_warning=add_warning,
-            add_error=add_error,
-            get_or_create_ciudadano=get_or_create_ciudadano,
-            existentes_ids=existentes_ids,
-            legajos_crear=legajos_crear,
-            relaciones_familiares_pairs=relaciones_familiares_pairs,
-            relaciones_familiares=relaciones_familiares,
-        )
+            (
+                cid_resp,
+                legajo_responsable_agregado,
+                relacion_agregada,
+            ) = _procesar_responsable_si_corresponde_importacion(
+                payload=payload,
+                cid_beneficiario=cid,
+                usuario=usuario,
+                expediente=expediente,
+                estado_id=estado_id,
+                provincia_usuario_id=provincia_usuario_id,
+                offset=offset,
+                normalizar_sexo=normalizar_sexo,
+                to_date=to_date,
+                add_warning=add_warning,
+                add_error=add_error,
+                get_or_create_ciudadano=get_or_create_ciudadano,
+                existentes_ids=existentes_ids,
+                legajos_crear=legajos_crear,
+                relaciones_familiares_pairs=relaciones_familiares_pairs,
+                relaciones_familiares=relaciones_familiares,
+                responsable_payload=responsable_payload,
+            )
 
         return 1, 0
     except Exception as exc:  # pylint: disable=broad-exception-caught
+        del warnings[warnings_len:]
+        del legajos_crear[legajos_len:]
+        del relaciones_familiares[relaciones_len:]
+        if relacion_agregada and cid_resp and cid:
+            relaciones_familiares_pairs.discard((cid_resp, cid))
+        if legajo_responsable_agregado and cid_resp:
+            existentes_ids.discard(cid_resp)
+        if cid:
+            existentes_ids.discard(cid)
+            abiertos.pop(cid, None)
         _registrar_error_fila_importacion(detalles_errores, row, offset, exc)
         return 0, 1
 
@@ -1669,6 +2048,7 @@ def _build_contexto_filas_importacion_legajos(
         "relaciones_familiares_pairs": relaciones_familiares_pairs,
         "relaciones_familiares": relaciones_familiares,
         "doble_rol_docs": doble_rol_docs,
+        "warnings": warnings,
     }
 
 
@@ -1806,7 +2186,7 @@ class ImportacionService:
             "NOMBRE_REPSONSABLE",
             "Cuit_Responsable",
             "FECHA_DE_NACIMIENTO_RESPONSABLE",
-            "SEXO",
+            "SEXO_RESPONSABLE",
             "DOMICILIO_RESPONSABLE",
             "LOCALIDAD_RESPONSABLE",
             "CELULAR_RESPONSABLE",
