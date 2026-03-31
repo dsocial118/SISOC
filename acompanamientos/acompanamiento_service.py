@@ -8,7 +8,11 @@ from admisiones.models.admisiones import (
     InformeTecnico,
 )
 from acompanamientos.models.hitos import Hitos, HitosIntervenciones
-from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
+from acompanamientos.models.acompanamiento import (
+    Acompanamiento,
+    InformacionRelevante,
+    Prestacion,
+)
 from duplas.models import Dupla
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
 from comedores.models import Comedor
@@ -248,25 +252,26 @@ class AcompanamientoService:
             return {}
 
     @staticmethod
-    def importar_datos_desde_admision(comedor):
-        """Copiar información relevante desde la admisión vinculada.
+    def importar_datos_desde_admision(admision):
+        """Crear el Acompanamiento y copiar la información relevante desde la admisión dada.
 
         Args:
-            comedor: Comedor cuya admisión será consultada.
+            admision: Admision desde la cual importar los datos.
 
         Returns:
-            None
+            Acompanamiento: instancia creada o existente.
         """
         try:
-            try:
-                admision = Admision.objects.get(comedor=comedor)
-            except Admision.DoesNotExist as exc:
-                raise ValueError(
-                    "No se encontró una admisión para este comedor."
-                ) from exc
+            nro = admision.numero_convenio or (
+                str(admision.convenio_numero) if admision.convenio_numero else ""
+            )
+            acompanamiento, _ = Acompanamiento.objects.get_or_create(
+                admision=admision,
+                defaults={"nro_convenio": nro},
+            )
 
             InformacionRelevante.objects.update_or_create(
-                comedor=comedor,
+                acompanamiento=acompanamiento,
                 defaults={
                     "numero_expediente": admision.numero_expediente,
                     "numero_resolucion": admision.numero_resolucion,
@@ -277,19 +282,37 @@ class AcompanamientoService:
 
             prestaciones_admision = admision.prestaciones.all()
             with transaction.atomic():
-                Prestacion.objects.filter(comedor=comedor).delete()
+                Prestacion.objects.filter(acompanamiento=acompanamiento).delete()
                 for prestacion in prestaciones_admision:
                     Prestacion.objects.create(
-                        comedor=comedor,
+                        acompanamiento=acompanamiento,
                         dia=prestacion.dia,
                         desayuno=prestacion.desayuno,
                         almuerzo=prestacion.almuerzo,
                         merienda=prestacion.merienda,
                         cena=prestacion.cena,
                     )
+
+            # Vincular Hitos al Acompanamiento.
+            # Si ya existe un Hitos para el comedor sin acompanamiento asignado, se lo vincula.
+            # Si ya está vinculado a otro acompanamiento (segunda admisión del mismo comedor),
+            # se crea un Hitos nuevo solo con la FK de acompanamiento.
+            hitos = Hitos.objects.filter(comedor=admision.comedor).first()
+            if hitos:
+                if not hitos.acompanamiento_id:
+                    hitos.acompanamiento = acompanamiento
+                    hitos.save(update_fields=["acompanamiento"])
+            else:
+                Hitos.objects.create(
+                    comedor=admision.comedor,
+                    acompanamiento=acompanamiento,
+                )
+
+            return acompanamiento
         except Exception:
             logger.exception(
-                f"Error en AcompanamientoService.importar_datos_desde_admision para comedor: {comedor.pk}",
+                f"Error en AcompanamientoService.importar_datos_desde_admision "
+                f"para admision: {admision.pk}",
             )
             raise
 
