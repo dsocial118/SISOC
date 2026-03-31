@@ -817,6 +817,7 @@ class ComedorListView(LoginRequiredMixin, ListView):
             {"title": "Referente celular"},
             {"title": "Validación"},
             {"title": "Fecha validación"},
+            {"title": "Judicializado"},
         ]
         fields = [
             {"name": "id"},
@@ -842,6 +843,7 @@ class ComedorListView(LoginRequiredMixin, ListView):
             {"name": "referente_celular"},
             {"name": "validacion"},
             {"name": "fecha_validado"},
+            {"name": "judicializado"},
         ]
         columns_context = build_columns_context_from_fields(
             self.request,
