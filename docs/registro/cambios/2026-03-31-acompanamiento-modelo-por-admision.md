@@ -41,10 +41,22 @@ correspondiente. Esto replica el patrón ya existente en `admisiones` (FK→Come
 - Los 11 hitos huérfanos con datos serán resueltos manualmente por el equipo antes
   o después del deploy, sin bloquear el avance de la feature.
 
+## Fase 2 — Service layer (mismo commit)
+
+- `acompanamientos/acompanamiento_service.py`:
+  - `importar_datos_desde_admision` ahora recibe `admision` (antes `comedor`).
+  - Crea `Acompanamiento` via `get_or_create`, vincula `InformacionRelevante` y
+    `Prestacion` al nuevo modelo, y vincula/crea `Hitos` al `Acompanamiento`.
+  - Retorna la instancia de `Acompanamiento` creada.
+- `admisiones/services/admisiones_service/impl.py`:
+  - `comenzar_acompanamiento` pasa `admision` en vez de `admision.comedor`.
+- `tests/test_acompanamiento_service_helpers_unit.py`:
+  - Test `test_importar_datos_desde_admision_ok_y_sin_admision` reescrito como
+    `test_importar_datos_desde_admision_ok` para reflejar la nueva firma.
+
 ## Fases siguientes
 
-- **Fase 2:** actualizar `acompanamiento_service.py` y `admisiones_service.py`
-  para crear `Acompanamiento` al llamar a `comenzar_acompanamiento()` y eliminar
-  el uso de `Hitos.comedor`.
-- **Fase 3:** actualizar views, URLs y templates para navegar por admisión/convenio.
-- **Fase 4:** tests y limpieza de `Hitos.comedor`.
+- **Fase 3:** actualizar views, URLs y templates para navegar entre acompañamientos
+  por admisión/convenio, mostrar selector en legajo y badge de múltiples activos.
+- **Fase 4:** limpiar `Hitos.comedor` y actualizar `crear_hitos` /
+  `_ensure_hito_para_comedor` en `comedores/services/comedor_service/impl.py`.
