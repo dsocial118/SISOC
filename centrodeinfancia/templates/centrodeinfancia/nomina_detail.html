@@ -78,6 +78,14 @@
             </div>
         </div>
 
+        <div class="nomina-stat-card genero-x bg-purple">
+            <i class="fas fa-transgender nomina-stat-icon sisoclabel bg-lightpurple"></i>
+            <div class="nomina-stat-content">
+                <p class="nomina-stat-number">{{ nominaX|default:0 }}</p>
+                <p class="nomina-stat-label">Género X / No binario</p>
+            </div>
+        </div>
+
         <div class="nomina-stat-card menores bg-green">
             <i class="fas fa-child nomina-stat-icon sisoclabel bg-lightgreen"></i>
             <div class="nomina-stat-content">
@@ -105,20 +113,6 @@
         <div id="detailedStatsContent"
              class="nomina-detailed-content"
              style="display: none">
-
-            <!-- Sección: Distribución por Género -->
-            <h3 class="nomina-subsection-title">
-                <i class="fas fa-venus-mars me-2"></i>Distribución por Género
-            </h3>
-            <div class="nomina-stats-row">
-                <div class="nomina-stat-card genero-x bg-purple">
-                    <i class="fas fa-transgender nomina-stat-icon sisoclabel bg-lightpurple"></i>
-                    <div class="nomina-stat-content">
-                        <p class="nomina-stat-number">{{ nominaX|default:0 }}</p>
-                        <p class="nomina-stat-label">Género X / No binario</p>
-                    </div>
-                </div>
-            </div>
 
             <!-- Sección: Distribución por Edad -->
             <h3 class="nomina-subsection-title">
