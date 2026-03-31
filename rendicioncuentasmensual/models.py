@@ -152,19 +152,11 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
 
     @classmethod
     def categorias_obligatorias(cls):
-        return {
-            item["codigo"]
-            for item in cls.CATEGORIAS_CONFIG
-            if item["required"]
-        }
+        return {item["codigo"] for item in cls.CATEGORIAS_CONFIG if item["required"]}
 
     @classmethod
     def categorias_multiples(cls):
-        return {
-            item["codigo"]
-            for item in cls.CATEGORIAS_CONFIG
-            if item["multiple"]
-        }
+        return {item["codigo"] for item in cls.CATEGORIAS_CONFIG if item["multiple"]}
 
     @classmethod
     def get_categoria_config(cls, categoria):

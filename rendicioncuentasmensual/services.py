@@ -97,7 +97,9 @@ class RendicionCuentaMensualService:
     def _validar_categoria_documental(rendicion, categoria):
         config = DocumentacionAdjunta.get_categoria_config(categoria)
         if not config:
-            raise ValidationError({"categoria": "La categoría de documentación es inválida."})
+            raise ValidationError(
+                {"categoria": "La categoría de documentación es inválida."}
+            )
 
         if (
             not config["multiple"]
@@ -133,7 +135,9 @@ class RendicionCuentaMensualService:
         documentos = list(
             RendicionCuentaMensualService._documentos_activos_queryset(rendicion)
         )
-        grouped = {item["codigo"]: [] for item in DocumentacionAdjunta.categorias_mobile()}
+        grouped = {
+            item["codigo"]: [] for item in DocumentacionAdjunta.categorias_mobile()
+        }
         for documento in documentos:
             grouped.setdefault(documento.categoria, []).append(documento)
         return grouped
@@ -237,7 +241,9 @@ class RendicionCuentaMensualService:
         nombre,
     ):
         RendicionCuentaMensualService._validar_rendicion_editable(rendicion)
-        RendicionCuentaMensualService._validar_categoria_documental(rendicion, categoria)
+        RendicionCuentaMensualService._validar_categoria_documental(
+            rendicion, categoria
+        )
 
         documento = DocumentacionAdjunta.objects.create(
             nombre=nombre,
@@ -254,7 +260,9 @@ class RendicionCuentaMensualService:
     def eliminar_documentacion_mobile(*, rendicion, documento):
         RendicionCuentaMensualService._validar_rendicion_editable(rendicion)
         if documento.rendicion_cuenta_mensual_id != rendicion.id:
-            raise ValidationError({"detail": "El documento no pertenece a la rendición."})
+            raise ValidationError(
+                {"detail": "El documento no pertenece a la rendición."}
+            )
         documento.delete()
         RendicionCuentaMensualService._sincronizar_flag_documento_adjunto(rendicion)
 
@@ -276,8 +284,8 @@ class RendicionCuentaMensualService:
     @staticmethod
     def crear_rendicion_cuenta_mensual(comedor, data):
         try:
-            archivos_adjuntos = RendicionCuentaMensualService._get_archivos_adjuntos_data(
-                data
+            archivos_adjuntos = (
+                RendicionCuentaMensualService._get_archivos_adjuntos_data(data)
             )
             rendicion = RendicionCuentaMensual.objects.create(
                 comedor=comedor,
@@ -287,8 +295,7 @@ class RendicionCuentaMensualService:
                 numero_rendicion=data.get("numero_rendicion"),
                 periodo_inicio=data.get("periodo_inicio"),
                 periodo_fin=data.get("periodo_fin"),
-                estado=data.get("estado")
-                or RendicionCuentaMensual.ESTADO_ELABORACION,
+                estado=data.get("estado") or RendicionCuentaMensual.ESTADO_ELABORACION,
                 documento_adjunto=data.get("documento_adjunto"),
                 observaciones=data.get("observaciones"),
             )
@@ -306,8 +313,8 @@ class RendicionCuentaMensualService:
     @staticmethod
     def actualizar_rendicion_cuenta_mensual(rendicion, data):
         try:
-            archivos_adjuntos = RendicionCuentaMensualService._get_archivos_adjuntos_data(
-                data
+            archivos_adjuntos = (
+                RendicionCuentaMensualService._get_archivos_adjuntos_data(data)
             )
             rendicion.mes = data.get("mes")
             rendicion.anio = data.get("anio")

@@ -97,7 +97,9 @@ class PWAAccessMixin:
         password_reset_requested_at=None,
     ):
         profile.must_change_password = must_change_password
-        profile.password_changed_at = None if must_change_password else profile.password_changed_at
+        profile.password_changed_at = (
+            None if must_change_password else profile.password_changed_at
+        )
         profile.initial_password_expires_at = (
             timezone.now() + timedelta(hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS)
             if must_change_password

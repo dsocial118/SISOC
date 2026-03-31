@@ -114,10 +114,14 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
                 "results": serialized_items,
                 "secciones": {
                     "generales": [
-                        item for item in serialized_items if item["seccion"] == "general"
+                        item
+                        for item in serialized_items
+                        if item["seccion"] == "general"
                     ],
                     "espacios": [
-                        item for item in serialized_items if item["seccion"] == "espacio"
+                        item
+                        for item in serialized_items
+                        if item["seccion"] == "espacio"
                     ],
                 },
             },
@@ -441,7 +445,13 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
                     filter=Q(inscriptos__activo=True),
                 )
             )
-            .order_by("dia_actividad_id", "hora_inicio", "hora_fin", "catalogo_actividad__actividad", "id")
+            .order_by(
+                "dia_actividad_id",
+                "hora_inicio",
+                "hora_fin",
+                "catalogo_actividad__actividad",
+                "id",
+            )
         )
 
     def _get_object(self):
@@ -779,9 +789,9 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
                 {"detail": "Registro de nómina no encontrado."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        registros = nomina.registros_asistencia_pwa.select_related("tomado_por").order_by(
-            "-periodo_referencia", "-fecha_toma_asistencia", "-id"
-        )
+        registros = nomina.registros_asistencia_pwa.select_related(
+            "tomado_por"
+        ).order_by("-periodo_referencia", "-fecha_toma_asistencia", "-id")
         serializer = RegistroAsistenciaNominaPWAListSerializer(registros, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

@@ -354,7 +354,9 @@ def test_detalle_y_listado_reflejan_estado_visto(espacios):
 
 
 @pytest.mark.django_db
-def test_detalle_mensaje_incluye_fecha_creacion_y_datos_de_adjuntos(espacios, settings, tmp_path):
+def test_detalle_mensaje_incluye_fecha_creacion_y_datos_de_adjuntos(
+    espacios, settings, tmp_path
+):
     settings.MEDIA_ROOT = str(tmp_path)
     espacio_1, _ = espacios
     representante = _create_pwa_user(

@@ -1,8 +1,8 @@
-from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import (
     INTERNAL_RESET_SESSION_TOKEN,
     LoginView,
@@ -13,13 +13,15 @@ from django.contrib.auth.views import (
 )
 from django.db.models import Count
 from django.http import HttpResponseRedirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.generic import CreateView, DeleteView, FormView, ListView, UpdateView
+
 from core.services.column_preferences import build_columns_context
+
 from .forms import (
     BackofficeAuthenticationForm,
     CustomUserChangeForm,
@@ -72,7 +74,7 @@ class UserListView(AdminRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Configuración para el componente data_table
+        # Configuracion para el componente data_table
         context.update(UsuariosService.get_usuarios_list_context(self.request))
         context["user_table_items"] = UsuariosService.build_user_table_items(
             context["users"],
@@ -131,22 +133,14 @@ class UserUpdateView(AdminRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         profile = getattr(self.object, "profile", None)
-        context["temporary_password_visible"] = bool(
-            profile
-            and getattr(profile, "must_change_password", False)
-            and getattr(profile, "temporary_password_plaintext", None)
-        )
         context["password_reset_requested_at"] = (
             getattr(profile, "password_reset_requested_at", None) if profile else None
         )
-        context["temporary_password_plaintext"] = (
-            getattr(profile, "temporary_password_plaintext", None) if profile else None
         temporary_password_plaintext = get_temporary_password(
             self.request.session,
             user_id=self.object.pk,
         )
         if not temporary_password_plaintext:
-            profile = getattr(self.object, "profile", None)
             temporary_password_plaintext = getattr(
                 profile,
                 "temporary_password_plaintext",
@@ -203,6 +197,8 @@ class UserGenerateTemporaryPasswordView(AdminRequiredMixin, View):
             ),
         )
         return HttpResponseRedirect(reverse("usuario_editar", kwargs={"pk": user.pk}))
+
+
 class UserActiveView(AdminRequiredMixin, UpdateView):
     model = User
     template_name = "user/user_confirm_delete.html"
@@ -237,7 +233,7 @@ class GroupListView(AdminRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Configuración para el componente data_table
+        # Configuracion para el componente data_table
         context.update(
             build_columns_context(
                 self.request,

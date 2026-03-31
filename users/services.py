@@ -2,7 +2,6 @@ import logging
 from typing import List, Tuple
 
 from django.contrib.auth.models import User
-from django.db.models import Case, CharField, F, Value, When
 from django.db.models import Case, CharField, Count, F, Q, Value, When
 from django.urls import reverse
 
@@ -45,7 +44,9 @@ class UsuariosService:
     @staticmethod
     def has_pending_mobile_password_resets() -> bool:
         """Indica si existe al menos una solicitud pendiente de reset mobile."""
-        return Profile.objects.filter(password_reset_requested_at__isnull=False).exists()
+        return Profile.objects.filter(
+            password_reset_requested_at__isnull=False
+        ).exists()
 
     @staticmethod
     def can_view_mobile_reset_notifications(user: User) -> bool:
@@ -64,7 +65,7 @@ class UsuariosService:
     @staticmethod
     def _apply_actor_scope(base_qs, request_or_get):
         """
-        Restringe visibilidad de usuarios según el alcance delegable del actor.
+        Restringe visibilidad de usuarios segun el alcance delegable del actor.
 
         Regla: si el actor tiene configurado `grupos_asignables` y/o
         `roles_asignables` (auth.role_*), solo puede ver usuarios cuyos grupos
@@ -139,6 +140,8 @@ class UsuariosService:
                         then=Value("!"),
                     ),
                     default=Value("-"),
+                    output_field=CharField(),
+                ),
                 is_active_display=Case(
                     When(is_active=True, then=Value("true")),
                     default=Value("false"),
@@ -150,7 +153,7 @@ class UsuariosService:
 
     @staticmethod
     def get_usuarios_list_context(request):
-        """Configuración para la lista de usuarios."""
+        """Configuracion para la lista de usuarios."""
         columns_catalog = list(USUARIOS_COLUMNS)
         if not UsuariosService.has_pending_mobile_password_resets():
             columns_catalog = [
@@ -239,12 +242,12 @@ class UsuariosService:
 
 
 class UserPermissionService:
-    """Servicio para verificación y gestión de permisos de usuarios."""
+    """Servicio para verificacion y gestion de permisos de usuarios."""
 
     @staticmethod
     def get_coordinador_duplas(user: User) -> Tuple[bool, List[int]]:
         """
-        Obtiene información de coordinador de un usuario.
+        Obtiene informacion de coordinador de un usuario.
 
         Args:
             user: Usuario a verificar
@@ -289,7 +292,7 @@ class UserPermissionService:
 
     @staticmethod
     def tiene_grupo(user: User, permiso_codigo: str) -> bool:
-        """Verifica si un usuario tiene un permiso específico."""
+        """Verifica si un usuario tiene un permiso especifico."""
         if not user or not user.is_authenticated:
             return False
 
@@ -311,13 +314,13 @@ class UserPermissionService:
 
     @staticmethod
     def es_tecnico_o_abogado(user: User) -> bool:
-        """Verifica si un usuario es técnico de comedor o abogado de dupla."""
+        """Verifica si un usuario es tecnico de comedor o abogado de dupla."""
         return UserPermissionService.tiene_alguno_de_los_grupos(
             user, list(TECHNICAL_ROLE_PERMISSION_CODES)
         )
 
     @staticmethod
     def es_coordinador(user: User) -> bool:
-        """Verifica si un usuario es coordinador de gestión."""
+        """Verifica si un usuario es coordinador de gestion."""
         is_coord, _ = UserPermissionService.get_coordinador_duplas(user)
         return is_coord

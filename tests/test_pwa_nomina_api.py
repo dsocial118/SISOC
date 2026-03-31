@@ -365,7 +365,9 @@ def test_nomina_history_endpoint_returns_attendance_history(comedor, admision, s
 
 
 @pytest.mark.django_db
-def test_nomina_detail_endpoint_returns_linked_activities(comedor, admision, sexo_m, dia):
+def test_nomina_detail_endpoint_returns_linked_activities(
+    comedor, admision, sexo_m, dia
+):
     representante = _create_representante(
         comedor=comedor, username="rep_nomina_detalle"
     )
@@ -442,11 +444,14 @@ def test_nomina_register_attendance_current_month_is_idempotent(
     assert first_response.data["created"] is True
     assert second_response.status_code == 200
     assert second_response.data["created"] is False
-    assert RegistroAsistenciaNominaPWA.objects.filter(
-        nomina=nomina,
-        periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
-        periodo_referencia=timezone.localdate().replace(day=1),
-    ).count() == 1
+    assert (
+        RegistroAsistenciaNominaPWA.objects.filter(
+            nomina=nomina,
+            periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
+            periodo_referencia=timezone.localdate().replace(day=1),
+        ).count()
+        == 1
+    )
     assert AuditoriaOperacionPWA.objects.filter(
         entidad="nomina_asistencia",
         accion="create",

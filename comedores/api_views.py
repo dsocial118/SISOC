@@ -178,7 +178,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             return self.get_paginated_response(page)
         return Response(list(queryset), status=status.HTTP_200_OK)
 
-    # Los mÃ©todos de documentos se definen mÃ¡s abajo con su implementaciÃ³n real.
+    # Los métodos de documentos se definen más abajo con su implementación real.
 
     def get_queryset(self):
         scoped_ids = self._get_scoped_comedor_ids()
@@ -223,14 +223,16 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                         "anexo",
                         "anexo__tecnologia",
                         "anexo__distancia_transporte",
-                    ).prefetch_related(
+                    )
+                    .prefetch_related(
                         "espacio__cocina__abastecimiento_combustible",
                         "recursos__recursos_donaciones_particulares",
                         "recursos__recursos_estado_nacional",
                         "recursos__recursos_estado_provincial",
                         "recursos__recursos_estado_municipal",
                         "recursos__recursos_otros",
-                    ).order_by("-fecha_visita", "-id"),
+                    )
+                    .order_by("-fecha_visita", "-id"),
                     to_attr="relevamientos_optimized",
                 ),
                 Prefetch(
@@ -461,7 +463,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 name="page",
                 type=OpenApiTypes.INT,
                 location=OpenApiParameter.QUERY,
-                description="PÃ¡gina (paginaciÃ³n).",
+                description="Página (paginación).",
             ),
         ],
         responses=DocumentoComedorSerializer(many=True),
@@ -504,7 +506,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 )
             except (ValueError, TypeError):
                 return Response(
-                    {"detail": "Formato de fecha invÃ¡lido."},
+                    {"detail": "Formato de fecha inválido."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -658,7 +660,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         )
         if not admision:
             return Response(
-                {"detail": "No hay admisiÃ³n para este comedor."},
+                {"detail": "No hay admisión para este comedor."},
                 status=status.HTTP_404_NOT_FOUND,
             )
         if request.method.lower() == "get":
@@ -676,9 +678,9 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         if not archivo:
             return "Debe adjuntar un archivo."
         if archivo.content_type not in ALLOWED_COMPROBANTE_CONTENT_TYPES:
-            return "Tipo de archivo no permitido. Formatos vÃ¡lidos: PDF, JPG, PNG."
+            return "Tipo de archivo no permitido. Formatos válidos: PDF, JPG, PNG."
         if archivo.size > MAX_COMPROBANTE_FILE_SIZE:
-            return "El archivo excede el tamaÃ±o mÃ¡ximo permitido de 10 MB."
+            return "El archivo excede el tamaño máximo permitido de 10 MB."
         return None
 
     @extend_schema(
@@ -757,7 +759,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             )
         except ValueError:
             return Response(
-                {"detail": "user_id invÃ¡lido."},
+                {"detail": "user_id inválido."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except PermissionDenied as exc:
@@ -811,15 +813,15 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             try:
                 queryset = queryset.filter(anio=int(anio))
             except (TypeError, ValueError) as exc:
-                raise ValidationError("ParÃ¡metro anio invÃ¡lido.") from exc
+                raise ValidationError("Parámetro anio inválido.") from exc
 
         if mes:
             try:
                 mes_int = int(mes)
             except (TypeError, ValueError) as exc:
-                raise ValidationError("ParÃ¡metro mes invÃ¡lido.") from exc
+                raise ValidationError("Parámetro mes inválido.") from exc
             if mes_int < 1 or mes_int > 12:
-                raise ValidationError("ParÃ¡metro mes invÃ¡lido.")
+                raise ValidationError("Parámetro mes inválido.")
             queryset = queryset.filter(mes=mes_int)
 
         desde = request.query_params.get("desde")
@@ -831,9 +833,9 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         hasta_date = self._parse_period_date(hasta, is_end=True) if hasta else None
 
         if (desde and not desde_date) or (hasta and not hasta_date):
-            raise ValidationError("Formato de perÃ­odo invÃ¡lido.")
+            raise ValidationError("Formato de período inválido.")
         if desde_date and hasta_date and desde_date > hasta_date:
-            raise ValidationError("Rango de perÃ­odos invÃ¡lido.")
+            raise ValidationError("Rango de períodos inválido.")
 
         if desde_date:
             queryset = queryset.filter(
@@ -856,7 +858,10 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         detail=True,
         methods=["get", "post"],
         url_path="rendiciones",
-        permission_classes=[IsPWARepresentativeForComedor, HasMobileRendicionPermission],
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
     )
     def rendiciones(self, request, pk=None):
         comedor = self.get_object()
@@ -908,7 +913,6 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             status=status.HTTP_200_OK,
         )
 
-
     @extend_schema(
         responses=RendicionMensualDetailSerializer,
         tags=["Rendiciones"],
@@ -917,7 +921,10 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         detail=True,
         methods=["get"],
         url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)",
-        permission_classes=[IsPWARepresentativeForComedor, HasMobileRendicionPermission],
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
     )
     def rendicion_detalle(self, request, pk=None, rendicion_id=None):
         comedor = self.get_object()
@@ -953,7 +960,10 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         methods=["post"],
         url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)/documentacion",
         parser_classes=[MultiPartParser, FormParser],
-        permission_classes=[IsPWARepresentativeForComedor, HasMobileRendicionPermission],
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
     )
     def adjuntar_documentacion_rendicion(self, request, pk=None, rendicion_id=None):
         comedor = self.get_object()
@@ -973,6 +983,21 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         if not rendicion:
             raise Http404("Rendición no encontrada.")
 
+        return self._adjuntar_documentacion_respuesta(
+            request,
+            comedor=comedor,
+            rendicion=rendicion,
+        )
+
+    def _adjuntar_documentacion_respuesta(
+        self,
+        request,
+        *,
+        comedor,
+        rendicion,
+        categoria_override=None,
+    ):
+
         archivo = request.FILES.get("archivo")
         file_error = self._validate_comprobante_file(archivo)
         if file_error:
@@ -981,7 +1006,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        categoria = (request.data.get("categoria") or "").strip()
+        categoria = categoria_override or (request.data.get("categoria") or "").strip()
         nombre = (request.data.get("nombre") or "").strip() or archivo.name
         try:
             RendicionCuentaMensualService.adjuntar_documentacion_mobile(
@@ -1011,7 +1036,10 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         detail=True,
         methods=["post"],
         url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)/documentacion/(?P<documento_id>[^/.]+)/eliminar",
-        permission_classes=[IsPWARepresentativeForComedor, HasMobileRendicionPermission],
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
     )
     def eliminar_documentacion_rendicion(
         self, request, pk=None, rendicion_id=None, documento_id=None
@@ -1068,16 +1096,34 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         methods=["post"],
         url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)/comprobantes",
         parser_classes=[MultiPartParser, FormParser],
-        permission_classes=[IsPWARepresentativeForComedor, HasMobileRendicionPermission],
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
     )
     def adjuntar_comprobante_rendicion(self, request, pk=None, rendicion_id=None):
-        mutable_data = request.data.copy()
-        mutable_data["categoria"] = DocumentacionAdjunta.CATEGORIA_COMPROBANTES
-        request._full_data = mutable_data
-        return self.adjuntar_documentacion_rendicion(
+        comedor = self.get_object()
+        try:
+            rendicion_id = int(rendicion_id)
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "rendicion_id inválido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        rendicion = (
+            self._get_rendiciones_detail_queryset(comedor)
+            .filter(id=rendicion_id)
+            .first()
+        )
+        if not rendicion:
+            raise Http404("Rendición no encontrada.")
+
+        return self._adjuntar_documentacion_respuesta(
             request,
-            pk=pk,
-            rendicion_id=rendicion_id,
+            comedor=comedor,
+            rendicion=rendicion,
+            categoria_override=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
         )
 
     @extend_schema(
@@ -1088,7 +1134,10 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         detail=True,
         methods=["post"],
         url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)/presentar",
-        permission_classes=[IsPWARepresentativeForComedor, HasMobileRendicionPermission],
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
     )
     def presentar_rendicion(self, request, pk=None, rendicion_id=None):
         comedor = self.get_object()
@@ -1129,7 +1178,10 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         detail=True,
         methods=["post"],
         url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)/eliminar",
-        permission_classes=[IsPWARepresentativeForComedor, HasMobileRendicionPermission],
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
     )
     def eliminar_rendicion(self, request, pk=None, rendicion_id=None):
         comedor = self.get_object()
@@ -1161,7 +1213,6 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             {"detail": "Rendición eliminada."},
             status=status.HTTP_200_OK,
         )
-
 
     @extend_schema(
         responses=InformeTecnicoPrestacionSerializer,
@@ -1215,7 +1266,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 name="page",
                 type=OpenApiTypes.INT,
                 location=OpenApiParameter.QUERY,
-                description="PÃ¡gina (paginaciÃ³n).",
+                description="Página (paginación).",
             ),
         ],
         responses=InformeTecnicoPrestacionSerializer(many=True),
@@ -1236,12 +1287,12 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
         if (desde and not desde_date) or (hasta and not hasta_date):
             return Response(
-                {"detail": "Formato de fecha invÃ¡lido."},
+                {"detail": "Formato de fecha inválido."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if desde_date and hasta_date and desde_date > hasta_date:
             return Response(
-                {"detail": "Rango de fechas invÃ¡lido."},
+                {"detail": "Rango de fechas inválido."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -1304,5 +1355,3 @@ class NominaViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
             NominaSerializer(nomina).data,
             status=status.HTTP_200_OK,
         )
-
-

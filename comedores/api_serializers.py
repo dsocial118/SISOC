@@ -354,18 +354,45 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
 
         tipos_actividad = self._join_truthy_labels(
             [
-                ("Jardín maternal", getattr(anexo, "actividades_jardin_maternal", None)),
-                ("Jardín de infantes", getattr(anexo, "actividades_jardin_infantes", None)),
+                (
+                    "Jardín maternal",
+                    getattr(anexo, "actividades_jardin_maternal", None),
+                ),
+                (
+                    "Jardín de infantes",
+                    getattr(anexo, "actividades_jardin_infantes", None),
+                ),
                 ("Apoyo escolar", getattr(anexo, "apoyo_escolar", None)),
-                ("Actividades de alfabetización", getattr(anexo, "alfabetizacion_terminalidad", None)),
+                (
+                    "Actividades de alfabetización",
+                    getattr(anexo, "alfabetizacion_terminalidad", None),
+                ),
                 ("Talleres y oficios", getattr(anexo, "capacitaciones_talleres", None)),
                 ("Promoción de la salud", getattr(anexo, "promocion_salud", None)),
-                ("Actividades para discapacidad", getattr(anexo, "actividades_discapacidad", None)),
-                ("Necesidades alimentarias", getattr(anexo, "necesidades_alimentarias", None)),
-                ("Recreativas y deportivas", getattr(anexo, "actividades_recreativas", None)),
-                ("Actividades culturales", getattr(anexo, "actividades_culturales", None)),
-                ("Emprendimientos productivos", getattr(anexo, "emprendimientos_productivos", None)),
-                ("Actividades religiosas", getattr(anexo, "actividades_religiosas", None)),
+                (
+                    "Actividades para discapacidad",
+                    getattr(anexo, "actividades_discapacidad", None),
+                ),
+                (
+                    "Necesidades alimentarias",
+                    getattr(anexo, "necesidades_alimentarias", None),
+                ),
+                (
+                    "Recreativas y deportivas",
+                    getattr(anexo, "actividades_recreativas", None),
+                ),
+                (
+                    "Actividades culturales",
+                    getattr(anexo, "actividades_culturales", None),
+                ),
+                (
+                    "Emprendimientos productivos",
+                    getattr(anexo, "emprendimientos_productivos", None),
+                ),
+                (
+                    "Actividades religiosas",
+                    getattr(anexo, "actividades_religiosas", None),
+                ),
                 ("Actividades de huerta", getattr(anexo, "actividades_huerta", None)),
             ]
         )
@@ -393,10 +420,19 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
 
         fuentes_insumos = self._join_truthy_labels(
             [
-                ("Donaciones particulares", getattr(recursos, "recibe_donaciones_particulares", None)),
+                (
+                    "Donaciones particulares",
+                    getattr(recursos, "recibe_donaciones_particulares", None),
+                ),
                 ("Estado nacional", getattr(recursos, "recibe_estado_nacional", None)),
-                ("Estado provincial", getattr(recursos, "recibe_estado_provincial", None)),
-                ("Estado municipal", getattr(recursos, "recibe_estado_municipal", None)),
+                (
+                    "Estado provincial",
+                    getattr(recursos, "recibe_estado_provincial", None),
+                ),
+                (
+                    "Estado municipal",
+                    getattr(recursos, "recibe_estado_municipal", None),
+                ),
                 ("Otras fuentes", getattr(recursos, "recibe_otros", None)),
             ]
         )
@@ -410,7 +446,11 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                     "frecuencia_donaciones_particulares",
                     "recursos_donaciones_particulares",
                 ),
-                ("Estado nacional", "frecuencia_estado_nacional", "recursos_estado_nacional"),
+                (
+                    "Estado nacional",
+                    "frecuencia_estado_nacional",
+                    "recursos_estado_nacional",
+                ),
                 (
                     "Estado provincial",
                     "frecuencia_estado_provincial",
@@ -425,7 +465,9 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             ):
                 recursos_qs = getattr(recursos, recursos_attr, None)
                 recursos_names = (
-                    self._join_names(recursos_qs.all()) if recursos_qs is not None else "Sin dato"
+                    self._join_names(recursos_qs.all())
+                    if recursos_qs is not None
+                    else "Sin dato"
                 )
                 if recursos_names != "Sin dato":
                     tipos_insumos.append(f"{label}: {recursos_names}")
@@ -433,7 +475,9 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 if frecuencia:
                     frecuencias_insumos.append(f"{label}: {frecuencia}")
 
-        tipo_espacio = getattr(getattr(espacio, "tipo_espacio_fisico", None), "nombre", None)
+        tipo_espacio = getattr(
+            getattr(espacio, "tipo_espacio_fisico", None), "nombre", None
+        )
         if espacio and espacio.espacio_fisico_otro:
             tipo_espacio = (
                 f"{tipo_espacio} / {espacio.espacio_fisico_otro}"
@@ -471,7 +515,10 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             {
                 "pregunta": "¿Cuenta con espacio para el almacenamiento de productos fríos?",
                 "respuesta": self._format_bool_answer(
-                    bool(getattr(cocina, "heladera", False) or getattr(cocina, "freezer", False))
+                    bool(
+                        getattr(cocina, "heladera", False)
+                        or getattr(cocina, "freezer", False)
+                    )
                     if cocina
                     else None
                 ),
@@ -491,7 +538,11 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             {
                 "pregunta": "¿Qué tipo de servicio presta?",
                 "respuesta": (
-                    getattr(getattr(funcionamiento, "modalidad_prestacion", None), "nombre", None)
+                    getattr(
+                        getattr(funcionamiento, "modalidad_prestacion", None),
+                        "nombre",
+                        None,
+                    )
                     or "Sin dato"
                 ),
             },
@@ -511,7 +562,9 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 "pregunta": "¿Qué cantidad de personas prestan servicios en el Centro?",
                 "respuesta": (
                     getattr(
-                        getattr(colaboradores, "cantidad_colaboradores", None), "nombre", None
+                        getattr(colaboradores, "cantidad_colaboradores", None),
+                        "nombre",
+                        None,
                     )
                     or "Sin dato"
                 ),
@@ -525,13 +578,19 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             {
                 "pregunta": "¿El Centro cuenta con personas capacitadas en Seguridad e Higiene?",
                 "respuesta": self._format_bool_answer(
-                    getattr(colaboradores, "colaboradores_capacitados_salud_seguridad", None)
+                    getattr(
+                        colaboradores, "colaboradores_capacitados_salud_seguridad", None
+                    )
                 ),
             },
             {
                 "pregunta": "¿El Centro cuenta con personas capacitadas en Violencia de Género?",
                 "respuesta": self._format_bool_answer(
-                    getattr(colaboradores, "colaboradores_recibieron_capacitacion_violencia", None)
+                    getattr(
+                        colaboradores,
+                        "colaboradores_recibieron_capacitacion_violencia",
+                        None,
+                    )
                 ),
             },
             {
@@ -593,7 +652,11 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             {
                 "pregunta": "¿Qué tipo de desagüe poseen los sanitarios?",
                 "respuesta": (
-                    getattr(getattr(espacio_prestacion, "desague_hinodoro", None), "nombre", None)
+                    getattr(
+                        getattr(espacio_prestacion, "desague_hinodoro", None),
+                        "nombre",
+                        None,
+                    )
                     or "Sin dato"
                 ),
             },
@@ -615,7 +678,11 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             },
             {
                 "pregunta": "¿Con qué frecuencia recibe estos insumos?",
-                "respuesta": ", ".join(frecuencias_insumos) if frecuencias_insumos else "Sin dato",
+                "respuesta": (
+                    ", ".join(frecuencias_insumos)
+                    if frecuencias_insumos
+                    else "Sin dato"
+                ),
             },
             {
                 "pregunta": "¿El Centro cuenta con acceso a internet?",
@@ -626,7 +693,8 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             {
                 "pregunta": "¿Con qué dispositivo se conecta?",
                 "respuesta": (
-                    getattr(getattr(anexo, "tecnologia", None), "nombre", None) or "Sin dato"
+                    getattr(getattr(anexo, "tecnologia", None), "nombre", None)
+                    or "Sin dato"
                 ),
             },
             {
@@ -638,7 +706,9 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             {
                 "pregunta": "¿A qué distancia se encuentra el Centro del transporte público?",
                 "respuesta": (
-                    getattr(getattr(anexo, "distancia_transporte", None), "nombre", None)
+                    getattr(
+                        getattr(anexo, "distancia_transporte", None), "nombre", None
+                    )
                     or "Sin dato"
                 ),
             },
@@ -831,7 +901,9 @@ class NominaUpdateSerializer(NoSaveSerializer):
 class ComprobanteRendicionSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     estado_label = serializers.CharField(source="get_estado_display", read_only=True)
-    categoria_label = serializers.CharField(source="get_categoria_display", read_only=True)
+    categoria_label = serializers.CharField(
+        source="get_categoria_display", read_only=True
+    )
 
     class Meta:
         model = DocumentacionAdjunta
@@ -897,13 +969,16 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
     documentacion = serializers.SerializerMethodField()
 
     class Meta(RendicionMensualListSerializer.Meta):
-        fields = RendicionMensualListSerializer.Meta.fields + ("comprobantes", "documentacion")
+        fields = RendicionMensualListSerializer.Meta.fields + (
+            "comprobantes",
+            "documentacion",
+        )
 
     def get_documentacion(self, obj):
         documentos = list(
-            getattr(obj, "archivos_adjuntos").filter(deleted_at__isnull=True).order_by(
-                "categoria", "fecha_creacion", "id"
-            )
+            getattr(obj, "archivos_adjuntos")
+            .filter(deleted_at__isnull=True)
+            .order_by("categoria", "fecha_creacion", "id")
         )
         grouped = {}
         for documento in documentos:
@@ -945,9 +1020,13 @@ class RendicionMensualCreateSerializer(NoSaveSerializer):
         periodo_fin = attrs.get("periodo_fin")
         if periodo_inicio and periodo_fin and periodo_inicio > periodo_fin:
             raise serializers.ValidationError(
-                {"periodo_fin": "La fecha de fin debe ser posterior o igual a la fecha de inicio."}
+                {
+                    "periodo_fin": "La fecha de fin debe ser posterior o igual a la fecha de inicio."
+                }
             )
         attrs["convenio"] = (attrs.get("convenio") or "").strip()
         if not attrs["convenio"]:
-            raise serializers.ValidationError({"convenio": "Este campo es obligatorio."})
+            raise serializers.ValidationError(
+                {"convenio": "Este campo es obligatorio."}
+            )
         return attrs

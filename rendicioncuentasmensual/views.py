@@ -79,7 +79,9 @@ class RendicionCuentaMensualGlobalListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         """Retorna todas las rendiciones activas para el listado global."""
-        return RendicionCuentaMensualService.obtener_todas_rendiciones_cuentas_mensuales()
+        return (
+            RendicionCuentaMensualService.obtener_todas_rendiciones_cuentas_mensuales()
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -105,8 +107,8 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
         context["documentacion_por_categoria"] = (
             RendicionCuentaMensualService.obtener_documentacion_para_detalle(rendicion)
         )
-        context["scope_proyecto"] = RendicionCuentaMensualService.obtener_scope_proyecto(
-            rendicion
+        context["scope_proyecto"] = (
+            RendicionCuentaMensualService.obtener_scope_proyecto(rendicion)
         )
         return context
 

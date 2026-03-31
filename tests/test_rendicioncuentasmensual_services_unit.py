@@ -240,7 +240,10 @@ def test_obtener_scope_proyecto_con_codigo_y_organizacion(mocker):
         nombre="Comedor Base",
     )
     rendicion = SimpleNamespace(comedor=comedor)
-    expected = [SimpleNamespace(nombre="Comedor 1"), SimpleNamespace(nombre="Comedor 2")]
+    expected = [
+        SimpleNamespace(nombre="Comedor 1"),
+        SimpleNamespace(nombre="Comedor 2"),
+    ]
     filter_mock = mocker.patch(
         "rendicioncuentasmensual.services.Comedor.objects.filter",
         return_value=SimpleNamespace(order_by=lambda *_args: expected),

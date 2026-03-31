@@ -12,7 +12,9 @@ def _snapshot_actividad(actividad: ActividadEspacioPWA) -> dict:
         "comedor_id": actividad.comedor_id,
         "catalogo_actividad_id": actividad.catalogo_actividad_id,
         "dia_actividad_id": actividad.dia_actividad_id,
-        "hora_inicio": actividad.hora_inicio.isoformat() if actividad.hora_inicio else None,
+        "hora_inicio": (
+            actividad.hora_inicio.isoformat() if actividad.hora_inicio else None
+        ),
         "hora_fin": actividad.hora_fin.isoformat() if actividad.hora_fin else None,
         "horario_actividad": actividad.horario_actividad,
         "activo": actividad.activo,

@@ -201,7 +201,7 @@
         {% endwith %}
     {% endif %}
     <!-- MENÚ LEGAJOS -->
-    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual %}menu-open{% endif %}">
+    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual %}menu-open{% endif %}">
         <a href="#" class="nav-link">
             <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
             <p>
@@ -210,39 +210,6 @@
             </p>
         </a>
         <ul class="nav nav-treeview">
-            <!-- CIUDADANOS -->
-            {% if request.user|has_perm_code:"ciudadanos.view_ciudadano" %}
-                <li class="nav-item {% if 'ciudadanos' in pagina_actual %}menu-open{% endif %}">
-                    <a href="#"
-                       class="nav-link nav-dot ms-2 {% if 'ciudadanos' in pagina_actual %}active{% endif %}">
-                        <p>
-                            Historia Social Digital
-                            <i class="nav-arrow bi bi-chevron-right"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="{% url 'ciudadanos' %}"
-                               class="nav-link ms-4 {% if 'ciudadanos/listar' in pagina_actual %}active{% endif %}">
-                                <i class="nav-icon bi bi-arrow-return-right"></i>
-                                <p>Búsqueda</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-            {% endif %}
-            <!-- COMEDORES -->
-            {% if request.user|has_perm_code:"comedores.view_comedor" %}
-                <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}menu-open{% endif %}">
-                    <a href="#"
-                       class="nav-link nav-dot ms-2 {% if 'comedores' in pagina_actual %}active{% endif %}">
-                        <p>
-                            Comedores
-                            <i class="nav-arrow bi bi-chevron-right"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        {% if request.user|has_perm_code:"comedores.view_comedor" %}
             {% if not vat_sidebar_only %}
                 <!-- CIUDADANOS -->
                 {% if request.user|has_perm_code:"ciudadanos.view_ciudadano" %}
@@ -325,6 +292,15 @@
                                     </a>
                                 </li>
                             {% endif %}
+                            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'rendicioncuentasmensual_global_list' %}"
+                                       class="nav-link ms-4 {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Rendiciones</p>
+                                    </a>
+                                </li>
+                            {% endif %}
                             {% comment %}
                         <!-- RENDICIÓN DE CUENTAS FINAL -->
                         {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
@@ -357,19 +333,6 @@
                                     <p>Ver Organizaciones</p>
                                 </a>
                             </li>
-                        {% endif %}
-                        {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
-                            <li class="nav-item">
-                                <a href="{% url 'rendicioncuentasmensual_global_list' %}"
-                                   class="nav-link ms-4 {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
-                                    <i class="nav-icon bi bi-arrow-return-right"></i>
-                                    <p>Rendiciones</p>
-                                </a>
-                            </li>
-                        {% endif %}
-                        {% comment %}
-                        <!-- RENDICIÓN DE CUENTAS FINAL -->
-                        {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
                         </ul>
                     </li>
                 {% endif %}

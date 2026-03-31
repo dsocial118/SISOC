@@ -189,11 +189,7 @@ class PasswordChangeRequiredSerializer(serializers.Serializer):
 
         if bool(email) == bool(username):
             raise serializers.ValidationError(
-                {
-                    "detail": (
-                        "Debe enviar email o username para solicitar el reseteo."
-                    )
-                }
+                {"detail": ("Debe enviar email o username para solicitar el reseteo.")}
             )
 
         if username:

@@ -422,9 +422,7 @@ class RegistroAsistenciaNominaPWA(models.Model):
 
     PERIODICIDAD_MENSUAL = "mensual"
 
-    PERIODICIDAD_CHOICES = (
-        (PERIODICIDAD_MENSUAL, "Mensual"),
-    )
+    PERIODICIDAD_CHOICES = ((PERIODICIDAD_MENSUAL, "Mensual"),)
 
     nomina = models.ForeignKey(
         Nomina,

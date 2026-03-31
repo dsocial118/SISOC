@@ -99,8 +99,9 @@ def test_custom_user_change_form_assigns_direct_permissions(user):
 
     assert form.is_valid(), form.errors
     saved_user = form.save()
-    assert saved_user.user_permissions.filter(id=permission.id).exists()
-    assert user_has_permission_code(saved_user, "comedores.delete_comedor") is True
+    fresh_user = User.objects.get(pk=saved_user.pk)
+    assert fresh_user.user_permissions.filter(id=permission.id).exists()
+    assert user_has_permission_code(fresh_user, "comedores.delete_comedor") is True
 
 
 @pytest.mark.django_db
@@ -431,6 +432,35 @@ def test_user_list_shows_reset_pending_indicator_when_reset_pending(client):
     view_user_permission = Permission.objects.get(
         content_type__app_label="auth",
         codename="view_user",
+    )
+    admin.user_permissions.add(view_user_permission)
+
+    user = User.objects.create_user(
+        username="pending_reset_user",
+        email="pending_reset_user@example.com",
+        password="Anterior123!",
+    )
+    user.profile.password_reset_requested_at = user.profile.fecha_creacion
+    user.profile.save(update_fields=["password_reset_requested_at"])
+
+    client.force_login(admin)
+    response = client.get(reverse("usuarios"))
+
+    assert response.status_code == 200
+    assert response.context["table_headers"][-1]["title"] == "Reset"
+    assert (
+        response.context["table_fields"][-1]["name"]
+        == "password_reset_requested_indicator"
+    )
+    listed_users = list(response.context["users"])
+    pending_user = next(item for item in listed_users if item.pk == user.pk)
+    assert pending_user.password_reset_requested_indicator == "!"
+    content = response.content.decode("utf-8")
+    assert "pending_reset_user" in content
+    assert "!" in content
+
+
+@pytest.mark.django_db
 def test_user_create_view_redirects_with_temporary_password_visible(
     client, monkeypatch
 ):
@@ -454,28 +484,30 @@ def test_user_create_view_redirects_with_temporary_password_visible(
         content_type__app_label="auth",
         codename="change_user",
     )
-    admin.user_permissions.add(view_user_permission, change_user_permission)
-
-    user = User.objects.create_user(
-        username="pending_reset_user",
-        email="pending_reset_user@example.com",
-        password="Anterior123!",
-    )
-    user.profile.password_reset_requested_at = user.profile.fecha_creacion
-    user.profile.save(update_fields=["password_reset_requested_at"])
+    monkeypatch.setattr("users.forms.get_random_string", lambda _: "Temporal123!")
+    admin.user_permissions.add(add_user_permission)
+    admin.user_permissions.add(change_user_permission)
 
     client.force_login(admin)
-    response = client.get(reverse("usuarios"))
+    response = client.post(
+        reverse("usuario_crear"),
+        data={
+            "username": "mobile_visible",
+            "email": "mobile_visible@example.com",
+            "es_representante_pwa": True,
+            "tipo_asociacion_pwa": "organizacion",
+            "organizaciones_pwa": [organizacion.id],
+            "comedores_pwa": [comedor.id],
+        },
+        follow=True,
+    )
 
     assert response.status_code == 200
-    assert response.context["table_headers"][-1]["title"] == "Reset"
-    assert response.context["table_fields"][-1]["name"] == "password_reset_requested_indicator"
-    listed_users = list(response.context["users"])
-    pending_user = next(item for item in listed_users if item.pk == user.pk)
-    assert pending_user.password_reset_requested_indicator == "!"
+    created_user = User.objects.get(username="mobile_visible")
+    assert created_user.check_password("Temporal123!") is True
     content = response.content.decode("utf-8")
-    assert "fa-exclamation-circle" in content
-    assert "text-danger" in content
+    assert "Contraseña inicial generada: Temporal123!" in content
+    assert "Contraseña temporal vigente:" in content
 
 
 @pytest.mark.django_db
@@ -509,30 +541,32 @@ def test_user_update_view_shows_reset_alert_and_button_inside_mobile_card(client
     admin = User.objects.create_user(
         username="users_admin_edit_reset",
         email="users_admin_edit_reset@example.com",
-    admin.user_permissions.add(add_user_permission, change_user_permission)
-    monkeypatch.setattr("users.forms.get_random_string", lambda _: "Temporal123!")
+        password="Secreta123!",
+    )
+    change_user_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="change_user",
+    )
+    admin.user_permissions.add(change_user_permission)
+
+    user = User.objects.create_user(
+        username="pending_reset_edit",
+        email="pending_reset_edit@example.com",
+        password="Anterior123!",
+    )
+    user.profile.password_reset_requested_at = user.profile.fecha_creacion
+    user.profile.save(update_fields=["password_reset_requested_at"])
 
     client.force_login(admin)
-    response = client.post(
-        reverse("usuario_crear"),
-        data={
-            "username": "mobile_visible",
-            "email": "mobile_visible@example.com",
-            "es_representante_pwa": True,
-            "tipo_asociacion_pwa": "organizacion",
-            "organizaciones_pwa": [organizacion.id],
-            "comedores_pwa": [comedor.id],
-        },
-        follow=True,
-    )
+    response = client.get(reverse("usuario_editar", kwargs={"pk": user.pk}))
 
     assert response.status_code == 200
-    created_user = User.objects.get(username="mobile_visible")
-    assert created_user.check_password("Temporal123!") is True
-    assert "Contraseña inicial generada: Temporal123!" in response.content.decode(
-        "utf-8"
+    content = response.content.decode("utf-8")
+    assert "El usuario pidió el blanqueamiento de contraseña." in content
+    assert "Resetear contraseña" in content
+    assert (
+        reverse("usuario_generar_password_temporal", kwargs={"pk": user.pk}) in content
     )
-    assert "Contraseña temporal vigente:" in response.content.decode("utf-8")
 
 
 @pytest.mark.django_db
@@ -549,12 +583,6 @@ def test_user_update_view_handles_user_without_profile(client):
     admin.user_permissions.add(change_user_permission)
 
     user = User.objects.create_user(
-        username="pending_reset_edit",
-        email="pending_reset_edit@example.com",
-        password="Anterior123!",
-    )
-    user.profile.password_reset_requested_at = user.profile.fecha_creacion
-    user.profile.save(update_fields=["password_reset_requested_at"])
         username="legacy_without_profile",
         email="legacy_without_profile@example.com",
         password="Secreta123!",
@@ -565,10 +593,6 @@ def test_user_update_view_handles_user_without_profile(client):
     response = client.get(reverse("usuario_editar", kwargs={"pk": user.pk}))
 
     assert response.status_code == 200
-    content = response.content.decode("utf-8")
-    assert "El usuario pidió el blanqueamiento de contraseña." in content
-    assert "Resetear contraseña" in content
-    assert reverse("usuario_generar_password_temporal", kwargs={"pk": user.pk}) in content
 
 
 @pytest.mark.django_db

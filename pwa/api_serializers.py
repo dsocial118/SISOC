@@ -444,11 +444,7 @@ class ActividadEspacioPWACreateUpdateSerializer(serializers.ModelSerializer):
 
         if hora_fin <= hora_inicio:
             raise serializers.ValidationError(
-                {
-                    "hora_fin": (
-                        "La hora de fin debe ser posterior a la hora de inicio."
-                    )
-                }
+                {"hora_fin": ("La hora de fin debe ser posterior a la hora de inicio.")}
             )
 
         dia_actividad = attrs.get(
@@ -459,9 +455,8 @@ class ActividadEspacioPWACreateUpdateSerializer(serializers.ModelSerializer):
             "catalogo_actividad",
             getattr(self.instance, "catalogo_actividad", None),
         )
-        comedor_id = (
-            self.context.get("comedor_id")
-            or getattr(self.instance, "comedor_id", None)
+        comedor_id = self.context.get("comedor_id") or getattr(
+            self.instance, "comedor_id", None
         )
         if dia_actividad and comedor_id and catalogo_actividad:
             overlapping = ActividadEspacioPWA.objects.filter(
@@ -861,7 +856,11 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
         lecturas = obj.lecturas_pwa.filter(user=user)
         if obj.subtipo == SubtipoComunicado.INSTITUCIONAL:
             return lecturas.order_by("-fecha_visto", "-id").first()
-        return lecturas.filter(comedor_id=comedor_id).order_by("-fecha_visto", "-id").first()
+        return (
+            lecturas.filter(comedor_id=comedor_id)
+            .order_by("-fecha_visto", "-id")
+            .first()
+        )
 
     def get_visto(self, obj):
         lectura = self._get_lectura(obj)
