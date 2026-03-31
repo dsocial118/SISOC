@@ -133,65 +133,61 @@ class FormularioCDIForm(forms.ModelForm):
         return instance_value
 
     def _configurar_grupo_geo(self, sufijo):
-        province_field = f"provincia_{sufijo}"
-        department_field = f"departamento_{sufijo}"
-        municipality_field = f"municipio_{sufijo}"
-        locality_field = f"localidad_{sufijo}"
+        campos = {
+            "provincia": f"provincia_{sufijo}",
+            "departamento": f"departamento_{sufijo}",
+            "municipio": f"municipio_{sufijo}",
+            "localidad": f"localidad_{sufijo}",
+        }
+        instancias = {
+            nombre: getattr(self.instance, campo, None)
+            for nombre, campo in campos.items()
+        }
+        valores = {
+            nombre: self._obtener_valor_enlazado_o_inicial(campo, instancias[nombre])
+            for nombre, campo in campos.items()
+        }
 
-        province_instance = getattr(self.instance, province_field, None)
-        department_instance = getattr(self.instance, department_field, None)
-        municipality_instance = getattr(self.instance, municipality_field, None)
-        locality_instance = getattr(self.instance, locality_field, None)
-
-        province_value = self._obtener_valor_enlazado_o_inicial(
-            province_field, province_instance
-        )
-        department_value = self._obtener_valor_enlazado_o_inicial(
-            department_field, department_instance
-        )
-        municipality_value = self._obtener_valor_enlazado_o_inicial(
-            municipality_field, municipality_instance
-        )
-        locality_value = self._obtener_valor_enlazado_o_inicial(
-            locality_field, locality_instance
-        )
-
-        province = Provincia.objects.filter(pk=self._parsear_pk(province_value)).first()
-        department = DepartamentoIpi.objects.filter(
-            pk=self._parsear_pk(department_value)
+        provincia = Provincia.objects.filter(
+            pk=self._parsear_pk(valores["provincia"])
         ).first()
-        municipality = Municipio.objects.filter(
-            pk=self._parsear_pk(municipality_value)
+        departamento = DepartamentoIpi.objects.filter(
+            pk=self._parsear_pk(valores["departamento"])
         ).first()
-        locality = Localidad.objects.filter(pk=self._parsear_pk(locality_value)).first()
+        municipio = Municipio.objects.filter(
+            pk=self._parsear_pk(valores["municipio"])
+        ).first()
+        localidad = Localidad.objects.filter(
+            pk=self._parsear_pk(valores["localidad"])
+        ).first()
 
-        self.fields[province_field].queryset = Provincia.objects.all().order_by(
+        self.fields[campos["provincia"]].queryset = Provincia.objects.all().order_by(
             "nombre"
         )
-        self.fields[department_field].queryset = (
-            DepartamentoIpi.objects.filter(provincia=province).order_by("nombre")
-            if province
+        self.fields[campos["departamento"]].queryset = (
+            DepartamentoIpi.objects.filter(provincia=provincia).order_by("nombre")
+            if provincia
             else DepartamentoIpi.objects.none()
         )
-        self.fields[municipality_field].queryset = (
-            Municipio.objects.filter(provincia=province).order_by("nombre")
-            if province
+        self.fields[campos["municipio"]].queryset = (
+            Municipio.objects.filter(provincia=provincia).order_by("nombre")
+            if provincia
             else Municipio.objects.none()
         )
-        self.fields[locality_field].queryset = (
-            Localidad.objects.filter(municipio=municipality).order_by("nombre")
-            if municipality
+        self.fields[campos["localidad"]].queryset = (
+            Localidad.objects.filter(municipio=municipio).order_by("nombre")
+            if municipio
             else Localidad.objects.none()
         )
 
-        if province:
-            self.fields[province_field].initial = province
-        if department:
-            self.fields[department_field].initial = department
-        if municipality:
-            self.fields[municipality_field].initial = municipality
-        if locality:
-            self.fields[locality_field].initial = locality
+        if provincia:
+            self.fields[campos["provincia"]].initial = provincia
+        if departamento:
+            self.fields[campos["departamento"]].initial = departamento
+        if municipio:
+            self.fields[campos["municipio"]].initial = municipio
+        if localidad:
+            self.fields[campos["localidad"]].initial = localidad
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

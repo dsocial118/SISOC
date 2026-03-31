@@ -84,9 +84,9 @@ class CentroDeInfanciaForm(forms.ModelForm):
     def _aplicar_requeridos(self):
         for field_name in ["telefono", "telefono_referente"]:
             self.fields[field_name].required = True
-            self.fields[field_name].error_messages["required"] = (
-                "Este campo es obligatorio."
-            )
+            self.fields[field_name].error_messages[
+                "required"
+            ] = "Este campo es obligatorio."
 
     def _aplicar_atributos_numericos(self):
         # Campos estrictamente numéricos
@@ -150,8 +150,8 @@ class CentroDeInfanciaForm(forms.ModelForm):
                 provincia=provincia
             ).order_by("nombre")
         else:
-            self.fields["departamento"].queryset = DepartamentoIpi.objects.all().order_by(
-                "nombre"
+            self.fields["departamento"].queryset = (
+                DepartamentoIpi.objects.all().order_by("nombre")
             )
             self.fields["municipio"].queryset = Municipio.objects.all().order_by(
                 "nombre"

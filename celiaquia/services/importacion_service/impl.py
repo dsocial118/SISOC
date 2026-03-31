@@ -80,6 +80,7 @@ IMPORTACION_COLUMN_MAP = {
     "sexo_responsable": "sexo_responsable",
     "domicilio_responsable": "domicilio_responsable",
     "localidad_responsable": "localidad_responsable",
+    "celular_responsable": "telefono_responsable",
     "contacto_responsable": "contacto_responsable",
     "telefono_celular_responsable": "telefono_responsable",
     "telefono_responsable": "telefono_responsable",
@@ -102,7 +103,7 @@ IMPORTACION_COLUMN_MAP = {
     "EMAIL_RESPONSABLE": "email_responsable",
 }
 
-IMPORTACION_REQUIRED_FIELDS = (
+IMPORTACION_BENEFICIARIO_REQUIRED_FIELDS = (
     "apellido",
     "nombre",
     "documento",
@@ -114,6 +115,10 @@ IMPORTACION_REQUIRED_FIELDS = (
     "calle",
     "altura",
     "codigo_postal",
+)
+
+IMPORTACION_REQUIRED_FIELDS = (
+    *IMPORTACION_BENEFICIARIO_REQUIRED_FIELDS,
     "apellido_responsable",
     "nombre_responsable",
     "documento_responsable",
@@ -219,12 +224,19 @@ def _normalizar_dataframe_importacion(df: pd.DataFrame) -> pd.DataFrame:
 def _obtener_provincia_usuario_id(usuario):
     provincia_usuario_id = None
     try:
-        if (
-            hasattr(usuario, "profile")
-            and usuario.profile
-            and usuario.profile.provincia_id
-        ):
-            provincia_usuario_id = usuario.profile.provincia_id
+        profile = getattr(usuario, "profile", None)
+        if profile and profile.provincia_id:
+            provincia_usuario_id = profile.provincia_id
+        elif getattr(usuario, "id", None):
+            from users.models import Profile
+
+            profile = (
+                Profile.objects.select_related("provincia")
+                .filter(user_id=usuario.id)
+                .first()
+            )
+            if profile and profile.provincia_id:
+                provincia_usuario_id = profile.provincia_id
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.warning("No se pudo obtener provincia del usuario: %s", exc)
 
@@ -613,13 +625,23 @@ def _aplicar_defaults_y_validar_payload_importacion(payload, provincia_usuario_i
     if provincia_usuario_id:
         payload["provincia"] = provincia_usuario_id
 
-    validar_campos_obligatorios_importacion(payload)
+    validar_campos_obligatorios_importacion(
+        payload,
+        required_fields=IMPORTACION_BENEFICIARIO_REQUIRED_FIELDS,
+    )
 
     doc = payload.get("documento")
     if not doc:
         raise ValidationError("Documento es obligatorio")
     if not str(doc).isdigit():
         raise ValidationError("Documento debe contener sólo dígitos")
+
+
+def _validar_beneficiario_menor_con_responsable_importacion(payload):
+    ValidacionEdadService.validar_beneficiario_menor_con_responsable(
+        payload.get("fecha_nacimiento"),
+        tiene_responsable=_tiene_datos_responsable_importacion(payload),
+    )
 
 
 def _payload_sin_nulos(payload):
@@ -938,6 +960,7 @@ def validar_y_normalizar_payloads_importacion(
         localidades_cache=localidades_cache,
         normalizar_sexo=normalizar_sexo,
     )
+    _validar_beneficiario_menor_con_responsable_importacion(payload_normalizado)
 
     responsable_payload = None
     es_mismo_documento_resp = False
@@ -1518,6 +1541,7 @@ def _construir_payload_fila_importacion(
         localidades_cache=localidades_cache,
         normalizar_sexo=normalizar_sexo,
     )
+    _validar_beneficiario_menor_con_responsable_importacion(payload)
     return payload
 
 
@@ -1577,12 +1601,7 @@ def _tiene_datos_responsable_importacion(payload):
 
 
 def _debe_validarse_responsable_importacion(payload):
-    tiene_datos_responsable = _tiene_datos_responsable_importacion(payload)
-    ValidacionEdadService.validar_beneficiario_menor_con_responsable(
-        payload.get("fecha_nacimiento"),
-        tiene_responsable=tiene_datos_responsable,
-    )
-    return tiene_datos_responsable
+    return _tiene_datos_responsable_importacion(payload)
 
 
 IMPORTACION_NUMERIC_FIELDS = {

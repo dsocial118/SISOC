@@ -77,6 +77,8 @@ Si el archivo ya usa comentarios de bloques de imports, conservar el estilo loca
   - constantes: `UPPER_CASE`
 - Evitar nombres descartables salvo los ya aceptados por configuración (`i`, `j`, `k`, `pk`, `id`, `_`, `VAT`).
 - Mantener imports agrupados por origen y evitar imports innecesarios o variables declaradas pero no usadas.
+- Cuando `pylint` marca una violación, primero buscar una corrección de código: simplificar funciones, extraer helpers, mover lógica al boundary correcto, hacer más explícito el flujo o renombrar símbolos ambiguos.
+- Evitar `# pylint: disable=...`, `# pylint: skip-file` y ampliaciones de ignore como salida por defecto. Si hay una falsa positiva o una restricción real del framework, usar la supresión más chica posible y dejar constancia en el cambio.
 - Aunque `pylint` permite `max-line-length = 150`, para código nuevo/modificado se prioriza el límite práctico de `black` (`88`). Las líneas más largas deberían quedar reservadas a casos difíciles de partir limpiamente (URLs, strings fijas, regex, SQL, etc.).
 
 ## Tipado en Python (cuándo y cómo)
