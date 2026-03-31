@@ -558,8 +558,13 @@ body.sidebar-collapse .sidebar-user-name {
   margin-right: 0;
 }
 
-.accordion-header--ubicacion {
-  background-color: #f79d00;
+.accordion-header--informacion {
+  background-color: #0b756d;
+  color: #ffffff;
+}
+
+.accordion-header--informacion {
+  background-color: #66a900;
   color: #ffffff;
 }
 
