@@ -12,6 +12,14 @@ footer.app-footer {
     display: flex;
 }
 
+/* Modales por encima del footer fijo (z-index: 3000) */
+.modal-backdrop {
+    z-index: 3050 !important;
+}
+.modal {
+    z-index: 3100 !important;
+}
+
 .app-sidebar {
     background-color: #232d4f !important;
     position: fixed;

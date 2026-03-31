@@ -8,6 +8,8 @@ from django.views.generic import (
 )
 from django.urls import reverse, reverse_lazy
 from django.contrib import messages
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 
 from VAT.models import (
     Sector,
@@ -327,6 +329,21 @@ class TituloReferenciaCreateView(LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse("vat_titulorreferencia_detail", kwargs={"pk": self.object.pk})
+
+
+@login_required
+def subsectores_por_sector(request):
+    """Devuelve subsectores filtrados por sector. Usado por el modal de Título de Referencia."""
+    sector_id = request.GET.get("sector_id")
+    if not sector_id:
+        return JsonResponse({"subsectores": []})
+    try:
+        sector_id = int(sector_id)
+    except (ValueError, TypeError):
+        return JsonResponse({"subsectores": []})
+    qs = Subsector.objects.filter(sector_id=sector_id).order_by("nombre")
+    data = [{"id": s.id, "nombre": s.nombre} for s in qs]
+    return JsonResponse({"subsectores": data})
 
 
 class TituloReferenciaDetailView(LoginRequiredMixin, DetailView):

@@ -44,6 +44,7 @@ from VAT.views.catalogo import (
     PlanVersionCurricularDetailView,
     PlanVersionCurricularUpdateView,
     PlanVersionCurricularDeleteView,
+    subsectores_por_sector,
 )
 
 from VAT.views.oferta import (
@@ -117,6 +118,7 @@ from VAT.views.voucher_parametria import (
 from VAT.views.persona import (
     InscripcionListView,
     InscripcionCreateView,
+    InscripcionRapidaComisionView,
     InscripcionDetailView,
     InscripcionUpdateView,
     InscripcionDeleteView,
@@ -228,6 +230,12 @@ urlpatterns = [
         "vat/catalogos/sectores/<int:pk>/eliminar/",
         permissions_any_required(["VAT.delete_sector"])(SectorDeleteView.as_view()),
         name="vat_sector_delete",
+    ),
+    # AJAX - Subsectores por Sector
+    path(
+        "vat/catalogos/ajax/subsectores/",
+        subsectores_por_sector,
+        name="vat_subsectores_por_sector",
     ),
     # Catálogos Académicos - Subsectores
     path(
@@ -718,6 +726,13 @@ urlpatterns = [
             InscripcionCreateView.as_view()
         ),
         name="vat_inscripcion_create",
+    ),
+    path(
+        "vat/inscripciones/rapida-comision/",
+        permissions_any_required(["VAT.add_inscripcion"])(
+            InscripcionRapidaComisionView.as_view()
+        ),
+        name="vat_inscripcion_rapida_comision",
     ),
     path(
         "vat/inscripciones/<int:pk>/",

@@ -78,7 +78,6 @@
                     </div>
                     <div class="card-body">
                         <div id="mobile-toggle-wrapper">{{ form.es_representante_pwa | as_crispy_field }}</div>
-                        <div id="mobile-association-type-wrapper" style="display: none">{{ form.tipo_asociacion_pwa | as_crispy_field }}</div>
                         <div id="mobile-association-choice-wrapper" class="mb-3">
                             <div class="mobile-selector-intro">
                                 <div>
@@ -240,6 +239,8 @@
                         {{ form.provincia|as_crispy_field }}
                         {{ form.es_coordinador|as_crispy_field }}
                         {{ form.duplas_asignadas|as_crispy_field }}
+                        {{ form.grupos_asignables|as_crispy_field }}
+                        {{ form.roles_asignables|as_crispy_field }}
                     </div>
                 </div>
 
@@ -252,7 +253,6 @@
     <script nonce="{{ request.csp_nonce }}">
   (() => {
     const repCheckbox = document.getElementById('id_es_representante_pwa');
-    const tipoAsociacion = document.getElementById('id_tipo_asociacion_pwa');
     const organizacionesSelect = document.getElementById('id_organizaciones_pwa');
     const comedoresSelect = document.getElementById('id_comedores_pwa');
     const mobileTabs = document.getElementById('mobile-tabs');
@@ -261,7 +261,6 @@
     const passwordFieldWrapper = document.getElementById('password-field-wrapper');
     const mobilePasswordHelp = document.getElementById('mobile-password-help');
     const associationChoiceWrapper = document.getElementById('mobile-association-choice-wrapper');
-    const associationTypeWrapper = document.getElementById('mobile-association-type-wrapper');
     const organizacionesWrapper = document.getElementById('mobile-organizaciones-wrapper');
     const comedoresWrapper = document.getElementById('mobile-comedores-wrapper');
     const organizacionesSearch = document.getElementById('mobile-organizaciones-search');
@@ -275,7 +274,7 @@
     const comedoresTableBody = document.getElementById('mobile-comedores-table-body');
     const comedoresEmptyState = document.getElementById('mobile-comedores-empty-state');
 
-    if (!repCheckbox || !tipoAsociacion || !comedoresSelect || !organizacionesSelect || !mobileTabs) {
+    if (!repCheckbox || !comedoresSelect || !organizacionesSelect || !mobileTabs) {
       return;
     }
 
@@ -433,28 +432,6 @@
       }
     };
 
-    const syncAssociationType = () => {
-      const selectedOrganizationIds = new Set(getSelectedValues(organizacionesSelect));
-      const hasOrganizations = selectedOrganizationIds.size > 0;
-      const hasStandaloneSpaces = Array.from(comedoresSelect.selectedOptions).some(
-        (option) => !selectedOrganizationIds.has(option.dataset.organizacionId || ''),
-      );
-
-      if (hasOrganizations && hasStandaloneSpaces) {
-        tipoAsociacion.value = '';
-        return;
-      }
-      if (hasOrganizations) {
-        tipoAsociacion.value = 'organizacion';
-        return;
-      }
-      if (hasStandaloneSpaces) {
-        tipoAsociacion.value = 'espacio';
-        return;
-      }
-      tipoAsociacion.value = '';
-    };
-
     const getComedoresOptionsByOrganization = () => {
       const selectedOrganizationIds = new Set(getSelectedValues(organizacionesSelect));
       const organizationOptions = [];
@@ -483,7 +460,6 @@
         comedoresOrganizacionHint,
       );
       applyComedoresSearch(comedoresTableBody, comedoresSearch, comedoresEmptyState);
-      syncAssociationType();
     };
 
     const syncComedoresForOrganizaciones = ({ preserveRemovedSelections = false } = {}) => {
@@ -527,12 +503,10 @@
       const isPwaUser = repCheckbox.checked;
 
       associationChoiceWrapper.style.display = isPwaUser ? '' : 'none';
-      associationTypeWrapper.style.display = 'none';
 
       if (!isPwaUser) {
         organizacionesWrapper.style.display = 'none';
         comedoresWrapper.style.display = 'none';
-        tipoAsociacion.value = '';
         if (organizacionesSearch) {
           organizacionesSearch.value = '';
           applyOrganizationSearch();
