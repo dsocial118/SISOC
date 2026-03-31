@@ -343,6 +343,63 @@ def test_actualizar_registro_erroneo_mergea_campos_omitidos_y_conserva_sexo(clie
 
 
 @pytest.mark.django_db
+def test_actualizar_registro_erroneo_permite_borrar_ultimo_dato_responsable(client):
+    user, provincia = _crear_usuario_provincial("prov_update_clear_resp")
+    user.is_superuser = True
+    user.save(update_fields=["is_superuser"])
+    expediente = _crear_contexto_expediente(user)
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    Nacionalidad.objects.create(nacionalidad="Argentina")
+    Sexo.objects.create(sexo="Masculino")
+    Sexo.objects.create(sexo="Femenino")
+    registro = RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=2,
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "30123456789",
+            "fecha_nacimiento": "01/01/1995",
+            "sexo": "1",
+            "nacionalidad": "1",
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+            "telefono_responsable": "3415550000",
+        },
+        mensaje_error="Faltan campos obligatorios del responsable",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("registro_erroneo_actualizar", args=[expediente.pk, registro.pk]),
+        data=json.dumps({"telefono_responsable": ""}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+
+    registro.refresh_from_db()
+    assert "telefono_responsable" not in registro.datos_raw
+    assert all(
+        campo not in registro.datos_raw
+        for campo in (
+            "apellido_responsable",
+            "nombre_responsable",
+            "documento_responsable",
+            "fecha_nacimiento_responsable",
+            "sexo_responsable",
+            "domicilio_responsable",
+            "localidad_responsable",
+            "email_responsable",
+        )
+    )
+
+
+@pytest.mark.django_db
 def test_importacion_con_sexo_responsable_invalido_no_crea_legajo_parcial():
     user, provincia = _crear_usuario_provincial("prov_resp_invalid")
     expediente = _crear_contexto_expediente(user)

@@ -41,6 +41,7 @@ from celiaquia.services.expediente_service import (
 from celiaquia.services.importacion_service import (
     ImportacionService,
     IMPORTACION_EDITABLE_FIELDS,
+    IMPORTACION_RESPONSABLE_FIELDS,
     validar_y_normalizar_payloads_importacion,
 )
 from celiaquia.services.cruce_service import CruceService
@@ -133,6 +134,17 @@ def _consolidar_datos_registro_erroneo(datos_previos, datos_nuevos):
             datos_consolidados.pop(field, None)
             continue
         datos_consolidados[field] = value
+
+    responsable_tocado = any(
+        field in datos_nuevos for field in IMPORTACION_RESPONSABLE_FIELDS
+    )
+    responsable_vacio = not any(
+        datos_consolidados.get(field) not in (None, "")
+        for field in IMPORTACION_RESPONSABLE_FIELDS
+    )
+    if responsable_tocado and responsable_vacio:
+        for field in IMPORTACION_RESPONSABLE_FIELDS:
+            datos_consolidados.pop(field, None)
     return datos_consolidados
 
 
