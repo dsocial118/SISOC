@@ -355,6 +355,54 @@ def test_formulario_cdi_crear_autocompleta_campos_nuevos_desde_centro(client):
 
 
 @pytest.mark.django_db
+def test_detalle_cdi_muestra_nuevos_paneles_y_campos(client):
+    user = _crear_usuario("super-cdi-detalle-campos", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Detalle",
+        organizacion="Asociacion Civil Horizonte",
+        cuit_organizacion_gestiona="20445350304",
+        ambito="rural",
+        mail="detalle@example.com",
+        fecha_inicio=date(2024, 5, 20),
+        codigo_postal=1234,
+        latitud="-34.603700",
+        longitud="-58.381600",
+        meses_funcionamiento=["enero", "febrero"],
+        dias_funcionamiento=["lunes", "martes"],
+        tipo_jornada="simple_single_shift",
+        oferta_servicios="multiedad",
+        modalidad_gestion="gestion_tercer_sector",
+    )
+    CentroDeInfanciaHorarioFuncionamiento.objects.create(
+        centro=centro,
+        dia="lunes",
+        hora_apertura="08:00",
+        hora_cierre="12:00",
+    )
+
+    response = client.get(reverse("centrodeinfancia_detalle", kwargs={"pk": centro.pk}))
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "accordion-header--informacion-basica" in content
+    assert "Informacion Basica" in content
+    assert "accordion-header--funcionamiento" in content
+    assert "Funcionamiento" in content
+    assert "Asociacion Civil Horizonte" in content
+    assert "20-44535030-4" in content
+    assert "detalle@example.com" in content
+    assert "20/05/2024" in content
+    assert "1234" in content
+    assert "Latitud:" in content
+    assert "Longitud:" in content
+    assert "Enero, Febrero" in content
+    assert "Lunes, Martes" in content
+    assert "Lunes: 08:00 a 12:00" in content
+    assert "Multiedad" in content
+
+
+@pytest.mark.django_db
 def test_formulario_cdi_form_sections_agrupa_meses_y_dias_en_la_misma_fila(client):
     user = _crear_usuario("super-form-layout", superuser=True)
     client.force_login(user)

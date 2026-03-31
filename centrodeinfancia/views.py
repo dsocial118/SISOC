@@ -49,6 +49,7 @@ from centrodeinfancia.forms import (
     ObservacionCentroInfanciaForm,
     TrabajadorForm,
 )
+from centrodeinfancia.formulario_cdi_schema import CAMPOS_OPCIONES_MULTIPLES
 from centrodeinfancia.models import (
     CentroDeInfancia,
     DepartamentoIpi,
@@ -92,6 +93,9 @@ logger = logging.getLogger(__name__)
 DOCUMENTACION_INTERVENCION_MAX_SIZE_BYTES = 5 * 1024 * 1024
 DOCUMENTACION_INTERVENCION_EXTS_PERMITIDAS = {".pdf", ".jpg", ".jpeg", ".png"}
 
+MESES_FUNCIONAMIENTO_MAP = dict(CAMPOS_OPCIONES_MULTIPLES["meses_funcionamiento"])
+DIAS_FUNCIONAMIENTO_MAP = dict(CAMPOS_OPCIONES_MULTIPLES["dias_funcionamiento"])
+
 
 def _centros_cdi_queryset_detalle():
     return CentroDeInfancia.objects.select_related(
@@ -99,7 +103,43 @@ def _centros_cdi_queryset_detalle():
         "departamento",
         "municipio",
         "localidad",
-    )
+    ).prefetch_related("horarios_funcionamiento")
+
+
+def _formatear_lista_opciones(valores, labels_map):
+    if not valores:
+        return "-"
+    return ", ".join(labels_map.get(valor, valor) for valor in valores)
+
+
+def _formatear_cuit(value):
+    if not value:
+        return "-"
+    digits = "".join(ch for ch in str(value) if ch.isdigit())[:11]
+    if len(digits) != 11:
+        return value
+    return f"{digits[:2]}-{digits[2:10]}-{digits[10:]}"
+
+
+def _construir_horarios_detalle(centro):
+    horarios = []
+    for horario in centro.horarios_funcionamiento.all():
+        horarios.append(
+            {
+                "dia": horario.get_dia_display(),
+                "apertura": (
+                    horario.hora_apertura.strftime("%H:%M")
+                    if horario.hora_apertura
+                    else "-"
+                ),
+                "cierre": (
+                    horario.hora_cierre.strftime("%H:%M")
+                    if horario.hora_cierre
+                    else "-"
+                ),
+            }
+        )
+    return horarios
 
 
 def _centros_cdi_queryset_scoped(user):
@@ -515,6 +555,47 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["observaciones_page_obj"] = observaciones_page_obj
         context["observaciones_is_paginated"] = observaciones_page_obj.has_other_pages()
         context["observaciones_page_range"] = observaciones_page_range
+        context["centro_info_basica"] = {
+            "organizacion": self.object.organizacion or "-",
+            "cuit_organizacion_gestiona": _formatear_cuit(
+                self.object.cuit_organizacion_gestiona
+            ),
+            "ambito": self.object.get_ambito_display() or "-",
+            "mail": self.object.mail or "-",
+            "fecha_inicio": (
+                self.object.fecha_inicio.strftime("%d/%m/%Y")
+                if self.object.fecha_inicio
+                else "-"
+            ),
+        }
+        context["centro_funcionamiento"] = {
+            "meses_funcionamiento": _formatear_lista_opciones(
+                self.object.meses_funcionamiento,
+                MESES_FUNCIONAMIENTO_MAP,
+            ),
+            "dias_funcionamiento": _formatear_lista_opciones(
+                self.object.dias_funcionamiento,
+                DIAS_FUNCIONAMIENTO_MAP,
+            ),
+            "horarios": _construir_horarios_detalle(self.object),
+            "tipo_jornada": (
+                self.object.get_tipo_jornada_display()
+                if self.object.tipo_jornada
+                else "-"
+            ),
+            "tipo_jornada_otra": self.object.tipo_jornada_otra or "",
+            "oferta_servicios": (
+                self.object.get_oferta_servicios_display()
+                if self.object.oferta_servicios
+                else "-"
+            ),
+            "modalidad_gestion": (
+                self.object.get_modalidad_gestion_display()
+                if self.object.modalidad_gestion
+                else "-"
+            ),
+            "modalidad_gestion_otra": self.object.modalidad_gestion_otra or "",
+        }
 
         intervencion_form = IntervencionCentroInfanciaForm(
             destinatario_fijo_nombre="Centro",
