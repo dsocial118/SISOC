@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
+from django.utils import timezone
 
 from ciudadanos.models import Ciudadano
 from core.fields import UnicodeEmailField
@@ -386,6 +387,26 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
 
 
 class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
+    class RespuestaSiNoNsNc(models.TextChoices):
+        SI = "si", "Si"
+        NO = "no", "No"
+        NS_NC = "ns_nc", "Ns/Nc"
+
+    class TipoDiscapacidad(models.TextChoices):
+        MOTORA = "motora", "Motora"
+        VISUAL = "visual", "Visual"
+        AUDITIVA = "auditiva", "Auditiva"
+        INTELECTUAL = "intelectual", "Intelectual"
+        MENTAL = "mental", "Mental"
+        VISCERAL = "visceral", "Visceral"
+        MULTIPLE = "multiple", "Múltiple"
+        NS_NC = "ns_nc", "Ns/Nc"
+
+    class SexoChoices(models.TextChoices):
+        FEMENINO = "Femenino", "Femenino"
+        MASCULINO = "Masculino", "Masculino"
+        X = "X", "X"
+
     ESTADO_PENDIENTE = "pendiente"
     ESTADO_ACTIVO = "activo"
     ESTADO_BAJA = "baja"
@@ -412,6 +433,117 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         choices=ESTADO_CHOICES,
         default=ESTADO_PENDIENTE,
     )
+    dni = models.PositiveBigIntegerField(blank=True, null=True)
+    apellido = models.CharField(max_length=255, blank=True, null=True)
+    nombre = models.CharField(max_length=255, blank=True, null=True)
+    fecha_nacimiento = models.DateField(blank=True, null=True)
+    sexo = models.CharField(
+        max_length=20,
+        choices=SexoChoices.choices,
+        blank=True,
+        null=True,
+    )
+    nacionalidad = models.CharField(max_length=255, blank=True, null=True)
+    sala = models.CharField(max_length=255, blank=True, null=True)
+
+    pertenece_pueblo_originario = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+    pueblo_originario_cual = models.CharField(max_length=255, blank=True, null=True)
+    habla_lengua_originaria_hogar = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+
+    talla = models.CharField(max_length=50, blank=True, null=True)
+    peso = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    calendario_vacunacion_al_dia = models.BooleanField(blank=True, null=True)
+    tiene_discapacidad = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+    discapacidad_tipo = models.CharField(
+        max_length=32,
+        choices=TipoDiscapacidad.choices,
+        blank=True,
+        null=True,
+    )
+    recibe_apoyo_discapacidad = models.BooleanField(blank=True, null=True)
+    posee_cud = models.BooleanField(blank=True, null=True)
+    posee_obra_social = models.BooleanField(blank=True, null=True)
+
+    calle_domicilio = models.CharField(max_length=255, blank=True, null=True)
+    altura_domicilio = models.PositiveIntegerField(blank=True, null=True)
+    piso_domicilio = models.CharField(max_length=50, blank=True, null=True)
+    departamento_domicilio = models.CharField(max_length=50, blank=True, null=True)
+    provincia_domicilio = models.ForeignKey(
+        Provincia,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
+    municipio_domicilio = models.ForeignKey(
+        Municipio,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
+    localidad_domicilio = models.ForeignKey(
+        Localidad,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
+
+    responsable_legal_1_apellido = models.CharField(max_length=255, blank=True, null=True)
+    responsable_legal_1_nombre = models.CharField(max_length=255, blank=True, null=True)
+    responsable_legal_1_dni = models.PositiveBigIntegerField(blank=True, null=True)
+    responsable_legal_1_telefono = models.PositiveBigIntegerField(blank=True, null=True)
+    responsable_legal_1_percibe_auh = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+    responsable_legal_1_percibe_alimenta = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+
+    responsable_legal_2_apellido = models.CharField(max_length=255, blank=True, null=True)
+    responsable_legal_2_nombre = models.CharField(max_length=255, blank=True, null=True)
+    responsable_legal_2_dni = models.PositiveBigIntegerField(blank=True, null=True)
+    responsable_legal_2_telefono = models.PositiveBigIntegerField(blank=True, null=True)
+    responsable_legal_2_percibe_auh = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+    responsable_legal_2_percibe_alimenta = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+
+    adulto_responsable_apellido = models.CharField(max_length=255, blank=True, null=True)
+    adulto_responsable_nombre = models.CharField(max_length=255, blank=True, null=True)
+    adulto_responsable_dni = models.PositiveBigIntegerField(blank=True, null=True)
+    adulto_responsable_telefono = models.CharField(max_length=50, blank=True, null=True)
+    adulto_responsable_parentesco = models.CharField(max_length=255, blank=True, null=True)
     observaciones = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -421,6 +553,66 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
 
     def __str__(self):
         return f"{self.ciudadano} en {self.centro} ({self.get_estado_display()})"
+
+    @property
+    def edad(self):
+        if not self.fecha_nacimiento:
+            return None
+        hoy = timezone.now().date()
+        return (
+            hoy.year
+            - self.fecha_nacimiento.year
+            - (
+                (hoy.month, hoy.day)
+                < (self.fecha_nacimiento.month, self.fecha_nacimiento.day)
+            )
+        )
+
+    def clean(self):
+        super().clean()
+        errors = {}
+
+        if self.pertenece_pueblo_originario != self.RespuestaSiNoNsNc.SI:
+            self.pueblo_originario_cual = None
+        elif not self.pueblo_originario_cual:
+            errors["pueblo_originario_cual"] = (
+                "Este campo es obligatorio cuando pertenece a un pueblo originario."
+            )
+
+        if self.tiene_discapacidad != self.RespuestaSiNoNsNc.SI:
+            self.discapacidad_tipo = None
+            self.recibe_apoyo_discapacidad = None
+        elif not self.discapacidad_tipo:
+            errors["discapacidad_tipo"] = (
+                "Este campo es obligatorio cuando indica discapacidad."
+            )
+
+        relation_rules = (
+            (
+                "municipio_domicilio",
+                "provincia_domicilio",
+                "provincia_id",
+                "El municipio no pertenece a la provincia indicada.",
+            ),
+            (
+                "localidad_domicilio",
+                "municipio_domicilio",
+                "municipio_id",
+                "La localidad no pertenece al municipio indicado.",
+            ),
+        )
+        for child_field, parent_field, relation_attr, message in relation_rules:
+            child_value = getattr(self, child_field)
+            parent_id = getattr(self, f"{parent_field}_id")
+            if (
+                child_value
+                and parent_id
+                and getattr(child_value, relation_attr) != parent_id
+            ):
+                errors[child_field] = message
+
+        if errors:
+            raise ValidationError(errors)
 
 
 class FormularioCDI(SoftDeleteModelMixin, models.Model):
