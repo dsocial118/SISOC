@@ -3,7 +3,10 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 
 from centrodeinfancia.forms import CentroDeInfanciaForm
-from centrodeinfancia.models import CentroDeInfancia, DepartamentoIpi
+from centrodeinfancia.models import (
+    CentroDeInfancia,
+    DepartamentoIpi,
+)
 from core.models import Provincia
 from users.models import Profile
 
@@ -205,11 +208,10 @@ def test_form_requiere_telefonos_en_creacion_y_edicion():
 
     assert not form_creacion.is_valid()
     assert form_creacion.errors["telefono"] == ["Este campo es obligatorio."]
-    assert form_creacion.errors["telefono_referente"] == ["Este campo es obligatorio."]
 
     assert not form_edicion.is_valid()
     assert form_edicion.errors["telefono"] == ["Este campo es obligatorio."]
-    assert form_edicion.errors["telefono_referente"] == ["Este campo es obligatorio."]
+    assert "telefono_referente" not in form_edicion.errors
 
 
 @pytest.mark.django_db
@@ -237,9 +239,87 @@ def test_edicion_centro_muestra_errores_si_se_eliminan_telefonos(client):
 
     assert response.status_code == 200
     assert response.context["form"].errors["telefono"] == ["Este campo es obligatorio."]
-    assert response.context["form"].errors["telefono_referente"] == [
-        "Este campo es obligatorio."
+    assert "telefono_referente" not in response.context["form"].errors
+
+
+@pytest.mark.django_db
+def test_form_acepta_telefono_referente_vacio():
+    user = User.objects.create_user(
+        username="user-telefono-referente-opcional",
+        password="test1234",
+    )
+    form = CentroDeInfanciaForm(
+        data={
+            "nombre": "CDI Referente Opcional",
+            "telefono": "1122334455",
+            "telefono_referente": "",
+        },
+        user=user,
+        lock_provincia_from_user=False,
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["telefono_referente"] == ""
+
+
+@pytest.mark.django_db
+def test_form_guarda_horarios_y_normaliza_cuit():
+    user = User.objects.create_user(
+        username="user-cdi-horarios-cuit",
+        password="test1234",
+    )
+    form = CentroDeInfanciaForm(
+        data={
+            "nombre": "CDI Horarios",
+            "organizacion": "Asociacion Barrial",
+            "cuit_organizacion_gestiona": "20-44535030-4",
+            "telefono": "1122334455",
+            "dias_funcionamiento": ["lunes", "martes"],
+            "horario_lunes_apertura": "08:00",
+            "horario_lunes_cierre": "12:00",
+            "horario_martes_apertura": "08:00",
+            "horario_martes_cierre": "12:00",
+        },
+        user=user,
+        lock_provincia_from_user=False,
+    )
+
+    assert form.is_valid(), form.errors
+    centro = form.save()
+
+    assert centro.cuit_organizacion_gestiona == "20445350304"
+    assert list(
+        centro.horarios_funcionamiento.order_by("dia").values_list(
+            "dia", "hora_apertura", "hora_cierre"
+        )
+    ) == [
+        (
+            "lunes",
+            form.cleaned_data["horario_lunes_apertura"],
+            form.cleaned_data["horario_lunes_cierre"],
+        ),
+        (
+            "martes",
+            form.cleaned_data["horario_martes_apertura"],
+            form.cleaned_data["horario_martes_cierre"],
+        ),
     ]
+
+
+@pytest.mark.django_db
+def test_form_rechaza_horarios_para_dias_no_seleccionados():
+    form = CentroDeInfanciaForm(
+        data={
+            "nombre": "CDI Horario Invalido",
+            "telefono": "1122334455",
+            "dias_funcionamiento": ["lunes"],
+            "horario_martes_apertura": "08:00",
+            "horario_martes_cierre": "12:00",
+        }
+    )
+
+    assert not form.is_valid()
+    assert "horario_martes_cierre" in form.errors
 
 
 @pytest.mark.django_db

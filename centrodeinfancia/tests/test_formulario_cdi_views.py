@@ -6,7 +6,11 @@ from django.http import Http404
 from django.test import RequestFactory
 from django.urls import reverse
 
-from centrodeinfancia.models import CentroDeInfancia, FormularioCDI
+from centrodeinfancia.models import (
+    CentroDeInfancia,
+    CentroDeInfanciaHorarioFuncionamiento,
+    FormularioCDI,
+)
 from centrodeinfancia.views_formulario_cdi import (
     FormularioCDIDetailView,
     FormularioCDIListView,
@@ -307,6 +311,47 @@ def test_formulario_cdi_crear_guarda_telefonos_flexibles_autocompletados(client)
     assert formulario.telefono_referente_cdi == "11-2233-4455"
     assert formulario.telefono_organizacion == "22334455"
     assert formulario.telefono_referente_organizacion == "54-11-99887766"
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_crear_autocompleta_campos_nuevos_desde_centro(client):
+    user = _crear_usuario("super-form-autocomplete", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Autocomplete",
+        organizacion="Asociacion Civil Horizonte",
+        cuit_organizacion_gestiona="20445350304",
+        ambito="rural",
+        telefono="12345678",
+        mail="cdi@example.com",
+        dias_funcionamiento=["lunes", "martes"],
+        meses_funcionamiento=["enero", "febrero"],
+        tipo_jornada="simple_single_shift",
+        oferta_servicios="multiedad",
+        modalidad_gestion="gestion_tercer_sector",
+    )
+    CentroDeInfanciaHorarioFuncionamiento.objects.create(
+        centro=centro,
+        dia="lunes",
+        hora_apertura="08:00",
+        hora_cierre="12:00",
+    )
+
+    response = client.get(
+        reverse("centrodeinfancia_formulario_crear", kwargs={"pk": centro.pk})
+    )
+
+    assert response.status_code == 200
+    form = response.context["form"]
+    assert form["ambito"].value() == "rural"
+    assert form["nombre_organizacion_gestora"].value() == "Asociacion Civil Horizonte"
+    assert form["cuit_organizacion_gestora"].value() == "20445350304"
+    assert form["email_cdi"].value() == "cdi@example.com"
+    assert form["tipo_jornada"].value() == "simple_single_shift"
+    assert form["oferta_servicios"].value() == "multiedad"
+    assert form["modalidad_gestion"].value() == "gestion_tercer_sector"
+    assert form["horario_lunes_apertura"].value().strftime("%H:%M") == "08:00"
+    assert form["horario_lunes_cierre"].value().strftime("%H:%M") == "12:00"
 
 
 @pytest.mark.django_db

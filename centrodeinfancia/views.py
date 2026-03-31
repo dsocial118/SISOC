@@ -95,7 +95,6 @@ DOCUMENTACION_INTERVENCION_EXTS_PERMITIDAS = {".pdf", ".jpg", ".jpeg", ".png"}
 
 def _centros_cdi_queryset_detalle():
     return CentroDeInfancia.objects.select_related(
-        "organizacion",
         "provincia",
         "departamento",
         "municipio",
@@ -193,7 +192,6 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
         query = self.request.GET.get("busqueda")
         nomina_subquery = NominaCentroInfancia.objects.filter(centro_id=OuterRef("pk"))
         queryset = CentroDeInfancia.objects.select_related(
-            "organizacion",
             "provincia",
             "departamento",
             "municipio",
@@ -202,7 +200,7 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
         queryset = _aplicar_filtro_provincia_usuario(queryset, self.request.user)
         if query:
             queryset = queryset.filter(
-                Q(nombre__icontains=query) | Q(organizacion__nombre__icontains=query)
+                Q(nombre__icontains=query) | Q(organizacion__icontains=query)
             )
         return queryset.order_by("nombre")
 
@@ -251,6 +249,20 @@ class CentroDeInfanciaCreateView(LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = context.get("form")
+        context["horario_fields"] = [
+            {
+                "dia": dia,
+                "etiqueta": etiqueta,
+                "apertura": form[f"horario_{dia}_apertura"],
+                "cierre": form[f"horario_{dia}_cierre"],
+            }
+            for dia, etiqueta in form.DIAS_SEMANA
+        ]
+        return context
 
 
 class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
@@ -557,6 +569,20 @@ class CentroDeInfanciaUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         return _centros_cdi_queryset_scoped(self.request.user)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = context.get("form")
+        context["horario_fields"] = [
+            {
+                "dia": dia,
+                "etiqueta": etiqueta,
+                "apertura": form[f"horario_{dia}_apertura"],
+                "cierre": form[f"horario_{dia}_cierre"],
+            }
+            for dia, etiqueta in form.DIAS_SEMANA
+        ]
+        return context
+
 
 class CentroDeInfanciaDeleteView(
     SoftDeleteDeleteViewMixin,
@@ -707,7 +733,6 @@ def centrodeinfancia_ajax(request):
         ]
 
         queryset = CentroDeInfancia.objects.select_related(
-            "organizacion",
             "provincia",
             "departamento",
             "municipio",
@@ -716,7 +741,7 @@ def centrodeinfancia_ajax(request):
         queryset = _aplicar_filtro_provincia_usuario(queryset, req.user)
         if query:
             queryset = queryset.filter(
-                Q(nombre__icontains=query) | Q(organizacion__nombre__icontains=query)
+                Q(nombre__icontains=query) | Q(organizacion__icontains=query)
             )
         queryset = queryset.order_by("nombre")
 

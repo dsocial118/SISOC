@@ -4,12 +4,13 @@ from django.core.validators import MaxValueValidator, MinValueValidator, RegexVa
 from django.db import models
 
 from ciudadanos.models import Ciudadano
+from core.fields import UnicodeEmailField
 from core.models import Localidad, Municipio, Provincia
 from core.soft_delete import SoftDeleteModelMixin
-from organizaciones.models import Organizacion
 from centrodeinfancia.formulario_cdi_schema import (
     CAMPOS_OPCIONES,
     CAMPOS_OPCIONES_MULTIPLES,
+    OPCIONES_DIAS_SEMANA,
 )
 import centrodeinfancia.models_cdi_relaciones as _models_cdi_relaciones
 
@@ -23,8 +24,8 @@ ObservacionCentroInfancia = _models_cdi_relaciones.ObservacionCentroInfancia
 
 
 CUIT_VALIDATOR = RegexValidator(
-    regex=r"^\d{2}-\d{8}-\d{1}$",
-    message="Ingrese un CUIT valido con formato 20-12345678-3.",
+    regex=r"^\d{11}$",
+    message="Ingrese un CUIT válido de 11 dígitos.",
 )
 PHONE_VALIDATOR = RegexValidator(
     regex=r"^\d+(?:-\d+)*$",
@@ -33,6 +34,28 @@ PHONE_VALIDATOR = RegexValidator(
         "guiones."
     ),
 )
+
+CODIGO_POSTAL_VALIDATORS = [
+    MinValueValidator(0),
+    MaxValueValidator(9999999999),
+]
+
+
+def normalizar_cuit(value):
+    if value in (None, ""):
+        return ""
+    return "".join(ch for ch in str(value) if ch.isdigit())
+
+
+def validar_opciones_multiples(field_name, value):
+    allowed = {item[0] for item in CAMPOS_OPCIONES_MULTIPLES[field_name]}
+    if value in (None, ""):
+        return
+    if not isinstance(value, list):
+        raise ValidationError({field_name: "Seleccione opciones válidas."})
+    invalid_values = [item for item in value if item not in allowed]
+    if invalid_values:
+        raise ValidationError({field_name: "Seleccione opciones válidas."})
 
 
 class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
@@ -44,11 +67,18 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
         verbose_name="Codigo CDI",
     )
-    organizacion = models.ForeignKey(
-        Organizacion,
-        on_delete=models.SET_NULL,
+    organizacion = models.CharField(
+        max_length=1000,
         null=True,
         blank=True,
+        verbose_name="Denominación del organismo u organización que gestiona",
+    )
+    cuit_organizacion_gestiona = models.CharField(
+        max_length=11,
+        blank=True,
+        null=True,
+        validators=[CUIT_VALIDATOR],
+        verbose_name="CUIT del organismo u organización que gestiona",
     )
     provincia = models.ForeignKey(
         Provincia,
@@ -75,13 +105,62 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
         blank=True,
     )
+    codigo_postal = models.PositiveBigIntegerField(
+        blank=True,
+        null=True,
+        validators=CODIGO_POSTAL_VALIDATORS,
+        verbose_name="Código postal",
+    )
+    ambito = models.CharField(
+        max_length=32,
+        choices=CAMPOS_OPCIONES["ambito"],
+        default="sin_informacion",
+        verbose_name="Ámbito",
+    )
     calle = models.CharField(max_length=255, blank=True, null=True)
     numero = models.CharField(max_length=50, blank=True, null=True)
+    latitud = models.DecimalField(
+        max_digits=8,
+        decimal_places=6,
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+    )
+    longitud = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
+    )
     telefono = models.CharField(max_length=50, blank=True, null=True)
+    mail = UnicodeEmailField(verbose_name="Mail", blank=True, null=True)
     nombre_referente = models.CharField(max_length=255, blank=True, null=True)
     apellido_referente = models.CharField(max_length=255, blank=True, null=True)
     email_referente = models.EmailField(blank=True, null=True)
     telefono_referente = models.CharField(max_length=50, blank=True, null=True)
+    meses_funcionamiento = models.JSONField(default=list, blank=True)
+    dias_funcionamiento = models.JSONField(default=list, blank=True)
+    tipo_jornada = models.CharField(
+        max_length=64,
+        choices=CAMPOS_OPCIONES["tipo_jornada"],
+        blank=True,
+        null=True,
+    )
+    tipo_jornada_otra = models.CharField(max_length=255, blank=True, null=True)
+    oferta_servicios = models.CharField(
+        max_length=64,
+        choices=CAMPOS_OPCIONES["oferta_servicios"],
+        blank=True,
+        null=True,
+    )
+    modalidad_gestion = models.CharField(
+        max_length=64,
+        choices=CAMPOS_OPCIONES["modalidad_gestion"],
+        blank=True,
+        null=True,
+    )
+    modalidad_gestion_otra = models.CharField(max_length=255, blank=True, null=True)
     fecha_inicio = models.DateField(blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
@@ -95,18 +174,43 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
 
     def clean(self):
         super().clean()
+        errors = {}
         if (
             self.departamento_id
             and self.provincia_id
             and self.departamento.provincia_id != self.provincia_id
         ):
-            raise ValidationError(
-                {
-                    "departamento": (
-                        "El departamento no pertenece a la provincia seleccionada."
-                    )
-                }
+            errors["departamento"] = (
+                "El departamento no pertenece a la provincia seleccionada."
             )
+
+        for field_name in ("meses_funcionamiento", "dias_funcionamiento"):
+            try:
+                validar_opciones_multiples(field_name, getattr(self, field_name))
+            except ValidationError as exc:
+                errors.update(exc.message_dict)
+
+        self.cuit_organizacion_gestiona = (
+            normalizar_cuit(self.cuit_organizacion_gestiona) or None
+        )
+
+        if self.tipo_jornada == "other" and not (self.tipo_jornada_otra or "").strip():
+            errors["tipo_jornada_otra"] = "Este campo es obligatorio."
+
+        if self.tipo_jornada != "other":
+            self.tipo_jornada_otra = ""
+
+        if (
+            self.modalidad_gestion == "otra"
+            and not (self.modalidad_gestion_otra or "").strip()
+        ):
+            errors["modalidad_gestion_otra"] = "Este campo es obligatorio."
+
+        if self.modalidad_gestion != "otra":
+            self.modalidad_gestion_otra = ""
+
+        if errors:
+            raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -114,6 +218,46 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
             codigo_cdi = f"CDI-{self.pk:06d}"
             type(self).objects.filter(pk=self.pk).update(codigo_cdi=codigo_cdi)
             self.codigo_cdi = codigo_cdi
+
+
+class CentroDeInfanciaHorarioFuncionamiento(models.Model):
+    centro = models.ForeignKey(
+        CentroDeInfancia,
+        on_delete=models.CASCADE,
+        related_name="horarios_funcionamiento",
+    )
+    dia = models.CharField(max_length=16, choices=OPCIONES_DIAS_SEMANA)
+    hora_apertura = models.TimeField(blank=True, null=True)
+    hora_cierre = models.TimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["centro", "dia"],
+                name="uniq_cdi_horario_funcionamiento_dia",
+            )
+        ]
+        verbose_name = "Horario de funcionamiento del CDI"
+        verbose_name_plural = "Horarios de funcionamiento del CDI"
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if bool(self.hora_apertura) != bool(self.hora_cierre):
+            errors["hora_cierre"] = (
+                "Debe completar horario de apertura y cierre para el día."
+            )
+        if (
+            self.hora_apertura
+            and self.hora_cierre
+            and self.hora_apertura >= self.hora_cierre
+        ):
+            errors["hora_cierre"] = (
+                "El horario de cierre debe ser posterior al de apertura."
+            )
+        if errors:
+            raise ValidationError(errors)
 
 
 class DepartamentoIpi(models.Model):
@@ -333,9 +477,19 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
         related_name="+",
     )
+    ambito = models.CharField(
+        max_length=32,
+        choices=CAMPOS_OPCIONES["ambito"],
+        default="sin_informacion",
+        blank=True,
+    )
     calle_cdi = models.CharField(max_length=255, blank=True, null=True)
     numero_puerta_cdi = models.CharField(max_length=255, blank=True, null=True)
-    codigo_postal_cdi = models.CharField(max_length=12, blank=True, null=True)
+    codigo_postal_cdi = models.PositiveBigIntegerField(
+        blank=True,
+        null=True,
+        validators=CODIGO_POSTAL_VALIDATORS,
+    )
     latitud_geografica_cdi = models.DecimalField(
         max_digits=8,
         decimal_places=6,
@@ -377,6 +531,12 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
     )
     tipo_jornada_otra = models.CharField(max_length=255, blank=True, null=True)
+    oferta_servicios = models.CharField(
+        max_length=64,
+        choices=CAMPOS_OPCIONES["oferta_servicios"],
+        blank=True,
+        null=True,
+    )
     cantidad_total_ninos = models.PositiveIntegerField(blank=True, null=True)
     cantidad_total_personal = models.PositiveIntegerField(blank=True, null=True)
 
@@ -391,7 +551,7 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         max_length=1000, blank=True, null=True
     )
     cuit_organizacion_gestora = models.CharField(
-        max_length=13,
+        max_length=11,
         blank=True,
         null=True,
         validators=[CUIT_VALIDATOR],
@@ -931,6 +1091,9 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         errors.update(self._collect_required_field_errors())
         errors.update(self._collect_consistency_errors())
         errors.update(self._collect_geography_errors())
+        self.cuit_organizacion_gestora = (
+            normalizar_cuit(self.cuit_organizacion_gestora) or None
+        )
 
         if errors:
             raise ValidationError(errors)
@@ -939,3 +1102,43 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         if not self.codigo_cdi and self.centro_id:
             self.codigo_cdi = self.centro.codigo_cdi
         super().save(*args, **kwargs)
+
+
+class FormularioCDIHorarioFuncionamiento(models.Model):
+    formulario = models.ForeignKey(
+        FormularioCDI,
+        on_delete=models.CASCADE,
+        related_name="horarios_funcionamiento",
+    )
+    dia = models.CharField(max_length=16, choices=OPCIONES_DIAS_SEMANA)
+    hora_apertura = models.TimeField(blank=True, null=True)
+    hora_cierre = models.TimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["formulario", "dia"],
+                name="uniq_formulario_cdi_horario_funcionamiento_dia",
+            )
+        ]
+        verbose_name = "Horario de funcionamiento del formulario CDI"
+        verbose_name_plural = "Horarios de funcionamiento del formulario CDI"
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if bool(self.hora_apertura) != bool(self.hora_cierre):
+            errors["hora_cierre"] = (
+                "Debe completar horario de apertura y cierre para el día."
+            )
+        if (
+            self.hora_apertura
+            and self.hora_cierre
+            and self.hora_apertura >= self.hora_cierre
+        ):
+            errors["hora_cierre"] = (
+                "El horario de cierre debe ser posterior al de apertura."
+            )
+        if errors:
+            raise ValidationError(errors)
