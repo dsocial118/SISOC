@@ -66,7 +66,7 @@
                 </div>
             {% endfor %}
 
-            <div class="card mb-3">
+            <div class="card mb-3" id="horarios-funcionamiento-card">
                 <div class="card-header">
                     <strong>Horarios de funcionamiento por día</strong>
                 </div>
@@ -250,6 +250,13 @@
             const diasInputs = Array.from(document.querySelectorAll("input[name='dias_funcionamiento']"));
             const horarioRows = Array.from(document.querySelectorAll(".formulario-horario-row"));
             const cuitInput = document.getElementById("id_cuit_organizacion_gestora");
+            const horarioCard = document.getElementById("horarios-funcionamiento-card");
+            const diasWrapper = document.querySelector("[data-field-name='dias_funcionamiento']");
+            const diasRow = diasWrapper ? diasWrapper.closest(".row") : null;
+            if (horarioCard && diasRow) {
+                diasRow.insertAdjacentElement("afterend", horarioCard);
+            }
+
             const horarioTouched = {};
             const showWhen = {
                 tipo_jornada_otra: function() {
