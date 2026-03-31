@@ -7,6 +7,7 @@ $repoRoot = Get-CodexRepoRoot
 $envPath = Get-CodexEnvPath -RepoRoot $repoRoot
 $envValues = Get-CodexEnvValues -Path $envPath
 $required = Get-CodexRequiredEnvDefaults -RepoRoot $repoRoot
+$composeProject = Get-CodexComposeProjectName -RepoRoot $repoRoot
 
 function Write-StatusLine {
     param(
@@ -20,6 +21,7 @@ function Write-StatusLine {
 }
 
 Write-Host ("Repo: {0}" -f $repoRoot)
+Write-StatusLine -Label "compose-project" -Ok $true -Detail $composeProject
 Write-StatusLine -Label ".env" -Ok (Test-Path $envPath) -Detail $envPath
 
 foreach ($key in $required.Keys) {
@@ -44,9 +46,9 @@ if ($dockerAvailable) {
     }
 
     try {
-        $services = Invoke-CodexCompose -RepoRoot $repoRoot -Arguments @("ps", "--format", "json")
+        $services = Get-CodexComposeServices -RepoRoot $repoRoot
         if ($services) {
-            Write-StatusLine -Label "compose-ps" -Ok $true -Detail "servicios consultados"
+            Write-StatusLine -Label "compose-ps" -Ok $true -Detail ($services -join ", ")
         }
         else {
             Write-StatusLine -Label "compose-ps" -Ok $true -Detail "sin servicios levantados"
@@ -56,26 +58,4 @@ if ($dockerAvailable) {
         Write-StatusLine -Label "compose-ps" -Ok $false -Detail $_.Exception.Message
     }
 }
-
-$pyAvailable = Test-CodexLocalPythonAvailable
-Write-StatusLine -Label "py-launcher" -Ok $pyAvailable -Detail (
-    $(if ($pyAvailable) { (& py -3 --version) } else { "py -3 no disponible" })
-)
-
-if ($pyAvailable) {
-    try {
-        $blackCheck = & py -3 -m black --version 2>&1
-        Write-StatusLine -Label "host-black" -Ok $true -Detail $blackCheck[0]
-    }
-    catch {
-        Write-StatusLine -Label "host-black" -Ok $false -Detail $_.Exception.Message
-    }
-
-    try {
-        $pytestCheck = & py -3 -m pytest --version 2>&1
-        Write-StatusLine -Label "host-pytest" -Ok $true -Detail $pytestCheck[0]
-    }
-    catch {
-        Write-StatusLine -Label "host-pytest" -Ok $false -Detail $_.Exception.Message
-    }
-}
+Write-StatusLine -Label "host-python" -Ok $true -Detail "ignorado a proposito: este repo usa Docker Compose para Django/pytest"

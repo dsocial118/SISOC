@@ -1,4 +1,7 @@
 - No inventes APIs, modelos, endpoints, settings ni dependencias. Si falta info, preguntá o dejá TODO explícito.
+- En este repo, no uses Python/Django/pytest del host: ejecutá todo dentro de Docker Compose.
+- Cada agente/tarea/worktree debe usar su propio proyecto Compose aislado; no compartas contenedores ni volúmenes entre worktrees.
+- Para comandos puntuales preferí `scripts/ai/codex_run.ps1` o `docker compose ... run --rm django ...` antes que `exec`.
 - Preservá comportamiento por defecto: si cambiás lógica/contratos, listá breaking changes y actualizá callers.
 - Cambios mínimos primero: preferí patches incrementales; refactors grandes primero proponlos, hazlos sin preguntar solo si son imprescindibles.
 - Compila/pasa tests: el output debe quedar en estado “verde” (lint + typecheck + tests) o explicar exactamente qué falta.

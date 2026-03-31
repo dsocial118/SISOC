@@ -5,6 +5,30 @@ function Get-CodexRepoRoot {
     return (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 }
 
+function Get-CodexComposeProjectName {
+    param(
+        [string]$RepoRoot
+    )
+
+    $worktreeName = Split-Path $RepoRoot -Leaf
+    $repoName = "sisoc"
+    $projectName = "{0}-{1}" -f $repoName.ToLowerInvariant(), $worktreeName.ToLowerInvariant()
+    $projectName = $projectName -replace "[^a-z0-9_-]", "-"
+
+    return $projectName.Trim("-")
+}
+
+function Get-CodexComposeFiles {
+    param(
+        [string]$RepoRoot
+    )
+
+    $baseCompose = Join-Path $RepoRoot "docker-compose.yml"
+    $codexCompose = Join-Path $RepoRoot "docker-compose.codex.yml"
+
+    return @($baseCompose, $codexCompose)
+}
+
 function Get-CodexEnvPath {
     param(
         [string]$RepoRoot
@@ -26,10 +50,7 @@ function Get-CodexRequiredEnvDefaults {
         [string]$RepoRoot
     )
 
-    $repoName = Split-Path $RepoRoot -Leaf
-    $worktreeName = Split-Path (Split-Path $RepoRoot -Parent) -Leaf
-    $projectName = "{0}-{1}" -f $repoName.ToLowerInvariant(), $worktreeName.ToLowerInvariant()
-    $projectName = $projectName -replace "[^a-z0-9_-]", "-"
+    $projectName = Get-CodexComposeProjectName -RepoRoot $RepoRoot
 
     return [ordered]@{
         "DATABASE_PASSWORD" = "root1-password2"
@@ -194,9 +215,19 @@ function Invoke-CodexCompose {
         [string[]]$Arguments
     )
 
+    $composeFiles = Get-CodexComposeFiles -RepoRoot $RepoRoot
+    $composeProject = Get-CodexComposeProjectName -RepoRoot $RepoRoot
+    $composeArgs = @()
+
+    foreach ($composeFile in $composeFiles) {
+        $composeArgs += @("-f", $composeFile)
+    }
+    $composeArgs += @("-p", $composeProject)
+    $composeArgs += $Arguments
+
     Push-Location $RepoRoot
     try {
-        & docker compose @Arguments
+        & docker compose @composeArgs
     }
     finally {
         Pop-Location
@@ -244,4 +275,41 @@ function Ensure-CodexLocalDependencies {
     & $venv.PythonExe -m pip install -r (Join-Path $RepoRoot "requirements.txt")
 
     return $venv
+}
+
+function Get-CodexComposeServices {
+    param(
+        [string]$RepoRoot
+    )
+
+    $result = Invoke-CodexCompose -RepoRoot $RepoRoot -Arguments @("ps", "--services", "--status", "running")
+    if (-not $result) {
+        return @()
+    }
+
+    return @($result | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+}
+
+function Wait-CodexServiceHealthy {
+    param(
+        [string]$RepoRoot,
+        [string]$Service,
+        [int]$TimeoutSeconds = 60
+    )
+
+    $containerId = Invoke-CodexCompose -RepoRoot $RepoRoot -Arguments @("ps", "-q", $Service)
+    if (-not $containerId) {
+        throw ("No se encontró contenedor para el servicio {0}" -f $Service)
+    }
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    do {
+        $healthStatus = docker inspect --format "{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}" $containerId
+        if ($healthStatus -eq "healthy" -or $healthStatus -eq "running") {
+            return
+        }
+        Start-Sleep -Seconds 2
+    } while ((Get-Date) -lt $deadline)
+
+    throw ("El servicio {0} no llegó a estado healthy/running dentro de {1}s" -f $Service, $TimeoutSeconds)
 }

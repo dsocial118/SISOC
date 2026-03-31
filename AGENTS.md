@@ -45,6 +45,21 @@ Para trabajar en SISOC con asistentes, la documentación en `docs/` es fuente de
 
 No imponer como obligatorio si no fue pedido: `ruff`, `mypy`, `eslint`, `prettier` (no hay configuración formal activa para estos checks en el repo).
 
+## Entorno de ejecución para Codex (obligatorio)
+
+- En este repo, Codex no debe usar `python`, `pytest`, `django-admin` ni `manage.py` del host.
+- Toda ejecución Django, lint y tests debe hacerse dentro de Docker Compose.
+- El proyecto Compose debe ser **aislado por worktree/tarea/agente**.
+- El nombre del proyecto Compose se deriva del nombre del worktree actual mediante `scripts/ai/codex_common.ps1`.
+- Para evitar conflictos entre agentes, Codex debe usar el override `docker-compose.codex.yml`, que elimina la publicación de puertos fijos.
+- Para comandos puntuales de Django, preferir `docker compose ... run --rm django ...` sobre `exec`.
+- Solo usar `exec` si ese mismo proyecto Compose aislado ya tiene el servicio levantado y la tarea realmente lo necesita.
+- Comandos de referencia para Codex:
+  - `powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 test`
+  - `powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 smoke`
+  - `powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 manage makemigrations --check --dry-run`
+  - `powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 manage migrate`
+
 ## Disciplina de formato y lint para IAs (obligatoria)
 
 - Escribir Python compatible con `black` desde el inicio. La referencia operativa es `line-length = 88`; no usar el `max-line-length = 150` de `pylint` como excusa para dejar líneas largas evitables.

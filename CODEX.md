@@ -50,6 +50,19 @@ Si falta contexto crítico, frenar expansión de alcance y pedir/explicitar supu
 
 ## Forma de trabajo esperada (Codex)
 
+## Entorno Docker aislado por worktree (obligatorio)
+
+- En SISOC, Codex debe ignorar el Python del host y ejecutar Django/pytest únicamente dentro de Docker Compose.
+- Cada worktree/tarea/agente debe usar su propio proyecto Compose aislado.
+- El nombre del proyecto Compose se calcula desde el worktree actual en `scripts/ai/codex_common.ps1`.
+- Toda llamada a Compose debe incluir `docker-compose.yml` + `docker-compose.codex.yml`; el override elimina puertos publicados para evitar choques entre agentes.
+- Para comandos de validación o administración, preferir `run --rm` sobre `exec`.
+- Punto de entrada recomendado:
+  - `powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 test`
+  - `powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 smoke`
+  - `powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 manage makemigrations --check --dry-run`
+  - `powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 manage migrate`
+
 ## 1) Explorar contexto rápido sin romper alcance
 
 - Buscar implementaciones similares antes de editar.

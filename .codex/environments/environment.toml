@@ -20,6 +20,16 @@ icon = "beaker"
 command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 smoke"
 
 [[actions]]
+name = "Tests Pytest"
+icon = "beaker"
+command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 test"
+
+[[actions]]
+name = "Check Migrations"
+icon = "terminal"
+command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 manage makemigrations --check --dry-run"
+
+[[actions]]
 name = "Abrir Shell Django"
 icon = "terminal"
 command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 shell"

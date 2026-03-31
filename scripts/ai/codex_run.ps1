@@ -28,21 +28,37 @@ $repoRoot = Get-CodexRepoRoot
 
 function Invoke-DjangoCommand {
     param(
-        [string[]]$CommandArgs
+        [string[]]$CommandArgs,
+        [switch]$RequiresMysql,
+        [switch]$Interactive
     )
 
-    & (Join-Path $PSScriptRoot "codex_bootstrap.ps1")
-    Invoke-CodexCompose -RepoRoot $repoRoot -Arguments @("exec", "-T", "django") + $CommandArgs
+    $bootstrapArgs = @("-NoStart")
+    & (Join-Path $PSScriptRoot "codex_bootstrap.ps1") @bootstrapArgs
+
+    if ($RequiresMysql) {
+        Invoke-CodexCompose -RepoRoot $repoRoot -Arguments @("up", "-d", "mysql")
+        Wait-CodexServiceHealthy -RepoRoot $repoRoot -Service "mysql"
+    }
+
+    $composeArgs = @("run", "--rm")
+    if (-not $Interactive) {
+        $composeArgs += "-T"
+    }
+    $composeArgs += @("django")
+    $composeArgs += $CommandArgs
+
+    Invoke-CodexCompose -RepoRoot $repoRoot -Arguments $composeArgs
 }
 
 switch ($Action) {
     "bootstrap" {
-        $bootstrapParams = @{}
+        $bootstrapParams = @()
         if ($Args -contains "-NoStart" -or $Args -contains "--no-start") {
-            $bootstrapParams["NoStart"] = $true
+            $bootstrapParams += "-NoStart"
         }
-        if ($Args -contains "-PreferLocalFallback" -or $Args -contains "--prefer-local-fallback") {
-            $bootstrapParams["PreferLocalFallback"] = $true
+        if ($Args -contains "-StartDjango" -or $Args -contains "--start-django") {
+            $bootstrapParams += "-StartDjango"
         }
         & (Join-Path $PSScriptRoot "codex_bootstrap.ps1") @bootstrapParams
         break
@@ -56,8 +72,7 @@ switch ($Action) {
         break
     }
     "shell" {
-        & (Join-Path $PSScriptRoot "codex_bootstrap.ps1")
-        Invoke-CodexCompose -RepoRoot $repoRoot -Arguments @("exec", "django", "bash")
+        Invoke-DjangoCommand -CommandArgs @("bash") -RequiresMysql -Interactive
         break
     }
     "test" {
@@ -100,7 +115,17 @@ switch ($Action) {
         if (-not $Args) {
             throw "manage requiere argumentos para manage.py."
         }
-        Invoke-DjangoCommand -CommandArgs (@("python", "manage.py") + $Args)
+        $requiresMysqlCommands = @(
+            "makemigrations",
+            "migrate",
+            "showmigrations",
+            "dbshell",
+            "createsuperuser",
+            "loaddata",
+            "dumpdata"
+        )
+        $requiresMysql = $requiresMysqlCommands -contains $Args[0]
+        Invoke-DjangoCommand -CommandArgs (@("python", "manage.py") + $Args) -RequiresMysql:$requiresMysql
         break
     }
 }
