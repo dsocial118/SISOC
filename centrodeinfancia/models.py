@@ -505,7 +505,9 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         related_name="+",
     )
 
-    responsable_legal_1_apellido = models.CharField(max_length=255, blank=True, null=True)
+    responsable_legal_1_apellido = models.CharField(
+        max_length=255, blank=True, null=True
+    )
     responsable_legal_1_nombre = models.CharField(max_length=255, blank=True, null=True)
     responsable_legal_1_dni = models.PositiveBigIntegerField(blank=True, null=True)
     responsable_legal_1_telefono = models.PositiveBigIntegerField(blank=True, null=True)
@@ -522,7 +524,9 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
     )
 
-    responsable_legal_2_apellido = models.CharField(max_length=255, blank=True, null=True)
+    responsable_legal_2_apellido = models.CharField(
+        max_length=255, blank=True, null=True
+    )
     responsable_legal_2_nombre = models.CharField(max_length=255, blank=True, null=True)
     responsable_legal_2_dni = models.PositiveBigIntegerField(blank=True, null=True)
     responsable_legal_2_telefono = models.PositiveBigIntegerField(blank=True, null=True)
@@ -539,11 +543,15 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
     )
 
-    adulto_responsable_apellido = models.CharField(max_length=255, blank=True, null=True)
+    adulto_responsable_apellido = models.CharField(
+        max_length=255, blank=True, null=True
+    )
     adulto_responsable_nombre = models.CharField(max_length=255, blank=True, null=True)
     adulto_responsable_dni = models.PositiveBigIntegerField(blank=True, null=True)
     adulto_responsable_telefono = models.CharField(max_length=50, blank=True, null=True)
-    adulto_responsable_parentesco = models.CharField(max_length=255, blank=True, null=True)
+    adulto_responsable_parentesco = models.CharField(
+        max_length=255, blank=True, null=True
+    )
     observaciones = models.TextField(blank=True, null=True)
 
     class Meta:
