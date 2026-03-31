@@ -243,6 +243,31 @@ def test_edicion_centro_muestra_errores_si_se_eliminan_telefonos(client):
 
 
 @pytest.mark.django_db
+def test_edicion_centro_renderiza_validacion_html_custom_para_telefonos(client):
+    user = User.objects.create_superuser(
+        username="super-cdi-edit-render",
+        email="super-cdi-edit-render@example.com",
+        password="test1234",
+    )
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Render",
+        telefono="",
+        telefono_referente="",
+    )
+
+    response = client.get(reverse("centrodeinfancia_editar", kwargs={"pk": centro.pk}))
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert 'id="centrodesarrolloinfantil-form"' in content
+    assert "novalidate" in content
+    assert 'name="telefono"' in content
+    assert 'name="telefono_referente"' in content
+    assert content.count("required") >= 2
+
+
+@pytest.mark.django_db
 def test_form_filtra_departamentos_por_provincia():
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     provincia_sf = Provincia.objects.create(nombre="Santa Fe")
