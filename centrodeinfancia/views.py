@@ -1262,7 +1262,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
                     sexo_obj = Sexo.objects.filter(
                         sexo=form.cleaned_data.get("sexo")
                     ).first()
-                    nacionalidad_obj = ComedorService._match_nacionalidad(
+                    nacionalidad_obj = ComedorService._match_nacionalidad(  # pylint: disable=protected-access
                         form.cleaned_data.get("nacionalidad")
                     )
                     ciudadano = Ciudadano.objects.filter(
