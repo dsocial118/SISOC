@@ -26,7 +26,7 @@
             {% csrf_token %}
 
             <div class="section-card mb-3">
-                <div class="section-header">
+                <div class="section-header section-header-info-basica">
                     <div class="section-header-left">
                         <div class="section-icon">
                             <i class="fas fa-child"></i>
@@ -98,7 +98,7 @@
             </div>
 
             <div class="section-card mb-3">
-                <div class="section-header">
+                <div class="section-header section-header-funcionamiento">
                     <div class="section-header-left">
                         <div class="section-icon">
                             <i class="fas fa-clock"></i>
@@ -184,6 +184,22 @@
 
 {% block customJS %}
     <style nonce="{{ request.csp_nonce }}">
+        .section-header-info-basica {
+            background: linear-gradient(135deg, #0f4c5c 0%, #146c7b 100%);
+        }
+
+        .section-header-info-basica:hover {
+            background: linear-gradient(135deg, #146c7b 0%, #198694 100%);
+        }
+
+        .section-header-funcionamiento {
+            background: linear-gradient(135deg, #6b2737 0%, #8f3550 100%);
+        }
+
+        .section-header-funcionamiento:hover {
+            background: linear-gradient(135deg, #8f3550 0%, #aa4361 100%);
+        }
+
         .horarios-funcionamiento-card {
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             border: 1px solid #3d566e;
