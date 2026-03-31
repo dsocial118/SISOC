@@ -125,17 +125,17 @@ class SubsectorSerializer(serializers.ModelSerializer):
 
 
 class TituloReferenciaSerializer(serializers.ModelSerializer):
-    plan_estudio_nombre = serializers.StringRelatedField(
-        source="plan_estudio",
-        read_only=True,
-    )
+    sector_nombre = serializers.CharField(source="sector.nombre", read_only=True)
+    subsector_nombre = serializers.CharField(source="subsector.nombre", read_only=True)
 
     class Meta:
         model = TituloReferencia
         fields = [
             "id",
-            "plan_estudio",
-            "plan_estudio_nombre",
+            "sector",
+            "sector_nombre",
+            "subsector",
+            "subsector_nombre",
             "codigo_referencia",
             "nombre",
             "descripcion",
@@ -150,12 +150,6 @@ class ModalidadCursadaSerializer(serializers.ModelSerializer):
 
 
 class PlanVersionCurricularSerializer(serializers.ModelSerializer):
-    sector_nombre = serializers.CharField(source="sector.nombre", read_only=True)
-    subsector_nombre = serializers.CharField(
-        source="subsector.nombre",
-        read_only=True,
-        allow_null=True,
-    )
     titulo_referencia_nombre = serializers.CharField(
         source="titulo_referencia.nombre", read_only=True
     )
@@ -167,17 +161,16 @@ class PlanVersionCurricularSerializer(serializers.ModelSerializer):
         model = PlanVersionCurricular
         fields = [
             "id",
-            "sector",
-            "sector_nombre",
-            "subsector",
-            "subsector_nombre",
+            "titulo_referencia",
             "titulo_referencia_nombre",
             "modalidad_cursada",
             "modalidad_cursada_nombre",
             "normativa",
+            "version",
             "horas_reloj",
             "nivel_requerido",
             "nivel_certifica",
+            "frecuencia",
             "activo",
         ]
 
@@ -604,8 +597,12 @@ class VatWebCursoHorarioSerializer(serializers.ModelSerializer):
 class VatWebCursoSerializer(serializers.ModelSerializer):
     centro_id = serializers.IntegerField(source="oferta.centro_id", read_only=True)
     centro_nombre = serializers.CharField(source="oferta.centro.nombre", read_only=True)
-    titulo_id = serializers.SerializerMethodField()
-    titulo_nombre = serializers.SerializerMethodField()
+    titulo_id = serializers.IntegerField(
+        source="oferta.plan_curricular.titulo_referencia_id", read_only=True
+    )
+    titulo_nombre = serializers.CharField(
+        source="oferta.plan_curricular.titulo_referencia.nombre", read_only=True
+    )
     plan_curricular_id = serializers.IntegerField(
         source="oferta.plan_curricular_id", read_only=True
     )
@@ -627,16 +624,6 @@ class VatWebCursoSerializer(serializers.ModelSerializer):
     total_inscriptos = serializers.IntegerField(read_only=True)
     cupos_disponibles = serializers.SerializerMethodField()
     horarios = VatWebCursoHorarioSerializer(many=True, read_only=True)
-
-    def get_titulo_id(self, obj):
-        plan = getattr(obj.oferta, "plan_curricular", None)
-        titulo = getattr(plan, "titulo_referencia", None)
-        return titulo.id if titulo else None
-
-    def get_titulo_nombre(self, obj):
-        plan = getattr(obj.oferta, "plan_curricular", None)
-        titulo = getattr(plan, "titulo_referencia", None)
-        return titulo.nombre if titulo else None
 
     def get_cupos_disponibles(self, obj):
         total_inscriptos = getattr(obj, "total_inscriptos", 0) or 0
