@@ -9,7 +9,7 @@
 
 - Se incorporó el conteo de género `X` en `CentroDeInfanciaDetailView` y se expuso en el contexto como `nomina_x`.
 - Se agregó la card visible de `Género X` en el acordeón de nómina del detalle del CDI.
-- Se movió la card de `Género X / No binario` al bloque principal de estadísticas de la vista de detalle de nómina CDI.
+- Se movió la card de `Género X` al bloque principal de estadísticas de la vista de detalle de nómina CDI.
 - Se agregó un test de regresión para verificar que ambas vistas exponen el conteo de género X cuando existe una persona en nómina con sexo `X`.
 
 ## Impacto
