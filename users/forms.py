@@ -284,9 +284,13 @@ class DelegationScopeMixin:
     def _scope_assignable_fields_for_actor(self):
         allowed_groups = self._allowed_groups_for_actor()
         allowed_roles = self._allowed_roles_for_actor()
+        all_permissions = Permission.objects.select_related("content_type").order_by(
+            "content_type__app_label",
+            "name",
+        )
 
         self.fields["groups"].queryset = allowed_groups
-        self.fields["user_permissions"].queryset = allowed_roles
+        self.fields["user_permissions"].queryset = all_permissions
         self.fields["grupos_asignables"].queryset = allowed_groups
         self.fields["roles_asignables"].queryset = allowed_roles
 
@@ -486,6 +490,7 @@ class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
             profile.initial_password_expires_at = timezone.now() + timedelta(
                 hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
             )
+            profile.temporary_password_plaintext = self.generated_password
             profile.save()
             # Evita devolver un profile cacheado con valores viejos tras el signal de User.
             user.refresh_from_db()
@@ -648,6 +653,7 @@ class CustomUserChangeForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm
                 profile.initial_password_expires_at = timezone.now() + timedelta(
                     hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
                 )
+                profile.temporary_password_plaintext = None
             profile.save()
             user.refresh_from_db()
             profile.grupos_asignables.set(

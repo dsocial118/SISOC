@@ -98,6 +98,12 @@ class Profile(models.Model):
         blank=True,
         verbose_name="Expira contraseña inicial en",
     )
+    temporary_password_plaintext = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        verbose_name="Contraseña temporal visible",
+    )
     es_coordinador = models.BooleanField(
         default=False,
         verbose_name="Es Coordinador de Gestión",

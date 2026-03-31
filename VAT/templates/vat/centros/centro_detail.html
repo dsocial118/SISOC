@@ -1728,7 +1728,7 @@
     </div>
 
     <script src="{% static 'custom/js/vat.js' %}"></script>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         // Funciones para editar (redirigir a pagina de edicion)
         function editAutoridad(id) {
             window.location.href = `/vat/institucion/autoridades/${id}/editar/`;

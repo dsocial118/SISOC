@@ -188,7 +188,7 @@ class VoucherAdmin(admin.ModelAdmin):
     )
     list_filter = ("estado", "programa", "fecha_vencimiento", "fecha_asignacion")
     search_fields = ("ciudadano__nombre", "ciudadano__apellido", "ciudadano__documento")
-    readonly_fields = ("fecha_creacion", "fecha_modificacion")
+    readonly_fields = ("fecha_asignacion", "fecha_creacion", "fecha_modificacion")
     inlines = [VoucherRecargaInline, VoucherUsoInline]
     fieldsets = (
         (

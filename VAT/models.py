@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 from django.db import models
 from django.contrib.auth.models import User
 from ciudadanos.models import Ciudadano

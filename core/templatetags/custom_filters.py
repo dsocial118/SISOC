@@ -53,7 +53,11 @@ def is_vat_sidebar_only(user):
     if user.is_superuser:
         return False
 
-    from VAT.services.access_scope import is_vat_provincial, is_vat_referente, is_vat_sse
+    from VAT.services.access_scope import (
+        is_vat_provincial,
+        is_vat_referente,
+        is_vat_sse,
+    )
 
     return bool(is_vat_sse(user) or is_vat_referente(user) or is_vat_provincial(user))
 

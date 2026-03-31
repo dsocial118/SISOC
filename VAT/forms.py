@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 import re
 
 from django import forms
@@ -326,7 +328,7 @@ class BaseInstitucionContactoAltaFormSet(BaseInlineFormSet):
         for form in self.forms:
             if not getattr(form, "cleaned_data", None):
                 continue
-            if self.can_delete and form.cleaned_data.get("DELETE"):
+            if getattr(self, "can_delete", False) and form.cleaned_data.get("DELETE"):
                 continue
             if not form.cleaned_data.get("nombre_contacto"):
                 continue
@@ -906,25 +908,21 @@ class InstitucionUbicacionForm(forms.ModelForm):
             centro = self.instance.centro
         elif "centro" in self.data:
             try:
-                from VAT.models import Centro as CentroModel
-
-                centro = CentroModel.objects.select_related(
+                centro = Centro.objects.select_related(
                     "municipio", "provincia"
                 ).get(pk=self.data["centro"])
-            except (CentroModel.DoesNotExist, ValueError):
+            except (Centro.DoesNotExist, ValueError):
                 pass
         elif self.initial.get("centro"):
             try:
-                from VAT.models import Centro as CentroModel
-
                 centro_val = self.initial["centro"]
-                if isinstance(centro_val, CentroModel):
+                if isinstance(centro_val, Centro):
                     centro = centro_val
                 else:
-                    centro = CentroModel.objects.select_related(
+                    centro = Centro.objects.select_related(
                         "municipio", "provincia"
                     ).get(pk=centro_val)
-            except (CentroModel.DoesNotExist, ValueError):
+            except (Centro.DoesNotExist, ValueError):
                 pass
         if centro:
             qs = Localidad.objects.order_by("nombre")
@@ -1519,8 +1517,6 @@ class VoucherAsignacionMasivaForm(forms.Form):
 
     def clean_dnis(self):
         raw = self.cleaned_data["dnis"]
-        import re
-
         dnis = [d.strip() for d in re.split(r"[\s,;]+", raw) if d.strip()]
         if not dnis:
             raise forms.ValidationError("Ingresá al menos un DNI.")

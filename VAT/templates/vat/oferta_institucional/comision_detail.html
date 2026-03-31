@@ -831,7 +831,7 @@
                 </div>
             </div>
         </div>
-        <script>
+        <script nonce="{{ request.csp_nonce }}">
     (function() {
         var form = document.getElementById('formComisionHorario');
         if (!form) return;
@@ -865,7 +865,7 @@
     {% endif %}
 
     {% if perms.VAT.add_inscripcion %}
-        <script>
+        <script nonce="{{ request.csp_nonce }}">
     (function() {
         var form = document.getElementById('formInscripcionRapida');
         if (!form) return;
