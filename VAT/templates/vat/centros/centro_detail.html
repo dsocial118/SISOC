@@ -229,6 +229,18 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        .nav-pills .nav-link.disabled,
+        .nav-pills .nav-link:disabled {
+            color: #8ea0b8 !important;
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.08);
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+            box-shadow: none;
+        }
+
         .card {
             border: none;
             border-radius: 12px;
@@ -597,12 +609,14 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link"
+                    <button class="nav-link disabled"
                             id="catalogo-tab"
-                            data-bs-toggle="tab"
                             data-bs-target="#catalogo"
                             type="button"
-                            role="tab">
+                            role="tab"
+                            aria-disabled="true"
+                            tabindex="-1"
+                            disabled>
                         <i class="fas fa-graduation-cap me-1"></i>Carrera
                     </button>
                 </li>
@@ -1613,6 +1627,7 @@
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#modalComisionCurso"
                                                                 data-comision-curso-mode="create"
+                                                                data-lock-curso="1"
                                                                 data-curso-id="{{ curso.id }}"
                                                                 data-curso-nombre="{{ curso.nombre }}">
                                                             <i class="fas fa-plus"></i>
@@ -2347,6 +2362,38 @@
                 field.value = value || '';
             }
 
+            function setCursoFieldLock(cursoId, lockField) {
+                if (!formComisionCurso) return;
+                var cursoSelect = document.getElementById('id_curso');
+                if (!cursoSelect) return;
+
+                var hiddenCurso = formComisionCurso.querySelector('#id_curso_locked_value');
+
+                if (lockField) {
+                    if (!hiddenCurso) {
+                        hiddenCurso = document.createElement('input');
+                        hiddenCurso.type = 'hidden';
+                        hiddenCurso.name = 'curso';
+                        hiddenCurso.id = 'id_curso_locked_value';
+                        formComisionCurso.appendChild(hiddenCurso);
+                    }
+
+                    cursoSelect.value = cursoId || '';
+                    hiddenCurso.value = cursoId || '';
+                    cursoSelect.disabled = true;
+                    cursoSelect.classList.add('bg-light');
+                    cursoSelect.setAttribute('aria-disabled', 'true');
+                    return;
+                }
+
+                cursoSelect.disabled = false;
+                cursoSelect.classList.remove('bg-light');
+                cursoSelect.removeAttribute('aria-disabled');
+                if (hiddenCurso) {
+                    hiddenCurso.remove();
+                }
+            }
+
             modalComisionCurso.addEventListener('show.bs.modal', function(event) {
                 var trigger = event.relatedTarget;
                 var mode = trigger
@@ -2354,6 +2401,9 @@
                     : 'create';
                 var cursoId = trigger ? trigger.getAttribute('data-curso-id') : '';
                 var cursoNombre = trigger ? trigger.getAttribute('data-curso-nombre') : '';
+                var lockCursoField = trigger
+                    ? trigger.getAttribute('data-lock-curso') === '1'
+                    : false;
                 var cursoSelect = document.getElementById('id_curso');
                 var cursoInfo = document.getElementById('cursoSeleccionadoInfo');
 
@@ -2399,6 +2449,8 @@
                         submitComisionCurso.textContent = 'Guardar';
                     }
                 }
+
+                setCursoFieldLock(cursoId, mode === 'create' && lockCursoField);
 
                 if (cursoSelect && cursoId) {
                     cursoSelect.value = cursoId;
@@ -2467,10 +2519,12 @@
             var usaVoucherInput = form.querySelector('input[name="usa_voucher"]');
             var programaSelect = form.querySelector('select[name="programa"]');
             var vouchersSelect = form.querySelector('select[name="voucher_parametrias"]');
+            var costoCreditosInput = form.querySelector('input[name="costo_creditos"]');
 
             if (!usaVoucherInput || !programaSelect || !vouchersSelect) return;
 
             function getFieldContainer(field) {
+                if (!field) return null;
                 return field.closest('p') || field.closest('.mb-3') || field.parentElement;
             }
 
@@ -2502,13 +2556,34 @@
             }
 
             function toggleVoucherField() {
-                var container = getFieldContainer(vouchersSelect);
-                if (!container) return;
+                var vouchersContainer = getFieldContainer(vouchersSelect);
+                var costoContainer = getFieldContainer(costoCreditosInput);
+
                 if (usaVoucherInput.checked) {
-                    container.classList.remove('d-none');
+                    if (vouchersContainer) {
+                        vouchersContainer.classList.remove('d-none');
+                    }
+                    if (costoContainer) {
+                        costoContainer.classList.remove('d-none');
+                    }
+                    if (costoCreditosInput) {
+                        costoCreditosInput.required = true;
+                        if (!costoCreditosInput.value || costoCreditosInput.value === '0') {
+                            costoCreditosInput.value = '1';
+                        }
+                    }
                     filtrarVouchersPorPrograma();
                 } else {
-                    container.classList.add('d-none');
+                    if (vouchersContainer) {
+                        vouchersContainer.classList.add('d-none');
+                    }
+                    if (costoContainer) {
+                        costoContainer.classList.add('d-none');
+                    }
+                    if (costoCreditosInput) {
+                        costoCreditosInput.required = false;
+                        costoCreditosInput.value = '0';
+                    }
                     Array.from(vouchersSelect.options).forEach(function(option) {
                         option.selected = false;
                     });
@@ -2700,6 +2775,7 @@
             if (!hash) return false;
             var tabButton = document.querySelector('#centroTabs [data-bs-target="' + hash + '"]');
             if (!tabButton) return false;
+            if (tabButton.disabled || tabButton.classList.contains('disabled')) return false;
             bootstrap.Tab.getOrCreateInstance(tabButton).show();
             return true;
         }

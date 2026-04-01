@@ -1066,10 +1066,11 @@ class CursoForm(forms.ModelForm):
     )
     costo_creditos = forms.IntegerField(
         label="Costo en créditos",
-        min_value=1,
-        initial=1,
-        widget=forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
-        help_text="Cantidad de créditos que se debitan por inscripción cuando usa voucher.",
+        required=False,
+        min_value=0,
+        initial=0,
+        widget=forms.NumberInput(attrs={"class": "form-control", "min": "0"}),
+        help_text="Cantidad de créditos que se debitan por inscripción cuando usa voucher. Si no usa voucher, se guarda en 0.",
     )
     observaciones = forms.CharField(
         label="Observaciones",
@@ -1120,6 +1121,7 @@ class CursoForm(forms.ModelForm):
         programa = cleaned_data.get("programa")
         usa_voucher = cleaned_data.get("usa_voucher")
         voucher_parametrias = cleaned_data.get("voucher_parametrias")
+        costo_creditos = cleaned_data.get("costo_creditos")
         centro_id = (
             self.instance.centro_id
             if self.instance and self.instance.centro_id
@@ -1153,6 +1155,16 @@ class CursoForm(forms.ModelForm):
                 "voucher_parametrias",
                 "Debés seleccionar al menos un voucher cuando el curso usa voucher.",
             )
+
+        if usa_voucher and (costo_creditos is None or costo_creditos <= 0):
+            self.add_error(
+                "costo_creditos",
+                "Debés informar un costo mayor a 0 cuando el curso usa voucher.",
+            )
+
+        if not usa_voucher:
+            cleaned_data["costo_creditos"] = 0
+            cleaned_data["voucher_parametrias"] = VoucherParametria.objects.none()
 
         if programa and voucher_parametrias:
             invalidas = [

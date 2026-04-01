@@ -157,6 +157,7 @@
     const toggle = document.getElementById('{{ form.usa_voucher.id_for_label }}');
     const programaSelect = document.getElementById('{{ form.programa.id_for_label }}');
     const vouchersSelect = document.getElementById('{{ form.voucher_parametrias.id_for_label }}');
+    const costoInput = document.getElementById('{{ form.costo_creditos.id_for_label }}');
     const campoCosto = document.getElementById('campo-costo-creditos');
     const campoVouchers = document.getElementById('campo-vouchers');
 
@@ -176,12 +177,22 @@
         campoCosto.style.display = toggle.checked ? 'block' : 'none';
         campoVouchers.style.display = toggle.checked ? 'block' : 'none';
         if (!toggle.checked) {
+            if (costoInput) {
+                costoInput.required = false;
+                costoInput.value = '0';
+            }
             if (vouchersSelect) {
                 Array.from(vouchersSelect.options).forEach(function (option) {
                     option.selected = false;
                 });
             }
         } else {
+            if (costoInput) {
+                costoInput.required = true;
+                if (!costoInput.value || costoInput.value === '0') {
+                    costoInput.value = '1';
+                }
+            }
             filtrarVouchersPorPrograma();
         }
     }

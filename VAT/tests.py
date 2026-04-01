@@ -621,6 +621,60 @@ def test_curso_form_plan_estudio_es_primer_campo():
 
 
 @pytest.mark.django_db
+def test_curso_form_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Test Costo")
+    usuario = User.objects.create_user(username="voucher-costo-1", password="test1234")
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Costo",
+        programa=programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+
+    form = CursoForm(
+        data={
+            "programa": str(programa.id),
+            "ubicacion": str(ubicacion.id),
+            "nombre": "Curso sin costo",
+            "modalidad": str(modalidad.id),
+            "estado": "planificado",
+            "usa_voucher": "on",
+            "voucher_parametrias": [str(voucher.id)],
+            "costo_creditos": "",
+            "observaciones": "",
+        },
+        initial={"centro": centro},
+    )
+
+    assert not form.is_valid()
+    assert "costo_creditos" in form.errors
+
+
+@pytest.mark.django_db
+def test_curso_form_default_costo_creditos_si_no_usa_voucher(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+
+    form = CursoForm(
+        data={
+            "programa": "",
+            "ubicacion": str(ubicacion.id),
+            "nombre": "Curso sin voucher",
+            "modalidad": str(modalidad.id),
+            "estado": "planificado",
+            "costo_creditos": "",
+            "observaciones": "",
+        },
+        initial={"centro": centro},
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["costo_creditos"] == 0
+
+
+@pytest.mark.django_db
 def test_curso_form_guarda_plan_estudio(vat_curso_base, vat_plan_estudio_base):
     centro, ubicacion, modalidad = vat_curso_base
     _, _, _, _, titulo, _ = vat_plan_estudio_base

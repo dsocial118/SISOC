@@ -986,10 +986,13 @@ class Curso(SoftDeleteModelMixin, models.Model):
                 }
             )
 
-        if self.costo_creditos <= 0:
+        if self.usa_voucher and self.costo_creditos <= 0:
             raise ValidationError(
                 {"costo_creditos": "El costo en créditos debe ser mayor a 0."}
             )
+
+        if not self.usa_voucher:
+            self.costo_creditos = 0
 
     def __str__(self):
         return f"{self.nombre} - {self.centro}"
