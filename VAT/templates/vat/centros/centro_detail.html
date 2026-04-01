@@ -1558,7 +1558,8 @@
                         <button type="button"
                                 class="btn btn-sm btn-primary"
                                 data-bs-toggle="modal"
-                                data-bs-target="#modalCurso">
+                                data-bs-target="#modalCurso"
+                                data-curso-mode="create">
                             <i class="fas fa-plus me-1"></i>Nuevo Curso
                         </button>
                     {% endif %}
@@ -1611,6 +1612,7 @@
                                                                 title="Nueva Comisión"
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#modalComisionCurso"
+                                                                data-comision-curso-mode="create"
                                                                 data-curso-id="{{ curso.id }}"
                                                                 data-curso-nombre="{{ curso.nombre }}">
                                                             <i class="fas fa-plus"></i>
@@ -1621,8 +1623,19 @@
                                                                 class="btn btn-outline-warning btn-editar-curso"
                                                                 title="Editar Curso"
                                                                 data-bs-toggle="modal"
-                                                                data-bs-target="#modalCursoEditar"
-                                                                data-edit-url="{% url 'vat_curso_update' curso.id %}">
+                                                                data-bs-target="#modalCurso"
+                                                                data-curso-mode="edit"
+                                                                data-edit-url="{% url 'vat_curso_update' curso.id %}"
+                                                                data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}"
+                                                                data-programa-id="{{ curso.programa_id|default:'' }}"
+                                                                data-ubicacion-id="{{ curso.ubicacion_id|default:'' }}"
+                                                                data-nombre="{{ curso.nombre }}"
+                                                                data-modalidad-id="{{ curso.modalidad_id|default:'' }}"
+                                                                data-estado="{{ curso.estado|default:'' }}"
+                                                                data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}"
+                                                                data-costo-creditos="{{ curso.costo_creditos|default:'' }}"
+                                                                data-observaciones="{{ curso.observaciones|default:'' }}"
+                                                                data-voucher-ids="{% for voucher in curso.voucher_parametrias.all %}{% if not forloop.first %},{% endif %}{{ voucher.id }}{% endfor %}">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
                                                     {% endif %}
@@ -1701,11 +1714,24 @@
                                                         </a>
                                                     {% endif %}
                                                     {% if perms.VAT.change_comisioncurso %}
-                                                        <a href="{% url 'vat_comision_curso_update' comision.id %}"
-                                                           class="btn btn-outline-warning"
-                                                           title="Editar Comisión">
+                                                        <button type="button"
+                                                                class="btn btn-outline-warning btn-editar-comision-curso"
+                                                                title="Editar Comisión"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#modalComisionCurso"
+                                                                data-comision-curso-mode="edit"
+                                                                data-edit-url="{% url 'vat_comision_curso_update' comision.id %}"
+                                                                data-curso-id="{{ comision.curso_id }}"
+                                                                data-curso-nombre="{{ comision.curso.nombre }}"
+                                                                data-codigo-comision="{{ comision.codigo_comision }}"
+                                                                data-nombre="{{ comision.nombre }}"
+                                                                data-cupo-total="{{ comision.cupo_total }}"
+                                                                data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
+                                                                data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
+                                                                data-estado="{{ comision.estado }}"
+                                                                data-observaciones="{{ comision.observaciones|default:'' }}">
                                                             <i class="fas fa-edit"></i>
-                                                        </a>
+                                                        </button>
                                                     {% endif %}
                                                     {% if perms.VAT.delete_comisioncurso %}
                                                         <a href="{% url 'vat_comision_curso_delete' comision.id %}"
@@ -1973,32 +1999,6 @@
                         <button type="submit" class="btn btn-primary">Guardar</button>
                     </div>
                 </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Editar Curso -->
-    <div class="modal fade"
-         id="modalCursoEditar"
-         tabindex="-1"
-         aria-labelledby="modalCursoEditarLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalCursoEditarLabel">Editar Curso</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-0">
-                    <iframe id="cursoEditFrame"
-                            title="Editar Curso"
-                            class="w-100 border-0"
-                            style="height: 78vh;"
-                            src="about:blank"></iframe>
-                </div>
             </div>
         </div>
     </div>
@@ -2308,12 +2308,74 @@
 
         var modalComisionCurso = document.getElementById('modalComisionCurso');
         if (modalComisionCurso) {
+            var formComisionCurso = document.getElementById('formComisionCurso');
+            var tituloComisionCurso = document.getElementById('modalComisionCursoLabel');
+            var submitComisionCurso = formComisionCurso
+                ? formComisionCurso.querySelector('button[type="submit"]')
+                : null;
+            var createComisionCursoAction = formComisionCurso
+                ? formComisionCurso.getAttribute('action')
+                : '';
+
+            function setComisionCursoValue(name, value) {
+                if (!formComisionCurso) return;
+                var field = formComisionCurso.querySelector('[name="' + name + '"]');
+                if (!field) return;
+                field.value = value || '';
+            }
+
             modalComisionCurso.addEventListener('show.bs.modal', function(event) {
                 var trigger = event.relatedTarget;
+                var mode = trigger
+                    ? (trigger.getAttribute('data-comision-curso-mode') || 'create')
+                    : 'create';
                 var cursoId = trigger ? trigger.getAttribute('data-curso-id') : '';
                 var cursoNombre = trigger ? trigger.getAttribute('data-curso-nombre') : '';
                 var cursoSelect = document.getElementById('id_curso');
                 var cursoInfo = document.getElementById('cursoSeleccionadoInfo');
+
+                if (mode === 'edit' && formComisionCurso) {
+                    if (tituloComisionCurso) {
+                        tituloComisionCurso.textContent = 'Editar Comisión de Curso';
+                    }
+                    formComisionCurso.setAttribute(
+                        'action',
+                        trigger.getAttribute('data-edit-url') || createComisionCursoAction
+                    );
+                    setComisionCursoValue('curso', cursoId);
+                    setComisionCursoValue(
+                        'codigo_comision',
+                        trigger.getAttribute('data-codigo-comision')
+                    );
+                    setComisionCursoValue('nombre', trigger.getAttribute('data-nombre'));
+                    setComisionCursoValue(
+                        'cupo_total',
+                        trigger.getAttribute('data-cupo-total')
+                    );
+                    setComisionCursoValue(
+                        'fecha_inicio',
+                        trigger.getAttribute('data-fecha-inicio')
+                    );
+                    setComisionCursoValue('fecha_fin', trigger.getAttribute('data-fecha-fin'));
+                    setComisionCursoValue('estado', trigger.getAttribute('data-estado'));
+                    setComisionCursoValue(
+                        'observaciones',
+                        trigger.getAttribute('data-observaciones')
+                    );
+                    if (submitComisionCurso) {
+                        submitComisionCurso.textContent = 'Actualizar';
+                    }
+                } else if (formComisionCurso) {
+                    if (tituloComisionCurso) {
+                        tituloComisionCurso.textContent = 'Nueva Comisión de Curso';
+                    }
+                    formComisionCurso.reset();
+                    formComisionCurso.setAttribute('action', createComisionCursoAction);
+                    setComisionCursoValue('curso', cursoId);
+                    if (submitComisionCurso) {
+                        submitComisionCurso.textContent = 'Guardar';
+                    }
+                }
 
                 if (cursoSelect && cursoId) {
                     cursoSelect.value = cursoId;
@@ -2540,29 +2602,68 @@
 
         setupCursoComisionFilter();
 
-        function setupCursoEditModal() {
-            var modalEl = document.getElementById('modalCursoEditar');
-            var iframeEl = document.getElementById('cursoEditFrame');
-            if (!modalEl || !iframeEl) return;
+        function setupCursoFormModal() {
+            var modalEl = document.getElementById('modalCurso');
+            var formEl = document.getElementById('formCurso');
+            var titleEl = document.getElementById('modalCursoLabel');
+            if (!modalEl || !formEl || !titleEl) return;
+
+            var createAction = formEl.getAttribute('action');
+
+            function setFormValue(name, value) {
+                var field = formEl.querySelector('[name="' + name + '"]');
+                if (!field) return;
+
+                if (field.type === 'checkbox') {
+                    field.checked = value === '1' || value === 'true' || value === true;
+                    return;
+                }
+
+                if (field.multiple) {
+                    var selected = (value || '')
+                        .split(',')
+                        .map(function(item) {
+                            return item.trim();
+                        })
+                        .filter(Boolean);
+                    Array.from(field.options).forEach(function(option) {
+                        option.selected = selected.includes(option.value);
+                    });
+                    return;
+                }
+
+                field.value = value || '';
+            }
 
             modalEl.addEventListener('show.bs.modal', function(event) {
                 var triggerButton = event.relatedTarget;
                 if (!triggerButton) return;
-                var editUrl = triggerButton.getAttribute('data-edit-url');
-                if (!editUrl) return;
-                iframeEl.src = editUrl;
-            });
 
-            modalEl.addEventListener('hidden.bs.modal', function() {
-                iframeEl.src = 'about:blank';
-                if (window.location.hash !== '#cursos') {
-                    window.location.hash = '#cursos';
+                var mode = triggerButton.getAttribute('data-curso-mode') || 'create';
+
+                if (mode === 'edit') {
+                    titleEl.textContent = 'Editar Curso';
+                    formEl.setAttribute('action', triggerButton.getAttribute('data-edit-url') || createAction);
+                    setFormValue('plan_estudio', triggerButton.getAttribute('data-plan-estudio-id'));
+                    setFormValue('programa', triggerButton.getAttribute('data-programa-id'));
+                    setFormValue('ubicacion', triggerButton.getAttribute('data-ubicacion-id'));
+                    setFormValue('nombre', triggerButton.getAttribute('data-nombre'));
+                    setFormValue('modalidad', triggerButton.getAttribute('data-modalidad-id'));
+                    setFormValue('estado', triggerButton.getAttribute('data-estado'));
+                    setFormValue('usa_voucher', triggerButton.getAttribute('data-usa-voucher'));
+                    setFormValue('costo_creditos', triggerButton.getAttribute('data-costo-creditos'));
+                    setFormValue('observaciones', triggerButton.getAttribute('data-observaciones'));
+                    setFormValue('voucher_parametrias', triggerButton.getAttribute('data-voucher-ids'));
+                    return;
                 }
-                window.location.reload();
+
+                titleEl.textContent = 'Nuevo Curso';
+                formEl.reset();
+                formEl.setAttribute('action', createAction);
             });
         }
 
-        setupCursoEditModal();
+        setupCursoFormModal();
 
         // Legacy compatibility - prevent any jQuery double-bind
         if (typeof $ !== 'undefined') {
