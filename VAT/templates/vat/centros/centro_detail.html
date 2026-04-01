@@ -1980,6 +1980,16 @@
                             {% for field in curso_form %}
                                 {% if field.is_hidden %}
                                     {{ field }}
+                                {% elif field.html_name == 'voucher_parametrias' %}
+                                    <div class="col-12 mb-3">
+                                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                            {{ field.label }}
+                                            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                    </div>
                                 {% else %}
                                     <div class="col-md-6 mb-3">
                                         <label for="{{ field.id_for_label }}" class="form-label fw-bold">
@@ -2137,63 +2147,76 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
           rel="stylesheet" />
     <style>
-        /* Select2 multiple dark mode para #modalOferta */
-        #modalOferta .select2-container--default .select2-selection--multiple {
+        /* Select2 multiple dark mode para #modalOferta y #modalCurso */
+        #modalOferta .select2-container--default .select2-selection--multiple,
+        #modalCurso .select2-container--default .select2-selection--multiple {
             background-color: #1e2a3a !important;
             border: 1px solid #3d4f63 !important;
             border-radius: 0.25rem;
             min-height: 38px;
         }
-        #modalOferta .select2-container--default.select2-container--focus .select2-selection--multiple {
+        #modalOferta .select2-container--default.select2-container--focus .select2-selection--multiple,
+        #modalCurso .select2-container--default.select2-container--focus .select2-selection--multiple {
             background-color: #253446 !important;
             border-color: #f39c12 !important;
             box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15) !important;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice,
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice {
             background-color: #2c3e50 !important;
             color: #f39c12 !important;
             border: 1px solid #3d4f63 !important;
             border-radius: 3px;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
             color: #9ca3af !important;
             border-right: 1px solid #3d4f63 !important;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover,
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
             color: #ef4444 !important;
             background-color: transparent !important;
         }
-        #modalOferta .select2-container--default .select2-search--inline .select2-search__field {
+        #modalOferta .select2-container--default .select2-search--inline .select2-search__field,
+        #modalCurso .select2-container--default .select2-search--inline .select2-search__field {
             color: #e5e7eb !important;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__rendered {
             color: #e5e7eb !important;
         }
         /* Dropdown (se renderiza dentro de .modal-body por dropdownParent) */
-        #formOferta .select2-dropdown {
+        #formOferta .select2-dropdown,
+        #formCurso .select2-dropdown {
             background-color: #1e2a3a !important;
             border: 1px solid #3d4f63;
         }
-        #formOferta .select2-search--dropdown .select2-search__field {
+        #formOferta .select2-search--dropdown .select2-search__field,
+        #formCurso .select2-search--dropdown .select2-search__field {
             background-color: #253446 !important;
             border: 1px solid #3d4f63 !important;
             border-radius: 0.25rem;
             color: #e5e7eb !important;
         }
-        #formOferta .select2-results__option {
+        #formOferta .select2-results__option,
+        #formCurso .select2-results__option {
             background-color: #1e2a3a !important;
             color: #e5e7eb !important;
             padding: 8px 12px !important;
         }
-        #formOferta .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        #formOferta .select2-container--default .select2-results__option--highlighted[aria-selected],
+        #formCurso .select2-container--default .select2-results__option--highlighted[aria-selected] {
             background-color: #f39c12 !important;
             color: #1e2a3a !important;
         }
-        #formOferta .select2-container--default .select2-results__option[aria-selected=true] {
+        #formOferta .select2-container--default .select2-results__option[aria-selected=true],
+        #formCurso .select2-container--default .select2-results__option[aria-selected=true] {
             background-color: #2c3e50 !important;
             color: #f39c12 !important;
         }
-        #formOferta .select2-container--default .select2-results__option--highlighted[aria-selected=true] {
+        #formOferta .select2-container--default .select2-results__option--highlighted[aria-selected=true],
+        #formCurso .select2-container--default .select2-results__option--highlighted[aria-selected=true] {
             background-color: #f39c12 !important;
             color: #1e2a3a !important;
         }
@@ -2786,6 +2809,63 @@
             });
 
             // Cuando cambia programa, refrescar Select2
+            programaSelect.addEventListener('change', function() {
+                if (select2Active) {
+                    $vouchers.trigger('change.select2');
+                }
+            });
+        })();
+
+        // Select2 para formCurso - igual que formOferta
+        (function() {
+            var form = document.getElementById('formCurso');
+            if (!form || typeof $ === 'undefined') return;
+
+            var usaVoucherInput = form.querySelector('input[name="usa_voucher"]');
+            var programaSelect = form.querySelector('select[name="programa"]');
+            var vouchersSelect = form.querySelector('select[name="voucher_parametrias"]');
+            if (!usaVoucherInput || !programaSelect || !vouchersSelect) return;
+
+            var $vouchers = $(vouchersSelect);
+            var select2Active = false;
+
+            function isModalVisible() {
+                var modal = document.getElementById('modalCurso');
+                return modal && modal.classList.contains('show');
+            }
+
+            function initSelect2() {
+                if (select2Active) return;
+                if (!isModalVisible()) return;
+                $vouchers.select2({
+                    dropdownParent: $(vouchersSelect).closest('.modal-body'),
+                    placeholder: 'Buscar voucher...',
+                    allowClear: true,
+                    width: '100%'
+                });
+                select2Active = true;
+            }
+
+            function destroySelect2() {
+                if (!select2Active) return;
+                $vouchers.select2('destroy');
+                select2Active = false;
+            }
+
+            document.getElementById('modalCurso').addEventListener('shown.bs.modal', function() {
+                if (usaVoucherInput.checked) {
+                    initSelect2();
+                }
+            });
+
+            usaVoucherInput.addEventListener('change', function() {
+                if (usaVoucherInput.checked && isModalVisible()) {
+                    initSelect2();
+                } else if (!usaVoucherInput.checked) {
+                    destroySelect2();
+                }
+            });
+
             programaSelect.addEventListener('change', function() {
                 if (select2Active) {
                     $vouchers.trigger('change.select2');
