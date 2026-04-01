@@ -16,6 +16,8 @@ from VAT.models import (
     AutoridadInstitucional,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
+    Curso,
+    ComisionCurso,
     # Fase 4
     OfertaInstitucional,
     Comision,
@@ -380,6 +382,59 @@ class InstitucionUbicacionSerializer(serializers.ModelSerializer):
 
 
 # ============================================================================
+# CURSOS (CAPA OPERATIVA)
+# ============================================================================
+
+
+class CursoSerializer(serializers.ModelSerializer):
+    centro_nombre = serializers.CharField(source="centro.nombre", read_only=True)
+    ubicacion_nombre = serializers.CharField(
+        source="ubicacion.nombre_ubicacion", read_only=True
+    )
+    modalidad_nombre = serializers.CharField(source="modalidad.nombre", read_only=True)
+
+    class Meta:
+        model = Curso
+        fields = [
+            "id",
+            "centro",
+            "centro_nombre",
+            "ubicacion",
+            "ubicacion_nombre",
+            "nombre",
+            "modalidad",
+            "modalidad_nombre",
+            "estado",
+            "observaciones",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class ComisionCursoSerializer(serializers.ModelSerializer):
+    curso_nombre = serializers.CharField(source="curso.nombre", read_only=True)
+    curso_centro_id = serializers.IntegerField(source="curso.centro_id", read_only=True)
+
+    class Meta:
+        model = ComisionCurso
+        fields = [
+            "id",
+            "curso",
+            "curso_nombre",
+            "curso_centro_id",
+            "codigo_comision",
+            "nombre",
+            "cupo_total",
+            "fecha_inicio",
+            "fecha_fin",
+            "estado",
+            "observaciones",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+# ============================================================================
 # FASE 4: OFERTA INSTITUCIONAL - COMISIONES
 # ============================================================================
 
@@ -437,6 +492,7 @@ class OfertaInstitucionalSerializer(serializers.ModelSerializer):
     )
     programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
     comisiones = ComisionSerializer(many=True, read_only=True)
+    voucher_parametrias = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
         model = OfertaInstitucional
@@ -454,6 +510,7 @@ class OfertaInstitucionalSerializer(serializers.ModelSerializer):
             "estado",
             "costo",
             "usa_voucher",
+            "voucher_parametrias",
             "fecha_publicacion",
             "comisiones",
             "observaciones",
