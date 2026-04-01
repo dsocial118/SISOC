@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.urls import reverse
@@ -95,6 +95,12 @@ class CursoCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["is_embedded"] = self.request.GET.get("modal") == "1"
+        context["base_template"] = (
+            "vat/curso/curso_embedded_base.html"
+            if context["is_embedded"]
+            else "includes/main.html"
+        )
         context["cancel_url"] = (
             f"{reverse('vat_centro_detail', kwargs={'pk': self.centro.id})}#cursos"
         )
@@ -124,10 +130,27 @@ class CursoUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         messages.success(self.request, "Curso actualizado exitosamente.")
+        if self.request.GET.get("modal") == "1":
+            self.object = form.save()
+            return HttpResponse(
+                "<script>"
+                "if (window.parent && window.parent !== window) {"
+                "window.parent.location.reload();"
+                "} else {"
+                f"window.location.href = '{self.get_success_url()}';"
+                "}"
+                "</script>"
+            )
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["is_embedded"] = self.request.GET.get("modal") == "1"
+        context["base_template"] = (
+            "vat/curso/curso_embedded_base.html"
+            if context["is_embedded"]
+            else "includes/main.html"
+        )
         context["cancel_url"] = (
             f"{reverse('vat_centro_detail', kwargs={'pk': self.object.centro_id})}#cursos"
         )

@@ -1,4 +1,4 @@
-{% extends "includes/main.html" %}
+{% extends base_template|default:"includes/main.html" %}
 {% load static %}
 
 {% block title %}
@@ -12,7 +12,13 @@
 {% block content %}
     <div class="container-fluid py-4">
         <div class="d-flex align-items-center gap-2 mb-4">
-            <a href="{{ cancel_url }}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+            {% if is_embedded %}
+                <button type="button" class="btn btn-light" id="closeEmbeddedCursoForm">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            {% else %}
+                <a href="{{ cancel_url }}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+            {% endif %}
             <h1 class="h3 mb-0" style="color: #1f3a93;">
                 {% if form.instance.id %}
                     <i class="bi bi-pencil-square me-2"></i>Editar Curso
@@ -121,7 +127,11 @@
                     </div>
 
                     <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Cancelar</a>
+                        {% if is_embedded %}
+                            <button type="button" class="btn btn-outline-secondary" id="cancelEmbeddedCursoForm">Cancelar</button>
+                        {% else %}
+                            <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Cancelar</a>
+                        {% endif %}
                         <button type="submit" class="btn btn-primary">
                             {% if form.instance.id %}
                                 Actualizar
@@ -143,6 +153,7 @@
     </style>
     <script nonce="{{ request.csp_nonce }}">
 (function () {
+    const isEmbedded = {{ is_embedded|yesno:"true,false" }};
     const toggle = document.getElementById('{{ form.usa_voucher.id_for_label }}');
     const programaSelect = document.getElementById('{{ form.programa.id_for_label }}');
     const vouchersSelect = document.getElementById('{{ form.voucher_parametrias.id_for_label }}');
@@ -181,6 +192,23 @@
             if (toggle.checked) filtrarVouchersPorPrograma();
         });
     }
+
+    if (isEmbedded) {
+        const closeModal = function () {
+            if (window.parent && window.parent !== window) {
+                const modalElement = window.parent.document.getElementById('modalCursoEditar');
+                if (modalElement && window.parent.bootstrap) {
+                    window.parent.bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+                }
+            }
+        };
+
+        const closeBtn = document.getElementById('closeEmbeddedCursoForm');
+        const cancelBtn = document.getElementById('cancelEmbeddedCursoForm');
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    }
+
     actualizarCosto();
 })();
     </script>
