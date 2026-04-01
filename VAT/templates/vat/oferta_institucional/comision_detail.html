@@ -106,6 +106,14 @@
     overflow: hidden;
 }
 
+/* Solo para Inscriptos: permite que el dropdown de estados desborde sin recorte */
+.ci-panel-inscriptos {
+    overflow: visible;
+}
+.ci-panel-inscriptos .dropdown-menu {
+    z-index: 1100;
+}
+
 /* ── Section header ───────────────────────────── */
 .ci-sec-head {
     display: flex; align-items: center; justify-content: space-between;
@@ -434,7 +442,7 @@
 
                 {# INSCRIPTOS #}
                 <div class="tab-pane fade" id="ci-inscriptos" role="tabpanel">
-                    <div class="ci-panel">
+                    <div class="ci-panel ci-panel-inscriptos">
                         <div class="ci-sec-head">
                             <span class="ci-sec-title"><i class="bi bi-people me-2"></i>Inscriptos</span>
                             {% if perms.VAT.add_inscripcion %}
@@ -502,7 +510,10 @@
                                         {% endif %}
                                         {% if perms.VAT.change_inscripcion %}
                                             <div class="dropdown">
-                                                <button class="ci-dots dropdown-toggle" data-bs-toggle="dropdown">
+                                                <button class="ci-dots dropdown-toggle"
+                                                        data-bs-toggle="dropdown"
+                                                        data-bs-display="dynamic"
+                                                        data-bs-strategy="fixed">
                                                     <i class="bi bi-three-dots-vertical"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3"
