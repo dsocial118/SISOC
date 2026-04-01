@@ -1064,7 +1064,9 @@ class CursoForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        centro = self.instance.centro if self.instance and self.instance.centro_id else None
+        centro = (
+            self.instance.centro if self.instance and self.instance.centro_id else None
+        )
         if not centro:
             centro_val = self.initial.get("centro")
             if isinstance(centro_val, Centro):
