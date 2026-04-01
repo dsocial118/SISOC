@@ -2,19 +2,27 @@ from django.db import migrations
 
 
 def _drop_curso_columns_if_present(apps, schema_editor):
-    """Drop legacy Curso columns only when they exist (MySQL-compatible)."""
-    table_name = "VAT_curso"
+    """Drop legacy Curso columns only when they exist (backend-agnostic)."""
+    curso_model = apps.get_model("VAT", "Curso")
+    table_name = curso_model._meta.db_table
     columns = ("cupo_total", "fecha_inicio", "fecha_fin")
+    connection = schema_editor.connection
+    introspection = connection.introspection
 
-    with schema_editor.connection.cursor() as cursor:
-        cursor.execute(f"SHOW COLUMNS FROM `{table_name}`")
-        existing = {row[0] for row in cursor.fetchall()}
+    with connection.cursor() as cursor:
+        if table_name not in introspection.table_names(cursor):
+            return
 
-        for column_name in columns:
-            if column_name in existing:
-                cursor.execute(
-                    f"ALTER TABLE `{table_name}` DROP COLUMN `{column_name}`"
-                )
+        description = introspection.get_table_description(cursor, table_name)
+        existing = {
+            getattr(column, "name", column[0])
+            for column in description
+        }
+
+    for column_name in columns:
+        if column_name in existing:
+            field = curso_model._meta.get_field(column_name)
+            schema_editor.remove_field(curso_model, field)
 
 
 class Migration(migrations.Migration):

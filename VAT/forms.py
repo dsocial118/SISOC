@@ -1064,18 +1064,19 @@ class CursoForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        centro = (
-            self.instance.centro if self.instance and self.instance.centro_id else None
-        )
-        if not centro:
+        centro_id = self.instance.centro_id if self.instance and self.instance.centro_id else None
+        if not centro_id:
             centro_val = self.initial.get("centro")
             if isinstance(centro_val, Centro):
-                centro = centro_val
+                centro_id = centro_val.id
             elif centro_val:
-                centro = Centro.objects.filter(pk=centro_val).first()
+                try:
+                    centro_id = int(centro_val)
+                except (TypeError, ValueError):
+                    centro_id = None
         ubicacion = cleaned_data.get("ubicacion")
 
-        if centro and ubicacion and ubicacion.centro_id != centro.id:
+        if centro_id and ubicacion and ubicacion.centro_id != centro_id:
             self.add_error(
                 "ubicacion",
                 "La ubicación seleccionada no pertenece al centro del curso.",
