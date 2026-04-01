@@ -215,7 +215,7 @@
         }
 
         .nav-pills .nav-link {
-            color: #25426f;
+            color: #4b6890 !important;
         }
 
         .nav-pills .nav-link.active {
@@ -2320,16 +2320,51 @@
             $('#formAutoridad, #formContacto, #formIdentificador, #formUbicacion, #formOferta, #formCurso, #formComisionCurso, #formTitulo, #formPlan').off('submit');
         }
 
-        function activateTabFromHash() {
-            if (!window.location.hash) return;
-            var tabButton = document.querySelector('[data-bs-target="' + window.location.hash + '"]');
-            if (!tabButton) return;
+        var tabStorageKey = 'vat-centro-active-tab-{{ centro.id }}';
+
+        function activateTabFromHash(hashValue) {
+            var hash = hashValue || window.location.hash;
+            if (!hash) return false;
+            var tabButton = document.querySelector('[data-bs-target="' + hash + '"]');
+            if (!tabButton) return false;
             var tab = new bootstrap.Tab(tabButton);
             tab.show();
+            return true;
         }
 
-        activateTabFromHash();
-        window.addEventListener('hashchange', activateTabFromHash);
+        function activatePersistedTab() {
+            var persistedHash = null;
+            try {
+                persistedHash = localStorage.getItem(tabStorageKey);
+            } catch (error) {
+                persistedHash = null;
+            }
+
+            if (activateTabFromHash(window.location.hash)) return;
+            if (persistedHash) {
+                activateTabFromHash(persistedHash);
+            }
+        }
+
+        document.querySelectorAll('#centroTabs [data-bs-toggle="tab"]').forEach(function(tabButton) {
+            tabButton.addEventListener('shown.bs.tab', function(event) {
+                var targetHash = event.target.getAttribute('data-bs-target');
+                if (!targetHash) return;
+                try {
+                    localStorage.setItem(tabStorageKey, targetHash);
+                } catch (error) {
+                    // localStorage can fail in private mode; ignore and keep normal tab behavior.
+                }
+                if (window.location.hash !== targetHash) {
+                    history.replaceState(null, '', targetHash);
+                }
+            });
+        });
+
+        activatePersistedTab();
+        window.addEventListener('hashchange', function() {
+            activateTabFromHash(window.location.hash);
+        });
     </script>
 {% endblock %}
 
