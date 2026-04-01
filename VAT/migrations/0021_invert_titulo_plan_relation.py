@@ -109,39 +109,47 @@ def _drop_titulo_referencia(apps, schema_editor):
     db = schema_editor.connection
     cursor = db.cursor()
 
-    # Buscar y eliminar FK constraints que involucren titulo_referencia_id
+    # En MySQL primero debe caer la FK antes que cualquier índice que la
+    # respalde; si no, DROP INDEX falla con OperationalError 1553.
     cursor.execute(
         """
-        SELECT tc.CONSTRAINT_NAME, tc.CONSTRAINT_TYPE
+        SELECT DISTINCT tc.CONSTRAINT_NAME
         FROM information_schema.TABLE_CONSTRAINTS tc
+        INNER JOIN information_schema.KEY_COLUMN_USAGE kcu
+            ON tc.TABLE_SCHEMA = kcu.TABLE_SCHEMA
+            AND tc.TABLE_NAME = kcu.TABLE_NAME
+            AND tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
         WHERE tc.TABLE_SCHEMA = DATABASE()
         AND tc.TABLE_NAME = 'VAT_planversioncurricular'
-        AND tc.CONSTRAINT_TYPE IN ('UNIQUE', 'FOREIGN KEY')
+        AND tc.CONSTRAINT_TYPE = 'FOREIGN KEY'
+        AND kcu.COLUMN_NAME = 'titulo_referencia_id'
         """
     )
-    constraints = cursor.fetchall()
-    for constraint_name, constraint_type in constraints:
+    for (constraint_name,) in cursor.fetchall():
         cursor.execute(
-            """
-            SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE
-            WHERE TABLE_SCHEMA = DATABASE()
-            AND TABLE_NAME = 'VAT_planversioncurricular'
-            AND CONSTRAINT_NAME = %s
-            AND COLUMN_NAME = 'titulo_referencia_id'
-            """,
-            [constraint_name],
+            f"ALTER TABLE `VAT_planversioncurricular` "
+            f"DROP FOREIGN KEY `{constraint_name}`"
         )
-        if cursor.fetchone()[0] > 0:
-            if constraint_type == "FOREIGN KEY":
-                cursor.execute(
-                    f"ALTER TABLE `VAT_planversioncurricular` "
-                    f"DROP FOREIGN KEY `{constraint_name}`"
-                )
-            elif constraint_type == "UNIQUE":
-                cursor.execute(
-                    f"ALTER TABLE `VAT_planversioncurricular` "
-                    f"DROP INDEX `{constraint_name}`"
-                )
+
+    cursor.execute(
+        """
+        SELECT DISTINCT tc.CONSTRAINT_NAME
+        FROM information_schema.TABLE_CONSTRAINTS tc
+        INNER JOIN information_schema.KEY_COLUMN_USAGE kcu
+            ON tc.TABLE_SCHEMA = kcu.TABLE_SCHEMA
+            AND tc.TABLE_NAME = kcu.TABLE_NAME
+            AND tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
+        WHERE tc.TABLE_SCHEMA = DATABASE()
+        AND tc.TABLE_NAME = 'VAT_planversioncurricular'
+        AND tc.CONSTRAINT_TYPE = 'UNIQUE'
+        AND kcu.COLUMN_NAME = 'titulo_referencia_id'
+        """
+    )
+    for (constraint_name,) in cursor.fetchall():
+        cursor.execute(
+            f"ALTER TABLE `VAT_planversioncurricular` "
+            f"DROP INDEX `{constraint_name}`"
+        )
 
     # Eliminar índices restantes sobre titulo_referencia_id
     cursor.execute(
