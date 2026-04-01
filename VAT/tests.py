@@ -354,6 +354,61 @@ def test_migracion_0021_falla_si_un_titulo_tiene_multiples_planes():
         migration._raise_if_ambiguous_title_plan_rows([(7, 2, "11,12")])
 
 
+def test_migracion_0021_droppea_fk_antes_que_indices_de_titulo_referencia():
+    migration = importlib.import_module(
+        "VAT.migrations.0021_invert_titulo_plan_relation"
+    )
+    executed_sql = []
+
+    class FakeCursor:
+        def execute(self, sql, params=None):
+            executed_sql.append((sql, params))
+            if "CONSTRAINT_TYPE = 'FOREIGN KEY'" in sql:
+                self._rows = [("vat_plan_titulo_fk",)]
+                self._row = None
+            elif "CONSTRAINT_TYPE = 'UNIQUE'" in sql:
+                self._rows = [
+                    ("VAT_planversioncurricula_titulo_referencia_id_mod_uniq",)
+                ]
+                self._row = None
+            elif "FROM information_schema.STATISTICS" in sql:
+                self._rows = []
+                self._row = None
+            elif "FROM information_schema.COLUMNS" in sql:
+                self._rows = None
+                self._row = (1,)
+            else:
+                self._rows = None
+                self._row = None
+
+        def fetchall(self):
+            return self._rows
+
+        def fetchone(self):
+            return self._row
+
+    class FakeConnection:
+        def cursor(self):
+            return FakeCursor()
+
+    schema_editor = type(
+        "FakeSchemaEditor",
+        (),
+        {"connection": FakeConnection()},
+    )()
+
+    migration._drop_titulo_referencia(None, schema_editor)
+
+    drop_fk_index = next(
+        i for i, (sql, _) in enumerate(executed_sql) if "DROP FOREIGN KEY" in sql
+    )
+    drop_unique_index = next(
+        i for i, (sql, _) in enumerate(executed_sql) if "DROP INDEX" in sql
+    )
+
+    assert drop_fk_index < drop_unique_index
+
+
 @pytest.fixture
 def vat_curso_base(db, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
