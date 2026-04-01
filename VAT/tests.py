@@ -445,16 +445,13 @@ def vat_curso_base(db, vat_geo_data):
 
 
 @pytest.mark.django_db
-def test_comision_curso_no_permite_cupo_mayor_al_curso(vat_curso_base):
+def test_comision_curso_permita_cupo_independiente_del_curso(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     curso = Curso.objects.create(
         centro=centro,
         ubicacion=ubicacion,
         nombre="Curso Soldadura Inicial",
         modalidad=modalidad,
-        fecha_inicio="2026-03-01",
-        fecha_fin="2026-03-30",
-        cupo_total=20,
         estado="planificado",
     )
     comision = ComisionCurso(
@@ -467,21 +464,17 @@ def test_comision_curso_no_permite_cupo_mayor_al_curso(vat_curso_base):
         estado="planificada",
     )
 
-    with pytest.raises(ValidationError):
-        comision.full_clean()
+    comision.full_clean()
 
 
 @pytest.mark.django_db
-def test_comision_curso_no_permite_fechas_fuera_de_rango(vat_curso_base):
+def test_comision_curso_permita_fechas_independientes_del_curso(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     curso = Curso.objects.create(
         centro=centro,
         ubicacion=ubicacion,
         nombre="Curso Electricidad",
         modalidad=modalidad,
-        fecha_inicio=date(2026, 4, 1),
-        fecha_fin=date(2026, 4, 30),
-        cupo_total=30,
         estado="planificado",
     )
     comision = ComisionCurso(
@@ -494,8 +487,7 @@ def test_comision_curso_no_permite_fechas_fuera_de_rango(vat_curso_base):
         estado="planificada",
     )
 
-    with pytest.raises(ValidationError):
-        comision.full_clean()
+    comision.full_clean()
 
 
 @pytest.mark.django_db
@@ -557,9 +549,6 @@ def test_curso_no_permite_ubicacion_de_otro_centro(vat_geo_data):
         ubicacion=ubicacion_b,
         nombre="Curso Inválido",
         modalidad=modalidad,
-        fecha_inicio="2026-05-01",
-        fecha_fin="2026-05-10",
-        cupo_total=10,
         estado="planificado",
     )
 

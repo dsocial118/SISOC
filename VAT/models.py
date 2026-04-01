@@ -920,9 +920,6 @@ class Curso(SoftDeleteModelMixin, models.Model):
         related_name="cursos",
         verbose_name="Modalidad",
     )
-    fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
-    fecha_fin = models.DateField(verbose_name="Fecha de Fin")
-    cupo_total = models.PositiveIntegerField(verbose_name="Cupo Total")
     estado = models.CharField(
         max_length=20,
         choices=ESTADO_CURSO_CHOICES,
@@ -937,16 +934,6 @@ class Curso(SoftDeleteModelMixin, models.Model):
 
     def clean(self):
         from django.core.exceptions import ValidationError
-
-        if self.fecha_inicio and self.fecha_fin and self.fecha_inicio > self.fecha_fin:
-            raise ValidationError(
-                {
-                    "fecha_fin": "La fecha de fin debe ser mayor o igual a la fecha de inicio."
-                }
-            )
-
-        if self.cupo_total is not None and self.cupo_total == 0:
-            raise ValidationError({"cupo_total": "El cupo total debe ser mayor a 0."})
 
         if (
             self.ubicacion_id
@@ -965,7 +952,7 @@ class Curso(SoftDeleteModelMixin, models.Model):
     class Meta:
         verbose_name = "Curso"
         verbose_name_plural = "Cursos"
-        ordering = ["-fecha_inicio", "nombre"]
+        ordering = ["-fecha_creacion", "nombre"]
         indexes = [
             models.Index(
                 fields=["centro", "estado"], name="vat_curso_centro_estado_idx"
@@ -1019,44 +1006,6 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
 
         if self.cupo_total is not None and self.cupo_total == 0:
             raise ValidationError({"cupo_total": "El cupo total debe ser mayor a 0."})
-
-        if self.curso_id:
-            if (
-                self.cupo_total
-                and self.curso.cupo_total
-                and self.cupo_total > self.curso.cupo_total
-            ):
-                raise ValidationError(
-                    {
-                        "cupo_total": (
-                            "El cupo total de la comisión no puede superar el cupo total del curso."
-                        )
-                    }
-                )
-            if (
-                self.fecha_inicio
-                and self.curso.fecha_inicio
-                and self.fecha_inicio < self.curso.fecha_inicio
-            ):
-                raise ValidationError(
-                    {
-                        "fecha_inicio": (
-                            "La fecha de inicio de la comisión debe estar dentro del rango del curso."
-                        )
-                    }
-                )
-            if (
-                self.fecha_fin
-                and self.curso.fecha_fin
-                and self.fecha_fin > self.curso.fecha_fin
-            ):
-                raise ValidationError(
-                    {
-                        "fecha_fin": (
-                            "La fecha de fin de la comisión debe estar dentro del rango del curso."
-                        )
-                    }
-                )
 
     def __str__(self):
         return f"{self.codigo_comision} - {self.nombre}"

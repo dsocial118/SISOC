@@ -41,16 +41,13 @@ class CursoCreateView(LoginRequiredMixin, CreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        scoped_centros = filter_centros_queryset_for_user(
-            Centro.objects.all(), self.request.user
-        )
-        form.fields["centro"].queryset = scoped_centros
         form.fields["ubicacion"].queryset = self.centro.ubicaciones.select_related(
             "localidad"
         )
         return form
 
     def form_valid(self, form):
+        form.instance.centro = self.centro
         messages.success(self.request, "Curso creado exitosamente.")
         return super().form_valid(form)
 
@@ -80,10 +77,6 @@ class CursoUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        scoped_centros = filter_centros_queryset_for_user(
-            Centro.objects.all(), self.request.user
-        )
-        form.fields["centro"].queryset = scoped_centros
         form.fields["ubicacion"].queryset = (
             self.object.centro.ubicaciones.select_related("localidad")
         )

@@ -921,7 +921,7 @@
                                         <th>Localidad</th>
                                         <th>Domicilio</th>
                                         <th>Principal</th>
-                                        <th class="text-center">Acciones</th>
+                                        <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1492,8 +1492,7 @@
                                         <th>Nombre</th>
                                         <th>Ubicación</th>
                                         <th>Modalidad</th>
-                                        <th>Periodo</th>
-                                        <th>Cupo Total</th>
+                                        <th>Comisiones</th>
                                         <th>Estado</th>
                                         <th class="text-center">Acciones</th>
                                     </tr>
@@ -1504,14 +1503,13 @@
                                             <td class="fw-bold">{{ curso.nombre }}</td>
                                             <td>{{ curso.ubicacion }}</td>
                                             <td>{{ curso.modalidad.nombre }}</td>
-                                            <td class="text-muted small">{{ curso.fecha_inicio|date:"d/m/Y" }} - {{ curso.fecha_fin|date:"d/m/Y" }}</td>
-                                            <td>{{ curso.cupo_total }}</td>
+                                            <td>{{ curso.comisiones.count }}</td>
                                             <td>
                                                 <span class="badge {% if curso.estado == 'activo' %}bg-success{% elif curso.estado == 'planificado' %}bg-warning text-dark{% elif curso.estado == 'finalizado' %}bg-secondary{% else %}bg-danger{% endif %}">
                                                     {{ curso.get_estado_display }}
                                                 </span>
                                             </td>
-                                            <td class="text-center">
+                                            <td class="text-end">
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     {% if perms.VAT.add_comisioncurso %}
                                                         <button type="button"
@@ -1563,6 +1561,14 @@
                         </h6>
                         <small class="text-muted">Comisiones vinculadas a cursos del centro.</small>
                     </div>
+                    {% if perms.VAT.add_comisioncurso %}
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalComisionCurso">
+                            <i class="fas fa-plus me-1"></i>Nueva Comisión
+                        </button>
+                    {% endif %}
                 </div>
                 <div class="card-body p-0">
                     {% if comisiones_curso %}
@@ -1576,7 +1582,7 @@
                                         <th>Periodo</th>
                                         <th>Cupo Total</th>
                                         <th>Estado</th>
-                                        <th class="text-center">Acciones</th>
+                                        <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1594,7 +1600,7 @@
                                                     {{ comision.get_estado_display }}
                                                 </span>
                                             </td>
-                                            <td class="text-center">
+                                            <td class="text-end">
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     {% if perms.VAT.change_comisioncurso %}
                                                         <a href="{% url 'vat_comision_curso_update' comision.id %}"
@@ -1843,15 +1849,19 @@
                     <div class="modal-body">
                         <div class="row">
                             {% for field in curso_form %}
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                                        {{ field.label }}
-                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                    </label>
+                                {% if field.is_hidden %}
                                     {{ field }}
-                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                </div>
+                                {% else %}
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                            {{ field.label }}
+                                            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                    </div>
+                                {% endif %}
                             {% endfor %}
                         </div>
                     </div>
@@ -2178,6 +2188,8 @@
 
                 if (cursoSelect && cursoId) {
                     cursoSelect.value = cursoId;
+                } else if (cursoSelect) {
+                    cursoSelect.value = '';
                 }
 
                 if (cursoInfo && cursoNombre) {

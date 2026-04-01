@@ -162,7 +162,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             Curso.objects.filter(centro=centro)
             .select_related("ubicacion__localidad", "modalidad")
             .prefetch_related("comisiones")
-            .order_by("-fecha_inicio")
+            .order_by("-fecha_creacion")
         )
         ctx["comisiones_curso"] = list(
             ComisionCurso.objects.filter(curso__centro=centro)
@@ -219,9 +219,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             )
         )
         ctx["curso_form"] = CursoForm(initial={"centro": centro})
-        ctx["curso_form"].fields["centro"].queryset = Centro.objects.filter(
-            pk=centro.pk
-        )
         ctx["curso_form"].fields["ubicacion"].queryset = (
             centro.ubicaciones.select_related("localidad").order_by(
                 "es_principal", "rol_ubicacion"

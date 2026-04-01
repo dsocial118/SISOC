@@ -1010,11 +1010,6 @@ class InstitucionUbicacionForm(forms.ModelForm):
 
 
 class CursoForm(forms.ModelForm):
-    centro = forms.ModelChoiceField(
-        queryset=Centro.objects.all(),
-        label="Centro",
-        widget=forms.Select(attrs={"class": "form-control"}),
-    )
     ubicacion = forms.ModelChoiceField(
         queryset=InstitucionUbicacion.objects.all(),
         label="Ubicación",
@@ -1028,19 +1023,6 @@ class CursoForm(forms.ModelForm):
         queryset=ModalidadCursada.objects.all(),
         label="Modalidad",
         widget=forms.Select(attrs={"class": "form-control"}),
-    )
-    fecha_inicio = forms.DateField(
-        label="Fecha de Inicio",
-        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-    )
-    fecha_fin = forms.DateField(
-        label="Fecha de Fin",
-        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-    )
-    cupo_total = forms.IntegerField(
-        label="Cupo Total",
-        min_value=1,
-        widget=forms.NumberInput(attrs={"class": "form-control"}),
     )
     estado = forms.ChoiceField(
         label="Estado",
@@ -1056,13 +1038,9 @@ class CursoForm(forms.ModelForm):
     class Meta:
         model = Curso
         fields = [
-            "centro",
             "ubicacion",
             "nombre",
             "modalidad",
-            "fecha_inicio",
-            "fecha_fin",
-            "cupo_total",
             "estado",
             "observaciones",
         ]
@@ -1073,8 +1051,6 @@ class CursoForm(forms.ModelForm):
 
         if self.instance and self.instance.pk and self.instance.centro_id:
             centro_id = self.instance.centro_id
-        elif self.data.get("centro"):
-            centro_id = self.data.get("centro")
         elif self.initial.get("centro"):
             centro = self.initial.get("centro")
             centro_id = centro.id if isinstance(centro, Centro) else centro
@@ -1088,20 +1064,14 @@ class CursoForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        fecha_inicio = cleaned_data.get("fecha_inicio")
-        fecha_fin = cleaned_data.get("fecha_fin")
-        cupo_total = cleaned_data.get("cupo_total")
-        centro = cleaned_data.get("centro")
+        centro = self.instance.centro if self.instance and self.instance.centro_id else None
+        if not centro:
+            centro_val = self.initial.get("centro")
+            if isinstance(centro_val, Centro):
+                centro = centro_val
+            elif centro_val:
+                centro = Centro.objects.filter(pk=centro_val).first()
         ubicacion = cleaned_data.get("ubicacion")
-
-        if fecha_inicio and fecha_fin and fecha_inicio > fecha_fin:
-            self.add_error(
-                "fecha_fin",
-                "La fecha de fin debe ser mayor o igual a la fecha de inicio.",
-            )
-
-        if cupo_total is not None and cupo_total <= 0:
-            self.add_error("cupo_total", "El cupo total debe ser mayor a 0.")
 
         if centro and ubicacion and ubicacion.centro_id != centro.id:
             self.add_error(
@@ -1165,7 +1135,6 @@ class ComisionCursoForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        curso = cleaned_data.get("curso")
         cupo_total = cleaned_data.get("cupo_total")
         fecha_inicio = cleaned_data.get("fecha_inicio")
         fecha_fin = cleaned_data.get("fecha_fin")
@@ -1178,24 +1147,6 @@ class ComisionCursoForm(forms.ModelForm):
 
         if cupo_total is not None and cupo_total <= 0:
             self.add_error("cupo_total", "El cupo total debe ser mayor a 0.")
-
-        if curso and cupo_total and cupo_total > curso.cupo_total:
-            self.add_error(
-                "cupo_total",
-                "El cupo total de la comisión no puede superar el cupo total del curso.",
-            )
-
-        if curso and fecha_inicio and fecha_inicio < curso.fecha_inicio:
-            self.add_error(
-                "fecha_inicio",
-                "La fecha de inicio de la comisión debe estar dentro del rango del curso.",
-            )
-
-        if curso and fecha_fin and fecha_fin > curso.fecha_fin:
-            self.add_error(
-                "fecha_fin",
-                "La fecha de fin de la comisión debe estar dentro del rango del curso.",
-            )
 
         return cleaned_data
 
