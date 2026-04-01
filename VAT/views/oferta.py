@@ -10,10 +10,11 @@ from django.views.generic import (
 )
 from django.contrib import messages
 from django.db.models import Q
+from django.http import HttpResponseRedirect
 
-from VAT.models import InscripcionOferta, Voucher
+from VAT.models import InscripcionOferta
 from VAT.forms import InscripcionOfertaForm
-from VAT.services.voucher_service.impl import VoucherService
+from VAT.services.inscripcion_service import InscripcionService
 
 logger = logging.getLogger("django")
 
@@ -61,50 +62,33 @@ class InscripcionOfertaCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy("vat_inscripcion_oferta_list")
 
     def form_valid(self, form):
-        form.instance.inscrito_por = self.request.user
-        response = super().form_valid(form)
-
-        inscripcion = self.object
-        comision = inscripcion.oferta
-        oferta = comision.oferta  # OfertaInstitucional
-
-        if oferta.usa_voucher:
-            voucher = (
-                Voucher.objects.filter(
-                    ciudadano=inscripcion.ciudadano,
-                    programa=oferta.programa,
-                    estado="activo",
-                )
-                .order_by("fecha_vencimiento")
-                .first()
+        data = form.cleaned_data
+        try:
+            self.object = InscripcionService.crear_inscripcion_oferta(
+                ciudadano=data["ciudadano"],
+                comision=data["oferta"],
+                estado=data["estado"],
+                inscrito_por=self.request.user,
             )
+        except ValueError as exc:
+            messages.error(self.request, str(exc))
+            return self.form_invalid(form)
 
-            if not voucher:
-                inscripcion.delete()
-                messages.error(
-                    self.request,
-                    f"{inscripcion.ciudadano} no tiene voucher activo para el programa {oferta.programa}. No se realizó la inscripción.",
-                )
-                return self.form_invalid(form)
-
-            ok, msg = VoucherService.usar_voucher(
-                voucher=voucher,
-                inscripcion_oferta=inscripcion,
-                cantidad=1,
-            )
-            if not ok:
-                inscripcion.delete()
-                messages.error(self.request, f"No se pudo usar el voucher: {msg}")
-                return self.form_invalid(form)
-
+        cantidad_debito = getattr(self.object, "voucher_debito", 0)
+        if cantidad_debito > 0:
+            saldo = getattr(self.object, "voucher_saldo", 0)
             messages.success(
                 self.request,
-                f"Inscripción creada. Se descontó 1 crédito del voucher de {inscripcion.ciudadano} ({voucher.cantidad_disponible} restantes).",
+                (
+                    f"Inscripción creada. Se descontaron {cantidad_debito} "
+                    f"créditos del voucher de {self.object.ciudadano} "
+                    f"({saldo} restantes)."
+                ),
             )
         else:
             messages.success(self.request, "Inscripción creada exitosamente.")
 
-        return response
+        return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form):
         messages.error(self.request, "Error al crear la inscripción.")

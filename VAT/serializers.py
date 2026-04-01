@@ -388,10 +388,13 @@ class InstitucionUbicacionSerializer(serializers.ModelSerializer):
 
 class CursoSerializer(serializers.ModelSerializer):
     centro_nombre = serializers.CharField(source="centro.nombre", read_only=True)
+    plan_estudio_nombre = serializers.CharField(source="plan_estudio", read_only=True)
     ubicacion_nombre = serializers.CharField(
         source="ubicacion.nombre_ubicacion", read_only=True
     )
     modalidad_nombre = serializers.CharField(source="modalidad.nombre", read_only=True)
+    programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
+    voucher_parametrias = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Curso
@@ -399,12 +402,19 @@ class CursoSerializer(serializers.ModelSerializer):
             "id",
             "centro",
             "centro_nombre",
+            "plan_estudio",
+            "plan_estudio_nombre",
             "ubicacion",
             "ubicacion_nombre",
             "nombre",
             "modalidad",
             "modalidad_nombre",
+            "programa",
+            "programa_nombre",
             "estado",
+            "usa_voucher",
+            "voucher_parametrias",
+            "costo_creditos",
             "observaciones",
             "fecha_creacion",
             "fecha_modificacion",

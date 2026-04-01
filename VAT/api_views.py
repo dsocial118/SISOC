@@ -266,6 +266,20 @@ class InscripcionOfertaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(estado=estado)
         return queryset
 
+    def perform_create(self, serializer):
+        data = serializer.validated_data
+        try:
+            inscripcion = InscripcionService.crear_inscripcion_oferta(
+                ciudadano=data["ciudadano"],
+                comision=data["oferta"],
+                estado=data.get("estado", "inscrito"),
+                inscrito_por=getattr(self.request, "user", None),
+            )
+        except ValueError as exc:
+            raise ValidationError({"error": [str(exc)]}) from exc
+
+        serializer.instance = inscripcion
+
 
 @extend_schema(tags=["VAT - Vouchers"])
 class VoucherViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
@@ -413,6 +427,12 @@ class InstitucionUbicacionViewSet(viewsets.ModelViewSet):
             description="Filtra cursos por modalidad.",
         ),
         OpenApiParameter(
+            "programa_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra cursos por programa.",
+        ),
+        OpenApiParameter(
             "estado",
             OpenApiTypes.STR,
             OpenApiParameter.QUERY,
@@ -421,9 +441,11 @@ class InstitucionUbicacionViewSet(viewsets.ModelViewSet):
     ],
 )
 class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = Curso.objects.select_related(
-        "centro", "ubicacion", "modalidad"
-    ).order_by("-fecha_creacion", "nombre")
+    queryset = (
+        Curso.objects.select_related("centro", "ubicacion", "modalidad", "programa")
+        .prefetch_related("voucher_parametrias")
+        .order_by("-fecha_creacion", "nombre")
+    )
     serializer_class = CursoSerializer
     permission_classes = [HasAPIKey]
 
@@ -431,11 +453,14 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         queryset = super().get_queryset()
         centro_id = self.request.query_params.get("centro_id")
         modalidad_id = self.request.query_params.get("modalidad_id")
+        programa_id = self.request.query_params.get("programa_id")
         estado = self.request.query_params.get("estado")
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
         if modalidad_id:
             queryset = queryset.filter(modalidad_id=modalidad_id)
+        if programa_id:
+            queryset = queryset.filter(programa_id=programa_id)
         if estado:
             queryset = queryset.filter(estado=estado)
         return queryset

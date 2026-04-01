@@ -160,8 +160,8 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
         ctx["cursos"] = list(
             Curso.objects.filter(centro=centro)
-            .select_related("ubicacion__localidad", "modalidad")
-            .prefetch_related("comisiones")
+            .select_related("ubicacion__localidad", "modalidad", "programa")
+            .prefetch_related("comisiones", "voucher_parametrias")
             .order_by("-fecha_creacion")
         )
         ctx["comisiones_curso"] = list(
@@ -270,7 +270,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
             return self.form_valid(form, contacto_formset)
         return self.form_invalid(form, contacto_formset)
 
-    def form_valid(self, form, contacto_formset):
+    def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         with transaction.atomic():
             self.object = form.save()
 
@@ -309,7 +309,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
 
-    def form_invalid(self, form, contacto_formset):
+    def form_invalid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         return self.render_to_response(
             self.get_context_data(
                 form=form,

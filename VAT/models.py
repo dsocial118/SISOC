@@ -907,6 +907,14 @@ class Curso(SoftDeleteModelMixin, models.Model):
         related_name="cursos",
         verbose_name="Centro",
     )
+    plan_estudio = models.ForeignKey(
+        PlanVersionCurricular,
+        on_delete=models.PROTECT,
+        related_name="cursos",
+        null=True,
+        blank=True,
+        verbose_name="Plan de Estudio",
+    )
     ubicacion = models.ForeignKey(
         InstitucionUbicacion,
         on_delete=models.PROTECT,
@@ -919,6 +927,31 @@ class Curso(SoftDeleteModelMixin, models.Model):
         on_delete=models.PROTECT,
         related_name="cursos",
         verbose_name="Modalidad",
+    )
+    programa = models.ForeignKey(
+        Programa,
+        on_delete=models.PROTECT,
+        related_name="cursos_vat",
+        null=True,
+        blank=True,
+        verbose_name="Programa",
+    )
+    usa_voucher = models.BooleanField(
+        default=False,
+        verbose_name="Usa Voucher",
+        help_text="Si está activo, las inscripciones del curso validan y descuentan créditos de voucher.",
+    )
+    voucher_parametrias = models.ManyToManyField(
+        "VoucherParametria",
+        related_name="cursos",
+        blank=True,
+        verbose_name="Vouchers habilitados",
+        help_text="Parametrías de voucher permitidas para este curso.",
+    )
+    costo_creditos = models.PositiveIntegerField(
+        default=1,
+        verbose_name="Costo en créditos",
+        help_text="Cantidad de créditos a debitar por inscripción cuando usa voucher.",
     )
     estado = models.CharField(
         max_length=20,
@@ -944,6 +977,18 @@ class Curso(SoftDeleteModelMixin, models.Model):
                 {
                     "ubicacion": "La ubicación seleccionada no pertenece al centro del curso."
                 }
+            )
+
+        if self.usa_voucher and not self.programa_id:
+            raise ValidationError(
+                {
+                    "programa": "Debés seleccionar un programa cuando el curso usa voucher."
+                }
+            )
+
+        if self.costo_creditos <= 0:
+            raise ValidationError(
+                {"costo_creditos": "El costo en créditos debe ser mayor a 0."}
             )
 
     def __str__(self):
@@ -1009,6 +1054,34 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
 
     def __str__(self):
         return f"{self.codigo_comision} - {self.nombre}"
+
+    @property
+    def centro(self):
+        return self.curso.centro
+
+    @property
+    def ubicacion(self):
+        return self.curso.ubicacion
+
+    @property
+    def cupo(self):
+        return self.cupo_total
+
+    @property
+    def programa(self):
+        return self.curso.programa
+
+    @property
+    def usa_voucher(self):
+        return self.curso.usa_voucher
+
+    @property
+    def voucher_parametrias(self):
+        return self.curso.voucher_parametrias
+
+    @property
+    def costo(self):
+        return self.curso.costo_creditos
 
     class Meta:
         verbose_name = "Comisión de Curso"
@@ -1206,6 +1279,16 @@ class ComisionHorario(models.Model):
         on_delete=models.CASCADE,
         related_name="horarios",
         verbose_name="Comisión",
+        null=True,
+        blank=True,
+    )
+    comision_curso = models.ForeignKey(
+        ComisionCurso,
+        on_delete=models.CASCADE,
+        related_name="horarios",
+        verbose_name="Comisión de Curso",
+        null=True,
+        blank=True,
     )
     dia_semana = models.ForeignKey(
         Dia,
@@ -1227,8 +1310,42 @@ class ComisionHorario(models.Model):
 
     def __str__(self):
         return (
-            f"{self.comision} - {self.dia_semana} {self.hora_desde}-{self.hora_hasta}"
+            f"{self.entidad_comision} - {self.dia_semana} "
+            f"{self.hora_desde}-{self.hora_hasta}"
         )
+
+    @property
+    def entidad_comision(self):
+        return self.comision if self.comision_id else self.comision_curso
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        errors = {}
+        if bool(self.comision_id) == bool(self.comision_curso_id):
+            errors["comision"] = (
+                "Debés vincular el horario a una comisión o a una comisión de curso."
+            )
+
+        existing = ComisionHorario.objects.exclude(pk=self.pk).filter(
+            dia_semana=self.dia_semana,
+            hora_desde=self.hora_desde,
+            hora_hasta=self.hora_hasta,
+        )
+        if self.comision_id and existing.filter(comision_id=self.comision_id).exists():
+            errors["hora_desde"] = (
+                "Ya existe un horario con ese día y rango horario para la comisión."
+            )
+        if (
+            self.comision_curso_id
+            and existing.filter(comision_curso_id=self.comision_curso_id).exists()
+        ):
+            errors["hora_desde"] = (
+                "Ya existe un horario con ese día y rango horario para la comisión de curso."
+            )
+
+        if errors:
+            raise ValidationError(errors)
 
     class Meta:
         verbose_name = "Horario de Comisión"
@@ -1262,6 +1379,16 @@ class SesionComision(models.Model):
         on_delete=models.CASCADE,
         related_name="sesiones",
         verbose_name="Comisión",
+        null=True,
+        blank=True,
+    )
+    comision_curso = models.ForeignKey(
+        ComisionCurso,
+        on_delete=models.CASCADE,
+        related_name="sesiones",
+        verbose_name="Comisión de Curso",
+        null=True,
+        blank=True,
     )
     horario = models.ForeignKey(
         ComisionHorario,
@@ -1282,8 +1409,47 @@ class SesionComision(models.Model):
     )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def entidad_comision(self):
+        return self.comision if self.comision_id else self.comision_curso
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        errors = {}
+        if bool(self.comision_id) == bool(self.comision_curso_id):
+            errors["comision"] = (
+                "Debés vincular la sesión a una comisión o a una comisión de curso."
+            )
+
+        if self.horario_id:
+            if self.comision_id and self.horario.comision_id != self.comision_id:
+                errors["horario"] = "El horario no pertenece a la comisión indicada."
+            if (
+                self.comision_curso_id
+                and self.horario.comision_curso_id != self.comision_curso_id
+            ):
+                errors["horario"] = (
+                    "El horario no pertenece a la comisión de curso indicada."
+                )
+
+        existing = SesionComision.objects.exclude(pk=self.pk).filter(
+            horario=self.horario,
+            fecha=self.fecha,
+        )
+        if (
+            self.comision_curso_id
+            and existing.filter(comision_curso_id=self.comision_curso_id).exists()
+        ):
+            errors["fecha"] = (
+                "Ya existe una sesión para esa fecha y horario en la comisión de curso."
+            )
+
+        if errors:
+            raise ValidationError(errors)
+
     def __str__(self):
-        return f"Sesión #{self.numero_sesion} — {self.comision} ({self.fecha})"
+        return f"Sesión #{self.numero_sesion} — {self.entidad_comision} ({self.fecha})"
 
     class Meta:
         verbose_name = "Sesión de Comisión"
@@ -1335,6 +1501,16 @@ class Inscripcion(SoftDeleteModelMixin, models.Model):
         on_delete=models.CASCADE,
         related_name="inscripciones",
         verbose_name="Comisión",
+        null=True,
+        blank=True,
+    )
+    comision_curso = models.ForeignKey(
+        ComisionCurso,
+        on_delete=models.CASCADE,
+        related_name="inscripciones",
+        verbose_name="Comisión de Curso",
+        null=True,
+        blank=True,
     )
     programa = models.ForeignKey(
         Programa,
@@ -1371,8 +1547,38 @@ class Inscripcion(SoftDeleteModelMixin, models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
 
+    @property
+    def entidad_comision(self):
+        return self.comision if self.comision_id else self.comision_curso
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        errors = {}
+        if bool(self.comision_id) == bool(self.comision_curso_id):
+            errors["comision"] = (
+                "Debés vincular la inscripción a una comisión o a una comisión de curso."
+            )
+
+        existing = Inscripcion.objects.exclude(pk=self.pk).filter(
+            ciudadano=self.ciudadano,
+        )
+        if (
+            self.comision_curso_id
+            and existing.filter(comision_curso_id=self.comision_curso_id).exists()
+        ):
+            errors["ciudadano"] = (
+                "El ciudadano ya tiene una inscripción en esta comisión de curso."
+            )
+
+        if errors:
+            raise ValidationError(errors)
+
     def __str__(self):
-        return f"{self.ciudadano.nombre_completo} - {self.comision.codigo_comision} [{self.estado}]"
+        return (
+            f"{self.ciudadano.nombre_completo} - "
+            f"{self.entidad_comision.codigo_comision} [{self.estado}]"
+        )
 
     class Meta:
         verbose_name = "Inscripción"

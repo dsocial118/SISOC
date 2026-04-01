@@ -1010,6 +1010,20 @@ class InstitucionUbicacionForm(forms.ModelForm):
 
 
 class CursoForm(forms.ModelForm):
+    plan_estudio = forms.ModelChoiceField(
+        queryset=PlanVersionCurricular.objects.filter(activo=True)
+        .select_related("sector", "modalidad_cursada")
+        .order_by("sector__nombre", "modalidad_cursada__nombre"),
+        label="Plan de Estudio",
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    programa = forms.ModelChoiceField(
+        queryset=Programa.objects.all(),
+        label="Programa",
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
     ubicacion = forms.ModelChoiceField(
         queryset=InstitucionUbicacion.objects.all(),
         label="Ubicación",
@@ -1029,6 +1043,34 @@ class CursoForm(forms.ModelForm):
         choices=Curso.ESTADO_CURSO_CHOICES,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
+    usa_voucher = forms.BooleanField(
+        label="Usa Voucher",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        help_text="Al inscribirse, se valida y descuenta crédito del voucher del ciudadano.",
+    )
+    voucher_parametrias = forms.ModelMultipleChoiceField(
+        queryset=VoucherParametria.objects.filter(activa=True).select_related(
+            "programa"
+        ),
+        label="Vouchers",
+        required=False,
+        widget=VoucherParametriaSelectMultiple(
+            attrs={
+                "class": "form-select",
+                "size": "7",
+                "style": "min-height: 170px;",
+            }
+        ),
+        help_text="Seleccioná uno o más vouchers del mismo programa (Ctrl/Cmd + click para selección múltiple).",
+    )
+    costo_creditos = forms.IntegerField(
+        label="Costo en créditos",
+        min_value=1,
+        initial=1,
+        widget=forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
+        help_text="Cantidad de créditos que se debitan por inscripción cuando usa voucher.",
+    )
     observaciones = forms.CharField(
         label="Observaciones",
         required=False,
@@ -1038,15 +1080,21 @@ class CursoForm(forms.ModelForm):
     class Meta:
         model = Curso
         fields = [
+            "plan_estudio",
+            "programa",
             "ubicacion",
             "nombre",
             "modalidad",
             "estado",
+            "usa_voucher",
+            "voucher_parametrias",
+            "costo_creditos",
             "observaciones",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["plan_estudio"].empty_label = "Seleccionar plan de estudio..."
         centro_id = None
 
         if self.instance and self.instance.pk and self.instance.centro_id:
@@ -1064,6 +1112,9 @@ class CursoForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        programa = cleaned_data.get("programa")
+        usa_voucher = cleaned_data.get("usa_voucher")
+        voucher_parametrias = cleaned_data.get("voucher_parametrias")
         centro_id = (
             self.instance.centro_id
             if self.instance and self.instance.centro_id
@@ -1085,6 +1136,28 @@ class CursoForm(forms.ModelForm):
                 "ubicacion",
                 "La ubicación seleccionada no pertenece al centro del curso.",
             )
+
+        if usa_voucher and not programa:
+            self.add_error(
+                "programa",
+                "Debés seleccionar un programa cuando el curso usa voucher.",
+            )
+
+        if usa_voucher and not voucher_parametrias:
+            self.add_error(
+                "voucher_parametrias",
+                "Debés seleccionar al menos un voucher cuando el curso usa voucher.",
+            )
+
+        if programa and voucher_parametrias:
+            invalidas = [
+                v.nombre for v in voucher_parametrias if v.programa_id != programa.id
+            ]
+            if invalidas:
+                self.add_error(
+                    "voucher_parametrias",
+                    "Todos los vouchers seleccionados deben pertenecer al programa elegido.",
+                )
 
         return cleaned_data
 
@@ -1401,6 +1474,48 @@ class ComisionHorarioForm(forms.ModelForm):
         model = ComisionHorario
         fields = [
             "comision",
+            "dia_semana",
+            "hora_desde",
+            "hora_hasta",
+            "aula_espacio",
+            "vigente",
+        ]
+
+
+class ComisionCursoHorarioForm(forms.ModelForm):
+    comision_curso = forms.ModelChoiceField(
+        queryset=ComisionCurso.objects.all(),
+        label="Comisión de Curso",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    dia_semana = forms.ModelChoiceField(
+        queryset=Dia.objects.all(),
+        label="Día de la Semana",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    hora_desde = forms.TimeField(
+        label="Hora Desde",
+        widget=forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
+    )
+    hora_hasta = forms.TimeField(
+        label="Hora Hasta",
+        widget=forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
+    )
+    aula_espacio = forms.CharField(
+        label="Aula/Espacio",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    vigente = forms.BooleanField(
+        label="Vigente",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    class Meta:
+        model = ComisionHorario
+        fields = [
+            "comision_curso",
             "dia_semana",
             "hora_desde",
             "hora_hasta",

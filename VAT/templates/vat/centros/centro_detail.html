@@ -1550,10 +1550,11 @@
                 <div class="card-body p-0">
                     {% if cursos %}
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0" id="tablaCursosCentro">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Nombre</th>
+                                        <th>Programa</th>
                                         <th>Ubicación</th>
                                         <th>Modalidad</th>
                                         <th>Comisiones</th>
@@ -1563,8 +1564,21 @@
                                 </thead>
                                 <tbody>
                                     {% for curso in cursos %}
-                                        <tr>
-                                            <td class="fw-bold">{{ curso.nombre }}</td>
+                                        <tr class="curso-row"
+                                            data-curso-id="{{ curso.id }}"
+                                            data-curso-nombre="{{ curso.nombre }}"
+                                            tabindex="0"
+                                            role="button"
+                                            aria-label="Filtrar comisiones del curso {{ curso.nombre }}">
+                                            <td class="fw-bold">
+                                                {{ curso.nombre }}
+                                                {% if curso.usa_voucher %}
+                                                    <span class="badge bg-info ms-1">
+                                                        <i class="fas fa-ticket-alt me-1"></i>Voucher
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ curso.programa.nombre|default:"-" }}</td>
                                             <td>{{ curso.ubicacion }}</td>
                                             <td>{{ curso.modalidad.nombre }}</td>
                                             <td>{{ curso.comisiones.count }}</td>
@@ -1623,21 +1637,13 @@
                             <i class="fas fa-users me-2"></i>
                             Comisiones de Curso
                         </h6>
-                        <small class="text-muted">Comisiones vinculadas a cursos del centro.</small>
+                        <small class="text-muted" id="comisionesCursoHint">Comisiones vinculadas a cursos del centro.</small>
                     </div>
-                    {% if perms.VAT.add_comisioncurso %}
-                        <button type="button"
-                                class="btn btn-sm btn-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modalComisionCurso">
-                            <i class="fas fa-plus me-1"></i>Nueva Comisión
-                        </button>
-                    {% endif %}
                 </div>
                 <div class="card-body p-0">
                     {% if comisiones_curso %}
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0" id="tablaComisionesCursoCentro">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Código</th>
@@ -1651,7 +1657,9 @@
                                 </thead>
                                 <tbody>
                                     {% for comision in comisiones_curso %}
-                                        <tr>
+                                        <tr class="comision-curso-row"
+                                            data-curso-id="{{ comision.curso_id }}"
+                                            data-curso-nombre="{{ comision.curso.nombre }}">
                                             <td>
                                                 <strong>{{ comision.codigo_comision }}</strong>
                                             </td>
@@ -1666,6 +1674,13 @@
                                             </td>
                                             <td class="text-end">
                                                 <div class="btn-group btn-group-sm" role="group">
+                                                    {% if perms.VAT.view_comisioncurso %}
+                                                        <a href="{% url 'vat_comision_curso_detail' comision.id %}"
+                                                           class="btn btn-outline-info"
+                                                           title="Gestionar Comisión">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                    {% endif %}
                                                     {% if perms.VAT.change_comisioncurso %}
                                                         <a href="{% url 'vat_comision_curso_update' comision.id %}"
                                                            class="btn btn-outline-warning"
@@ -1686,6 +1701,11 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+                        <div id="comisionesCursoEmptyState"
+                             class="text-center py-4 text-muted d-none">
+                            <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">El curso seleccionado no tiene comisiones registradas.</p>
                         </div>
                     {% else %}
                         <div class="text-center py-4 text-muted">
@@ -2378,6 +2398,70 @@
         }
 
         setupOfertaVoucherSelector('formOferta');
+        setupOfertaVoucherSelector('formCurso');
+
+        function setupCursoComisionFilter() {
+            var cursosTable = document.getElementById('tablaCursosCentro');
+            var comisionesTable = document.getElementById('tablaComisionesCursoCentro');
+            if (!cursosTable || !comisionesTable) return;
+
+            var cursoRows = Array.from(cursosTable.querySelectorAll('tbody .curso-row'));
+            var comisionRows = Array.from(comisionesTable.querySelectorAll('tbody .comision-curso-row'));
+            var hint = document.getElementById('comisionesCursoHint');
+            var emptyState = document.getElementById('comisionesCursoEmptyState');
+            var defaultHint = hint ? hint.textContent : '';
+
+            function applyCursoFilter(cursoId, cursoNombre) {
+                var visibleRows = 0;
+
+                cursoRows.forEach(function(row) {
+                    var isSelected = cursoId && row.getAttribute('data-curso-id') === cursoId;
+                    row.classList.toggle('table-active', isSelected);
+                });
+
+                comisionRows.forEach(function(row) {
+                    var matches = !cursoId || row.getAttribute('data-curso-id') === cursoId;
+                    row.classList.toggle('d-none', !matches);
+                    if (matches) {
+                        visibleRows += 1;
+                    }
+                });
+
+                if (hint) {
+                    hint.textContent = cursoId
+                        ? 'Mostrando comisiones de: ' + cursoNombre
+                        : defaultHint;
+                }
+
+                if (emptyState) {
+                    emptyState.classList.toggle('d-none', visibleRows > 0 || !cursoId);
+                }
+            }
+
+            cursoRows.forEach(function(row) {
+                function filterRow() {
+                    applyCursoFilter(
+                        row.getAttribute('data-curso-id'),
+                        row.getAttribute('data-curso-nombre') || 'Curso'
+                    );
+                }
+
+                row.addEventListener('mouseenter', filterRow);
+                row.addEventListener('click', filterRow);
+                row.addEventListener('focus', filterRow);
+                row.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        filterRow();
+                    }
+                    if (event.key === 'Escape') {
+                        applyCursoFilter('', '');
+                    }
+                });
+            });
+        }
+
+        setupCursoComisionFilter();
 
         // Legacy compatibility - prevent any jQuery double-bind
         if (typeof $ !== 'undefined') {
