@@ -30,6 +30,7 @@ Alinear el dominio de Curso con la politica de vouchers ya existente en Oferta I
 - Tabla de cursos muestra columna `Programa`.
 - Se muestra badge de `Voucher` cuando el curso tiene `usa_voucher` activo.
 - Se inicializa comportamiento de selector de vouchers en el modal de Curso (reutilizando la logica de Oferta).
+- En `Nuevo Curso`, el bloque de `Vouchers` ahora se renderiza con el mismo patron visual y funcional que `Nueva Oferta Materia` (switch, selector multiple y filtrado por programa en tiempo real).
 - La seleccion o hover sobre una fila de `Cursos` ahora filtra en el momento la tabla `Comisiones de Curso` del mismo centro, sin filtros manuales adicionales.
 - La tabla `Comisiones de Curso` agrega un boton explicito de `Gestionar Comisión` en acciones, ahora con vista de detalle propia (`vat/cursos/comisiones/<id>/`) para replicar la navegacion de gestion del catalogo sin mezclar modelos.
 

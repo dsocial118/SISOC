@@ -1095,6 +1095,11 @@ class CursoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["plan_estudio"].empty_label = "Seleccionar plan de estudio..."
+        self.fields["voucher_parametrias"].queryset = (
+            VoucherParametria.objects.filter(activa=True)
+            .select_related("programa")
+            .order_by("nombre")
+        )
         centro_id = None
 
         if self.instance and self.instance.pk and self.instance.centro_id:

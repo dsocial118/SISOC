@@ -344,6 +344,22 @@
             background-color: rgba(74, 141, 219, 0.12);
         }
 
+        #tablaCursosCentro .curso-row {
+            cursor: pointer;
+        }
+
+        #tablaCursosCentro .curso-row.curso-row-selected {
+            background: rgba(74, 141, 219, 0.28) !important;
+        }
+
+        #tablaCursosCentro .curso-row.curso-row-selected > td {
+            background: transparent !important;
+        }
+
+        #tablaCursosCentro .curso-row.curso-row-selected > td:first-child {
+            box-shadow: inset 3px 0 0 #7cb2f2;
+        }
+
         .badge {
             font-size: 0.75em;
             font-weight: 500;
@@ -1601,11 +1617,14 @@
                                                         </button>
                                                     {% endif %}
                                                     {% if perms.VAT.change_curso %}
-                                                        <a href="{% url 'vat_curso_update' curso.id %}"
-                                                           class="btn btn-outline-warning"
-                                                           title="Editar Curso">
+                                                        <button type="button"
+                                                                class="btn btn-outline-warning btn-editar-curso"
+                                                                title="Editar Curso"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#modalCursoEditar"
+                                                                data-edit-url="{% url 'vat_curso_update' curso.id %}">
                                                             <i class="fas fa-edit"></i>
-                                                        </a>
+                                                        </button>
                                                     {% endif %}
                                                     {% if perms.VAT.delete_curso %}
                                                         <a href="{% url 'vat_curso_delete' curso.id %}"
@@ -1954,6 +1973,32 @@
                         <button type="submit" class="btn btn-primary">Guardar</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Curso -->
+    <div class="modal fade"
+         id="modalCursoEditar"
+         tabindex="-1"
+         aria-labelledby="modalCursoEditarLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalCursoEditarLabel">Editar Curso</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <iframe id="cursoEditFrame"
+                            title="Editar Curso"
+                            class="w-100 border-0"
+                            style="height: 78vh;"
+                            src="about:blank"></iframe>
+                </div>
             </div>
         </div>
     </div>
@@ -2410,13 +2455,16 @@
             var hint = document.getElementById('comisionesCursoHint');
             var emptyState = document.getElementById('comisionesCursoEmptyState');
             var defaultHint = hint ? hint.textContent : '';
+            var lockedCursoId = '';
+            var lockedCursoNombre = '';
 
             function applyCursoFilter(cursoId, cursoNombre) {
                 var visibleRows = 0;
 
                 cursoRows.forEach(function(row) {
                     var isSelected = cursoId && row.getAttribute('data-curso-id') === cursoId;
-                    row.classList.toggle('table-active', isSelected);
+                    row.classList.toggle('curso-row-selected', isSelected);
+                    row.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
                 });
 
                 comisionRows.forEach(function(row) {
@@ -2446,15 +2494,44 @@
                     );
                 }
 
-                row.addEventListener('mouseenter', filterRow);
-                row.addEventListener('click', filterRow);
-                row.addEventListener('focus', filterRow);
+                function lockRowFilter(event) {
+                    if (event && event.target && event.target.closest('.btn-group')) {
+                        return;
+                    }
+
+                    var rowCursoId = row.getAttribute('data-curso-id') || '';
+                    if (lockedCursoId === rowCursoId) {
+                        lockedCursoId = '';
+                        lockedCursoNombre = '';
+                        applyCursoFilter('', '');
+                        return;
+                    }
+
+                    lockedCursoId = rowCursoId;
+                    lockedCursoNombre = row.getAttribute('data-curso-nombre') || 'Curso';
+                    applyCursoFilter(lockedCursoId, lockedCursoNombre);
+                }
+
+                row.addEventListener('mouseenter', function() {
+                    if (lockedCursoId) return;
+                    filterRow();
+                });
+                row.addEventListener('click', lockRowFilter);
+                row.addEventListener('focus', function() {
+                    if (lockedCursoId) {
+                        applyCursoFilter(lockedCursoId, lockedCursoNombre);
+                        return;
+                    }
+                    filterRow();
+                });
                 row.addEventListener('keydown', function(event) {
                     if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
-                        filterRow();
+                        lockRowFilter();
                     }
                     if (event.key === 'Escape') {
+                        lockedCursoId = '';
+                        lockedCursoNombre = '';
                         applyCursoFilter('', '');
                     }
                 });
@@ -2462,6 +2539,30 @@
         }
 
         setupCursoComisionFilter();
+
+        function setupCursoEditModal() {
+            var modalEl = document.getElementById('modalCursoEditar');
+            var iframeEl = document.getElementById('cursoEditFrame');
+            if (!modalEl || !iframeEl) return;
+
+            modalEl.addEventListener('show.bs.modal', function(event) {
+                var triggerButton = event.relatedTarget;
+                if (!triggerButton) return;
+                var editUrl = triggerButton.getAttribute('data-edit-url');
+                if (!editUrl) return;
+                iframeEl.src = editUrl;
+            });
+
+            modalEl.addEventListener('hidden.bs.modal', function() {
+                iframeEl.src = 'about:blank';
+                if (window.location.hash !== '#cursos') {
+                    window.location.hash = '#cursos';
+                }
+                window.location.reload();
+            });
+        }
+
+        setupCursoEditModal();
 
         // Legacy compatibility - prevent any jQuery double-bind
         if (typeof $ !== 'undefined') {
