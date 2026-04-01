@@ -83,12 +83,8 @@
                 <div class="card-body">
                     <form method="post" id="nomina-cdi-form">
                         {% csrf_token %}
-                        {% if selected_ciudadano %}
-                            <input type="hidden" name="ciudadano_id" value="{{ selected_ciudadano.id }}" />
-                        {% endif %}
-                        {% if renaper_precarga %}
-                            <input type="hidden" name="origen_dato" value="renaper" />
-                        {% endif %}
+                        {% if selected_ciudadano %}<input type="hidden" name="ciudadano_id" value="{{ selected_ciudadano.id }}" />{% endif %}
+                        {% if renaper_precarga %}<input type="hidden" name="origen_dato" value="renaper" />{% endif %}
 
                         <h4 class="mb-3">Datos personales</h4>
                         <div class="row">

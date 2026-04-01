@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
 
     {% url 'vat_titulorreferencia_list' as reset_url %}
-    {% include 'components/search_bar.html' with titulo="Buscar Título de Referencia" placeholder="Buscar por nombre, sector o código" help_text="Buscar por nombre, sector o código" reset_url=reset_url add_url='vat_titulorreferencia_create' add_text='Agregar' query=request.GET.busqueda %}
+    {% include 'components/search_bar.html' with titulo="Buscar Título de Referencia" placeholder="Buscar por nombre, plan o código" help_text="Buscar por nombre, plan o código" reset_url=reset_url add_url='vat_titulorreferencia_create' add_text='Agregar' query=request.GET.busqueda %}
 
     <div class="row mt-5 max-width-100">
         <div class="col-12">
@@ -21,7 +21,7 @@
                                         Nombre
                                         <i class="fas fa-sort sort-icon"></i>
                                     </th>
-                                    <th>Sector</th>
+                                    <th>Plan de Estudio</th>
                                     <th>Código</th>
                                     <th>Estado</th>
                                     <th class="notexport">Acciones</th>
@@ -35,7 +35,7 @@
                                                class="link-handler"
                                                title="Ver detalles">{{ titulo.nombre }}</a>
                                         </td>
-                                        <td>{{ titulo.sector.nombre }}</td>
+                                        <td>{{ titulo.plan_estudio|default:"—" }}</td>
                                         <td>{{ titulo.codigo_referencia|default:"—" }}</td>
                                         <td>
                                             {% if titulo.activo %}
