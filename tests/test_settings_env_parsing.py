@@ -32,3 +32,36 @@ def test_settings_renaper_retry_parses_valid_env(monkeypatch):
 
     assert module.RENAPER_VALIDACION_MAX_RETRIES == 3
     assert module.RENAPER_VALIDACION_BACKOFF_SECONDS == 0.25
+
+
+def test_settings_email_backend_keeps_smtp_when_config_is_complete(monkeypatch):
+    monkeypatch.setenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+    monkeypatch.setenv("EMAIL_HOST", "smtp.resend.com")
+    monkeypatch.setenv("EMAIL_PORT", "587")
+    monkeypatch.setenv("EMAIL_HOST_USER", "resend")
+    monkeypatch.setenv("EMAIL_HOST_PASSWORD", "re_test_key")
+    monkeypatch.setenv("EMAIL_USE_TLS", "true")
+    monkeypatch.setenv("EMAIL_USE_SSL", "false")
+    monkeypatch.setenv("DEFAULT_FROM_EMAIL", "SISOC <onboarding@resend.dev>")
+
+    module = _load_settings_module()
+
+    assert module.EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend"
+    assert module.EMAIL_HOST == "smtp.resend.com"
+    assert module.EMAIL_PORT == 587
+    assert module.EMAIL_HOST_USER == "resend"
+    assert module.DEFAULT_FROM_EMAIL == "SISOC <onboarding@resend.dev>"
+
+
+def test_settings_email_backend_falls_back_to_console_when_smtp_is_incomplete(
+    monkeypatch,
+):
+    monkeypatch.setenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+    monkeypatch.setenv("EMAIL_HOST", "smtp.resend.com")
+    monkeypatch.setenv("EMAIL_PORT", "587")
+    monkeypatch.setenv("EMAIL_HOST_USER", "resend")
+    monkeypatch.delenv("EMAIL_HOST_PASSWORD", raising=False)
+
+    module = _load_settings_module()
+
+    assert module.EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend"
