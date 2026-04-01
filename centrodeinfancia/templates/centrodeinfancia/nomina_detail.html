@@ -256,7 +256,7 @@
                             <td>
                                 <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}"
                                    style="color: #3498db;
-                                           text-decoration: none">{{ e.apellido|default:e.ciudadano.apellido }}</a>
+                                          text-decoration: none">{{ e.apellido|default:e.ciudadano.apellido }}</a>
                             </td>
                             <td>{{ e.dni|default:e.ciudadano.documento|default:"-" }}</td>
                             <td>{{ e.sexo|default:e.ciudadano.sexo.sexo|default:"-" }}</td>

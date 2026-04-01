@@ -23,12 +23,27 @@ from VAT.models import (
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
     OfertaInstitucional,
+    VoucherParametria,
+    Curso,
+    ComisionCurso,
     Comision,
     ComisionHorario,
     Inscripcion,
     Evaluacion,
     ResultadoEvaluacion,
 )
+
+
+class VoucherParametriaSelectMultiple(forms.SelectMultiple):
+    def create_option(  # pylint: disable=too-many-arguments
+        self, name, value, label, selected, index, subindex=None, attrs=None
+    ):
+        option = super().create_option(
+            name, value, label, selected, index, subindex=subindex, attrs=attrs
+        )
+        if value is not None and hasattr(value, "instance") and value.instance:
+            option["attrs"]["data-programa-id"] = str(value.instance.programa_id)
+        return option
 
 
 HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
@@ -490,17 +505,6 @@ class SubsectorForm(forms.ModelForm):
 
 
 class TituloReferenciaForm(forms.ModelForm):
-    sector = forms.ModelChoiceField(
-        queryset=Sector.objects.all(),
-        label="Sector",
-        widget=forms.Select(attrs={"class": "form-control"}),
-    )
-    subsector = forms.ModelChoiceField(
-        queryset=Subsector.objects.all(),
-        label="Subsector",
-        required=False,
-        widget=forms.Select(attrs={"class": "form-control"}),
-    )
     nombre = forms.CharField(
         label="Nombre del Título",
         widget=forms.TextInput(attrs={"class": "form-control"}),
@@ -522,11 +526,17 @@ class TituloReferenciaForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
 
+    plan_estudio = forms.ModelChoiceField(
+        queryset=PlanVersionCurricular.objects.filter(activo=True),
+        label="Plan de Estudio",
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
     class Meta:
         model = TituloReferencia
         fields = [
-            "sector",
-            "subsector",
+            "plan_estudio",
             "nombre",
             "codigo_referencia",
             "descripcion",
@@ -557,20 +567,21 @@ class ModalidadCursadaForm(forms.ModelForm):
 
 
 class PlanVersionCurricularForm(forms.ModelForm):
-    titulo_referencia = forms.ModelChoiceField(
-        queryset=TituloReferencia.objects.all(),
-        label="Título de Referencia",
+    sector = forms.ModelChoiceField(
+        queryset=Sector.objects.all(),
+        label="Sector",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    subsector = forms.ModelChoiceField(
+        queryset=Subsector.objects.all(),
+        label="Subsector",
+        required=False,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
     modalidad_cursada = forms.ModelChoiceField(
         queryset=ModalidadCursada.objects.all(),
-        label="Modalidad de Cursado",
+        label="Modalidad",
         widget=forms.Select(attrs={"class": "form-control"}),
-    )
-    version = forms.CharField(
-        label="Versión",
-        required=False,
-        widget=forms.TextInput(attrs={"class": "form-control"}),
     )
     normativa = forms.CharField(
         label="Normativa",
@@ -607,20 +618,6 @@ class PlanVersionCurricularForm(forms.ModelForm):
         ],
         widget=forms.Select(attrs={"class": "form-control"}),
     )
-    frecuencia = forms.ChoiceField(
-        label="Frecuencia",
-        required=False,
-        choices=[
-            ("", "---------"),
-            ("1_vez", "1 vez por semana"),
-            ("2_veces", "2 veces por semana"),
-            ("3_veces", "3 veces por semana"),
-            ("4_veces", "4 veces por semana"),
-            ("5_veces", "5 veces por semana"),
-            ("intensivo", "Intensivo"),
-        ],
-        widget=forms.Select(attrs={"class": "form-control"}),
-    )
     activo = forms.BooleanField(
         label="Activo",
         required=False,
@@ -631,16 +628,47 @@ class PlanVersionCurricularForm(forms.ModelForm):
     class Meta:
         model = PlanVersionCurricular
         fields = [
-            "titulo_referencia",
+            "sector",
+            "subsector",
             "modalidad_cursada",
-            "version",
             "normativa",
             "horas_reloj",
             "nivel_requerido",
             "nivel_certifica",
-            "frecuencia",
             "activo",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        sector_id = None
+
+        if self.data.get("sector"):
+            sector_id = self.data.get("sector")
+        elif self.instance and self.instance.pk and self.instance.sector_id:
+            sector_id = self.instance.sector_id
+        elif self.initial.get("sector"):
+            sector = self.initial.get("sector")
+            sector_id = sector.id if isinstance(sector, Sector) else sector
+
+        if sector_id:
+            self.fields["subsector"].queryset = Subsector.objects.filter(
+                sector_id=sector_id
+            ).order_by("nombre")
+        else:
+            self.fields["subsector"].queryset = Subsector.objects.none()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        sector = cleaned_data.get("sector")
+        subsector = cleaned_data.get("subsector")
+
+        if sector and subsector and subsector.sector_id != sector.id:
+            self.add_error(
+                "subsector",
+                "El subsector seleccionado no pertenece al sector indicado.",
+            )
+
+        return cleaned_data
 
 
 class InscripcionOfertaForm(forms.ModelForm):
@@ -977,6 +1005,202 @@ class InstitucionUbicacionForm(forms.ModelForm):
 
 
 # ============================================================================
+# CURSOS FORMS
+# ============================================================================
+
+
+class CursoForm(forms.ModelForm):
+    centro = forms.ModelChoiceField(
+        queryset=Centro.objects.all(),
+        label="Centro",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    ubicacion = forms.ModelChoiceField(
+        queryset=InstitucionUbicacion.objects.all(),
+        label="Ubicación",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    nombre = forms.CharField(
+        label="Nombre",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    modalidad = forms.ModelChoiceField(
+        queryset=ModalidadCursada.objects.all(),
+        label="Modalidad",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    fecha_inicio = forms.DateField(
+        label="Fecha de Inicio",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    fecha_fin = forms.DateField(
+        label="Fecha de Fin",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    cupo_total = forms.IntegerField(
+        label="Cupo Total",
+        min_value=1,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    estado = forms.ChoiceField(
+        label="Estado",
+        choices=Curso.ESTADO_CURSO_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    observaciones = forms.CharField(
+        label="Observaciones",
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    )
+
+    class Meta:
+        model = Curso
+        fields = [
+            "centro",
+            "ubicacion",
+            "nombre",
+            "modalidad",
+            "fecha_inicio",
+            "fecha_fin",
+            "cupo_total",
+            "estado",
+            "observaciones",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        centro_id = None
+
+        if self.instance and self.instance.pk and self.instance.centro_id:
+            centro_id = self.instance.centro_id
+        elif self.data.get("centro"):
+            centro_id = self.data.get("centro")
+        elif self.initial.get("centro"):
+            centro = self.initial.get("centro")
+            centro_id = centro.id if isinstance(centro, Centro) else centro
+
+        if centro_id:
+            self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.filter(
+                centro_id=centro_id
+            ).select_related("localidad")
+        else:
+            self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.none()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        fecha_inicio = cleaned_data.get("fecha_inicio")
+        fecha_fin = cleaned_data.get("fecha_fin")
+        cupo_total = cleaned_data.get("cupo_total")
+        centro = cleaned_data.get("centro")
+        ubicacion = cleaned_data.get("ubicacion")
+
+        if fecha_inicio and fecha_fin and fecha_inicio > fecha_fin:
+            self.add_error(
+                "fecha_fin",
+                "La fecha de fin debe ser mayor o igual a la fecha de inicio.",
+            )
+
+        if cupo_total is not None and cupo_total <= 0:
+            self.add_error("cupo_total", "El cupo total debe ser mayor a 0.")
+
+        if centro and ubicacion and ubicacion.centro_id != centro.id:
+            self.add_error(
+                "ubicacion",
+                "La ubicación seleccionada no pertenece al centro del curso.",
+            )
+
+        return cleaned_data
+
+
+class ComisionCursoForm(forms.ModelForm):
+    curso = forms.ModelChoiceField(
+        queryset=Curso.objects.all(),
+        label="Curso",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    codigo_comision = forms.CharField(
+        label="Código de Comisión",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    nombre = forms.CharField(
+        label="Nombre",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    cupo_total = forms.IntegerField(
+        label="Cupo Total",
+        min_value=1,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    fecha_inicio = forms.DateField(
+        label="Fecha de Inicio",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    fecha_fin = forms.DateField(
+        label="Fecha de Fin",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    estado = forms.ChoiceField(
+        label="Estado",
+        choices=ComisionCurso.ESTADO_COMISION_CURSO_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    observaciones = forms.CharField(
+        label="Observaciones",
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    )
+
+    class Meta:
+        model = ComisionCurso
+        fields = [
+            "curso",
+            "codigo_comision",
+            "nombre",
+            "cupo_total",
+            "fecha_inicio",
+            "fecha_fin",
+            "estado",
+            "observaciones",
+        ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        curso = cleaned_data.get("curso")
+        cupo_total = cleaned_data.get("cupo_total")
+        fecha_inicio = cleaned_data.get("fecha_inicio")
+        fecha_fin = cleaned_data.get("fecha_fin")
+
+        if fecha_inicio and fecha_fin and fecha_inicio > fecha_fin:
+            self.add_error(
+                "fecha_fin",
+                "La fecha de fin debe ser mayor o igual a la fecha de inicio.",
+            )
+
+        if cupo_total is not None and cupo_total <= 0:
+            self.add_error("cupo_total", "El cupo total debe ser mayor a 0.")
+
+        if curso and cupo_total and cupo_total > curso.cupo_total:
+            self.add_error(
+                "cupo_total",
+                "El cupo total de la comisión no puede superar el cupo total del curso.",
+            )
+
+        if curso and fecha_inicio and fecha_inicio < curso.fecha_inicio:
+            self.add_error(
+                "fecha_inicio",
+                "La fecha de inicio de la comisión debe estar dentro del rango del curso.",
+            )
+
+        if curso and fecha_fin and fecha_fin > curso.fecha_fin:
+            self.add_error(
+                "fecha_fin",
+                "La fecha de fin de la comisión debe estar dentro del rango del curso.",
+            )
+
+        return cleaned_data
+
+
+# ============================================================================
 # PHASE 4 - OFERTA INSTITUCIONAL FORMS
 # ============================================================================
 
@@ -987,10 +1211,17 @@ class OfertaInstitucionalForm(forms.ModelForm):
         label="Centro",
         widget=forms.Select(attrs={"class": "form-control"}),
     )
+    titulo_referencia = forms.ModelChoiceField(
+        queryset=TituloReferencia.objects.filter(activo=True).select_related(
+            "plan_estudio"
+        ),
+        label="Título de Referencia",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
     plan_curricular = forms.ModelChoiceField(
         queryset=PlanVersionCurricular.objects.all(),
-        label="Plan Curricular",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        required=False,
+        widget=forms.HiddenInput(),
     )
     programa = forms.ModelChoiceField(
         queryset=Programa.objects.all(),
@@ -1025,6 +1256,21 @@ class OfertaInstitucionalForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
         help_text="Al inscribirse, se valida y descuenta un crédito del voucher del ciudadano.",
     )
+    voucher_parametrias = forms.ModelMultipleChoiceField(
+        queryset=VoucherParametria.objects.filter(activa=True).select_related(
+            "programa"
+        ),
+        label="Vouchers",
+        required=False,
+        widget=VoucherParametriaSelectMultiple(
+            attrs={
+                "class": "form-select",
+                "size": "7",
+                "style": "min-height: 170px;",
+            }
+        ),
+        help_text="Seleccioná uno o más vouchers del mismo programa (Ctrl/Cmd + click para selección múltiple).",
+    )
     fecha_publicacion = forms.DateField(
         label="Fecha de Publicación",
         required=False,
@@ -1040,6 +1286,7 @@ class OfertaInstitucionalForm(forms.ModelForm):
         model = OfertaInstitucional
         fields = [
             "centro",
+            "titulo_referencia",
             "plan_curricular",
             "programa",
             "nombre_local",
@@ -1047,9 +1294,61 @@ class OfertaInstitucionalForm(forms.ModelForm):
             "estado",
             "costo",
             "usa_voucher",
+            "voucher_parametrias",
             "fecha_publicacion",
             "observaciones",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["voucher_parametrias"].queryset = (
+            VoucherParametria.objects.filter(activa=True)
+            .select_related("programa")
+            .order_by("nombre")
+        )
+
+        # Si la oferta ya existe, preseleccionamos el título asociado al plan.
+        if self.instance and self.instance.pk and self.instance.plan_curricular_id:
+            titulo = self.instance.plan_curricular.titulos.first()
+            if titulo:
+                self.fields["titulo_referencia"].initial = titulo.pk
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        titulo = cleaned_data.get("titulo_referencia")
+        if not titulo:
+            return cleaned_data
+
+        if not titulo.plan_estudio_id:
+            self.add_error(
+                "titulo_referencia",
+                "El título seleccionado no tiene un Plan de Estudio asociado.",
+            )
+            return cleaned_data
+
+        usa_voucher = cleaned_data.get("usa_voucher")
+        programa = cleaned_data.get("programa")
+        voucher_parametrias = cleaned_data.get("voucher_parametrias")
+
+        if usa_voucher and not voucher_parametrias:
+            self.add_error(
+                "voucher_parametrias",
+                "Debés seleccionar al menos un voucher cuando la oferta usa voucher.",
+            )
+
+        if programa and voucher_parametrias:
+            invalidas = [
+                v.nombre for v in voucher_parametrias if v.programa_id != programa.id
+            ]
+            if invalidas:
+                self.add_error(
+                    "voucher_parametrias",
+                    "Todos los vouchers seleccionados deben pertenecer al programa elegido.",
+                )
+
+        cleaned_data["plan_curricular"] = titulo.plan_estudio
+        return cleaned_data
 
 
 class ComisionForm(forms.ModelForm):
@@ -1416,8 +1715,6 @@ class VoucherParametriaForm(forms.ModelForm):
         return fecha
 
     class Meta:
-        from VAT.models import VoucherParametria
-
         model = VoucherParametria
         fields = [
             "nombre",

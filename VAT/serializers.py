@@ -125,13 +125,27 @@ class SubsectorSerializer(serializers.ModelSerializer):
 
 
 class TituloReferenciaSerializer(serializers.ModelSerializer):
-    sector_nombre = serializers.CharField(source="sector.nombre", read_only=True)
-    subsector_nombre = serializers.CharField(source="subsector.nombre", read_only=True)
+    plan_estudio = serializers.PrimaryKeyRelatedField(
+        queryset=PlanVersionCurricular.objects.all(),
+        allow_null=True,
+        required=False,
+    )
+    sector = serializers.IntegerField(source="plan_estudio.sector_id", read_only=True)
+    sector_nombre = serializers.CharField(
+        source="plan_estudio.sector.nombre", read_only=True
+    )
+    subsector = serializers.IntegerField(
+        source="plan_estudio.subsector_id", read_only=True
+    )
+    subsector_nombre = serializers.CharField(
+        source="plan_estudio.subsector.nombre", read_only=True
+    )
 
     class Meta:
         model = TituloReferencia
         fields = [
             "id",
+            "plan_estudio",
             "sector",
             "sector_nombre",
             "subsector",
@@ -150,9 +164,14 @@ class ModalidadCursadaSerializer(serializers.ModelSerializer):
 
 
 class PlanVersionCurricularSerializer(serializers.ModelSerializer):
+    titulo_referencia = serializers.IntegerField(
+        source="titulo_referencia_id", read_only=True
+    )
     titulo_referencia_nombre = serializers.CharField(
         source="titulo_referencia.nombre", read_only=True
     )
+    sector_nombre = serializers.CharField(source="sector.nombre", read_only=True)
+    subsector_nombre = serializers.CharField(source="subsector.nombre", read_only=True)
     modalidad_cursada_nombre = serializers.CharField(
         source="modalidad_cursada.nombre", read_only=True
     )
@@ -163,14 +182,16 @@ class PlanVersionCurricularSerializer(serializers.ModelSerializer):
             "id",
             "titulo_referencia",
             "titulo_referencia_nombre",
+            "sector",
+            "sector_nombre",
+            "subsector",
+            "subsector_nombre",
             "modalidad_cursada",
             "modalidad_cursada_nombre",
             "normativa",
-            "version",
             "horas_reloj",
             "nivel_requerido",
             "nivel_certifica",
-            "frecuencia",
             "activo",
         ]
 
@@ -561,8 +582,17 @@ class VatWebCentroSerializer(serializers.ModelSerializer):
 
 
 class VatWebTituloSerializer(serializers.ModelSerializer):
-    sector_nombre = serializers.CharField(source="sector.nombre", read_only=True)
-    subsector_nombre = serializers.CharField(source="subsector.nombre", read_only=True)
+    plan_estudio = serializers.IntegerField(source="plan_estudio_id", read_only=True)
+    sector = serializers.IntegerField(source="plan_estudio.sector_id", read_only=True)
+    sector_nombre = serializers.CharField(
+        source="plan_estudio.sector.nombre", read_only=True
+    )
+    subsector = serializers.IntegerField(
+        source="plan_estudio.subsector_id", read_only=True
+    )
+    subsector_nombre = serializers.CharField(
+        source="plan_estudio.subsector.nombre", read_only=True
+    )
 
     class Meta:
         model = TituloReferencia
@@ -572,6 +602,7 @@ class VatWebTituloSerializer(serializers.ModelSerializer):
             "codigo_referencia",
             "descripcion",
             "activo",
+            "plan_estudio",
             "sector",
             "sector_nombre",
             "subsector",

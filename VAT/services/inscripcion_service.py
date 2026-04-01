@@ -147,17 +147,24 @@ class InscripcionService:
             )
 
             if oferta.usa_voucher:
-                voucher = (
-                    Voucher.objects.filter(
-                        ciudadano_id=InscripcionService._resolve_lookup_id(ciudadano),
-                        programa_id=InscripcionService._resolve_lookup_id(
-                            oferta.programa
-                        ),
-                        estado="activo",
-                    )
-                    .order_by("fecha_vencimiento")
-                    .first()
+                vouchers_qs = Voucher.objects.filter(
+                    ciudadano_id=InscripcionService._resolve_lookup_id(ciudadano),
+                    programa_id=InscripcionService._resolve_lookup_id(oferta.programa),
+                    estado="activo",
                 )
+
+                voucher_parametrias = getattr(oferta, "voucher_parametrias", None)
+                ids_parametrias_habilitadas = []
+                if hasattr(voucher_parametrias, "values_list"):
+                    ids_parametrias_habilitadas = list(
+                        voucher_parametrias.values_list("id", flat=True)
+                    )
+                if ids_parametrias_habilitadas:
+                    vouchers_qs = vouchers_qs.filter(
+                        parametria_id__in=ids_parametrias_habilitadas
+                    )
+
+                voucher = vouchers_qs.order_by("fecha_vencimiento").first()
                 if not voucher:
                     raise ValueError(
                         f"{ciudadano} no tiene voucher activo para el programa {oferta.programa}."

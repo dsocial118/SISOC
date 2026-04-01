@@ -340,7 +340,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         for registro in nomina_qs:
             ciudadano = registro.ciudadano
             sexo = str(
-                registro.sexo or getattr(getattr(ciudadano, "sexo", None), "sexo", "") or ""
+                registro.sexo
+                or getattr(getattr(ciudadano, "sexo", None), "sexo", "")
+                or ""
             ).lower()
 
             if registro.estado == NominaCentroInfancia.ESTADO_PENDIENTE:
@@ -922,11 +924,15 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
             if registro.estado == NominaCentroInfancia.ESTADO_PENDIENTE:
                 resumen["espera"] += 1
 
-            sexo = str(
-                registro.sexo
-                or getattr(getattr(registro.ciudadano, "sexo", None), "sexo", "")
-                or ""
-            ).strip().lower()
+            sexo = (
+                str(
+                    registro.sexo
+                    or getattr(getattr(registro.ciudadano, "sexo", None), "sexo", "")
+                    or ""
+                )
+                .strip()
+                .lower()
+            )
             if "mascul" in sexo or sexo == "m":
                 resumen["nomina_m"] += 1
             elif "femen" in sexo or sexo == "f":
@@ -1078,14 +1084,18 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     @staticmethod
     def _resolve_nacionalidad_nombre(nacionalidad_value, datos_api=None):
         if nacionalidad_value:
-            nacionalidad_obj = Nacionalidad.objects.filter(pk=nacionalidad_value).first()
+            nacionalidad_obj = Nacionalidad.objects.filter(
+                pk=nacionalidad_value
+            ).first()
             if nacionalidad_obj:
                 return nacionalidad_obj.nacionalidad
         return (datos_api or {}).get("pais") or None
 
     @staticmethod
     def _get_selected_ciudadano_from_request(request):
-        ciudadano_id = request.GET.get("ciudadano_id") or request.POST.get("ciudadano_id")
+        ciudadano_id = request.GET.get("ciudadano_id") or request.POST.get(
+            "ciudadano_id"
+        )
         if not str(ciudadano_id or "").isdigit():
             return None
         return Ciudadano.objects.filter(pk=ciudadano_id).first()
@@ -1118,7 +1128,9 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         if not form:
             if selected_ciudadano:
                 form = self.form_class(
-                    initial=self._build_nomina_initial_from_ciudadano(selected_ciudadano)
+                    initial=self._build_nomina_initial_from_ciudadano(
+                        selected_ciudadano
+                    )
                 )
             elif renaper_data:
                 form = self.form_class(initial=renaper_data)
@@ -1208,9 +1220,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         if cleaned_data.get("piso_domicilio"):
             pieces.append(f'Piso {cleaned_data["piso_domicilio"]}')
         if cleaned_data.get("departamento_domicilio"):
-            pieces.append(
-                f'Departamento {cleaned_data["departamento_domicilio"]}'
-            )
+            pieces.append(f'Departamento {cleaned_data["departamento_domicilio"]}')
         return " / ".join(pieces) or None
 
     def post(self, request, *args, **kwargs):
@@ -1252,7 +1262,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
                     sexo_obj = Sexo.objects.filter(
                         sexo=form.cleaned_data.get("sexo")
                     ).first()
-                    nacionalidad_obj = ComedorService._match_nacionalidad(
+                    nacionalidad_obj = ComedorService._match_nacionalidad(  # pylint: disable=protected-access
                         form.cleaned_data.get("nacionalidad")
                     )
                     ciudadano = Ciudadano.objects.filter(

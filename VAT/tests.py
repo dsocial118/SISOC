@@ -1,14 +1,26 @@
+import importlib
+from datetime import date
+
 import pytest
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 
+from VAT import serializers as vat_serializers
 from VAT.models import (
     AutoridadInstitucional,
     Centro,
+    Sector,
+    Subsector,
+    TituloReferencia,
+    Curso,
+    ComisionCurso,
     InstitucionContacto,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
+    ModalidadCursada,
+    PlanVersionCurricular,
 )
 from core.models import Localidad, Municipio, Provincia
 from users.models import Profile
@@ -239,3 +251,317 @@ def test_centro_create_usuario_provincial_sin_scope_global_recibe_403(client):
     response = client.get(reverse("vat_centro_create"))
 
     assert response.status_code == 403
+
+
+@pytest.fixture
+def vat_plan_estudio_base(db):
+    sector = Sector.objects.create(nombre="Industria")
+    subsector = Subsector.objects.create(sector=sector, nombre="Metalúrgica")
+    otro_sector = Sector.objects.create(nombre="Servicios")
+    otro_subsector = Subsector.objects.create(
+        sector=otro_sector,
+        nombre="Administración",
+    )
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        sector=sector,
+        subsector=subsector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    titulo = TituloReferencia.objects.create(
+        plan_estudio=plan,
+        nombre="Soldador Básico",
+        activo=True,
+    )
+    return sector, subsector, otro_sector, otro_subsector, titulo, modalidad
+
+
+@pytest.mark.django_db
+def test_plan_estudio_rechaza_subsector_fuera_del_sector(vat_plan_estudio_base):
+    sector, _, _, otro_subsector, titulo, modalidad = vat_plan_estudio_base
+    plan = PlanVersionCurricular(
+        sector=sector,
+        subsector=otro_subsector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+
+    with pytest.raises(ValidationError):
+        plan.full_clean()
+
+
+@pytest.mark.django_db
+def test_plan_estudio_rechaza_sector_distinto_al_titulo(vat_plan_estudio_base):
+    _, _, otro_sector, otro_subsector, titulo, modalidad = vat_plan_estudio_base
+    # Tras la inversión de la relación, el plan ya no valida coherencia con
+    # el título. Título de Referencia ya no tiene sector/subsector propios.
+    plan = PlanVersionCurricular(
+        sector=otro_sector,
+        subsector=otro_subsector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    assert titulo.plan_estudio.sector_id != plan.sector_id
+    plan.full_clean()  # ya no debe lanzar error por sector del titulo
+
+
+@pytest.mark.django_db
+def test_plan_estudio_backward_compat_devuelve_primer_titulo(vat_plan_estudio_base):
+    _, _, _, _, titulo, _ = vat_plan_estudio_base
+
+    assert titulo.plan_estudio.titulo_referencia == titulo
+    assert titulo.plan_estudio.titulo_referencia_id == titulo.id
+
+
+@pytest.mark.django_db
+def test_titulo_referencia_serializer_expone_clasificacion_via_plan(
+    vat_plan_estudio_base,
+):
+    sector, subsector, _, _, titulo, _ = vat_plan_estudio_base
+
+    data = vat_serializers.TituloReferenciaSerializer(instance=titulo).data
+
+    assert data["plan_estudio"] == titulo.plan_estudio_id
+    assert data["sector"] == sector.id
+    assert data["sector_nombre"] == sector.nombre
+    assert data["subsector"] == subsector.id
+    assert data["subsector_nombre"] == subsector.nombre
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_serializer_omite_campos_eliminados(
+    vat_plan_estudio_base,
+):
+    _, _, _, _, titulo, _ = vat_plan_estudio_base
+
+    data = vat_serializers.PlanVersionCurricularSerializer(
+        instance=titulo.plan_estudio
+    ).data
+
+    assert data["titulo_referencia"] == titulo.id
+    assert data["titulo_referencia_nombre"] == titulo.nombre
+    assert "version" not in data
+    assert "frecuencia" not in data
+
+
+def test_migracion_0021_falla_si_un_titulo_tiene_multiples_planes():
+    migration = importlib.import_module(
+        "VAT.migrations.0021_invert_titulo_plan_relation"
+    )
+
+    with pytest.raises(RuntimeError, match="múltiples planes históricos"):
+        migration._raise_if_ambiguous_title_plan_rows([(7, 2, "11,12")])
+
+
+def test_migracion_0021_droppea_fk_antes_que_indices_de_titulo_referencia():
+    migration = importlib.import_module(
+        "VAT.migrations.0021_invert_titulo_plan_relation"
+    )
+    executed_sql = []
+
+    class FakeCursor:
+        def execute(self, sql, params=None):
+            executed_sql.append((sql, params))
+            if "CONSTRAINT_TYPE = 'FOREIGN KEY'" in sql:
+                self._rows = [("vat_plan_titulo_fk",)]
+                self._row = None
+            elif "CONSTRAINT_TYPE = 'UNIQUE'" in sql:
+                self._rows = [
+                    ("VAT_planversioncurricula_titulo_referencia_id_mod_uniq",)
+                ]
+                self._row = None
+            elif "FROM information_schema.STATISTICS" in sql:
+                self._rows = []
+                self._row = None
+            elif "FROM information_schema.COLUMNS" in sql:
+                self._rows = None
+                self._row = (1,)
+            else:
+                self._rows = None
+                self._row = None
+
+        def fetchall(self):
+            return self._rows
+
+        def fetchone(self):
+            return self._row
+
+    class FakeConnection:
+        def cursor(self):
+            return FakeCursor()
+
+    schema_editor = type(
+        "FakeSchemaEditor",
+        (),
+        {"connection": FakeConnection()},
+    )()
+
+    migration._drop_titulo_referencia(None, schema_editor)
+
+    drop_fk_index = next(
+        i for i, (sql, _) in enumerate(executed_sql) if "DROP FOREIGN KEY" in sql
+    )
+    drop_unique_index = next(
+        i for i, (sql, _) in enumerate(executed_sql) if "DROP INDEX" in sql
+    )
+
+    assert drop_fk_index < drop_unique_index
+
+
+@pytest.fixture
+def vat_curso_base(db, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    centro = Centro.objects.create(
+        nombre="CFP 501",
+        codigo="CFP-501",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="8",
+        numero=111,
+        domicilio_actividad="Calle 8 N° 111",
+        telefono="221-1111111",
+        celular="221-1111112",
+        correo="cfp501@vat.test",
+        nombre_referente="Marta",
+        apellido_referente="Lopez",
+        telefono_referente="221-1111113",
+        correo_referente="marta@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 8 N° 111",
+        es_principal=True,
+    )
+    return centro, ubicacion, modalidad
+
+
+@pytest.mark.django_db
+def test_comision_curso_no_permite_cupo_mayor_al_curso(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        ubicacion=ubicacion,
+        nombre="Curso Soldadura Inicial",
+        modalidad=modalidad,
+        fecha_inicio="2026-03-01",
+        fecha_fin="2026-03-30",
+        cupo_total=20,
+        estado="planificado",
+    )
+    comision = ComisionCurso(
+        curso=curso,
+        codigo_comision="SOLD-01",
+        nombre="Comisión mañana",
+        cupo_total=25,
+        fecha_inicio="2026-03-05",
+        fecha_fin="2026-03-25",
+        estado="planificada",
+    )
+
+    with pytest.raises(ValidationError):
+        comision.full_clean()
+
+
+@pytest.mark.django_db
+def test_comision_curso_no_permite_fechas_fuera_de_rango(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        ubicacion=ubicacion,
+        nombre="Curso Electricidad",
+        modalidad=modalidad,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        cupo_total=30,
+        estado="planificado",
+    )
+    comision = ComisionCurso(
+        curso=curso,
+        codigo_comision="ELEC-01",
+        nombre="Comisión tarde",
+        cupo_total=20,
+        fecha_inicio=date(2026, 3, 28),
+        fecha_fin=date(2026, 4, 20),
+        estado="planificada",
+    )
+
+    with pytest.raises(ValidationError):
+        comision.full_clean()
+
+
+@pytest.mark.django_db
+def test_curso_no_permite_ubicacion_de_otro_centro(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Semipresencial", activo=True)
+    centro_a = Centro.objects.create(
+        nombre="Centro A",
+        codigo="A-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="10",
+        numero=100,
+        domicilio_actividad="Calle 10",
+        telefono="221-1000000",
+        celular="221-1000001",
+        correo="a@vat.test",
+        nombre_referente="Ref",
+        apellido_referente="A",
+        telefono_referente="221-1000002",
+        correo_referente="refa@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    centro_b = Centro.objects.create(
+        nombre="Centro B",
+        codigo="B-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="11",
+        numero=101,
+        domicilio_actividad="Calle 11",
+        telefono="221-1100000",
+        celular="221-1100001",
+        correo="b@vat.test",
+        nombre_referente="Ref",
+        apellido_referente="B",
+        telefono_referente="221-1100002",
+        correo_referente="refb@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion_b = InstitucionUbicacion.objects.create(
+        centro=centro_b,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 11",
+        es_principal=True,
+    )
+
+    curso = Curso(
+        centro=centro_a,
+        ubicacion=ubicacion_b,
+        nombre="Curso Inválido",
+        modalidad=modalidad,
+        fecha_inicio="2026-05-01",
+        fecha_fin="2026-05-10",
+        cupo_total=10,
+        estado="planificado",
+    )
+
+    with pytest.raises(ValidationError):
+        curso.full_clean()

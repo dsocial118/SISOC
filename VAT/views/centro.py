@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.db import transaction
 from django.db.models import Count, Q
+from django import forms
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.http import JsonResponse
@@ -17,6 +18,8 @@ from django.http import JsonResponse
 from VAT.models import (
     AutoridadInstitucional,
     Centro,
+    Curso,
+    ComisionCurso,
     Comision,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
@@ -39,20 +42,22 @@ from VAT.forms import (
     AutoridadInstitucionalForm,
     InstitucionIdentificadorHistForm,
     InstitucionUbicacionForm,
+    CursoForm,
+    ComisionCursoForm,
     OfertaInstitucionalForm,
     ComisionForm,
     TituloReferenciaForm,
     PlanVersionCurricularForm,
 )
-from core.services.advanced_filters import AdvancedFilterEngine
-from core.services.favorite_filters import SeccionesFiltrosFavoritos
-from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from VAT.services.access_scope import (
     can_user_access_centro,
     can_user_add_vat_entities,
     filter_centros_queryset_for_user,
     is_vat_referente,
 )
+from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 
 BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
@@ -141,38 +146,52 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # annotate para evitar N+1 al contar comisiones por oferta
         ctx["ofertas"] = list(
-            centro.ofertas_institucionales.select_related(
-                "plan_curricular__titulo_referencia", "programa"
-            )
+            centro.ofertas_institucionales.select_related("plan_curricular", "programa")
             .annotate(comisiones_count=Count("comisiones"))
             .order_by("-ciclo_lectivo")
         )
         ctx["comisiones"] = list(
             Comision.objects.filter(oferta__centro=centro)
             .select_related(
-                "oferta__plan_curricular__titulo_referencia",
+                "oferta__plan_curricular",
                 "oferta__programa",
             )
+            .order_by("codigo_comision")
+        )
+        ctx["cursos"] = list(
+            Curso.objects.filter(centro=centro)
+            .select_related("ubicacion__localidad", "modalidad")
+            .prefetch_related("comisiones")
+            .order_by("-fecha_inicio")
+        )
+        ctx["comisiones_curso"] = list(
+            ComisionCurso.objects.filter(curso__centro=centro)
+            .select_related("curso")
             .order_by("codigo_comision")
         )
 
         # Todos los counts desde datos ya cargados, sin queries adicionales
         ctx["count_ofertas"] = len(ctx["ofertas"])
         ctx["count_comisiones"] = len(ctx["comisiones"])
+        ctx["count_cursos"] = len(ctx["cursos"])
+        ctx["count_comisiones_curso"] = len(ctx["comisiones_curso"])
         ctx["count_autoridades"] = len(ctx["autoridades"])
         ctx["count_identificadores"] = len(ctx["identificadores"])
         ctx["count_contactos"] = len(ctx["contactos"])
 
         # Títulos y planes activos (catálogo disponible)
         ctx["titulos"] = list(
-            TituloReferencia.objects.filter(activo=True)
-            .select_related("sector", "subsector")
-            .prefetch_related("planes")
+            TituloReferencia.objects.filter(activo=True).select_related(
+                "plan_estudio",
+                "plan_estudio__sector",
+                "plan_estudio__subsector",
+                "plan_estudio__modalidad_cursada",
+            )
         )
         ctx["planes"] = list(
-            PlanVersionCurricular.objects.filter(activo=True).select_related(
-                "titulo_referencia", "modalidad_cursada"
-            )
+            PlanVersionCurricular.objects.filter(activo=True)
+            .select_related("sector", "subsector", "modalidad_cursada")
+            .prefetch_related("titulos")
         )
 
         # Forms para modales
@@ -185,6 +204,11 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
         ctx["ubicacion_form"] = InstitucionUbicacionForm(initial={"centro": centro})
         ctx["oferta_form"] = OfertaInstitucionalForm(initial={"centro": centro})
+        ctx["oferta_form"].fields["centro"].queryset = Centro.objects.filter(
+            pk=centro.pk
+        )
+        ctx["oferta_form"].fields["centro"].initial = centro.pk
+        ctx["oferta_form"].fields["centro"].widget = forms.HiddenInput()
         ctx["comision_form"] = ComisionForm()
         ctx["comision_form"].fields["oferta"].queryset = (
             centro.ofertas_institucionales.order_by("-ciclo_lectivo")
@@ -193,6 +217,19 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             centro.ubicaciones.select_related("localidad").order_by(
                 "es_principal", "rol_ubicacion"
             )
+        )
+        ctx["curso_form"] = CursoForm(initial={"centro": centro})
+        ctx["curso_form"].fields["centro"].queryset = Centro.objects.filter(
+            pk=centro.pk
+        )
+        ctx["curso_form"].fields["ubicacion"].queryset = (
+            centro.ubicaciones.select_related("localidad").order_by(
+                "es_principal", "rol_ubicacion"
+            )
+        )
+        ctx["comision_curso_form"] = ComisionCursoForm()
+        ctx["comision_curso_form"].fields["curso"].queryset = centro.cursos.order_by(
+            "nombre"
         )
         ctx["titulo_form"] = TituloReferenciaForm()
         ctx["plan_form"] = PlanVersionCurricularForm()

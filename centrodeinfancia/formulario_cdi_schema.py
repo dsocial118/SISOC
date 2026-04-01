@@ -132,7 +132,12 @@ CAMPOS_OPCIONES = {
         ),
         (
             "gestion_tercer_sector",
-            "Gestión Tercer Sector (Organizaciones sin fines de lucro; incluye organizaciones no gubernamentales, organizaciones sociales, movimientos sociales, grupos comunitarios o barriales, etc.)",
+            (
+                "Gestión Tercer Sector (Organizaciones sin fines de lucro; "
+                "incluye organizaciones no gubernamentales, organizaciones "
+                "sociales, movimientos sociales, grupos comunitarios o "
+                "barriales, etc.)"
+            ),
         ),
         (
             "cogestion_provincial_municipal",

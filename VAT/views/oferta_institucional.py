@@ -12,7 +12,7 @@ from django.views.generic import (
     TemplateView,
 )
 from django.contrib import messages
-from django.db.models import Q, Count
+from django.db.models import Q
 from django.utils import timezone
 
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -70,7 +70,7 @@ class OfertaInstitucionalListView(LoginRequiredMixin, ListView):
         if buscar:
             queryset = queryset.filter(
                 Q(centro__nombre__icontains=buscar)
-                | Q(plan_curricular__titulo_referencia__nombre__icontains=buscar)
+                | Q(plan_curricular__titulos__nombre__icontains=buscar)
                 | Q(nombre_local__icontains=buscar)
             )
 
@@ -119,7 +119,7 @@ class OfertaInstitucionalDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         queryset = OfertaInstitucional.objects.select_related(
-            "centro", "plan_curricular__titulo_referencia", "programa"
+            "centro", "plan_curricular", "programa"
         )
         return filter_ofertas_queryset_for_user(queryset, self.request.user)
 
@@ -257,7 +257,7 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         queryset = Comision.objects.select_related(
-            "oferta__centro", "oferta__plan_curricular__titulo_referencia"
+            "oferta__centro", "oferta__plan_curricular"
         )
         return filter_comisiones_queryset_for_user(queryset, self.request.user)
 

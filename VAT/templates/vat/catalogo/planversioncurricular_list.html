@@ -1,13 +1,13 @@
 {% extends "includes/main.html" %}
 {% load static %}
 
-{% block title %}Planes Curriculares{% endblock %}
+{% block title %}Planes de Estudio{% endblock %}
 
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
 
     {% url 'vat_planversioncurricular_list' as reset_url %}
-    {% include 'components/search_bar.html' with titulo="Buscar Plan Curricular" placeholder="Buscar por título, modalidad o versión" help_text="Buscar por título, modalidad o versión" reset_url=reset_url add_url='vat_planversioncurricular_create' add_text='Agregar' query=request.GET.busqueda %}
+    {% include 'components/search_bar.html' with titulo="Buscar Plan de Estudio" placeholder="Buscar por sector, título o modalidad" help_text="Buscar por sector, título o modalidad" reset_url=reset_url add_url='vat_planversioncurricular_create' add_text='Agregar' query=request.GET.busqueda %}
 
     <div class="row mt-5 max-width-100">
         <div class="col-12">
@@ -17,12 +17,13 @@
                         <table class="table table-bordered table-striped projects">
                             <thead>
                                 <tr>
+                                    <th>Sector</th>
+                                    <th>Subsector</th>
                                     <th class="sortable" data-column="titulo">
                                         Título
                                         <i class="fas fa-sort sort-icon"></i>
                                     </th>
                                     <th>Modalidad</th>
-                                    <th>Versión</th>
                                     <th>Horas</th>
                                     <th>Estado</th>
                                     <th class="notexport">Acciones</th>
@@ -31,13 +32,14 @@
                             <tbody>
                                 {% for plan in planes %}
                                     <tr>
+                                        <td>{{ plan.sector.nombre }}</td>
+                                        <td>{{ plan.subsector.nombre|default:"—" }}</td>
                                         <td data-titulo="{{ plan.titulo_referencia.nombre }}">
                                             <a href="{% url 'vat_planversioncurricular_detail' plan.id %}"
                                                class="link-handler"
                                                title="Ver detalles">{{ plan.titulo_referencia.nombre }}</a>
                                         </td>
                                         <td>{{ plan.modalidad_cursada.nombre }}</td>
-                                        <td>{{ plan.version|default:"—" }}</td>
                                         <td>{{ plan.horas_reloj|default:"—" }}</td>
                                         <td>
                                             {% if plan.activo %}
@@ -79,9 +81,9 @@
                                     </tr>
                                 {% empty %}
                                     <tr>
-                                        <td colspan="6">
+                                        <td colspan="8">
                                             <div class="no-comedores-message">
-                                                <h3>No se encontraron planes curriculares</h3>
+                                                <h3>No se encontraron planes de estudio</h3>
                                                 <p>No hay planes registrados.</p>
                                             </div>
                                         </td>
