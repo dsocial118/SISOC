@@ -126,6 +126,7 @@
 
 - How deploys happen (CI/CD):
   - CI ejecuta lint/tests en PR/push (`development`/`main`).
+  - Los PRs contra `main` ejecutan ademas un sanity check de release (`check --deploy`, validacion de schema OpenAPI y `collectstatic`) para detectar fallas de despliegue antes del merge.
   - Deploy a qa/prd es manual por Tech Lead.
   - Política de release documentada: flujo `development` → freeze/tag → validación QA → merge a `main` para prd.
 

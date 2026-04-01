@@ -1,0 +1,46 @@
+name: Sanity de release
+
+on:
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    release_sanity:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4.1.7
+
+            - name: Create .env for release sanity
+              run: |
+                  cat > .env <<'EOF'
+                  DJANGO_DEBUG=False
+                  ENVIRONMENT=prd
+                  DJANGO_SECRET_KEY=ci-release-sanity-secret-key-2026-main-pr-check-long
+                  DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,sisoc.local
+                  DATABASE_HOST=mysql
+                  DATABASE_PORT=3306
+                  DATABASE_USER=root
+                  DATABASE_PASSWORD=root1-password2
+                  DATABASE_NAME=sisoc-local
+                  WAIT_FOR_DB=false
+                  DOCKER_MYSQL_PORT_FORWARD=3307
+                  DOCKER_MYSQL_PORT=3306
+                  DOCKER_DJANGO_PORT_FORWARD=8000
+                  DOCKER_DJANGO_PORT=8000
+                  DOCKER_DEBUGGER_PORT_FORWARD=5678
+                  DOCKER_DEBUGGER_PORT=5678
+                  ENABLE_CSP=true
+                  CSP_REPORT_ONLY=false
+                  EOF
+
+            - name: Validar configuracion de deploy
+              run: docker compose run --build --rm --no-deps -T django python manage.py check --deploy
+
+            - name: Validar schema OpenAPI
+              run: docker compose run --build --rm --no-deps -T django python manage.py spectacular --file /tmp/schema.yml --validate
+
+            - name: Validar collectstatic
+              run: docker compose run --build --rm --no-deps -T django python manage.py collectstatic --noinput
