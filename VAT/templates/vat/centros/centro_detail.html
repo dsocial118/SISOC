@@ -1202,6 +1202,21 @@
                                                             <i class="fas fa-edit"></i>
                                                         </button>
                                                     {% endif %}
+                                                    {% if perms.VAT.delete_planversioncurricular %}
+                                                        <form method="post"
+                                                              action="{% url 'vat_planversioncurricular_delete' p.pk %}"
+                                                              class="d-inline confirm-delete-form">
+                                                            {% csrf_token %}
+                                                            <input type="hidden"
+                                                                   name="next"
+                                                                   value="{{ request.get_full_path }}">
+                                                            <button type="submit"
+                                                                    class="btn btn-outline-danger"
+                                                                    title="Eliminar">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    {% endif %}
                                                 </div>
                                             </td>
                                         </tr>
@@ -1279,6 +1294,21 @@
                                                                 title="Editar">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
+                                                    {% endif %}
+                                                    {% if perms.VAT.delete_titulorreferencia %}
+                                                        <form method="post"
+                                                              action="{% url 'vat_titulorreferencia_delete' t.pk %}"
+                                                              class="d-inline confirm-delete-form">
+                                                            {% csrf_token %}
+                                                            <input type="hidden"
+                                                                   name="next"
+                                                                   value="{{ request.get_full_path }}">
+                                                            <button type="submit"
+                                                                    class="btn btn-outline-danger"
+                                                                    title="Eliminar">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
                                                     {% endif %}
                                                 </div>
                                             </td>
@@ -1359,11 +1389,28 @@
                                                 </span>
                                             </td>
                                             <td class="text-center">
-                                                <a href="{% url 'vat_oferta_institucional_detail' oferta.pk %}"
-                                                   class="btn btn-sm btn-outline-info"
-                                                   title="Ver detalle">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{% url 'vat_oferta_institucional_detail' oferta.pk %}"
+                                                       class="btn btn-sm btn-outline-info"
+                                                       title="Ver detalle">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    {% if perms.VAT.delete_ofertainstitucional %}
+                                                        <form method="post"
+                                                              action="{% url 'vat_oferta_institucional_delete' oferta.pk %}"
+                                                              class="d-inline confirm-delete-form">
+                                                            {% csrf_token %}
+                                                            <input type="hidden"
+                                                                   name="next"
+                                                                   value="{{ request.get_full_path }}">
+                                                            <button type="submit"
+                                                                    class="btn btn-sm btn-outline-danger"
+                                                                    title="Eliminar">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -1439,11 +1486,28 @@
                                                 </span>
                                             </td>
                                             <td class="text-center">
-                                                <a href="{% url 'vat_comision_detail' comision.pk %}"
-                                                   class="btn btn-sm btn-outline-info"
-                                                   title="Ver detalle">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{% url 'vat_comision_detail' comision.pk %}"
+                                                       class="btn btn-sm btn-outline-info"
+                                                       title="Ver detalle">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    {% if perms.VAT.delete_comision %}
+                                                        <form method="post"
+                                                              action="{% url 'vat_comision_delete' comision.pk %}"
+                                                              class="d-inline confirm-delete-form">
+                                                            {% csrf_token %}
+                                                            <input type="hidden"
+                                                                   name="next"
+                                                                   value="{{ request.get_full_path }}">
+                                                            <button type="submit"
+                                                                    class="btn btn-sm btn-outline-danger"
+                                                                    title="Eliminar">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -2325,10 +2389,9 @@
         function activateTabFromHash(hashValue) {
             var hash = hashValue || window.location.hash;
             if (!hash) return false;
-            var tabButton = document.querySelector('[data-bs-target="' + hash + '"]');
+            var tabButton = document.querySelector('#centroTabs [data-bs-target="' + hash + '"]');
             if (!tabButton) return false;
-            var tab = new bootstrap.Tab(tabButton);
-            tab.show();
+            bootstrap.Tab.getOrCreateInstance(tabButton).show();
             return true;
         }
 
@@ -2361,9 +2424,21 @@
             });
         });
 
-        activatePersistedTab();
+        // Diferir al siguiente tick para que Bootstrap termine de inicializar
+        // las transiciones CSS antes de intentar activar la solapa del hash.
+        setTimeout(activatePersistedTab, 0);
         window.addEventListener('hashchange', function() {
             activateTabFromHash(window.location.hash);
+        });
+
+        // Confirmación de eliminado lógico
+        document.querySelectorAll('.confirm-delete-form').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (window.confirm('¿Confirmás la eliminación de este registro?\nEsta acción es reversible desde la administración.')) {
+                    form.submit();
+                }
+            });
         });
     </script>
 {% endblock %}

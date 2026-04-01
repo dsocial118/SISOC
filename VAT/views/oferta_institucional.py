@@ -162,7 +162,12 @@ class OfertaInstitucionalDeleteView(
     model = OfertaInstitucional
     template_name = "vat/oferta_institucional/oferta_confirm_delete.html"
     context_object_name = "oferta"
-    success_url = reverse_lazy("vat_oferta_institucional_list")
+
+    def get_success_url(self):
+        next_url = self.request.POST.get("next")
+        if next_url:
+            return next_url
+        return reverse_lazy("vat_oferta_institucional_list")
 
     def get_queryset(self):
         queryset = OfertaInstitucional.objects.select_related("centro")
@@ -433,7 +438,12 @@ class ComisionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteVi
     model = Comision
     template_name = "vat/oferta_institucional/comision_confirm_delete.html"
     context_object_name = "comision"
-    success_url = reverse_lazy("vat_comision_list")
+
+    def get_success_url(self):
+        next_url = self.request.POST.get("next")
+        if next_url:
+            return next_url
+        return reverse_lazy("vat_comision_list")
 
     def get_queryset(self):
         queryset = Comision.objects.select_related("oferta__centro")

@@ -10,6 +10,7 @@ from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 from VAT.models import (
     Sector,
@@ -329,15 +330,18 @@ class TituloReferenciaUpdateView(LoginRequiredMixin, UpdateView):
         return reverse("vat_titulorreferencia_detail", kwargs={"pk": self.object.pk})
 
 
-class TituloReferenciaDeleteView(LoginRequiredMixin, DeleteView):
+class TituloReferenciaDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     model = TituloReferencia
     template_name = "vat/catalogo/titulorreferencia_confirm_delete.html"
     context_object_name = "tituloreferencia"
-    success_url = reverse_lazy("vat_titulorreferencia_list")
 
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, "Título de referencia eliminado correctamente.")
-        return super().delete(request, *args, **kwargs)
+    def get_success_url(self):
+        next_url = self.request.POST.get("next")
+        if next_url:
+            return next_url
+        return reverse_lazy("vat_titulorreferencia_list")
 
 
 # ============ PLAN VERSION CURRICULAR ============
@@ -412,12 +416,15 @@ class PlanVersionCurricularUpdateView(LoginRequiredMixin, UpdateView):
         )
 
 
-class PlanVersionCurricularDeleteView(LoginRequiredMixin, DeleteView):
+class PlanVersionCurricularDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     model = PlanVersionCurricular
     template_name = "vat/catalogo/planversioncurricular_confirm_delete.html"
     context_object_name = "planversioncurricular"
-    success_url = reverse_lazy("vat_planversioncurricular_list")
 
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, "Plan de estudio eliminado correctamente.")
-        return super().delete(request, *args, **kwargs)
+    def get_success_url(self):
+        next_url = self.request.POST.get("next")
+        if next_url:
+            return next_url
+        return reverse_lazy("vat_planversioncurricular_list")
