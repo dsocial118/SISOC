@@ -175,6 +175,11 @@ def test_centro_list_usuario_provincial_solo_ve_su_provincia(client):
             "provincia": provincia_ba,
         },
     )
+    permiso_add_plan = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="add_planversioncurricular",
+    )
+    user.user_permissions.add(permiso_add_plan)
 
     permiso_view_centro = Permission.objects.get(
         content_type__app_label="VAT",
@@ -259,6 +264,21 @@ def test_centro_create_usuario_provincial_sin_scope_global_recibe_403(client):
     assert response.status_code == 403
 
 
+@pytest.mark.django_db
+def test_plan_curricular_list_usuario_no_provincial_recibe_403(client):
+    user = User.objects.create_user(username="no-provincial-plan", password="test1234")
+    permiso_view_plan = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="view_planversioncurricular",
+    )
+    user.user_permissions.add(permiso_view_plan)
+
+    client.force_login(user)
+    response = client.get(reverse("vat_planversioncurricular_list"))
+
+    assert response.status_code == 403
+
+
 @pytest.fixture
 def vat_plan_estudio_base(db):
     sector = Sector.objects.create(nombre="Industria")
@@ -318,6 +338,45 @@ def test_plan_estudio_backward_compat_devuelve_primer_titulo(vat_plan_estudio_ba
 
     assert titulo.plan_estudio.titulo_referencia == titulo
     assert titulo.plan_estudio.titulo_referencia_id == titulo.id
+
+
+@pytest.mark.django_db
+def test_plan_estudio_create_usuario_provincial_asigna_provincia(client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    user = User.objects.create_superuser(
+        username="provincial-plan",
+        email="provincial-plan@vat.test",
+        password="test1234",
+    )
+    Profile.objects.update_or_create(
+        user=user,
+        defaults={
+            "es_usuario_provincial": True,
+            "provincia": provincia_ba,
+        },
+    )
+
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_planversioncurricular_create"),
+        data={
+            "sector": str(sector.id),
+            "subsector": "",
+            "modalidad_cursada": str(modalidad.id),
+            "normativa": "RES-2026",
+            "horas_reloj": "120",
+            "nivel_requerido": "sin_requisito",
+            "nivel_certifica": "nivel_1",
+            "activo": "on",
+        },
+    )
+
+    assert response.status_code == 302
+    plan = PlanVersionCurricular.objects.get(normativa="RES-2026")
+    assert plan.provincia_id == provincia_ba.id
 
 
 @pytest.mark.django_db
@@ -700,6 +759,40 @@ def test_curso_form_guarda_plan_estudio(vat_curso_base, vat_plan_estudio_base):
     curso.save()
 
     assert curso.plan_estudio_id == titulo.plan_estudio_id
+
+
+@pytest.mark.django_db
+def test_curso_form_filtra_plan_estudio_por_provincia_del_centro(vat_curso_base):
+    centro, _, _ = vat_curso_base
+    provincia_ba = centro.provincia
+    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
+
+    sector = Sector.objects.create(nombre="Servicios")
+    modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
+
+    plan_ba = PlanVersionCurricular.objects.create(
+        provincia=provincia_ba,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    PlanVersionCurricular.objects.create(
+        provincia=provincia_sf,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+
+    form = CursoForm(initial={"centro": centro})
+    plan_ids = set(form.fields["plan_estudio"].queryset.values_list("id", flat=True))
+
+    assert plan_ba.id in plan_ids
+    assert all(
+        provincia_id == provincia_ba.id
+        for provincia_id in form.fields["plan_estudio"].queryset.values_list(
+            "provincia_id", flat=True
+        )
+    )
 
 
 @pytest.mark.django_db

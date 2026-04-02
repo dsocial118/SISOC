@@ -1102,12 +1102,35 @@ class CursoForm(forms.ModelForm):
             .order_by("nombre")
         )
         centro_id = None
+        centro_provincia_id = None
 
         if self.instance and self.instance.pk and self.instance.centro_id:
             centro_id = self.instance.centro_id
+            centro_provincia_id = self.instance.centro.provincia_id
         elif self.initial.get("centro"):
             centro = self.initial.get("centro")
-            centro_id = centro.id if isinstance(centro, Centro) else centro
+            if isinstance(centro, Centro):
+                centro_id = centro.id
+                centro_provincia_id = centro.provincia_id
+            else:
+                centro_id = centro
+
+        if centro_provincia_id is None and centro_id:
+            centro_provincia_id = (
+                Centro.objects.filter(pk=centro_id).values_list("provincia_id", flat=True).first()
+            )
+
+        if centro_provincia_id:
+            self.fields["plan_estudio"].queryset = (
+                PlanVersionCurricular.objects.filter(
+                    activo=True,
+                    provincia_id=centro_provincia_id,
+                )
+                .select_related("sector", "modalidad_cursada")
+                .order_by("sector__nombre", "modalidad_cursada__nombre")
+            )
+        else:
+            self.fields["plan_estudio"].queryset = PlanVersionCurricular.objects.none()
 
         if centro_id:
             self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.filter(

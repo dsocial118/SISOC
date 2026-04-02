@@ -44,6 +44,14 @@ Alinear el dominio de Curso con la politica de vouchers ya existente en Oferta I
 - Se agregan relaciones opcionales sobre `ComisionHorario`, `SesionComision` e `Inscripcion` para soportar tanto `Comision` como `ComisionCurso`.
 - Se agrega `VAT/migrations/0028_comisionhorario_comision_curso_and_more.py`.
 
+7. Plan de Estudio por usuario provincial:
+- `PlanVersionCurricular` incorpora `provincia` (FK nullable a `core.Provincia`).
+- Al crear un Plan de Estudio desde `PlanVersionCurricularCreateView`, si el usuario autenticado es provincial, se asigna automaticamente su provincia en el plan creado.
+- Las vistas web de planes curriculares (`list/create/detail/update/delete`) quedan restringidas a usuario provincial VAT y scopeadas por provincia del perfil.
+- Se agrega regresion `test_plan_estudio_create_usuario_provincial_asigna_provincia`.
+- Se agrega regresion `test_plan_curricular_list_usuario_no_provincial_recibe_403`.
+- Se agrega `VAT/migrations/0029_planversioncurricular_provincia.py`.
+
 ## Validacion ejecutada
 - `black` sobre archivos Python modificados.
 - `pylint` sobre archivos VAT modificados: 10.00/10.

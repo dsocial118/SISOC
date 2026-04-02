@@ -609,6 +609,16 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
+                    <button class="nav-link"
+                            id="cursos-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#cursos"
+                            type="button"
+                            role="tab">
+                        <i class="fas fa-chalkboard-teacher me-1"></i>Cursos
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
                     <button class="nav-link disabled"
                             id="catalogo-tab"
                             data-bs-target="#catalogo"
@@ -618,16 +628,6 @@
                             tabindex="-1"
                             disabled>
                         <i class="fas fa-graduation-cap me-1"></i>Carrera
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link"
-                            id="cursos-tab"
-                            data-bs-toggle="tab"
-                            data-bs-target="#cursos"
-                            type="button"
-                            role="tab">
-                        <i class="fas fa-chalkboard-teacher me-1"></i>Cursos
                     </button>
                 </li>
             </ul>
@@ -2617,6 +2617,7 @@
             var defaultHint = hint ? hint.textContent : '';
             var lockedCursoId = '';
             var lockedCursoNombre = '';
+            var hoverFilterEnabled = false;
 
             function applyCursoFilter(cursoId, cursoNombre) {
                 var visibleRows = 0;
@@ -2646,6 +2647,12 @@
                 }
             }
 
+            applyCursoFilter('', '');
+
+            cursosTable.addEventListener('mousemove', function() {
+                hoverFilterEnabled = true;
+            }, { once: true });
+
             cursoRows.forEach(function(row) {
                 function filterRow() {
                     applyCursoFilter(
@@ -2673,7 +2680,7 @@
                 }
 
                 row.addEventListener('mouseenter', function() {
-                    if (lockedCursoId) return;
+                    if (lockedCursoId || !hoverFilterEnabled) return;
                     filterRow();
                 });
                 row.addEventListener('click', lockRowFilter);

@@ -216,6 +216,14 @@ class ModalidadCursada(models.Model):
 
 
 class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="vat_planes_estudio",
+        verbose_name="Provincia",
+    )
     sector = models.ForeignKey(
         Sector,
         on_delete=models.PROTECT,
