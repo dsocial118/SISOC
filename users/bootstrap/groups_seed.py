@@ -245,6 +245,33 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        "Provincia VAT",
+        (
+            "auth.role_provincia_vat",
+            "VAT.view_centro",
+            "VAT.view_planversioncurricular",
+            "VAT.add_planversioncurricular",
+        ),
+    ),
+    BootstrapGroupSeed(
+        "ReferenteCentroVAT",
+        (
+            "auth.role_referentecentrovat",
+            "VAT.view_centro",
+        ),
+    ),
+    BootstrapGroupSeed(
+        "VAT SSE",
+        (
+            "auth.role_vat_sse",
+            "VAT.view_centro",
+            "VAT.view_planversioncurricular",
+            "VAT.add_planversioncurricular",
+            "VAT.change_planversioncurricular",
+            "VAT.delete_planversioncurricular",
+        ),
+    ),
+    BootstrapGroupSeed(
         "Tableros Total",
         (
             "auth.role_dashboard_centrodefamilia",

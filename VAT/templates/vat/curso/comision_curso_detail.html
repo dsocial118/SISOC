@@ -1,0 +1,90 @@
+{% extends "includes/main.html" %}
+
+{% block title %}{{ comision_curso.codigo_comision }} - Comisión de Curso{% endblock %}
+
+{% block content %}
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+            <div>
+                <div class="text-muted small mb-1">Comisión de Curso</div>
+                <h1 class="h3 mb-1">{{ comision_curso.nombre }}</h1>
+                <div class="text-muted">{{ comision_curso.codigo_comision }} · {{ comision_curso.curso.nombre }}</div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Volver al centro</a>
+                {% if perms.VAT.change_comisioncurso %}
+                    <a href="{% url 'vat_comision_curso_update' comision_curso.pk %}"
+                       class="btn btn-primary">Editar comisión</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pb-0">
+                        <h2 class="h5 mb-0">Datos de la comisión</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="text-muted small">Código</div>
+                                <div class="fw-semibold">{{ comision_curso.codigo_comision }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">Estado</div>
+                                <div>{{ comision_curso.get_estado_display }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">Fecha de inicio</div>
+                                <div>{{ comision_curso.fecha_inicio|date:"d/m/Y" }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">Fecha de fin</div>
+                                <div>{{ comision_curso.fecha_fin|date:"d/m/Y" }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">Cupo total</div>
+                                <div>{{ comision_curso.cupo_total }}</div>
+                            </div>
+                            <div class="col-12">
+                                <div class="text-muted small">Observaciones</div>
+                                <div>{{ comision_curso.observaciones|default:"-" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pb-0">
+                        <h2 class="h5 mb-0">Curso vinculado</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="text-muted small">Curso</div>
+                            <div class="fw-semibold">{{ comision_curso.curso.nombre }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="text-muted small">Centro</div>
+                            <div>{{ comision_curso.curso.centro.nombre }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="text-muted small">Ubicación</div>
+                            <div>{{ comision_curso.curso.ubicacion|default:"-" }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="text-muted small">Modalidad</div>
+                            <div>{{ comision_curso.curso.modalidad.nombre|default:"-" }}</div>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Programa</div>
+                            <div>{{ comision_curso.curso.programa.nombre|default:"-" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
