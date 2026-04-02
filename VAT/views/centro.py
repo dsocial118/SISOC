@@ -349,7 +349,9 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
         context.update(
             {
                 "page_title": "Editar Centro VAT",
-                "cancel_url": reverse("vat_centro_detail", kwargs={"pk": self.object.pk}),
+                "cancel_url": reverse(
+                    "vat_centro_detail", kwargs={"pk": self.object.pk}
+                ),
                 "submit_text": "Guardar cambios",
             }
         )

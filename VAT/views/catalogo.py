@@ -410,7 +410,9 @@ class PlanVersionCurricularListView(
         return context
 
 
-class PlanVersionCurricularCreateView(VATProvincialOnlyMixin, LoginRequiredMixin, CreateView):
+class PlanVersionCurricularCreateView(
+    VATProvincialOnlyMixin, LoginRequiredMixin, CreateView
+):
     model = PlanVersionCurricular
     form_class = PlanVersionCurricularForm
     template_name = "vat/catalogo/planversioncurricular_form.html"

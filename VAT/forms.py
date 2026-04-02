@@ -1117,7 +1117,9 @@ class CursoForm(forms.ModelForm):
 
         if centro_provincia_id is None and centro_id:
             centro_provincia_id = (
-                Centro.objects.filter(pk=centro_id).values_list("provincia_id", flat=True).first()
+                Centro.objects.filter(pk=centro_id)
+                .values_list("provincia_id", flat=True)
+                .first()
             )
 
         if centro_provincia_id:
