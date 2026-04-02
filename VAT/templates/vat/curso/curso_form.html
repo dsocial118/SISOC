@@ -128,7 +128,9 @@
 
                     <div class="d-flex justify-content-end gap-2 mt-4">
                         {% if is_embedded %}
-                            <button type="button" class="btn btn-outline-secondary" id="cancelEmbeddedCursoForm">Cancelar</button>
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    id="cancelEmbeddedCursoForm">Cancelar</button>
                         {% else %}
                             <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Cancelar</a>
                         {% endif %}
