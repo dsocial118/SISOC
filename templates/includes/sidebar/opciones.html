@@ -463,7 +463,7 @@
                             </li>
                         {% endif %}
                         <!-- Oferta Educativa (subgrupo) - oculto temporalmente -->
-                        {% if False and (request.user|has_perm_code:"VAT.view_ofertainstitucional" or request.user|has_perm_code:"VAT.view_comision" or request.user|has_perm_code:"VAT.view_inscripcionoferta") %}
+                        {% if False %}
                             <li class="nav-item ms-4 {% if 'vat/ofertas' in pagina_actual or 'vat/comisiones' in pagina_actual or 'vat/inscripciones-oferta' in pagina_actual %}menu-open{% endif %}">
                                 <a href="#" class="nav-link">
                                     <i class="nav-icon bi bi-arrow-return-right"></i>
@@ -501,7 +501,7 @@
                             </li>
                         {% endif %}
                         <!-- Datos Institución (subgrupo) - oculto temporalmente -->
-                        {% if False and (request.user|has_perm_code:"VAT.view_institucioncontacto" or request.user|has_perm_code:"VAT.view_autoridadinstitucional" or request.user|has_perm_code:"VAT.view_institucionidentificadorhist" or request.user|has_perm_code:"VAT.view_institucionubicacion") %}
+                        {% if False %}
                             <li class="nav-item ms-4 {% if 'vat/institucion/' in pagina_actual %}menu-open{% endif %}">
                                 <a href="#" class="nav-link">
                                     <i class="nav-icon bi bi-arrow-return-right"></i>

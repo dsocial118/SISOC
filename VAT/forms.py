@@ -614,7 +614,7 @@ class PlanVersionCurricularForm(forms.ModelForm):
             ("nivel_1", "Certificado Nivel I"),
             ("nivel_2", "Certificado Nivel II"),
             ("nivel_3", "Certificado Nivel III"),
-            ("titulo_tecnico", "Título Técnico"),
+            ("sin_nivel", "Sin nivel"),
         ],
         widget=forms.Select(attrs={"class": "form-control"}),
     )
@@ -1117,7 +1117,9 @@ class CursoForm(forms.ModelForm):
 
         if centro_provincia_id is None and centro_id:
             centro_provincia_id = (
-                Centro.objects.filter(pk=centro_id).values_list("provincia_id", flat=True).first()
+                Centro.objects.filter(pk=centro_id)
+                .values_list("provincia_id", flat=True)
+                .first()
             )
 
         if centro_provincia_id:

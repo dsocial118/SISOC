@@ -4,6 +4,7 @@ from datetime import date
 import pytest
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.urls import reverse
@@ -28,6 +29,7 @@ from VAT.models import (
     SesionComision,
     VoucherParametria,
 )
+from VAT.services.access_scope import filter_centros_queryset_for_user, is_vat_referente
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Programa, Sexo
 from users.models import Profile
@@ -241,6 +243,107 @@ def test_centro_list_usuario_provincial_solo_ve_su_provincia(client):
 
 
 @pytest.mark.django_db
+def test_filter_centros_queryset_usuario_con_role_provincia_vat_aplica_scope():
+    provincia_corrientes = Provincia.objects.create(nombre="Corrientes")
+    provincia_chaco = Provincia.objects.create(nombre="Chaco")
+
+    municipio_corrientes = Municipio.objects.create(
+        nombre="Capital",
+        provincia=provincia_corrientes,
+    )
+    municipio_chaco = Municipio.objects.create(
+        nombre="Resistencia",
+        provincia=provincia_chaco,
+    )
+
+    localidad_corrientes = Localidad.objects.create(
+        nombre="Corrientes",
+        municipio=municipio_corrientes,
+    )
+    localidad_chaco = Localidad.objects.create(
+        nombre="Resistencia",
+        municipio=municipio_chaco,
+    )
+
+    user = User.objects.create_user(username="provincia-vat-role", password="test1234")
+    Profile.objects.update_or_create(
+        user=user,
+        defaults={
+            "es_usuario_provincial": True,
+            "provincia": provincia_corrientes,
+        },
+    )
+
+    permiso_role_provincia, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_provincia_vat",
+        defaults={"name": "Puede role provincia vat"},
+    )
+    user.user_permissions.add(permiso_role_provincia)
+    user = User.objects.get(pk=user.pk)
+
+    centro_corrientes = Centro.objects.create(
+        nombre="Centro Corrientes",
+        codigo="CTES-001",
+        provincia=provincia_corrientes,
+        municipio=municipio_corrientes,
+        localidad=localidad_corrientes,
+        calle="Mendoza",
+        numero=100,
+        domicilio_actividad="Mendoza 100",
+        telefono="379-111111",
+        celular="379-111112",
+        correo="corrientes@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Acosta",
+        telefono_referente="379-111113",
+        correo_referente="refcorrientes@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    Centro.objects.create(
+        nombre="Centro Chaco",
+        codigo="CHA-001",
+        provincia=provincia_chaco,
+        municipio=municipio_chaco,
+        localidad=localidad_chaco,
+        calle="Santa María",
+        numero=200,
+        domicilio_actividad="Santa María 200",
+        telefono="362-222221",
+        celular="362-222222",
+        correo="chaco@vat.test",
+        nombre_referente="Luis",
+        apellido_referente="Benitez",
+        telefono_referente="362-222223",
+        correo_referente="refchaco@vat.test",
+        tipo_gestion="Privada",
+        clase_institucion="Capacitación Laboral",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    centros = list(filter_centros_queryset_for_user(Centro.objects.all(), user))
+
+    assert centros == [centro_corrientes]
+
+
+@pytest.mark.django_db
+def test_is_vat_referente_reconoce_alias_legacy_centroreferentevat():
+    user = User.objects.create_user(username="referente-legacy", password="test1234")
+    permiso_role_referente_legacy, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_centroreferentevat",
+        defaults={"name": "ReferenteCentroVAT legacy"},
+    )
+    user.user_permissions.add(permiso_role_referente_legacy)
+
+    assert is_vat_referente(user) is True
+
+
+@pytest.mark.django_db
 def test_centro_create_usuario_provincial_sin_scope_global_recibe_403(client):
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_user(
@@ -278,6 +381,20 @@ def test_plan_curricular_list_usuario_no_provincial_recibe_403(client):
     response = client.get(reverse("vat_planversioncurricular_list"))
 
     assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_plan_curricular_list_superuser_puede_acceder(client):
+    user = User.objects.create_superuser(
+        username="super-plan-list",
+        email="super-plan-list@vat.test",
+        password="test1234",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_planversioncurricular_list"))
+
+    assert response.status_code == 200
 
 
 @pytest.fixture
@@ -840,6 +957,8 @@ def test_curso_form_default_costo_creditos_si_no_usa_voucher(vat_curso_base):
 def test_curso_form_guarda_plan_estudio(vat_curso_base, vat_plan_estudio_base):
     centro, ubicacion, modalidad = vat_curso_base
     _, _, _, _, titulo, _ = vat_plan_estudio_base
+    titulo.plan_estudio.provincia = centro.provincia
+    titulo.plan_estudio.save(update_fields=["provincia"])
 
     form = CursoForm(
         data={
