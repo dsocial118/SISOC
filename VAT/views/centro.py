@@ -344,6 +344,17 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
         messages.success(self.request, "Centro actualizado correctamente.")
         return super().form_valid(form)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "page_title": "Editar Centro VAT",
+                "cancel_url": reverse("vat_centro_detail", kwargs={"pk": self.object.pk}),
+                "submit_text": "Guardar cambios",
+            }
+        )
+        return context
+
     def get_success_url(self):
         return reverse("vat_centro_detail", kwargs={"pk": self.object.pk})
 
