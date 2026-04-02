@@ -8,19 +8,13 @@
             <div>
                 <div class="text-muted small mb-1">Comisión de Curso</div>
                 <h1 class="h3 mb-1">{{ comision_curso.nombre }}</h1>
-                <div class="text-muted">
-                    {{ comision_curso.codigo_comision }} · {{ comision_curso.curso.nombre }}
-                </div>
+                <div class="text-muted">{{ comision_curso.codigo_comision }} · {{ comision_curso.curso.nombre }}</div>
             </div>
             <div class="d-flex gap-2">
-                <a href="{{ cancel_url }}" class="btn btn-outline-secondary">
-                    Volver al centro
-                </a>
+                <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Volver al centro</a>
                 {% if perms.VAT.change_comisioncurso %}
                     <a href="{% url 'vat_comision_curso_update' comision_curso.pk %}"
-                       class="btn btn-primary">
-                        Editar comisión
-                    </a>
+                       class="btn btn-primary">Editar comisión</a>
                 {% endif %}
             </div>
         </div>

@@ -33,7 +33,6 @@ from VAT.services.access_scope import (
     is_vat_sse,
 )
 
-
 # ============ MODALIDAD CURSADA ============
 
 
