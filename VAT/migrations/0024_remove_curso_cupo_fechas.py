@@ -1,11 +1,61 @@
 from django.db import migrations
 
 
+LEGACY_CURSO_COLUMNS = ("cupo_total", "fecha_inicio", "fecha_fin")
+CURSO_ESTADO_TO_COMISION = {
+    "planificado": "planificada",
+    "activo": "activa",
+    "finalizado": "cerrada",
+    "cancelado": "suspendida",
+}
+
+
+def _map_curso_estado_to_comision(estado):
+    return CURSO_ESTADO_TO_COMISION.get(estado, "planificada")
+
+
+def _backfill_comision_curso_if_needed(
+    curso_model, comision_curso_model, existing_columns
+):
+    required_columns = set(LEGACY_CURSO_COLUMNS)
+    if not required_columns.issubset(existing_columns):
+        return
+
+    cursos_con_comision = set(
+        comision_curso_model.objects.values_list("curso_id", flat=True)
+    )
+    cursos_legacy = (
+        curso_model.objects.exclude(cupo_total__isnull=True)
+        .exclude(fecha_inicio__isnull=True)
+        .exclude(fecha_fin__isnull=True)
+    )
+
+    comisiones_creadas = []
+    for curso in cursos_legacy.iterator():
+        if curso.pk in cursos_con_comision:
+            continue
+        comisiones_creadas.append(
+            comision_curso_model(
+                curso_id=curso.pk,
+                codigo_comision=f"LEG-{curso.pk}",
+                nombre=curso.nombre,
+                cupo_total=curso.cupo_total,
+                fecha_inicio=curso.fecha_inicio,
+                fecha_fin=curso.fecha_fin,
+                estado=_map_curso_estado_to_comision(curso.estado),
+                observaciones=getattr(curso, "observaciones", None),
+            )
+        )
+
+    if comisiones_creadas:
+        comision_curso_model.objects.bulk_create(comisiones_creadas)
+
+
 def _drop_curso_columns_if_present(apps, schema_editor):
-    """Drop legacy Curso columns only when they exist (backend-agnostic)."""
+    """Backfill legacy Curso data into ComisionCurso before dropping columns."""
     curso_model = apps.get_model("VAT", "Curso")
+    comision_curso_model = apps.get_model("VAT", "ComisionCurso")
     table_name = curso_model._meta.db_table
-    columns = ("cupo_total", "fecha_inicio", "fecha_fin")
     connection = schema_editor.connection
     introspection = connection.introspection
 
@@ -14,12 +64,11 @@ def _drop_curso_columns_if_present(apps, schema_editor):
             return
 
         description = introspection.get_table_description(cursor, table_name)
-        existing = {
-            getattr(column, "name", column[0])
-            for column in description
-        }
+        existing = {getattr(column, "name", column[0]) for column in description}
 
-    for column_name in columns:
+    _backfill_comision_curso_if_needed(curso_model, comision_curso_model, existing)
+
+    for column_name in LEGACY_CURSO_COLUMNS:
         if column_name in existing:
             field = curso_model._meta.get_field(column_name)
             schema_editor.remove_field(curso_model, field)

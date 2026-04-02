@@ -5,6 +5,7 @@ import pytest
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.urls import reverse
 
 from VAT import serializers as vat_serializers
@@ -472,6 +473,108 @@ def test_migracion_0021_droppea_fk_antes_que_indices_de_titulo_referencia():
     )
 
     assert drop_fk_index < drop_unique_index
+
+
+def test_migracion_0024_mapea_estado_de_curso_a_comision():
+    migration = importlib.import_module("VAT.migrations.0024_remove_curso_cupo_fechas")
+
+    assert migration._map_curso_estado_to_comision("planificado") == "planificada"
+    assert migration._map_curso_estado_to_comision("activo") == "activa"
+    assert migration._map_curso_estado_to_comision("finalizado") == "cerrada"
+    assert migration._map_curso_estado_to_comision("cancelado") == "suspendida"
+    assert migration._map_curso_estado_to_comision("desconocido") == "planificada"
+
+
+def test_migracion_0024_backfillea_comision_curso_si_faltaba():
+    migration = importlib.import_module("VAT.migrations.0024_remove_curso_cupo_fechas")
+
+    class FakeCurso:
+        def __init__(self, pk, nombre, cupo_total, fecha_inicio, fecha_fin, estado):
+            self.pk = pk
+            self.id = pk
+            self.nombre = nombre
+            self.cupo_total = cupo_total
+            self.fecha_inicio = fecha_inicio
+            self.fecha_fin = fecha_fin
+            self.estado = estado
+            self.observaciones = "legado"
+
+    class FakeCursoQuerySet:
+        def __init__(self, cursos):
+            self._cursos = cursos
+
+        def exclude(self, **kwargs):
+            field_name = next(iter(kwargs)).replace("__isnull", "")
+            return FakeCursoQuerySet(
+                [
+                    curso
+                    for curso in self._cursos
+                    if getattr(curso, field_name) is not None
+                ]
+            )
+
+        def iterator(self):
+            return iter(self._cursos)
+
+    class FakeCursoManager:
+        def __init__(self, cursos):
+            self._cursos = cursos
+
+        def exclude(self, **kwargs):
+            return FakeCursoQuerySet(self._cursos).exclude(**kwargs)
+
+    class FakeComisionCurso:
+        def __init__(self, **kwargs):
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+
+    class FakeComisionCursoManager:
+        def __init__(self):
+            self.created = []
+
+        def values_list(self, *_args, **_kwargs):
+            return []
+
+        def bulk_create(self, rows):
+            self.created.extend(rows)
+
+    curso_model = type(
+        "CursoModel",
+        (),
+        {
+            "objects": FakeCursoManager(
+                [
+                    FakeCurso(
+                        7,
+                        "Curso legado",
+                        22,
+                        date(2026, 4, 1),
+                        date(2026, 5, 1),
+                        "activo",
+                    )
+                ]
+            )
+        },
+    )
+    comision_manager = FakeComisionCursoManager()
+    comision_model = type(
+        "ComisionCursoModel",
+        (),
+        {"objects": comision_manager},
+    )
+
+    migration._backfill_comision_curso_if_needed(
+        curso_model,
+        comision_model,
+        {"cupo_total", "fecha_inicio", "fecha_fin"},
+    )
+
+    assert len(comision_manager.created) == 1
+    comision = comision_manager.created[0]
+    assert comision.curso_id == 7
+    assert comision.codigo_comision == "LEG-7"
+    assert comision.estado == "activa"
+    assert comision.cupo_total == 22
 
 
 @pytest.fixture
@@ -1116,3 +1219,165 @@ def test_inscripcion_rapida_comision_curso_crea_inscripcion(client, vat_geo_data
     assert payload["ok"] is True
     assert inscripcion.programa == programa
     assert inscripcion.estado == "inscripta"
+
+
+@pytest.fixture
+def vat_comision_curso_integridad_base(db, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial Base", activo=True)
+    programa = Programa.objects.create(nombre="Programa Integridad")
+    sexo = Sexo.objects.create(sexo="Masculino")
+    centro = Centro.objects.create(
+        nombre="CFP Integridad",
+        codigo="CFP-INT",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="20",
+        numero=200,
+        domicilio_actividad="Calle 20 N° 200",
+        telefono="221-1002000",
+        celular="221-1002001",
+        correo="integridad@vat.test",
+        nombre_referente="Luis",
+        apellido_referente="Paz",
+        telefono_referente="221-1002002",
+        correo_referente="luis@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 20 N° 200",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        ubicacion=ubicacion,
+        nombre="Curso Integridad",
+        modalidad=modalidad,
+        programa=programa,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        codigo_comision="INT-01",
+        nombre="Comisión Integridad",
+        cupo_total=25,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    dia = Dia.objects.create(nombre="Miércoles")
+    ciudadano = Ciudadano.objects.create(
+        apellido="Perez",
+        nombre="Carlos",
+        fecha_nacimiento=date(1999, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=33444555,
+        sexo=sexo,
+    )
+    return comision, dia, ciudadano, programa
+
+
+@pytest.mark.django_db
+def test_inscripcion_comision_curso_no_duplica_por_constraint(
+    vat_comision_curso_integridad_base,
+):
+    comision, _, ciudadano, programa = vat_comision_curso_integridad_base
+    Inscripcion.objects.create(
+        ciudadano=ciudadano,
+        comision_curso=comision,
+        programa=programa,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+
+    with pytest.raises(IntegrityError):
+        Inscripcion.objects.create(
+            ciudadano=ciudadano,
+            comision_curso=comision,
+            programa=programa,
+            estado="inscripta",
+            origen_canal="backoffice",
+        )
+
+
+@pytest.mark.django_db
+def test_comision_horario_comision_curso_no_duplica_por_constraint(
+    vat_comision_curso_integridad_base,
+):
+    comision, dia, _, _ = vat_comision_curso_integridad_base
+    ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde="10:00",
+        hora_hasta="12:00",
+        aula_espacio="Aula 3",
+        vigente=True,
+    )
+
+    with pytest.raises(IntegrityError):
+        ComisionHorario.objects.create(
+            comision_curso=comision,
+            dia_semana=dia,
+            hora_desde="10:00",
+            hora_hasta="12:00",
+            aula_espacio="Aula 4",
+            vigente=True,
+        )
+
+
+@pytest.mark.django_db
+def test_sesion_comision_curso_no_duplica_por_constraint(
+    vat_comision_curso_integridad_base,
+):
+    comision, dia, _, _ = vat_comision_curso_integridad_base
+    horario = ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde="14:00",
+        hora_hasta="16:00",
+        aula_espacio="Aula 5",
+        vigente=True,
+    )
+    SesionComision.objects.create(
+        comision_curso=comision,
+        horario=horario,
+        numero_sesion=1,
+        fecha=date(2026, 4, 8),
+        estado="programada",
+    )
+
+    with pytest.raises(IntegrityError):
+        SesionComision.objects.create(
+            comision_curso=comision,
+            horario=horario,
+            numero_sesion=2,
+            fecha=date(2026, 4, 8),
+            estado="programada",
+        )
+
+
+@pytest.mark.django_db
+def test_sidebar_vat_recupera_links_principales(client):
+    user = User.objects.create_superuser(
+        username="sidebar-vat",
+        email="sidebar@vat.test",
+        password="test1234",
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("vat_centro_list"))
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert reverse("vat_inscripcion_list") in content
+    assert reverse("vat_oferta_institucional_list") in content
+    assert reverse("vat_modalidad_institucional_list") in content
+    assert reverse("vat_sector_list") in content
+    assert reverse("vat_titulorreferencia_list") in content

@@ -1368,6 +1368,20 @@ class ComisionHorario(models.Model):
             "hora_desde",
             "hora_hasta",
         )
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(comision__isnull=False, comision_curso__isnull=True)
+                    | models.Q(comision__isnull=True, comision_curso__isnull=False)
+                ),
+                name="vat_comhor_xor_comision_refs",
+            ),
+            models.UniqueConstraint(
+                fields=("comision_curso", "dia_semana", "hora_desde", "hora_hasta"),
+                condition=models.Q(comision_curso__isnull=False),
+                name="vat_comhor_comisioncurso_horario_uniq",
+            ),
+        ]
 
 
 class SesionComision(models.Model):
@@ -1470,6 +1484,20 @@ class SesionComision(models.Model):
         indexes = [
             models.Index(
                 fields=["comision", "estado"], name="vat_sesion_comision_estado_idx"
+            ),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(comision__isnull=False, comision_curso__isnull=True)
+                    | models.Q(comision__isnull=True, comision_curso__isnull=False)
+                ),
+                name="vat_sesion_xor_comision_refs",
+            ),
+            models.UniqueConstraint(
+                fields=("comision_curso", "horario", "fecha"),
+                condition=models.Q(comision_curso__isnull=False),
+                name="vat_sesion_comisioncurso_horario_fecha_uniq",
             ),
         ]
 
@@ -1604,6 +1632,20 @@ class Inscripcion(SoftDeleteModelMixin, models.Model):
             models.Index(
                 fields=["ciudadano", "estado"],
                 name="vat_insc_ciu_est_idx",
+            ),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(comision__isnull=False, comision_curso__isnull=True)
+                    | models.Q(comision__isnull=True, comision_curso__isnull=False)
+                ),
+                name="vat_inscripcion_xor_comision_refs",
+            ),
+            models.UniqueConstraint(
+                fields=("ciudadano", "comision_curso"),
+                condition=models.Q(comision_curso__isnull=False),
+                name="vat_inscripcion_ciudadano_comisioncurso_uniq",
             ),
         ]
 
