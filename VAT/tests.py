@@ -273,11 +273,13 @@ def test_filter_centros_queryset_usuario_con_role_provincia_vat_aplica_scope():
         },
     )
 
-    permiso_role_provincia = Permission.objects.get(
-        content_type__app_label="auth",
+    permiso_role_provincia, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
         codename="role_provincia_vat",
+        defaults={"name": "Puede role provincia vat"},
     )
     user.user_permissions.add(permiso_role_provincia)
+    user = User.objects.get(pk=user.pk)
 
     centro_corrientes = Centro.objects.create(
         nombre="Centro Corrientes",
@@ -852,6 +854,8 @@ def test_curso_form_default_costo_creditos_si_no_usa_voucher(vat_curso_base):
 def test_curso_form_guarda_plan_estudio(vat_curso_base, vat_plan_estudio_base):
     centro, ubicacion, modalidad = vat_curso_base
     _, _, _, _, titulo, _ = vat_plan_estudio_base
+    titulo.plan_estudio.provincia = centro.provincia
+    titulo.plan_estudio.save(update_fields=["provincia"])
 
     form = CursoForm(
         data={

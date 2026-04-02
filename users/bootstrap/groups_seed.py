@@ -265,6 +265,10 @@ LISTADO_DEFINED_GROUPS = (
         (
             "auth.role_vat_sse",
             "VAT.view_centro",
+            "VAT.view_planversioncurricular",
+            "VAT.add_planversioncurricular",
+            "VAT.change_planversioncurricular",
+            "VAT.delete_planversioncurricular",
         ),
     ),
     BootstrapGroupSeed(

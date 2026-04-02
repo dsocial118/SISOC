@@ -353,7 +353,7 @@ class TituloReferenciaDeleteView(
 
 
 class VATProvincialOnlyMixin:
-    """Restringe acceso a usuarios provinciales VAT."""
+    """Restringe acceso a usuarios VAT SSE o provinciales."""
 
     def dispatch(self, request, *args, **kwargs):
         if not (is_vat_sse(request.user) or is_vat_provincial(request.user)):
@@ -365,7 +365,8 @@ class VATPlanScopeMixin:
     """Aplica scope a planes curriculares según rol VAT."""
 
     def get_scoped_plan_queryset(self, queryset=None):
-        queryset = queryset or super().get_queryset()
+        if queryset is None:
+            queryset = super().get_queryset()
         user = self.request.user
         if is_vat_sse(user):
             return queryset
