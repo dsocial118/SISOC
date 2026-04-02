@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.views.generic import (
     ListView,
     CreateView,
@@ -10,6 +11,7 @@ from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 from VAT.models import (
     Sector,
@@ -25,6 +27,7 @@ from VAT.forms import (
     ModalidadCursadaForm,
     PlanVersionCurricularForm,
 )
+from VAT.services.access_scope import get_user_provincia_id, is_vat_provincial
 
 
 # ============ MODALIDAD CURSADA ============
@@ -329,21 +332,33 @@ class TituloReferenciaUpdateView(LoginRequiredMixin, UpdateView):
         return reverse("vat_titulorreferencia_detail", kwargs={"pk": self.object.pk})
 
 
-class TituloReferenciaDeleteView(LoginRequiredMixin, DeleteView):
+class TituloReferenciaDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     model = TituloReferencia
     template_name = "vat/catalogo/titulorreferencia_confirm_delete.html"
     context_object_name = "tituloreferencia"
-    success_url = reverse_lazy("vat_titulorreferencia_list")
 
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, "Título de referencia eliminado correctamente.")
-        return super().delete(request, *args, **kwargs)
+    def get_success_url(self):
+        next_url = self.request.POST.get("next")
+        if next_url:
+            return next_url
+        return reverse_lazy("vat_titulorreferencia_list")
 
 
 # ============ PLAN VERSION CURRICULAR ============
 
 
-class PlanVersionCurricularListView(LoginRequiredMixin, ListView):
+class VATProvincialOnlyMixin:
+    """Restringe acceso a usuarios provinciales VAT."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if not is_vat_provincial(request.user):
+            raise PermissionDenied()
+        return super().dispatch(request, *args, **kwargs)
+
+
+class PlanVersionCurricularListView(VATProvincialOnlyMixin, LoginRequiredMixin, ListView):
     model = PlanVersionCurricular
     template_name = "vat/catalogo/planversioncurricular_list.html"
     context_object_name = "planes"
@@ -356,6 +371,11 @@ class PlanVersionCurricularListView(LoginRequiredMixin, ListView):
             .select_related("sector", "subsector", "modalidad_cursada")
             .prefetch_related("titulos")
         )
+        provincia_id = get_user_provincia_id(self.request.user)
+        if provincia_id:
+            queryset = queryset.filter(provincia_id=provincia_id)
+        else:
+            queryset = queryset.none()
         titulo_id = self.request.GET.get("titulo")
         activo = self.request.GET.get("activo")
         if titulo_id:
@@ -374,12 +394,15 @@ class PlanVersionCurricularListView(LoginRequiredMixin, ListView):
         return context
 
 
-class PlanVersionCurricularCreateView(LoginRequiredMixin, CreateView):
+class PlanVersionCurricularCreateView(VATProvincialOnlyMixin, LoginRequiredMixin, CreateView):
     model = PlanVersionCurricular
     form_class = PlanVersionCurricularForm
     template_name = "vat/catalogo/planversioncurricular_form.html"
 
     def form_valid(self, form):
+        provincia_id = get_user_provincia_id(self.request.user)
+        if provincia_id:
+            form.instance.provincia_id = provincia_id
         response = super().form_valid(form)
         messages.success(self.request, "Plan de estudio creado correctamente.")
         return response
@@ -390,16 +413,30 @@ class PlanVersionCurricularCreateView(LoginRequiredMixin, CreateView):
         )
 
 
-class PlanVersionCurricularDetailView(LoginRequiredMixin, DetailView):
+class PlanVersionCurricularDetailView(VATProvincialOnlyMixin, LoginRequiredMixin, DetailView):
     model = PlanVersionCurricular
     template_name = "vat/catalogo/planversioncurricular_detail.html"
     context_object_name = "plan"
 
+    def get_queryset(self):
+        provincia_id = get_user_provincia_id(self.request.user)
+        queryset = super().get_queryset()
+        if provincia_id:
+            return queryset.filter(provincia_id=provincia_id)
+        return queryset.none()
 
-class PlanVersionCurricularUpdateView(LoginRequiredMixin, UpdateView):
+
+class PlanVersionCurricularUpdateView(VATProvincialOnlyMixin, LoginRequiredMixin, UpdateView):
     model = PlanVersionCurricular
     form_class = PlanVersionCurricularForm
     template_name = "vat/catalogo/planversioncurricular_form.html"
+
+    def get_queryset(self):
+        provincia_id = get_user_provincia_id(self.request.user)
+        queryset = super().get_queryset()
+        if provincia_id:
+            return queryset.filter(provincia_id=provincia_id)
+        return queryset.none()
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -412,12 +449,22 @@ class PlanVersionCurricularUpdateView(LoginRequiredMixin, UpdateView):
         )
 
 
-class PlanVersionCurricularDeleteView(LoginRequiredMixin, DeleteView):
+class PlanVersionCurricularDeleteView(
+    VATProvincialOnlyMixin, SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     model = PlanVersionCurricular
     template_name = "vat/catalogo/planversioncurricular_confirm_delete.html"
     context_object_name = "planversioncurricular"
-    success_url = reverse_lazy("vat_planversioncurricular_list")
 
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, "Plan de estudio eliminado correctamente.")
-        return super().delete(request, *args, **kwargs)
+    def get_queryset(self):
+        provincia_id = get_user_provincia_id(self.request.user)
+        queryset = super().get_queryset()
+        if provincia_id:
+            return queryset.filter(provincia_id=provincia_id)
+        return queryset.none()
+
+    def get_success_url(self):
+        next_url = self.request.POST.get("next")
+        if next_url:
+            return next_url
+        return reverse_lazy("vat_planversioncurricular_list")

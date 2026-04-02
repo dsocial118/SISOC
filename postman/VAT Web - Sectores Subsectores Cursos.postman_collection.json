@@ -1,0 +1,562 @@
+{
+  "info": {
+    "_postman_id": "be431f6f-36bb-4e98-96f0-cc7428537f7b",
+    "name": "VAT Web - Sectores Subsectores Cursos",
+    "description": "Coleccion para navegar el flujo Sector -> Subsector -> Cursos y validar centros e inscripciones usando endpoints VAT Web.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "apiPrefix",
+      "value": "/api"
+    },
+    {
+      "key": "apiKey",
+      "value": ""
+    },
+    {
+      "key": "authHeader",
+      "value": "Api-Key {{apiKey}}"
+    },
+    {
+      "key": "centro_id",
+      "value": ""
+    },
+    {
+      "key": "sector_id",
+      "value": ""
+    },
+    {
+      "key": "subsector_id",
+      "value": ""
+    },
+    {
+      "key": "titulo_id",
+      "value": ""
+    },
+    {
+      "key": "comision_id",
+      "value": ""
+    },
+    {
+      "key": "ciudadano_id",
+      "value": ""
+    },
+    {
+      "key": "documento",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0 - Centros",
+      "item": [
+        {
+          "name": "Listar centros activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/centros/?activo=true",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "centros",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('centro_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Buscar centros por q",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/centros/?q=CFP",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "centros",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "CFP"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1 - Sectores",
+      "item": [
+        {
+          "name": "Listar titulos (activo=true)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/titulos/?activo=true",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "titulos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].sector) {",
+                  "  pm.collectionVariables.set('sector_id', String(rows[0].sector));",
+                  "}",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('titulo_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar titulos por sector_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/titulos/?activo=true&sector_id={{sector_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "titulos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                },
+                {
+                  "key": "sector_id",
+                  "value": "{{sector_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].subsector) {",
+                  "  pm.collectionVariables.set('subsector_id', String(rows[0].subsector));",
+                  "}",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('titulo_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2 - Subsectores",
+      "item": [
+        {
+          "name": "Listar titulos por sector_id + subsector_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/titulos/?activo=true&sector_id={{sector_id}}&subsector_id={{subsector_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "titulos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                },
+                {
+                  "key": "sector_id",
+                  "value": "{{sector_id}}"
+                },
+                {
+                  "key": "subsector_id",
+                  "value": "{{subsector_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('titulo_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3 - Cursos",
+      "item": [
+        {
+          "name": "Listar cursos por titulo_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/cursos/?titulo_id={{titulo_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "titulo_id",
+                  "value": "{{titulo_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('comision_id', String(rows[0].id));",
+                  "}",
+                  "if (rows.length && rows[0].centro_id) {",
+                  "  pm.collectionVariables.set('centro_id', String(rows[0].centro_id));",
+                  "}",
+                  "if (rows.length && rows[0].titulo_id) {",
+                  "  pm.collectionVariables.set('titulo_id', String(rows[0].titulo_id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar cursos por titulo_id + estado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/cursos/?titulo_id={{titulo_id}}&estado=activa",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "titulo_id",
+                  "value": "{{titulo_id}}"
+                },
+                {
+                  "key": "estado",
+                  "value": "activa"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar cursos por titulo_id + usa_voucher=false",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/cursos/?titulo_id={{titulo_id}}&usa_voucher=false",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "titulo_id",
+                  "value": "{{titulo_id}}"
+                },
+                {
+                  "key": "usa_voucher",
+                  "value": "false"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar cursos por centro_id + q",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/cursos/?centro_id={{centro_id}}&q=curso",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "centro_id",
+                  "value": "{{centro_id}}"
+                },
+                {
+                  "key": "q",
+                  "value": "curso"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4 - Inscripciones",
+      "item": [
+        {
+          "name": "Listar inscripciones por documento",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/inscripciones/?documento={{documento}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "inscripciones",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "documento",
+                  "value": "{{documento}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear inscripcion por documento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"{{documento}}\",\n  \"comision_id\": {{comision_id}},\n  \"estado\": \"pre_inscripta\",\n  \"observaciones\": \"Alta desde Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/inscripciones/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "inscripciones",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -17,6 +17,8 @@ from VAT.api_views import (
     AutoridadInstitucionalViewSet,
     InstitucionIdentificadorHistViewSet,
     InstitucionUbicacionViewSet,
+    CursoViewSet,
+    ComisionCursoViewSet,
     OfertaInstitucionalViewSet,
     ComisionViewSet,
     ComisionHorarioViewSet,
@@ -86,6 +88,17 @@ router.register(
     r"institucion-ubicaciones",
     InstitucionUbicacionViewSet,
     basename="vat-api-institucion-ubicacion",
+)
+# Cursos (capa operativa)
+router.register(
+    r"cursos",
+    CursoViewSet,
+    basename="vat-api-curso",
+)
+router.register(
+    r"comisiones-curso",
+    ComisionCursoViewSet,
+    basename="vat-api-comision-curso",
 )
 # Phase 4 - Oferta Institucional
 router.register(
