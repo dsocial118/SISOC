@@ -614,7 +614,7 @@ class PlanVersionCurricularForm(forms.ModelForm):
             ("nivel_1", "Certificado Nivel I"),
             ("nivel_2", "Certificado Nivel II"),
             ("nivel_3", "Certificado Nivel III"),
-            ("titulo_tecnico", "Título Técnico"),
+            ("sin_nivel", "Sin nivel"),
         ],
         widget=forms.Select(attrs={"class": "form-control"}),
     )
