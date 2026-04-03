@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 
 from VAT import serializers as vat_serializers
-from VAT.forms import CursoForm
+from VAT.forms import CursoForm, PlanVersionCurricularForm
 from VAT.models import (
     AutoridadInstitucional,
     Centro,
@@ -44,7 +44,7 @@ def vat_geo_data(db):
 
 @pytest.fixture
 def vat_referente_user(db):
-    group, _ = Group.objects.get_or_create(name="ReferenteCentroVAT")
+    group, _ = Group.objects.get_or_create(name="CFP")
     user = User.objects.create_user(username="referente-vat", password="test1234")
     user.groups.add(group)
     return user
@@ -103,11 +103,23 @@ def _build_centro_payload(referente_user, provincia, municipio, localidad, **ove
     return payload
 
 
+def _assign_user_profile_provincia(user, provincia, es_usuario_provincial=False):
+    Profile.objects.update_or_create(
+        user=user,
+        defaults={
+            "es_usuario_provincial": es_usuario_provincial,
+            "provincia": provincia,
+        },
+    )
+
+
 @pytest.mark.django_db
 def test_centro_create_crea_entidades_relacionadas(
     vat_admin_client, vat_referente_user, vat_geo_data
 ):
     provincia, municipio, localidad = vat_geo_data
+    admin_user = User.objects.get(username="admin-vat")
+    _assign_user_profile_provincia(admin_user, provincia)
     payload = _build_centro_payload(
         vat_referente_user, provincia, municipio, localidad, save_continue="1"
     )
@@ -141,6 +153,8 @@ def test_centro_create_requiere_un_contacto_principal(
     vat_admin_client, vat_referente_user, vat_geo_data
 ):
     provincia, municipio, localidad = vat_geo_data
+    admin_user = User.objects.get(username="admin-vat")
+    _assign_user_profile_provincia(admin_user, provincia)
     payload = _build_centro_payload(
         vat_referente_user,
         provincia,
@@ -156,6 +170,169 @@ def test_centro_create_requiere_un_contacto_principal(
     assert "Debe existir exactamente un contacto principal." in response.content.decode(
         "utf-8"
     )
+
+
+@pytest.mark.django_db
+def test_centro_create_rechaza_referente_sin_grupo_cfp(vat_admin_client, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    admin_user = User.objects.get(username="admin-vat")
+    _assign_user_profile_provincia(admin_user, provincia)
+    user_sin_cfp = User.objects.create_user(
+        username="sin-cfp",
+        email="sin-cfp@vat.test",
+        password="test1234",
+    )
+    payload = _build_centro_payload(
+        user_sin_cfp,
+        provincia,
+        municipio,
+        localidad,
+    )
+    payload.pop("provincia")
+
+    response = vat_admin_client.post(reverse("vat_centro_create"), data=payload)
+
+    assert response.status_code == 200
+    assert Centro.objects.filter(codigo="500144900").count() == 0
+    assert "El referente seleccionado debe tener el rol CFP." in response.content.decode(
+        "utf-8"
+    )
+
+
+@pytest.mark.django_db
+def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
+    vat_admin_client, vat_referente_user, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    admin_user = User.objects.get(username="admin-vat")
+    _assign_user_profile_provincia(admin_user, provincia)
+    payload = _build_centro_payload(
+        vat_referente_user, provincia, municipio, localidad, save_continue="1"
+    )
+    vat_admin_client.post(reverse("vat_centro_create"), data=payload)
+    centro = Centro.objects.get(codigo="500144900")
+
+    response = vat_admin_client.get(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk})
+    )
+
+    content = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert "name=\"autoridad_dni\"" in content
+    assert "contactos-TOTAL_FORMS" in content
+    assert "3.2 Contactos de la institución" in content
+
+
+@pytest.mark.django_db
+def test_centro_create_oculta_jurisdiccion_y_asigna_provincia_del_usuario(
+    vat_admin_client, vat_referente_user, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    admin_user = User.objects.get(username="admin-vat")
+    _assign_user_profile_provincia(admin_user, provincia)
+
+    response = vat_admin_client.get(reverse("vat_centro_create"))
+
+    content = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert 'for="id_provincia"' not in content
+    assert "Seleccionar jurisdicción" not in content
+
+    payload = _build_centro_payload(vat_referente_user, provincia, municipio, localidad)
+    payload.pop("provincia")
+
+    post_response = vat_admin_client.post(reverse("vat_centro_create"), data=payload)
+
+    centro = Centro.objects.get(codigo="500144900")
+    assert post_response.status_code == 302
+    assert centro.provincia_id == provincia.id
+
+
+@pytest.mark.django_db
+def test_centro_create_filtra_municipios_por_provincia_del_usuario(client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
+    municipio_ba = Municipio.objects.create(nombre="La Plata", provincia=provincia_ba)
+    Municipio.objects.create(nombre="Rosario", provincia=provincia_sf)
+    Localidad.objects.create(nombre="Tolosa", municipio=municipio_ba)
+
+    user = User.objects.create_superuser(
+        username="admin-vat-filtro-municipio",
+        email="admin-vat-filtro-municipio@vat.test",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba)
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_create"))
+
+    content = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert "La Plata" in content
+    assert "Rosario" not in content
+
+
+@pytest.mark.django_db
+def test_centro_update_actualiza_entidades_relacionadas_del_formulario_extendido(
+    vat_admin_client, vat_referente_user, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    admin_user = User.objects.get(username="admin-vat")
+    _assign_user_profile_provincia(admin_user, provincia)
+    payload = _build_centro_payload(
+        vat_referente_user, provincia, municipio, localidad, save_continue="1"
+    )
+    vat_admin_client.post(reverse("vat_centro_create"), data=payload)
+
+    centro = Centro.objects.get(codigo="500144900")
+    contacto = centro.contactos_adicionales.get(nombre_contacto="María Gómez")
+
+    update_payload = _build_centro_payload(
+        vat_referente_user,
+        provincia,
+        municipio,
+        localidad,
+        nombre="Centro de Formación 402",
+        codigo="500144901",
+        domicilio_actividad="Calle 8 N° 4321",
+        autoridad_dni="30999888",
+        nombre_referente="Laura",
+        apellido_referente="Gómez",
+        telefono_referente="221-4999999",
+        correo_referente="laura@vat.test",
+        **{
+            "contactos-TOTAL_FORMS": "1",
+            "contactos-INITIAL_FORMS": "1",
+            "contactos-MIN_NUM_FORMS": "0",
+            "contactos-MAX_NUM_FORMS": "1000",
+            "contactos-0-id": str(contacto.id),
+            "contactos-0-centro": str(centro.id),
+            "contactos-0-nombre_contacto": "Laura Gómez",
+            "contactos-0-rol_area": "Dirección",
+            "contactos-0-telefono_contacto": "221-4333333",
+            "contactos-0-email_contacto": "direccion2@vat.test",
+            "contactos-0-es_principal": "on",
+        },
+    )
+
+    response = vat_admin_client.post(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
+        data=update_payload,
+    )
+
+    centro.refresh_from_db()
+    autoridad = centro.autoridades.get(es_actual=True)
+    identificador = centro.identificadores_hist.get(tipo_identificador="cue")
+    ubicacion = centro.ubicaciones.get(rol_ubicacion="sede_principal")
+    contacto.refresh_from_db()
+
+    assert response.status_code == 302
+    assert centro.nombre == "Centro de Formación 402"
+    assert autoridad.dni == "30999888"
+    assert identificador.valor_identificador == "500144901"
+    assert ubicacion.domicilio == "Calle 8 N° 4321"
+    assert contacto.nombre_contacto == "Laura Gómez"
+    assert contacto.email_contacto == "direccion2@vat.test"
 
 
 @pytest.mark.django_db
@@ -343,10 +520,18 @@ def test_is_vat_referente_reconoce_alias_legacy_centroreferentevat():
 
 
 @pytest.mark.django_db
-def test_centro_create_usuario_provincial_sin_scope_global_recibe_403(client):
+def test_centro_create_usuario_provincial_puede_crear_con_su_provincia(client):
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    municipio_ba = Municipio.objects.create(nombre="La Plata", provincia=provincia_ba)
+    localidad_ba = Localidad.objects.create(nombre="Tolosa", municipio=municipio_ba)
+    group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user(
+        username="referente-provincial",
+        password="test1234",
+    )
+    referente.groups.add(group)
     user = User.objects.create_user(
-        username="provincial-no-create", password="test1234"
+        username="provincial-create", password="test1234"
     )
     Profile.objects.update_or_create(
         user=user,
@@ -359,12 +544,199 @@ def test_centro_create_usuario_provincial_sin_scope_global_recibe_403(client):
         content_type__app_label="VAT",
         codename="view_centro",
     )
-    user.user_permissions.add(permiso_view_centro)
+    permiso_add_centro = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="add_centro",
+    )
+    user.user_permissions.add(permiso_view_centro, permiso_add_centro)
 
     client.force_login(user)
-    response = client.get(reverse("vat_centro_create"))
+    payload = _build_centro_payload(
+        referente,
+        provincia_ba,
+        municipio_ba,
+        localidad_ba,
+    )
+    payload.pop("provincia")
+    response = client.post(reverse("vat_centro_create"), data=payload)
 
-    assert response.status_code == 403
+    centro = Centro.objects.get(codigo="500144900")
+
+    assert response.status_code == 302
+    assert centro.provincia_id == provincia_ba.id
+
+
+@pytest.mark.django_db
+def test_centro_update_usuario_provincial_puede_editar_dentro_de_su_provincia(client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    municipio_ba = Municipio.objects.create(nombre="La Plata", provincia=provincia_ba)
+    localidad_ba = Localidad.objects.create(nombre="Tolosa", municipio=municipio_ba)
+    group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user(
+        username="referente-update-provincial",
+        password="test1234",
+    )
+    referente.groups.add(group)
+
+    centro = Centro.objects.create(
+        nombre="Centro Provincial",
+        codigo="CTRO-001",
+        provincia=provincia_ba,
+        municipio=municipio_ba,
+        localidad=localidad_ba,
+        calle="7",
+        numero=123,
+        domicilio_actividad="Calle 7 N° 123",
+        telefono="221-4000000",
+        celular="221-5000000",
+        correo="institucion@vat.test",
+        sitio_web="https://vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Pérez",
+        telefono_referente="221-4111111",
+        correo_referente="direccion@vat.test",
+        referente=referente,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    contacto = InstitucionContacto.objects.create(
+        centro=centro,
+        nombre_contacto="María Gómez",
+        rol_area="Administración",
+        telefono_contacto="221-4222222",
+        email_contacto="maria@vat.test",
+        es_principal=True,
+    )
+    InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad_ba,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 7 N° 123",
+        es_principal=True,
+    )
+    InstitucionIdentificadorHist.objects.create(
+        centro=centro,
+        tipo_identificador="cue",
+        valor_identificador="CTRO-001",
+        rol_institucional="sede",
+        es_actual=True,
+    )
+    AutoridadInstitucional.objects.create(
+        centro=centro,
+        nombre_completo="Ana Pérez",
+        dni="30111222",
+        cargo="Director/a",
+        email="direccion@vat.test",
+        telefono="221-4111111",
+        es_actual=True,
+    )
+
+    user = User.objects.create_user(
+        username="provincial-update",
+        password="test1234",
+    )
+    Profile.objects.update_or_create(
+        user=user,
+        defaults={
+            "es_usuario_provincial": True,
+            "provincia": provincia_ba,
+        },
+    )
+    permiso_view_centro = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="view_centro",
+    )
+    permiso_change_centro = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="change_centro",
+    )
+    user.user_permissions.add(permiso_view_centro, permiso_change_centro)
+
+    client.force_login(user)
+    update_payload = _build_centro_payload(
+        referente,
+        provincia_ba,
+        municipio_ba,
+        localidad_ba,
+        nombre="Centro Provincial Editado",
+        codigo="CTRO-002",
+        domicilio_actividad="Calle 8 N° 4321",
+        autoridad_dni="30999888",
+        nombre_referente="Laura",
+        apellido_referente="Gómez",
+        telefono_referente="221-4999999",
+        correo_referente="laura@vat.test",
+        **{
+            "contactos-TOTAL_FORMS": "1",
+            "contactos-INITIAL_FORMS": "1",
+            "contactos-MIN_NUM_FORMS": "0",
+            "contactos-MAX_NUM_FORMS": "1000",
+            "contactos-0-id": str(contacto.id),
+            "contactos-0-centro": str(centro.id),
+            "contactos-0-nombre_contacto": "Laura Gómez",
+            "contactos-0-rol_area": "Dirección",
+            "contactos-0-telefono_contacto": "221-4333333",
+            "contactos-0-email_contacto": "direccion2@vat.test",
+            "contactos-0-es_principal": "on",
+        },
+    )
+
+    response = client.post(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
+        data=update_payload,
+    )
+
+    centro.refresh_from_db()
+    contacto.refresh_from_db()
+
+    assert response.status_code == 302
+    assert centro.nombre == "Centro Provincial Editado"
+    assert contacto.nombre_contacto == "Laura Gómez"
+
+
+@pytest.mark.django_db
+def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    referente_group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user(
+        username="referente-centro-detail",
+        password="test1234",
+    )
+    referente.groups.add(referente_group)
+
+    centro = Centro.objects.create(
+        nombre="Centro CFP",
+        codigo="CFP-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="7",
+        numero=123,
+        domicilio_actividad="Calle 7 N° 123",
+        telefono="221-4000000",
+        celular="221-5000000",
+        correo="institucion@vat.test",
+        sitio_web="https://vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Pérez",
+        telefono_referente="221-4111111",
+        correo_referente="direccion@vat.test",
+        referente=referente,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    client.force_login(referente)
+    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+
+    content = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert reverse("vat_centro_update", kwargs={"pk": centro.pk}) in content
+    assert "Editar" in content
 
 
 @pytest.mark.django_db
@@ -483,7 +855,9 @@ def test_plan_estudio_create_usuario_provincial_asigna_provincia(client):
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
-            "normativa": "RES-2026",
+            "normativa_tipo": "Resolución",
+            "normativa_numero": "123",
+            "normativa_anio": "2026",
             "horas_reloj": "120",
             "nivel_requerido": "sin_requisito",
             "nivel_certifica": "nivel_1",
@@ -492,8 +866,171 @@ def test_plan_estudio_create_usuario_provincial_asigna_provincia(client):
     )
 
     assert response.status_code == 302
-    plan = PlanVersionCurricular.objects.get(normativa="RES-2026")
+    plan = PlanVersionCurricular.objects.get(normativa="Resolución 123/2026")
     assert plan.provincia_id == provincia_ba.id
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_form_inicializa_campos_compuestos_de_normativa():
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Disposición 55/2024",
+    )
+
+    form = PlanVersionCurricularForm(instance=plan)
+
+    assert form.initial["normativa_tipo"] == "Disposición"
+    assert form.initial["normativa_numero"] == "55"
+    assert form.initial["normativa_anio"] == "2024"
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_create_acepta_normativa_texto_libre(client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    user = User.objects.create_superuser(
+        username="super-plan-libre",
+        email="super-plan-libre@vat.test",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba, es_usuario_provincial=True)
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_planversioncurricular_create"),
+        data={
+            "sector": str(sector.id),
+            "subsector": "",
+            "modalidad_cursada": str(modalidad.id),
+            "normativa": "Resolución interna sin formato estándar",
+            "normativa_tipo": "",
+            "normativa_numero": "",
+            "normativa_anio": "",
+            "horas_reloj": "120",
+            "nivel_requerido": "sin_requisito",
+            "nivel_certifica": "nivel_1",
+            "activo": "on",
+        },
+    )
+
+    assert response.status_code == 302
+    plan = PlanVersionCurricular.objects.get(
+        normativa="Resolución interna sin formato estándar"
+    )
+    assert plan.provincia_id == provincia_ba.id
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_create_conserva_normativa_libre_y_estructurada(client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    user = User.objects.create_superuser(
+        username="super-plan-mixta",
+        email="super-plan-mixta@vat.test",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba, es_usuario_provincial=True)
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_planversioncurricular_create"),
+        data={
+            "sector": str(sector.id),
+            "subsector": "",
+            "modalidad_cursada": str(modalidad.id),
+            "normativa": "asdedas",
+            "normativa_tipo": "Disposición",
+            "normativa_numero": "55",
+            "normativa_anio": "2024",
+            "horas_reloj": "120",
+            "nivel_requerido": "sin_requisito",
+            "nivel_certifica": "nivel_1",
+            "activo": "on",
+        },
+    )
+
+    assert response.status_code == 302
+    plan = PlanVersionCurricular.objects.get(
+        normativa="asdedas || Disposición 55/2024"
+    )
+    assert plan.provincia_id == provincia_ba.id
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_detail_muestra_los_cuatro_campos_de_normativa(client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    user = User.objects.create_superuser(
+        username="super-plan-detail",
+        email="super-plan-detail@vat.test",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba, es_usuario_provincial=True)
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Disposición 55/2024",
+        horas_reloj=120,
+        nivel_requerido="sin_requisito",
+        nivel_certifica="nivel_1",
+        activo=True,
+        provincia=provincia_ba,
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_planversioncurricular_detail", kwargs={"pk": plan.pk})
+    )
+
+    content = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert "Normativa - Tipo" in content
+    assert "Disposición" in content
+    assert "Normativa - Número" in content
+    assert ">55<" in content
+    assert "Normativa - Año" in content
+    assert ">2024<" in content
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_detail_muestra_normativa_libre_y_estructurada(client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    user = User.objects.create_superuser(
+        username="super-plan-detail-mixto",
+        email="super-plan-detail-mixto@vat.test",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba, es_usuario_provincial=True)
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="asdedas || Disposición 55/2024",
+        horas_reloj=120,
+        nivel_requerido="sin_requisito",
+        nivel_certifica="nivel_1",
+        activo=True,
+        provincia=provincia_ba,
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_planversioncurricular_detail", kwargs={"pk": plan.pk})
+    )
+
+    content = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert ">asdedas<" in content
+    assert "Disposición" in content
+    assert ">55<" in content
+    assert ">2024<" in content
 
 
 @pytest.mark.django_db
@@ -920,7 +1457,7 @@ def test_centro_detail_renderiza_marcadores_para_filtrar_comisiones_por_curso(
 ):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
-    group, _ = Group.objects.get_or_create(name="ReferenteCentroVAT")
+    group, _ = Group.objects.get_or_create(name="CFP")
     user = User.objects.create_superuser(
         username="admin-vat-centro-detail",
         email="admin-centro-detail@vat.test",
@@ -993,7 +1530,7 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
     programa = Programa.objects.create(nombre="Programa Curso VAT")
-    group, _ = Group.objects.get_or_create(name="ReferenteCentroVAT")
+    group, _ = Group.objects.get_or_create(name="CFP")
     user = User.objects.create_superuser(
         username="admin-comision-curso-detail",
         email="admin-comision-curso-detail@vat.test",
@@ -1073,7 +1610,7 @@ def test_comision_curso_horario_create_genera_sesiones(client, vat_geo_data):
     modalidad = ModalidadCursada.objects.create(
         nombre="Presencial Horario", activo=True
     )
-    group, _ = Group.objects.get_or_create(name="ReferenteCentroVAT")
+    group, _ = Group.objects.get_or_create(name="CFP")
     user = User.objects.create_superuser(
         username="admin-comision-curso-horario",
         email="admin-comision-curso-horario@vat.test",
@@ -1156,7 +1693,7 @@ def test_inscripcion_rapida_comision_curso_crea_inscripcion(client, vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Presencial Insc", activo=True)
     programa = Programa.objects.create(nombre="Programa Inscripción Curso")
     sexo = Sexo.objects.create(sexo="Femenino")
-    group, _ = Group.objects.get_or_create(name="ReferenteCentroVAT")
+    group, _ = Group.objects.get_or_create(name="CFP")
     user = User.objects.create_superuser(
         username="admin-comision-curso-insc",
         email="admin-comision-curso-insc@vat.test",

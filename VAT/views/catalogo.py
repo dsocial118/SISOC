@@ -26,6 +26,8 @@ from VAT.forms import (
     TituloReferenciaForm,
     ModalidadCursadaForm,
     PlanVersionCurricularForm,
+    _parse_normativa_value,
+    _split_normativa_value,
 )
 from VAT.services.access_scope import (
     get_user_provincia_id,
@@ -51,6 +53,21 @@ class ModalidadCursadaCreateView(LoginRequiredMixin, CreateView):
     form_class = ModalidadCursadaForm
     template_name = "vat/catalogo/modalidadcursada_form.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "page_title": "Nueva Modalidad de Cursado",
+                "page_description": (
+                    "Definí el nombre, la descripción y el estado operativo de la "
+                    "modalidad para reutilizarla en planes y cursos."
+                ),
+                "submit_text": "Crear modalidad",
+                "cancel_url": reverse("vat_modalidadcursada_list"),
+            }
+        )
+        return context
+
     def form_valid(self, form):
         response = super().form_valid(form)
         messages.success(self.request, "Modalidad de cursado creada correctamente.")
@@ -70,6 +87,23 @@ class ModalidadCursadaUpdateView(LoginRequiredMixin, UpdateView):
     model = ModalidadCursada
     form_class = ModalidadCursadaForm
     template_name = "vat/catalogo/modalidadcursada_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "page_title": "Editar Modalidad de Cursado",
+                "page_description": (
+                    "Actualizá la definición de la modalidad y su disponibilidad "
+                    "para el catálogo académico de VAT."
+                ),
+                "submit_text": "Guardar cambios",
+                "cancel_url": reverse(
+                    "vat_modalidadcursada_detail", kwargs={"pk": self.object.pk}
+                ),
+            }
+        )
+        return context
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -353,7 +387,7 @@ class TituloReferenciaDeleteView(
 
 
 class VATProvincialOnlyMixin:
-    """Restringe acceso a usuarios VAT SSE o provinciales."""
+    """Restringe acceso a usuarios CFPINET o provinciales."""
 
     def dispatch(self, request, *args, **kwargs):
         if not (is_vat_sse(request.user) or is_vat_provincial(request.user)):
@@ -451,6 +485,22 @@ class PlanVersionCurricularDetailView(
 
     def get_queryset(self):
         return self.get_scoped_plan_queryset(super().get_queryset())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        normativa_texto, _ = _split_normativa_value(self.object.normativa)
+        normativa_tipo, normativa_numero, normativa_anio = _parse_normativa_value(
+            self.object.normativa
+        )
+        context.update(
+            {
+                "normativa_texto": normativa_texto,
+                "normativa_tipo": normativa_tipo,
+                "normativa_numero": normativa_numero,
+                "normativa_anio": normativa_anio,
+            }
+        )
+        return context
 
 
 class PlanVersionCurricularUpdateView(

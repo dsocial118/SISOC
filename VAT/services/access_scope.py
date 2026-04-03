@@ -11,6 +11,8 @@ ROLE_REFERENTE_CENTRO_PERMISSIONS = (
     "auth.role_centroreferentevat",
 )
 VAT_VIEW_CENTRO_PERMISSION = "VAT.view_centro"
+VAT_ADD_CENTRO_PERMISSION = "VAT.add_centro"
+VAT_CHANGE_CENTRO_PERMISSION = "VAT.change_centro"
 
 
 def _user_has_any_permission_code(user, permission_codes) -> bool:
@@ -125,3 +127,28 @@ def filter_sesiones_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
 
 def can_user_add_vat_entities(user) -> bool:
     return is_vat_sse(user)
+
+
+def can_user_create_centro(user) -> bool:
+    if is_vat_sse(user):
+        return True
+
+    return bool(
+        is_vat_provincial(user)
+        and user_has_permission_code(user, VAT_ADD_CENTRO_PERMISSION)
+    )
+
+
+def can_user_edit_centro(user, centro) -> bool:
+    if is_vat_sse(user):
+        return True
+
+    provincia_id = get_user_provincia_id(user)
+    if (
+        provincia_id
+        and is_vat_provincial(user)
+        and user_has_permission_code(user, VAT_CHANGE_CENTRO_PERMISSION)
+    ):
+        return centro.provincia_id == provincia_id
+
+    return bool(is_vat_referente(user) and centro.referente_id == user.id)

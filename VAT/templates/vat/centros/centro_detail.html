@@ -537,7 +537,7 @@
                     <span class="ci-state-badge">Inactivo</span>
                 {% endif %}
                 <span class="ci-code-badge">CENTRO</span>
-                {% if perms.VAT.change_centro %}
+                {% if can_edit_centro %}
                     <a href="{% url 'vat_centro_update' centro.id %}" class="ci-edit-btn">
                         <i class="bi bi-pencil me-1"></i>Editar
                     </a>

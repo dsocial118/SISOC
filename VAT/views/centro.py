@@ -13,7 +13,7 @@ from django.db.models import Count, Q
 from django import forms
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse
 
 from VAT.models import (
     AutoridadInstitucional,
@@ -52,6 +52,8 @@ from VAT.forms import (
 from VAT.services.access_scope import (
     can_user_access_centro,
     can_user_add_vat_entities,
+    can_user_create_centro,
+    can_user_edit_centro,
     filter_centros_queryset_for_user,
     is_vat_referente,
 )
@@ -104,7 +106,7 @@ class CentroListView(LoginRequiredMixin, ListView):
             }
         )
 
-        ctx["can_add"] = can_user_add_vat_entities(user)
+        ctx["can_add"] = can_user_create_centro(user)
 
         ctx["table_headers"] = [
             {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
@@ -230,6 +232,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
         ctx["titulo_form"] = TituloReferenciaForm()
         ctx["plan_form"] = PlanVersionCurricularForm()
+        ctx["can_edit_centro"] = can_user_edit_centro(self.request.user, centro)
 
         return ctx
 
@@ -240,8 +243,26 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     template_name = "vat/centros/centro_create_form.html"
     success_url = reverse_lazy("vat_centro_list")
 
+    def _get_creator_provincia(self):
+        profile = getattr(self.request.user, "profile", None)
+        return getattr(profile, "provincia", None)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        creator_provincia = self._get_creator_provincia()
+        kwargs["hide_provincia"] = True
+        kwargs["provincia_inicial"] = creator_provincia
+
+        data = kwargs.get("data")
+        if data is not None and creator_provincia is not None:
+            data = data.copy()
+            data["provincia"] = str(creator_provincia.pk)
+            kwargs["data"] = data
+
+        return kwargs
+
     def dispatch(self, request, *args, **kwargs):
-        if not can_user_add_vat_entities(request.user):
+        if not can_user_create_centro(request.user):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -253,7 +274,16 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         ctx.update(
             {
                 "contacto_formset": contacto_formset,
+                "page_title": "Alta de Centro de Formacion",
+                "page_description": (
+                    "Registro inicial del centro VAT con datos institucionales, "
+                    "ubicación, contactos y autoridad responsable."
+                ),
+                "show_provincia_field": False,
                 "cancel_url": reverse("vat_centro_list"),
+                "submit_text": "Guardar",
+                "submit_continue_text": "Guardar y continuar",
+                "show_save_continue": True,
             }
         )
         return ctx
@@ -261,10 +291,20 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     def post(self, request, *args, **kwargs):
         self.object = None
         form = self.get_form()
+        creator_provincia = self._get_creator_provincia()
         contacto_formset = InstitucionContactoAltaFormSet(
             self.request.POST,
             prefix="contactos",
         )
+
+        if creator_provincia is None:
+            form.add_error(
+                None,
+                "El usuario creador debe tener una jurisdicción asignada para dar de alta centros.",
+            )
+            return self.form_invalid(form, contacto_formset)
+
+        form.instance.provincia = creator_provincia
 
         if form.is_valid() and contacto_formset.is_valid():
             return self.form_valid(form, contacto_formset)
@@ -325,37 +365,136 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
 
 class CentroUpdateView(LoginRequiredMixin, UpdateView):
     model = Centro
-    form_class = CentroForm
-    template_name = "vat/centros/centro_form.html"
+    form_class = CentroAltaForm
+    template_name = "vat/centros/centro_create_form.html"
 
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
-        if not (
-            can_user_add_vat_entities(request.user)
-            or (
-                is_vat_referente(request.user)
-                and centro.referente_id == request.user.id
-            )
-        ):
+        if not can_user_edit_centro(request.user, centro):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
-    def form_valid(self, form):
-        messages.success(self.request, "Centro actualizado correctamente.")
-        return super().form_valid(form)
+    def get_initial(self):
+        initial = super().get_initial()
+        autoridad = (
+            self.object.autoridades.filter(es_actual=True)
+            .order_by("-vigencia_desde", "-id")
+            .first()
+            or self.object.autoridades.order_by("-vigencia_desde", "-id").first()
+        )
+        if autoridad:
+            initial["autoridad_dni"] = autoridad.dni
+        return initial
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        contacto_formset = kwargs.get("contacto_formset")
+        if contacto_formset is None:
+            contacto_formset = InstitucionContactoAltaFormSet(
+                instance=self.object,
+                prefix="contactos",
+            )
         context.update(
             {
-                "page_title": "Editar Centro VAT",
+                "contacto_formset": contacto_formset,
+                "page_title": "Editar Centro de Formacion",
+                "page_description": (
+                    "Actualizá los datos institucionales, la ubicación, los "
+                    "contactos y la autoridad responsable del centro VAT."
+                ),
                 "cancel_url": reverse(
                     "vat_centro_detail", kwargs={"pk": self.object.pk}
                 ),
-                "submit_text": "Guardar cambios",
+                "submit_text": "Guardar",
+                "submit_continue_text": "Guardar y continuar",
+                "show_save_continue": True,
             }
         )
         return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form()
+        contacto_formset = InstitucionContactoAltaFormSet(
+            self.request.POST,
+            instance=self.object,
+            prefix="contactos",
+        )
+        if form.is_valid() and contacto_formset.is_valid():
+            return self.form_valid(form, contacto_formset)
+        return self.form_invalid(form, contacto_formset)
+
+    def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
+        with transaction.atomic():
+            form.instance.activo = self.object.activo
+            self.object = form.save()
+
+            contacto_formset.instance = self.object
+            contacto_formset.save()
+
+            ubicacion_principal = (
+                self.object.ubicaciones.filter(rol_ubicacion="sede_principal")
+                .order_by("-es_principal", "-vigencia_desde", "-id")
+                .first()
+                or self.object.ubicaciones.order_by(
+                    "-es_principal", "-vigencia_desde", "-id"
+                ).first()
+            )
+            if ubicacion_principal is None:
+                ubicacion_principal = InstitucionUbicacion(
+                    centro=self.object,
+                    rol_ubicacion="sede_principal",
+                )
+            ubicacion_principal.localidad = form.cleaned_data["localidad"]
+            ubicacion_principal.domicilio = form.cleaned_data["domicilio_actividad"]
+            ubicacion_principal.es_principal = True
+            ubicacion_principal.save()
+
+            autoridad_actual = (
+                self.object.autoridades.filter(es_actual=True)
+                .order_by("-vigencia_desde", "-id")
+                .first()
+                or self.object.autoridades.order_by("-vigencia_desde", "-id").first()
+            )
+            if autoridad_actual is None:
+                autoridad_actual = AutoridadInstitucional(centro=self.object)
+            autoridad_actual.nombre_completo = (
+                f"{form.cleaned_data['nombre_referente']} "
+                f"{form.cleaned_data['apellido_referente']}"
+            ).strip()
+            autoridad_actual.dni = form.cleaned_data["autoridad_dni"]
+            autoridad_actual.cargo = autoridad_actual.cargo or "Director/a"
+            autoridad_actual.email = form.cleaned_data["correo_referente"]
+            autoridad_actual.telefono = form.cleaned_data.get("telefono_referente")
+            autoridad_actual.es_actual = True
+            autoridad_actual.save()
+
+            identificador_cue = (
+                self.object.identificadores_hist.filter(tipo_identificador="cue")
+                .order_by("-es_actual", "-vigencia_desde", "-id")
+                .first()
+            )
+            if identificador_cue is None:
+                identificador_cue = InstitucionIdentificadorHist(
+                    centro=self.object,
+                    tipo_identificador="cue",
+                )
+            identificador_cue.valor_identificador = form.cleaned_data["codigo"]
+            identificador_cue.rol_institucional = "sede"
+            identificador_cue.ubicacion = ubicacion_principal
+            identificador_cue.es_actual = True
+            identificador_cue.save()
+
+        messages.success(self.request, "Centro actualizado correctamente.")
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form, contacto_formset):  # pylint: disable=arguments-differ
+        return self.render_to_response(
+            self.get_context_data(
+                form=form,
+                contacto_formset=contacto_formset,
+            )
+        )
 
     def get_success_url(self):
         return reverse("vat_centro_detail", kwargs={"pk": self.object.pk})
@@ -400,7 +539,7 @@ def centros_ajax(request):
         paginator = Paginator(qs, 10)
         page_obj = paginator.get_page(page)
 
-        can_add = can_user_add_vat_entities(user)
+        can_add = can_user_create_centro(user)
 
         context = {
             "centros": page_obj,
