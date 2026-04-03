@@ -891,10 +891,9 @@ def test_plan_estudio_create_usuario_provincial_asigna_provincia(client):
         },
     )
 
-        assert "form" in response.context
-        assert response.context["form"].errors["normativa"] == [
-            "La normativa libre no puede contener la secuencia '||'."
-        ]
+    assert response.status_code == 302
+    plan = PlanVersionCurricular.objects.get(normativa="Resolución 123/2026")
+    assert plan.provincia_id == provincia_ba.id
 
 
 @pytest.mark.django_db
@@ -982,10 +981,10 @@ def test_plan_version_curricular_rechaza_separador_interno_en_normativa_libre(cl
     )
 
     assert response.status_code == 200
-    assert (
+    assert "form" in response.context
+    assert response.context["form"].errors["normativa"] == [
         "La normativa libre no puede contener la secuencia '||'."
-        in response.content.decode("utf-8")
-    )
+    ]
 
 
 @pytest.mark.django_db
