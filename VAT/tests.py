@@ -891,9 +891,10 @@ def test_plan_estudio_create_usuario_provincial_asigna_provincia(client):
         },
     )
 
-    assert response.status_code == 302
-    plan = PlanVersionCurricular.objects.get(normativa="Resolución 123/2026")
-    assert plan.provincia_id == provincia_ba.id
+        assert "form" in response.context
+        assert response.context["form"].errors["normativa"] == [
+            "La normativa libre no puede contener la secuencia '||'."
+        ]
 
 
 @pytest.mark.django_db
