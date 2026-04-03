@@ -30,12 +30,14 @@
             margin: 0 0 .35rem;
             font-size: 1.9rem;
             font-weight: 700;
+            line-height: 1.2;
         }
 
         .vp-hero p {
             margin: 0;
             max-width: 760px;
             color: rgba(255, 255, 255, 0.82);
+            line-height: 1.5;
         }
 
         .vp-hero-actions {
@@ -63,14 +65,24 @@
             color: #f8fbff;
         }
 
+        .vp-panel-header > div {
+            display: flex;
+            flex-direction: column;
+            gap: .4rem;
+        }
+
         .vp-panel-header .card-title {
             color: #ffffff;
             font-weight: 700;
             margin: 0;
+            line-height: 1.25;
         }
 
         .vp-panel-header .small {
             color: rgba(240, 247, 255, 0.82) !important;
+            display: block;
+            line-height: 1.45;
+            margin: 0;
         }
 
         .vp-section {
@@ -210,7 +222,19 @@
                 <div class="vp-metric-grid">
                     <div class="vp-metric">
                         <div class="vp-metric-label">Normativa</div>
-                        <div class="vp-metric-value">{{ plan.normativa|default:"-" }}</div>
+                        <div class="vp-metric-value">{{ normativa_texto|default:"-" }}</div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Normativa - Tipo</div>
+                        <div class="vp-metric-value">{{ normativa_tipo|default:"-" }}</div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Normativa - Número</div>
+                        <div class="vp-metric-value">{{ normativa_numero|default:"-" }}</div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Normativa - Año</div>
+                        <div class="vp-metric-value">{{ normativa_anio|default:"-" }}</div>
                     </div>
                     <div class="vp-metric">
                         <div class="vp-metric-label">Horas Reloj</div>

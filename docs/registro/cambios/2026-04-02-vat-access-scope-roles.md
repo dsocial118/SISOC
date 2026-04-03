@@ -9,7 +9,7 @@ Fecha: 2026-04-02
 - El chequeo de referente ahora reconoce ambos codenames legacy detectados en producción/local:
   - `auth.role_referentecentrovat`
   - `auth.role_centroreferentevat`
-- Se amplió el seed del grupo `VAT SSE` para incluir permisos de listado y CRUD de `PlanVersionCurricular`, en línea con el acceso global ya habilitado para SSE en vistas VAT.
+- Se amplió el seed del grupo `CFPINET` para incluir permisos de listado y CRUD de `PlanVersionCurricular`, en línea con el acceso global ya habilitado para SSE en vistas VAT.
 
 ## Motivo
 

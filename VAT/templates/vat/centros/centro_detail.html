@@ -537,7 +537,7 @@
                     <span class="ci-state-badge">Inactivo</span>
                 {% endif %}
                 <span class="ci-code-badge">CENTRO</span>
-                {% if perms.VAT.change_centro %}
+                {% if can_edit_centro %}
                     <a href="{% url 'vat_centro_update' centro.id %}" class="ci-edit-btn">
                         <i class="bi bi-pencil me-1"></i>Editar
                     </a>
@@ -616,18 +616,6 @@
                             type="button"
                             role="tab">
                         <i class="fas fa-chalkboard-teacher me-1"></i>Cursos
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link disabled"
-                            id="catalogo-tab"
-                            data-bs-target="#catalogo"
-                            type="button"
-                            role="tab"
-                            aria-disabled="true"
-                            tabindex="-1"
-                            disabled>
-                        <i class="fas fa-graduation-cap me-1"></i>Carrera
                     </button>
                 </li>
             </ul>
@@ -1544,6 +1532,78 @@
         {# ================================================================ #}
         <div class="tab-pane fade" id="cursos" role="tabpanel">
             <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light centro-section-header">
+                    <div>
+                        <h6 class="mb-0 text-primary">
+                            <i class="fas fa-book me-2"></i>
+                            Planes Curriculares
+                        </h6>
+                        <small class="text-muted">Todos los planes curriculares activos de la provincia del centro.</small>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if planes_centro %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Plan Curricular</th>
+                                        <th>Sector</th>
+                                        <th>Subsector</th>
+                                        <th>Modalidad</th>
+                                        <th>Normativa</th>
+                                        <th>Estado</th>
+                                        {% if perms.VAT.add_curso %}<th class="text-center">Acciones</th>{% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for plan in planes_centro %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ plan.titulo_referencia|default:plan }}</strong>
+                                            </td>
+                                            <td>{{ plan.sector|default:"-" }}</td>
+                                            <td>{{ plan.subsector|default:"-" }}</td>
+                                            <td>{{ plan.modalidad_cursada|default:"-" }}</td>
+                                            <td>{{ plan.normativa|default:"-" }}</td>
+                                            <td>
+                                                {% if plan.activo %}
+                                                    <span class="badge bg-success">Activo</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Inactivo</span>
+                                                {% endif %}
+                                            </td>
+                                            {% if perms.VAT.add_curso %}
+                                                <td class="text-center">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-primary"
+                                                            title="Nuevo curso con este plan"
+                                                            aria-label="Nuevo curso con el plan {{ plan.titulo_referencia|default:plan }}"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalCurso"
+                                                            data-curso-mode="create"
+                                                            data-plan-estudio-id="{{ plan.id }}"
+                                                            data-plan-estudio-label="{{ plan.titulo_referencia|default:plan }}"
+                                                            data-lock-plan-estudio="1">
+                                                        <i class="fas fa-plus"></i>
+                                                    </button>
+                                                </td>
+                                            {% endif %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-book fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No hay planes curriculares activos para la provincia de este centro.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
                 <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="mb-0 text-primary">
@@ -1552,15 +1612,6 @@
                         </h6>
                         <small class="text-muted">Cursos configurados para este centro.</small>
                     </div>
-                    {% if perms.VAT.add_curso %}
-                        <button type="button"
-                                class="btn btn-sm btn-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modalCurso"
-                                data-curso-mode="create">
-                            <i class="fas fa-plus me-1"></i>Nuevo Curso
-                        </button>
-                    {% endif %}
                 </div>
                 <div class="card-body p-0">
                     {% if cursos %}
@@ -1975,6 +2026,10 @@
                       action="{% url 'vat_curso_create' %}?centro={{ centro.id }}">
                     {% csrf_token %}
                     <div class="modal-body">
+                        <div id="planEstudioSeleccionadoInfo"
+                             class="alert alert-info d-none"
+                             role="status"
+                             aria-live="polite"></div>
                         <div class="row">
                             {% for field in curso_form %}
                                 {% if field.is_hidden %}
@@ -2146,6 +2201,20 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
           rel="stylesheet" />
     <style>
+        #modalCurso .form-control:disabled,
+        #modalCurso .form-select:disabled,
+        #modalCurso .modal-locked-field,
+        #modalComisionCurso .form-control:disabled,
+        #modalComisionCurso .form-select:disabled,
+        #modalComisionCurso .modal-locked-field {
+            background-color: #253446 !important;
+            color: #e5e7eb !important;
+            border-color: #3d4f63 !important;
+            opacity: 1 !important;
+            -webkit-text-fill-color: #e5e7eb !important;
+            cursor: not-allowed;
+        }
+
         /* Select2 multiple dark mode para #modalOferta y #modalCurso */
         #modalOferta .select2-container--default .select2-selection--multiple,
         #modalCurso .select2-container--default .select2-selection--multiple {
@@ -2365,13 +2434,13 @@
                     cursoSelect.value = cursoId || '';
                     hiddenCurso.value = cursoId || '';
                     cursoSelect.disabled = true;
-                    cursoSelect.classList.add('bg-light');
+                    cursoSelect.classList.add('modal-locked-field');
                     cursoSelect.setAttribute('aria-disabled', 'true');
                     return;
                 }
 
                 cursoSelect.disabled = false;
-                cursoSelect.classList.remove('bg-light');
+                cursoSelect.classList.remove('modal-locked-field');
                 cursoSelect.removeAttribute('aria-disabled');
                 if (hiddenCurso) {
                     hiddenCurso.remove();
@@ -2695,6 +2764,7 @@
             var modalEl = document.getElementById('modalCurso');
             var formEl = document.getElementById('formCurso');
             var titleEl = document.getElementById('modalCursoLabel');
+            var planEstudioInfoEl = document.getElementById('planEstudioSeleccionadoInfo');
             if (!modalEl || !formEl || !titleEl) return;
 
             var createAction = formEl.getAttribute('action');
@@ -2724,11 +2794,58 @@
                 field.value = value || '';
             }
 
+            function setPlanEstudioFieldLock(planEstudioId, lockField) {
+                var planEstudioSelect = formEl.querySelector('[name="plan_estudio"]');
+                if (!planEstudioSelect) return;
+
+                var hiddenPlanEstudio = formEl.querySelector('#id_plan_estudio_locked_value');
+
+                if (lockField) {
+                    if (!hiddenPlanEstudio) {
+                        hiddenPlanEstudio = document.createElement('input');
+                        hiddenPlanEstudio.type = 'hidden';
+                        hiddenPlanEstudio.name = 'plan_estudio';
+                        hiddenPlanEstudio.id = 'id_plan_estudio_locked_value';
+                        formEl.appendChild(hiddenPlanEstudio);
+                    }
+
+                    planEstudioSelect.value = planEstudioId || '';
+                    hiddenPlanEstudio.value = planEstudioId || '';
+                    planEstudioSelect.disabled = true;
+                    planEstudioSelect.classList.add('modal-locked-field');
+                    planEstudioSelect.setAttribute('aria-disabled', 'true');
+                    return;
+                }
+
+                planEstudioSelect.disabled = false;
+                planEstudioSelect.classList.remove('modal-locked-field');
+                planEstudioSelect.removeAttribute('aria-disabled');
+                if (hiddenPlanEstudio) {
+                    hiddenPlanEstudio.remove();
+                }
+            }
+
+            function setPlanEstudioInfo(planLabel, locked) {
+                if (!planEstudioInfoEl) return;
+
+                if (locked && planLabel) {
+                    planEstudioInfoEl.textContent = 'Plan de estudio seleccionado: ' + planLabel;
+                    planEstudioInfoEl.classList.remove('d-none');
+                    return;
+                }
+
+                planEstudioInfoEl.textContent = '';
+                planEstudioInfoEl.classList.add('d-none');
+            }
+
             modalEl.addEventListener('show.bs.modal', function(event) {
                 var triggerButton = event.relatedTarget;
                 if (!triggerButton) return;
 
                 var mode = triggerButton.getAttribute('data-curso-mode') || 'create';
+                var planEstudioId = triggerButton.getAttribute('data-plan-estudio-id') || '';
+                var planEstudioLabel = triggerButton.getAttribute('data-plan-estudio-label') || '';
+                var lockPlanEstudio = triggerButton.getAttribute('data-lock-plan-estudio') === '1';
 
                 if (mode === 'edit') {
                     titleEl.textContent = 'Editar Curso';
@@ -2743,12 +2860,17 @@
                     setFormValue('costo_creditos', triggerButton.getAttribute('data-costo-creditos'));
                     setFormValue('observaciones', triggerButton.getAttribute('data-observaciones'));
                     setFormValue('voucher_parametrias', triggerButton.getAttribute('data-voucher-ids'));
+                    setPlanEstudioFieldLock('', false);
+                    setPlanEstudioInfo('', false);
                     return;
                 }
 
                 titleEl.textContent = 'Nuevo Curso';
                 formEl.reset();
                 formEl.setAttribute('action', createAction);
+                setFormValue('plan_estudio', planEstudioId);
+                setPlanEstudioFieldLock(planEstudioId, lockPlanEstudio);
+                setPlanEstudioInfo(planEstudioLabel, lockPlanEstudio);
             });
         }
 

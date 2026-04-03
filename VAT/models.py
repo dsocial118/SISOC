@@ -12,7 +12,7 @@ class Centro(SoftDeleteModelMixin, models.Model):
     referente = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
-        limit_choices_to={"groups__name": "ReferenteCentroVAT"},
+        limit_choices_to={"groups__name": "CFP"},
         related_name="vat_centros",
         null=True,
         blank=False,

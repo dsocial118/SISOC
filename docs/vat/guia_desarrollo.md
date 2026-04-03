@@ -144,8 +144,9 @@ Todo lo demás es solo backoffice.
 | Rol | Permission code | Alcance |
 |---|---|---|
 | Superuser | (Django built-in) | Acceso total |
-| VAT SSE | `auth.role_vat_sse` | Ve todos los centros, puede crear centros y actividades |
-| Referente Centro VAT | `auth.role_referentecentrovat` | Ve solo sus centros asignados, puede editar/eliminar sus centros |
+| CFPINET | `auth.role_vat_sse` | Ve todos los centros, puede crear centros y actividades |
+| CFPJuridicccion | `auth.role_provincia_vat` | Crea y edita centros dentro de su jurisdicción, y administra planes curriculares provinciales |
+| CFP | `auth.role_referentecentrovat` | Ve solo sus centros asignados y gestiona cursos, comisiones, horarios, asistencia e inscripciones dentro de esos centros |
 
 ### 4.2 Roles pendientes de definición
 
@@ -166,7 +167,7 @@ Todo lo demás es solo backoffice.
 
 **Centros**
 - Un centro puede estar activo o inactivo.
-- Solo el referente asignado, superuser o rol VAT SSE pueden editar/eliminar un centro.
+- Solo el referente asignado, superuser o rol CFPINET pueden editar/eliminar un centro.
 - Referente solo ve sus centros; SSE ve todos.
 
 **Actividades (ActividadCentro)**
