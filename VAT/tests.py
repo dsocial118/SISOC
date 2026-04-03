@@ -1587,6 +1587,64 @@ def test_centro_detail_renderiza_marcadores_para_filtrar_comisiones_por_curso(
 
 
 @pytest.mark.django_db
+def test_centro_detail_renderiza_accion_para_crear_curso_desde_plan_curricular(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
+    sector = Sector.objects.create(nombre="Servicios")
+    titulo = TituloReferencia.objects.create(nombre="Plan con acceso", activo=True)
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-vat-centro-plan-curso",
+        email="admin-centro-plan-curso@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP 779",
+        codigo="CFP-779",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="14",
+        numero=100,
+        domicilio_actividad="Calle 14 N° 100",
+        telefono="221-7100001",
+        celular="221-7100002",
+        correo="cfp779@vat.test",
+        nombre_referente="Marta",
+        apellido_referente="Lopez",
+        telefono_referente="221-7100003",
+        correo_referente="marta@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    plan = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Resolución 100/2026",
+        activo=True,
+    )
+    plan.titulos.add(titulo)
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert 'title="Nuevo curso con este plan"' in content
+    assert f'data-plan-estudio-id="{plan.id}"' in content
+    assert 'data-lock-plan-estudio="1"' in content
+    assert 'id="planEstudioSeleccionadoInfo"' in content
+    assert "setPlanEstudioFieldLock" in content
+
+
+@pytest.mark.django_db
 def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)

@@ -152,6 +152,15 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             .annotate(comisiones_count=Count("comisiones"))
             .order_by("-ciclo_lectivo")
         )
+        ctx["planes_centro"] = list(
+            PlanVersionCurricular.objects.filter(
+                activo=True,
+                provincia_id=centro.provincia_id,
+            )
+            .select_related("sector", "subsector", "modalidad_cursada")
+            .prefetch_related("titulos")
+            .order_by("sector__nombre", "subsector__nombre", "id")
+        )
         ctx["comisiones"] = list(
             Comision.objects.filter(oferta__centro=centro)
             .select_related(
