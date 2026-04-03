@@ -12,6 +12,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from iam.services import user_has_permission_code
 
 from VAT.models import (
     Sector,
@@ -26,6 +27,8 @@ from VAT.forms import (
     TituloReferenciaForm,
     ModalidadCursadaForm,
     PlanVersionCurricularForm,
+    _parse_normativa_value,
+    _split_normativa_value,
 )
 from VAT.services.access_scope import (
     get_user_provincia_id,
@@ -51,6 +54,21 @@ class ModalidadCursadaCreateView(LoginRequiredMixin, CreateView):
     form_class = ModalidadCursadaForm
     template_name = "vat/catalogo/modalidadcursada_form.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "page_title": "Nueva Modalidad de Cursado",
+                "page_description": (
+                    "Definí el nombre, la descripción y el estado operativo de la "
+                    "modalidad para reutilizarla en planes y cursos."
+                ),
+                "submit_text": "Crear modalidad",
+                "cancel_url": reverse("vat_modalidadcursada_list"),
+            }
+        )
+        return context
+
     def form_valid(self, form):
         response = super().form_valid(form)
         messages.success(self.request, "Modalidad de cursado creada correctamente.")
@@ -70,6 +88,23 @@ class ModalidadCursadaUpdateView(LoginRequiredMixin, UpdateView):
     model = ModalidadCursada
     form_class = ModalidadCursadaForm
     template_name = "vat/catalogo/modalidadcursada_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "page_title": "Editar Modalidad de Cursado",
+                "page_description": (
+                    "Actualizá la definición de la modalidad y su disponibilidad "
+                    "para el catálogo académico de VAT."
+                ),
+                "submit_text": "Guardar cambios",
+                "cancel_url": reverse(
+                    "vat_modalidadcursada_detail", kwargs={"pk": self.object.pk}
+                ),
+            }
+        )
+        return context
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -353,7 +388,7 @@ class TituloReferenciaDeleteView(
 
 
 class VATProvincialOnlyMixin:
-    """Restringe acceso a usuarios VAT SSE o provinciales."""
+    """Restringe acceso a usuarios CFPINET o provinciales."""
 
     def dispatch(self, request, *args, **kwargs):
         if not (is_vat_sse(request.user) or is_vat_provincial(request.user)):
@@ -376,6 +411,22 @@ class VATPlanScopeMixin:
             return queryset.filter(provincia_id=provincia_id)
 
         return queryset.none()
+
+
+class VATPlanMutationPermissionMixin:
+    required_permission_code = ""
+
+    def dispatch(self, request, *args, **kwargs):
+        if is_vat_sse(request.user):
+            return super().dispatch(request, *args, **kwargs)
+
+        if not (
+            is_vat_provincial(request.user)
+            and user_has_permission_code(request.user, self.required_permission_code)
+        ):
+            raise PermissionDenied()
+
+        return super().dispatch(request, *args, **kwargs)
 
 
 class PlanVersionCurricularListView(
@@ -411,11 +462,15 @@ class PlanVersionCurricularListView(
 
 
 class PlanVersionCurricularCreateView(
-    VATProvincialOnlyMixin, LoginRequiredMixin, CreateView
+    VATProvincialOnlyMixin,
+    VATPlanMutationPermissionMixin,
+    LoginRequiredMixin,
+    CreateView,
 ):
     model = PlanVersionCurricular
     form_class = PlanVersionCurricularForm
     template_name = "vat/catalogo/planversioncurricular_form.html"
+    required_permission_code = "VAT.add_planversioncurricular"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -452,13 +507,34 @@ class PlanVersionCurricularDetailView(
     def get_queryset(self):
         return self.get_scoped_plan_queryset(super().get_queryset())
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        normativa_texto, _ = _split_normativa_value(self.object.normativa)
+        normativa_tipo, normativa_numero, normativa_anio = _parse_normativa_value(
+            self.object.normativa
+        )
+        context.update(
+            {
+                "normativa_texto": normativa_texto,
+                "normativa_tipo": normativa_tipo,
+                "normativa_numero": normativa_numero,
+                "normativa_anio": normativa_anio,
+            }
+        )
+        return context
+
 
 class PlanVersionCurricularUpdateView(
-    VATProvincialOnlyMixin, VATPlanScopeMixin, LoginRequiredMixin, UpdateView
+    VATProvincialOnlyMixin,
+    VATPlanMutationPermissionMixin,
+    VATPlanScopeMixin,
+    LoginRequiredMixin,
+    UpdateView,
 ):
     model = PlanVersionCurricular
     form_class = PlanVersionCurricularForm
     template_name = "vat/catalogo/planversioncurricular_form.html"
+    required_permission_code = "VAT.change_planversioncurricular"
 
     def get_queryset(self):
         return self.get_scoped_plan_queryset(super().get_queryset())
@@ -489,6 +565,7 @@ class PlanVersionCurricularUpdateView(
 
 class PlanVersionCurricularDeleteView(
     VATProvincialOnlyMixin,
+    VATPlanMutationPermissionMixin,
     VATPlanScopeMixin,
     SoftDeleteDeleteViewMixin,
     LoginRequiredMixin,
@@ -497,6 +574,7 @@ class PlanVersionCurricularDeleteView(
     model = PlanVersionCurricular
     template_name = "vat/catalogo/planversioncurricular_confirm_delete.html"
     context_object_name = "planversioncurricular"
+    required_permission_code = "VAT.delete_planversioncurricular"
 
     def get_queryset(self):
         return self.get_scoped_plan_queryset(super().get_queryset())

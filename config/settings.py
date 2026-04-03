@@ -233,6 +233,10 @@ if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
 
     if not os.getenv("EMAIL_HOST", "").strip():
         email_backend_errors.append("EMAIL_HOST vacío")
+    if not EMAIL_HOST_USER.strip():
+        email_backend_errors.append("EMAIL_HOST_USER vacío")
+    if not EMAIL_HOST_PASSWORD.strip():
+        email_backend_errors.append("EMAIL_HOST_PASSWORD vacío")
 
 if email_backend_errors:
     settings_logger.warning(

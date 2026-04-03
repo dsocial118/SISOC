@@ -26,12 +26,14 @@
             margin: 0 0 .35rem;
             font-size: 1.9rem;
             font-weight: 700;
+            line-height: 1.2;
         }
 
         .vp-hero p {
             margin: 0;
             max-width: 760px;
             color: rgba(255, 255, 255, 0.82);
+            line-height: 1.5;
         }
 
         .vp-panel {
@@ -49,15 +51,25 @@
             color: #f8fbff;
         }
 
+        .vp-panel-header > div {
+            display: flex;
+            flex-direction: column;
+            gap: .4rem;
+        }
+
         .vp-panel-header .card-title {
             color: #ffffff;
             font-weight: 700;
             margin: 0;
+            line-height: 1.25;
         }
 
         .vp-panel-header .small,
         .vp-panel-header .text-muted {
             color: rgba(240, 247, 255, 0.82) !important;
+            display: block;
+            line-height: 1.45;
+            margin: 0;
         }
 
         .vp-section {
@@ -179,8 +191,15 @@
                     </div>
                 </div>
                 <div class="vp-section">
+                    <div class="mb-3">
+                        <label class="form-label mb-1">Normativa</label>
+                        <div class="small text-muted">Podés cargar un texto libre o usar el formato estructurado con tipo, número y año.</div>
+                    </div>
                     <div class="row">
-                        <div class="col-md-4 vp-field">{{ form.normativa|as_crispy_field }}</div>
+                        <div class="col-12 vp-field">{{ form.normativa|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.normativa_tipo|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.normativa_numero|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.normativa_anio|as_crispy_field }}</div>
                         <div class="col-md-2 vp-field">{{ form.horas_reloj|as_crispy_field }}</div>
                         <div class="col-md-3 vp-field">{{ form.nivel_requerido|as_crispy_field }}</div>
                         <div class="col-md-3 vp-field">{{ form.nivel_certifica|as_crispy_field }}</div>
