@@ -130,7 +130,18 @@ def _split_normativa_value(value):
         )
         return normativa_texto.strip(), normativa_estructurada.strip()
 
-    return cleaned_value, cleaned_value
+    if _parse_normativa_match(cleaned_value):
+        return "", cleaned_value
+
+    return cleaned_value, ""
+
+
+def _parse_normativa_match(value):
+    return re.fullmatch(
+        r"(Resolución|Resolucion|Disposición|Disposicion)\s+(\d+)\s*/\s*(\d{4})",
+        value or "",
+        flags=re.IGNORECASE,
+    )
 
 
 def _parse_normativa_value(value):
@@ -138,11 +149,7 @@ def _parse_normativa_value(value):
     if not structured_value:
         return "", "", ""
 
-    match = re.fullmatch(
-        r"(Resolución|Resolucion|Disposición|Disposicion)\s+(\d+)\s*/\s*(\d{4})",
-        structured_value,
-        flags=re.IGNORECASE,
-    )
+    match = _parse_normativa_match(structured_value)
     if not match:
         return "", "", ""
 
@@ -442,11 +449,6 @@ class CentroAltaForm(CentroForm):
             "El DNI del director/a",
             max_length=20,
         )
-
-    def save(self, commit=True):
-        self.instance.activo = True
-        return super().save(commit=commit)
-
 
 class BaseInstitucionContactoAltaFormSet(BaseInlineFormSet):
     def clean(self):
