@@ -1553,9 +1553,7 @@
                                         <th>Modalidad</th>
                                         <th>Normativa</th>
                                         <th>Estado</th>
-                                        {% if perms.VAT.add_curso %}
-                                            <th class="text-center">Acciones</th>
-                                        {% endif %}
+                                        {% if perms.VAT.add_curso %}<th class="text-center">Acciones</th>{% endif %}
                                     </tr>
                                 </thead>
                                 <tbody>
