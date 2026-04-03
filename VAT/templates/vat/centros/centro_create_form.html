@@ -354,7 +354,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save mr-1"></i>{{ submit_text|default:"Guardar" }}
                     </button>
-                    {% if show_save_continue|default:True %}
+                    {% if show_save_continue or show_save_continue is None %}
                         <button type="submit"
                                 name="save_continue"
                                 value="1"

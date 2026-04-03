@@ -151,7 +151,9 @@ def _parse_normativa_value(value):
     return tipo, numero, anio
 
 
-def _build_normativa_value(normativa_texto, normativa_tipo, normativa_numero, normativa_anio):
+def _build_normativa_value(
+    normativa_texto, normativa_tipo, normativa_numero, normativa_anio
+):
     normativa_texto = (normativa_texto or "").strip()
 
     structured_value = ""
@@ -162,6 +164,13 @@ def _build_normativa_value(normativa_texto, normativa_tipo, normativa_numero, no
         return f"{normativa_texto}{NORMATIVA_STORAGE_SEPARATOR}{structured_value}"
 
     return normativa_texto or structured_value
+
+
+def _validate_normativa_texto(value):
+    cleaned_value = (value or "").strip()
+    if cleaned_value and NORMATIVA_STORAGE_SEPARATOR in cleaned_value:
+        raise ValidationError("La normativa libre no puede contener la secuencia '||'.")
+    return cleaned_value
 
 
 class CentroForm(forms.ModelForm):
@@ -201,9 +210,9 @@ class CentroForm(forms.ModelForm):
         self.fields["referente"].queryset = User.objects.filter(
             groups__name="CFP"
         ).only("id", "username", "first_name", "last_name")
-        self.fields["referente"].error_messages["invalid_choice"] = (
-            "El referente seleccionado debe tener el rol CFP."
-        )
+        self.fields["referente"].error_messages[
+            "invalid_choice"
+        ] = "El referente seleccionado debe tener el rol CFP."
 
     def clean_referente(self):
         referente = self.cleaned_data.get("referente")
@@ -356,9 +365,9 @@ class CentroAltaForm(CentroForm):
             self.fields["provincia"].widget = forms.HiddenInput()
             self.fields["provincia"].empty_label = None
             if provincia_pk:
-                self.fields["provincia"].queryset = self.fields["provincia"].queryset.filter(
-                    pk=provincia_pk
-                )
+                self.fields["provincia"].queryset = self.fields[
+                    "provincia"
+                ].queryset.filter(pk=provincia_pk)
                 self.initial.setdefault("provincia", provincia_pk)
 
         provincia_value = (
@@ -367,9 +376,9 @@ class CentroAltaForm(CentroForm):
             or getattr(self.instance, "provincia_id", None)
         )
         if provincia_value:
-            self.fields["municipio"].queryset = self.fields["municipio"].queryset.filter(
-                provincia_id=provincia_value
-            )
+            self.fields["municipio"].queryset = self.fields[
+                "municipio"
+            ].queryset.filter(provincia_id=provincia_value)
 
         municipio_value = (
             self.data.get("municipio")
@@ -377,13 +386,13 @@ class CentroAltaForm(CentroForm):
             or getattr(self.instance, "municipio_id", None)
         )
         if municipio_value:
-            self.fields["localidad"].queryset = self.fields["localidad"].queryset.filter(
-                municipio_id=municipio_value
-            )
+            self.fields["localidad"].queryset = self.fields[
+                "localidad"
+            ].queryset.filter(municipio_id=municipio_value)
         elif provincia_value:
-            self.fields["localidad"].queryset = self.fields["localidad"].queryset.filter(
-                municipio__provincia_id=provincia_value
-            )
+            self.fields["localidad"].queryset = self.fields[
+                "localidad"
+            ].queryset.filter(municipio__provincia_id=provincia_value)
 
     def clean_nombre(self):
         return _clean_non_empty_text(self.cleaned_data.get("nombre"), "La denominación")
@@ -710,9 +719,7 @@ class PlanVersionCurricularForm(forms.ModelForm):
     normativa_numero = forms.CharField(
         label="Normativa - Número",
         required=False,
-        widget=forms.TextInput(
-            attrs={"class": "form-control", "inputmode": "numeric"}
-        ),
+        widget=forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
     )
     normativa_anio = forms.ChoiceField(
         label="Normativa - Año",
@@ -806,6 +813,9 @@ class PlanVersionCurricularForm(forms.ModelForm):
             max_length=20,
         )
 
+    def clean_normativa(self):
+        return _validate_normativa_texto(self.cleaned_data.get("normativa"))
+
     def clean(self):
         cleaned_data = super().clean()
         sector = cleaned_data.get("sector")
@@ -825,9 +835,7 @@ class PlanVersionCurricularForm(forms.ModelForm):
             if not normativa_tipo:
                 self.add_error("normativa_tipo", "Seleccione el tipo de normativa.")
             if not normativa_numero:
-                self.add_error(
-                    "normativa_numero", "Ingrese el número de la normativa."
-                )
+                self.add_error("normativa_numero", "Ingrese el número de la normativa.")
             if not normativa_anio:
                 self.add_error("normativa_anio", "Seleccione el año de la normativa.")
 
@@ -1995,8 +2003,6 @@ class VoucherParametriaForm(forms.ModelForm):
     )
 
     def clean_fecha_vencimiento(self):
-        from datetime import date
-
         fecha = self.cleaned_data.get("fecha_vencimiento")
         if fecha and fecha <= date.today():
             raise forms.ValidationError(
@@ -2041,8 +2047,6 @@ class VoucherForm(forms.ModelForm):
     )
 
     def clean_fecha_vencimiento(self):
-        from datetime import date
-
         fecha = self.cleaned_data.get("fecha_vencimiento")
         if fecha and fecha <= date.today():
             raise forms.ValidationError(

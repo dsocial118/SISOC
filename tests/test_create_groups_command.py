@@ -94,9 +94,14 @@ def test_create_groups_creates_cfp_secondary_groups_with_expected_permissions():
     cfp_juridicccion = Group.objects.get(name="CFPJuridicccion")
     cfp = Group.objects.get(name="CFP")
 
-    assert {"role_provincia_vat", "view_centro", "add_centro", "change_centro", "view_planversioncurricular", "add_planversioncurricular"}.issubset(
-        set(cfp_juridicccion.permissions.values_list("codename", flat=True))
-    )
+    assert {
+        "role_provincia_vat",
+        "view_centro",
+        "add_centro",
+        "change_centro",
+        "view_planversioncurricular",
+        "add_planversioncurricular",
+    }.issubset(set(cfp_juridicccion.permissions.values_list("codename", flat=True)))
     assert {
         "role_referentecentrovat",
         "view_centro",
@@ -116,9 +121,7 @@ def test_create_groups_creates_cfp_secondary_groups_with_expected_permissions():
         "change_inscripcion",
         "add_asistenciasesion",
         "change_asistenciasesion",
-    }.issubset(
-        set(cfp.permissions.values_list("codename", flat=True))
-    )
+    }.issubset(set(cfp.permissions.values_list("codename", flat=True)))
 
 
 def test_rename_vat_sse_group_migration_forward_renames_existing_group():

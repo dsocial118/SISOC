@@ -194,8 +194,9 @@ def test_centro_create_rechaza_referente_sin_grupo_cfp(vat_admin_client, vat_geo
 
     assert response.status_code == 200
     assert Centro.objects.filter(codigo="500144900").count() == 0
-    assert "El referente seleccionado debe tener el rol CFP." in response.content.decode(
-        "utf-8"
+    assert (
+        "El referente seleccionado debe tener el rol CFP."
+        in response.content.decode("utf-8")
     )
 
 
@@ -218,9 +219,10 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
 
     content = response.content.decode("utf-8")
     assert response.status_code == 200
-    assert "name=\"autoridad_dni\"" in content
+    assert 'name="autoridad_dni"' in content
     assert "contactos-TOTAL_FORMS" in content
     assert "3.2 Contactos de la institución" in content
+    assert 'name="save_continue"' not in content
 
 
 @pytest.mark.django_db
@@ -270,6 +272,32 @@ def test_centro_create_filtra_municipios_por_provincia_del_usuario(client):
     assert response.status_code == 200
     assert "La Plata" in content
     assert "Rosario" not in content
+
+
+@pytest.mark.django_db
+def test_centro_create_muestra_provincia_y_permite_alta_si_usuario_no_tiene_provincia(
+    client, vat_referente_user, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_superuser(
+        username="admin-vat-sin-provincia",
+        email="admin-vat-sin-provincia@vat.test",
+        password="test1234",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_create"))
+
+    content = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert 'for="id_provincia"' in content
+
+    payload = _build_centro_payload(vat_referente_user, provincia, municipio, localidad)
+    post_response = client.post(reverse("vat_centro_create"), data=payload)
+
+    centro = Centro.objects.get(codigo="500144900")
+    assert post_response.status_code == 302
+    assert centro.provincia_id == provincia.id
 
 
 @pytest.mark.django_db
@@ -530,9 +558,7 @@ def test_centro_create_usuario_provincial_puede_crear_con_su_provincia(client):
         password="test1234",
     )
     referente.groups.add(group)
-    user = User.objects.create_user(
-        username="provincial-create", password="test1234"
-    )
+    user = User.objects.create_user(username="provincial-create", password="test1234")
     Profile.objects.update_or_create(
         user=user,
         defaults={
@@ -661,7 +687,7 @@ def test_centro_update_usuario_provincial_puede_editar_dentro_de_su_provincia(cl
         municipio_ba,
         localidad_ba,
         nombre="Centro Provincial Editado",
-        codigo="CTRO-002",
+        codigo="500144902",
         domicilio_actividad="Calle 8 N° 4321",
         autoridad_dni="30999888",
         nombre_referente="Laura",
@@ -925,6 +951,43 @@ def test_plan_version_curricular_create_acepta_normativa_texto_libre(client):
 
 
 @pytest.mark.django_db
+def test_plan_version_curricular_rechaza_separador_interno_en_normativa_libre(client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    user = User.objects.create_superuser(
+        username="super-plan-separador",
+        email="super-plan-separador@vat.test",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba, es_usuario_provincial=True)
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_planversioncurricular_create"),
+        data={
+            "sector": str(sector.id),
+            "subsector": "",
+            "modalidad_cursada": str(modalidad.id),
+            "normativa": "Texto libre || inválido",
+            "normativa_tipo": "",
+            "normativa_numero": "",
+            "normativa_anio": "",
+            "horas_reloj": "120",
+            "nivel_requerido": "sin_requisito",
+            "nivel_certifica": "nivel_1",
+            "activo": "on",
+        },
+    )
+
+    assert response.status_code == 200
+    assert (
+        "La normativa libre no puede contener la secuencia '||'."
+        in response.content.decode("utf-8")
+    )
+
+
+@pytest.mark.django_db
 def test_plan_version_curricular_create_conserva_normativa_libre_y_estructurada(client):
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_superuser(
@@ -955,9 +1018,7 @@ def test_plan_version_curricular_create_conserva_normativa_libre_y_estructurada(
     )
 
     assert response.status_code == 302
-    plan = PlanVersionCurricular.objects.get(
-        normativa="asdedas || Disposición 55/2024"
-    )
+    plan = PlanVersionCurricular.objects.get(normativa="asdedas || Disposición 55/2024")
     assert plan.provincia_id == provincia_ba.id
 
 

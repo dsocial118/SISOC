@@ -247,10 +247,13 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         profile = getattr(self.request.user, "profile", None)
         return getattr(profile, "provincia", None)
 
+    def _should_hide_provincia_field(self):
+        return self._get_creator_provincia() is not None
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         creator_provincia = self._get_creator_provincia()
-        kwargs["hide_provincia"] = True
+        kwargs["hide_provincia"] = self._should_hide_provincia_field()
         kwargs["provincia_inicial"] = creator_provincia
 
         data = kwargs.get("data")
@@ -279,7 +282,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
                     "Registro inicial del centro VAT con datos institucionales, "
                     "ubicación, contactos y autoridad responsable."
                 ),
-                "show_provincia_field": False,
+                "show_provincia_field": not self._should_hide_provincia_field(),
                 "cancel_url": reverse("vat_centro_list"),
                 "submit_text": "Guardar",
                 "submit_continue_text": "Guardar y continuar",
@@ -297,14 +300,8 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
             prefix="contactos",
         )
 
-        if creator_provincia is None:
-            form.add_error(
-                None,
-                "El usuario creador debe tener una jurisdicción asignada para dar de alta centros.",
-            )
-            return self.form_invalid(form, contacto_formset)
-
-        form.instance.provincia = creator_provincia
+        if creator_provincia is not None:
+            form.instance.provincia = creator_provincia
 
         if form.is_valid() and contacto_formset.is_valid():
             return self.form_valid(form, contacto_formset)
@@ -406,8 +403,7 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
                     "vat_centro_detail", kwargs={"pk": self.object.pk}
                 ),
                 "submit_text": "Guardar",
-                "submit_continue_text": "Guardar y continuar",
-                "show_save_continue": True,
+                "show_save_continue": False,
             }
         )
         return context
