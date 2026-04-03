@@ -318,6 +318,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         with transaction.atomic():
+            form.instance.activo = True
             self.object = form.save()
 
             contacto_formset.instance = self.object
