@@ -162,7 +162,12 @@ class OfertaInstitucionalDeleteView(
     model = OfertaInstitucional
     template_name = "vat/oferta_institucional/oferta_confirm_delete.html"
     context_object_name = "oferta"
-    success_url = reverse_lazy("vat_oferta_institucional_list")
+
+    def get_success_url(self):
+        next_url = self.request.POST.get("next")
+        if next_url:
+            return next_url
+        return reverse_lazy("vat_oferta_institucional_list")
 
     def get_queryset(self):
         queryset = OfertaInstitucional.objects.select_related("centro")
@@ -264,6 +269,37 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comision = self.object
+        context["comision_tipo_titulo"] = "Comisión"
+        context["comision_back_url"] = reverse(
+            "vat_centro_detail", kwargs={"pk": comision.oferta.centro_id}
+        )
+        context["comision_edit_url"] = reverse(
+            "vat_comision_update", kwargs={"pk": comision.pk}
+        )
+        context["comision_delete_url"] = reverse(
+            "vat_comision_delete", kwargs={"pk": comision.pk}
+        )
+        context["puede_editar_comision"] = self.request.user.has_perm(
+            "VAT.change_comision"
+        )
+        context["puede_eliminar_comision"] = self.request.user.has_perm(
+            "VAT.delete_comision"
+        )
+        context["comision_subtitle"] = str(comision.oferta)
+        context["unidad_label"] = "Oferta"
+        context["unidad_valor"] = str(comision.oferta)
+        context["unidad_sidebar_title"] = "Oferta asociada"
+        context["unidad_detail_url"] = reverse(
+            "vat_oferta_institucional_detail", kwargs={"pk": comision.oferta_id}
+        )
+        context["unidad_detail_text"] = "Ver oferta"
+        context["inscripcion_estado_url_name"] = "vat_inscripcion_cambiar_estado"
+        context["asistencia_url_name"] = "vat_asistencia_sesion"
+        context["horario_create_url_name"] = "vat_comision_horario_create"
+        context["horario_create_query_param"] = "comision"
+        context["horario_update_url_name"] = "vat_comision_horario_update"
+        context["horario_delete_url_name"] = "vat_comision_horario_delete"
+        context["inscripcion_rapida_url_name"] = "vat_inscripcion_rapida_comision"
         horario_form = ComisionHorarioForm(initial={"comision": comision.id})
         horario_form.fields["comision"].queryset = Comision.objects.filter(
             pk=comision.pk
@@ -372,6 +408,10 @@ class AsistenciaSesionView(LoginRequiredMixin, TemplateView):
         context["sesion"] = sesion
         context["filas"] = filas
         context["ya_tomada"] = bool(asistencias_existentes)
+        context["comision_detail_url"] = reverse(
+            "vat_comision_detail", kwargs={"pk": sesion.comision_id}
+        )
+        context["comision_label"] = str(sesion.comision)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -433,7 +473,12 @@ class ComisionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteVi
     model = Comision
     template_name = "vat/oferta_institucional/comision_confirm_delete.html"
     context_object_name = "comision"
-    success_url = reverse_lazy("vat_comision_list")
+
+    def get_success_url(self):
+        next_url = self.request.POST.get("next")
+        if next_url:
+            return next_url
+        return reverse_lazy("vat_comision_list")
 
     def get_queryset(self):
         queryset = Comision.objects.select_related("oferta__centro")

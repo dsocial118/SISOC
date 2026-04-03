@@ -160,9 +160,9 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
         ctx["cursos"] = list(
             Curso.objects.filter(centro=centro)
-            .select_related("ubicacion__localidad", "modalidad")
-            .prefetch_related("comisiones")
-            .order_by("-fecha_inicio")
+            .select_related("ubicacion__localidad", "modalidad", "programa")
+            .prefetch_related("comisiones", "voucher_parametrias")
+            .order_by("-fecha_creacion")
         )
         ctx["comisiones_curso"] = list(
             ComisionCurso.objects.filter(curso__centro=centro)
@@ -219,9 +219,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             )
         )
         ctx["curso_form"] = CursoForm(initial={"centro": centro})
-        ctx["curso_form"].fields["centro"].queryset = Centro.objects.filter(
-            pk=centro.pk
-        )
         ctx["curso_form"].fields["ubicacion"].queryset = (
             centro.ubicaciones.select_related("localidad").order_by(
                 "es_principal", "rol_ubicacion"
@@ -273,7 +270,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
             return self.form_valid(form, contacto_formset)
         return self.form_invalid(form, contacto_formset)
 
-    def form_valid(self, form, contacto_formset):
+    def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         with transaction.atomic():
             self.object = form.save()
 
@@ -312,7 +309,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
 
-    def form_invalid(self, form, contacto_formset):
+    def form_invalid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         return self.render_to_response(
             self.get_context_data(
                 form=form,
@@ -346,6 +343,19 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, "Centro actualizado correctamente.")
         return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "page_title": "Editar Centro VAT",
+                "cancel_url": reverse(
+                    "vat_centro_detail", kwargs={"pk": self.object.pk}
+                ),
+                "submit_text": "Guardar cambios",
+            }
+        )
+        return context
 
     def get_success_url(self):
         return reverse("vat_centro_detail", kwargs={"pk": self.object.pk})

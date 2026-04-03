@@ -27,7 +27,11 @@
       "Bash(source venv/Scripts/activate)",
       "Read(//c/Users/mkdir/AppData/Local/Programs/**)",
       "Bash(py -3.12 -m django --version)",
-      "Bash(docker-compose ps:*)"
+      "Bash(docker-compose ps:*)",
+      "Bash(pip show:*)",
+      "Bash(gh auth:*)",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

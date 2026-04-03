@@ -215,7 +215,7 @@
         }
 
         .nav-pills .nav-link {
-            color: #25426f;
+            color: #4b6890 !important;
         }
 
         .nav-pills .nav-link.active {
@@ -227,6 +227,18 @@
         .nav-pills .nav-link:hover {
             transform: translateY(-1px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .nav-pills .nav-link.disabled,
+        .nav-pills .nav-link:disabled {
+            color: #8ea0b8 !important;
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.08);
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+            box-shadow: none;
         }
 
         .card {
@@ -342,6 +354,22 @@
 
         .table-hover tbody tr:hover {
             background-color: rgba(74, 141, 219, 0.12);
+        }
+
+        #tablaCursosCentro .curso-row {
+            cursor: pointer;
+        }
+
+        #tablaCursosCentro .curso-row.curso-row-selected {
+            background: rgba(74, 141, 219, 0.28) !important;
+        }
+
+        #tablaCursosCentro .curso-row.curso-row-selected > td {
+            background: transparent !important;
+        }
+
+        #tablaCursosCentro .curso-row.curso-row-selected > td:first-child {
+            box-shadow: inset 3px 0 0 #7cb2f2;
         }
 
         .badge {
@@ -582,22 +610,24 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link"
-                            id="catalogo-tab"
-                            data-bs-toggle="tab"
-                            data-bs-target="#catalogo"
-                            type="button"
-                            role="tab">
-                        <i class="fas fa-graduation-cap me-1"></i>Carrera
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link"
                             id="cursos-tab"
                             data-bs-toggle="tab"
                             data-bs-target="#cursos"
                             type="button"
                             role="tab">
                         <i class="fas fa-chalkboard-teacher me-1"></i>Cursos
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link disabled"
+                            id="catalogo-tab"
+                            data-bs-target="#catalogo"
+                            type="button"
+                            role="tab"
+                            aria-disabled="true"
+                            tabindex="-1"
+                            disabled>
+                        <i class="fas fa-graduation-cap me-1"></i>Carrera
                     </button>
                 </li>
             </ul>
@@ -921,7 +951,7 @@
                                         <th>Localidad</th>
                                         <th>Domicilio</th>
                                         <th>Principal</th>
-                                        <th class="text-center">Acciones</th>
+                                        <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1086,7 +1116,7 @@
                                         <th>Valor</th>
                                         <th>Rol</th>
                                         <th>Ubicación</th>
-                                        <th class="text-center">Acciones</th>
+                                        <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1202,6 +1232,17 @@
                                                             <i class="fas fa-edit"></i>
                                                         </button>
                                                     {% endif %}
+                                                    {% if perms.VAT.delete_planversioncurricular %}
+                                                        <form method="post"
+                                                              action="{% url 'vat_planversioncurricular_delete' p.pk %}"
+                                                              class="d-inline confirm-delete-form">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+                                                            <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    {% endif %}
                                                 </div>
                                             </td>
                                         </tr>
@@ -1279,6 +1320,17 @@
                                                                 title="Editar">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
+                                                    {% endif %}
+                                                    {% if perms.VAT.delete_titulorreferencia %}
+                                                        <form method="post"
+                                                              action="{% url 'vat_titulorreferencia_delete' t.pk %}"
+                                                              class="d-inline confirm-delete-form">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+                                                            <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
                                                     {% endif %}
                                                 </div>
                                             </td>
@@ -1359,11 +1411,24 @@
                                                 </span>
                                             </td>
                                             <td class="text-center">
-                                                <a href="{% url 'vat_oferta_institucional_detail' oferta.pk %}"
-                                                   class="btn btn-sm btn-outline-info"
-                                                   title="Ver detalle">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{% url 'vat_oferta_institucional_detail' oferta.pk %}"
+                                                       class="btn btn-sm btn-outline-info"
+                                                       title="Ver detalle">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    {% if perms.VAT.delete_ofertainstitucional %}
+                                                        <form method="post"
+                                                              action="{% url 'vat_oferta_institucional_delete' oferta.pk %}"
+                                                              class="d-inline confirm-delete-form">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -1439,11 +1504,24 @@
                                                 </span>
                                             </td>
                                             <td class="text-center">
-                                                <a href="{% url 'vat_comision_detail' comision.pk %}"
-                                                   class="btn btn-sm btn-outline-info"
-                                                   title="Ver detalle">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{% url 'vat_comision_detail' comision.pk %}"
+                                                       class="btn btn-sm btn-outline-info"
+                                                       title="Ver detalle">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    {% if perms.VAT.delete_comision %}
+                                                        <form method="post"
+                                                              action="{% url 'vat_comision_delete' comision.pk %}"
+                                                              class="d-inline confirm-delete-form">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -1478,7 +1556,8 @@
                         <button type="button"
                                 class="btn btn-sm btn-primary"
                                 data-bs-toggle="modal"
-                                data-bs-target="#modalCurso">
+                                data-bs-target="#modalCurso"
+                                data-curso-mode="create">
                             <i class="fas fa-plus me-1"></i>Nuevo Curso
                         </button>
                     {% endif %}
@@ -1486,32 +1565,44 @@
                 <div class="card-body p-0">
                     {% if cursos %}
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0" id="tablaCursosCentro">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Nombre</th>
+                                        <th>Programa</th>
                                         <th>Ubicación</th>
                                         <th>Modalidad</th>
-                                        <th>Periodo</th>
-                                        <th>Cupo Total</th>
+                                        <th>Comisiones</th>
                                         <th>Estado</th>
                                         <th class="text-center">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for curso in cursos %}
-                                        <tr>
-                                            <td class="fw-bold">{{ curso.nombre }}</td>
+                                        <tr class="curso-row"
+                                            data-curso-id="{{ curso.id }}"
+                                            data-curso-nombre="{{ curso.nombre }}"
+                                            tabindex="0"
+                                            role="button"
+                                            aria-label="Filtrar comisiones del curso {{ curso.nombre }}">
+                                            <td class="fw-bold">
+                                                {{ curso.nombre }}
+                                                {% if curso.usa_voucher %}
+                                                    <span class="badge bg-info ms-1">
+                                                        <i class="fas fa-ticket-alt me-1"></i>Voucher
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ curso.programa.nombre|default:"-" }}</td>
                                             <td>{{ curso.ubicacion }}</td>
                                             <td>{{ curso.modalidad.nombre }}</td>
-                                            <td class="text-muted small">{{ curso.fecha_inicio|date:"d/m/Y" }} - {{ curso.fecha_fin|date:"d/m/Y" }}</td>
-                                            <td>{{ curso.cupo_total }}</td>
+                                            <td>{{ curso.comisiones.count }}</td>
                                             <td>
                                                 <span class="badge {% if curso.estado == 'activo' %}bg-success{% elif curso.estado == 'planificado' %}bg-warning text-dark{% elif curso.estado == 'finalizado' %}bg-secondary{% else %}bg-danger{% endif %}">
                                                     {{ curso.get_estado_display }}
                                                 </span>
                                             </td>
-                                            <td class="text-center">
+                                            <td class="text-end">
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     {% if perms.VAT.add_comisioncurso %}
                                                         <button type="button"
@@ -1519,17 +1610,33 @@
                                                                 title="Nueva Comisión"
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#modalComisionCurso"
+                                                                data-comision-curso-mode="create"
+                                                                data-lock-curso="1"
                                                                 data-curso-id="{{ curso.id }}"
                                                                 data-curso-nombre="{{ curso.nombre }}">
                                                             <i class="fas fa-plus"></i>
                                                         </button>
                                                     {% endif %}
                                                     {% if perms.VAT.change_curso %}
-                                                        <a href="{% url 'vat_curso_update' curso.id %}"
-                                                           class="btn btn-outline-warning"
-                                                           title="Editar Curso">
+                                                        <button type="button"
+                                                                class="btn btn-outline-warning btn-editar-curso"
+                                                                title="Editar Curso"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#modalCurso"
+                                                                data-curso-mode="edit"
+                                                                data-edit-url="{% url 'vat_curso_update' curso.id %}"
+                                                                data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}"
+                                                                data-programa-id="{{ curso.programa_id|default:'' }}"
+                                                                data-ubicacion-id="{{ curso.ubicacion_id|default:'' }}"
+                                                                data-nombre="{{ curso.nombre }}"
+                                                                data-modalidad-id="{{ curso.modalidad_id|default:'' }}"
+                                                                data-estado="{{ curso.estado|default:'' }}"
+                                                                data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}"
+                                                                data-costo-creditos="{{ curso.costo_creditos|default:'' }}"
+                                                                data-observaciones="{{ curso.observaciones|default:'' }}"
+                                                                data-voucher-ids="{% for voucher in curso.voucher_parametrias.all %}{% if not forloop.first %},{% endif %}{{ voucher.id }}{% endfor %}">
                                                             <i class="fas fa-edit"></i>
-                                                        </a>
+                                                        </button>
                                                     {% endif %}
                                                     {% if perms.VAT.delete_curso %}
                                                         <a href="{% url 'vat_curso_delete' curso.id %}"
@@ -1561,13 +1668,13 @@
                             <i class="fas fa-users me-2"></i>
                             Comisiones de Curso
                         </h6>
-                        <small class="text-muted">Comisiones vinculadas a cursos del centro.</small>
+                        <small class="text-muted" id="comisionesCursoHint">Comisiones vinculadas a cursos del centro.</small>
                     </div>
                 </div>
                 <div class="card-body p-0">
                     {% if comisiones_curso %}
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0" id="tablaComisionesCursoCentro">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Código</th>
@@ -1576,12 +1683,14 @@
                                         <th>Periodo</th>
                                         <th>Cupo Total</th>
                                         <th>Estado</th>
-                                        <th class="text-center">Acciones</th>
+                                        <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for comision in comisiones_curso %}
-                                        <tr>
+                                        <tr class="comision-curso-row"
+                                            data-curso-id="{{ comision.curso_id }}"
+                                            data-curso-nombre="{{ comision.curso.nombre }}">
                                             <td>
                                                 <strong>{{ comision.codigo_comision }}</strong>
                                             </td>
@@ -1594,14 +1703,34 @@
                                                     {{ comision.get_estado_display }}
                                                 </span>
                                             </td>
-                                            <td class="text-center">
+                                            <td class="text-end">
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    {% if perms.VAT.change_comisioncurso %}
-                                                        <a href="{% url 'vat_comision_curso_update' comision.id %}"
-                                                           class="btn btn-outline-warning"
-                                                           title="Editar Comisión">
-                                                            <i class="fas fa-edit"></i>
+                                                    {% if perms.VAT.view_comisioncurso %}
+                                                        <a href="{% url 'vat_comision_curso_detail' comision.id %}"
+                                                           class="btn btn-outline-info"
+                                                           title="Gestionar Comisión">
+                                                            <i class="fas fa-eye"></i>
                                                         </a>
+                                                    {% endif %}
+                                                    {% if perms.VAT.change_comisioncurso %}
+                                                        <button type="button"
+                                                                class="btn btn-outline-warning btn-editar-comision-curso"
+                                                                title="Editar Comisión"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#modalComisionCurso"
+                                                                data-comision-curso-mode="edit"
+                                                                data-edit-url="{% url 'vat_comision_curso_update' comision.id %}"
+                                                                data-curso-id="{{ comision.curso_id }}"
+                                                                data-curso-nombre="{{ comision.curso.nombre }}"
+                                                                data-codigo-comision="{{ comision.codigo_comision }}"
+                                                                data-nombre="{{ comision.nombre }}"
+                                                                data-cupo-total="{{ comision.cupo_total }}"
+                                                                data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
+                                                                data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
+                                                                data-estado="{{ comision.estado }}"
+                                                                data-observaciones="{{ comision.observaciones|default:'' }}">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
                                                     {% endif %}
                                                     {% if perms.VAT.delete_comisioncurso %}
                                                         <a href="{% url 'vat_comision_curso_delete' comision.id %}"
@@ -1616,6 +1745,11 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+                        <div id="comisionesCursoEmptyState"
+                             class="text-center py-4 text-muted d-none">
+                            <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">El curso seleccionado no tiene comisiones registradas.</p>
                         </div>
                     {% else %}
                         <div class="text-center py-4 text-muted">
@@ -1843,15 +1977,29 @@
                     <div class="modal-body">
                         <div class="row">
                             {% for field in curso_form %}
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                                        {{ field.label }}
-                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                    </label>
+                                {% if field.is_hidden %}
                                     {{ field }}
-                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                </div>
+                                {% elif field.html_name == 'voucher_parametrias' %}
+                                    <div class="col-12 mb-3">
+                                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                            {{ field.label }}
+                                            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                    </div>
+                                {% else %}
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                            {{ field.label }}
+                                            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                    </div>
+                                {% endif %}
                             {% endfor %}
                         </div>
                     </div>
@@ -1998,63 +2146,76 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
           rel="stylesheet" />
     <style>
-        /* Select2 multiple dark mode para #modalOferta */
-        #modalOferta .select2-container--default .select2-selection--multiple {
+        /* Select2 multiple dark mode para #modalOferta y #modalCurso */
+        #modalOferta .select2-container--default .select2-selection--multiple,
+        #modalCurso .select2-container--default .select2-selection--multiple {
             background-color: #1e2a3a !important;
             border: 1px solid #3d4f63 !important;
             border-radius: 0.25rem;
             min-height: 38px;
         }
-        #modalOferta .select2-container--default.select2-container--focus .select2-selection--multiple {
+        #modalOferta .select2-container--default.select2-container--focus .select2-selection--multiple,
+        #modalCurso .select2-container--default.select2-container--focus .select2-selection--multiple {
             background-color: #253446 !important;
             border-color: #f39c12 !important;
             box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15) !important;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice,
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice {
             background-color: #2c3e50 !important;
             color: #f39c12 !important;
             border: 1px solid #3d4f63 !important;
             border-radius: 3px;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
             color: #9ca3af !important;
             border-right: 1px solid #3d4f63 !important;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover,
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
             color: #ef4444 !important;
             background-color: transparent !important;
         }
-        #modalOferta .select2-container--default .select2-search--inline .select2-search__field {
+        #modalOferta .select2-container--default .select2-search--inline .select2-search__field,
+        #modalCurso .select2-container--default .select2-search--inline .select2-search__field {
             color: #e5e7eb !important;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__rendered {
             color: #e5e7eb !important;
         }
         /* Dropdown (se renderiza dentro de .modal-body por dropdownParent) */
-        #formOferta .select2-dropdown {
+        #formOferta .select2-dropdown,
+        #formCurso .select2-dropdown {
             background-color: #1e2a3a !important;
             border: 1px solid #3d4f63;
         }
-        #formOferta .select2-search--dropdown .select2-search__field {
+        #formOferta .select2-search--dropdown .select2-search__field,
+        #formCurso .select2-search--dropdown .select2-search__field {
             background-color: #253446 !important;
             border: 1px solid #3d4f63 !important;
             border-radius: 0.25rem;
             color: #e5e7eb !important;
         }
-        #formOferta .select2-results__option {
+        #formOferta .select2-results__option,
+        #formCurso .select2-results__option {
             background-color: #1e2a3a !important;
             color: #e5e7eb !important;
             padding: 8px 12px !important;
         }
-        #formOferta .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        #formOferta .select2-container--default .select2-results__option--highlighted[aria-selected],
+        #formCurso .select2-container--default .select2-results__option--highlighted[aria-selected] {
             background-color: #f39c12 !important;
             color: #1e2a3a !important;
         }
-        #formOferta .select2-container--default .select2-results__option[aria-selected=true] {
+        #formOferta .select2-container--default .select2-results__option[aria-selected=true],
+        #formCurso .select2-container--default .select2-results__option[aria-selected=true] {
             background-color: #2c3e50 !important;
             color: #f39c12 !important;
         }
-        #formOferta .select2-container--default .select2-results__option--highlighted[aria-selected=true] {
+        #formOferta .select2-container--default .select2-results__option--highlighted[aria-selected=true],
+        #formCurso .select2-container--default .select2-results__option--highlighted[aria-selected=true] {
             background-color: #f39c12 !important;
             color: #1e2a3a !important;
         }
@@ -2169,15 +2330,116 @@
 
         var modalComisionCurso = document.getElementById('modalComisionCurso');
         if (modalComisionCurso) {
+            var formComisionCurso = document.getElementById('formComisionCurso');
+            var tituloComisionCurso = document.getElementById('modalComisionCursoLabel');
+            var submitComisionCurso = formComisionCurso
+                ? formComisionCurso.querySelector('button[type="submit"]')
+                : null;
+            var createComisionCursoAction = formComisionCurso
+                ? formComisionCurso.getAttribute('action')
+                : '';
+
+            function setComisionCursoValue(name, value) {
+                if (!formComisionCurso) return;
+                var field = formComisionCurso.querySelector('[name="' + name + '"]');
+                if (!field) return;
+                field.value = value || '';
+            }
+
+            function setCursoFieldLock(cursoId, lockField) {
+                if (!formComisionCurso) return;
+                var cursoSelect = document.getElementById('id_curso');
+                if (!cursoSelect) return;
+
+                var hiddenCurso = formComisionCurso.querySelector('#id_curso_locked_value');
+
+                if (lockField) {
+                    if (!hiddenCurso) {
+                        hiddenCurso = document.createElement('input');
+                        hiddenCurso.type = 'hidden';
+                        hiddenCurso.name = 'curso';
+                        hiddenCurso.id = 'id_curso_locked_value';
+                        formComisionCurso.appendChild(hiddenCurso);
+                    }
+
+                    cursoSelect.value = cursoId || '';
+                    hiddenCurso.value = cursoId || '';
+                    cursoSelect.disabled = true;
+                    cursoSelect.classList.add('bg-light');
+                    cursoSelect.setAttribute('aria-disabled', 'true');
+                    return;
+                }
+
+                cursoSelect.disabled = false;
+                cursoSelect.classList.remove('bg-light');
+                cursoSelect.removeAttribute('aria-disabled');
+                if (hiddenCurso) {
+                    hiddenCurso.remove();
+                }
+            }
+
             modalComisionCurso.addEventListener('show.bs.modal', function(event) {
                 var trigger = event.relatedTarget;
+                var mode = trigger
+                    ? (trigger.getAttribute('data-comision-curso-mode') || 'create')
+                    : 'create';
                 var cursoId = trigger ? trigger.getAttribute('data-curso-id') : '';
                 var cursoNombre = trigger ? trigger.getAttribute('data-curso-nombre') : '';
+                var lockCursoField = trigger
+                    ? trigger.getAttribute('data-lock-curso') === '1'
+                    : false;
                 var cursoSelect = document.getElementById('id_curso');
                 var cursoInfo = document.getElementById('cursoSeleccionadoInfo');
 
+                if (mode === 'edit' && formComisionCurso) {
+                    if (tituloComisionCurso) {
+                        tituloComisionCurso.textContent = 'Editar Comisión de Curso';
+                    }
+                    formComisionCurso.setAttribute(
+                        'action',
+                        trigger.getAttribute('data-edit-url') || createComisionCursoAction
+                    );
+                    setComisionCursoValue('curso', cursoId);
+                    setComisionCursoValue(
+                        'codigo_comision',
+                        trigger.getAttribute('data-codigo-comision')
+                    );
+                    setComisionCursoValue('nombre', trigger.getAttribute('data-nombre'));
+                    setComisionCursoValue(
+                        'cupo_total',
+                        trigger.getAttribute('data-cupo-total')
+                    );
+                    setComisionCursoValue(
+                        'fecha_inicio',
+                        trigger.getAttribute('data-fecha-inicio')
+                    );
+                    setComisionCursoValue('fecha_fin', trigger.getAttribute('data-fecha-fin'));
+                    setComisionCursoValue('estado', trigger.getAttribute('data-estado'));
+                    setComisionCursoValue(
+                        'observaciones',
+                        trigger.getAttribute('data-observaciones')
+                    );
+                    if (submitComisionCurso) {
+                        submitComisionCurso.textContent = 'Actualizar';
+                    }
+                } else if (formComisionCurso) {
+                    if (tituloComisionCurso) {
+                        tituloComisionCurso.textContent = 'Nueva Comisión de Curso';
+                    }
+                    formComisionCurso.reset();
+                    formComisionCurso.setAttribute('action', createComisionCursoAction);
+                    setComisionCursoValue('curso', cursoId);
+                    if (submitComisionCurso) {
+                        submitComisionCurso.textContent = 'Guardar';
+                    }
+                }
+
+                setCursoFieldLock(cursoId, mode === 'create' && lockCursoField);
+
                 if (cursoSelect && cursoId) {
                     cursoSelect.value = cursoId;
+                } else if (cursoSelect) {
+                    cursoSelect.value = '';
                 }
 
                 if (cursoInfo && cursoNombre) {
@@ -2241,10 +2503,12 @@
             var usaVoucherInput = form.querySelector('input[name="usa_voucher"]');
             var programaSelect = form.querySelector('select[name="programa"]');
             var vouchersSelect = form.querySelector('select[name="voucher_parametrias"]');
+            var costoCreditosInput = form.querySelector('input[name="costo_creditos"]');
 
             if (!usaVoucherInput || !programaSelect || !vouchersSelect) return;
 
             function getFieldContainer(field) {
+                if (!field) return null;
                 return field.closest('p') || field.closest('.mb-3') || field.parentElement;
             }
 
@@ -2276,13 +2540,34 @@
             }
 
             function toggleVoucherField() {
-                var container = getFieldContainer(vouchersSelect);
-                if (!container) return;
+                var vouchersContainer = getFieldContainer(vouchersSelect);
+                var costoContainer = getFieldContainer(costoCreditosInput);
+
                 if (usaVoucherInput.checked) {
-                    container.classList.remove('d-none');
+                    if (vouchersContainer) {
+                        vouchersContainer.classList.remove('d-none');
+                    }
+                    if (costoContainer) {
+                        costoContainer.classList.remove('d-none');
+                    }
+                    if (costoCreditosInput) {
+                        costoCreditosInput.required = true;
+                        if (!costoCreditosInput.value || costoCreditosInput.value === '0') {
+                            costoCreditosInput.value = '1';
+                        }
+                    }
                     filtrarVouchersPorPrograma();
                 } else {
-                    container.classList.add('d-none');
+                    if (vouchersContainer) {
+                        vouchersContainer.classList.add('d-none');
+                    }
+                    if (costoContainer) {
+                        costoContainer.classList.add('d-none');
+                    }
+                    if (costoCreditosInput) {
+                        costoCreditosInput.required = false;
+                        costoCreditosInput.value = '0';
+                    }
                     Array.from(vouchersSelect.options).forEach(function(option) {
                         option.selected = false;
                     });
@@ -2302,22 +2587,235 @@
         }
 
         setupOfertaVoucherSelector('formOferta');
+        setupOfertaVoucherSelector('formCurso');
+
+        function setupCursoComisionFilter() {
+            var cursosTable = document.getElementById('tablaCursosCentro');
+            var comisionesTable = document.getElementById('tablaComisionesCursoCentro');
+            if (!cursosTable || !comisionesTable) return;
+
+            var cursoRows = Array.from(cursosTable.querySelectorAll('tbody .curso-row'));
+            var comisionRows = Array.from(comisionesTable.querySelectorAll('tbody .comision-curso-row'));
+            var hint = document.getElementById('comisionesCursoHint');
+            var emptyState = document.getElementById('comisionesCursoEmptyState');
+            var defaultHint = hint ? hint.textContent : '';
+            var lockedCursoId = '';
+            var lockedCursoNombre = '';
+            var hoverFilterEnabled = false;
+
+            function applyCursoFilter(cursoId, cursoNombre) {
+                var visibleRows = 0;
+
+                cursoRows.forEach(function(row) {
+                    var isSelected = cursoId && row.getAttribute('data-curso-id') === cursoId;
+                    row.classList.toggle('curso-row-selected', isSelected);
+                    row.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+                });
+
+                comisionRows.forEach(function(row) {
+                    var matches = !cursoId || row.getAttribute('data-curso-id') === cursoId;
+                    row.classList.toggle('d-none', !matches);
+                    if (matches) {
+                        visibleRows += 1;
+                    }
+                });
+
+                if (hint) {
+                    hint.textContent = cursoId
+                        ? 'Mostrando comisiones de: ' + cursoNombre
+                        : defaultHint;
+                }
+
+                if (emptyState) {
+                    emptyState.classList.toggle('d-none', visibleRows > 0 || !cursoId);
+                }
+            }
+
+            applyCursoFilter('', '');
+
+            cursosTable.addEventListener('mousemove', function() {
+                hoverFilterEnabled = true;
+            }, { once: true });
+
+            cursoRows.forEach(function(row) {
+                function filterRow() {
+                    applyCursoFilter(
+                        row.getAttribute('data-curso-id'),
+                        row.getAttribute('data-curso-nombre') || 'Curso'
+                    );
+                }
+
+                function lockRowFilter(event) {
+                    if (event && event.target && event.target.closest('.btn-group')) {
+                        return;
+                    }
+
+                    var rowCursoId = row.getAttribute('data-curso-id') || '';
+                    if (lockedCursoId === rowCursoId) {
+                        lockedCursoId = '';
+                        lockedCursoNombre = '';
+                        applyCursoFilter('', '');
+                        return;
+                    }
+
+                    lockedCursoId = rowCursoId;
+                    lockedCursoNombre = row.getAttribute('data-curso-nombre') || 'Curso';
+                    applyCursoFilter(lockedCursoId, lockedCursoNombre);
+                }
+
+                row.addEventListener('mouseenter', function() {
+                    if (lockedCursoId || !hoverFilterEnabled) return;
+                    filterRow();
+                });
+                row.addEventListener('click', lockRowFilter);
+                row.addEventListener('focus', function() {
+                    if (lockedCursoId) {
+                        applyCursoFilter(lockedCursoId, lockedCursoNombre);
+                        return;
+                    }
+                    filterRow();
+                });
+                row.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        lockRowFilter();
+                    }
+                    if (event.key === 'Escape') {
+                        lockedCursoId = '';
+                        lockedCursoNombre = '';
+                        applyCursoFilter('', '');
+                    }
+                });
+            });
+        }
+
+        setupCursoComisionFilter();
+
+        function setupCursoFormModal() {
+            var modalEl = document.getElementById('modalCurso');
+            var formEl = document.getElementById('formCurso');
+            var titleEl = document.getElementById('modalCursoLabel');
+            if (!modalEl || !formEl || !titleEl) return;
+
+            var createAction = formEl.getAttribute('action');
+
+            function setFormValue(name, value) {
+                var field = formEl.querySelector('[name="' + name + '"]');
+                if (!field) return;
+
+                if (field.type === 'checkbox') {
+                    field.checked = value === '1' || value === 'true' || value === true;
+                    return;
+                }
+
+                if (field.multiple) {
+                    var selected = (value || '')
+                        .split(',')
+                        .map(function(item) {
+                            return item.trim();
+                        })
+                        .filter(Boolean);
+                    Array.from(field.options).forEach(function(option) {
+                        option.selected = selected.includes(option.value);
+                    });
+                    return;
+                }
+
+                field.value = value || '';
+            }
+
+            modalEl.addEventListener('show.bs.modal', function(event) {
+                var triggerButton = event.relatedTarget;
+                if (!triggerButton) return;
+
+                var mode = triggerButton.getAttribute('data-curso-mode') || 'create';
+
+                if (mode === 'edit') {
+                    titleEl.textContent = 'Editar Curso';
+                    formEl.setAttribute('action', triggerButton.getAttribute('data-edit-url') || createAction);
+                    setFormValue('plan_estudio', triggerButton.getAttribute('data-plan-estudio-id'));
+                    setFormValue('programa', triggerButton.getAttribute('data-programa-id'));
+                    setFormValue('ubicacion', triggerButton.getAttribute('data-ubicacion-id'));
+                    setFormValue('nombre', triggerButton.getAttribute('data-nombre'));
+                    setFormValue('modalidad', triggerButton.getAttribute('data-modalidad-id'));
+                    setFormValue('estado', triggerButton.getAttribute('data-estado'));
+                    setFormValue('usa_voucher', triggerButton.getAttribute('data-usa-voucher'));
+                    setFormValue('costo_creditos', triggerButton.getAttribute('data-costo-creditos'));
+                    setFormValue('observaciones', triggerButton.getAttribute('data-observaciones'));
+                    setFormValue('voucher_parametrias', triggerButton.getAttribute('data-voucher-ids'));
+                    return;
+                }
+
+                titleEl.textContent = 'Nuevo Curso';
+                formEl.reset();
+                formEl.setAttribute('action', createAction);
+            });
+        }
+
+        setupCursoFormModal();
 
         // Legacy compatibility - prevent any jQuery double-bind
         if (typeof $ !== 'undefined') {
             $('#formAutoridad, #formContacto, #formIdentificador, #formUbicacion, #formOferta, #formCurso, #formComisionCurso, #formTitulo, #formPlan').off('submit');
         }
 
-        function activateTabFromHash() {
-            if (!window.location.hash) return;
-            var tabButton = document.querySelector('[data-bs-target="' + window.location.hash + '"]');
-            if (!tabButton) return;
-            var tab = new bootstrap.Tab(tabButton);
-            tab.show();
+        var tabStorageKey = 'vat-centro-active-tab-{{ centro.id }}';
+
+        function activateTabFromHash(hashValue) {
+            var hash = hashValue || window.location.hash;
+            if (!hash) return false;
+            var tabButton = document.querySelector('#centroTabs [data-bs-target="' + hash + '"]');
+            if (!tabButton) return false;
+            if (tabButton.disabled || tabButton.classList.contains('disabled')) return false;
+            bootstrap.Tab.getOrCreateInstance(tabButton).show();
+            return true;
         }
 
-        activateTabFromHash();
-        window.addEventListener('hashchange', activateTabFromHash);
+        function activatePersistedTab() {
+            var persistedHash = null;
+            try {
+                persistedHash = localStorage.getItem(tabStorageKey);
+            } catch (error) {
+                persistedHash = null;
+            }
+
+            if (activateTabFromHash(window.location.hash)) return;
+            if (persistedHash) {
+                activateTabFromHash(persistedHash);
+            }
+        }
+
+        document.querySelectorAll('#centroTabs [data-bs-toggle="tab"]').forEach(function(tabButton) {
+            tabButton.addEventListener('shown.bs.tab', function(event) {
+                var targetHash = event.target.getAttribute('data-bs-target');
+                if (!targetHash) return;
+                try {
+                    localStorage.setItem(tabStorageKey, targetHash);
+                } catch (error) {
+                    // localStorage can fail in private mode; ignore and keep normal tab behavior.
+                }
+                if (window.location.hash !== targetHash) {
+                    history.replaceState(null, '', targetHash);
+                }
+            });
+        });
+
+        // Diferir al siguiente tick para que Bootstrap termine de inicializar
+        // las transiciones CSS antes de intentar activar la solapa del hash.
+        setTimeout(activatePersistedTab, 0);
+        window.addEventListener('hashchange', function() {
+            activateTabFromHash(window.location.hash);
+        });
+
+        // Confirmación de eliminado lógico
+        document.querySelectorAll('.confirm-delete-form').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (window.confirm('¿Confirmás la eliminación de este registro?\nEsta acción es reversible desde la administración.')) {
+                    form.submit();
+                }
+            });
+        });
     </script>
 {% endblock %}
 
@@ -2378,6 +2876,63 @@
             });
 
             // Cuando cambia programa, refrescar Select2
+            programaSelect.addEventListener('change', function() {
+                if (select2Active) {
+                    $vouchers.trigger('change.select2');
+                }
+            });
+        })();
+
+        // Select2 para formCurso - igual que formOferta
+        (function() {
+            var form = document.getElementById('formCurso');
+            if (!form || typeof $ === 'undefined') return;
+
+            var usaVoucherInput = form.querySelector('input[name="usa_voucher"]');
+            var programaSelect = form.querySelector('select[name="programa"]');
+            var vouchersSelect = form.querySelector('select[name="voucher_parametrias"]');
+            if (!usaVoucherInput || !programaSelect || !vouchersSelect) return;
+
+            var $vouchers = $(vouchersSelect);
+            var select2Active = false;
+
+            function isModalVisible() {
+                var modal = document.getElementById('modalCurso');
+                return modal && modal.classList.contains('show');
+            }
+
+            function initSelect2() {
+                if (select2Active) return;
+                if (!isModalVisible()) return;
+                $vouchers.select2({
+                    dropdownParent: $(vouchersSelect).closest('.modal-body'),
+                    placeholder: 'Buscar voucher...',
+                    allowClear: true,
+                    width: '100%'
+                });
+                select2Active = true;
+            }
+
+            function destroySelect2() {
+                if (!select2Active) return;
+                $vouchers.select2('destroy');
+                select2Active = false;
+            }
+
+            document.getElementById('modalCurso').addEventListener('shown.bs.modal', function() {
+                if (usaVoucherInput.checked) {
+                    initSelect2();
+                }
+            });
+
+            usaVoucherInput.addEventListener('change', function() {
+                if (usaVoucherInput.checked && isModalVisible()) {
+                    initSelect2();
+                } else if (!usaVoucherInput.checked) {
+                    destroySelect2();
+                }
+            });
+
             programaSelect.addEventListener('change', function() {
                 if (select2Active) {
                     $vouchers.trigger('change.select2');
