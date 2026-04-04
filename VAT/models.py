@@ -2,6 +2,7 @@
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Programa
 from core.soft_delete import SoftDeleteModelMixin
@@ -273,6 +274,9 @@ class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
             raise ValidationError(errors)
 
     def __str__(self):
+        titulo_referencia = self.titulo_referencia
+        if titulo_referencia:
+            return f"{titulo_referencia.nombre} - {self.modalidad_cursada.nombre}"
         return f"{self.sector.nombre} - {self.modalidad_cursada.nombre}"
 
     class Meta:
@@ -923,26 +927,12 @@ class Curso(SoftDeleteModelMixin, models.Model):
         blank=True,
         verbose_name="Plan de Estudio",
     )
-    ubicacion = models.ForeignKey(
-        InstitucionUbicacion,
-        on_delete=models.PROTECT,
-        related_name="cursos",
-        verbose_name="Ubicación",
-    )
     nombre = models.CharField(max_length=255, verbose_name="Nombre")
     modalidad = models.ForeignKey(
         ModalidadCursada,
         on_delete=models.PROTECT,
         related_name="cursos",
         verbose_name="Modalidad",
-    )
-    programa = models.ForeignKey(
-        Programa,
-        on_delete=models.PROTECT,
-        related_name="cursos_vat",
-        null=True,
-        blank=True,
-        verbose_name="Programa",
     )
     usa_voucher = models.BooleanField(
         default=False,
@@ -976,24 +966,6 @@ class Curso(SoftDeleteModelMixin, models.Model):
     def clean(self):
         from django.core.exceptions import ValidationError
 
-        if (
-            self.ubicacion_id
-            and self.centro_id
-            and self.ubicacion.centro_id != self.centro_id
-        ):
-            raise ValidationError(
-                {
-                    "ubicacion": "La ubicación seleccionada no pertenece al centro del curso."
-                }
-            )
-
-        if self.usa_voucher and not self.programa_id:
-            raise ValidationError(
-                {
-                    "programa": "Debés seleccionar un programa cuando el curso usa voucher."
-                }
-            )
-
         if self.usa_voucher and self.costo_creditos <= 0:
             raise ValidationError(
                 {"costo_creditos": "El costo en créditos debe ser mayor a 0."}
@@ -1004,6 +976,69 @@ class Curso(SoftDeleteModelMixin, models.Model):
 
     def __str__(self):
         return f"{self.nombre} - {self.centro}"
+
+    def _resolve_programa_from_vouchers(self):
+        cached_programa = getattr(
+            self,
+            "_resolved_programa_from_vouchers_cache",
+            None,
+        )
+        if "_resolved_programa_from_vouchers_cache" in self.__dict__:
+            return cached_programa
+
+        if not self.pk:
+            self._resolved_programa_from_vouchers_cache = None
+            return None
+
+        prefetched_objects_cache = getattr(self, "_prefetched_objects_cache", {})
+        voucher_parametrias = prefetched_objects_cache.get("voucher_parametrias")
+        if voucher_parametrias is None:
+            voucher_parametrias = list(
+                VoucherParametria.objects.filter(cursos=self)
+                .select_related("programa")
+                .order_by("programa_id", "id")
+            )
+        else:
+            voucher_parametrias = sorted(
+                voucher_parametrias,
+                key=lambda voucher_parametria: (
+                    voucher_parametria.programa_id or 0,
+                    voucher_parametria.id,
+                ),
+            )
+
+        if not voucher_parametrias:
+            self._resolved_programa_from_vouchers_cache = None
+            return None
+
+        programa_ids = {
+            voucher_parametria.programa_id
+            for voucher_parametria in voucher_parametrias
+            if voucher_parametria.programa_id is not None
+        }
+        if len(programa_ids) != 1:
+            self._resolved_programa_from_vouchers_cache = None
+            return None
+
+        programa = next(
+            (
+                voucher_parametria.programa
+                for voucher_parametria in voucher_parametrias
+                if voucher_parametria.programa_id is not None
+            ),
+            None,
+        )
+        self._resolved_programa_from_vouchers_cache = programa
+        return programa
+
+    @property
+    def programa(self):
+        return self._resolve_programa_from_vouchers()
+
+    @property
+    def programa_id(self):
+        programa = self.programa
+        return programa.id if programa else None
 
     class Meta:
         verbose_name = "Curso"
@@ -1033,6 +1068,12 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
         related_name="comisiones",
         verbose_name="Curso",
     )
+    ubicacion = models.ForeignKey(
+        InstitucionUbicacion,
+        on_delete=models.PROTECT,
+        related_name="comisiones_curso",
+        verbose_name="Ubicación",
+    )
     codigo_comision = models.CharField(max_length=50, verbose_name="Código de Comisión")
     nombre = models.CharField(max_length=255, verbose_name="Nombre")
     cupo_total = models.PositiveIntegerField(verbose_name="Cupo Total")
@@ -1053,6 +1094,17 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
     def clean(self):
         from django.core.exceptions import ValidationError
 
+        if (
+            self.ubicacion_id
+            and self.curso_id
+            and self.ubicacion.centro_id != self.curso.centro_id
+        ):
+            raise ValidationError(
+                {
+                    "ubicacion": "La ubicación seleccionada no pertenece al centro del curso."
+                }
+            )
+
         if self.fecha_inicio and self.fecha_fin and self.fecha_inicio > self.fecha_fin:
             raise ValidationError(
                 {
@@ -1066,13 +1118,26 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
     def __str__(self):
         return f"{self.codigo_comision} - {self.nombre}"
 
+    def _build_default_codigo_comision(self):
+        if not self.curso_id:
+            return timezone.now().strftime("COMCUR-%Y%m%d%H%M%S%f")[:50]
+        return f"COMCUR-{self.curso_id}-{timezone.now():%Y%m%d%H%M%S%f}"[:50]
+
+    def _build_default_nombre(self):
+        if self.curso_id and getattr(self, "curso", None):
+            return f"Comisión {self.curso.nombre}"[:255]
+        return "Comisión"[:255]
+
+    def save(self, *args, **kwargs):
+        if not self.codigo_comision:
+            self.codigo_comision = self._build_default_codigo_comision()
+        if not self.nombre:
+            self.nombre = self._build_default_nombre()
+        return super().save(*args, **kwargs)
+
     @property
     def centro(self):
         return self.curso.centro
-
-    @property
-    def ubicacion(self):
-        return self.curso.ubicacion
 
     @property
     def cupo(self):
