@@ -1601,13 +1601,13 @@ def test_comision_curso_permita_cupo_independiente_del_curso(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     curso = Curso.objects.create(
         centro=centro,
-        ubicacion=ubicacion,
         nombre="Curso Soldadura Inicial",
         modalidad=modalidad,
         estado="planificado",
     )
     comision = ComisionCurso(
         curso=curso,
+        ubicacion=ubicacion,
         codigo_comision="SOLD-01",
         nombre="Comisión mañana",
         cupo_total=25,
@@ -1624,13 +1624,13 @@ def test_comision_curso_permita_fechas_independientes_del_curso(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     curso = Curso.objects.create(
         centro=centro,
-        ubicacion=ubicacion,
         nombre="Curso Electricidad",
         modalidad=modalidad,
         estado="planificado",
     )
     comision = ComisionCurso(
         curso=curso,
+        ubicacion=ubicacion,
         codigo_comision="ELEC-01",
         nombre="Comisión tarde",
         cupo_total=20,
@@ -1643,7 +1643,7 @@ def test_comision_curso_permita_fechas_independientes_del_curso(vat_curso_base):
 
 
 @pytest.mark.django_db
-def test_curso_no_permite_ubicacion_de_otro_centro(vat_geo_data):
+def test_comision_curso_no_permite_ubicacion_de_otro_centro(vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Semipresencial", activo=True)
     centro_a = Centro.objects.create(
@@ -1698,14 +1698,26 @@ def test_curso_no_permite_ubicacion_de_otro_centro(vat_geo_data):
 
     curso = Curso(
         centro=centro_a,
-        ubicacion=ubicacion_b,
         nombre="Curso Inválido",
         modalidad=modalidad,
         estado="planificado",
     )
+    curso.full_clean()
+    curso.save()
+
+    comision = ComisionCurso(
+        curso=curso,
+        ubicacion=ubicacion_b,
+        codigo_comision="CUR-A-01",
+        nombre="Comisión inválida",
+        cupo_total=10,
+        fecha_inicio=date(2026, 1, 1),
+        fecha_fin=date(2026, 1, 10),
+        estado="planificada",
+    )
 
     with pytest.raises(ValidationError):
-        curso.full_clean()
+        comision.full_clean()
 
 
 @pytest.mark.django_db
@@ -1741,7 +1753,6 @@ def test_curso_form_rechaza_vouchers_fuera_del_programa(vat_curso_base):
     form = CursoForm(
         data={
             "plan_estudio": str(plan_estudio.id),
-            "ubicacion": str(ubicacion.id),
             "nombre": "Curso Test Voucher",
             "estado": "planificado",
             "usa_voucher": "on",
@@ -1765,6 +1776,7 @@ def test_curso_form_plan_estudio_es_primer_campo():
     form = CursoForm()
 
     assert list(form.fields.keys())[0] == "plan_estudio"
+    assert "ubicacion" not in form.fields
 
 
 @pytest.mark.django_db
@@ -1791,7 +1803,6 @@ def test_curso_form_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
     form = CursoForm(
         data={
             "plan_estudio": str(plan_estudio.id),
-            "ubicacion": str(ubicacion.id),
             "nombre": "Curso sin costo",
             "estado": "planificado",
             "usa_voucher": "on",
@@ -1820,7 +1831,6 @@ def test_curso_form_default_costo_creditos_si_no_usa_voucher(vat_curso_base):
     form = CursoForm(
         data={
             "plan_estudio": str(plan_estudio.id),
-            "ubicacion": str(ubicacion.id),
             "nombre": "Curso sin voucher",
             "estado": "planificado",
             "costo_creditos": "",
@@ -1843,7 +1853,6 @@ def test_curso_form_guarda_plan_estudio(vat_curso_base, vat_plan_estudio_base):
     form = CursoForm(
         data={
             "plan_estudio": str(titulo.plan_estudio_id),
-            "ubicacion": str(ubicacion.id),
             "nombre": "Curso con plan",
             "estado": "planificado",
             "costo_creditos": 1,
@@ -1865,12 +1874,11 @@ def test_curso_form_guarda_plan_estudio(vat_curso_base, vat_plan_estudio_base):
 
 @pytest.mark.django_db
 def test_curso_programa_se_deriva_desde_vouchers(vat_curso_base):
-    centro, ubicacion, modalidad = vat_curso_base
+    centro, _, modalidad = vat_curso_base
     programa = Programa.objects.create(nombre="Programa Derivado")
     usuario = User.objects.create_user(username="curso-derivado", password="test1234")
     curso = Curso.objects.create(
         centro=centro,
-        ubicacion=ubicacion,
         nombre="Curso con programa derivado",
         modalidad=modalidad,
         estado="planificado",
@@ -1970,13 +1978,13 @@ def test_centro_detail_renderiza_marcadores_para_filtrar_comisiones_por_curso(
     )
     curso = Curso.objects.create(
         centro=centro,
-        ubicacion=ubicacion,
         nombre="Curso Filtrable",
         modalidad=modalidad,
         estado="planificado",
     )
     comision = ComisionCurso.objects.create(
         curso=curso,
+        ubicacion=ubicacion,
         codigo_comision="FIL-01",
         nombre="Comisión Filtrable",
         cupo_total=30,
@@ -2101,14 +2109,22 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
     )
     curso = Curso.objects.create(
         centro=centro,
-        ubicacion=ubicacion,
         nombre="Curso con detalle",
         modalidad=modalidad,
-        programa=programa,
         estado="planificado",
     )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Comisión Detalle",
+        programa=programa,
+        cantidad_inicial=3,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=user,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
     comision = ComisionCurso.objects.create(
         curso=curso,
+        ubicacion=ubicacion,
         codigo_comision="DET-01",
         nombre="Comisión Detalle",
         cupo_total=25,
@@ -2181,13 +2197,13 @@ def test_comision_curso_horario_create_genera_sesiones(client, vat_geo_data):
     )
     curso = Curso.objects.create(
         centro=centro,
-        ubicacion=ubicacion,
         nombre="Curso con horarios",
         modalidad=modalidad,
         estado="planificado",
     )
     comision = ComisionCurso.objects.create(
         curso=curso,
+        ubicacion=ubicacion,
         codigo_comision="HOR-01",
         nombre="Comisión Horario",
         cupo_total=20,
@@ -2264,14 +2280,22 @@ def test_inscripcion_rapida_comision_curso_crea_inscripcion(client, vat_geo_data
     )
     curso = Curso.objects.create(
         centro=centro,
-        ubicacion=ubicacion,
         nombre="Curso con inscripción",
         modalidad=modalidad,
-        programa=programa,
         estado="planificado",
     )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Comisión Insc",
+        programa=programa,
+        cantidad_inicial=10,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=user,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
     comision = ComisionCurso.objects.create(
         curso=curso,
+        ubicacion=ubicacion,
         codigo_comision="INSC-01",
         nombre="Comisión Inscriptos",
         cupo_total=20,

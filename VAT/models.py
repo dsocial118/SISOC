@@ -926,12 +926,6 @@ class Curso(SoftDeleteModelMixin, models.Model):
         blank=True,
         verbose_name="Plan de Estudio",
     )
-    ubicacion = models.ForeignKey(
-        InstitucionUbicacion,
-        on_delete=models.PROTECT,
-        related_name="cursos",
-        verbose_name="Ubicación",
-    )
     nombre = models.CharField(max_length=255, verbose_name="Nombre")
     modalidad = models.ForeignKey(
         ModalidadCursada,
@@ -970,17 +964,6 @@ class Curso(SoftDeleteModelMixin, models.Model):
 
     def clean(self):
         from django.core.exceptions import ValidationError
-
-        if (
-            self.ubicacion_id
-            and self.centro_id
-            and self.ubicacion.centro_id != self.centro_id
-        ):
-            raise ValidationError(
-                {
-                    "ubicacion": "La ubicación seleccionada no pertenece al centro del curso."
-                }
-            )
 
         if self.usa_voucher and self.costo_creditos <= 0:
             raise ValidationError(
@@ -1049,6 +1032,12 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
         related_name="comisiones",
         verbose_name="Curso",
     )
+    ubicacion = models.ForeignKey(
+        InstitucionUbicacion,
+        on_delete=models.PROTECT,
+        related_name="comisiones_curso",
+        verbose_name="Ubicación",
+    )
     codigo_comision = models.CharField(max_length=50, verbose_name="Código de Comisión")
     nombre = models.CharField(max_length=255, verbose_name="Nombre")
     cupo_total = models.PositiveIntegerField(verbose_name="Cupo Total")
@@ -1069,6 +1058,17 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
     def clean(self):
         from django.core.exceptions import ValidationError
 
+        if (
+            self.ubicacion_id
+            and self.curso_id
+            and self.ubicacion.centro_id != self.curso.centro_id
+        ):
+            raise ValidationError(
+                {
+                    "ubicacion": "La ubicación seleccionada no pertenece al centro del curso."
+                }
+            )
+
         if self.fecha_inicio and self.fecha_fin and self.fecha_inicio > self.fecha_fin:
             raise ValidationError(
                 {
@@ -1085,10 +1085,6 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
     @property
     def centro(self):
         return self.curso.centro
-
-    @property
-    def ubicacion(self):
-        return self.curso.ubicacion
 
     @property
     def cupo(self):

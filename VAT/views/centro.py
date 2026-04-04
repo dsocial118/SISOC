@@ -171,13 +171,13 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
         ctx["cursos"] = list(
             Curso.objects.filter(centro=centro)
-            .select_related("ubicacion__localidad", "modalidad")
+            .select_related("modalidad")
             .prefetch_related("comisiones", "voucher_parametrias")
             .order_by("-fecha_creacion")
         )
         ctx["comisiones_curso"] = list(
             ComisionCurso.objects.filter(curso__centro=centro)
-            .select_related("curso")
+            .select_related("curso", "ubicacion__localidad")
             .order_by("codigo_comision")
         )
 
@@ -230,14 +230,14 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             )
         )
         ctx["curso_form"] = CursoForm(initial={"centro": centro})
-        ctx["curso_form"].fields["ubicacion"].queryset = (
-            centro.ubicaciones.select_related("localidad").order_by(
-                "es_principal", "rol_ubicacion"
-            )
-        )
         ctx["comision_curso_form"] = ComisionCursoForm()
         ctx["comision_curso_form"].fields["curso"].queryset = centro.cursos.order_by(
             "nombre"
+        )
+        ctx["comision_curso_form"].fields["ubicacion"].queryset = (
+            centro.ubicaciones.select_related("localidad").order_by(
+                "es_principal", "rol_ubicacion"
+            )
         )
         ctx["titulo_form"] = TituloReferenciaForm()
         ctx["plan_form"] = PlanVersionCurricularForm()

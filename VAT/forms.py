@@ -1251,11 +1251,6 @@ class CursoForm(forms.ModelForm):
         required=True,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
-    ubicacion = forms.ModelChoiceField(
-        queryset=InstitucionUbicacion.objects.all(),
-        label="Ubicación",
-        widget=forms.Select(attrs={"class": "form-control"}),
-    )
     nombre = forms.CharField(
         label="Nombre",
         widget=forms.TextInput(attrs={"class": "form-control"}),
@@ -1304,7 +1299,6 @@ class CursoForm(forms.ModelForm):
         model = Curso
         fields = [
             "plan_estudio",
-            "ubicacion",
             "nombre",
             "estado",
             "usa_voucher",
@@ -1354,40 +1348,12 @@ class CursoForm(forms.ModelForm):
         else:
             self.fields["plan_estudio"].queryset = PlanVersionCurricular.objects.none()
 
-        if centro_id:
-            self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.filter(
-                centro_id=centro_id
-            ).select_related("localidad")
-        else:
-            self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.none()
-
     def clean(self):
         cleaned_data = super().clean()
         plan_estudio = cleaned_data.get("plan_estudio")
         usa_voucher = cleaned_data.get("usa_voucher")
         voucher_parametrias = cleaned_data.get("voucher_parametrias")
         costo_creditos = cleaned_data.get("costo_creditos")
-        centro_id = (
-            self.instance.centro_id
-            if self.instance and self.instance.centro_id
-            else None
-        )
-        if not centro_id:
-            centro_val = self.initial.get("centro")
-            if isinstance(centro_val, Centro):
-                centro_id = centro_val.id
-            elif centro_val:
-                try:
-                    centro_id = int(centro_val)
-                except (TypeError, ValueError):
-                    centro_id = None
-        ubicacion = cleaned_data.get("ubicacion")
-
-        if centro_id and ubicacion and ubicacion.centro_id != centro_id:
-            self.add_error(
-                "ubicacion",
-                "La ubicación seleccionada no pertenece al centro del curso.",
-            )
 
         if not plan_estudio:
             self.add_error(
@@ -1440,6 +1406,11 @@ class ComisionCursoForm(forms.ModelForm):
         label="Curso",
         widget=forms.Select(attrs={"class": "form-control"}),
     )
+    ubicacion = forms.ModelChoiceField(
+        queryset=InstitucionUbicacion.objects.none(),
+        label="Ubicación",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
     codigo_comision = forms.CharField(
         label="Código de Comisión",
         widget=forms.TextInput(attrs={"class": "form-control"}),
@@ -1476,6 +1447,7 @@ class ComisionCursoForm(forms.ModelForm):
         model = ComisionCurso
         fields = [
             "curso",
+            "ubicacion",
             "codigo_comision",
             "nombre",
             "cupo_total",
@@ -1485,11 +1457,43 @@ class ComisionCursoForm(forms.ModelForm):
             "observaciones",
         ]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        curso_id = None
+
+        if self.is_bound:
+            curso_id = self.data.get("curso")
+        elif self.instance and self.instance.pk:
+            curso_id = self.instance.curso_id
+        else:
+            curso_inicial = self.initial.get("curso")
+            if isinstance(curso_inicial, Curso):
+                curso_id = curso_inicial.id
+            else:
+                curso_id = curso_inicial
+
+        if curso_id:
+            self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.filter(
+                centro_id=Curso.objects.filter(pk=curso_id)
+                .values_list("centro_id", flat=True)
+                .first()
+            ).select_related("localidad")
+        else:
+            self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.none()
+
     def clean(self):
         cleaned_data = super().clean()
+        curso = cleaned_data.get("curso")
+        ubicacion = cleaned_data.get("ubicacion")
         cupo_total = cleaned_data.get("cupo_total")
         fecha_inicio = cleaned_data.get("fecha_inicio")
         fecha_fin = cleaned_data.get("fecha_fin")
+
+        if curso and ubicacion and ubicacion.centro_id != curso.centro_id:
+            self.add_error(
+                "ubicacion",
+                "La ubicación seleccionada no pertenece al centro del curso.",
+            )
 
         if fecha_inicio and fecha_fin and fecha_inicio > fecha_fin:
             self.add_error(

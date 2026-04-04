@@ -442,7 +442,7 @@ class InstitucionUbicacionViewSet(viewsets.ModelViewSet):
 )
 class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     queryset = (
-        Curso.objects.select_related("centro", "ubicacion", "modalidad")
+        Curso.objects.select_related("centro", "modalidad")
         .prefetch_related("voucher_parametrias")
         .order_by("-fecha_creacion", "nombre")
     )
@@ -492,9 +492,9 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     ],
 )
 class ComisionCursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = ComisionCurso.objects.select_related("curso", "curso__centro").order_by(
-        "codigo_comision"
-    )
+    queryset = ComisionCurso.objects.select_related(
+        "curso", "curso__centro", "ubicacion"
+    ).order_by("codigo_comision")
     serializer_class = ComisionCursoSerializer
     permission_classes = [HasAPIKey]
 

@@ -389,9 +389,6 @@ class InstitucionUbicacionSerializer(serializers.ModelSerializer):
 class CursoSerializer(serializers.ModelSerializer):
     centro_nombre = serializers.CharField(source="centro.nombre", read_only=True)
     plan_estudio_nombre = serializers.CharField(source="plan_estudio", read_only=True)
-    ubicacion_nombre = serializers.CharField(
-        source="ubicacion.nombre_ubicacion", read_only=True
-    )
     modalidad_nombre = serializers.CharField(source="modalidad.nombre", read_only=True)
     programa = serializers.IntegerField(source="programa_id", read_only=True)
     programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
@@ -405,8 +402,6 @@ class CursoSerializer(serializers.ModelSerializer):
             "centro_nombre",
             "plan_estudio",
             "plan_estudio_nombre",
-            "ubicacion",
-            "ubicacion_nombre",
             "nombre",
             "modalidad",
             "modalidad_nombre",
@@ -425,6 +420,9 @@ class CursoSerializer(serializers.ModelSerializer):
 class ComisionCursoSerializer(serializers.ModelSerializer):
     curso_nombre = serializers.CharField(source="curso.nombre", read_only=True)
     curso_centro_id = serializers.IntegerField(source="curso.centro_id", read_only=True)
+    ubicacion_nombre = serializers.CharField(
+        source="ubicacion.nombre_ubicacion", read_only=True
+    )
 
     class Meta:
         model = ComisionCurso
@@ -433,6 +431,8 @@ class ComisionCursoSerializer(serializers.ModelSerializer):
             "curso",
             "curso_nombre",
             "curso_centro_id",
+            "ubicacion",
+            "ubicacion_nombre",
             "codigo_comision",
             "nombre",
             "cupo_total",

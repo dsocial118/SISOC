@@ -1621,7 +1621,6 @@
                                     <tr>
                                         <th>Nombre</th>
                                         <th>Programa</th>
-                                        <th>Ubicación</th>
                                         <th>Modalidad</th>
                                         <th>Comisiones</th>
                                         <th>Estado</th>
@@ -1645,7 +1644,6 @@
                                                 {% endif %}
                                             </td>
                                             <td>{{ curso.programa.nombre|default:"-" }}</td>
-                                            <td>{{ curso.ubicacion }}</td>
                                             <td>{{ curso.modalidad.nombre }}</td>
                                             <td>{{ curso.comisiones.count }}</td>
                                             <td>
@@ -1677,7 +1675,6 @@
                                                                 data-curso-mode="edit"
                                                                 data-edit-url="{% url 'vat_curso_update' curso.id %}"
                                                                 data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}"
-                                                                data-ubicacion-id="{{ curso.ubicacion_id|default:'' }}"
                                                                 data-nombre="{{ curso.nombre }}"
                                                                 data-estado="{{ curso.estado|default:'' }}"
                                                                 data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}"
@@ -1729,6 +1726,7 @@
                                         <th>Código</th>
                                         <th>Nombre</th>
                                         <th>Curso</th>
+                                        <th>Ubicación</th>
                                         <th>Periodo</th>
                                         <th>Cupo Total</th>
                                         <th>Estado</th>
@@ -1745,6 +1743,7 @@
                                             </td>
                                             <td>{{ comision.nombre }}</td>
                                             <td>{{ comision.curso.nombre }}</td>
+                                            <td>{{ comision.ubicacion|default:"-" }}</td>
                                             <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} - {{ comision.fecha_fin|date:"d/m/Y" }}</td>
                                             <td>{{ comision.cupo_total }}</td>
                                             <td>
@@ -1771,6 +1770,7 @@
                                                                 data-edit-url="{% url 'vat_comision_curso_update' comision.id %}"
                                                                 data-curso-id="{{ comision.curso_id }}"
                                                                 data-curso-nombre="{{ comision.curso.nombre }}"
+                                                                data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
                                                                 data-codigo-comision="{{ comision.codigo_comision }}"
                                                                 data-nombre="{{ comision.nombre }}"
                                                                 data-cupo-total="{{ comision.cupo_total }}"
@@ -2467,6 +2467,7 @@
                         trigger.getAttribute('data-edit-url') || createComisionCursoAction
                     );
                     setComisionCursoValue('curso', cursoId);
+                    setComisionCursoValue('ubicacion', trigger.getAttribute('data-ubicacion-id'));
                     setComisionCursoValue(
                         'codigo_comision',
                         trigger.getAttribute('data-codigo-comision')
@@ -2860,7 +2861,6 @@
                     titleEl.textContent = 'Editar Curso';
                     formEl.setAttribute('action', triggerButton.getAttribute('data-edit-url') || createAction);
                     setFormValue('plan_estudio', triggerButton.getAttribute('data-plan-estudio-id'));
-                    setFormValue('ubicacion', triggerButton.getAttribute('data-ubicacion-id'));
                     setFormValue('nombre', triggerButton.getAttribute('data-nombre'));
                     setFormValue('estado', triggerButton.getAttribute('data-estado'));
                     setFormValue('usa_voucher', triggerButton.getAttribute('data-usa-voucher'));

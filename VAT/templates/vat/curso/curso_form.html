@@ -38,13 +38,6 @@
                             {{ form.plan_estudio }}
                             {% if form.plan_estudio.errors %}<div class="text-danger small mt-1">{{ form.plan_estudio.errors.0 }}</div>{% endif %}
                         </div>
-                        <div class="col-md-6">
-                            <label for="{{ form.ubicacion.id_for_label }}" class="form-label fw-600">
-                                {{ form.ubicacion.label }} <span class="text-danger">*</span>
-                            </label>
-                            {{ form.ubicacion }}
-                            {% if form.ubicacion.errors %}<div class="text-danger small mt-1">{{ form.ubicacion.errors.0 }}</div>{% endif %}
-                        </div>
                     </div>
 
                     <div class="row mb-4">
