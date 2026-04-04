@@ -684,6 +684,17 @@ class ModalidadCursadaForm(forms.ModelForm):
 
 
 class PlanVersionCurricularForm(forms.ModelForm):
+    nombre = forms.CharField(
+        label="Nombre",
+        max_length=200,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Nombre del título o trayecto formativo",
+            }
+        ),
+        help_text="Se usa para crear o actualizar el título de referencia asociado al plan.",
+    )
     sector = forms.ModelChoiceField(
         queryset=Sector.objects.all(),
         label="Sector",
@@ -780,6 +791,16 @@ class PlanVersionCurricularForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         sector_id = None
+        titulo_referencia = None
+
+        if self.instance and self.instance.pk:
+            titulo_referencia = self.instance.titulo_referencia
+
+        self.fields["nombre"].initial = (
+            self.data.get("nombre")
+            if self.is_bound
+            else (titulo_referencia.nombre if titulo_referencia else "")
+        )
 
         if self.data.get("sector"):
             sector_id = self.data.get("sector")
@@ -805,6 +826,9 @@ class PlanVersionCurricularForm(forms.ModelForm):
             self.initial.setdefault("normativa_tipo", normativa_tipo)
             self.initial.setdefault("normativa_numero", normativa_numero)
             self.initial.setdefault("normativa_anio", normativa_anio)
+
+    def clean_nombre(self):
+        return _clean_non_empty_text(self.cleaned_data.get("nombre"), "El nombre")
 
     def clean_normativa_numero(self):
         return _clean_numeric_text(
@@ -852,6 +876,30 @@ class PlanVersionCurricularForm(forms.ModelForm):
             cleaned_data["normativa"] = ""
 
         return cleaned_data
+
+    def save(self, commit=True):
+        plan = super().save(commit=commit)
+        if not commit:
+            return plan
+
+        nombre = self.cleaned_data["nombre"]
+        titulo_referencia = plan.titulos.order_by("id").first()
+
+        if titulo_referencia:
+            titulo_referencia.nombre = nombre
+            titulo_referencia.plan_estudio = plan
+            titulo_referencia.activo = plan.activo
+            titulo_referencia.save(
+                update_fields=["nombre", "plan_estudio", "activo"]
+            )
+        else:
+            TituloReferencia.objects.create(
+                nombre=nombre,
+                plan_estudio=plan,
+                activo=plan.activo,
+            )
+
+        return plan
 
 
 class InscripcionOfertaForm(forms.ModelForm):
