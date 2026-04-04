@@ -401,6 +401,10 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
         if data is not None and self.object.provincia_id is not None:
             data = data.copy()
             data["provincia"] = str(self.object.provincia_id)
+            if self.object.activo:
+                data["activo"] = "on"
+            else:
+                data.pop("activo", None)
             kwargs["data"] = data
 
         return kwargs
