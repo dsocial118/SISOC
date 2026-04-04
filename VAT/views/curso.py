@@ -30,7 +30,6 @@ from VAT.models import (
     SesionComision,
     Inscripcion,
     AsistenciaSesion,
-    InstitucionUbicacion,
 )
 from VAT.services.access_scope import (
     can_user_access_centro,
@@ -49,9 +48,10 @@ def _scoped_centros_ids(user):
 def _scoped_comisiones_curso_queryset(user):
     return ComisionCurso.objects.select_related(
         "curso__centro",
+        "curso__ubicacion",
         "curso__modalidad",
+        "curso__programa",
         "curso__plan_estudio",
-        "ubicacion__localidad",
     ).filter(curso__centro_id__in=_scoped_centros_ids(user))
 
 
@@ -80,6 +80,13 @@ class CursoCreateView(LoginRequiredMixin, CreateView):
         initial = super().get_initial()
         initial["centro"] = self.centro.id
         return initial
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["ubicacion"].queryset = self.centro.ubicaciones.select_related(
+            "localidad"
+        )
+        return form
 
     def form_valid(self, form):
         form.instance.centro = self.centro
@@ -110,9 +117,16 @@ class CursoUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         scoped_centros = _scoped_centros_ids(self.request.user)
-        return Curso.objects.select_related("centro").filter(
+        return Curso.objects.select_related("centro", "ubicacion").filter(
             centro_id__in=scoped_centros
         )
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["ubicacion"].queryset = (
+            self.object.centro.ubicaciones.select_related("localidad")
+        )
+        return form
 
     def form_valid(self, form):
         messages.success(self.request, "Curso actualizado exitosamente.")
@@ -194,12 +208,6 @@ class ComisionCursoCreateView(LoginRequiredMixin, CreateView):
         form.fields["curso"].queryset = Curso.objects.filter(
             centro_id__in=scoped_centros.values_list("id", flat=True)
         ).select_related("centro")
-        ubicaciones_qs = InstitucionUbicacion.objects.filter(
-            centro_id__in=scoped_centros.values_list("id", flat=True)
-        ).select_related("localidad")
-        if self.curso:
-            ubicaciones_qs = ubicaciones_qs.filter(centro_id=self.curso.centro_id)
-        form.fields["ubicacion"].queryset = ubicaciones_qs
         return form
 
     def form_valid(self, form):
@@ -571,9 +579,6 @@ class ComisionCursoUpdateView(LoginRequiredMixin, UpdateView):
         form.fields["curso"].queryset = Curso.objects.filter(
             centro_id__in=scoped_centros.values_list("id", flat=True)
         ).select_related("centro")
-        form.fields["ubicacion"].queryset = InstitucionUbicacion.objects.filter(
-            centro_id=self.object.curso.centro_id
-        ).select_related("localidad")
         return form
 
     def form_valid(self, form):

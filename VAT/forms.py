@@ -450,7 +450,6 @@ class CentroAltaForm(CentroForm):
             max_length=20,
         )
 
-
 class BaseInstitucionContactoAltaFormSet(BaseInlineFormSet):
     def clean(self):
         super().clean()
@@ -687,18 +686,6 @@ class ModalidadCursadaForm(forms.ModelForm):
 
 
 class PlanVersionCurricularForm(forms.ModelForm):
-    nombre = forms.CharField(
-        label="Nombre",
-        max_length=200,
-        strip=False,
-        widget=forms.TextInput(
-            attrs={
-                "class": "form-control",
-                "placeholder": "Nombre del título o trayecto formativo",
-            }
-        ),
-        help_text="Se usa para crear o actualizar el título de referencia asociado al plan.",
-    )
     sector = forms.ModelChoiceField(
         queryset=Sector.objects.all(),
         label="Sector",
@@ -714,6 +701,16 @@ class PlanVersionCurricularForm(forms.ModelForm):
         queryset=ModalidadCursada.objects.all(),
         label="Modalidad",
         widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    normativa = forms.CharField(
+        label="Normativa",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Ingresá una normativa libre si no usás el formato estructurado",
+            }
+        ),
     )
     normativa_tipo = forms.ChoiceField(
         label="Normativa - Tipo",
@@ -775,6 +772,7 @@ class PlanVersionCurricularForm(forms.ModelForm):
             "sector",
             "subsector",
             "modalidad_cursada",
+            "normativa",
             "horas_reloj",
             "nivel_requerido",
             "nivel_certifica",
@@ -784,17 +782,6 @@ class PlanVersionCurricularForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         sector_id = None
-        titulo_referencia = None
-        self.normativa_texto_actual = ""
-
-        if self.instance and self.instance.pk:
-            titulo_referencia = self.instance.titulo_referencia
-
-        self.initial["nombre"] = (
-            self.data.get("nombre")
-            if self.is_bound
-            else (titulo_referencia.nombre if titulo_referencia else "")
-        )
 
         if self.data.get("sector"):
             sector_id = self.data.get("sector")
@@ -816,16 +803,10 @@ class PlanVersionCurricularForm(forms.ModelForm):
             normativa_tipo, normativa_numero, normativa_anio = _parse_normativa_value(
                 self.instance.normativa
             )
-            self.normativa_texto_actual = normativa_texto
+            self.initial.setdefault("normativa", normativa_texto)
             self.initial.setdefault("normativa_tipo", normativa_tipo)
             self.initial.setdefault("normativa_numero", normativa_numero)
             self.initial.setdefault("normativa_anio", normativa_anio)
-        elif self.instance and self.instance.pk:
-            normativa_texto, _ = _split_normativa_value(self.instance.normativa)
-            self.normativa_texto_actual = normativa_texto
-
-    def clean_nombre(self):
-        return _clean_non_empty_text(self.cleaned_data.get("nombre"), "El nombre")
 
     def clean_normativa_numero(self):
         return _clean_numeric_text(
@@ -834,11 +815,14 @@ class PlanVersionCurricularForm(forms.ModelForm):
             max_length=20,
         )
 
+    def clean_normativa(self):
+        return _validate_normativa_texto(self.cleaned_data.get("normativa"))
+
     def clean(self):
         cleaned_data = super().clean()
         sector = cleaned_data.get("sector")
         subsector = cleaned_data.get("subsector")
-        normativa_texto_actual = self.normativa_texto_actual
+        normativa = (cleaned_data.get("normativa") or "").strip()
         normativa_tipo = cleaned_data.get("normativa_tipo")
         normativa_numero = cleaned_data.get("normativa_numero")
         normativa_anio = cleaned_data.get("normativa_anio")
@@ -857,14 +841,9 @@ class PlanVersionCurricularForm(forms.ModelForm):
             if not normativa_anio:
                 self.add_error("normativa_anio", "Seleccione el año de la normativa.")
 
-        if normativa_texto_actual and not self.instance.pk:
-            normativa_texto_actual = ""
-
-        if normativa_texto_actual or (
-            normativa_tipo and normativa_numero and normativa_anio
-        ):
+        if normativa or (normativa_tipo and normativa_numero and normativa_anio):
             cleaned_data["normativa"] = _build_normativa_value(
-                _validate_normativa_texto(normativa_texto_actual),
+                normativa,
                 normativa_tipo,
                 normativa_numero,
                 normativa_anio,
@@ -875,33 +854,6 @@ class PlanVersionCurricularForm(forms.ModelForm):
             cleaned_data["normativa"] = ""
 
         return cleaned_data
-
-    def save(self, commit=True):
-        plan = super().save(commit=False)
-        plan.normativa = self.cleaned_data.get("normativa")
-
-        if commit:
-            plan.save()
-            self.save_m2m()
-        else:
-            return plan
-
-        nombre = self.cleaned_data["nombre"]
-        titulo_referencia = plan.titulos.order_by("id").first()
-
-        if titulo_referencia:
-            titulo_referencia.nombre = nombre
-            titulo_referencia.plan_estudio = plan
-            titulo_referencia.activo = plan.activo
-            titulo_referencia.save(update_fields=["nombre", "plan_estudio", "activo"])
-        else:
-            TituloReferencia.objects.create(
-                nombre=nombre,
-                plan_estudio=plan,
-                activo=plan.activo,
-            )
-
-        return plan
 
 
 class InscripcionOfertaForm(forms.ModelForm):
@@ -1248,12 +1200,28 @@ class CursoForm(forms.ModelForm):
         .select_related("sector", "modalidad_cursada")
         .order_by("sector__nombre", "modalidad_cursada__nombre"),
         label="Plan de Estudio",
-        required=True,
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    programa = forms.ModelChoiceField(
+        queryset=Programa.objects.all(),
+        label="Programa",
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    ubicacion = forms.ModelChoiceField(
+        queryset=InstitucionUbicacion.objects.all(),
+        label="Ubicación",
         widget=forms.Select(attrs={"class": "form-control"}),
     )
     nombre = forms.CharField(
         label="Nombre",
         widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    modalidad = forms.ModelChoiceField(
+        queryset=ModalidadCursada.objects.all(),
+        label="Modalidad",
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
     estado = forms.ChoiceField(
         label="Estado",
@@ -1299,7 +1267,10 @@ class CursoForm(forms.ModelForm):
         model = Curso
         fields = [
             "plan_estudio",
+            "programa",
+            "ubicacion",
             "nombre",
+            "modalidad",
             "estado",
             "usa_voucher",
             "voucher_parametrias",
@@ -1348,20 +1319,46 @@ class CursoForm(forms.ModelForm):
         else:
             self.fields["plan_estudio"].queryset = PlanVersionCurricular.objects.none()
 
+        if centro_id:
+            self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.filter(
+                centro_id=centro_id
+            ).select_related("localidad")
+        else:
+            self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.none()
+
     def clean(self):
         cleaned_data = super().clean()
-        plan_estudio = cleaned_data.get("plan_estudio")
+        programa = cleaned_data.get("programa")
         usa_voucher = cleaned_data.get("usa_voucher")
         voucher_parametrias = cleaned_data.get("voucher_parametrias")
         costo_creditos = cleaned_data.get("costo_creditos")
+        centro_id = (
+            self.instance.centro_id
+            if self.instance and self.instance.centro_id
+            else None
+        )
+        if not centro_id:
+            centro_val = self.initial.get("centro")
+            if isinstance(centro_val, Centro):
+                centro_id = centro_val.id
+            elif centro_val:
+                try:
+                    centro_id = int(centro_val)
+                except (TypeError, ValueError):
+                    centro_id = None
+        ubicacion = cleaned_data.get("ubicacion")
 
-        if not plan_estudio:
+        if centro_id and ubicacion and ubicacion.centro_id != centro_id:
             self.add_error(
-                "plan_estudio",
-                "Debés seleccionar un plan de estudio para definir la modalidad del curso.",
+                "ubicacion",
+                "La ubicación seleccionada no pertenece al centro del curso.",
             )
-        else:
-            cleaned_data["modalidad"] = plan_estudio.modalidad_cursada
+
+        if usa_voucher and not programa:
+            self.add_error(
+                "programa",
+                "Debés seleccionar un programa cuando el curso usa voucher.",
+            )
 
         if usa_voucher and not voucher_parametrias:
             self.add_error(
@@ -1379,25 +1376,17 @@ class CursoForm(forms.ModelForm):
             cleaned_data["costo_creditos"] = 0
             cleaned_data["voucher_parametrias"] = VoucherParametria.objects.none()
 
-        if voucher_parametrias:
-            programas_ids = {voucher.programa_id for voucher in voucher_parametrias}
-            if len(programas_ids) > 1:
+        if programa and voucher_parametrias:
+            invalidas = [
+                v.nombre for v in voucher_parametrias if v.programa_id != programa.id
+            ]
+            if invalidas:
                 self.add_error(
                     "voucher_parametrias",
-                    "Todos los vouchers seleccionados deben pertenecer al mismo programa.",
+                    "Todos los vouchers seleccionados deben pertenecer al programa elegido.",
                 )
 
         return cleaned_data
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        instance.modalidad = self.cleaned_data.get("modalidad")
-
-        if commit:
-            instance.save()
-            self.save_m2m()
-
-        return instance
 
 
 class ComisionCursoForm(forms.ModelForm):
@@ -1406,10 +1395,13 @@ class ComisionCursoForm(forms.ModelForm):
         label="Curso",
         widget=forms.Select(attrs={"class": "form-control"}),
     )
-    ubicacion = forms.ModelChoiceField(
-        queryset=InstitucionUbicacion.objects.none(),
-        label="Ubicación",
-        widget=forms.Select(attrs={"class": "form-control"}),
+    codigo_comision = forms.CharField(
+        label="Código de Comisión",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    nombre = forms.CharField(
+        label="Nombre",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
     )
     cupo_total = forms.IntegerField(
         label="Cupo Total",
@@ -1439,7 +1431,8 @@ class ComisionCursoForm(forms.ModelForm):
         model = ComisionCurso
         fields = [
             "curso",
-            "ubicacion",
+            "codigo_comision",
+            "nombre",
             "cupo_total",
             "fecha_inicio",
             "fecha_fin",
@@ -1447,43 +1440,11 @@ class ComisionCursoForm(forms.ModelForm):
             "observaciones",
         ]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        curso_id = None
-
-        if self.is_bound:
-            curso_id = self.data.get("curso")
-        elif self.instance and self.instance.pk:
-            curso_id = self.instance.curso_id
-        else:
-            curso_inicial = self.initial.get("curso")
-            if isinstance(curso_inicial, Curso):
-                curso_id = curso_inicial.id
-            else:
-                curso_id = curso_inicial
-
-        if curso_id:
-            self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.filter(
-                centro_id=Curso.objects.filter(pk=curso_id)
-                .values_list("centro_id", flat=True)
-                .first()
-            ).select_related("localidad")
-        else:
-            self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.none()
-
     def clean(self):
         cleaned_data = super().clean()
-        curso = cleaned_data.get("curso")
-        ubicacion = cleaned_data.get("ubicacion")
         cupo_total = cleaned_data.get("cupo_total")
         fecha_inicio = cleaned_data.get("fecha_inicio")
         fecha_fin = cleaned_data.get("fecha_fin")
-
-        if curso and ubicacion and ubicacion.centro_id != curso.centro_id:
-            self.add_error(
-                "ubicacion",
-                "La ubicación seleccionada no pertenece al centro del curso.",
-            )
 
         if fecha_inicio and fecha_fin and fecha_inicio > fecha_fin:
             self.add_error(
