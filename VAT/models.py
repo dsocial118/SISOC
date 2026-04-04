@@ -273,6 +273,9 @@ class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
             raise ValidationError(errors)
 
     def __str__(self):
+        titulo_referencia = self.titulo_referencia
+        if titulo_referencia:
+            return f"{titulo_referencia.nombre} - {self.modalidad_cursada.nombre}"
         return f"{self.sector.nombre} - {self.modalidad_cursada.nombre}"
 
     class Meta:

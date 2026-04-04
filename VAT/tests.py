@@ -223,6 +223,107 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
     assert "contactos-TOTAL_FORMS" in content
     assert "3.2 Contactos de la institución" in content
     assert 'name="save_continue"' not in content
+    assert 'for="id_provincia"' not in content
+    assert 'name="provincia"' in content
+
+
+@pytest.mark.django_db
+def test_centro_update_oculta_provincia_y_conserva_valor_actual(client, vat_geo_data):
+    provincia_ba, municipio_ba, localidad_ba = vat_geo_data
+    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
+    user = User.objects.create_superuser(
+        username="admin-vat-update-provincia",
+        email="admin-vat-update-provincia@vat.test",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba)
+    group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user(
+        username="referente-update-provincia",
+        email="referente-update-provincia@vat.test",
+        password="test1234",
+    )
+    referente.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Provincia Fija",
+        codigo="500144998",
+        provincia=provincia_ba,
+        municipio=municipio_ba,
+        localidad=localidad_ba,
+        calle="12",
+        numero=100,
+        domicilio_actividad="Calle 12 N° 100",
+        telefono="221-1111111",
+        celular="221-2222222",
+        correo="cfp-provincia@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Perez",
+        telefono_referente="221-3333333",
+        correo_referente="ana@vat.test",
+        referente=referente,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    autoridad = AutoridadInstitucional.objects.create(
+        centro=centro,
+        nombre_completo="Ana Perez",
+        dni="30111222",
+        cargo="Director/a",
+        email="ana@vat.test",
+        telefono="221-3333333",
+        es_actual=True,
+    )
+    InstitucionContacto.objects.create(
+        centro=centro,
+        nombre_contacto="Ana Perez",
+        rol_area="Dirección",
+        telefono_contacto="221-3333333",
+        email_contacto="ana@vat.test",
+        es_principal=True,
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("vat_centro_update", kwargs={"pk": centro.pk}))
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert 'for="id_provincia"' not in content
+
+    update_payload = _build_centro_payload(
+        referente,
+        provincia_sf,
+        municipio_ba,
+        localidad_ba,
+        nombre="CFP Provincia Fija Editado",
+        codigo="500144998",
+        autoridad_dni=autoridad.dni,
+        **{
+            "contactos-TOTAL_FORMS": "1",
+            "contactos-INITIAL_FORMS": "1",
+            "contactos-MIN_NUM_FORMS": "0",
+            "contactos-MAX_NUM_FORMS": "1000",
+            "contactos-0-id": str(centro.contactos_adicionales.first().id),
+            "contactos-0-centro": str(centro.id),
+            "contactos-0-nombre_contacto": "Ana Perez",
+            "contactos-0-rol_area": "Dirección",
+            "contactos-0-telefono_contacto": "221-3333333",
+            "contactos-0-email_contacto": "ana@vat.test",
+            "contactos-0-es_principal": "on",
+        },
+    )
+    update_payload.pop("provincia", None)
+
+    post_response = client.post(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
+        data=update_payload,
+    )
+
+    centro.refresh_from_db()
+
+    assert post_response.status_code == 302
+    assert centro.provincia_id == provincia_ba.id
 
 
 @pytest.mark.django_db
@@ -878,6 +979,7 @@ def test_plan_estudio_create_usuario_provincial_asigna_provincia(client):
     response = client.post(
         reverse("vat_planversioncurricular_create"),
         data={
+            "nombre": "Plan Industrial Inicial",
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
@@ -894,6 +996,7 @@ def test_plan_estudio_create_usuario_provincial_asigna_provincia(client):
     assert response.status_code == 302
     plan = PlanVersionCurricular.objects.get(normativa="Resolución 123/2026")
     assert plan.provincia_id == provincia_ba.id
+    assert plan.titulo_referencia.nombre == "Plan Industrial Inicial"
 
 
 @pytest.mark.django_db
@@ -905,9 +1008,15 @@ def test_plan_version_curricular_form_inicializa_campos_compuestos_de_normativa(
         modalidad_cursada=modalidad,
         normativa="Disposición 55/2024",
     )
+    TituloReferencia.objects.create(
+        plan_estudio=plan,
+        nombre="Plan de Prueba",
+        activo=True,
+    )
 
     form = PlanVersionCurricularForm(instance=plan)
 
+    assert form.initial["nombre"] == "Plan de Prueba"
     assert form.initial["normativa_tipo"] == "Disposición"
     assert form.initial["normativa_numero"] == "55"
     assert form.initial["normativa_anio"] == "2024"
@@ -929,6 +1038,7 @@ def test_plan_version_curricular_create_acepta_normativa_texto_libre(client):
     response = client.post(
         reverse("vat_planversioncurricular_create"),
         data={
+            "nombre": "Plan con normativa libre",
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
@@ -948,6 +1058,7 @@ def test_plan_version_curricular_create_acepta_normativa_texto_libre(client):
         normativa="Resolución interna sin formato estándar"
     )
     assert plan.provincia_id == provincia_ba.id
+    assert plan.titulo_referencia.nombre == "Plan con normativa libre"
 
 
 @pytest.mark.django_db
@@ -966,6 +1077,7 @@ def test_plan_version_curricular_rechaza_separador_interno_en_normativa_libre(cl
     response = client.post(
         reverse("vat_planversioncurricular_create"),
         data={
+            "nombre": "Plan inválido",
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
@@ -1003,6 +1115,7 @@ def test_plan_version_curricular_create_conserva_normativa_libre_y_estructurada(
     response = client.post(
         reverse("vat_planversioncurricular_create"),
         data={
+            "nombre": "Plan mixto",
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
@@ -1020,6 +1133,84 @@ def test_plan_version_curricular_create_conserva_normativa_libre_y_estructurada(
     assert response.status_code == 302
     plan = PlanVersionCurricular.objects.get(normativa="asdedas || Disposición 55/2024")
     assert plan.provincia_id == provincia_ba.id
+    assert plan.titulo_referencia.nombre == "Plan mixto"
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_create_requiere_nombre(client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    user = User.objects.create_superuser(
+        username="super-plan-sin-nombre",
+        email="super-plan-sin-nombre@vat.test",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba, es_usuario_provincial=True)
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_planversioncurricular_create"),
+        data={
+            "nombre": "   ",
+            "sector": str(sector.id),
+            "subsector": "",
+            "modalidad_cursada": str(modalidad.id),
+            "normativa_tipo": "Resolución",
+            "normativa_numero": "123",
+            "normativa_anio": "2026",
+            "horas_reloj": "120",
+            "nivel_requerido": "sin_requisito",
+            "nivel_certifica": "nivel_1",
+            "activo": "on",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.context["form"].errors["nombre"] == [
+        "El nombre no puede contener solo espacios."
+    ]
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_form_save_actualiza_titulo_asociado():
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Disposición 55/2024",
+        activo=True,
+    )
+    titulo = TituloReferencia.objects.create(
+        plan_estudio=plan,
+        nombre="Nombre anterior",
+        activo=True,
+    )
+
+    form = PlanVersionCurricularForm(
+        data={
+            "nombre": "Nombre actualizado",
+            "sector": str(sector.id),
+            "subsector": "",
+            "modalidad_cursada": str(modalidad.id),
+            "normativa": "Disposición 55/2024",
+            "normativa_tipo": "",
+            "normativa_numero": "",
+            "normativa_anio": "",
+            "horas_reloj": "",
+            "nivel_requerido": "",
+            "nivel_certifica": "",
+            "activo": "on",
+        },
+        instance=plan,
+    )
+
+    assert form.is_valid(), form.errors
+    form.save()
+    titulo.refresh_from_db()
+
+    assert titulo.nombre == "Nombre actualizado"
 
 
 @pytest.mark.django_db

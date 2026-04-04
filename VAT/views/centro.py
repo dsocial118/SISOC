@@ -392,6 +392,19 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
             initial["autoridad_dni"] = autoridad.dni
         return initial
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["hide_provincia"] = True
+        kwargs["provincia_inicial"] = self.object.provincia
+
+        data = kwargs.get("data")
+        if data is not None and self.object.provincia_id is not None:
+            data = data.copy()
+            data["provincia"] = str(self.object.provincia_id)
+            kwargs["data"] = data
+
+        return kwargs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         contacto_formset = kwargs.get("contacto_formset")
@@ -412,6 +425,7 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
                     "vat_centro_detail", kwargs={"pk": self.object.pk}
                 ),
                 "submit_text": "Guardar",
+                "show_provincia_field": False,
                 "show_save_continue": False,
             }
         )
@@ -425,6 +439,7 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
             instance=self.object,
             prefix="contactos",
         )
+        form.instance.provincia = self.object.provincia
         if form.is_valid() and contacto_formset.is_valid():
             return self.form_valid(form, contacto_formset)
         return self.form_invalid(form, contacto_formset)
