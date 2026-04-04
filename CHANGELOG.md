@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-04-08 -->
+# Versión SISOC 08.04.2026
+
+## Actualizaciones
+
+- [sin-area] Revert "FIXVAT2000". (PR #1429)
+<!-- AUTO-GENERATED RELEASE END: 2026-04-08 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-04-01 -->
 # Versión SISOC 01.04.2026
 
