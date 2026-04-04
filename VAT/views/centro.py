@@ -36,6 +36,7 @@ from VAT.services.centro_filter_config import (
 )
 from VAT.forms import (
     CentroAltaForm,
+    CentroForm,
     InstitucionContactoAltaFormSet,
     InstitucionContactoForm,
     AutoridadInstitucionalForm,
@@ -170,13 +171,13 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
         ctx["cursos"] = list(
             Curso.objects.filter(centro=centro)
-            .select_related("modalidad")
+            .select_related("ubicacion__localidad", "modalidad", "programa")
             .prefetch_related("comisiones", "voucher_parametrias")
             .order_by("-fecha_creacion")
         )
         ctx["comisiones_curso"] = list(
             ComisionCurso.objects.filter(curso__centro=centro)
-            .select_related("curso", "ubicacion__localidad")
+            .select_related("curso")
             .order_by("codigo_comision")
         )
 
@@ -229,14 +230,14 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             )
         )
         ctx["curso_form"] = CursoForm(initial={"centro": centro})
-        ctx["comision_curso_form"] = ComisionCursoForm()
-        ctx["comision_curso_form"].fields["curso"].queryset = centro.cursos.order_by(
-            "nombre"
-        )
-        ctx["comision_curso_form"].fields["ubicacion"].queryset = (
+        ctx["curso_form"].fields["ubicacion"].queryset = (
             centro.ubicaciones.select_related("localidad").order_by(
                 "es_principal", "rol_ubicacion"
             )
+        )
+        ctx["comision_curso_form"] = ComisionCursoForm()
+        ctx["comision_curso_form"].fields["curso"].queryset = centro.cursos.order_by(
+            "nombre"
         )
         ctx["titulo_form"] = TituloReferenciaForm()
         ctx["plan_form"] = PlanVersionCurricularForm()
@@ -392,23 +393,6 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
             initial["autoridad_dni"] = autoridad.dni
         return initial
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["hide_provincia"] = True
-        kwargs["provincia_inicial"] = self.object.provincia
-
-        data = kwargs.get("data")
-        if data is not None and self.object.provincia_id is not None:
-            data = data.copy()
-            data["provincia"] = str(self.object.provincia_id)
-            if self.object.activo:
-                data["activo"] = "on"
-            else:
-                data.pop("activo", None)
-            kwargs["data"] = data
-
-        return kwargs
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         contacto_formset = kwargs.get("contacto_formset")
@@ -429,60 +413,27 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
                     "vat_centro_detail", kwargs={"pk": self.object.pk}
                 ),
                 "submit_text": "Guardar",
-                "show_provincia_field": False,
                 "show_save_continue": False,
             }
         )
         return context
 
-    def _normalize_contacto_formset_data(self, data):
-        if data is None:
-            return data
-
-        total_forms = int(data.get("contactos-TOTAL_FORMS", 0) or 0)
-        initial_forms = int(data.get("contactos-INITIAL_FORMS", 0) or 0)
-        if total_forms == 0 or initial_forms != 0:
-            return data
-
-        if any(data.get(f"contactos-{index}-id") for index in range(total_forms)):
-            return data
-
-        contactos_existentes = list(
-            self.object.contactos_adicionales.order_by("id")[:total_forms]
-        )
-        if not contactos_existentes:
-            return data
-
-        normalized_data = data.copy()
-        normalized_data["contactos-INITIAL_FORMS"] = str(len(contactos_existentes))
-        for index, contacto in enumerate(contactos_existentes):
-            normalized_data[f"contactos-{index}-id"] = str(contacto.id)
-            normalized_data[f"contactos-{index}-centro"] = str(self.object.id)
-        return normalized_data
-
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        mutable_post = self._normalize_contacto_formset_data(request.POST)
-        if mutable_post is not request.POST:
-            request.POST = mutable_post
         form = self.get_form()
         contacto_formset = InstitucionContactoAltaFormSet(
-            request.POST,
+            self.request.POST,
             instance=self.object,
             prefix="contactos",
         )
-        form.instance.provincia = self.object.provincia
         if form.is_valid() and contacto_formset.is_valid():
             return self.form_valid(form, contacto_formset)
         return self.form_invalid(form, contacto_formset)
 
     def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         with transaction.atomic():
-            centro = form.save(commit=False)
-            centro.activo = self.object.activo
-            centro.save()
-            form.save_m2m()
-            self.object = centro
+            form.instance.activo = self.object.activo
+            self.object = form.save()
 
             contacto_formset.instance = self.object
             contacto_formset.save()

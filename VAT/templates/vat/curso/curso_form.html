@@ -38,9 +38,21 @@
                             {{ form.plan_estudio }}
                             {% if form.plan_estudio.errors %}<div class="text-danger small mt-1">{{ form.plan_estudio.errors.0 }}</div>{% endif %}
                         </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.programa.id_for_label }}" class="form-label fw-600">{{ form.programa.label }}</label>
+                            {{ form.programa }}
+                            {% if form.programa.errors %}<div class="text-danger small mt-1">{{ form.programa.errors.0 }}</div>{% endif %}
+                        </div>
                     </div>
 
                     <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="{{ form.ubicacion.id_for_label }}" class="form-label fw-600">
+                                {{ form.ubicacion.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.ubicacion }}
+                            {% if form.ubicacion.errors %}<div class="text-danger small mt-1">{{ form.ubicacion.errors.0 }}</div>{% endif %}
+                        </div>
                         <div class="col-md-6">
                             <label for="{{ form.nombre.id_for_label }}" class="form-label fw-600">
                                 {{ form.nombre.label }} <span class="text-danger">*</span>
@@ -51,6 +63,13 @@
                     </div>
 
                     <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="{{ form.modalidad.id_for_label }}" class="form-label fw-600">
+                                {{ form.modalidad.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.modalidad }}
+                            {% if form.modalidad.errors %}<div class="text-danger small mt-1">{{ form.modalidad.errors.0 }}</div>{% endif %}
+                        </div>
                         <div class="col-md-6">
                             <label for="{{ form.estado.id_for_label }}" class="form-label fw-600">
                                 {{ form.estado.label }} <span class="text-danger">*</span>
@@ -99,7 +118,6 @@
 
                     <div class="row mb-4">
                         <div class="col-md-12">
-                            <div class="form-text text-muted mb-2">La modalidad se toma automáticamente del plan de estudio seleccionado.</div>
                             <label for="{{ form.observaciones.id_for_label }}" class="form-label fw-600">{{ form.observaciones.label }}</label>
                             {{ form.observaciones }}
                             {% if form.observaciones.errors %}
@@ -139,10 +157,23 @@
 (function () {
     const isEmbedded = {{ is_embedded|yesno:"true,false" }};
     const toggle = document.getElementById('{{ form.usa_voucher.id_for_label }}');
+    const programaSelect = document.getElementById('{{ form.programa.id_for_label }}');
     const vouchersSelect = document.getElementById('{{ form.voucher_parametrias.id_for_label }}');
     const costoInput = document.getElementById('{{ form.costo_creditos.id_for_label }}');
     const campoCosto = document.getElementById('campo-costo-creditos');
     const campoVouchers = document.getElementById('campo-vouchers');
+
+    function filtrarVouchersPorPrograma() {
+        if (!programaSelect || !vouchersSelect) return;
+        const programaId = programaSelect.value;
+        Array.from(vouchersSelect.options).forEach(function (option) {
+            const optionProgramaId = option.getAttribute('data-programa-id');
+            const visible = !programaId || optionProgramaId === programaId;
+            option.hidden = !visible;
+            option.disabled = !visible;
+            if (!visible) option.selected = false;
+        });
+    }
 
     function actualizarCosto() {
         campoCosto.style.display = toggle.checked ? 'block' : 'none';
@@ -164,10 +195,16 @@
                     costoInput.value = '1';
                 }
             }
+            filtrarVouchersPorPrograma();
         }
     }
 
     toggle.addEventListener('change', actualizarCosto);
+    if (programaSelect) {
+        programaSelect.addEventListener('change', function () {
+            if (toggle.checked) filtrarVouchersPorPrograma();
+        });
+    }
 
     if (isEmbedded) {
         const closeModal = function () {
