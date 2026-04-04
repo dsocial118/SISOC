@@ -155,7 +155,10 @@ class UsuariosService:
     def get_usuarios_list_context(request):
         """Configuracion para la lista de usuarios."""
         columns_catalog = list(USUARIOS_COLUMNS)
-        if not UsuariosService.has_pending_mobile_password_resets():
+        if (
+            not UsuariosService.can_view_mobile_reset_notifications(request.user)
+            or not UsuariosService.has_pending_mobile_password_resets()
+        ):
             columns_catalog = [
                 column
                 for column in columns_catalog

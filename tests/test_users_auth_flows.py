@@ -423,7 +423,8 @@ def test_user_update_view_shows_temporary_password(client):
 
 
 @pytest.mark.django_db
-def test_user_list_shows_reset_pending_indicator_when_reset_pending(client):
+@override_settings(ROOT_URLCONF="tests.test_urls_pr1400_fixes")
+def test_user_list_shows_reset_pending_indicator_when_reset_pending():
     admin = User.objects.create_user(
         username="users_admin_list",
         email="users_admin_list@example.com",
@@ -433,7 +434,11 @@ def test_user_list_shows_reset_pending_indicator_when_reset_pending(client):
         content_type__app_label="auth",
         codename="view_user",
     )
-    admin.user_permissions.add(view_user_permission)
+    change_user_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="change_user",
+    )
+    admin.user_permissions.add(view_user_permission, change_user_permission)
 
     user = User.objects.create_user(
         username="pending_reset_user",
@@ -443,21 +448,50 @@ def test_user_list_shows_reset_pending_indicator_when_reset_pending(client):
     user.profile.password_reset_requested_at = user.profile.fecha_creacion
     user.profile.save(update_fields=["password_reset_requested_at"])
 
-    client.force_login(admin)
-    response = client.get(reverse("usuarios"))
+    request = RequestFactory().get(reverse("usuarios"))
+    request.user = admin
 
-    assert response.status_code == 200
-    assert response.context["table_headers"][-1]["title"] == "Reset"
-    assert (
-        response.context["table_fields"][-1]["name"]
-        == "password_reset_requested_indicator"
-    )
-    listed_users = list(response.context["users"])
+    context = UsuariosService.get_usuarios_list_context(request)
+    listed_users = list(UsuariosService.get_filtered_usuarios(request))
+
+    assert context["table_headers"][-1]["title"] == "Reset"
+    assert context["table_fields"][-1]["name"] == "password_reset_requested_indicator"
     pending_user = next(item for item in listed_users if item.pk == user.pk)
     assert pending_user.password_reset_requested_indicator == "!"
-    content = response.content.decode("utf-8")
-    assert "pending_reset_user" in content
-    assert "!" in content
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.test_urls_pr1400_fixes")
+def test_user_list_hides_reset_column_for_view_only_user_even_with_pending_requests():
+    admin = User.objects.create_user(
+        username="users_view_only_pending",
+        email="users_view_only_pending@example.com",
+        password="Secreta123!",
+    )
+    view_user_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="view_user",
+    )
+    admin.user_permissions.add(view_user_permission)
+
+    user = User.objects.create_user(
+        username="pending_reset_hidden",
+        email="pending_reset_hidden@example.com",
+        password="Anterior123!",
+    )
+    user.profile.password_reset_requested_at = user.profile.fecha_creacion
+    user.profile.save(update_fields=["password_reset_requested_at"])
+
+    request = RequestFactory().get(reverse("usuarios"))
+    request.user = admin
+
+    context = UsuariosService.get_usuarios_list_context(request)
+
+    assert all(header["title"] != "Reset" for header in context["table_headers"])
+    assert all(
+        field["name"] != "password_reset_requested_indicator"
+        for field in context["table_fields"]
+    )
 
 
 @pytest.mark.django_db

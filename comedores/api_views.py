@@ -1,7 +1,7 @@
 ﻿# pylint: disable=too-many-lines
 
 import calendar
-from datetime import date
+from datetime import date, time
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
@@ -500,7 +500,12 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                     else None
                 )
                 hasta_dt = (
-                    timezone.make_aware(timezone.datetime.strptime(hasta, "%Y-%m-%d"))
+                    timezone.make_aware(
+                        timezone.datetime.combine(
+                            timezone.datetime.strptime(hasta, "%Y-%m-%d").date(),
+                            time.max,
+                        )
+                    )
                     if hasta
                     else None
                 )

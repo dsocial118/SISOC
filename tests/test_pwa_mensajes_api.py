@@ -3,6 +3,7 @@ from datetime import timedelta
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -351,6 +352,48 @@ def test_detalle_y_listado_reflejan_estado_visto(espacios):
     assert list_response.status_code == 200
     assert list_response.data["unread_count"] == 0
     assert list_response.data["results"][0]["visto"] is True
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.test_urls_pr1400_fixes")
+def test_list_mensajes_keeps_global_unread_counters_with_pagination(espacios):
+    espacio_1, _ = espacios
+    representante = _create_pwa_user(
+        comedor=espacio_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_mensajes_paginados",
+    )
+    client = _auth_client_for_user(representante)
+
+    general = _create_comunicado(
+        creador=representante,
+        titulo="General leido",
+        subtipo=SubtipoComunicado.INSTITUCIONAL,
+    )
+    for index in range(21):
+        _create_comunicado(
+            creador=representante,
+            titulo=f"Mensaje paginado {index}",
+            comedor=espacio_1,
+            fecha_publicacion=timezone.now() + timedelta(minutes=index + 1),
+        )
+    LecturaMensajePWA.objects.create(
+        comunicado=general,
+        comedor=espacio_1,
+        user=representante,
+        visto=True,
+        fecha_visto=timezone.now(),
+    )
+
+    response = client.get(f"/api/pwa/espacios/{espacio_1.id}/mensajes/", {"page": 2})
+
+    assert response.status_code == 200
+    assert response.data["count"] == 22
+    assert response.data["current_page"] == 2
+    assert len(response.data["results"]) == 2
+    assert response.data["unread_count"] == 21
+    assert response.data["unread_general_count"] == 0
+    assert response.data["unread_espacio_count"] == 21
 
 
 @pytest.mark.django_db

@@ -79,6 +79,27 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
     def list(self, request, comedor_id=None):
         queryset = list_mensajes_for_espacio(comedor_id=comedor_id, user=request.user)
         items = list(queryset)
+        serializer = MensajeEspacioPWASerializer(
+            items,
+            many=True,
+            context={
+                "request": request,
+                "comedor_id": comedor_id,
+                "user": request.user,
+            },
+        )
+        serialized_all_items = serializer.data
+        unread_count = sum(1 for item in serialized_all_items if not item["visto"])
+        unread_general_count = sum(
+            1
+            for item in serialized_all_items
+            if item["seccion"] == "general" and not item["visto"]
+        )
+        unread_espacio_count = sum(
+            1
+            for item in serialized_all_items
+            if item["seccion"] == "espacio" and not item["visto"]
+        )
         paginator = Paginator(items, 20)
         page_number = request.query_params.get("page", 1)
         page_obj = paginator.get_page(page_number)
@@ -92,17 +113,6 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
             },
         )
         serialized_items = serializer.data
-        unread_count = sum(1 for item in serialized_items if not item["visto"])
-        unread_general_count = sum(
-            1
-            for item in serialized_items
-            if item["seccion"] == "general" and not item["visto"]
-        )
-        unread_espacio_count = sum(
-            1
-            for item in serialized_items
-            if item["seccion"] == "espacio" and not item["visto"]
-        )
         return Response(
             {
                 "count": paginator.count,

@@ -7,6 +7,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import models
+from django.test import override_settings
+from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
@@ -1112,6 +1114,53 @@ def test_documentos_list_filter_and_download(comedores, settings, tmp_path):
 
     outside_scope_response = client.get(f"/api/comedores/{comedor_2.id}/documentos/")
     assert outside_scope_response.status_code == 404
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.test_urls_pr1400_fixes")
+def test_documentos_filter_hasta_includes_files_from_same_day(
+    comedores, settings, tmp_path
+):
+    settings.MEDIA_ROOT = str(tmp_path)
+    comedor_1, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_documentos_hasta",
+    )
+    client = _token_client(representante)
+
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=comedor_1,
+        mes=4,
+        anio=2026,
+    )
+    documento = DocumentacionAdjunta.objects.create(
+        nombre="Comprobante cierre diario",
+        archivo=SimpleUploadedFile(
+            "comprobante_cierre.pdf",
+            b"%PDF-1.4 fake content",
+            content_type="application/pdf",
+        ),
+        rendicion_cuenta_mensual=rendicion,
+    )
+    timestamp = timezone.make_aware(timezone.datetime(2026, 4, 4, 18, 30, 0))
+    DocumentacionAdjunta.objects.filter(pk=documento.pk).update(
+        ultima_modificacion=timestamp
+    )
+
+    response = client.get(
+        f"/api/comedores/{comedor_1.id}/documentos/",
+        {
+            "tipo": "documento_rendicion_mensual",
+            "q": "comprobante_cierre",
+            "hasta": "2026-04-04",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.data["count"] == 1
+    assert response.data["results"][0]["nombre"].endswith("comprobante_cierre.pdf")
 
 
 @pytest.mark.django_db
