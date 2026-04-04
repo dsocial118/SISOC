@@ -329,6 +329,199 @@ def test_centro_update_oculta_provincia_y_conserva_valor_actual(client, vat_geo_
 
 
 @pytest.mark.django_db
+def test_centro_update_permite_cambiar_activo(client, vat_geo_data):
+    provincia_ba, municipio_ba, localidad_ba = vat_geo_data
+    user = User.objects.create_superuser(
+        username="admin-vat-update-activo",
+        email="admin-vat-update-activo@vat.test",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba)
+    group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user(
+        username="referente-update-activo",
+        email="referente-update-activo@vat.test",
+        password="test1234",
+    )
+    referente.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Estado Editable",
+        codigo="500144999",
+        provincia=provincia_ba,
+        municipio=municipio_ba,
+        localidad=localidad_ba,
+        calle="12",
+        numero=100,
+        domicilio_actividad="Calle 12 N° 100",
+        telefono="221-1111111",
+        celular="221-2222222",
+        correo="cfp-estado@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Perez",
+        telefono_referente="221-3333333",
+        correo_referente="ana@vat.test",
+        referente=referente,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    autoridad = AutoridadInstitucional.objects.create(
+        centro=centro,
+        nombre_completo="Ana Perez",
+        dni="30111223",
+        cargo="Director/a",
+        email="ana@vat.test",
+        telefono="221-3333333",
+        es_actual=True,
+    )
+    contacto = InstitucionContacto.objects.create(
+        centro=centro,
+        nombre_contacto="Ana Perez",
+        rol_area="Dirección",
+        telefono_contacto="221-3333333",
+        email_contacto="ana@vat.test",
+        es_principal=True,
+    )
+    client.force_login(user)
+
+    update_payload = _build_centro_payload(
+        referente,
+        provincia_ba,
+        municipio_ba,
+        localidad_ba,
+        nombre="CFP Estado Editable",
+        codigo="500144999",
+        autoridad_dni=autoridad.dni,
+        **{
+            "contactos-TOTAL_FORMS": "1",
+            "contactos-INITIAL_FORMS": "1",
+            "contactos-MIN_NUM_FORMS": "0",
+            "contactos-MAX_NUM_FORMS": "1000",
+            "contactos-0-id": str(contacto.id),
+            "contactos-0-centro": str(centro.id),
+            "contactos-0-nombre_contacto": "Ana Perez",
+            "contactos-0-rol_area": "Dirección",
+            "contactos-0-telefono_contacto": "221-3333333",
+            "contactos-0-email_contacto": "ana@vat.test",
+            "contactos-0-es_principal": "on",
+        },
+    )
+    update_payload.pop("provincia", None)
+    update_payload.pop("activo", None)
+
+    response = client.post(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
+        data=update_payload,
+    )
+
+    centro.refresh_from_db()
+
+    assert response.status_code == 302
+    assert centro.activo is False
+
+
+@pytest.mark.django_db
+def test_centro_update_rechaza_formset_contactos_sin_ids_existentes(
+    client, vat_geo_data
+):
+    provincia_ba, municipio_ba, localidad_ba = vat_geo_data
+    user = User.objects.create_superuser(
+        username="admin-vat-contactos-sin-ids",
+        email="admin-vat-contactos-sin-ids@vat.test",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba)
+    group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user(
+        username="referente-contactos-sin-ids",
+        email="referente-contactos-sin-ids@vat.test",
+        password="test1234",
+    )
+    referente.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Contactos Seguros",
+        codigo="500145000",
+        provincia=provincia_ba,
+        municipio=municipio_ba,
+        localidad=localidad_ba,
+        calle="12",
+        numero=100,
+        domicilio_actividad="Calle 12 N° 100",
+        telefono="221-1111111",
+        celular="221-2222222",
+        correo="cfp-contactos@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Perez",
+        telefono_referente="221-3333333",
+        correo_referente="ana@vat.test",
+        referente=referente,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    autoridad = AutoridadInstitucional.objects.create(
+        centro=centro,
+        nombre_completo="Ana Perez",
+        dni="30111224",
+        cargo="Director/a",
+        email="ana@vat.test",
+        telefono="221-3333333",
+        es_actual=True,
+    )
+    contacto = InstitucionContacto.objects.create(
+        centro=centro,
+        nombre_contacto="Contacto Original",
+        rol_area="Dirección",
+        telefono_contacto="221-3333333",
+        email_contacto="original@vat.test",
+        es_principal=True,
+    )
+    client.force_login(user)
+
+    update_payload = _build_centro_payload(
+        referente,
+        provincia_ba,
+        municipio_ba,
+        localidad_ba,
+        nombre="CFP Contactos Seguros",
+        codigo="500145000",
+        autoridad_dni=autoridad.dni,
+        **{
+            "contactos-TOTAL_FORMS": "1",
+            "contactos-INITIAL_FORMS": "0",
+            "contactos-MIN_NUM_FORMS": "0",
+            "contactos-MAX_NUM_FORMS": "1000",
+            "contactos-0-centro": str(centro.id),
+            "contactos-0-nombre_contacto": "Contacto Editado Sin ID",
+            "contactos-0-rol_area": "Dirección",
+            "contactos-0-telefono_contacto": "221-4444444",
+            "contactos-0-email_contacto": "editado@vat.test",
+            "contactos-0-es_principal": "on",
+        },
+    )
+    update_payload.pop("provincia", None)
+
+    response = client.post(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
+        data=update_payload,
+    )
+
+    contacto.refresh_from_db()
+
+    assert response.status_code == 200
+    assert response.context["form"].non_field_errors() == [
+        (
+            "No se pudo guardar la edición de contactos porque faltan los "
+            "identificadores de filas existentes. Recargá la página e intentá "
+            "nuevamente."
+        )
+    ]
+    assert contacto.nombre_contacto == "Contacto Original"
+
+
+@pytest.mark.django_db
 def test_centro_create_oculta_jurisdiccion_y_asigna_provincia_del_usuario(
     vat_admin_client, vat_referente_user, vat_geo_data
 ):

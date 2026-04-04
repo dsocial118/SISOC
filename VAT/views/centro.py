@@ -401,10 +401,6 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
         if data is not None and self.object.provincia_id is not None:
             data = data.copy()
             data["provincia"] = str(self.object.provincia_id)
-            if self.object.activo:
-                data["activo"] = "on"
-            else:
-                data.pop("activo", None)
             kwargs["data"] = data
 
         return kwargs
@@ -437,32 +433,33 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
 
     def _normalize_contacto_formset_data(self, data):
         if data is None:
-            return data
+            return data, None
 
         total_forms = int(data.get("contactos-TOTAL_FORMS", 0) or 0)
         initial_forms = int(data.get("contactos-INITIAL_FORMS", 0) or 0)
         if total_forms == 0 or initial_forms != 0:
-            return data
+            return data, None
 
         if any(data.get(f"contactos-{index}-id") for index in range(total_forms)):
-            return data
+            return data, None
 
-        contactos_existentes = list(
-            self.object.contactos_adicionales.order_by("id")[:total_forms]
-        )
-        if not contactos_existentes:
-            return data
+        if self.object.contactos_adicionales.exists():
+            return (
+                data,
+                (
+                    "No se pudo guardar la edición de contactos porque faltan los "
+                    "identificadores de filas existentes. Recargá la página e intentá "
+                    "nuevamente."
+                ),
+            )
 
-        normalized_data = data.copy()
-        normalized_data["contactos-INITIAL_FORMS"] = str(len(contactos_existentes))
-        for index, contacto in enumerate(contactos_existentes):
-            normalized_data[f"contactos-{index}-id"] = str(contacto.id)
-            normalized_data[f"contactos-{index}-centro"] = str(self.object.id)
-        return normalized_data
+        return data, None
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        mutable_post = self._normalize_contacto_formset_data(request.POST)
+        mutable_post, contacto_formset_error = self._normalize_contacto_formset_data(
+            request.POST
+        )
         if mutable_post is not request.POST:
             request.POST = mutable_post
         form = self.get_form()
@@ -472,6 +469,8 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
             prefix="contactos",
         )
         form.instance.provincia = self.object.provincia
+        if contacto_formset_error:
+            form.add_error(None, contacto_formset_error)
         if form.is_valid() and contacto_formset.is_valid():
             return self.form_valid(form, contacto_formset)
         return self.form_invalid(form, contacto_formset)
@@ -479,7 +478,6 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         with transaction.atomic():
             centro = form.save(commit=False)
-            centro.activo = self.object.activo
             centro.save()
             form.save_m2m()
             self.object = centro
