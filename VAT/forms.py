@@ -713,16 +713,6 @@ class PlanVersionCurricularForm(forms.ModelForm):
         label="Modalidad",
         widget=forms.Select(attrs={"class": "form-control"}),
     )
-    normativa = forms.CharField(
-        label="Normativa",
-        required=False,
-        widget=forms.TextInput(
-            attrs={
-                "class": "form-control",
-                "placeholder": "Ingresá una normativa libre si no usás el formato estructurado",
-            }
-        ),
-    )
     normativa_tipo = forms.ChoiceField(
         label="Normativa - Tipo",
         required=False,
@@ -783,7 +773,6 @@ class PlanVersionCurricularForm(forms.ModelForm):
             "sector",
             "subsector",
             "modalidad_cursada",
-            "normativa",
             "horas_reloj",
             "nivel_requerido",
             "nivel_certifica",
@@ -794,11 +783,12 @@ class PlanVersionCurricularForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         sector_id = None
         titulo_referencia = None
+        self.normativa_texto_actual = ""
 
         if self.instance and self.instance.pk:
             titulo_referencia = self.instance.titulo_referencia
 
-        self.fields["nombre"].initial = (
+        self.initial["nombre"] = (
             self.data.get("nombre")
             if self.is_bound
             else (titulo_referencia.nombre if titulo_referencia else "")
@@ -824,10 +814,13 @@ class PlanVersionCurricularForm(forms.ModelForm):
             normativa_tipo, normativa_numero, normativa_anio = _parse_normativa_value(
                 self.instance.normativa
             )
-            self.initial.setdefault("normativa", normativa_texto)
+            self.normativa_texto_actual = normativa_texto
             self.initial.setdefault("normativa_tipo", normativa_tipo)
             self.initial.setdefault("normativa_numero", normativa_numero)
             self.initial.setdefault("normativa_anio", normativa_anio)
+        elif self.instance and self.instance.pk:
+            normativa_texto, _ = _split_normativa_value(self.instance.normativa)
+            self.normativa_texto_actual = normativa_texto
 
     def clean_nombre(self):
         return _clean_non_empty_text(self.cleaned_data.get("nombre"), "El nombre")
@@ -839,14 +832,11 @@ class PlanVersionCurricularForm(forms.ModelForm):
             max_length=20,
         )
 
-    def clean_normativa(self):
-        return _validate_normativa_texto(self.cleaned_data.get("normativa"))
-
     def clean(self):
         cleaned_data = super().clean()
         sector = cleaned_data.get("sector")
         subsector = cleaned_data.get("subsector")
-        normativa = (cleaned_data.get("normativa") or "").strip()
+        normativa_texto_actual = self.normativa_texto_actual
         normativa_tipo = cleaned_data.get("normativa_tipo")
         normativa_numero = cleaned_data.get("normativa_numero")
         normativa_anio = cleaned_data.get("normativa_anio")
@@ -865,9 +855,14 @@ class PlanVersionCurricularForm(forms.ModelForm):
             if not normativa_anio:
                 self.add_error("normativa_anio", "Seleccione el año de la normativa.")
 
-        if normativa or (normativa_tipo and normativa_numero and normativa_anio):
+        if normativa_texto_actual and not self.instance.pk:
+            normativa_texto_actual = ""
+
+        if normativa_texto_actual or (
+            normativa_tipo and normativa_numero and normativa_anio
+        ):
             cleaned_data["normativa"] = _build_normativa_value(
-                normativa,
+                _validate_normativa_texto(normativa_texto_actual),
                 normativa_tipo,
                 normativa_numero,
                 normativa_anio,

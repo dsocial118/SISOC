@@ -6,6 +6,8 @@ Fecha: 2026-04-04
 
 - Se agregó el campo Nombre al formulario web de alta y edición de planes curriculares.
 - El valor ingresado se usa para crear o actualizar automáticamente el Título de Referencia asociado al plan.
+- La normativa libre dejó de editarse desde la UI; el formulario solo permite cargar tipo, número y año.
+- Si el plan ya tiene normativa libre persistida en base, se muestra como dato informativo y se conserva al guardar.
 - El detalle del plan ahora muestra explícitamente ese nombre en la sección de clasificación académica.
 
 ## Motivo

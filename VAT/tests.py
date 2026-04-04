@@ -1075,10 +1075,10 @@ def test_plan_version_curricular_form_no_duplica_normativa_estructurada_al_edita
 
     form = PlanVersionCurricularForm(
         data={
+            "nombre": "Plan Industrial",
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
-            "normativa": "",
             "normativa_tipo": "Disposición",
             "normativa_numero": "55",
             "normativa_anio": "2024",
@@ -1091,7 +1091,7 @@ def test_plan_version_curricular_form_no_duplica_normativa_estructurada_al_edita
     )
 
     assert form.is_valid(), form.errors
-    assert form.initial["normativa"] == ""
+    assert form.normativa_texto_actual == ""
 
     plan = form.save()
 
@@ -1099,11 +1099,11 @@ def test_plan_version_curricular_form_no_duplica_normativa_estructurada_al_edita
 
 
 @pytest.mark.django_db
-def test_plan_version_curricular_create_acepta_normativa_texto_libre(client):
+def test_plan_version_curricular_create_solo_guarda_normativa_estructurada(client):
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_superuser(
-        username="super-plan-libre",
-        email="super-plan-libre@vat.test",
+        username="super-plan-estructurado",
+        email="super-plan-estructurado@vat.test",
         password="test1234",
     )
     _assign_user_profile_provincia(user, provincia_ba, es_usuario_provincial=True)
@@ -1114,14 +1114,13 @@ def test_plan_version_curricular_create_acepta_normativa_texto_libre(client):
     response = client.post(
         reverse("vat_planversioncurricular_create"),
         data={
-            "nombre": "Plan con normativa libre",
+            "nombre": "Plan con normativa estructurada",
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
-            "normativa": "Resolución interna sin formato estándar",
-            "normativa_tipo": "",
-            "normativa_numero": "",
-            "normativa_anio": "",
+            "normativa_tipo": "Resolución",
+            "normativa_numero": "321",
+            "normativa_anio": "2025",
             "horas_reloj": "120",
             "nivel_requerido": "sin_requisito",
             "nivel_certifica": "nivel_1",
@@ -1130,53 +1129,78 @@ def test_plan_version_curricular_create_acepta_normativa_texto_libre(client):
     )
 
     assert response.status_code == 302
-    plan = PlanVersionCurricular.objects.get(
-        normativa="Resolución interna sin formato estándar"
-    )
+    plan = PlanVersionCurricular.objects.get(normativa="Resolución 321/2025")
     assert plan.provincia_id == provincia_ba.id
-    assert plan.titulo_referencia.nombre == "Plan con normativa libre"
+    assert plan.titulo_referencia.nombre == "Plan con normativa estructurada"
 
 
 @pytest.mark.django_db
-def test_plan_version_curricular_rechaza_separador_interno_en_normativa_libre(client):
-    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
-    user = User.objects.create_superuser(
-        username="super-plan-separador",
-        email="super-plan-separador@vat.test",
-        password="test1234",
-    )
-    _assign_user_profile_provincia(user, provincia_ba, es_usuario_provincial=True)
+def test_plan_version_curricular_form_preserva_normativa_libre_existente():
     sector = Sector.objects.create(nombre="Industria")
     modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Texto libre cargado por base || Resolución 123/2024",
+        activo=True,
+    )
+    TituloReferencia.objects.create(
+        plan_estudio=plan,
+        nombre="Plan con texto libre persistido",
+        activo=True,
+    )
 
-    client.force_login(user)
-    response = client.post(
-        reverse("vat_planversioncurricular_create"),
+    form = PlanVersionCurricularForm(instance=plan)
+
+    assert form.normativa_texto_actual == "Texto libre cargado por base"
+    assert "normativa" not in form.fields
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_form_guarda_normativa_libre_existente_y_actualiza_estructurada():
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Texto libre cargado por base || Resolución 123/2024",
+        horas_reloj=120,
+        nivel_requerido="sin_requisito",
+        nivel_certifica="nivel_1",
+        activo=True,
+    )
+    TituloReferencia.objects.create(
+        plan_estudio=plan,
+        nombre="Plan con texto libre persistido",
+        activo=True,
+    )
+
+    form = PlanVersionCurricularForm(
         data={
-            "nombre": "Plan inválido",
+            "nombre": "Plan con texto libre persistido",
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
-            "normativa": "Texto libre || inválido",
-            "normativa_tipo": "",
-            "normativa_numero": "",
-            "normativa_anio": "",
+            "normativa_tipo": "Disposición",
+            "normativa_numero": "55",
+            "normativa_anio": "2024",
             "horas_reloj": "120",
             "nivel_requerido": "sin_requisito",
             "nivel_certifica": "nivel_1",
             "activo": "on",
         },
+        instance=plan,
     )
 
-    assert response.status_code == 200
-    assert "form" in response.context
-    assert response.context["form"].errors["normativa"] == [
-        "La normativa libre no puede contener la secuencia '||'."
-    ]
+    assert form.is_valid(), form.errors
+
+    plan = form.save()
+
+    assert plan.normativa == "Texto libre cargado por base || Disposición 55/2024"
 
 
 @pytest.mark.django_db
-def test_plan_version_curricular_create_conserva_normativa_libre_y_estructurada(client):
+def test_plan_version_curricular_create_no_mezcla_texto_libre_en_alta(client):
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_superuser(
         username="super-plan-mixta",
@@ -1195,7 +1219,6 @@ def test_plan_version_curricular_create_conserva_normativa_libre_y_estructurada(
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
-            "normativa": "asdedas",
             "normativa_tipo": "Disposición",
             "normativa_numero": "55",
             "normativa_anio": "2024",
@@ -1207,7 +1230,7 @@ def test_plan_version_curricular_create_conserva_normativa_libre_y_estructurada(
     )
 
     assert response.status_code == 302
-    plan = PlanVersionCurricular.objects.get(normativa="asdedas || Disposición 55/2024")
+    plan = PlanVersionCurricular.objects.get(normativa="Disposición 55/2024")
     assert plan.provincia_id == provincia_ba.id
     assert plan.titulo_referencia.nombre == "Plan mixto"
 
