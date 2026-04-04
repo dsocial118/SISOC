@@ -1731,6 +1731,13 @@ def test_curso_form_rechaza_vouchers_fuera_del_programa(vat_curso_base):
     programa_curso = Programa.objects.create(nombre="Programa Curso")
     programa_otro = Programa.objects.create(nombre="Programa Otro")
     usuario = User.objects.create_user(username="voucher-curso", password="test1234")
+    sector = Sector.objects.create(nombre="Servicios")
+    plan_estudio = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
     voucher_otro_programa = VoucherParametria.objects.create(
         nombre="Voucher Programa Otro",
         programa=programa_otro,
@@ -1742,10 +1749,10 @@ def test_curso_form_rechaza_vouchers_fuera_del_programa(vat_curso_base):
 
     form = CursoForm(
         data={
+            "plan_estudio": str(plan_estudio.id),
             "programa": str(programa_curso.id),
             "ubicacion": str(ubicacion.id),
             "nombre": "Curso Test Voucher",
-            "modalidad": str(modalidad.id),
             "estado": "planificado",
             "usa_voucher": "on",
             "voucher_parametrias": [str(voucher_otro_programa.id)],
@@ -1771,6 +1778,13 @@ def test_curso_form_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     programa = Programa.objects.create(nombre="Programa Test Costo")
     usuario = User.objects.create_user(username="voucher-costo-1", password="test1234")
+    sector = Sector.objects.create(nombre="Administración")
+    plan_estudio = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
     voucher = VoucherParametria.objects.create(
         nombre="Voucher Costo",
         programa=programa,
@@ -1782,10 +1796,10 @@ def test_curso_form_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
 
     form = CursoForm(
         data={
+            "plan_estudio": str(plan_estudio.id),
             "programa": str(programa.id),
             "ubicacion": str(ubicacion.id),
             "nombre": "Curso sin costo",
-            "modalidad": str(modalidad.id),
             "estado": "planificado",
             "usa_voucher": "on",
             "voucher_parametrias": [str(voucher.id)],
@@ -1802,13 +1816,20 @@ def test_curso_form_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
 @pytest.mark.django_db
 def test_curso_form_default_costo_creditos_si_no_usa_voucher(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
+    sector = Sector.objects.create(nombre="Turismo")
+    plan_estudio = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
 
     form = CursoForm(
         data={
+            "plan_estudio": str(plan_estudio.id),
             "programa": "",
             "ubicacion": str(ubicacion.id),
             "nombre": "Curso sin voucher",
-            "modalidad": str(modalidad.id),
             "estado": "planificado",
             "costo_creditos": "",
             "observaciones": "",
@@ -1833,7 +1854,6 @@ def test_curso_form_guarda_plan_estudio(vat_curso_base, vat_plan_estudio_base):
             "programa": "",
             "ubicacion": str(ubicacion.id),
             "nombre": "Curso con plan",
-            "modalidad": str(modalidad.id),
             "estado": "planificado",
             "costo_creditos": 1,
             "observaciones": "",
@@ -1848,6 +1868,7 @@ def test_curso_form_guarda_plan_estudio(vat_curso_base, vat_plan_estudio_base):
     curso.save()
 
     assert curso.plan_estudio_id == titulo.plan_estudio_id
+    assert curso.modalidad_id == titulo.plan_estudio.modalidad_cursada_id
 
 
 @pytest.mark.django_db

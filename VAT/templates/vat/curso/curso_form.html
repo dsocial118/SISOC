@@ -64,13 +64,6 @@
 
                     <div class="row mb-4">
                         <div class="col-md-6">
-                            <label for="{{ form.modalidad.id_for_label }}" class="form-label fw-600">
-                                {{ form.modalidad.label }} <span class="text-danger">*</span>
-                            </label>
-                            {{ form.modalidad }}
-                            {% if form.modalidad.errors %}<div class="text-danger small mt-1">{{ form.modalidad.errors.0 }}</div>{% endif %}
-                        </div>
-                        <div class="col-md-6">
                             <label for="{{ form.estado.id_for_label }}" class="form-label fw-600">
                                 {{ form.estado.label }} <span class="text-danger">*</span>
                             </label>
@@ -118,6 +111,7 @@
 
                     <div class="row mb-4">
                         <div class="col-md-12">
+                            <div class="form-text text-muted mb-2">La modalidad se toma automáticamente del plan de estudio seleccionado.</div>
                             <label for="{{ form.observaciones.id_for_label }}" class="form-label fw-600">{{ form.observaciones.label }}</label>
                             {{ form.observaciones }}
                             {% if form.observaciones.errors %}

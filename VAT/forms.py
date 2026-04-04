@@ -1248,7 +1248,7 @@ class CursoForm(forms.ModelForm):
         .select_related("sector", "modalidad_cursada")
         .order_by("sector__nombre", "modalidad_cursada__nombre"),
         label="Plan de Estudio",
-        required=False,
+        required=True,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
     programa = forms.ModelChoiceField(
@@ -1265,11 +1265,6 @@ class CursoForm(forms.ModelForm):
     nombre = forms.CharField(
         label="Nombre",
         widget=forms.TextInput(attrs={"class": "form-control"}),
-    )
-    modalidad = forms.ModelChoiceField(
-        queryset=ModalidadCursada.objects.all(),
-        label="Modalidad",
-        widget=forms.Select(attrs={"class": "form-control"}),
     )
     estado = forms.ChoiceField(
         label="Estado",
@@ -1318,7 +1313,6 @@ class CursoForm(forms.ModelForm):
             "programa",
             "ubicacion",
             "nombre",
-            "modalidad",
             "estado",
             "usa_voucher",
             "voucher_parametrias",
@@ -1376,6 +1370,7 @@ class CursoForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        plan_estudio = cleaned_data.get("plan_estudio")
         programa = cleaned_data.get("programa")
         usa_voucher = cleaned_data.get("usa_voucher")
         voucher_parametrias = cleaned_data.get("voucher_parametrias")
@@ -1401,6 +1396,14 @@ class CursoForm(forms.ModelForm):
                 "ubicacion",
                 "La ubicación seleccionada no pertenece al centro del curso.",
             )
+
+        if not plan_estudio:
+            self.add_error(
+                "plan_estudio",
+                "Debés seleccionar un plan de estudio para definir la modalidad del curso.",
+            )
+        else:
+            cleaned_data["modalidad"] = plan_estudio.modalidad_cursada
 
         if usa_voucher and not programa:
             self.add_error(
@@ -1435,6 +1438,16 @@ class CursoForm(forms.ModelForm):
                 )
 
         return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.modalidad = self.cleaned_data.get("modalidad")
+
+        if commit:
+            instance.save()
+            self.save_m2m()
+
+        return instance
 
 
 class ComisionCursoForm(forms.ModelForm):
