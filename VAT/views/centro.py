@@ -36,7 +36,6 @@ from VAT.services.centro_filter_config import (
 )
 from VAT.forms import (
     CentroAltaForm,
-    CentroForm,
     InstitucionContactoAltaFormSet,
     InstitucionContactoForm,
     AutoridadInstitucionalForm,

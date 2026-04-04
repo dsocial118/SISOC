@@ -996,9 +996,7 @@ class Curso(SoftDeleteModelMixin, models.Model):
             voucher_parametrias = list(
                 VoucherParametria.objects.filter(cursos=self)
                 .select_related("programa")
-                .order_by(
-                    "programa_id", "id"
-                )
+                .order_by("programa_id", "id")
             )
         else:
             voucher_parametrias = sorted(
