@@ -978,23 +978,53 @@ class Curso(SoftDeleteModelMixin, models.Model):
         return f"{self.nombre} - {self.centro}"
 
     def _resolve_programa_from_vouchers(self):
+        if hasattr(self, "_resolved_programa_from_vouchers_cache"):
+            return self._resolved_programa_from_vouchers_cache
+
         if not self.pk:
+            self._resolved_programa_from_vouchers_cache = None
             return None
 
-        voucher_parametria = (
-            self.voucher_parametrias.select_related("programa")
-            .order_by("programa_id", "id")
-            .first()
+        prefetched_objects_cache = getattr(self, "_prefetched_objects_cache", {})
+        voucher_parametrias = prefetched_objects_cache.get("voucher_parametrias")
+        if voucher_parametrias is None:
+            voucher_parametrias = list(
+                self.voucher_parametrias.select_related("programa").order_by(
+                    "programa_id", "id"
+                )
+            )
+        else:
+            voucher_parametrias = sorted(
+                voucher_parametrias,
+                key=lambda voucher_parametria: (
+                    voucher_parametria.programa_id or 0,
+                    voucher_parametria.id,
+                ),
+            )
+
+        if not voucher_parametrias:
+            self._resolved_programa_from_vouchers_cache = None
+            return None
+
+        programa_ids = {
+            voucher_parametria.programa_id
+            for voucher_parametria in voucher_parametrias
+            if voucher_parametria.programa_id is not None
+        }
+        if len(programa_ids) != 1:
+            self._resolved_programa_from_vouchers_cache = None
+            return None
+
+        programa = next(
+            (
+                voucher_parametria.programa
+                for voucher_parametria in voucher_parametrias
+                if voucher_parametria.programa_id is not None
+            ),
+            None,
         )
-        if not voucher_parametria:
-            return None
-
-        if self.voucher_parametrias.exclude(
-            programa_id=voucher_parametria.programa_id
-        ).exists():
-            return None
-
-        return voucher_parametria.programa
+        self._resolved_programa_from_vouchers_cache = programa
+        return programa
 
     @property
     def programa(self):
@@ -1086,9 +1116,7 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
     def _build_default_codigo_comision(self):
         if not self.curso_id:
             return timezone.now().strftime("COMCUR-%Y%m%d%H%M%S%f")[:50]
-        return (
-            f"COMCUR-{self.curso_id}-{timezone.now():%Y%m%d%H%M%S%f}"[:50]
-        )
+        return f"COMCUR-{self.curso_id}-{timezone.now():%Y%m%d%H%M%S%f}"[:50]
 
     def _build_default_nombre(self):
         if self.curso_id and getattr(self, "curso", None):

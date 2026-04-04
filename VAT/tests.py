@@ -6,9 +6,11 @@ from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.test import RequestFactory
 from django.urls import reverse
 
 from VAT import serializers as vat_serializers
+from VAT.api_views import CursoViewSet
 from VAT.forms import ComisionCursoForm, CursoForm, PlanVersionCurricularForm
 from VAT.models import (
     AutoridadInstitucional,
@@ -1425,7 +1427,9 @@ def test_plan_version_curricular_usuario_provincial_sin_change_no_puede_editar(c
 
 
 @pytest.mark.django_db
-def test_plan_version_curricular_usuario_provincial_sin_delete_no_puede_eliminar(client):
+def test_plan_version_curricular_usuario_provincial_sin_delete_no_puede_eliminar(
+    client,
+):
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_user(
         username="provincial-plan-sin-delete",
@@ -1674,6 +1678,63 @@ def test_comision_curso_form_no_expone_codigo_ni_nombre_y_los_autogenera(
 
     assert comision.codigo_comision.startswith(f"COMCUR-{curso.id}-")
     assert comision.nombre == f"Comisión {curso.nombre}"
+
+
+@pytest.mark.django_db
+def test_comision_curso_create_view_renderiza_formulario(client, vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-create",
+        email="admin-comision-curso-create@vat.test",
+        password="test1234",
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso para formulario de comisión",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_comision_curso_create"),
+        {"curso": curso.pk},
+    )
+
+    assert response.status_code == 200
+    assert "ubicacion" in response.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_comision_curso_update_view_renderiza_formulario(client, vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-update",
+        email="admin-comision-curso-update@vat.test",
+        password="test1234",
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso para editar comisión",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="planificada",
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+    )
+
+    assert response.status_code == 200
+    assert "ubicacion" in response.content.decode("utf-8")
 
 
 @pytest.mark.django_db
@@ -1932,6 +1993,59 @@ def test_curso_programa_se_deriva_desde_vouchers(vat_curso_base):
 
     assert curso.programa_id == programa.id
     assert curso.programa == programa
+
+
+@pytest.mark.django_db
+def test_curso_viewset_filtra_programa_solo_si_el_derivado_es_consistente(
+    vat_curso_base,
+):
+    centro, _, modalidad = vat_curso_base
+    user = User.objects.create_user(username="api-vat-programa", password="test1234")
+    programa_ok = Programa.objects.create(nombre="Programa OK")
+    programa_otro = Programa.objects.create(nombre="Programa Otro API")
+    voucher_ok = VoucherParametria.objects.create(
+        nombre="Voucher API OK",
+        programa=programa_ok,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=user,
+        activa=True,
+    )
+    voucher_otro = VoucherParametria.objects.create(
+        nombre="Voucher API Otro",
+        programa=programa_otro,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=user,
+        activa=True,
+    )
+    curso_programa_unico = Curso.objects.create(
+        centro=centro,
+        nombre="Curso programa único",
+        modalidad=modalidad,
+        estado="planificado",
+        usa_voucher=True,
+        costo_creditos=1,
+    )
+    curso_programa_unico.voucher_parametrias.add(voucher_ok)
+    curso_programa_mixto = Curso.objects.create(
+        centro=centro,
+        nombre="Curso programa mixto",
+        modalidad=modalidad,
+        estado="planificado",
+        usa_voucher=True,
+        costo_creditos=1,
+    )
+    curso_programa_mixto.voucher_parametrias.add(voucher_ok, voucher_otro)
+
+    request = RequestFactory().get("/vat/api/cursos/", {"programa_id": programa_ok.id})
+    view = CursoViewSet()
+    view.action_map = {"get": "list"}
+    view.request = view.initialize_request(request)
+
+    queryset = view.get_queryset()
+
+    assert list(queryset.values_list("id", flat=True)) == [curso_programa_unico.id]
 
 
 @pytest.mark.django_db

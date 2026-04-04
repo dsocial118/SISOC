@@ -30,6 +30,7 @@ from VAT.models import (
     SesionComision,
     Inscripcion,
     AsistenciaSesion,
+    InstitucionUbicacion,
 )
 from VAT.services.access_scope import (
     can_user_access_centro,
@@ -112,7 +113,9 @@ class CursoUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         scoped_centros = _scoped_centros_ids(self.request.user)
-        return Curso.objects.select_related("centro").filter(centro_id__in=scoped_centros)
+        return Curso.objects.select_related("centro").filter(
+            centro_id__in=scoped_centros
+        )
 
     def get_form(self, form_class=None):
         return super().get_form(form_class)
