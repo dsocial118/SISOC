@@ -1,5 +1,6 @@
 import logging
 
+from django.db.models import Count, Prefetch
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -24,6 +25,7 @@ from VAT.models import (
     InstitucionUbicacion,
     Curso,
     ComisionCurso,
+    VoucherParametria,
     OfertaInstitucional,
     Comision,
     ComisionHorario,
@@ -442,8 +444,15 @@ class InstitucionUbicacionViewSet(viewsets.ModelViewSet):
 )
 class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     queryset = (
-        Curso.objects.select_related("centro", "ubicacion", "modalidad", "programa")
-        .prefetch_related("voucher_parametrias")
+        Curso.objects.select_related("centro", "modalidad")
+        .prefetch_related(
+            Prefetch(
+                "voucher_parametrias",
+                queryset=VoucherParametria.objects.select_related("programa").order_by(
+                    "programa_id", "id"
+                ),
+            )
+        )
         .order_by("-fecha_creacion", "nombre")
     )
     serializer_class = CursoSerializer
@@ -460,7 +469,19 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         if modalidad_id:
             queryset = queryset.filter(modalidad_id=modalidad_id)
         if programa_id:
-            queryset = queryset.filter(programa_id=programa_id)
+            queryset = (
+                queryset.annotate(
+                    programas_distintos=Count(
+                        "voucher_parametrias__programa_id",
+                        distinct=True,
+                    )
+                )
+                .filter(
+                    voucher_parametrias__programa_id=programa_id,
+                    programas_distintos=1,
+                )
+                .distinct()
+            )
         if estado:
             queryset = queryset.filter(estado=estado)
         return queryset
@@ -490,9 +511,9 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     ],
 )
 class ComisionCursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = ComisionCurso.objects.select_related("curso", "curso__centro").order_by(
-        "codigo_comision"
-    )
+    queryset = ComisionCurso.objects.select_related(
+        "curso", "curso__centro", "ubicacion"
+    ).order_by("codigo_comision")
     serializer_class = ComisionCursoSerializer
     permission_classes = [HasAPIKey]
 

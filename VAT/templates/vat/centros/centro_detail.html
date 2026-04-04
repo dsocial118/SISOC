@@ -1621,7 +1621,6 @@
                                     <tr>
                                         <th>Nombre</th>
                                         <th>Programa</th>
-                                        <th>Ubicación</th>
                                         <th>Modalidad</th>
                                         <th>Comisiones</th>
                                         <th>Estado</th>
@@ -1645,7 +1644,6 @@
                                                 {% endif %}
                                             </td>
                                             <td>{{ curso.programa.nombre|default:"-" }}</td>
-                                            <td>{{ curso.ubicacion }}</td>
                                             <td>{{ curso.modalidad.nombre }}</td>
                                             <td>{{ curso.comisiones.count }}</td>
                                             <td>
@@ -1677,10 +1675,7 @@
                                                                 data-curso-mode="edit"
                                                                 data-edit-url="{% url 'vat_curso_update' curso.id %}"
                                                                 data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}"
-                                                                data-programa-id="{{ curso.programa_id|default:'' }}"
-                                                                data-ubicacion-id="{{ curso.ubicacion_id|default:'' }}"
                                                                 data-nombre="{{ curso.nombre }}"
-                                                                data-modalidad-id="{{ curso.modalidad_id|default:'' }}"
                                                                 data-estado="{{ curso.estado|default:'' }}"
                                                                 data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}"
                                                                 data-costo-creditos="{{ curso.costo_creditos|default:'' }}"
@@ -1731,6 +1726,7 @@
                                         <th>Código</th>
                                         <th>Nombre</th>
                                         <th>Curso</th>
+                                        <th>Ubicación</th>
                                         <th>Periodo</th>
                                         <th>Cupo Total</th>
                                         <th>Estado</th>
@@ -1747,6 +1743,7 @@
                                             </td>
                                             <td>{{ comision.nombre }}</td>
                                             <td>{{ comision.curso.nombre }}</td>
+                                            <td>{{ comision.ubicacion|default:"-" }}</td>
                                             <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} - {{ comision.fecha_fin|date:"d/m/Y" }}</td>
                                             <td>{{ comision.cupo_total }}</td>
                                             <td>
@@ -1773,8 +1770,7 @@
                                                                 data-edit-url="{% url 'vat_comision_curso_update' comision.id %}"
                                                                 data-curso-id="{{ comision.curso_id }}"
                                                                 data-curso-nombre="{{ comision.curso.nombre }}"
-                                                                data-codigo-comision="{{ comision.codigo_comision }}"
-                                                                data-nombre="{{ comision.nombre }}"
+                                                                data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
                                                                 data-cupo-total="{{ comision.cupo_total }}"
                                                                 data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
                                                                 data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
@@ -2469,11 +2465,7 @@
                         trigger.getAttribute('data-edit-url') || createComisionCursoAction
                     );
                     setComisionCursoValue('curso', cursoId);
-                    setComisionCursoValue(
-                        'codigo_comision',
-                        trigger.getAttribute('data-codigo-comision')
-                    );
-                    setComisionCursoValue('nombre', trigger.getAttribute('data-nombre'));
+                    setComisionCursoValue('ubicacion', trigger.getAttribute('data-ubicacion-id'));
                     setComisionCursoValue(
                         'cupo_total',
                         trigger.getAttribute('data-cupo-total')
@@ -2574,7 +2566,7 @@
             var vouchersSelect = form.querySelector('select[name="voucher_parametrias"]');
             var costoCreditosInput = form.querySelector('input[name="costo_creditos"]');
 
-            if (!usaVoucherInput || !programaSelect || !vouchersSelect) return;
+            if (!usaVoucherInput || !vouchersSelect) return;
 
             function getFieldContainer(field) {
                 if (!field) return null;
@@ -2597,6 +2589,15 @@
             }
 
             function filtrarVouchersPorPrograma() {
+                if (!programaSelect) {
+                    Array.from(vouchersSelect.options).forEach(function(option) {
+                        option.hidden = false;
+                        option.disabled = false;
+                    });
+                    refreshSelectedInfo();
+                    return;
+                }
+
                 var programaId = programaSelect.value;
                 Array.from(vouchersSelect.options).forEach(function(option) {
                     var optionProgramaId = option.getAttribute('data-programa-id');
@@ -2645,11 +2646,13 @@
             }
 
             usaVoucherInput.addEventListener('change', toggleVoucherField);
-            programaSelect.addEventListener('change', function() {
-                if (usaVoucherInput.checked) {
-                    filtrarVouchersPorPrograma();
-                }
-            });
+            if (programaSelect) {
+                programaSelect.addEventListener('change', function() {
+                    if (usaVoucherInput.checked) {
+                        filtrarVouchersPorPrograma();
+                    }
+                });
+            }
             vouchersSelect.addEventListener('change', refreshSelectedInfo);
 
             toggleVoucherField();
@@ -2851,10 +2854,7 @@
                     titleEl.textContent = 'Editar Curso';
                     formEl.setAttribute('action', triggerButton.getAttribute('data-edit-url') || createAction);
                     setFormValue('plan_estudio', triggerButton.getAttribute('data-plan-estudio-id'));
-                    setFormValue('programa', triggerButton.getAttribute('data-programa-id'));
-                    setFormValue('ubicacion', triggerButton.getAttribute('data-ubicacion-id'));
                     setFormValue('nombre', triggerButton.getAttribute('data-nombre'));
-                    setFormValue('modalidad', triggerButton.getAttribute('data-modalidad-id'));
                     setFormValue('estado', triggerButton.getAttribute('data-estado'));
                     setFormValue('usa_voucher', triggerButton.getAttribute('data-usa-voucher'));
                     setFormValue('costo_creditos', triggerButton.getAttribute('data-costo-creditos'));
@@ -3011,9 +3011,8 @@
             if (!form || typeof $ === 'undefined') return;
 
             var usaVoucherInput = form.querySelector('input[name="usa_voucher"]');
-            var programaSelect = form.querySelector('select[name="programa"]');
             var vouchersSelect = form.querySelector('select[name="voucher_parametrias"]');
-            if (!usaVoucherInput || !programaSelect || !vouchersSelect) return;
+            if (!usaVoucherInput || !vouchersSelect) return;
 
             var $vouchers = $(vouchersSelect);
             var select2Active = false;
@@ -3052,12 +3051,6 @@
                     initSelect2();
                 } else if (!usaVoucherInput.checked) {
                     destroySelect2();
-                }
-            });
-
-            programaSelect.addEventListener('change', function() {
-                if (select2Active) {
-                    $vouchers.trigger('change.select2');
                 }
             });
         })();

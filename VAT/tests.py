@@ -6,10 +6,12 @@ from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.test import RequestFactory
 from django.urls import reverse
 
 from VAT import serializers as vat_serializers
-from VAT.forms import CursoForm, PlanVersionCurricularForm
+from VAT.api_views import CursoViewSet
+from VAT.forms import ComisionCursoForm, CursoForm, PlanVersionCurricularForm
 from VAT.models import (
     AutoridadInstitucional,
     Centro,
@@ -223,6 +225,107 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
     assert "contactos-TOTAL_FORMS" in content
     assert "3.2 Contactos de la institución" in content
     assert 'name="save_continue"' not in content
+    assert 'for="id_provincia"' not in content
+    assert 'name="provincia"' in content
+
+
+@pytest.mark.django_db
+def test_centro_update_oculta_provincia_y_conserva_valor_actual(client, vat_geo_data):
+    provincia_ba, municipio_ba, localidad_ba = vat_geo_data
+    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
+    user = User.objects.create_superuser(
+        username="admin-vat-update-provincia",
+        email="admin-vat-update-provincia@vat.test",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba)
+    group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user(
+        username="referente-update-provincia",
+        email="referente-update-provincia@vat.test",
+        password="test1234",
+    )
+    referente.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Provincia Fija",
+        codigo="500144998",
+        provincia=provincia_ba,
+        municipio=municipio_ba,
+        localidad=localidad_ba,
+        calle="12",
+        numero=100,
+        domicilio_actividad="Calle 12 N° 100",
+        telefono="221-1111111",
+        celular="221-2222222",
+        correo="cfp-provincia@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Perez",
+        telefono_referente="221-3333333",
+        correo_referente="ana@vat.test",
+        referente=referente,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    autoridad = AutoridadInstitucional.objects.create(
+        centro=centro,
+        nombre_completo="Ana Perez",
+        dni="30111222",
+        cargo="Director/a",
+        email="ana@vat.test",
+        telefono="221-3333333",
+        es_actual=True,
+    )
+    InstitucionContacto.objects.create(
+        centro=centro,
+        nombre_contacto="Ana Perez",
+        rol_area="Dirección",
+        telefono_contacto="221-3333333",
+        email_contacto="ana@vat.test",
+        es_principal=True,
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("vat_centro_update", kwargs={"pk": centro.pk}))
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert 'for="id_provincia"' not in content
+
+    update_payload = _build_centro_payload(
+        referente,
+        provincia_sf,
+        municipio_ba,
+        localidad_ba,
+        nombre="CFP Provincia Fija Editado",
+        codigo="500144998",
+        autoridad_dni=autoridad.dni,
+        **{
+            "contactos-TOTAL_FORMS": "1",
+            "contactos-INITIAL_FORMS": "1",
+            "contactos-MIN_NUM_FORMS": "0",
+            "contactos-MAX_NUM_FORMS": "1000",
+            "contactos-0-id": str(centro.contactos_adicionales.first().id),
+            "contactos-0-centro": str(centro.id),
+            "contactos-0-nombre_contacto": "Ana Perez",
+            "contactos-0-rol_area": "Dirección",
+            "contactos-0-telefono_contacto": "221-3333333",
+            "contactos-0-email_contacto": "ana@vat.test",
+            "contactos-0-es_principal": "on",
+        },
+    )
+    update_payload.pop("provincia", None)
+
+    post_response = client.post(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
+        data=update_payload,
+    )
+
+    centro.refresh_from_db()
+
+    assert post_response.status_code == 302
+    assert centro.provincia_id == provincia_ba.id
 
 
 @pytest.mark.django_db
@@ -915,6 +1018,7 @@ def test_plan_estudio_create_usuario_provincial_asigna_provincia(client):
     response = client.post(
         reverse("vat_planversioncurricular_create"),
         data={
+            "nombre": "Plan Industrial Inicial",
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
@@ -931,6 +1035,7 @@ def test_plan_estudio_create_usuario_provincial_asigna_provincia(client):
     assert response.status_code == 302
     plan = PlanVersionCurricular.objects.get(normativa="Resolución 123/2026")
     assert plan.provincia_id == provincia_ba.id
+    assert plan.titulo_referencia.nombre == "Plan Industrial Inicial"
 
 
 @pytest.mark.django_db
@@ -942,9 +1047,15 @@ def test_plan_version_curricular_form_inicializa_campos_compuestos_de_normativa(
         modalidad_cursada=modalidad,
         normativa="Disposición 55/2024",
     )
+    TituloReferencia.objects.create(
+        plan_estudio=plan,
+        nombre="Plan de Prueba",
+        activo=True,
+    )
 
     form = PlanVersionCurricularForm(instance=plan)
 
+    assert form.initial["nombre"] == "Plan de Prueba"
     assert form.initial["normativa_tipo"] == "Disposición"
     assert form.initial["normativa_numero"] == "55"
     assert form.initial["normativa_anio"] == "2024"
@@ -966,10 +1077,10 @@ def test_plan_version_curricular_form_no_duplica_normativa_estructurada_al_edita
 
     form = PlanVersionCurricularForm(
         data={
+            "nombre": "Plan Industrial",
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
-            "normativa": "",
             "normativa_tipo": "Disposición",
             "normativa_numero": "55",
             "normativa_anio": "2024",
@@ -982,7 +1093,7 @@ def test_plan_version_curricular_form_no_duplica_normativa_estructurada_al_edita
     )
 
     assert form.is_valid(), form.errors
-    assert form.initial["normativa"] == ""
+    assert form.normativa_texto_actual == ""
 
     plan = form.save()
 
@@ -990,11 +1101,11 @@ def test_plan_version_curricular_form_no_duplica_normativa_estructurada_al_edita
 
 
 @pytest.mark.django_db
-def test_plan_version_curricular_create_acepta_normativa_texto_libre(client):
+def test_plan_version_curricular_create_solo_guarda_normativa_estructurada(client):
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_superuser(
-        username="super-plan-libre",
-        email="super-plan-libre@vat.test",
+        username="super-plan-estructurado",
+        email="super-plan-estructurado@vat.test",
         password="test1234",
     )
     _assign_user_profile_provincia(user, provincia_ba, es_usuario_provincial=True)
@@ -1005,13 +1116,13 @@ def test_plan_version_curricular_create_acepta_normativa_texto_libre(client):
     response = client.post(
         reverse("vat_planversioncurricular_create"),
         data={
+            "nombre": "Plan con normativa estructurada",
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
-            "normativa": "Resolución interna sin formato estándar",
-            "normativa_tipo": "",
-            "normativa_numero": "",
-            "normativa_anio": "",
+            "normativa_tipo": "Resolución",
+            "normativa_numero": "321",
+            "normativa_anio": "2025",
             "horas_reloj": "120",
             "nivel_requerido": "sin_requisito",
             "nivel_certifica": "nivel_1",
@@ -1020,51 +1131,78 @@ def test_plan_version_curricular_create_acepta_normativa_texto_libre(client):
     )
 
     assert response.status_code == 302
-    plan = PlanVersionCurricular.objects.get(
-        normativa="Resolución interna sin formato estándar"
-    )
+    plan = PlanVersionCurricular.objects.get(normativa="Resolución 321/2025")
     assert plan.provincia_id == provincia_ba.id
+    assert plan.titulo_referencia.nombre == "Plan con normativa estructurada"
 
 
 @pytest.mark.django_db
-def test_plan_version_curricular_rechaza_separador_interno_en_normativa_libre(client):
-    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
-    user = User.objects.create_superuser(
-        username="super-plan-separador",
-        email="super-plan-separador@vat.test",
-        password="test1234",
-    )
-    _assign_user_profile_provincia(user, provincia_ba, es_usuario_provincial=True)
+def test_plan_version_curricular_form_preserva_normativa_libre_existente():
     sector = Sector.objects.create(nombre="Industria")
     modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Texto libre cargado por base || Resolución 123/2024",
+        activo=True,
+    )
+    TituloReferencia.objects.create(
+        plan_estudio=plan,
+        nombre="Plan con texto libre persistido",
+        activo=True,
+    )
 
-    client.force_login(user)
-    response = client.post(
-        reverse("vat_planversioncurricular_create"),
+    form = PlanVersionCurricularForm(instance=plan)
+
+    assert form.normativa_texto_actual == "Texto libre cargado por base"
+    assert "normativa" not in form.fields
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_form_guarda_normativa_libre_existente_y_actualiza_estructurada():
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Texto libre cargado por base || Resolución 123/2024",
+        horas_reloj=120,
+        nivel_requerido="sin_requisito",
+        nivel_certifica="nivel_1",
+        activo=True,
+    )
+    TituloReferencia.objects.create(
+        plan_estudio=plan,
+        nombre="Plan con texto libre persistido",
+        activo=True,
+    )
+
+    form = PlanVersionCurricularForm(
         data={
+            "nombre": "Plan con texto libre persistido",
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
-            "normativa": "Texto libre || inválido",
-            "normativa_tipo": "",
-            "normativa_numero": "",
-            "normativa_anio": "",
+            "normativa_tipo": "Disposición",
+            "normativa_numero": "55",
+            "normativa_anio": "2024",
             "horas_reloj": "120",
             "nivel_requerido": "sin_requisito",
             "nivel_certifica": "nivel_1",
             "activo": "on",
         },
+        instance=plan,
     )
 
-    assert response.status_code == 200
-    assert "form" in response.context
-    assert response.context["form"].errors["normativa"] == [
-        "La normativa libre no puede contener la secuencia '||'."
-    ]
+    assert form.is_valid(), form.errors
+
+    plan = form.save()
+
+    assert plan.normativa == "Texto libre cargado por base || Disposición 55/2024"
 
 
 @pytest.mark.django_db
-def test_plan_version_curricular_create_conserva_normativa_libre_y_estructurada(client):
+def test_plan_version_curricular_create_no_mezcla_texto_libre_en_alta(client):
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_superuser(
         username="super-plan-mixta",
@@ -1079,10 +1217,10 @@ def test_plan_version_curricular_create_conserva_normativa_libre_y_estructurada(
     response = client.post(
         reverse("vat_planversioncurricular_create"),
         data={
+            "nombre": "Plan mixto",
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
-            "normativa": "asdedas",
             "normativa_tipo": "Disposición",
             "normativa_numero": "55",
             "normativa_anio": "2024",
@@ -1094,8 +1232,86 @@ def test_plan_version_curricular_create_conserva_normativa_libre_y_estructurada(
     )
 
     assert response.status_code == 302
-    plan = PlanVersionCurricular.objects.get(normativa="asdedas || Disposición 55/2024")
+    plan = PlanVersionCurricular.objects.get(normativa="Disposición 55/2024")
     assert plan.provincia_id == provincia_ba.id
+    assert plan.titulo_referencia.nombre == "Plan mixto"
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_create_requiere_nombre(client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    user = User.objects.create_superuser(
+        username="super-plan-sin-nombre",
+        email="super-plan-sin-nombre@vat.test",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba, es_usuario_provincial=True)
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_planversioncurricular_create"),
+        data={
+            "nombre": "   ",
+            "sector": str(sector.id),
+            "subsector": "",
+            "modalidad_cursada": str(modalidad.id),
+            "normativa_tipo": "Resolución",
+            "normativa_numero": "123",
+            "normativa_anio": "2026",
+            "horas_reloj": "120",
+            "nivel_requerido": "sin_requisito",
+            "nivel_certifica": "nivel_1",
+            "activo": "on",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.context["form"].errors["nombre"] == [
+        "El nombre no puede contener solo espacios."
+    ]
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_form_save_actualiza_titulo_asociado():
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Disposición 55/2024",
+        activo=True,
+    )
+    titulo = TituloReferencia.objects.create(
+        plan_estudio=plan,
+        nombre="Nombre anterior",
+        activo=True,
+    )
+
+    form = PlanVersionCurricularForm(
+        data={
+            "nombre": "Nombre actualizado",
+            "sector": str(sector.id),
+            "subsector": "",
+            "modalidad_cursada": str(modalidad.id),
+            "normativa": "Disposición 55/2024",
+            "normativa_tipo": "",
+            "normativa_numero": "",
+            "normativa_anio": "",
+            "horas_reloj": "",
+            "nivel_requerido": "",
+            "nivel_certifica": "",
+            "activo": "on",
+        },
+        instance=plan,
+    )
+
+    assert form.is_valid(), form.errors
+    form.save()
+    titulo.refresh_from_db()
+
+    assert titulo.nombre == "Nombre actualizado"
 
 
 @pytest.mark.django_db
@@ -1211,7 +1427,9 @@ def test_plan_version_curricular_usuario_provincial_sin_change_no_puede_editar(c
 
 
 @pytest.mark.django_db
-def test_plan_version_curricular_usuario_provincial_sin_delete_no_puede_eliminar(client):
+def test_plan_version_curricular_usuario_provincial_sin_delete_no_puede_eliminar(
+    client,
+):
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_user(
         username="provincial-plan-sin-delete",
@@ -1387,13 +1605,13 @@ def test_comision_curso_permita_cupo_independiente_del_curso(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     curso = Curso.objects.create(
         centro=centro,
-        ubicacion=ubicacion,
         nombre="Curso Soldadura Inicial",
         modalidad=modalidad,
         estado="planificado",
     )
     comision = ComisionCurso(
         curso=curso,
+        ubicacion=ubicacion,
         codigo_comision="SOLD-01",
         nombre="Comisión mañana",
         cupo_total=25,
@@ -1410,13 +1628,13 @@ def test_comision_curso_permita_fechas_independientes_del_curso(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     curso = Curso.objects.create(
         centro=centro,
-        ubicacion=ubicacion,
         nombre="Curso Electricidad",
         modalidad=modalidad,
         estado="planificado",
     )
     comision = ComisionCurso(
         curso=curso,
+        ubicacion=ubicacion,
         codigo_comision="ELEC-01",
         nombre="Comisión tarde",
         cupo_total=20,
@@ -1429,7 +1647,98 @@ def test_comision_curso_permita_fechas_independientes_del_curso(vat_curso_base):
 
 
 @pytest.mark.django_db
-def test_curso_no_permite_ubicacion_de_otro_centro(vat_geo_data):
+def test_comision_curso_form_no_expone_codigo_ni_nombre_y_los_autogenera(
+    vat_curso_base,
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso comisión automática",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+
+    form = ComisionCursoForm(
+        data={
+            "curso": str(curso.id),
+            "ubicacion": str(ubicacion.id),
+            "cupo_total": 25,
+            "fecha_inicio": "2026-04-01",
+            "fecha_fin": "2026-04-30",
+            "estado": "planificada",
+            "observaciones": "",
+        }
+    )
+
+    assert "codigo_comision" not in form.fields
+    assert "nombre" not in form.fields
+    assert form.is_valid(), form.errors
+
+    comision = form.save()
+
+    assert comision.codigo_comision.startswith(f"COMCUR-{curso.id}-")
+    assert comision.nombre == f"Comisión {curso.nombre}"
+
+
+@pytest.mark.django_db
+def test_comision_curso_create_view_renderiza_formulario(client, vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-create",
+        email="admin-comision-curso-create@vat.test",
+        password="test1234",
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso para formulario de comisión",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_comision_curso_create"),
+        {"curso": curso.pk},
+    )
+
+    assert response.status_code == 200
+    assert "ubicacion" in response.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_comision_curso_update_view_renderiza_formulario(client, vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-update",
+        email="admin-comision-curso-update@vat.test",
+        password="test1234",
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso para editar comisión",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="planificada",
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+    )
+
+    assert response.status_code == 200
+    assert "ubicacion" in response.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_comision_curso_no_permite_ubicacion_de_otro_centro(vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Semipresencial", activo=True)
     centro_a = Centro.objects.create(
@@ -1484,39 +1793,41 @@ def test_curso_no_permite_ubicacion_de_otro_centro(vat_geo_data):
 
     curso = Curso(
         centro=centro_a,
-        ubicacion=ubicacion_b,
         nombre="Curso Inválido",
         modalidad=modalidad,
         estado="planificado",
     )
+    curso.full_clean()
+    curso.save()
 
-    with pytest.raises(ValidationError):
-        curso.full_clean()
-
-
-@pytest.mark.django_db
-def test_curso_requiere_programa_si_usa_voucher(vat_curso_base):
-    centro, ubicacion, modalidad = vat_curso_base
-    curso = Curso(
-        centro=centro,
-        ubicacion=ubicacion,
-        nombre="Curso con voucher",
-        modalidad=modalidad,
-        estado="planificado",
-        usa_voucher=True,
-        programa=None,
+    comision = ComisionCurso(
+        curso=curso,
+        ubicacion=ubicacion_b,
+        codigo_comision="CUR-A-01",
+        nombre="Comisión inválida",
+        cupo_total=10,
+        fecha_inicio=date(2026, 1, 1),
+        fecha_fin=date(2026, 1, 10),
+        estado="planificada",
     )
 
     with pytest.raises(ValidationError):
-        curso.full_clean()
+        comision.full_clean()
 
 
 @pytest.mark.django_db
 def test_curso_form_rechaza_vouchers_fuera_del_programa(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
-    programa_curso = Programa.objects.create(nombre="Programa Curso")
-    programa_otro = Programa.objects.create(nombre="Programa Otro")
     usuario = User.objects.create_user(username="voucher-curso", password="test1234")
+    programa_otro = Programa.objects.create(nombre="Programa Otro")
+    programa_extra = Programa.objects.create(nombre="Programa Extra")
+    sector = Sector.objects.create(nombre="Servicios")
+    plan_estudio = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
     voucher_otro_programa = VoucherParametria.objects.create(
         nombre="Voucher Programa Otro",
         programa=programa_otro,
@@ -1525,16 +1836,25 @@ def test_curso_form_rechaza_vouchers_fuera_del_programa(vat_curso_base):
         creado_por=usuario,
         activa=True,
     )
+    voucher_programa_extra = VoucherParametria.objects.create(
+        nombre="Voucher Programa Extra",
+        programa=programa_extra,
+        cantidad_inicial=3,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
 
     form = CursoForm(
         data={
-            "programa": str(programa_curso.id),
-            "ubicacion": str(ubicacion.id),
+            "plan_estudio": str(plan_estudio.id),
             "nombre": "Curso Test Voucher",
-            "modalidad": str(modalidad.id),
             "estado": "planificado",
             "usa_voucher": "on",
-            "voucher_parametrias": [str(voucher_otro_programa.id)],
+            "voucher_parametrias": [
+                str(voucher_otro_programa.id),
+                str(voucher_programa_extra.id),
+            ],
             "costo_creditos": 1,
             "observaciones": "",
         },
@@ -1543,6 +1863,7 @@ def test_curso_form_rechaza_vouchers_fuera_del_programa(vat_curso_base):
 
     assert not form.is_valid()
     assert "voucher_parametrias" in form.errors
+    assert "programa" not in form.fields
 
 
 @pytest.mark.django_db
@@ -1550,6 +1871,7 @@ def test_curso_form_plan_estudio_es_primer_campo():
     form = CursoForm()
 
     assert list(form.fields.keys())[0] == "plan_estudio"
+    assert "ubicacion" not in form.fields
 
 
 @pytest.mark.django_db
@@ -1557,6 +1879,13 @@ def test_curso_form_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     programa = Programa.objects.create(nombre="Programa Test Costo")
     usuario = User.objects.create_user(username="voucher-costo-1", password="test1234")
+    sector = Sector.objects.create(nombre="Administración")
+    plan_estudio = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
     voucher = VoucherParametria.objects.create(
         nombre="Voucher Costo",
         programa=programa,
@@ -1568,10 +1897,8 @@ def test_curso_form_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
 
     form = CursoForm(
         data={
-            "programa": str(programa.id),
-            "ubicacion": str(ubicacion.id),
+            "plan_estudio": str(plan_estudio.id),
             "nombre": "Curso sin costo",
-            "modalidad": str(modalidad.id),
             "estado": "planificado",
             "usa_voucher": "on",
             "voucher_parametrias": [str(voucher.id)],
@@ -1588,13 +1915,18 @@ def test_curso_form_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
 @pytest.mark.django_db
 def test_curso_form_default_costo_creditos_si_no_usa_voucher(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
+    sector = Sector.objects.create(nombre="Turismo")
+    plan_estudio = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
 
     form = CursoForm(
         data={
-            "programa": "",
-            "ubicacion": str(ubicacion.id),
+            "plan_estudio": str(plan_estudio.id),
             "nombre": "Curso sin voucher",
-            "modalidad": str(modalidad.id),
             "estado": "planificado",
             "costo_creditos": "",
             "observaciones": "",
@@ -1616,10 +1948,7 @@ def test_curso_form_guarda_plan_estudio(vat_curso_base, vat_plan_estudio_base):
     form = CursoForm(
         data={
             "plan_estudio": str(titulo.plan_estudio_id),
-            "programa": "",
-            "ubicacion": str(ubicacion.id),
             "nombre": "Curso con plan",
-            "modalidad": str(modalidad.id),
             "estado": "planificado",
             "costo_creditos": 1,
             "observaciones": "",
@@ -1634,6 +1963,89 @@ def test_curso_form_guarda_plan_estudio(vat_curso_base, vat_plan_estudio_base):
     curso.save()
 
     assert curso.plan_estudio_id == titulo.plan_estudio_id
+    assert curso.modalidad_id == titulo.plan_estudio.modalidad_cursada_id
+    assert curso.programa_id is None
+
+
+@pytest.mark.django_db
+def test_curso_programa_se_deriva_desde_vouchers(vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Derivado")
+    usuario = User.objects.create_user(username="curso-derivado", password="test1234")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso con programa derivado",
+        modalidad=modalidad,
+        estado="planificado",
+        usa_voucher=True,
+        costo_creditos=1,
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Derivado",
+        programa=programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+
+    curso.voucher_parametrias.add(voucher)
+
+    assert curso.programa_id == programa.id
+    assert curso.programa == programa
+
+
+@pytest.mark.django_db
+def test_curso_viewset_filtra_programa_solo_si_el_derivado_es_consistente(
+    vat_curso_base,
+):
+    centro, _, modalidad = vat_curso_base
+    user = User.objects.create_user(username="api-vat-programa", password="test1234")
+    programa_ok = Programa.objects.create(nombre="Programa OK")
+    programa_otro = Programa.objects.create(nombre="Programa Otro API")
+    voucher_ok = VoucherParametria.objects.create(
+        nombre="Voucher API OK",
+        programa=programa_ok,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=user,
+        activa=True,
+    )
+    voucher_otro = VoucherParametria.objects.create(
+        nombre="Voucher API Otro",
+        programa=programa_otro,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=user,
+        activa=True,
+    )
+    curso_programa_unico = Curso.objects.create(
+        centro=centro,
+        nombre="Curso programa único",
+        modalidad=modalidad,
+        estado="planificado",
+        usa_voucher=True,
+        costo_creditos=1,
+    )
+    curso_programa_unico.voucher_parametrias.add(voucher_ok)
+    curso_programa_mixto = Curso.objects.create(
+        centro=centro,
+        nombre="Curso programa mixto",
+        modalidad=modalidad,
+        estado="planificado",
+        usa_voucher=True,
+        costo_creditos=1,
+    )
+    curso_programa_mixto.voucher_parametrias.add(voucher_ok, voucher_otro)
+
+    request = RequestFactory().get("/vat/api/cursos/", {"programa_id": programa_ok.id})
+    view = CursoViewSet()
+    view.action_map = {"get": "list"}
+    view.request = view.initialize_request(request)
+
+    queryset = view.get_queryset()
+
+    assert list(queryset.values_list("id", flat=True)) == [curso_programa_unico.id]
 
 
 @pytest.mark.django_db
@@ -1714,13 +2126,13 @@ def test_centro_detail_renderiza_marcadores_para_filtrar_comisiones_por_curso(
     )
     curso = Curso.objects.create(
         centro=centro,
-        ubicacion=ubicacion,
         nombre="Curso Filtrable",
         modalidad=modalidad,
         estado="planificado",
     )
     comision = ComisionCurso.objects.create(
         curso=curso,
+        ubicacion=ubicacion,
         codigo_comision="FIL-01",
         nombre="Comisión Filtrable",
         cupo_total=30,
@@ -1845,14 +2257,22 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
     )
     curso = Curso.objects.create(
         centro=centro,
-        ubicacion=ubicacion,
         nombre="Curso con detalle",
         modalidad=modalidad,
-        programa=programa,
         estado="planificado",
     )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Comisión Detalle",
+        programa=programa,
+        cantidad_inicial=3,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=user,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
     comision = ComisionCurso.objects.create(
         curso=curso,
+        ubicacion=ubicacion,
         codigo_comision="DET-01",
         nombre="Comisión Detalle",
         cupo_total=25,
@@ -1925,13 +2345,13 @@ def test_comision_curso_horario_create_genera_sesiones(client, vat_geo_data):
     )
     curso = Curso.objects.create(
         centro=centro,
-        ubicacion=ubicacion,
         nombre="Curso con horarios",
         modalidad=modalidad,
         estado="planificado",
     )
     comision = ComisionCurso.objects.create(
         curso=curso,
+        ubicacion=ubicacion,
         codigo_comision="HOR-01",
         nombre="Comisión Horario",
         cupo_total=20,
@@ -2008,14 +2428,22 @@ def test_inscripcion_rapida_comision_curso_crea_inscripcion(client, vat_geo_data
     )
     curso = Curso.objects.create(
         centro=centro,
-        ubicacion=ubicacion,
         nombre="Curso con inscripción",
         modalidad=modalidad,
-        programa=programa,
         estado="planificado",
     )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Comisión Insc",
+        programa=programa,
+        cantidad_inicial=10,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=user,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
     comision = ComisionCurso.objects.create(
         curso=curso,
+        ubicacion=ubicacion,
         codigo_comision="INSC-01",
         nombre="Comisión Inscriptos",
         cupo_total=20,
