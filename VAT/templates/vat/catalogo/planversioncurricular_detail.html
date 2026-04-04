@@ -184,10 +184,6 @@
             <div class="vp-section">
                 <div class="vp-metric-grid">
                     <div class="vp-metric">
-                        <div class="vp-metric-label">Nombre</div>
-                        <div class="vp-metric-value">{{ plan.titulo_referencia.nombre|default:"-" }}</div>
-                    </div>
-                    <div class="vp-metric">
                         <div class="vp-metric-label">Sector</div>
                         <div class="vp-metric-value">{{ plan.sector.nombre }}</div>
                     </div>
@@ -198,6 +194,16 @@
                     <div class="vp-metric">
                         <div class="vp-metric-label">Modalidad de Cursado</div>
                         <div class="vp-metric-value">{{ plan.modalidad_cursada.nombre }}</div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Estado</div>
+                        <div class="vp-metric-value">
+                            {% if plan.activo %}
+                                <span class="vp-badge vp-badge--ok"><i class="fas fa-check-circle"></i>Activo</span>
+                            {% else %}
+                                <span class="vp-badge vp-badge--off"><i class="fas fa-times-circle"></i>Inactivo</span>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -214,16 +220,6 @@
             </div>
             <div class="vp-section">
                 <div class="vp-metric-grid">
-                    <div class="vp-metric">
-                        <div class="vp-metric-label">Estado</div>
-                        <div class="vp-metric-value">
-                            {% if plan.activo %}
-                                <span class="vp-badge vp-badge--ok"><i class="fas fa-check-circle"></i>Activo</span>
-                            {% else %}
-                                <span class="vp-badge vp-badge--off"><i class="fas fa-times-circle"></i>Inactivo</span>
-                            {% endif %}
-                        </div>
-                    </div>
                     <div class="vp-metric">
                         <div class="vp-metric-label">Normativa</div>
                         <div class="vp-metric-value">{{ normativa_texto|default:"-" }}</div>

@@ -154,7 +154,7 @@
                 <i class="fas fa-clipboard-list me-2"></i>{{ page_title }}
             </h1>
             <p>
-                Definí el nombre del trayecto y su estructura académica con sector, subsector, modalidad, normativa estructurada y condiciones de certificación.
+                Definí la estructura académica del plan con sector, subsector, modalidad, normativa y condiciones de certificación.
             </p>
         </div>
 
@@ -169,12 +169,11 @@
                         <h3 class="card-title">
                             <i class="fas fa-sitemap me-2"></i>1. Clasificación Académica
                         </h3>
-                        <div class="small">Definí el nombre, sector, subsector y modalidad de cursado del plan.</div>
+                        <div class="small">Definí sector, subsector y modalidad de cursado del plan.</div>
                     </div>
                 </div>
                 <div class="vp-section">
                     <div class="row">
-                        <div class="col-md-12 vp-field">{{ form.nombre|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.sector|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.subsector|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.modalidad_cursada|as_crispy_field }}</div>
@@ -188,21 +187,16 @@
                         <h3 class="card-title">
                             <i class="fas fa-book me-2"></i>2. Datos del Plan
                         </h3>
-                        <div class="small">Completá normativa estructurada, carga horaria y configuración de certificación.</div>
+                        <div class="small">Completá normativa, carga horaria y configuración de certificación.</div>
                     </div>
                 </div>
                 <div class="vp-section">
                     <div class="mb-3">
                         <label class="form-label mb-1">Normativa</label>
-                        <div class="small text-muted">Solo se edita el formato estructurado con tipo, número y año.</div>
+                        <div class="small text-muted">Podés cargar un texto libre o usar el formato estructurado con tipo, número y año.</div>
                     </div>
-                    {% if form.normativa_texto_actual %}
-                        <div class="alert alert-secondary mb-3">
-                            <strong>Normativa libre cargada en base:</strong>
-                            {{ form.normativa_texto_actual }}
-                        </div>
-                    {% endif %}
                     <div class="row">
+                        <div class="col-12 vp-field">{{ form.normativa|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.normativa_tipo|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.normativa_numero|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.normativa_anio|as_crispy_field }}</div>
