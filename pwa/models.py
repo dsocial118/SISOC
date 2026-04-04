@@ -277,6 +277,8 @@ class ActividadEspacioPWA(models.Model):
         related_name="actividades_pwa",
     )
     horario_actividad = models.CharField(max_length=60)
+    hora_inicio = models.TimeField(null=True, blank=True)
+    hora_fin = models.TimeField(null=True, blank=True)
     activo = models.BooleanField(default=True)
     fecha_alta = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
@@ -413,3 +415,61 @@ class NominaEspacioPWA(models.Model):
 
     def __str__(self):
         return f"Nomina {self.nomina_id} - indocumentado={self.es_indocumentado}"
+
+
+class RegistroAsistenciaNominaPWA(models.Model):
+    """Historial de toma de asistencia por período para una persona de nómina."""
+
+    PERIODICIDAD_MENSUAL = "mensual"
+
+    PERIODICIDAD_CHOICES = ((PERIODICIDAD_MENSUAL, "Mensual"),)
+
+    nomina = models.ForeignKey(
+        Nomina,
+        on_delete=models.CASCADE,
+        related_name="registros_asistencia_pwa",
+    )
+    periodicidad = models.CharField(
+        max_length=20,
+        choices=PERIODICIDAD_CHOICES,
+        default=PERIODICIDAD_MENSUAL,
+    )
+    periodo_referencia = models.DateField(
+        help_text="Fecha ancla del período. Para mensual se usa el primer día del mes."
+    )
+    fecha_toma_asistencia = models.DateTimeField(auto_now_add=True, db_index=True)
+    tomado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="asistencias_nomina_pwa_registradas",
+    )
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        verbose_name = "Registro Asistencia Nómina PWA"
+        verbose_name_plural = "Registros Asistencia Nómina PWA"
+        ordering = ("-periodo_referencia", "-fecha_toma_asistencia", "-id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("nomina", "periodicidad", "periodo_referencia"),
+                name="uniq_pwa_asistencia_nomina_periodo",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=["nomina", "periodicidad", "periodo_referencia"],
+                name="pwa_nom_asis_nom_per_idx",
+            ),
+            models.Index(
+                fields=["periodicidad", "periodo_referencia"],
+                name="pwa_nom_asis_periodo_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"Asistencia nomina {self.nomina_id} {self.periodicidad} "
+            f"{self.periodo_referencia:%Y-%m}"
+        )

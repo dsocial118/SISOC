@@ -182,7 +182,7 @@ CAMPOS_OPCIONES = {
         "red_o_embotellada_segura",
         "pozo_analisis_vigente",
         "pozo_analisis_vencido_o_sin_control",
-        "otra_con_proceso_sin_garantia_formal",
+        ("otra_con_proceso_sin_garantia_formal"),
         "otra_sin_info_potabilizacion",
     ),
     "eliminacion_excretas": _construir_opciones(
