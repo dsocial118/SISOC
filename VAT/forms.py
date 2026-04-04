@@ -690,6 +690,7 @@ class PlanVersionCurricularForm(forms.ModelForm):
     nombre = forms.CharField(
         label="Nombre",
         max_length=200,
+        strip=False,
         widget=forms.TextInput(
             attrs={
                 "class": "form-control",

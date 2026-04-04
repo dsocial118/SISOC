@@ -993,9 +993,10 @@ class Curso(SoftDeleteModelMixin, models.Model):
         prefetched_objects_cache = getattr(self, "_prefetched_objects_cache", {})
         voucher_parametrias = prefetched_objects_cache.get("voucher_parametrias")
         if voucher_parametrias is None:
-            voucher_parametrias_manager = self.voucher_parametrias.all()
             voucher_parametrias = list(
-                voucher_parametrias_manager.select_related("programa").order_by(
+                VoucherParametria.objects.filter(cursos=self)
+                .select_related("programa")
+                .order_by(
                     "programa_id", "id"
                 )
             )

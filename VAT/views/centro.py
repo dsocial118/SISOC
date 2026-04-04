@@ -432,11 +432,39 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
         )
         return context
 
+    def _normalize_contacto_formset_data(self, data):
+        if data is None:
+            return data
+
+        total_forms = int(data.get("contactos-TOTAL_FORMS", 0) or 0)
+        initial_forms = int(data.get("contactos-INITIAL_FORMS", 0) or 0)
+        if total_forms == 0 or initial_forms != 0:
+            return data
+
+        if any(data.get(f"contactos-{index}-id") for index in range(total_forms)):
+            return data
+
+        contactos_existentes = list(
+            self.object.contactos_adicionales.order_by("id")[:total_forms]
+        )
+        if not contactos_existentes:
+            return data
+
+        normalized_data = data.copy()
+        normalized_data["contactos-INITIAL_FORMS"] = str(len(contactos_existentes))
+        for index, contacto in enumerate(contactos_existentes):
+            normalized_data[f"contactos-{index}-id"] = str(contacto.id)
+            normalized_data[f"contactos-{index}-centro"] = str(self.object.id)
+        return normalized_data
+
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+        mutable_post = self._normalize_contacto_formset_data(request.POST)
+        if mutable_post is not request.POST:
+            request.POST = mutable_post
         form = self.get_form()
         contacto_formset = InstitucionContactoAltaFormSet(
-            self.request.POST,
+            request.POST,
             instance=self.object,
             prefix="contactos",
         )
