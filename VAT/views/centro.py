@@ -171,7 +171,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
         ctx["cursos"] = list(
             Curso.objects.filter(centro=centro)
-            .select_related("ubicacion__localidad", "modalidad", "programa")
+            .select_related("ubicacion__localidad", "modalidad")
             .prefetch_related("comisiones", "voucher_parametrias")
             .order_by("-fecha_creacion")
         )

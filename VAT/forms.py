@@ -1251,12 +1251,6 @@ class CursoForm(forms.ModelForm):
         required=True,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
-    programa = forms.ModelChoiceField(
-        queryset=Programa.objects.all(),
-        label="Programa",
-        required=False,
-        widget=forms.Select(attrs={"class": "form-control"}),
-    )
     ubicacion = forms.ModelChoiceField(
         queryset=InstitucionUbicacion.objects.all(),
         label="Ubicación",
@@ -1310,7 +1304,6 @@ class CursoForm(forms.ModelForm):
         model = Curso
         fields = [
             "plan_estudio",
-            "programa",
             "ubicacion",
             "nombre",
             "estado",
@@ -1371,7 +1364,6 @@ class CursoForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         plan_estudio = cleaned_data.get("plan_estudio")
-        programa = cleaned_data.get("programa")
         usa_voucher = cleaned_data.get("usa_voucher")
         voucher_parametrias = cleaned_data.get("voucher_parametrias")
         costo_creditos = cleaned_data.get("costo_creditos")
@@ -1405,12 +1397,6 @@ class CursoForm(forms.ModelForm):
         else:
             cleaned_data["modalidad"] = plan_estudio.modalidad_cursada
 
-        if usa_voucher and not programa:
-            self.add_error(
-                "programa",
-                "Debés seleccionar un programa cuando el curso usa voucher.",
-            )
-
         if usa_voucher and not voucher_parametrias:
             self.add_error(
                 "voucher_parametrias",
@@ -1427,14 +1413,12 @@ class CursoForm(forms.ModelForm):
             cleaned_data["costo_creditos"] = 0
             cleaned_data["voucher_parametrias"] = VoucherParametria.objects.none()
 
-        if programa and voucher_parametrias:
-            invalidas = [
-                v.nombre for v in voucher_parametrias if v.programa_id != programa.id
-            ]
-            if invalidas:
+        if voucher_parametrias:
+            programas_ids = {voucher.programa_id for voucher in voucher_parametrias}
+            if len(programas_ids) > 1:
                 self.add_error(
                     "voucher_parametrias",
-                    "Todos los vouchers seleccionados deben pertenecer al programa elegido.",
+                    "Todos los vouchers seleccionados deben pertenecer al mismo programa.",
                 )
 
         return cleaned_data

@@ -393,6 +393,7 @@ class CursoSerializer(serializers.ModelSerializer):
         source="ubicacion.nombre_ubicacion", read_only=True
     )
     modalidad_nombre = serializers.CharField(source="modalidad.nombre", read_only=True)
+    programa = serializers.IntegerField(source="programa_id", read_only=True)
     programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
     voucher_parametrias = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 

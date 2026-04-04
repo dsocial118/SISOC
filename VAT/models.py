@@ -939,14 +939,6 @@ class Curso(SoftDeleteModelMixin, models.Model):
         related_name="cursos",
         verbose_name="Modalidad",
     )
-    programa = models.ForeignKey(
-        Programa,
-        on_delete=models.PROTECT,
-        related_name="cursos_vat",
-        null=True,
-        blank=True,
-        verbose_name="Programa",
-    )
     usa_voucher = models.BooleanField(
         default=False,
         verbose_name="Usa Voucher",
@@ -990,13 +982,6 @@ class Curso(SoftDeleteModelMixin, models.Model):
                 }
             )
 
-        if self.usa_voucher and not self.programa_id:
-            raise ValidationError(
-                {
-                    "programa": "Debés seleccionar un programa cuando el curso usa voucher."
-                }
-            )
-
         if self.usa_voucher and self.costo_creditos <= 0:
             raise ValidationError(
                 {"costo_creditos": "El costo en créditos debe ser mayor a 0."}
@@ -1007,6 +992,34 @@ class Curso(SoftDeleteModelMixin, models.Model):
 
     def __str__(self):
         return f"{self.nombre} - {self.centro}"
+
+    def _resolve_programa_from_vouchers(self):
+        if not self.pk:
+            return None
+
+        voucher_parametria = (
+            self.voucher_parametrias.select_related("programa")
+            .order_by("programa_id", "id")
+            .first()
+        )
+        if not voucher_parametria:
+            return None
+
+        if self.voucher_parametrias.exclude(
+            programa_id=voucher_parametria.programa_id
+        ).exists():
+            return None
+
+        return voucher_parametria.programa
+
+    @property
+    def programa(self):
+        return self._resolve_programa_from_vouchers()
+
+    @property
+    def programa_id(self):
+        programa = self.programa
+        return programa.id if programa else None
 
     class Meta:
         verbose_name = "Curso"

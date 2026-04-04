@@ -50,7 +50,6 @@ def _scoped_comisiones_curso_queryset(user):
         "curso__centro",
         "curso__ubicacion",
         "curso__modalidad",
-        "curso__programa",
         "curso__plan_estudio",
     ).filter(curso__centro_id__in=_scoped_centros_ids(user))
 

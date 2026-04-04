@@ -442,7 +442,7 @@ class InstitucionUbicacionViewSet(viewsets.ModelViewSet):
 )
 class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     queryset = (
-        Curso.objects.select_related("centro", "ubicacion", "modalidad", "programa")
+        Curso.objects.select_related("centro", "ubicacion", "modalidad")
         .prefetch_related("voucher_parametrias")
         .order_by("-fecha_creacion", "nombre")
     )
@@ -460,7 +460,9 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         if modalidad_id:
             queryset = queryset.filter(modalidad_id=modalidad_id)
         if programa_id:
-            queryset = queryset.filter(programa_id=programa_id)
+            queryset = queryset.filter(
+                voucher_parametrias__programa_id=programa_id
+            ).distinct()
         if estado:
             queryset = queryset.filter(estado=estado)
         return queryset

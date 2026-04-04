@@ -1709,28 +1709,11 @@ def test_curso_no_permite_ubicacion_de_otro_centro(vat_geo_data):
 
 
 @pytest.mark.django_db
-def test_curso_requiere_programa_si_usa_voucher(vat_curso_base):
-    centro, ubicacion, modalidad = vat_curso_base
-    curso = Curso(
-        centro=centro,
-        ubicacion=ubicacion,
-        nombre="Curso con voucher",
-        modalidad=modalidad,
-        estado="planificado",
-        usa_voucher=True,
-        programa=None,
-    )
-
-    with pytest.raises(ValidationError):
-        curso.full_clean()
-
-
-@pytest.mark.django_db
 def test_curso_form_rechaza_vouchers_fuera_del_programa(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
-    programa_curso = Programa.objects.create(nombre="Programa Curso")
-    programa_otro = Programa.objects.create(nombre="Programa Otro")
     usuario = User.objects.create_user(username="voucher-curso", password="test1234")
+    programa_otro = Programa.objects.create(nombre="Programa Otro")
+    programa_extra = Programa.objects.create(nombre="Programa Extra")
     sector = Sector.objects.create(nombre="Servicios")
     plan_estudio = PlanVersionCurricular.objects.create(
         provincia=centro.provincia,
@@ -1746,16 +1729,26 @@ def test_curso_form_rechaza_vouchers_fuera_del_programa(vat_curso_base):
         creado_por=usuario,
         activa=True,
     )
+    voucher_programa_extra = VoucherParametria.objects.create(
+        nombre="Voucher Programa Extra",
+        programa=programa_extra,
+        cantidad_inicial=3,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
 
     form = CursoForm(
         data={
             "plan_estudio": str(plan_estudio.id),
-            "programa": str(programa_curso.id),
             "ubicacion": str(ubicacion.id),
             "nombre": "Curso Test Voucher",
             "estado": "planificado",
             "usa_voucher": "on",
-            "voucher_parametrias": [str(voucher_otro_programa.id)],
+            "voucher_parametrias": [
+                str(voucher_otro_programa.id),
+                str(voucher_programa_extra.id),
+            ],
             "costo_creditos": 1,
             "observaciones": "",
         },
@@ -1764,6 +1757,7 @@ def test_curso_form_rechaza_vouchers_fuera_del_programa(vat_curso_base):
 
     assert not form.is_valid()
     assert "voucher_parametrias" in form.errors
+    assert "programa" not in form.fields
 
 
 @pytest.mark.django_db
@@ -1797,7 +1791,6 @@ def test_curso_form_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
     form = CursoForm(
         data={
             "plan_estudio": str(plan_estudio.id),
-            "programa": str(programa.id),
             "ubicacion": str(ubicacion.id),
             "nombre": "Curso sin costo",
             "estado": "planificado",
@@ -1827,7 +1820,6 @@ def test_curso_form_default_costo_creditos_si_no_usa_voucher(vat_curso_base):
     form = CursoForm(
         data={
             "plan_estudio": str(plan_estudio.id),
-            "programa": "",
             "ubicacion": str(ubicacion.id),
             "nombre": "Curso sin voucher",
             "estado": "planificado",
@@ -1851,7 +1843,6 @@ def test_curso_form_guarda_plan_estudio(vat_curso_base, vat_plan_estudio_base):
     form = CursoForm(
         data={
             "plan_estudio": str(titulo.plan_estudio_id),
-            "programa": "",
             "ubicacion": str(ubicacion.id),
             "nombre": "Curso con plan",
             "estado": "planificado",
@@ -1869,6 +1860,36 @@ def test_curso_form_guarda_plan_estudio(vat_curso_base, vat_plan_estudio_base):
 
     assert curso.plan_estudio_id == titulo.plan_estudio_id
     assert curso.modalidad_id == titulo.plan_estudio.modalidad_cursada_id
+    assert curso.programa_id is None
+
+
+@pytest.mark.django_db
+def test_curso_programa_se_deriva_desde_vouchers(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Derivado")
+    usuario = User.objects.create_user(username="curso-derivado", password="test1234")
+    curso = Curso.objects.create(
+        centro=centro,
+        ubicacion=ubicacion,
+        nombre="Curso con programa derivado",
+        modalidad=modalidad,
+        estado="planificado",
+        usa_voucher=True,
+        costo_creditos=1,
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Derivado",
+        programa=programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+
+    curso.voucher_parametrias.add(voucher)
+
+    assert curso.programa_id == programa.id
+    assert curso.programa == programa
 
 
 @pytest.mark.django_db
