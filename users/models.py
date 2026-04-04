@@ -98,6 +98,15 @@ class Profile(models.Model):
         blank=True,
         verbose_name="Expira contraseña inicial en",
     )
+    password_reset_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Reset de contraseña solicitado en",
+        help_text=(
+            "Se completa cuando un usuario mobile solicita desde la app "
+            "que un administrador genere una nueva contraseña temporal."
+        ),
+    )
     temporary_password_plaintext = models.CharField(
         max_length=128,
         null=True,

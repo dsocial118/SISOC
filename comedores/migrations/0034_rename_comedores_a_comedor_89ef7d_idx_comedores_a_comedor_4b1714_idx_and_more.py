@@ -9,20 +9,4 @@ class Migration(migrations.Migration):
         ("comedores", "0033_merge_20260329_1458"),
     ]
 
-    operations = [
-        migrations.RenameIndex(
-            model_name="auditcolaboradorespacio",
-            new_name="comedores_a_comedor_4b1714_idx",
-            old_name="comedores_a_comedor_89ef7d_idx",
-        ),
-        migrations.RenameIndex(
-            model_name="auditcolaboradorespacio",
-            new_name="comedores_a_ciudada_80944f_idx",
-            old_name="comedores_a_ciudada_b3ff72_idx",
-        ),
-        migrations.RenameIndex(
-            model_name="auditcolaboradorespacio",
-            new_name="comedores_a_accion_7893a2_idx",
-            old_name="comedores_a_accion_825919_idx",
-        ),
-    ]
+    operations = []

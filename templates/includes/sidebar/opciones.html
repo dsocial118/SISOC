@@ -292,6 +292,15 @@
                                     </a>
                                 </li>
                             {% endif %}
+                            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'rendicioncuentasmensual_global_list' %}"
+                                       class="nav-link ms-4 {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Rendiciones</p>
+                                    </a>
+                                </li>
+                            {% endif %}
                             {% comment %}
                         <!-- RENDICIÓN DE CUENTAS FINAL -->
                         {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}

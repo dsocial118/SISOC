@@ -23,23 +23,37 @@ def _visible_messages_queryset(*, comedor_id: int):
     return (
         Comunicado.objects.filter(
             tipo=TipoComunicado.EXTERNO,
-            subtipo=SubtipoComunicado.COMEDORES,
+            subtipo__in=(
+                SubtipoComunicado.INSTITUCIONAL,
+                SubtipoComunicado.COMEDORES,
+            ),
             estado=EstadoComunicado.PUBLICADO,
         )
         .filter(
             Q(fecha_vencimiento__isnull=True) | Q(fecha_vencimiento__gt=timezone.now())
         )
-        .filter(Q(para_todos_comedores=True) | Q(comedores__id=comedor_id))
+        .filter(
+            Q(subtipo=SubtipoComunicado.INSTITUCIONAL)
+            | Q(
+                subtipo=SubtipoComunicado.COMEDORES,
+                para_todos_comedores=True,
+            )
+            | Q(
+                subtipo=SubtipoComunicado.COMEDORES,
+                comedores__id=comedor_id,
+            )
+        )
         .distinct()
-        .order_by("-destacado", "-fecha_publicacion", "-fecha_creacion")
+        .order_by("-fecha_publicacion", "-fecha_creacion", "-id")
     )
 
 
 def list_mensajes_for_espacio(*, comedor_id: int, user):
     _assert_user_has_comedor_access(user=user, comedor_id=comedor_id)
+    accessible_comedor_ids = get_accessible_comedor_ids(user)
     lecturas_qs = LecturaMensajePWA.objects.filter(
-        comedor_id=comedor_id,
         user=user,
+        comedor_id__in=accessible_comedor_ids,
     ).order_by("-fecha_visto", "-id")
     return _visible_messages_queryset(comedor_id=comedor_id).prefetch_related(
         "adjuntos",
@@ -82,6 +96,48 @@ def marcar_mensaje_como_visto(*, comedor_id: int, comunicado_id: int, actor):
         user=actor,
     )
     now = timezone.now()
+
+    if comunicado.subtipo == SubtipoComunicado.INSTITUCIONAL:
+        lecturas = []
+        first_lectura = None
+        for accessible_comedor_id in get_accessible_comedor_ids(actor):
+            lectura, created = LecturaMensajePWA.objects.get_or_create(
+                comunicado=comunicado,
+                comedor_id=accessible_comedor_id,
+                user=actor,
+                defaults={
+                    "visto": True,
+                    "fecha_visto": now,
+                },
+            )
+            snapshot_antes = None if created else _snapshot_lectura(lectura)
+            if not lectura.visto or not lectura.fecha_visto:
+                lectura.visto = True
+                lectura.fecha_visto = now
+                lectura.save(
+                    update_fields=["visto", "fecha_visto", "fecha_actualizacion"]
+                )
+
+            if created or not snapshot_antes or snapshot_antes["visto"] is False:
+                registrar_evento_operacion(
+                    actor=actor,
+                    comedor_id=accessible_comedor_id,
+                    entidad="mensaje_lectura",
+                    entidad_id=lectura.id,
+                    accion="create" if created else "update",
+                    snapshot_antes=snapshot_antes,
+                    snapshot_despues=_snapshot_lectura(lectura),
+                    metadata={
+                        "comunicado_id": comunicado.id,
+                        "origen": "comunicados",
+                    },
+                )
+            if first_lectura is None:
+                first_lectura = lectura
+            lecturas.append(lectura)
+        comunicado.lecturas_pwa_usuario_espacio = lecturas
+        return comunicado, first_lectura
+
     lectura, created = LecturaMensajePWA.objects.get_or_create(
         comunicado=comunicado,
         comedor_id=comedor_id,

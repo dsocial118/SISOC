@@ -53,7 +53,7 @@
             </a>
         </li>
     {% endif %}
-    <li class="nav-item {% if 'comedores/' in pagina_actual or 'admisiones' in pagina_actual %}menu-open{% endif %}">
+    <li class="nav-item {% if 'comedores/' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}menu-open{% endif %}">
         <a href="#" class="nav-link">
             <i class="nav-icon fa fa-address-card"></i>
             <p>
@@ -102,6 +102,15 @@
                        class="nav-link {% if 'acompanamiento' in pagina_actual %}active{% endif %}">
                         <i class="nav-icon bi bi-emoji-smile-fill"></i>
                         <p>Acompañamiento</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                <li class="nav-item">
+                    <a href="{% url 'rendicioncuentasmensual_global_list' %}"
+                       class="nav-link {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-receipt"></i>
+                        <p>Rendiciones</p>
                     </a>
                 </li>
             {% endif %}
@@ -159,6 +168,7 @@
                     </a>
                 </li>
             {% endif %}
-        </ul>
-    </li>
+        {% endif %}
+    </ul>
+</li>
 {% endwith %}
