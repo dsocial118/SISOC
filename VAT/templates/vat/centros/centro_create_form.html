@@ -2,8 +2,8 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}Alta de Centro VAT{% endblock %}
-{% block titulo-pagina %}Alta de Centro VAT{% endblock %}
+{% block title %}{{ page_title|default:"Alta de Centro de Formacion" }}{% endblock %}
+{% block titulo-pagina %}{% endblock %}
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
@@ -26,6 +26,14 @@
             margin: 0 0 .35rem;
             font-size: 1.9rem;
             font-weight: 700;
+        }
+
+        .vp-hero h1 i,
+        .vp-panel-header .card-title i,
+        .vp-panel-header .btn i,
+        .vp-contact-item .btn i,
+        .vp-actions .btn i {
+            margin-right: .5rem;
         }
 
         .vp-hero p {
@@ -53,15 +61,26 @@
             gap: .75rem;
         }
 
+        .vp-panel-header > div {
+            display: flex;
+            flex-direction: column;
+            gap: .35rem;
+            min-width: 0;
+        }
+
         .vp-panel-header .card-title {
             color: #ffffff;
             font-weight: 700;
             margin: 0;
+            line-height: 1.2;
         }
 
         .vp-panel-header .text-muted,
         .vp-panel-header .small {
             color: rgba(240, 247, 255, 0.82) !important;
+            display: block;
+            margin: 0;
+            line-height: 1.35;
         }
 
         .vp-section {
@@ -178,9 +197,8 @@
     <div class="vp-shell">
         <div class="vp-hero">
             <h1>
-                <i class="fas fa-building mr-2"></i>Alta de Institución
+                <i class="fas fa-building mr-2"></i>{{ page_title|default:"Alta de Centro de Formacion" }}
             </h1>
-            <p>Registro inicial del centro VAT con datos institucionales, ubicación, contactos y autoridad responsable.</p>
         </div>
 
         <form method="post"
@@ -233,9 +251,15 @@
                         <div class="col-md-4 vp-field">{{ form.lote|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.manzana|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.entre_calles|as_crispy_field }}</div>
-                        <div class="col-md-4 vp-field">{{ form.provincia|as_crispy_field }}</div>
-                        <div class="col-md-4 vp-field">{{ form.municipio|as_crispy_field }}</div>
-                        <div class="col-md-4 vp-field">{{ form.localidad|as_crispy_field }}</div>
+                        {% if show_provincia_field|default:True %}
+                            <div class="col-md-4 vp-field">{{ form.provincia|as_crispy_field }}</div>
+                            <div class="col-md-4 vp-field">{{ form.municipio|as_crispy_field }}</div>
+                            <div class="col-md-4 vp-field">{{ form.localidad|as_crispy_field }}</div>
+                        {% else %}
+                            {{ form.provincia }}
+                            <div class="col-md-6 vp-field">{{ form.municipio|as_crispy_field }}</div>
+                            <div class="col-md-6 vp-field">{{ form.localidad|as_crispy_field }}</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -328,14 +352,16 @@
                         <i class="fas fa-times mr-1"></i>Cancelar
                     </a>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-1"></i>Guardar
+                        <i class="fas fa-save mr-1"></i>{{ submit_text|default:"Guardar" }}
                     </button>
-                    <button type="submit"
-                            name="save_continue"
-                            value="1"
-                            class="btn btn-outline-primary">
-                        <i class="fas fa-arrow-right mr-1"></i>Guardar y continuar
-                    </button>
+                    {% if show_save_continue or show_save_continue is None %}
+                        <button type="submit"
+                                name="save_continue"
+                                value="1"
+                                class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-right mr-1"></i>{{ submit_continue_text|default:"Guardar y continuar" }}
+                        </button>
+                    {% endif %}
                 </div>
             </div>
         </form>

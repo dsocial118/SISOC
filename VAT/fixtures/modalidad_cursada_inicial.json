@@ -1,0 +1,92 @@
+[
+  {
+    "model": "VAT.modalidadcursada",
+    "pk": 1,
+    "fields": {
+      "nombre": "Educación Técnico Profesional",
+      "descripcion": "Modalidad de cursado vinculada a propuestas de educación técnico profesional.",
+      "activo": true
+    }
+  },
+  {
+    "model": "VAT.modalidadcursada",
+    "pk": 2,
+    "fields": {
+      "nombre": "Educación Permanente de Jóvenes y Adultos",
+      "descripcion": "Modalidad de cursado orientada a trayectorias de educación permanente de jóvenes y adultos.",
+      "activo": true
+    }
+  },
+  {
+    "model": "VAT.modalidadcursada",
+    "pk": 3,
+    "fields": {
+      "nombre": "Educación Especial",
+      "descripcion": "Modalidad de cursado destinada a propuestas de educación especial.",
+      "activo": true
+    }
+  },
+  {
+    "model": "VAT.modalidadcursada",
+    "pk": 4,
+    "fields": {
+      "nombre": "No Corresponde",
+      "descripcion": "Opción de catálogo para registros donde la modalidad de cursado no aplica.",
+      "activo": true
+    }
+  },
+  {
+    "model": "VAT.modalidadcursada",
+    "pk": 5,
+    "fields": {
+      "nombre": "Educación de Formación Docente",
+      "descripcion": "Modalidad de cursado asociada a propuestas de formación docente.",
+      "activo": true
+    }
+  },
+  {
+    "model": "VAT.modalidadcursada",
+    "pk": 6,
+    "fields": {
+      "nombre": "Educación en Contextos de Privación de Libertad",
+      "descripcion": "Modalidad de cursado para propuestas desarrolladas en contextos de privación de libertad.",
+      "activo": true
+    }
+  },
+  {
+    "model": "VAT.modalidadcursada",
+    "pk": 7,
+    "fields": {
+      "nombre": "Educación Rural",
+      "descripcion": "Modalidad de cursado correspondiente a propuestas de educación rural.",
+      "activo": true
+    }
+  },
+  {
+    "model": "VAT.modalidadcursada",
+    "pk": 8,
+    "fields": {
+      "nombre": "Educación Artística",
+      "descripcion": "Modalidad de cursado para ofertas de educación artística.",
+      "activo": true
+    }
+  },
+  {
+    "model": "VAT.modalidadcursada",
+    "pk": 9,
+    "fields": {
+      "nombre": "Educación Común",
+      "descripcion": "Modalidad de cursado correspondiente a propuestas de educación común.",
+      "activo": true
+    }
+  },
+  {
+    "model": "VAT.modalidadcursada",
+    "pk": 10,
+    "fields": {
+      "nombre": "Educación de Socio Humanística",
+      "descripcion": "Modalidad de cursado para ofertas con enfoque socio humanístico.",
+      "activo": true
+    }
+  }
+]

@@ -294,7 +294,7 @@ class FormularioCDIForm(forms.ModelForm):
             raise forms.ValidationError("Ingrese un CUIT válido de 11 dígitos.")
         return value
 
-    def clean(self):
+    def clean(self):  # pylint: disable=too-many-branches
         cleaned_data = super().clean()
         meals = cleaned_data.get("prestaciones_alimentarias") or []
 

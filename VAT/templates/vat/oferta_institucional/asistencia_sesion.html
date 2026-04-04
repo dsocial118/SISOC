@@ -152,14 +152,13 @@
         {# ── Fila superior: back + título + badges ── #}
         <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
             <div class="d-flex align-items-center gap-3">
-                <a href="{% url 'vat_comision_detail' sesion.comision_id %}"
-                   class="ci-back"><i class="bi bi-arrow-left"></i></a>
+                <a href="{{ comision_detail_url }}" class="ci-back"><i class="bi bi-arrow-left"></i></a>
                 <div>
                     <div class="ci-hero-title" style="margin-top:0;">
                         <i class="bi bi-check2-square me-2"></i>Tomar Asistencia
                     </div>
                     <div class="ci-hero-sub" style="opacity:.75;font-size:.88rem;">
-                        <i class="bi bi-book me-1"></i>{{ sesion.comision }}
+                        <i class="bi bi-book me-1"></i>{{ comision_label }}
                     </div>
                 </div>
             </div>
@@ -279,7 +278,7 @@
                         {% endfor %}
 
                         <div class="ci-footer">
-                            <a href="{% url 'vat_comision_detail' sesion.comision_id %}"
+                            <a href="{{ comision_detail_url }}"
                                class="btn btn-sm btn-outline-secondary rounded-3">
                                 <i class="bi bi-x-lg me-1"></i>Cancelar
                             </a>
@@ -313,11 +312,11 @@
                                          color:var(--bs-secondary-color);
                                          display:block;
                                          margin-bottom:.15rem">Comisión</span>
-                            <a href="{% url 'vat_comision_detail' sesion.comision_id %}"
+                            <a href="{{ comision_detail_url }}"
                                class="text-decoration-none"
                                style="font-size:.86rem;
                                       font-weight:600;
-                                      color:var(--bs-body-color)">{{ sesion.comision }}</a>
+                                      color:var(--bs-body-color)">{{ comision_label }}</a>
                         </div>
                         <div>
                             <span style="font-size:.65rem;
@@ -348,7 +347,7 @@
                 <div class="ci-scard">
                     <p class="ci-sc-title">Acciones rápidas</p>
                     <div class="d-grid gap-2">
-                        <a href="{% url 'vat_comision_detail' sesion.comision_id %}"
+                        <a href="{{ comision_detail_url }}"
                            class="btn btn-outline-secondary btn-sm rounded-3"><i class="bi bi-arrow-left me-2"></i>Volver a comisión</a>
                     </div>
                 </div>

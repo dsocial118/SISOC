@@ -332,6 +332,7 @@ def test_form_rechaza_horarios_para_dias_no_seleccionados():
     assert "horario_martes_cierre" in form.errors
 
 
+@pytest.mark.django_db
 def test_edicion_centro_renderiza_validacion_html_custom_para_telefonos(client):
     user = User.objects.create_superuser(
         username="super-cdi-edit-render",
