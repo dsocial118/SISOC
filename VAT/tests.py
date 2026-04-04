@@ -465,6 +465,43 @@ def test_centro_update_actualiza_entidades_relacionadas_del_formulario_extendido
 
 
 @pytest.mark.django_db
+def test_centro_update_no_reactiva_centros_inactivos(
+    vat_admin_client, vat_referente_user, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    admin_user = User.objects.get(username="admin-vat")
+    _assign_user_profile_provincia(admin_user, provincia)
+    payload = _build_centro_payload(
+        vat_referente_user, provincia, municipio, localidad, save_continue="1"
+    )
+    vat_admin_client.post(reverse("vat_centro_create"), data=payload)
+
+    centro = Centro.objects.get(codigo="500144900")
+    centro.activo = False
+    centro.save(update_fields=["activo"])
+
+    update_payload = _build_centro_payload(
+        vat_referente_user,
+        provincia,
+        municipio,
+        localidad,
+        nombre="Centro inactivo editado",
+        codigo="500144902",
+    )
+
+    response = vat_admin_client.post(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
+        data=update_payload,
+    )
+
+    centro.refresh_from_db()
+
+    assert response.status_code == 302
+    assert centro.nombre == "Centro inactivo editado"
+    assert centro.activo is False
+
+
+@pytest.mark.django_db
 def test_centro_list_usuario_provincial_solo_ve_su_provincia(client):
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     provincia_sf = Provincia.objects.create(nombre="Santa Fe")
@@ -1023,6 +1060,45 @@ def test_plan_version_curricular_form_inicializa_campos_compuestos_de_normativa(
 
 
 @pytest.mark.django_db
+def test_plan_version_curricular_form_no_duplica_normativa_estructurada_al_editar():
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Disposicion 55/2024",
+        horas_reloj=120,
+        nivel_requerido="sin_requisito",
+        nivel_certifica="nivel_1",
+        activo=True,
+    )
+
+    form = PlanVersionCurricularForm(
+        data={
+            "sector": str(sector.id),
+            "subsector": "",
+            "modalidad_cursada": str(modalidad.id),
+            "normativa": "",
+            "normativa_tipo": "Disposición",
+            "normativa_numero": "55",
+            "normativa_anio": "2024",
+            "horas_reloj": "120",
+            "nivel_requerido": "sin_requisito",
+            "nivel_certifica": "nivel_1",
+            "activo": "on",
+        },
+        instance=plan,
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.initial["normativa"] == ""
+
+    plan = form.save()
+
+    assert plan.normativa == "Disposición 55/2024"
+
+
+@pytest.mark.django_db
 def test_plan_version_curricular_create_acepta_normativa_texto_libre(client):
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_superuser(
@@ -1283,6 +1359,88 @@ def test_plan_version_curricular_detail_muestra_normativa_libre_y_estructurada(c
     assert "Disposición" in content
     assert ">55<" in content
     assert ">2024<" in content
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_usuario_provincial_sin_change_no_puede_editar(client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    user = User.objects.create_user(
+        username="provincial-plan-sin-change",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba, es_usuario_provincial=True)
+    permiso_role_provincia, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_provincia_vat",
+        defaults={"name": "Puede role provincia vat"},
+    )
+    permiso_add_plan = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="add_planversioncurricular",
+    )
+    user.user_permissions.add(permiso_role_provincia, permiso_add_plan)
+
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        provincia=provincia_ba,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Resolución 12/2026",
+        horas_reloj=120,
+        nivel_requerido="sin_requisito",
+        nivel_certifica="nivel_1",
+        activo=True,
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_planversioncurricular_update", kwargs={"pk": plan.pk})
+    )
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_usuario_provincial_sin_delete_no_puede_eliminar(client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    user = User.objects.create_user(
+        username="provincial-plan-sin-delete",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba, es_usuario_provincial=True)
+    permiso_role_provincia, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_provincia_vat",
+        defaults={"name": "Puede role provincia vat"},
+    )
+    permiso_add_plan = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="add_planversioncurricular",
+    )
+    user.user_permissions.add(permiso_role_provincia, permiso_add_plan)
+
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        provincia=provincia_ba,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Resolución 13/2026",
+        horas_reloj=120,
+        nivel_requerido="sin_requisito",
+        nivel_certifica="nivel_1",
+        activo=True,
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_planversioncurricular_delete", kwargs={"pk": plan.pk}),
+        data={},
+    )
+
+    assert response.status_code == 403
+    assert PlanVersionCurricular.objects.filter(pk=plan.pk).exists()
 
 
 @pytest.mark.django_db

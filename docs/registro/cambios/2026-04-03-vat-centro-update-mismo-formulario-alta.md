@@ -12,6 +12,7 @@ Fecha: 2026-04-03
   - contactos adicionales,
   - datos de autoridad responsable.
 - La actualización persiste también los datos relacionados que en alta se cargan junto con el centro: autoridad, identificador CUE, ubicación principal y contactos adicionales.
+- La edición preserva el estado `activo` existente del centro y no lo reactiva por reutilizar el formulario de alta.
 
 ## Motivo
 
