@@ -474,8 +474,11 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         with transaction.atomic():
-            form.instance.activo = self.object.activo
-            self.object = form.save()
+            centro = form.save(commit=False)
+            centro.activo = self.object.activo
+            centro.save()
+            form.save_m2m()
+            self.object = centro
 
             contacto_formset.instance = self.object
             contacto_formset.save()
