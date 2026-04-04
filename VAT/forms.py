@@ -450,6 +450,7 @@ class CentroAltaForm(CentroForm):
             max_length=20,
         )
 
+
 class BaseInstitucionContactoAltaFormSet(BaseInlineFormSet):
     def clean(self):
         super().clean()
@@ -891,9 +892,7 @@ class PlanVersionCurricularForm(forms.ModelForm):
             titulo_referencia.nombre = nombre
             titulo_referencia.plan_estudio = plan
             titulo_referencia.activo = plan.activo
-            titulo_referencia.save(
-                update_fields=["nombre", "plan_estudio", "activo"]
-            )
+            titulo_referencia.save(update_fields=["nombre", "plan_estudio", "activo"])
         else:
             TituloReferencia.objects.create(
                 nombre=nombre,

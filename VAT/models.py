@@ -978,8 +978,13 @@ class Curso(SoftDeleteModelMixin, models.Model):
         return f"{self.nombre} - {self.centro}"
 
     def _resolve_programa_from_vouchers(self):
-        if hasattr(self, "_resolved_programa_from_vouchers_cache"):
-            return self._resolved_programa_from_vouchers_cache
+        cached_programa = getattr(
+            self,
+            "_resolved_programa_from_vouchers_cache",
+            None,
+        )
+        if "_resolved_programa_from_vouchers_cache" in self.__dict__:
+            return cached_programa
 
         if not self.pk:
             self._resolved_programa_from_vouchers_cache = None
@@ -988,8 +993,9 @@ class Curso(SoftDeleteModelMixin, models.Model):
         prefetched_objects_cache = getattr(self, "_prefetched_objects_cache", {})
         voucher_parametrias = prefetched_objects_cache.get("voucher_parametrias")
         if voucher_parametrias is None:
+            voucher_parametrias_manager = self.voucher_parametrias.all()
             voucher_parametrias = list(
-                self.voucher_parametrias.select_related("programa").order_by(
+                voucher_parametrias_manager.select_related("programa").order_by(
                     "programa_id", "id"
                 )
             )

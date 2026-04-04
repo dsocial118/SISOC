@@ -81,9 +81,6 @@ class CursoCreateView(LoginRequiredMixin, CreateView):
         initial["centro"] = self.centro.id
         return initial
 
-    def get_form(self, form_class=None):
-        return super().get_form(form_class)
-
     def form_valid(self, form):
         form.instance.centro = self.centro
         messages.success(self.request, "Curso creado exitosamente.")
@@ -116,9 +113,6 @@ class CursoUpdateView(LoginRequiredMixin, UpdateView):
         return Curso.objects.select_related("centro").filter(
             centro_id__in=scoped_centros
         )
-
-    def get_form(self, form_class=None):
-        return super().get_form(form_class)
 
     def form_valid(self, form):
         messages.success(self.request, "Curso actualizado exitosamente.")
