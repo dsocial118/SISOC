@@ -14,7 +14,6 @@ from .models import (
     VoucherLog,
     # Fase 2
     InstitucionContacto,
-    AutoridadInstitucional,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
     # Fase 4
@@ -344,21 +343,6 @@ class InstitucionContactoAdmin(admin.ModelAdmin):
     )
     list_filter = ("tipo", "es_principal", "vigencia_desde")
     search_fields = ("centro__nombre", "valor")
-    readonly_fields = ("vigencia_desde", "fecha_creacion", "fecha_modificacion")
-
-
-@admin.register(AutoridadInstitucional)
-class AutoridadInstitucionalAdmin(admin.ModelAdmin):
-    list_display = (
-        "centro",
-        "nombre_completo",
-        "cargo",
-        "dni",
-        "es_actual",
-        "vigencia_desde",
-    )
-    list_filter = ("es_actual", "vigencia_desde")
-    search_fields = ("centro__nombre", "nombre_completo", "dni")
     readonly_fields = ("vigencia_desde", "fecha_creacion", "fecha_modificacion")
 
 

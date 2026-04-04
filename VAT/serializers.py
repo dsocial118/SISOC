@@ -13,7 +13,6 @@ from VAT.models import (
     VoucherUso,
     # Fase 2
     InstitucionContacto,
-    AutoridadInstitucional,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
     Curso,
@@ -169,9 +168,7 @@ class PlanVersionCurricularSerializer(serializers.ModelSerializer):
     titulo_referencia = serializers.IntegerField(
         source="titulo_referencia_id", read_only=True
     )
-    titulo_referencia_nombre = serializers.CharField(
-        source="titulo_referencia.nombre", read_only=True
-    )
+    titulo_referencia_nombre = serializers.CharField(source="nombre", read_only=True)
     sector_nombre = serializers.CharField(source="sector.nombre", read_only=True)
     subsector_nombre = serializers.CharField(source="subsector.nombre", read_only=True)
     modalidad_cursada_nombre = serializers.CharField(
@@ -182,6 +179,7 @@ class PlanVersionCurricularSerializer(serializers.ModelSerializer):
         model = PlanVersionCurricular
         fields = [
             "id",
+            "nombre",
             "titulo_referencia",
             "titulo_referencia_nombre",
             "sector",
@@ -310,29 +308,15 @@ class InstitucionContactoSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "centro",
+            "nombre_contacto",
+            "rol_area",
+            "documento",
+            "telefono_contacto",
+            "email_contacto",
             "tipo",
             "valor",
             "es_principal",
             "observaciones",
-            "vigencia_desde",
-            "vigencia_hasta",
-            "fecha_creacion",
-            "fecha_modificacion",
-        ]
-
-
-class AutoridadInstitucionalSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AutoridadInstitucional
-        fields = [
-            "id",
-            "centro",
-            "nombre_completo",
-            "dni",
-            "cargo",
-            "email",
-            "telefono",
-            "es_actual",
             "vigencia_desde",
             "vigencia_hasta",
             "fecha_creacion",

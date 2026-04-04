@@ -20,7 +20,6 @@ from VAT.models import (
     PlanVersionCurricular,
     InscripcionOferta,
     InstitucionContacto,
-    AutoridadInstitucional,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
     OfertaInstitucional,
@@ -357,6 +356,16 @@ class CentroAltaForm(CentroForm):
         provincia_inicial = kwargs.pop("provincia_inicial", None)
         super().__init__(*args, **kwargs)
         self.fields["activo"].required = False
+        for hidden_field in [
+            "nombre_referente",
+            "apellido_referente",
+            "telefono_referente",
+            "correo_referente",
+        ]:
+            self.fields[hidden_field].required = False
+            self.fields[hidden_field].widget = forms.HiddenInput()
+        self.fields["autoridad_dni"].required = False
+        self.fields["autoridad_dni"].widget = forms.HiddenInput()
         self.fields["referente"].empty_label = "Seleccionar referente..."
         self.fields["provincia"].empty_label = "Seleccionar jurisdicción..."
         self.fields["municipio"].empty_label = "Seleccionar municipio..."
@@ -457,48 +466,68 @@ class BaseInstitucionContactoAltaFormSet(BaseInlineFormSet):
         if any(self.errors):
             return
 
-        contactos_activos = []
         contactos_principales = 0
+        tracked_fields = [
+            "nombre_contacto",
+            "rol_area",
+            "documento",
+            "telefono_contacto",
+            "email_contacto",
+        ]
 
         for form in self.forms:
             if not getattr(form, "cleaned_data", None):
                 continue
             if getattr(self, "can_delete", False) and form.cleaned_data.get("DELETE"):
                 continue
-            if not form.cleaned_data.get("nombre_contacto"):
+            if not any(form.cleaned_data.get(field_name) for field_name in tracked_fields):
                 continue
 
-            contactos_activos.append(form)
             if form.cleaned_data.get("es_principal"):
                 contactos_principales += 1
 
-        if not contactos_activos:
-            raise ValidationError("Debe cargar al menos un contacto adicional.")
-        if contactos_principales != 1:
-            raise ValidationError("Debe existir exactamente un contacto principal.")
+        if contactos_principales > 1:
+            raise ValidationError("Solo puede existir un contacto principal.")
 
 
 class InstitucionContactoAltaForm(forms.ModelForm):
     nombre_contacto = forms.CharField(
-        label="Nombre del contacto",
+        label="Nombre y apellido del responsable",
+        required=False,
         widget=forms.TextInput(attrs={"class": "form-control"}),
     )
     rol_area = forms.CharField(
         label="Rol / Área",
+        required=False,
         widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    documento = forms.CharField(
+        label="Documento",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "inputmode": "numeric",
+                "pattern": "[0-9]*",
+                "maxlength": "20",
+                "oninput": "this.value=this.value.replace(/\\D/g, '')",
+            }
+        ),
     )
     telefono_contacto = forms.CharField(
         label="Teléfono",
+        required=False,
         widget=forms.TextInput(attrs={"class": "form-control"}),
     )
     email_contacto = forms.EmailField(
         label="Correo electrónico",
+        required=False,
         widget=forms.EmailInput(attrs={"class": "form-control"}),
     )
     es_principal = forms.BooleanField(
         label="Contacto principal",
         required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        widget=forms.HiddenInput(),
     )
 
     class Meta:
@@ -506,39 +535,43 @@ class InstitucionContactoAltaForm(forms.ModelForm):
         fields = [
             "nombre_contacto",
             "rol_area",
+            "documento",
             "telefono_contacto",
             "email_contacto",
             "es_principal",
         ]
 
     def clean_nombre_contacto(self):
-        return _clean_non_empty_text(
-            self.cleaned_data.get("nombre_contacto"),
-            "El nombre del contacto",
-        )
+        value = self.cleaned_data.get("nombre_contacto")
+        if not value:
+            return ""
+        return _clean_non_empty_text(value, "El nombre del contacto")
 
     def clean_rol_area(self):
-        return _clean_non_empty_text(
-            self.cleaned_data.get("rol_area"),
-            "El rol o área",
-        )
+        value = self.cleaned_data.get("rol_area")
+        if not value:
+            return ""
+        return _clean_non_empty_text(value, "El rol o área")
 
     def clean_telefono_contacto(self):
-        return _clean_phone_text(
-            self.cleaned_data.get("telefono_contacto"),
-            "El teléfono del contacto",
+        value = self.cleaned_data.get("telefono_contacto")
+        if not value:
+            return ""
+        return _clean_phone_text(value, "El teléfono del contacto")
+
+    def clean_documento(self):
+        return _clean_numeric_text(
+            self.cleaned_data.get("documento"),
+            "El documento",
+            max_length=20,
         )
 
     def save(self, commit=True):
         instance = super().save(commit=False)
         email_contacto = self.cleaned_data.get("email_contacto")
         telefono_contacto = self.cleaned_data.get("telefono_contacto")
-        if email_contacto:
-            instance.tipo = "email"
-            instance.valor = email_contacto
-        else:
-            instance.tipo = "telefono"
-            instance.valor = telefono_contacto
+        instance.tipo = "email" if email_contacto else "telefono"
+        instance.valor = email_contacto or telefono_contacto or ""
         if commit:
             instance.save()
         return instance
@@ -694,10 +727,9 @@ class PlanVersionCurricularForm(forms.ModelForm):
         widget=forms.TextInput(
             attrs={
                 "class": "form-control",
-                "placeholder": "Nombre del título o trayecto formativo",
+                "placeholder": "Nombre del plan curricular",
             }
         ),
-        help_text="Se usa para crear o actualizar el título de referencia asociado al plan.",
     )
     sector = forms.ModelChoiceField(
         queryset=Sector.objects.all(),
@@ -772,6 +804,7 @@ class PlanVersionCurricularForm(forms.ModelForm):
     class Meta:
         model = PlanVersionCurricular
         fields = [
+            "nombre",
             "sector",
             "subsector",
             "modalidad_cursada",
@@ -784,16 +817,10 @@ class PlanVersionCurricularForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         sector_id = None
-        titulo_referencia = None
         self.normativa_texto_actual = ""
 
-        if self.instance and self.instance.pk:
-            titulo_referencia = self.instance.titulo_referencia
-
         self.initial["nombre"] = (
-            self.data.get("nombre")
-            if self.is_bound
-            else (titulo_referencia.nombre if titulo_referencia else "")
+            self.data.get("nombre") if self.is_bound else (self.instance.nombre or "")
         )
 
         if self.data.get("sector"):
@@ -878,6 +905,7 @@ class PlanVersionCurricularForm(forms.ModelForm):
 
     def save(self, commit=True):
         plan = super().save(commit=False)
+        plan.nombre = self.cleaned_data["nombre"]
         plan.normativa = self.cleaned_data.get("normativa")
 
         if commit:
@@ -937,135 +965,91 @@ class InstitucionContactoForm(forms.ModelForm):
         label="Centro",
         widget=forms.Select(attrs={"class": "form-control"}),
     )
-    tipo = forms.ChoiceField(
-        label="Tipo de Contacto",
-        choices=InstitucionContacto.TIPO_CONTACTO_CHOICES,
-        widget=forms.Select(attrs={"class": "form-control"}),
-    )
-    valor = forms.CharField(
-        label="Valor",
+    nombre_contacto = forms.CharField(
+        label="Nombre y apellido del responsable",
+        required=False,
         widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    rol_area = forms.CharField(
+        label="Rol / Área",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    documento = forms.CharField(
+        label="Documento",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "inputmode": "numeric",
+                "pattern": "[0-9]*",
+                "maxlength": "20",
+                "oninput": "this.value=this.value.replace(/\\D/g, '')",
+            }
+        ),
+    )
+    telefono_contacto = forms.CharField(
+        label="Teléfono",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    email_contacto = forms.EmailField(
+        label="Correo electrónico",
+        required=False,
+        widget=forms.EmailInput(attrs={"class": "form-control"}),
     )
     es_principal = forms.BooleanField(
         label="Es Principal",
         required=False,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
-    observaciones = forms.CharField(
-        label="Requerimiento",
-        required=False,
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-    )
-    vigencia_hasta = forms.DateField(
-        label="Vigencia Hasta",
-        required=False,
-        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-    )
 
     class Meta:
         model = InstitucionContacto
         fields = [
             "centro",
-            "tipo",
-            "valor",
+            "nombre_contacto",
+            "rol_area",
+            "documento",
+            "telefono_contacto",
+            "email_contacto",
             "es_principal",
-            "observaciones",
-            "vigencia_hasta",
         ]
 
+    def clean_nombre_contacto(self):
+        value = self.cleaned_data.get("nombre_contacto")
+        if not value:
+            return ""
+        return _clean_non_empty_text(value, "El nombre y apellido del responsable")
 
-class AutoridadInstitucionalForm(forms.ModelForm):
-    centro = forms.ModelChoiceField(
-        queryset=Centro.objects.all(),
-        label="Centro",
-        widget=forms.Select(attrs={"class": "form-control"}),
-    )
-    nombre_completo = forms.CharField(
-        label="Nombre Completo",
-        widget=forms.TextInput(attrs={"class": "form-control"}),
-    )
-    dni = forms.CharField(
-        label="DNI",
-        widget=forms.TextInput(attrs={"class": "form-control"}),
-    )
-    CARGO_CHOICES = [
-        ("", "---------"),
-        ("Director/a", "Director/a"),
-        ("Vicedirector/a", "Vicedirector/a"),
-        ("Coordinador/a Pedagógico/a", "Coordinador/a Pedagógico/a"),
-        ("Coordinador/a Técnico/a", "Coordinador/a Técnico/a"),
-        ("Secretario/a", "Secretario/a"),
-        ("Pro-Secretario/a", "Pro-Secretario/a"),
-        ("Representante Legal", "Representante Legal"),
-        ("otro", "Otro"),
-    ]
+    def clean_rol_area(self):
+        value = self.cleaned_data.get("rol_area")
+        if not value:
+            return ""
+        return _clean_non_empty_text(value, "El rol o área")
 
-    cargo = forms.ChoiceField(
-        label="Cargo",
-        choices=CARGO_CHOICES,
-        widget=forms.Select(attrs={"class": "form-control", "id": "id_cargo"}),
-    )
-    cargo_otro = forms.CharField(
-        label="Especificar cargo",
-        required=False,
-        widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Descripción del cargo"}
-        ),
-    )
-    email = forms.EmailField(
-        label="Email",
-        required=False,
-        widget=forms.EmailInput(attrs={"class": "form-control"}),
-    )
-    telefono = forms.CharField(
-        label="Teléfono",
-        required=False,
-        widget=forms.TextInput(attrs={"class": "form-control"}),
-    )
-    es_actual = forms.BooleanField(
-        label="Es la Autoridad Actual",
-        required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
-    )
-    vigencia_hasta = forms.DateField(
-        label="Vigencia Hasta",
-        required=False,
-        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-    )
+    def clean_documento(self):
+        return _clean_numeric_text(
+            self.cleaned_data.get("documento"),
+            "El documento",
+            max_length=20,
+        )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Si el valor guardado no está en las opciones, es un "otro" personalizado
-        instance = kwargs.get("instance")
-        if instance and instance.cargo:
-            valores_conocidos = [c[0] for c in self.CARGO_CHOICES if c[0]]
-            if instance.cargo not in valores_conocidos:
-                self.fields["cargo"].initial = "otro"
-                self.fields["cargo_otro"].initial = instance.cargo
+    def clean_telefono_contacto(self):
+        value = self.cleaned_data.get("telefono_contacto")
+        if not value:
+            return ""
+        return _clean_phone_text(value, "El teléfono del responsable")
 
-    def clean(self):
-        cleaned_data = super().clean()
-        cargo = cleaned_data.get("cargo")
-        cargo_otro = cleaned_data.get("cargo_otro", "").strip()
-        if cargo == "otro":
-            if not cargo_otro:
-                self.add_error("cargo_otro", "Debe especificar el cargo.")
-            else:
-                cleaned_data["cargo"] = cargo_otro
-        return cleaned_data
-
-    class Meta:
-        model = AutoridadInstitucional
-        fields = [
-            "centro",
-            "nombre_completo",
-            "dni",
-            "cargo",
-            "email",
-            "telefono",
-            "es_actual",
-            "vigencia_hasta",
-        ]
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        email_contacto = self.cleaned_data.get("email_contacto")
+        telefono_contacto = self.cleaned_data.get("telefono_contacto")
+        instance.tipo = "email" if email_contacto else "telefono"
+        instance.valor = email_contacto or telefono_contacto or ""
+        if commit:
+            instance.save()
+        return instance
 
 
 class InstitucionIdentificadorHistForm(forms.ModelForm):
@@ -1138,6 +1122,7 @@ class InstitucionIdentificadorHistForm(forms.ModelForm):
             "centro",
             "tipo_identificador",
             "valor_identificador",
+            "rol_institucional",
             "ubicacion",
             "es_actual",
             "vigencia_hasta",
@@ -1149,64 +1134,22 @@ class InstitucionUbicacionForm(forms.ModelForm):
     centro = forms.ModelChoiceField(
         queryset=Centro.objects.all(),
         label="Centro",
-        widget=forms.Select(
-            attrs={"class": "form-control", "id": "id_centro_ubicacion"}
-        ),
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
     localidad = forms.ModelChoiceField(
-        queryset=Localidad.objects.none(),
+        queryset=Localidad.objects.order_by("nombre"),
         label="Localidad",
-        widget=forms.Select(
-            attrs={"class": "form-control", "id": "id_localidad_ubicacion"}
-        ),
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Pre-filtrar localidades por el municipio del centro
-        centro = None
-        if self.instance and self.instance.pk and self.instance.centro_id:
-            centro = self.instance.centro
-        elif "centro" in self.data:
-            try:
-                centro = Centro.objects.select_related("municipio", "provincia").get(
-                    pk=self.data["centro"]
-                )
-            except (Centro.DoesNotExist, ValueError):
-                pass
-        elif self.initial.get("centro"):
-            try:
-                centro_val = self.initial["centro"]
-                if isinstance(centro_val, Centro):
-                    centro = centro_val
-                else:
-                    centro = Centro.objects.select_related(
-                        "municipio", "provincia"
-                    ).get(pk=centro_val)
-            except (Centro.DoesNotExist, ValueError):
-                pass
-        if centro:
-            qs = Localidad.objects.order_by("nombre")
-            if centro.municipio_id:
-                qs = qs.filter(municipio_id=centro.municipio_id)
-            elif centro.provincia_id:
-                qs = qs.filter(municipio__provincia_id=centro.provincia_id)
-            self.fields["localidad"].queryset = qs
-
     rol_ubicacion = forms.ChoiceField(
-        label="Rol de Ubicación",
+        label="Rol de la ubicación",
         choices=InstitucionUbicacion.ROL_UBICACION_CHOICES,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
     nombre_ubicacion = forms.CharField(
-        label="Nombre de Ubicación",
+        label="Nombre de ubicación",
         required=False,
-        widget=forms.TextInput(
-            attrs={
-                "class": "form-control",
-                "placeholder": "Ej: Sede Centro, Anexo Norte",
-            }
-        ),
+        widget=forms.TextInput(attrs={"class": "form-control"}),
     )
     domicilio = forms.CharField(
         label="Domicilio",
@@ -1214,7 +1157,7 @@ class InstitucionUbicacionForm(forms.ModelForm):
         widget=forms.TextInput(attrs={"class": "form-control"}),
     )
     es_principal = forms.BooleanField(
-        label="Es Principal",
+        label="Es principal",
         required=False,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
