@@ -1411,14 +1411,6 @@ class ComisionCursoForm(forms.ModelForm):
         label="Ubicación",
         widget=forms.Select(attrs={"class": "form-control"}),
     )
-    codigo_comision = forms.CharField(
-        label="Código de Comisión",
-        widget=forms.TextInput(attrs={"class": "form-control"}),
-    )
-    nombre = forms.CharField(
-        label="Nombre",
-        widget=forms.TextInput(attrs={"class": "form-control"}),
-    )
     cupo_total = forms.IntegerField(
         label="Cupo Total",
         min_value=1,
@@ -1448,8 +1440,6 @@ class ComisionCursoForm(forms.ModelForm):
         fields = [
             "curso",
             "ubicacion",
-            "codigo_comision",
-            "nombre",
             "cupo_total",
             "fecha_inicio",
             "fecha_fin",

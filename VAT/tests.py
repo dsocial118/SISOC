@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 
 from VAT import serializers as vat_serializers
-from VAT.forms import CursoForm, PlanVersionCurricularForm
+from VAT.forms import ComisionCursoForm, CursoForm, PlanVersionCurricularForm
 from VAT.models import (
     AutoridadInstitucional,
     Centro,
@@ -1640,6 +1640,40 @@ def test_comision_curso_permita_fechas_independientes_del_curso(vat_curso_base):
     )
 
     comision.full_clean()
+
+
+@pytest.mark.django_db
+def test_comision_curso_form_no_expone_codigo_ni_nombre_y_los_autogenera(
+    vat_curso_base,
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso comisión automática",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+
+    form = ComisionCursoForm(
+        data={
+            "curso": str(curso.id),
+            "ubicacion": str(ubicacion.id),
+            "cupo_total": 25,
+            "fecha_inicio": "2026-04-01",
+            "fecha_fin": "2026-04-30",
+            "estado": "planificada",
+            "observaciones": "",
+        }
+    )
+
+    assert "codigo_comision" not in form.fields
+    assert "nombre" not in form.fields
+    assert form.is_valid(), form.errors
+
+    comision = form.save()
+
+    assert comision.codigo_comision.startswith(f"COMCUR-{curso.id}-")
+    assert comision.nombre == f"Comisión {curso.nombre}"
 
 
 @pytest.mark.django_db

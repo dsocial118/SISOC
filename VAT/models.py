@@ -2,6 +2,7 @@
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Programa
 from core.soft_delete import SoftDeleteModelMixin
@@ -1081,6 +1082,25 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
 
     def __str__(self):
         return f"{self.codigo_comision} - {self.nombre}"
+
+    def _build_default_codigo_comision(self):
+        if not self.curso_id:
+            return timezone.now().strftime("COMCUR-%Y%m%d%H%M%S%f")[:50]
+        return (
+            f"COMCUR-{self.curso_id}-{timezone.now():%Y%m%d%H%M%S%f}"[:50]
+        )
+
+    def _build_default_nombre(self):
+        if self.curso_id and getattr(self, "curso", None):
+            return f"Comisión {self.curso.nombre}"[:255]
+        return "Comisión"[:255]
+
+    def save(self, *args, **kwargs):
+        if not self.codigo_comision:
+            self.codigo_comision = self._build_default_codigo_comision()
+        if not self.nombre:
+            self.nombre = self._build_default_nombre()
+        return super().save(*args, **kwargs)
 
     @property
     def centro(self):

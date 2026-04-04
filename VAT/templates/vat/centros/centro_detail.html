@@ -1771,8 +1771,6 @@
                                                                 data-curso-id="{{ comision.curso_id }}"
                                                                 data-curso-nombre="{{ comision.curso.nombre }}"
                                                                 data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
-                                                                data-codigo-comision="{{ comision.codigo_comision }}"
-                                                                data-nombre="{{ comision.nombre }}"
                                                                 data-cupo-total="{{ comision.cupo_total }}"
                                                                 data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
                                                                 data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
@@ -2468,11 +2466,6 @@
                     );
                     setComisionCursoValue('curso', cursoId);
                     setComisionCursoValue('ubicacion', trigger.getAttribute('data-ubicacion-id'));
-                    setComisionCursoValue(
-                        'codigo_comision',
-                        trigger.getAttribute('data-codigo-comision')
-                    );
-                    setComisionCursoValue('nombre', trigger.getAttribute('data-nombre'));
                     setComisionCursoValue(
                         'cupo_total',
                         trigger.getAttribute('data-cupo-total')
