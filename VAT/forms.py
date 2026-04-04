@@ -875,8 +875,13 @@ class PlanVersionCurricularForm(forms.ModelForm):
         return cleaned_data
 
     def save(self, commit=True):
-        plan = super().save(commit=commit)
-        if not commit:
+        plan = super().save(commit=False)
+        plan.normativa = self.cleaned_data.get("normativa")
+
+        if commit:
+            plan.save()
+            self.save_m2m()
+        else:
             return plan
 
         nombre = self.cleaned_data["nombre"]
