@@ -316,12 +316,14 @@ def resolve_foreign_keys(parsed_row: ParsedCentroRow):
     if parsed_row.municipio_id is not None:
         municipio = Municipio.objects.filter(pk=parsed_row.municipio_id).first()
         if municipio is None:
-            raise ValueError(f"municipio_id inexistente: {parsed_row.municipio_id}")
+            municipio = None
+            localidad = None
 
     if parsed_row.localidad_id is not None:
         localidad = Localidad.objects.filter(pk=parsed_row.localidad_id).first()
         if localidad is None:
-            raise ValueError(f"localidad_id inexistente: {parsed_row.localidad_id}")
+            localidad = None
+            municipio = None
 
     if provincia and municipio and municipio.provincia_id != provincia.id:
         municipio = None

@@ -283,3 +283,42 @@ def test_import_vat_centros_excel_keeps_only_provincia_on_geo_mismatch(tmp_path)
     assert centro.provincia_id == provincia.id
     assert centro.municipio_id is None
     assert centro.localidad_id is None
+
+
+def test_import_vat_centros_excel_keeps_only_provincia_on_missing_localidad(tmp_path):
+    provincia = Provincia.objects.create(id=2, nombre="Buenos Aires")
+    Municipio.objects.create(id=92, nombre="General Pueyrredon", provincia=provincia)
+
+    file_path = _build_excel_file(
+        tmp_path,
+        [
+            [
+                "nombre",
+                "codigo",
+                "provincia_id",
+                "municipio_id",
+                "localidad_id",
+                "tipo_gestion",
+                "clase_institucion",
+                "situacion",
+            ],
+            [
+                "Centro C. E. J. A. Adultos N° 3",
+                "900001800",
+                "2",
+                "92",
+                "11021",
+                "Estatal",
+                "Formación Profesional",
+                "Institución de Otro Nivel y/o Modalidad",
+            ],
+        ],
+    )
+
+    call_command("import_vat_centros_excel", str(file_path), stdout=StringIO())
+
+    centro = Centro.objects.get(codigo="900001800")
+
+    assert centro.provincia_id == provincia.id
+    assert centro.municipio_id is None
+    assert centro.localidad_id is None
