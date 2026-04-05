@@ -18,6 +18,7 @@ from VAT.forms import (
     InstitucionContactoForm,
     PlanVersionCurricularForm,
 )
+from VAT.views import centro as centro_views
 from VAT.models import (
     Centro,
     Sector,
@@ -693,6 +694,128 @@ def test_institucion_contacto_forms_no_requieren_campos_visibles():
         assert form.fields["documento"].required is False
         assert form.fields["telefono_contacto"].required is False
         assert form.fields["email_contacto"].required is False
+
+
+@pytest.mark.django_db
+def test_institucion_contacto_forms_requieren_un_canal_de_contacto():
+    alta_form = InstitucionContactoAltaForm(
+        data={
+            "nombre_contacto": "María Gómez",
+            "rol_area": "Administración",
+            "documento": "30111222",
+            "telefono_contacto": "",
+            "email_contacto": "",
+            "es_principal": "on",
+        }
+    )
+    admin_form = InstitucionContactoForm(
+        data={
+            "centro": "",
+            "nombre_contacto": "María Gómez",
+            "rol_area": "Administración",
+            "documento": "30111222",
+            "telefono_contacto": "",
+            "email_contacto": "",
+            "es_principal": "on",
+        }
+    )
+
+    assert not alta_form.is_valid()
+    assert alta_form.non_field_errors() == [
+        "Debe informar al menos un teléfono o correo electrónico para el contacto."
+    ]
+    assert not admin_form.is_valid()
+    assert admin_form.non_field_errors() == [
+        "Debe informar al menos un teléfono o correo electrónico para el contacto."
+    ]
+
+
+@pytest.mark.django_db
+def test_institucion_contacto_create_renderiza_campos_unificados(client):
+    user = User.objects.create_superuser(
+        username="admin-contacto-form",
+        email="admin-contacto-form@vat.test",
+        password="test1234",
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("vat_institucion_contacto_create"))
+
+    content = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert 'name="nombre_contacto"' in content
+    assert 'name="rol_area"' in content
+    assert 'name="documento"' in content
+    assert 'name="telefono_contacto"' in content
+    assert 'name="email_contacto"' in content
+    assert 'name="tipo"' not in content
+    assert 'name="valor"' not in content
+
+
+@pytest.mark.django_db
+def test_sync_responsable_principal_prioriza_contacto_marcado(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user(
+        username="referente-principal-sync",
+        email="referente-principal-sync@vat.test",
+        password="test1234",
+    )
+    referente.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Contactos Principales",
+        codigo="500145111",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="12",
+        numero=100,
+        domicilio_actividad="Calle 12 N° 100",
+        telefono="221-1111111",
+        celular="221-2222222",
+        correo="cfp-principal@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Pérez",
+        telefono_referente="221-3333333",
+        correo_referente="ana@vat.test",
+        referente=referente,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    primer_contacto = InstitucionContacto.objects.create(
+        centro=centro,
+        nombre_contacto="Primer Contacto",
+        rol_area="Administración",
+        documento="30111001",
+        telefono_contacto="221-4000001",
+        email_contacto="primer@vat.test",
+        tipo="email",
+        valor="primer@vat.test",
+        es_principal=False,
+    )
+    contacto_principal = InstitucionContacto.objects.create(
+        centro=centro,
+        nombre_contacto="Contacto Principal",
+        rol_area="Dirección",
+        documento="30111002",
+        telefono_contacto="221-4000002",
+        email_contacto="principal@vat.test",
+        tipo="email",
+        valor="principal@vat.test",
+        es_principal=True,
+    )
+
+    centro_views._sync_responsable_principal(centro)
+    primer_contacto.refresh_from_db()
+    contacto_principal.refresh_from_db()
+    centro.refresh_from_db()
+
+    assert contacto_principal.es_principal is True
+    assert primer_contacto.es_principal is False
+    assert centro.nombre_referente == "Contacto Principal"
+    assert centro.correo_referente == "principal@vat.test"
 
 
 @pytest.mark.django_db

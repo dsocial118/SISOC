@@ -87,7 +87,11 @@ def _build_responsable_principal_data(contacto):
 
 
 def _sync_responsable_principal(centro):
-    principal = centro.contactos_adicionales.order_by("id").first()
+    principal = (
+        centro.contactos_adicionales.filter(es_principal=True).order_by("id").first()
+    )
+    if principal is None:
+        principal = centro.contactos_adicionales.order_by("id").first()
     if principal is None:
         return None
 

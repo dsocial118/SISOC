@@ -179,6 +179,37 @@ def _validate_normativa_texto(value):
     return cleaned_value
 
 
+def _has_contact_data(cleaned_data):
+    tracked_fields = [
+        "nombre_contacto",
+        "rol_area",
+        "documento",
+        "telefono_contacto",
+        "email_contacto",
+    ]
+    return any(cleaned_data.get(field_name) for field_name in tracked_fields)
+
+
+def _validate_contact_channels(cleaned_data):
+    if not _has_contact_data(cleaned_data):
+        return
+
+    if cleaned_data.get("email_contacto") or cleaned_data.get("telefono_contacto"):
+        return
+
+    raise ValidationError(
+        "Debe informar al menos un teléfono o correo electrónico para el contacto."
+    )
+
+
+def _assign_contact_type_and_value(instance, cleaned_data):
+    email_contacto = cleaned_data.get("email_contacto")
+    telefono_contacto = cleaned_data.get("telefono_contacto")
+    instance.tipo = "email" if email_contacto else "telefono"
+    instance.valor = email_contacto or telefono_contacto
+    return instance
+
+
 class CentroForm(forms.ModelForm):
     class Meta:
         model = Centro
@@ -568,12 +599,14 @@ class InstitucionContactoAltaForm(forms.ModelForm):
             max_length=20,
         )
 
+    def clean(self):
+        cleaned_data = super().clean()
+        _validate_contact_channels(cleaned_data)
+        return cleaned_data
+
     def save(self, commit=True):
         instance = super().save(commit=False)
-        email_contacto = self.cleaned_data.get("email_contacto")
-        telefono_contacto = self.cleaned_data.get("telefono_contacto")
-        instance.tipo = "email" if email_contacto else "telefono"
-        instance.valor = email_contacto or telefono_contacto or ""
+        instance = _assign_contact_type_and_value(instance, self.cleaned_data)
         if commit:
             instance.save()
         return instance
@@ -1043,12 +1076,14 @@ class InstitucionContactoForm(forms.ModelForm):
             return ""
         return _clean_phone_text(value, "El teléfono del responsable")
 
+    def clean(self):
+        cleaned_data = super().clean()
+        _validate_contact_channels(cleaned_data)
+        return cleaned_data
+
     def save(self, commit=True):
         instance = super().save(commit=False)
-        email_contacto = self.cleaned_data.get("email_contacto")
-        telefono_contacto = self.cleaned_data.get("telefono_contacto")
-        instance.tipo = "email" if email_contacto else "telefono"
-        instance.valor = email_contacto or telefono_contacto or ""
+        instance = _assign_contact_type_and_value(instance, self.cleaned_data)
         if commit:
             instance.save()
         return instance
