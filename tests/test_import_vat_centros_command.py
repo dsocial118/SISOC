@@ -193,3 +193,49 @@ def test_import_vat_centros_excel_pads_codigo_with_leading_zeroes(tmp_path):
 
     assert centro.codigo == "000012345"
     assert centro.correo == "centro2345@vat.local"
+
+
+def test_import_vat_centros_excel_uses_localidad_as_source_of_truth(tmp_path):
+    provincia_correcta = Provincia.objects.create(id=2, nombre="Buenos Aires")
+    provincia_incorrecta = Provincia.objects.create(id=3, nombre="Cordoba")
+    municipio_correcto = Municipio.objects.create(
+        id=92, nombre="General Pueyrredon", provincia=provincia_correcta
+    )
+    Municipio.objects.create(id=500, nombre="Capital", provincia=provincia_incorrecta)
+    localidad = Localidad.objects.create(
+        id=3085, nombre="Mar del Plata", municipio=municipio_correcto
+    )
+
+    file_path = _build_excel_file(
+        tmp_path,
+        [
+            [
+                "nombre",
+                "codigo",
+                "provincia_id",
+                "municipio_id",
+                "localidad_id",
+                "tipo_gestion",
+                "clase_institucion",
+                "situacion",
+            ],
+            [
+                "Centro C. E. J. A. Adultos N° 3",
+                "900001800",
+                "3",
+                "500",
+                "3085",
+                "Estatal",
+                "Formación Profesional",
+                "Institución de Otro Nivel y/o Modalidad",
+            ],
+        ],
+    )
+
+    call_command("import_vat_centros_excel", str(file_path), stdout=StringIO())
+
+    centro = Centro.objects.get(codigo="900001800")
+
+    assert centro.localidad_id == localidad.id
+    assert centro.municipio_id == municipio_correcto.id
+    assert centro.provincia_id == provincia_correcta.id

@@ -10,6 +10,7 @@
 
 - Busca o actualiza centros por `codigo` (CUE).
 - Si el `codigo` trae menos de 9 dígitos, lo completa con ceros a la izquierda antes de importar.
+- Si `localidad_id` viene informado, se toma como fuente de verdad y se ajustan `municipio_id` y `provincia_id` según esa localidad.
 - Crea o actualiza la `sede_principal` y el identificador histórico tipo `cue`.
 - Si vienen columnas `contacto_*`, crea o actualiza un `InstitucionContacto` vinculado al centro.
 - Si falta `correo`, genera uno de fantasía con formato `centro<ultimos4>@vat.local`.
