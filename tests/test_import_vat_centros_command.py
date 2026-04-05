@@ -322,3 +322,55 @@ def test_import_vat_centros_excel_keeps_only_provincia_on_missing_localidad(tmp_
     assert centro.provincia_id == provincia.id
     assert centro.municipio_id is None
     assert centro.localidad_id is None
+
+
+def test_import_vat_centros_excel_partial_update_preserves_absent_fields(tmp_path):
+    provincia = Provincia.objects.create(id=2, nombre="Buenos Aires")
+    municipio = Municipio.objects.create(id=92, nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(id=3085, nombre="Tolosa", municipio=municipio)
+    group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user(username="cfp-preserve", password="1")
+    referente.groups.add(group)
+
+    centro = Centro.objects.create(
+        nombre="Centro Original",
+        codigo="616126000",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        domicilio_actividad="Calle 1",
+        telefono="221111111",
+        celular="221222222",
+        correo="original@vat.test",
+        nombre_referente="Laura",
+        apellido_referente="Perez",
+        telefono_referente="221333333",
+        correo_referente="laura@vat.test",
+        referente=referente,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    file_path = _build_excel_file(
+        tmp_path,
+        [
+            ["nombre", "codigo"],
+            ["Centro Actualizado", "616126000"],
+        ],
+    )
+
+    call_command("import_vat_centros_excel", str(file_path), stdout=StringIO())
+
+    centro.refresh_from_db()
+
+    assert centro.nombre == "Centro Actualizado"
+    assert centro.provincia_id == provincia.id
+    assert centro.municipio_id == municipio.id
+    assert centro.localidad_id == localidad.id
+    assert centro.correo == "original@vat.test"
+    assert centro.referente_id == referente.id
+    assert centro.tipo_gestion == "Estatal"
+    assert centro.clase_institucion == "Formación Profesional"
+    assert centro.situacion == "Institución de ETP"

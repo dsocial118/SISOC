@@ -355,6 +355,14 @@ def resolve_generated_username(
         counter += 1
 
 
+def can_update_existing_user(existing_user) -> bool:
+    if existing_user.groups.filter(name=GROUP_NAME).exists():
+        return True
+
+    profile = getattr(existing_user, "profile", None)
+    return getattr(profile, "rol", "") == GROUP_NAME
+
+
 def iter_csv_rows(file_path: Path) -> tuple[list[str], list[tuple[int, list[str]]]]:
     with file_path.open(newline="", encoding="utf-8-sig") as csv_file:
         reader = csv.reader(csv_file)
@@ -561,6 +569,16 @@ class Command(BaseCommand):
                     batch_usernames.add(username)
 
                 email = parsed_row.email or build_fantasy_email(username)
+
+                existing_user = user_model.objects.filter(username=username).first()
+                if parsed_row.username and existing_user and not can_update_existing_user(
+                    existing_user
+                ):
+                    raise CommandError(
+                        "El username "
+                        f"'{username}' ya existe y no pertenece a un usuario CFP "
+                        "gestionado por esta importación."
+                    )
 
                 user, created = user_model.objects.get_or_create(
                     username=username,

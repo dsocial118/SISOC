@@ -273,8 +273,6 @@ def build_parsed_row(
         "situacion",
     )
 
-    correo = get_value("correo") or build_fantasy_email(prefix="centro", codigo=codigo)
-
     return ParsedCentroRow(
         line_number=line_number,
         nombre=nombre,
@@ -284,7 +282,7 @@ def build_parsed_row(
         localidad_id=parse_int(get_value("localidad_id"), "localidad_id"),
         domicilio_actividad=get_value("domicilio_actividad"),
         telefono=get_value("telefono"),
-        correo=correo,
+        correo=get_value("correo"),
         nombre_referente=get_value("nombre_referente"),
         apellido_referente=get_value("apellido_referente"),
         telefono_referente=get_value("telefono_referente"),
@@ -352,6 +350,14 @@ def resolve_foreign_keys(parsed_row: ParsedCentroRow):
             raise ValueError("referente_id no pertenece al grupo CFP")
 
     return provincia, municipio, localidad, referente
+
+
+def has_source_column(header_mapping: dict[str, int], field_name: str) -> bool:
+    return field_name in header_mapping
+
+
+def should_update_field(*, created: bool, header_mapping: dict[str, int], field_name: str) -> bool:
+    return created or has_source_column(header_mapping, field_name)
 
 
 def sync_principal_contact(centro: Centro, contacto: InstitucionContacto) -> None:
@@ -444,27 +450,110 @@ class Command(BaseCommand):
                     centro = Centro(codigo=parsed_row.codigo)
 
                 centro.nombre = parsed_row.nombre
-                centro.provincia = provincia
-                centro.municipio = municipio
-                centro.localidad = localidad
-                centro.domicilio_actividad = parsed_row.domicilio_actividad
-                centro.telefono = parsed_row.telefono
-                centro.celular = ""
-                centro.correo = parsed_row.correo
-                centro.nombre_referente = parsed_row.nombre_referente
-                centro.apellido_referente = parsed_row.apellido_referente
-                centro.telefono_referente = parsed_row.telefono_referente
-                centro.correo_referente = parsed_row.correo_referente
-                centro.referente = referente
-                centro.tipo_gestion = parsed_row.tipo_gestion
-                centro.clase_institucion = parsed_row.clase_institucion
-                centro.situacion = parsed_row.situacion
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="provincia_id",
+                ):
+                    centro.provincia = provincia
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="municipio_id",
+                ):
+                    centro.municipio = municipio
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="localidad_id",
+                ):
+                    centro.localidad = localidad
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="domicilio_actividad",
+                ):
+                    centro.domicilio_actividad = parsed_row.domicilio_actividad
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="telefono",
+                ):
+                    centro.telefono = parsed_row.telefono
+                if created:
+                    centro.celular = ""
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="correo",
+                ):
+                    centro.correo = parsed_row.correo or build_fantasy_email(
+                        prefix="centro",
+                        codigo=parsed_row.codigo,
+                    )
+                elif created:
+                    centro.correo = build_fantasy_email(
+                        prefix="centro",
+                        codigo=parsed_row.codigo,
+                    )
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="nombre_referente",
+                ):
+                    centro.nombre_referente = parsed_row.nombre_referente
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="apellido_referente",
+                ):
+                    centro.apellido_referente = parsed_row.apellido_referente
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="telefono_referente",
+                ):
+                    centro.telefono_referente = parsed_row.telefono_referente
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="correo_referente",
+                ):
+                    centro.correo_referente = parsed_row.correo_referente
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="referente_id",
+                ):
+                    centro.referente = referente
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="tipo_gestion",
+                ):
+                    centro.tipo_gestion = parsed_row.tipo_gestion
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="clase_institucion",
+                ):
+                    centro.clase_institucion = parsed_row.clase_institucion
+                if should_update_field(
+                    created=created,
+                    header_mapping=header_mapping,
+                    field_name="situacion",
+                ):
+                    centro.situacion = parsed_row.situacion
                 centro.activo = True
 
                 if not dry_run:
                     centro.save()
 
-                    if localidad is not None:
+                    if should_update_field(
+                        created=created,
+                        header_mapping=header_mapping,
+                        field_name="localidad_id",
+                    ) and localidad is not None:
                         ubicacion = (
                             centro.ubicaciones.filter(rol_ubicacion="sede_principal")
                             .order_by("-es_principal", "id")
@@ -477,8 +566,14 @@ class Command(BaseCommand):
                         ubicacion.domicilio = parsed_row.domicilio_actividad
                         ubicacion.es_principal = True
                         ubicacion.save()
-                    else:
+                    elif created:
                         ubicacion = None
+                    else:
+                        ubicacion = (
+                            centro.ubicaciones.filter(rol_ubicacion="sede_principal")
+                            .order_by("-es_principal", "id")
+                            .first()
+                        )
 
                     identificador = (
                         centro.identificadores_hist.filter(tipo_identificador="cue")
@@ -516,14 +611,58 @@ class Command(BaseCommand):
                         if contacto is None:
                             contacto = InstitucionContacto(centro=centro)
 
-                        contacto.nombre_contacto = parsed_row.contacto_nombre
-                        contacto.rol_area = parsed_row.contacto_rol_area
-                        contacto.documento = parsed_row.autoridad_dni
-                        contacto.telefono_contacto = parsed_row.contacto_telefono
-                        contacto.email_contacto = contact_email
-                        contacto.tipo = "email" if contact_email else "telefono"
-                        contacto.valor = contact_email or parsed_row.contacto_telefono
-                        contacto.es_principal = parsed_row.contacto_es_principal
+                        if should_update_field(
+                            created=created,
+                            header_mapping=header_mapping,
+                            field_name="contacto_nombre",
+                        ):
+                            contacto.nombre_contacto = parsed_row.contacto_nombre
+                        if should_update_field(
+                            created=created,
+                            header_mapping=header_mapping,
+                            field_name="contacto_rol_area",
+                        ):
+                            contacto.rol_area = parsed_row.contacto_rol_area
+                        if should_update_field(
+                            created=created,
+                            header_mapping=header_mapping,
+                            field_name="autoridad_dni",
+                        ):
+                            contacto.documento = parsed_row.autoridad_dni
+                        if should_update_field(
+                            created=created,
+                            header_mapping=header_mapping,
+                            field_name="contacto_telefono",
+                        ):
+                            contacto.telefono_contacto = parsed_row.contacto_telefono
+                        if should_update_field(
+                            created=created,
+                            header_mapping=header_mapping,
+                            field_name="contacto_email",
+                        ):
+                            contacto.email_contacto = contact_email
+                        if (
+                            should_update_field(
+                                created=created,
+                                header_mapping=header_mapping,
+                                field_name="contacto_email",
+                            )
+                            or should_update_field(
+                                created=created,
+                                header_mapping=header_mapping,
+                                field_name="contacto_telefono",
+                            )
+                        ):
+                            resolved_email = contacto.email_contacto or ""
+                            resolved_phone = contacto.telefono_contacto or ""
+                            contacto.tipo = "email" if resolved_email else "telefono"
+                            contacto.valor = resolved_email or resolved_phone
+                        if should_update_field(
+                            created=created,
+                            header_mapping=header_mapping,
+                            field_name="contacto_es_principal",
+                        ):
+                            contacto.es_principal = parsed_row.contacto_es_principal
                         contacto.save()
 
                         if contacto.es_principal:

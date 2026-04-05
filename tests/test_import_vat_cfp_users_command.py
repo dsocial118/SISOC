@@ -2,8 +2,11 @@ from io import StringIO
 
 import pytest
 from django.contrib.auth.models import Group, User
+from django.core.management.base import CommandError
 from django.core.management import call_command
 from openpyxl import Workbook
+
+from users.models import Profile
 
 
 pytestmark = pytest.mark.django_db
@@ -21,6 +24,7 @@ def _build_excel_file(tmp_path, rows):
 
 def test_import_vat_cfp_users_from_excel_creates_and_updates_users(tmp_path, settings):
     settings.INITIAL_PASSWORD_MAX_AGE_HOURS = 24
+    cfp_group, _ = Group.objects.get_or_create(name="CFP")
     file_path = _build_excel_file(
         tmp_path,
         [
@@ -35,13 +39,14 @@ def test_import_vat_cfp_users_from_excel_creates_and_updates_users(tmp_path, set
         email="anterior@example.com",
         password="oldpass",
     )
+    existing_user.groups.add(cfp_group)
+    Profile.objects.update_or_create(user=existing_user, defaults={"rol": "CFP"})
 
     out = StringIO()
     call_command("import_vat_cfp_users", str(file_path), stdout=out)
 
     existing_user.refresh_from_db()
     imported_user = User.objects.get(username="cfp-002")
-    cfp_group = Group.objects.get(name="CFP")
 
     assert existing_user.email == "cfp-001@example.com"
     assert existing_user.profile.rol == "CFP"
@@ -189,3 +194,28 @@ def test_import_vat_cfp_users_avoids_colliding_with_existing_user(tmp_path):
     imported_user = User.objects.get(email="cfp1crucbelg1@vat.local")
 
     assert imported_user.username == "cfp1crucbelg1"
+
+
+def test_import_vat_cfp_users_rejects_collision_with_non_cfp_user(tmp_path):
+    file_path = _build_excel_file(
+        tmp_path,
+        [
+            ["Usuario", "Email", "Nombre", "Contraseña"],
+            ["cfp-colision", "cfp-colision@example.com", "Ana", "Clave123"],
+        ],
+    )
+
+    existing_user = User.objects.create_user(
+        username="cfp-colision",
+        email="otro@example.com",
+        password="previa",
+        first_name="Otro",
+    )
+
+    with pytest.raises(CommandError, match="ya existe y no pertenece a un usuario CFP"):
+        call_command("import_vat_cfp_users", str(file_path), stdout=StringIO())
+
+    existing_user.refresh_from_db()
+
+    assert existing_user.email == "otro@example.com"
+    assert existing_user.first_name == "Otro"
