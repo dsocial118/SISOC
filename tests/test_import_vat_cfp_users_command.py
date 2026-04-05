@@ -174,7 +174,7 @@ def test_import_vat_cfp_users_avoids_colliding_with_existing_user(tmp_path):
     )
 
     User.objects.create_user(
-        username="cfp1cruc",
+        username="cfp1crucbelg",
         email="otro@example.com",
         password="previa",
     )
@@ -186,6 +186,6 @@ def test_import_vat_cfp_users_avoids_colliding_with_existing_user(tmp_path):
         stdout=StringIO(),
     )
 
-    imported_user = User.objects.get(email="cfp1crucbelg@vat.local")
+    imported_user = User.objects.get(email="cfp1crucbelg1@vat.local")
 
-    assert imported_user.username == "cfp1crucbelg"
+    assert imported_user.username == "cfp1crucbelg1"

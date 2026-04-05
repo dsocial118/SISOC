@@ -104,19 +104,30 @@ TOKEN_REPLACEMENTS = {
 SPECIAL_PATTERN_REPLACEMENTS = {
     "c.f.p.": "cfp",
     "c.f.p": "cfp",
+    "c. f. p.": "cfp",
+    "c. f. p": "cfp",
+    "c f p": "cfp",
     "cfp": "cfp",
     "c.e.j.a.": "ceja",
     "c.e.j.a": "ceja",
+    "c. e. j. a.": "ceja",
+    "c. e. j. a": "ceja",
+    "c e j a": "ceja",
     "ceja": "ceja",
     "c.c.t.": "cct",
     "c.c.t": "cct",
+    "c. c. t.": "cct",
+    "c. c. t": "cct",
+    "c c t": "cct",
     "cct": "cct",
     "e.e.t.": "eet",
     "e.e.t": "eet",
+    "e. e. t.": "eet",
+    "e. e. t": "eet",
+    "e e t": "eet",
     "eet": "eet",
     "nº": "n",
     "n°": "n",
-    "no": "n",
 }
 MAX_USERNAME_LENGTH = 24
 
@@ -188,7 +199,6 @@ def normalize_name_for_username(name: str) -> str:
     normalized = str(name or "").lower()
     for original, replacement in SPECIAL_PATTERN_REPLACEMENTS.items():
         normalized = normalized.replace(original, f" {replacement} ")
-    normalized = normalized.replace("n ", " n")
     normalized = slugify(normalized).replace("-", " ")
     return normalized
 
@@ -258,7 +268,9 @@ def build_username_descriptors(tokens: list[str]) -> list[str]:
 
 def build_username_base(display_name: str) -> str:
     normalized_name = normalize_name_for_username(display_name)
-    tokens = [token for token in normalized_name.split() if token and token not in STOPWORDS]
+    tokens = [
+        token for token in normalized_name.split() if token and token not in STOPWORDS
+    ]
     if not tokens:
         return "cfpuser"
 
