@@ -93,9 +93,7 @@ def normalize_header(value: object) -> str:
     text = str(value or "").strip()
     normalized = unicodedata.normalize("NFKD", text)
     normalized = "".join(
-        character
-        for character in normalized
-        if not unicodedata.combining(character)
+        character for character in normalized if not unicodedata.combining(character)
     )
     normalized = normalized.lower().replace(" ", "_").replace("-", "_")
     normalized = re.sub(r"[^a-z0-9_]+", "", normalized)
@@ -112,9 +110,7 @@ def _build_normalized_choice_map(raw_mapping: dict[str, str]) -> dict[str, str]:
 
 
 NORMALIZED_TIPO_GESTION_MAP = _build_normalized_choice_map(TIPO_GESTION_MAP)
-NORMALIZED_CLASE_INSTITUCION_MAP = _build_normalized_choice_map(
-    CLASE_INSTITUCION_MAP
-)
+NORMALIZED_CLASE_INSTITUCION_MAP = _build_normalized_choice_map(CLASE_INSTITUCION_MAP)
 NORMALIZED_SITUACION_MAP = _build_normalized_choice_map(SITUACION_MAP)
 
 
@@ -137,7 +133,9 @@ def resolve_header_mapping(headers: list[str]) -> dict[str, int]:
                 mapping[field_name] = index
                 break
 
-    missing_fields = [field_name for field_name in REQUIRED_FIELDS if field_name not in mapping]
+    missing_fields = [
+        field_name for field_name in REQUIRED_FIELDS if field_name not in mapping
+    ]
     if missing_fields:
         raise CommandError(
             "El archivo no contiene las columnas requeridas: "
@@ -475,10 +473,9 @@ class Command(BaseCommand):
                                 f"Fila {line_number}: el contacto requiere teléfono o email."
                             )
 
-                        contacto = (
-                            centro.contactos_adicionales.filter(email_contacto=contact_email)
-                            .first()
-                        )
+                        contacto = centro.contactos_adicionales.filter(
+                            email_contacto=contact_email
+                        ).first()
                         if contacto is None and parsed_row.contacto_telefono:
                             contacto = centro.contactos_adicionales.filter(
                                 telefono_contacto=parsed_row.contacto_telefono
@@ -509,9 +506,7 @@ class Command(BaseCommand):
                     updated_count += 1
 
                 if processed_count % 100 == 0:
-                    self.stdout.write(
-                        f"Procesadas {processed_count} filas..."
-                    )
+                    self.stdout.write(f"Procesadas {processed_count} filas...")
 
         mode = "Simulación finalizada" if dry_run else "Proceso finalizado"
         self.stdout.write(

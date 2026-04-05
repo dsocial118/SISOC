@@ -140,7 +140,11 @@ def test_bootstrap_vat_referentes_centros_requires_same_row_count(tmp_path):
     users_file = _build_excel_file(
         tmp_path,
         "usuarios.xlsx",
-        [["nombre"], ["Centro Ceja Tafi Del Valle"], ["Centro De Formación Laboral Nº 1"]],
+        [
+            ["nombre"],
+            ["Centro Ceja Tafi Del Valle"],
+            ["Centro De Formación Laboral Nº 1"],
+        ],
     )
     centers_file = _build_excel_file(
         tmp_path,

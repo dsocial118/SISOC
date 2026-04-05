@@ -173,22 +173,14 @@ class Command(BaseCommand):
             "import_vat_cfp_users",
             str(users_file),
             f"--default-password={default_password}",
-            *(
-                [f"--sheet-name={users_sheet_name}"]
-                if users_sheet_name
-                else []
-            ),
+            *([f"--sheet-name={users_sheet_name}"] if users_sheet_name else []),
         )
 
         self.stdout.write("2/3 Importando centros VAT...")
         call_command(
             "import_vat_centros_excel",
             str(centers_file),
-            *(
-                [f"--sheet-name={centers_sheet_name}"]
-                if centers_sheet_name
-                else []
-            ),
+            *([f"--sheet-name={centers_sheet_name}"] if centers_sheet_name else []),
         )
 
         self.stdout.write("3/3 Asignando referentes a centros...")
@@ -196,7 +188,9 @@ class Command(BaseCommand):
         skipped_existing_count = 0
 
         for planned_user, planned_center in zip(planned_users, planned_centers):
-            user = get_user_model().objects.filter(username=planned_user.username).first()
+            user = (
+                get_user_model().objects.filter(username=planned_user.username).first()
+            )
             if user is None:
                 raise CommandError(
                     f"No se encontró el usuario '{planned_user.username}' para la fila {planned_user.line_number}."

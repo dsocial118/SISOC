@@ -57,9 +57,7 @@ def remove_documentacion_tipo_if_exists(apps, schema_editor):
                 f"ALTER TABLE `admisiones_documentacion` DROP INDEX `{index_name}`"
             )
 
-        cursor.execute(
-            "ALTER TABLE `admisiones_documentacion` DROP COLUMN `tipo_id`"
-        )
+        cursor.execute("ALTER TABLE `admisiones_documentacion` DROP COLUMN `tipo_id`")
 
 
 def noop(apps, schema_editor):

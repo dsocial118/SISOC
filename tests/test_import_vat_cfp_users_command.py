@@ -19,9 +19,7 @@ def _build_excel_file(tmp_path, rows):
     return file_path
 
 
-def test_import_vat_cfp_users_from_excel_creates_and_updates_users(
-    tmp_path, settings
-):
+def test_import_vat_cfp_users_from_excel_creates_and_updates_users(tmp_path, settings):
     settings.INITIAL_PASSWORD_MAX_AGE_HOURS = 24
     file_path = _build_excel_file(
         tmp_path,

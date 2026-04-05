@@ -115,9 +115,7 @@ def normalize_header(value: object) -> str:
     text = str(value or "").strip()
     normalized = unicodedata.normalize("NFKD", text)
     normalized = "".join(
-        character
-        for character in normalized
-        if not unicodedata.combining(character)
+        character for character in normalized if not unicodedata.combining(character)
     )
     normalized = normalized.lower().replace(" ", "_").replace("-", "_")
     while "__" in normalized:
@@ -248,7 +246,9 @@ def resolve_generated_username(
     while True:
         if candidate in batch_usernames:
             suffix = str(counter)
-            trimmed_base = base_username[: MAX_USERNAME_LENGTH - len(suffix)] or "cfpuser"
+            trimmed_base = (
+                base_username[: MAX_USERNAME_LENGTH - len(suffix)] or "cfpuser"
+            )
             candidate = f"{trimmed_base}{suffix}"
             counter += 1
             continue
@@ -315,9 +315,7 @@ def load_rows(
         return iter_csv_rows(file_path)
     if suffix in {".xlsx", ".xlsm"}:
         return iter_excel_rows(file_path, sheet_name)
-    raise CommandError(
-        "Formato no soportado. Use un archivo .csv, .xlsx o .xlsm."
-    )
+    raise CommandError("Formato no soportado. Use un archivo .csv, .xlsx o .xlsm.")
 
 
 def build_parsed_row(
@@ -446,9 +444,7 @@ class Command(BaseCommand):
                 except ValueError as exc:
                     skipped_count += 1
                     self.stdout.write(
-                        self.style.WARNING(
-                            f"Fila {line_number}: {exc}. Se omite."
-                        )
+                        self.style.WARNING(f"Fila {line_number}: {exc}. Se omite.")
                     )
                     continue
 

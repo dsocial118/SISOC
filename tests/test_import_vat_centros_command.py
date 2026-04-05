@@ -25,8 +25,12 @@ def _build_excel_file(tmp_path, rows):
 
 def test_import_vat_centros_excel_creates_centro_relations_and_contact(tmp_path):
     provincia = Provincia.objects.create(id=2, nombre="Buenos Aires")
-    municipio = Municipio.objects.create(id=92, nombre="General Pueyrredon", provincia=provincia)
-    localidad = Localidad.objects.create(id=3085, nombre="Mar del Plata", municipio=municipio)
+    municipio = Municipio.objects.create(
+        id=92, nombre="General Pueyrredon", provincia=provincia
+    )
+    localidad = Localidad.objects.create(
+        id=3085, nombre="Mar del Plata", municipio=municipio
+    )
     group, _ = Group.objects.get_or_create(name="CFP")
     referente = User.objects.create_user(username="cfp-ref", password="1")
     referente.groups.add(group)
@@ -101,7 +105,9 @@ def test_import_vat_centros_excel_creates_centro_relations_and_contact(tmp_path)
     ).exists()
 
 
-def test_import_vat_centros_excel_generates_fantasy_email_and_normalizes_gestion(tmp_path):
+def test_import_vat_centros_excel_generates_fantasy_email_and_normalizes_gestion(
+    tmp_path,
+):
     provincia = Provincia.objects.create(id=23, nombre="Tucuman")
     municipio = Municipio.objects.create(id=800, nombre="Capital", provincia=provincia)
 
