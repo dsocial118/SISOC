@@ -380,6 +380,13 @@ class Command(BaseCommand):
         "CSV o Excel."
     )
 
+    progress_step = 100
+
+    def _write_status(self, message: str) -> None:
+        self.stdout.write(message)
+        if hasattr(self.stdout, "flush"):
+            self.stdout.flush()
+
     def add_arguments(self, parser):
         parser.add_argument(
             "file_path",
@@ -420,11 +427,16 @@ class Command(BaseCommand):
         header_mapping = resolve_header_mapping(headers)
         user_model = get_user_model()
         batch_usernames: set[str] = set()
+        total_rows = sum(1 for _, row in raw_rows if any(row))
 
         created_count = 0
         updated_count = 0
         skipped_count = 0
         processed_count = 0
+
+        self._write_status(
+            f"Inicio importación VAT usuarios CFP. Filas a procesar: {total_rows}."
+        )
 
         with transaction.atomic():
             group, _ = Group.objects.get_or_create(name=GROUP_NAME)
@@ -503,11 +515,19 @@ class Command(BaseCommand):
                 else:
                     updated_count += 1
 
+                if processed_count % self.progress_step == 0:
+                    self._write_status(
+                        "Avance usuarios VAT: "
+                        f"{processed_count}/{total_rows} procesados, "
+                        f"{created_count} creados, {updated_count} actualizados, "
+                        f"{skipped_count} omitidos."
+                    )
+
             if dry_run:
                 transaction.set_rollback(True)
 
         mode = "Simulación finalizada" if dry_run else "Proceso finalizado"
-        self.stdout.write(
+        self._write_status(
             self.style.SUCCESS(
                 f"{mode}. Procesados: {processed_count}, creados: {created_count}, "
                 f"actualizados: {updated_count}, omitidos: {skipped_count}."

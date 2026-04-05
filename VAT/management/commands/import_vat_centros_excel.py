@@ -363,6 +363,13 @@ def should_create_contact(parsed_row: ParsedCentroRow) -> bool:
 class Command(BaseCommand):
     help = "Importa centros VAT desde un archivo Excel/CSV con layout institucional."
 
+    progress_step = 100
+
+    def _write_status(self, message: str) -> None:
+        self.stdout.write(message)
+        if hasattr(self.stdout, "flush"):
+            self.stdout.flush()
+
     def add_arguments(self, parser):
         parser.add_argument("file_path", type=str)
         parser.add_argument("--sheet-name", type=str, default=None)
@@ -378,11 +385,16 @@ class Command(BaseCommand):
 
         headers, raw_rows = load_rows(file_path, sheet_name)
         header_mapping = resolve_header_mapping(headers)
+        total_rows = sum(1 for _, row in raw_rows if any(row))
 
         created_count = 0
         updated_count = 0
         skipped_count = 0
         processed_count = 0
+
+        self._write_status(
+            f"Inicio importación VAT centros. Filas a procesar: {total_rows}."
+        )
 
         for line_number, raw_values in raw_rows:
             if not any(raw_values):
@@ -505,11 +517,16 @@ class Command(BaseCommand):
                 else:
                     updated_count += 1
 
-                if processed_count % 100 == 0:
-                    self.stdout.write(f"Procesadas {processed_count} filas...")
+                if processed_count % self.progress_step == 0:
+                    self._write_status(
+                        "Avance centros VAT: "
+                        f"{processed_count}/{total_rows} procesados, "
+                        f"{created_count} creados, {updated_count} actualizados, "
+                        f"{skipped_count} omitidos."
+                    )
 
         mode = "Simulación finalizada" if dry_run else "Proceso finalizado"
-        self.stdout.write(
+        self._write_status(
             self.style.SUCCESS(
                 f"{mode}. Procesados: {processed_count}, creados: {created_count}, "
                 f"actualizados: {updated_count}, omitidos: {skipped_count}."

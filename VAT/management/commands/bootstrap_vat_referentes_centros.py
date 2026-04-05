@@ -112,6 +112,13 @@ class Command(BaseCommand):
         "de referentes por orden de fila."
     )
 
+    progress_step = 100
+
+    def _write_status(self, message: str) -> None:
+        self.stdout.write(message)
+        if hasattr(self.stdout, "flush"):
+            self.stdout.flush()
+
     def add_arguments(self, parser):
         parser.add_argument("users_file", type=str)
         parser.add_argument("centers_file", type=str)
@@ -158,7 +165,7 @@ class Command(BaseCommand):
             )
 
         if dry_run:
-            self.stdout.write(
+            self._write_status(
                 self.style.SUCCESS(
                     "Simulación finalizada. "
                     f"Usuarios planificados: {len(planned_users)}, "
@@ -168,7 +175,13 @@ class Command(BaseCommand):
             )
             return
 
-        self.stdout.write("1/3 Importando usuarios CFP...")
+        self._write_status(
+            "Bootstrap VAT iniciado. "
+            f"Usuarios planificados: {len(planned_users)}. "
+            f"Centros planificados: {len(planned_centers)}."
+        )
+
+        self._write_status("1/3 Importando usuarios CFP...")
         call_command(
             "import_vat_cfp_users",
             str(users_file),
@@ -176,14 +189,14 @@ class Command(BaseCommand):
             *([f"--sheet-name={users_sheet_name}"] if users_sheet_name else []),
         )
 
-        self.stdout.write("2/3 Importando centros VAT...")
+        self._write_status("2/3 Importando centros VAT...")
         call_command(
             "import_vat_centros_excel",
             str(centers_file),
             *([f"--sheet-name={centers_sheet_name}"] if centers_sheet_name else []),
         )
 
-        self.stdout.write("3/3 Asignando referentes a centros...")
+        self._write_status("3/3 Asignando referentes a centros...")
         assigned_count = 0
         skipped_existing_count = 0
 
@@ -218,7 +231,14 @@ class Command(BaseCommand):
             center.save(update_fields=["referente"])
             assigned_count += 1
 
-        self.stdout.write(
+            if assigned_count % self.progress_step == 0:
+                self._write_status(
+                    "Avance asignación referentes VAT: "
+                    f"{assigned_count}/{len(planned_centers)} asignados, "
+                    f"{skipped_existing_count} omitidos por referente existente."
+                )
+
+        self._write_status(
             self.style.SUCCESS(
                 "Proceso finalizado. "
                 f"Usuarios planificados: {len(planned_users)}, "
