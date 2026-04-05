@@ -170,3 +170,26 @@ def test_import_vat_centros_excel_dry_run_does_not_persist(tmp_path):
 
     assert not Centro.objects.filter(codigo="615050000").exists()
     assert "Simulación finalizada" in out.getvalue()
+
+
+def test_import_vat_centros_excel_pads_codigo_with_leading_zeroes(tmp_path):
+    file_path = _build_excel_file(
+        tmp_path,
+        [
+            ["nombre", "codigo", "tipo_gestion", "clase_institucion", "situacion"],
+            [
+                "Centro De Formación Laboral Nº 1",
+                "12345",
+                "Estatal",
+                "Formación Profesional",
+                "Institución de ETP",
+            ],
+        ],
+    )
+
+    call_command("import_vat_centros_excel", str(file_path), stdout=StringIO())
+
+    centro = Centro.objects.get(codigo="000012345")
+
+    assert centro.codigo == "000012345"
+    assert centro.correo == "centro2345@vat.local"

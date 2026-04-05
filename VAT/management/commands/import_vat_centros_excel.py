@@ -231,6 +231,15 @@ def build_contact_fantasy_email(*, codigo: str) -> str:
     return f"contacto{codigo[-6:]}@{FANTASY_DOMAIN}"
 
 
+def normalize_codigo(codigo: str) -> str:
+    cleaned_codigo = (codigo or "").strip()
+    if not cleaned_codigo or not cleaned_codigo.isdigit():
+        raise ValueError("el código/CUE debe ser numérico de hasta 9 dígitos")
+    if len(cleaned_codigo) > 9:
+        raise ValueError("el código/CUE debe ser numérico de hasta 9 dígitos")
+    return cleaned_codigo.zfill(9)
+
+
 def build_parsed_row(
     *,
     line_number: int,
@@ -244,11 +253,9 @@ def build_parsed_row(
         return raw_values[index]
 
     nombre = get_value("nombre")
-    codigo = get_value("codigo")
+    codigo = normalize_codigo(get_value("codigo"))
     if not nombre:
         raise ValueError("el nombre es obligatorio")
-    if not codigo or not codigo.isdigit() or len(codigo) != 9:
-        raise ValueError("el código/CUE debe ser numérico de 9 dígitos")
 
     tipo_gestion = normalize_choice(
         get_value("tipo_gestion"),
