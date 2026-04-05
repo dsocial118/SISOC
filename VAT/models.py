@@ -225,6 +225,7 @@ class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
         related_name="vat_planes_estudio",
         verbose_name="Provincia",
     )
+    nombre = models.CharField(max_length=200, blank=True, default="")
     sector = models.ForeignKey(
         Sector,
         on_delete=models.PROTECT,
@@ -274,6 +275,9 @@ class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
             raise ValidationError(errors)
 
     def __str__(self):
+        nombre = (self.nombre or "").strip()
+        if nombre:
+            return f"{nombre} - {self.modalidad_cursada.nombre}"
         titulo_referencia = self.titulo_referencia
         if titulo_referencia:
             return f"{titulo_referencia.nombre} - {self.modalidad_cursada.nombre}"
@@ -651,8 +655,7 @@ class VoucherLog(models.Model):
 
 class InstitucionContacto(models.Model):
     """
-    Datos de contacto asociados a una institución (Centro).
-    Permite múltiples contactos (email, teléfono, web, etc).
+    Responsables y contactos institucionales asociados a un Centro.
     """
 
     TIPO_CONTACTO_CHOICES = [
@@ -679,13 +682,19 @@ class InstitucionContacto(models.Model):
         max_length=255,
         blank=True,
         null=True,
-        verbose_name="Nombre del Contacto",
+        verbose_name="Nombre y apellido del responsable",
     )
     rol_area = models.CharField(
         max_length=100,
         blank=True,
         null=True,
         verbose_name="Rol / Área",
+    )
+    documento = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="Documento",
     )
     telefono_contacto = models.CharField(
         max_length=50,
@@ -710,46 +719,14 @@ class InstitucionContacto(models.Model):
     fecha_modificacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.centro} - {self.get_tipo_display()}: {self.valor}"
+        nombre_contacto = self.nombre_contacto or self.valor or "Contacto institucional"
+        return f"{self.centro} - {nombre_contacto}"
 
     class Meta:
         verbose_name = "Contacto de Institución"
         verbose_name_plural = "Contactos de Institución"
-        ordering = ["-es_principal", "tipo"]
+        ordering = ["-es_principal", "nombre_contacto", "rol_area"]
         unique_together = ("centro", "tipo", "valor")
-
-
-class AutoridadInstitucional(models.Model):
-    """
-    Representante legal/administrativo de la institución (Centro).
-    """
-
-    centro = models.ForeignKey(
-        Centro,
-        on_delete=models.CASCADE,
-        related_name="autoridades",
-        verbose_name="Centro",
-    )
-    nombre_completo = models.CharField(max_length=255, verbose_name="Nombre Completo")
-    dni = models.CharField(max_length=20, verbose_name="DNI")
-    cargo = models.CharField(max_length=100, verbose_name="Cargo")
-    email = models.EmailField(blank=True, null=True)
-    telefono = models.CharField(max_length=50, blank=True, null=True)
-    es_actual = models.BooleanField(default=True, verbose_name="Es la Autoridad Actual")
-    vigencia_desde = models.DateField(auto_now_add=True, verbose_name="Vigencia Desde")
-    vigencia_hasta = models.DateField(
-        blank=True, null=True, verbose_name="Vigencia Hasta"
-    )
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    fecha_modificacion = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.centro} - {self.nombre_completo} ({self.cargo})"
-
-    class Meta:
-        verbose_name = "Autoridad de Institución"
-        verbose_name_plural = "Autoridades de Institución"
-        ordering = ["-es_actual", "-vigencia_desde"]
 
 
 class InstitucionIdentificadorHist(models.Model):
@@ -1258,7 +1235,11 @@ class OfertaInstitucional(SoftDeleteModelMixin, models.Model):
     fecha_modificacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        nombre = self.nombre_local or self.plan_curricular.titulo_referencia.nombre
+        nombre = (
+            self.nombre_local
+            or self.plan_curricular.nombre
+            or self.plan_curricular.titulo_referencia.nombre
+        )
         return f"{self.centro} - {nombre} ({self.ciclo_lectivo})"
 
     class Meta:

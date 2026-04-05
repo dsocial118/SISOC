@@ -14,7 +14,6 @@ from VAT.api_views import (
     InscripcionOfertaViewSet,
     VoucherViewSet,
     InstitucionContactoViewSet,
-    AutoridadInstitucionalViewSet,
     InstitucionIdentificadorHistViewSet,
     InstitucionUbicacionViewSet,
     CursoViewSet,
@@ -73,11 +72,6 @@ router.register(
     r"institucion-contactos",
     InstitucionContactoViewSet,
     basename="vat-api-institucion-contacto",
-)
-router.register(
-    r"autoridades-institucionales",
-    AutoridadInstitucionalViewSet,
-    basename="vat-api-autoridad-institucional",
 )
 router.register(
     r"institucion-identificadores",

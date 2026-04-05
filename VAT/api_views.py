@@ -20,7 +20,6 @@ from VAT.models import (
     InscripcionOferta,
     Voucher,
     InstitucionContacto,
-    AutoridadInstitucional,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
     Curso,
@@ -47,7 +46,6 @@ from VAT.serializers import (
     InscripcionOfertaSerializer,
     VoucherSerializer,
     InstitucionContactoSerializer,
-    AutoridadInstitucionalSerializer,
     InstitucionIdentificadorHistSerializer,
     InstitucionUbicacionSerializer,
     CursoSerializer,
@@ -358,20 +356,6 @@ class InstitucionContactoViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(centro_id=centro_id)
         if tipo:
             queryset = queryset.filter(tipo=tipo)
-        return queryset
-
-
-@extend_schema(tags=["VAT - Institución"])
-class AutoridadInstitucionalViewSet(viewsets.ModelViewSet):
-    queryset = AutoridadInstitucional.objects.select_related("centro").order_by("cargo")
-    serializer_class = AutoridadInstitucionalSerializer
-    permission_classes = [HasAPIKey]
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        centro_id = self.request.query_params.get("centro_id")
-        if centro_id:
-            queryset = queryset.filter(centro_id=centro_id)
         return queryset
 
 

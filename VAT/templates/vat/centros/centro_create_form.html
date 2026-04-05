@@ -289,7 +289,7 @@
                         <h3 class="card-title">
                             <i class="fas fa-address-book mr-2"></i>3.2 Contactos de la institución
                         </h3>
-                        <div class="small">Podés cargar varios contactos y marcar uno como principal.</div>
+                        <div class="small">Podés cargar responsables o contactos adicionales en la misma tabla institucional.</div>
                     </div>
                     <button type="button"
                             class="btn btn-sm btn-outline-light"
@@ -307,15 +307,10 @@
                                 <div class="row">
                                     <div class="col-md-4 vp-field">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
                                     <div class="col-md-3 vp-field">{{ contacto_form.rol_area|as_crispy_field }}</div>
+                                    <div class="col-md-2 vp-field">{{ contacto_form.documento|as_crispy_field }}</div>
                                     <div class="col-md-2 vp-field">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
                                     <div class="col-md-3 vp-field">{{ contacto_form.email_contacto|as_crispy_field }}</div>
-                                    <div class="col-md-3 d-flex align-items-center">
-                                        <div class="form-group mt-4 pt-2 mb-0">
-                                            {{ contacto_form.es_principal }}
-                                            <label for="{{ contacto_form.es_principal.id_for_label }}" class="ml-2 mb-0">Principal</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 d-flex align-items-center justify-content-end">
+                                    <div class="col-md-12 d-flex align-items-center justify-content-end">
                                         <button type="button"
                                                 class="btn btn-outline-danger btn-sm remove-contacto-btn">
                                             <i class="fas fa-trash mr-1"></i>Quitar
@@ -326,55 +321,34 @@
                             </div>
                         {% endfor %}
                     </div>
-                </div>
-            </div>
-
-            <div class="card vp-panel">
-                <div class="vp-panel-header">
-                    <div>
-                        <h3 class="card-title">
-                            <i class="fas fa-user-tie mr-2"></i>4. Autoridades
-                        </h3>
-                        <div class="small">Datos de la autoridad responsable para el alta inicial.</div>
-                    </div>
-                </div>
-                <div class="vp-section">
-                    <div class="row">
-                        <div class="col-md-3 vp-field">{{ form.nombre_referente|as_crispy_field }}</div>
-                        <div class="col-md-3 vp-field">{{ form.apellido_referente|as_crispy_field }}</div>
-                        <div class="col-md-2 vp-field">{{ form.autoridad_dni|as_crispy_field }}</div>
-                        <div class="col-md-2 vp-field">{{ form.telefono_referente|as_crispy_field }}</div>
-                        <div class="col-md-2 vp-field">{{ form.correo_referente|as_crispy_field }}</div>
-                    </div>
-                </div>
-                <div class="vp-actions">
-                    <a href="{{ cancel_url }}" class="btn btn-secondary">
-                        <i class="fas fa-times mr-1"></i>Cancelar
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-1"></i>{{ submit_text|default:"Guardar" }}
-                    </button>
-                    {% if show_save_continue or show_save_continue is None %}
-                        <button type="submit"
-                                name="save_continue"
-                                value="1"
-                                class="btn btn-outline-primary">
-                            <i class="fas fa-arrow-right mr-1"></i>{{ submit_continue_text|default:"Guardar y continuar" }}
+                    <div class="vp-actions">
+                        <a href="{{ cancel_url }}" class="btn btn-secondary">
+                            <i class="fas fa-times mr-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save mr-1"></i>{{ submit_text|default:"Guardar" }}
                         </button>
-                    {% endif %}
+                        {% if show_save_continue or show_save_continue is None %}
+                            <button type="submit"
+                                    name="save_continue"
+                                    value="1"
+                                    class="btn btn-outline-primary">
+                                <i class="fas fa-arrow-right mr-1"></i>{{ submit_continue_text|default:"Guardar y continuar" }}
+                            </button>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
-        </form>
-    </div>
+            </form>
+        </div>
 
-    <template id="contacto-empty-form-template">
-        <div class="vp-contact-item mb-3 contacto-form-item"
-             data-form-index="__prefix__">__FORM_FIELDS__</div>
-    </template>
-{% endblock %}
+        <template id="contacto-empty-form-template">
+            <div class="vp-contact-item mb-3 contacto-form-item"
+                 data-form-index="__prefix__">__FORM_FIELDS__</div>
+        </template>
+    {% endblock %}
 
-{% block customJS %}
-    <script nonce="{{ request.csp_nonce }}">
+    {% block customJS %}
+        <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
         var contactoEmptyFormHtml = `{% filter escapejs %}
@@ -383,15 +357,10 @@
                 <div class="row">
                     <div class="col-md-4">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
                     <div class="col-md-3">{{ contacto_form.rol_area|as_crispy_field }}</div>
+                    <div class="col-md-2">{{ contacto_form.documento|as_crispy_field }}</div>
                     <div class="col-md-2">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
                     <div class="col-md-3">{{ contacto_form.email_contacto|as_crispy_field }}</div>
-                    <div class="col-md-3 d-flex align-items-center">
-                        <div class="form-group mt-4 pt-2">
-                            {{ contacto_form.es_principal }}
-                            <label for="{{ contacto_form.es_principal.id_for_label }}" class="ml-2">Principal</label>
-                        </div>
-                    </div>
-                    <div class="col-md-3 d-flex align-items-center justify-content-end">
+                    <div class="col-md-12 d-flex align-items-center justify-content-end">
                         <button type="button" class="btn btn-outline-danger btn-sm remove-contacto-btn">
                             <i class="fas fa-trash mr-1"></i>Quitar
                         </button>
@@ -399,6 +368,6 @@
                 </div>
             {% endwith %}
         {% endfilter %}`;
-    </script>
-    <script src="{% static 'custom/js/centro_create_form.js' %}"></script>
-{% endblock %}
+        </script>
+        <script src="{% static 'custom/js/centro_create_form.js' %}"></script>
+    {% endblock %}

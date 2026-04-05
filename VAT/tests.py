@@ -11,9 +11,15 @@ from django.urls import reverse
 
 from VAT import serializers as vat_serializers
 from VAT.api_views import CursoViewSet
-from VAT.forms import ComisionCursoForm, CursoForm, PlanVersionCurricularForm
+from VAT.forms import (
+    ComisionCursoForm,
+    CursoForm,
+    InstitucionContactoAltaForm,
+    InstitucionContactoForm,
+    PlanVersionCurricularForm,
+)
+from VAT.views import centro as centro_views
 from VAT.models import (
-    AutoridadInstitucional,
     Centro,
     Sector,
     Subsector,
@@ -97,6 +103,7 @@ def _build_centro_payload(referente_user, provincia, municipio, localidad, **ove
         "contactos-MAX_NUM_FORMS": "1000",
         "contactos-0-nombre_contacto": "María Gómez",
         "contactos-0-rol_area": "Administración",
+        "contactos-0-documento": "30111222",
         "contactos-0-telefono_contacto": "221-4222222",
         "contactos-0-email_contacto": "maria@vat.test",
         "contactos-0-es_principal": "on",
@@ -132,12 +139,14 @@ def test_centro_create_crea_entidades_relacionadas(
 
     assert response.status_code == 302
     assert response.url == reverse("vat_centro_detail", kwargs={"pk": centro.pk})
-    assert AutoridadInstitucional.objects.filter(centro=centro, dni="30111222").exists()
-    assert InstitucionContacto.objects.filter(
+    contacto = InstitucionContacto.objects.get(
         centro=centro,
         nombre_contacto="María Gómez",
-        es_principal=True,
-    ).exists()
+    )
+    assert contacto.es_principal is True
+    assert contacto.documento == "30111222"
+    assert centro.nombre_referente == "María Gómez"
+    assert centro.correo_referente == "maria@vat.test"
     assert InstitucionIdentificadorHist.objects.filter(
         centro=centro,
         tipo_identificador="cue",
@@ -151,7 +160,7 @@ def test_centro_create_crea_entidades_relacionadas(
 
 
 @pytest.mark.django_db
-def test_centro_create_requiere_un_contacto_principal(
+def test_centro_create_permite_guardar_sin_contactos_institucionales(
     vat_admin_client, vat_referente_user, vat_geo_data
 ):
     provincia, municipio, localidad = vat_geo_data
@@ -162,16 +171,25 @@ def test_centro_create_requiere_un_contacto_principal(
         provincia,
         municipio,
         localidad,
-        **{"contactos-0-es_principal": ""},
+        **{
+            "nombre_referente": "",
+            "apellido_referente": "",
+            "telefono_referente": "",
+            "correo_referente": "",
+            "autoridad_dni": "",
+            "contactos-TOTAL_FORMS": "0",
+            "contactos-INITIAL_FORMS": "0",
+        },
     )
 
     response = vat_admin_client.post(reverse("vat_centro_create"), data=payload)
 
-    assert response.status_code == 200
-    assert Centro.objects.filter(codigo="500144900").count() == 0
-    assert "Debe existir exactamente un contacto principal." in response.content.decode(
-        "utf-8"
-    )
+    centro = Centro.objects.get(codigo="500144900")
+
+    assert response.status_code == 302
+    assert centro.contactos_adicionales.count() == 0
+    assert centro.nombre_referente == ""
+    assert centro.correo_referente == ""
 
 
 @pytest.mark.django_db
@@ -221,9 +239,10 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
 
     content = response.content.decode("utf-8")
     assert response.status_code == 200
-    assert 'name="autoridad_dni"' in content
     assert "contactos-TOTAL_FORMS" in content
     assert "3.2 Contactos de la institución" in content
+    assert "4. Autoridades" not in content
+    assert 'name="contactos-0-documento"' in content
     assert 'name="save_continue"' not in content
     assert 'for="id_provincia"' not in content
     assert 'name="provincia"' in content
@@ -268,18 +287,10 @@ def test_centro_update_oculta_provincia_y_conserva_valor_actual(client, vat_geo_
         situacion="Institución de ETP",
         activo=True,
     )
-    autoridad = AutoridadInstitucional.objects.create(
-        centro=centro,
-        nombre_completo="Ana Perez",
-        dni="30111222",
-        cargo="Director/a",
-        email="ana@vat.test",
-        telefono="221-3333333",
-        es_actual=True,
-    )
     InstitucionContacto.objects.create(
         centro=centro,
         nombre_contacto="Ana Perez",
+        documento="30111222",
         rol_area="Dirección",
         telefono_contacto="221-3333333",
         email_contacto="ana@vat.test",
@@ -300,7 +311,6 @@ def test_centro_update_oculta_provincia_y_conserva_valor_actual(client, vat_geo_
         localidad_ba,
         nombre="CFP Provincia Fija Editado",
         codigo="500144998",
-        autoridad_dni=autoridad.dni,
         **{
             "contactos-TOTAL_FORMS": "1",
             "contactos-INITIAL_FORMS": "1",
@@ -310,6 +320,7 @@ def test_centro_update_oculta_provincia_y_conserva_valor_actual(client, vat_geo_
             "contactos-0-centro": str(centro.id),
             "contactos-0-nombre_contacto": "Ana Perez",
             "contactos-0-rol_area": "Dirección",
+            "contactos-0-documento": "30111222",
             "contactos-0-telefono_contacto": "221-3333333",
             "contactos-0-email_contacto": "ana@vat.test",
             "contactos-0-es_principal": "on",
@@ -366,18 +377,10 @@ def test_centro_update_permite_cambiar_activo(client, vat_geo_data):
         situacion="Institución de ETP",
         activo=True,
     )
-    autoridad = AutoridadInstitucional.objects.create(
-        centro=centro,
-        nombre_completo="Ana Perez",
-        dni="30111223",
-        cargo="Director/a",
-        email="ana@vat.test",
-        telefono="221-3333333",
-        es_actual=True,
-    )
     contacto = InstitucionContacto.objects.create(
         centro=centro,
         nombre_contacto="Ana Perez",
+        documento="30111223",
         rol_area="Dirección",
         telefono_contacto="221-3333333",
         email_contacto="ana@vat.test",
@@ -392,7 +395,6 @@ def test_centro_update_permite_cambiar_activo(client, vat_geo_data):
         localidad_ba,
         nombre="CFP Estado Editable",
         codigo="500144999",
-        autoridad_dni=autoridad.dni,
         **{
             "contactos-TOTAL_FORMS": "1",
             "contactos-INITIAL_FORMS": "1",
@@ -402,6 +404,7 @@ def test_centro_update_permite_cambiar_activo(client, vat_geo_data):
             "contactos-0-centro": str(centro.id),
             "contactos-0-nombre_contacto": "Ana Perez",
             "contactos-0-rol_area": "Dirección",
+            "contactos-0-documento": "30111223",
             "contactos-0-telefono_contacto": "221-3333333",
             "contactos-0-email_contacto": "ana@vat.test",
             "contactos-0-es_principal": "on",
@@ -461,18 +464,10 @@ def test_centro_update_rechaza_formset_contactos_sin_ids_existentes(
         situacion="Institución de ETP",
         activo=True,
     )
-    autoridad = AutoridadInstitucional.objects.create(
-        centro=centro,
-        nombre_completo="Ana Perez",
-        dni="30111224",
-        cargo="Director/a",
-        email="ana@vat.test",
-        telefono="221-3333333",
-        es_actual=True,
-    )
     contacto = InstitucionContacto.objects.create(
         centro=centro,
         nombre_contacto="Contacto Original",
+        documento="30111224",
         rol_area="Dirección",
         telefono_contacto="221-3333333",
         email_contacto="original@vat.test",
@@ -487,7 +482,6 @@ def test_centro_update_rechaza_formset_contactos_sin_ids_existentes(
         localidad_ba,
         nombre="CFP Contactos Seguros",
         codigo="500145000",
-        autoridad_dni=autoridad.dni,
         **{
             "contactos-TOTAL_FORMS": "1",
             "contactos-INITIAL_FORMS": "0",
@@ -496,6 +490,7 @@ def test_centro_update_rechaza_formset_contactos_sin_ids_existentes(
             "contactos-0-centro": str(centro.id),
             "contactos-0-nombre_contacto": "Contacto Editado Sin ID",
             "contactos-0-rol_area": "Dirección",
+            "contactos-0-documento": "30111224",
             "contactos-0-telefono_contacto": "221-4444444",
             "contactos-0-email_contacto": "editado@vat.test",
             "contactos-0-es_principal": "on",
@@ -619,7 +614,6 @@ def test_centro_update_actualiza_entidades_relacionadas_del_formulario_extendido
         nombre="Centro de Formación 402",
         codigo="500144901",
         domicilio_actividad="Calle 8 N° 4321",
-        autoridad_dni="30999888",
         nombre_referente="Laura",
         apellido_referente="Gómez",
         telefono_referente="221-4999999",
@@ -633,6 +627,7 @@ def test_centro_update_actualiza_entidades_relacionadas_del_formulario_extendido
             "contactos-0-centro": str(centro.id),
             "contactos-0-nombre_contacto": "Laura Gómez",
             "contactos-0-rol_area": "Dirección",
+            "contactos-0-documento": "30999888",
             "contactos-0-telefono_contacto": "221-4333333",
             "contactos-0-email_contacto": "direccion2@vat.test",
             "contactos-0-es_principal": "on",
@@ -645,18 +640,182 @@ def test_centro_update_actualiza_entidades_relacionadas_del_formulario_extendido
     )
 
     centro.refresh_from_db()
-    autoridad = centro.autoridades.get(es_actual=True)
     identificador = centro.identificadores_hist.get(tipo_identificador="cue")
     ubicacion = centro.ubicaciones.get(rol_ubicacion="sede_principal")
     contacto.refresh_from_db()
 
     assert response.status_code == 302
     assert centro.nombre == "Centro de Formación 402"
-    assert autoridad.dni == "30999888"
+    assert centro.nombre_referente == "Laura Gómez"
+    assert centro.correo_referente == "direccion2@vat.test"
     assert identificador.valor_identificador == "500144901"
     assert ubicacion.domicilio == "Calle 8 N° 4321"
     assert contacto.nombre_contacto == "Laura Gómez"
+    assert contacto.documento == "30999888"
     assert contacto.email_contacto == "direccion2@vat.test"
+
+
+@pytest.mark.django_db
+def test_institucion_contacto_alta_form_rechaza_documento_no_numerico():
+    form = InstitucionContactoAltaForm(
+        data={
+            "nombre_contacto": "María Gómez",
+            "rol_area": "Administración",
+            "documento": "30A11222",
+            "telefono_contacto": "221-4222222",
+            "email_contacto": "maria@vat.test",
+            "es_principal": "on",
+        }
+    )
+
+    assert not form.is_valid()
+    assert form.errors["documento"] == ["El documento debe contener solo números."]
+
+
+@pytest.mark.django_db
+def test_institucion_contacto_forms_renderizan_documento_como_numerico():
+    alta_form = InstitucionContactoAltaForm()
+    admin_form = InstitucionContactoForm()
+
+    for form in [alta_form, admin_form]:
+        attrs = form.fields["documento"].widget.attrs
+        assert attrs["inputmode"] == "numeric"
+        assert attrs["pattern"] == "[0-9]*"
+        assert attrs["maxlength"] == "20"
+
+
+def test_institucion_contacto_forms_no_requieren_campos_visibles():
+    alta_form = InstitucionContactoAltaForm()
+    admin_form = InstitucionContactoForm()
+
+    for form in [alta_form, admin_form]:
+        assert form.fields["nombre_contacto"].required is False
+        assert form.fields["rol_area"].required is False
+        assert form.fields["documento"].required is False
+        assert form.fields["telefono_contacto"].required is False
+        assert form.fields["email_contacto"].required is False
+
+
+@pytest.mark.django_db
+def test_institucion_contacto_forms_requieren_un_canal_de_contacto():
+    alta_form = InstitucionContactoAltaForm(
+        data={
+            "nombre_contacto": "María Gómez",
+            "rol_area": "Administración",
+            "documento": "30111222",
+            "telefono_contacto": "",
+            "email_contacto": "",
+            "es_principal": "on",
+        }
+    )
+    admin_form = InstitucionContactoForm(
+        data={
+            "centro": "",
+            "nombre_contacto": "María Gómez",
+            "rol_area": "Administración",
+            "documento": "30111222",
+            "telefono_contacto": "",
+            "email_contacto": "",
+            "es_principal": "on",
+        }
+    )
+
+    assert not alta_form.is_valid()
+    assert alta_form.non_field_errors() == [
+        "Debe informar al menos un teléfono o correo electrónico para el contacto."
+    ]
+    assert not admin_form.is_valid()
+    assert admin_form.non_field_errors() == [
+        "Debe informar al menos un teléfono o correo electrónico para el contacto."
+    ]
+
+
+@pytest.mark.django_db
+def test_institucion_contacto_create_renderiza_campos_unificados(client):
+    user = User.objects.create_superuser(
+        username="admin-contacto-form",
+        email="admin-contacto-form@vat.test",
+        password="test1234",
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("vat_institucion_contacto_create"))
+
+    content = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert 'name="nombre_contacto"' in content
+    assert 'name="rol_area"' in content
+    assert 'name="documento"' in content
+    assert 'name="telefono_contacto"' in content
+    assert 'name="email_contacto"' in content
+    assert 'name="tipo"' not in content
+    assert 'name="valor"' not in content
+
+
+@pytest.mark.django_db
+def test_sync_responsable_principal_prioriza_contacto_marcado(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user(
+        username="referente-principal-sync",
+        email="referente-principal-sync@vat.test",
+        password="test1234",
+    )
+    referente.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Contactos Principales",
+        codigo="500145111",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="12",
+        numero=100,
+        domicilio_actividad="Calle 12 N° 100",
+        telefono="221-1111111",
+        celular="221-2222222",
+        correo="cfp-principal@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Pérez",
+        telefono_referente="221-3333333",
+        correo_referente="ana@vat.test",
+        referente=referente,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    primer_contacto = InstitucionContacto.objects.create(
+        centro=centro,
+        nombre_contacto="Primer Contacto",
+        rol_area="Administración",
+        documento="30111001",
+        telefono_contacto="221-4000001",
+        email_contacto="primer@vat.test",
+        tipo="email",
+        valor="primer@vat.test",
+        es_principal=False,
+    )
+    contacto_principal = InstitucionContacto.objects.create(
+        centro=centro,
+        nombre_contacto="Contacto Principal",
+        rol_area="Dirección",
+        documento="30111002",
+        telefono_contacto="221-4000002",
+        email_contacto="principal@vat.test",
+        tipo="email",
+        valor="principal@vat.test",
+        es_principal=True,
+    )
+
+    centro_views._sync_responsable_principal(centro)
+    primer_contacto.refresh_from_db()
+    contacto_principal.refresh_from_db()
+    centro.refresh_from_db()
+
+    assert contacto_principal.es_principal is True
+    assert primer_contacto.es_principal is False
+    assert centro.nombre_referente == "Contacto Principal"
+    assert centro.correo_referente == "principal@vat.test"
 
 
 @pytest.mark.django_db
@@ -982,16 +1141,6 @@ def test_centro_update_usuario_provincial_puede_editar_dentro_de_su_provincia(cl
         rol_institucional="sede",
         es_actual=True,
     )
-    AutoridadInstitucional.objects.create(
-        centro=centro,
-        nombre_completo="Ana Pérez",
-        dni="30111222",
-        cargo="Director/a",
-        email="direccion@vat.test",
-        telefono="221-4111111",
-        es_actual=True,
-    )
-
     user = User.objects.create_user(
         username="provincial-update",
         password="test1234",
@@ -1096,6 +1245,9 @@ def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_d
     assert response.status_code == 200
     assert reverse("vat_centro_update", kwargs={"pk": centro.pk}) in content
     assert "Editar" in content
+    assert "Estructura Institucional" not in content
+    assert "Ubicacion Principal" in content
+    assert "Identificadores" in content
 
 
 @pytest.mark.django_db
@@ -1138,6 +1290,7 @@ def vat_plan_estudio_base(db):
     )
     modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
     plan = PlanVersionCurricular.objects.create(
+        nombre="Soldador Básico",
         sector=sector,
         subsector=subsector,
         modalidad_cursada=modalidad,
@@ -1228,6 +1381,7 @@ def test_plan_estudio_create_usuario_provincial_asigna_provincia(client):
     assert response.status_code == 302
     plan = PlanVersionCurricular.objects.get(normativa="Resolución 123/2026")
     assert plan.provincia_id == provincia_ba.id
+    assert plan.nombre == "Plan Industrial Inicial"
     assert plan.titulo_referencia.nombre == "Plan Industrial Inicial"
 
 
@@ -1236,14 +1390,10 @@ def test_plan_version_curricular_form_inicializa_campos_compuestos_de_normativa(
     sector = Sector.objects.create(nombre="Industria")
     modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
     plan = PlanVersionCurricular.objects.create(
+        nombre="Plan de Prueba",
         sector=sector,
         modalidad_cursada=modalidad,
         normativa="Disposición 55/2024",
-    )
-    TituloReferencia.objects.create(
-        plan_estudio=plan,
-        nombre="Plan de Prueba",
-        activo=True,
     )
 
     form = PlanVersionCurricularForm(instance=plan)
@@ -1326,6 +1476,7 @@ def test_plan_version_curricular_create_solo_guarda_normativa_estructurada(clien
     assert response.status_code == 302
     plan = PlanVersionCurricular.objects.get(normativa="Resolución 321/2025")
     assert plan.provincia_id == provincia_ba.id
+    assert plan.nombre == "Plan con normativa estructurada"
     assert plan.titulo_referencia.nombre == "Plan con normativa estructurada"
 
 
@@ -1334,14 +1485,10 @@ def test_plan_version_curricular_form_preserva_normativa_libre_existente():
     sector = Sector.objects.create(nombre="Industria")
     modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
     plan = PlanVersionCurricular.objects.create(
+        nombre="Plan con texto libre persistido",
         sector=sector,
         modalidad_cursada=modalidad,
         normativa="Texto libre cargado por base || Resolución 123/2024",
-        activo=True,
-    )
-    TituloReferencia.objects.create(
-        plan_estudio=plan,
-        nombre="Plan con texto libre persistido",
         activo=True,
     )
 
@@ -1356,6 +1503,7 @@ def test_plan_version_curricular_form_guarda_normativa_libre_existente_y_actuali
     sector = Sector.objects.create(nombre="Industria")
     modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
     plan = PlanVersionCurricular.objects.create(
+        nombre="Plan con texto libre persistido",
         sector=sector,
         modalidad_cursada=modalidad,
         normativa="Texto libre cargado por base || Resolución 123/2024",
@@ -1364,12 +1512,6 @@ def test_plan_version_curricular_form_guarda_normativa_libre_existente_y_actuali
         nivel_certifica="nivel_1",
         activo=True,
     )
-    TituloReferencia.objects.create(
-        plan_estudio=plan,
-        nombre="Plan con texto libre persistido",
-        activo=True,
-    )
-
     form = PlanVersionCurricularForm(
         data={
             "nombre": "Plan con texto libre persistido",
@@ -1427,6 +1569,7 @@ def test_plan_version_curricular_create_no_mezcla_texto_libre_en_alta(client):
     assert response.status_code == 302
     plan = PlanVersionCurricular.objects.get(normativa="Disposición 55/2024")
     assert plan.provincia_id == provincia_ba.id
+    assert plan.nombre == "Plan mixto"
     assert plan.titulo_referencia.nombre == "Plan mixto"
 
 
@@ -1471,6 +1614,7 @@ def test_plan_version_curricular_form_save_actualiza_titulo_asociado():
     sector = Sector.objects.create(nombre="Industria")
     modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
     plan = PlanVersionCurricular.objects.create(
+        nombre="Nombre anterior",
         sector=sector,
         modalidad_cursada=modalidad,
         normativa="Disposición 55/2024",
@@ -1502,8 +1646,10 @@ def test_plan_version_curricular_form_save_actualiza_titulo_asociado():
 
     assert form.is_valid(), form.errors
     form.save()
+    plan.refresh_from_db()
     titulo.refresh_from_db()
 
+    assert plan.nombre == "Nombre actualizado"
     assert titulo.nombre == "Nombre actualizado"
 
 
@@ -1688,8 +1834,9 @@ def test_plan_version_curricular_serializer_omite_campos_eliminados(
         instance=titulo.plan_estudio
     ).data
 
+    assert data["nombre"] == titulo.plan_estudio.nombre
     assert data["titulo_referencia"] == titulo.id
-    assert data["titulo_referencia_nombre"] == titulo.nombre
+    assert data["titulo_referencia_nombre"] == titulo.plan_estudio.nombre
     assert "version" not in data
     assert "frecuencia" not in data
 

@@ -61,11 +61,6 @@ from VAT.views.institucion import (
     InstitucionContactoDetailView,
     InstitucionContactoUpdateView,
     InstitucionContactoDeleteView,
-    AutoridadInstitucionalListView,
-    AutoridadInstitucionalCreateView,
-    AutoridadInstitucionalDetailView,
-    AutoridadInstitucionalUpdateView,
-    AutoridadInstitucionalDeleteView,
     InstitucionIdentificadorHistListView,
     InstitucionIdentificadorHistCreateView,
     InstitucionIdentificadorHistDetailView,
@@ -583,42 +578,6 @@ urlpatterns = [
             InstitucionContactoDeleteView.as_view()
         ),
         name="vat_institucion_contacto_delete",
-    ),
-    # Institución - Autoridades
-    path(
-        "vat/institucion/autoridades/",
-        permissions_any_required(["VAT.view_autoridadinstitucional"])(
-            AutoridadInstitucionalListView.as_view()
-        ),
-        name="vat_autoridad_institucional_list",
-    ),
-    path(
-        "vat/institucion/autoridades/nuevo/",
-        permissions_any_required(["VAT.add_autoridadinstitucional"])(
-            AutoridadInstitucionalCreateView.as_view()
-        ),
-        name="vat_autoridad_institucional_create",
-    ),
-    path(
-        "vat/institucion/autoridades/<int:pk>/",
-        permissions_any_required(["VAT.view_autoridadinstitucional"])(
-            AutoridadInstitucionalDetailView.as_view()
-        ),
-        name="vat_autoridad_institucional_detail",
-    ),
-    path(
-        "vat/institucion/autoridades/<int:pk>/editar/",
-        permissions_any_required(["VAT.change_autoridadinstitucional"])(
-            AutoridadInstitucionalUpdateView.as_view()
-        ),
-        name="vat_autoridad_institucional_update",
-    ),
-    path(
-        "vat/institucion/autoridades/<int:pk>/eliminar/",
-        permissions_any_required(["VAT.delete_autoridadinstitucional"])(
-            AutoridadInstitucionalDeleteView.as_view()
-        ),
-        name="vat_autoridad_institucional_delete",
     ),
     # Institución - Identificadores
     path(
