@@ -480,7 +480,9 @@ class BaseInstitucionContactoAltaFormSet(BaseInlineFormSet):
                 continue
             if getattr(self, "can_delete", False) and form.cleaned_data.get("DELETE"):
                 continue
-            if not any(form.cleaned_data.get(field_name) for field_name in tracked_fields):
+            if not any(
+                form.cleaned_data.get(field_name) for field_name in tracked_fields
+            ):
                 continue
 
             if form.cleaned_data.get("es_principal"):

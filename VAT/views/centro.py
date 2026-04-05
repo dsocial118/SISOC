@@ -20,7 +20,6 @@ from VAT.models import (
     Curso,
     ComisionCurso,
     Comision,
-    InstitucionContacto,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
     PlanVersionCurricular,
@@ -107,9 +106,9 @@ def _sync_responsable_principal(centro):
             "es_principal",
         ]
     )
-    centro.contactos_adicionales.exclude(pk=principal.pk).filter(es_principal=True).update(
-        es_principal=False
-    )
+    centro.contactos_adicionales.exclude(pk=principal.pk).filter(
+        es_principal=True
+    ).update(es_principal=False)
     centro.nombre_referente = principal.nombre_contacto or ""
     centro.apellido_referente = ""
     centro.telefono_referente = principal.telefono_contacto or ""
@@ -123,6 +122,34 @@ def _sync_responsable_principal(centro):
         ]
     )
     return principal
+
+
+def _submitted_contact_matches_existing(data, contacto_existente):
+    submitted_es_principal = data.get("contactos-0-es_principal") in {
+        "1",
+        "true",
+        "True",
+        "on",
+    }
+    submitted_values = {
+        "nombre_contacto": (data.get("contactos-0-nombre_contacto", "") or "").strip(),
+        "rol_area": (data.get("contactos-0-rol_area", "") or "").strip(),
+        "documento": (data.get("contactos-0-documento", "") or "").strip(),
+        "telefono_contacto": (
+            data.get("contactos-0-telefono_contacto", "") or ""
+        ).strip(),
+        "email_contacto": (data.get("contactos-0-email_contacto", "") or "").strip(),
+        "es_principal": submitted_es_principal,
+    }
+    existing_values = {
+        "nombre_contacto": (contacto_existente.nombre_contacto or "").strip(),
+        "rol_area": (contacto_existente.rol_area or "").strip(),
+        "documento": (contacto_existente.documento or "").strip(),
+        "telefono_contacto": (contacto_existente.telefono_contacto or "").strip(),
+        "email_contacto": (contacto_existente.email_contacto or "").strip(),
+        "es_principal": bool(contacto_existente.es_principal),
+    }
+    return submitted_values == existing_values
 
 
 class CentroListView(LoginRequiredMixin, ListView):
@@ -193,7 +220,9 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             .order_by("-es_actual", "-vigencia_desde")
         )
         ctx["contactos"] = list(
-            centro.contactos_adicionales.all().order_by("-es_principal", "nombre_contacto")
+            centro.contactos_adicionales.all().order_by(
+                "-es_principal", "nombre_contacto"
+            )
         )
         ctx["ubicaciones"] = centro.ubicaciones.select_related("localidad").all()
 
@@ -478,7 +507,17 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
         if any(data.get(f"contactos-{index}-id") for index in range(total_forms)):
             return data, None
 
-        if self.object.contactos_adicionales.exists():
+        contactos_existentes = list(self.object.contactos_adicionales.order_by("id"))
+        if total_forms == 1 and len(contactos_existentes) == 1:
+            contacto_existente = contactos_existentes[0]
+            if _submitted_contact_matches_existing(data, contacto_existente):
+                normalized_data = data.copy()
+                normalized_data["contactos-INITIAL_FORMS"] = "1"
+                normalized_data["contactos-0-id"] = str(contacto_existente.pk)
+                normalized_data["contactos-0-centro"] = str(self.object.pk)
+                return normalized_data, None
+
+        if contactos_existentes:
             return (
                 data,
                 (
@@ -512,7 +551,15 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         with transaction.atomic():
+            was_active = (
+                type(self.object)
+                .objects.filter(pk=self.object.pk)
+                .values_list("activo", flat=True)
+                .first()
+            )
             centro = form.save(commit=False)
+            if not was_active:
+                centro.activo = False
             centro.save()
             form.save_m2m()
             self.object = centro

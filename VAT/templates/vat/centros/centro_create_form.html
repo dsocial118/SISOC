@@ -321,34 +321,34 @@
                             </div>
                         {% endfor %}
                     </div>
-                <div class="vp-actions">
-                    <a href="{{ cancel_url }}" class="btn btn-secondary">
-                        <i class="fas fa-times mr-1"></i>Cancelar
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-1"></i>{{ submit_text|default:"Guardar" }}
-                    </button>
-                    {% if show_save_continue or show_save_continue is None %}
-                        <button type="submit"
-                                name="save_continue"
-                                value="1"
-                                class="btn btn-outline-primary">
-                            <i class="fas fa-arrow-right mr-1"></i>{{ submit_continue_text|default:"Guardar y continuar" }}
+                    <div class="vp-actions">
+                        <a href="{{ cancel_url }}" class="btn btn-secondary">
+                            <i class="fas fa-times mr-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save mr-1"></i>{{ submit_text|default:"Guardar" }}
                         </button>
-                    {% endif %}
+                        {% if show_save_continue or show_save_continue is None %}
+                            <button type="submit"
+                                    name="save_continue"
+                                    value="1"
+                                    class="btn btn-outline-primary">
+                                <i class="fas fa-arrow-right mr-1"></i>{{ submit_continue_text|default:"Guardar y continuar" }}
+                            </button>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
-        </form>
-    </div>
+            </form>
+        </div>
 
-    <template id="contacto-empty-form-template">
-        <div class="vp-contact-item mb-3 contacto-form-item"
-             data-form-index="__prefix__">__FORM_FIELDS__</div>
-    </template>
-{% endblock %}
+        <template id="contacto-empty-form-template">
+            <div class="vp-contact-item mb-3 contacto-form-item"
+                 data-form-index="__prefix__">__FORM_FIELDS__</div>
+        </template>
+    {% endblock %}
 
-{% block customJS %}
-    <script nonce="{{ request.csp_nonce }}">
+    {% block customJS %}
+        <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
         var contactoEmptyFormHtml = `{% filter escapejs %}
@@ -368,6 +368,6 @@
                 </div>
             {% endwith %}
         {% endfilter %}`;
-    </script>
-    <script src="{% static 'custom/js/centro_create_form.js' %}"></script>
-{% endblock %}
+        </script>
+        <script src="{% static 'custom/js/centro_create_form.js' %}"></script>
+    {% endblock %}
