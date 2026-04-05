@@ -528,14 +528,6 @@
                                             </a>
                                         </li>
                                     {% endif %}
-                                    {% if request.user|has_perm_code:"VAT.view_autoridadinstitucional" %}
-                                        <li class="nav-item">
-                                            <a href="{% url 'vat_autoridad_institucional_list' %}"
-                                               class="nav-link nav-dot ms-4 {% if 'vat/institucion/autoridades/' in pagina_actual %}active{% endif %}">
-                                                <p>Autoridades</p>
-                                            </a>
-                                        </li>
-                                    {% endif %}
                                     {% if request.user|has_perm_code:"VAT.view_institucionidentificadorhist" %}
                                         <li class="nav-item">
                                             <a href="{% url 'vat_institucion_identificador_list' %}"

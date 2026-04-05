@@ -20,7 +20,7 @@
                                     <th>Sector</th>
                                     <th>Subsector</th>
                                     <th class="sortable" data-column="titulo">
-                                        Título
+                                        Nombre
                                         <i class="fas fa-sort sort-icon"></i>
                                     </th>
                                     <th>Modalidad</th>
@@ -34,10 +34,10 @@
                                     <tr>
                                         <td>{{ plan.sector.nombre }}</td>
                                         <td>{{ plan.subsector.nombre|default:"—" }}</td>
-                                        <td data-titulo="{{ plan.titulo_referencia.nombre }}">
+                                        <td data-titulo="{{ plan.nombre }}">
                                             <a href="{% url 'vat_planversioncurricular_detail' plan.id %}"
                                                class="link-handler"
-                                               title="Ver detalles">{{ plan.titulo_referencia.nombre }}</a>
+                                               title="Ver detalles">{{ plan.nombre }}</a>
                                         </td>
                                         <td>{{ plan.modalidad_cursada.nombre }}</td>
                                         <td>{{ plan.horas_reloj|default:"—" }}</td>

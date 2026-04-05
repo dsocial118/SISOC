@@ -562,8 +562,8 @@
             </div>
             <div class="ci-stat-sep"></div>
             <div class="ci-stat">
-                <span class="ci-stat-val">{{ count_autoridades }}</span>
-                <span class="ci-stat-lbl">Autoridades</span>
+                <span class="ci-stat-val">{{ count_contactos }}</span>
+                <span class="ci-stat-lbl">Contactos</span>
             </div>
             <div class="ci-stat-sep"></div>
             <div class="ci-stat">
@@ -596,16 +596,6 @@
                             type="button"
                             role="tab">
                         <i class="fas fa-info-circle me-1"></i>Datos Generales
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link"
-                            id="estructura-tab"
-                            data-bs-toggle="tab"
-                            data-bs-target="#estructura"
-                            type="button"
-                            role="tab">
-                        <i class="fas fa-sitemap me-1"></i>Estructura Institucional
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -785,12 +775,21 @@
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>
-                                            <i class="fas fa-tag me-1"></i>Tipo
-                                        </th>
-                                        <th>
-                                            <i class="fas fa-address-book me-1"></i>Valor
-                                        </th>
+                                            <th>
+                                                <i class="fas fa-user me-1"></i>Responsable
+                                            </th>
+                                            <th>
+                                                <i class="fas fa-briefcase me-1"></i>Rol / Área
+                                            </th>
+                                            <th>
+                                                <i class="fas fa-id-card me-1"></i>Documento
+                                            </th>
+                                            <th>
+                                                <i class="fas fa-phone me-1"></i>Teléfono
+                                            </th>
+                                            <th>
+                                                <i class="fas fa-envelope me-1"></i>Correo
+                                            </th>
                                         <th>
                                             <i class="fas fa-star me-1"></i>Principal
                                         </th>
@@ -802,10 +801,17 @@
                                 <tbody>
                                     {% for c in contactos %}
                                         <tr>
+                                            <td class="fw-bold">{{ c.nombre_contacto|default:"-" }}</td>
+                                            <td>{{ c.rol_area|default:"-" }}</td>
+                                            <td>{{ c.documento|default:"-" }}</td>
+                                            <td>{{ c.telefono_contacto|default:"-" }}</td>
                                             <td>
-                                                <span class="badge bg-info">{{ c.get_tipo_display }}</span>
+                                                {% if c.email_contacto %}
+                                                    <a href="mailto:{{ c.email_contacto }}" class="text-decoration-none">{{ c.email_contacto }}</a>
+                                                {% else %}
+                                                    -
+                                                {% endif %}
                                             </td>
-                                            <td class="fw-bold">{{ c.valor }}</td>
                                             <td class="text-center">
                                                 {% if c.es_principal %}
                                                     <i class="fas fa-star text-warning"></i>
@@ -839,19 +845,15 @@
                     {% else %}
                         <div class="text-center py-4 text-muted">
                             <i class="fas fa-phone fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">No hay contactos adicionales registrados.</p>
+                            <p class="mb-0">No hay contactos institucionales registrados.</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
 
-        </div>
-
-        {# ================================================================ #}
-        {# TAB 2: ESTRUCTURA INSTITUCIONAL                                  #}
-        {# Agrupa: Ubicacion + Ubicaciones + Autoridades + Identificadores  #}
-        {# ================================================================ #}
-        <div class="tab-pane fade" id="estructura" role="tabpanel">
+            {# ================================================================ #}
+            {# DATOS INSTITUCIONALES DENTRO DE DATOS GENERALES                #}
+            {# ================================================================ #}
 
             <!-- Ubicacion Principal -->
             <div class="card shadow-sm mb-4">
@@ -983,96 +985,6 @@
                         <div class="text-center py-4 text-muted">
                             <i class="fas fa-map fa-2x mb-2 opacity-50"></i>
                             <p class="mb-0">Sin ubicaciones adicionales registradas.</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Autoridades Institucionales -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 text-primary">
-                        <i class="fas fa-user-tie me-2"></i>
-                        Autoridades Institucionales
-                    </h6>
-                    {% if perms.VAT.add_autoridadinstitucional %}
-                        <button type="button"
-                                class="btn btn-sm btn-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modalAutoridad">
-                            <i class="fas fa-plus me-1"></i>Agregar
-                        </button>
-                    {% endif %}
-                </div>
-                <div class="card-body p-0">
-                    {% if autoridades %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>
-                                            <i class="fas fa-user me-1"></i>Nombre
-                                        </th>
-                                        <th>
-                                            <i class="fas fa-id-card me-1"></i>DNI
-                                        </th>
-                                        <th>
-                                            <i class="fas fa-briefcase me-1"></i>Cargo
-                                        </th>
-                                        <th>
-                                            <i class="fas fa-envelope me-1"></i>Email
-                                        </th>
-                                        <th>
-                                            <i class="fas fa-phone me-1"></i>Telefono
-                                        </th>
-                                        <th class="text-center">
-                                            <i class="fas fa-cogs me-1"></i>Acciones
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for a in autoridades %}
-                                        <tr>
-                                            <td class="fw-bold">{{ a.nombre_completo }}</td>
-                                            <td>{{ a.dni }}</td>
-                                            <td>
-                                                <span class="badge bg-secondary">{{ a.cargo }}</span>
-                                            </td>
-                                            <td>
-                                                {% if a.email %}
-                                                    <a href="mailto:{{ a.email }}" class="text-decoration-none">{{ a.email }}</a>
-                                                {% else %}
-                                                    -
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ a.telefono|default:"-" }}</td>
-                                            <td class="text-center">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    {% if perms.VAT.change_autoridadinstitucional %}
-                                                        <button class="btn btn-outline-warning"
-                                                                onclick="editAutoridad({{ a.id }})"
-                                                                title="Editar">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                    {% if perms.VAT.delete_autoridadinstitucional %}
-                                                        <button class="btn btn-outline-danger"
-                                                                onclick="deleteAutoridad({{ a.id }})"
-                                                                title="Eliminar">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-user-tie fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">No hay autoridades asociadas.</p>
                         </div>
                     {% endif %}
                 </div>
@@ -1814,49 +1726,6 @@
     <!-- MODALES                                                          -->
     <!-- ================================================================ -->
 
-    <!-- Modal Autoridad -->
-    <div class="modal fade"
-         id="modalAutoridad"
-         tabindex="-1"
-         aria-labelledby="modalAutoridadLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalAutoridadLabel">Agregar Autoridad</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-                <form id="formAutoridad"
-                      method="post"
-                      action="{% url 'vat_autoridad_institucional_create' %}?centro={{ centro.id }}">
-                    {% csrf_token %}
-                    <div class="modal-body">
-                        <div class="row">
-                            {% for field in autoridad_form %}
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                                        {{ field.label }}
-                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                    </label>
-                                    {{ field }}
-                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal Contacto -->
     <div class="modal fade"
          id="modalContacto"
@@ -2288,20 +2157,6 @@
     <script src="{% static 'custom/js/vat.js' %}"></script>
     <script nonce="{{ request.csp_nonce }}">
         // Funciones para editar (redirigir a pagina de edicion)
-        function editAutoridad(id) {
-            window.location.href = `/vat/institucion/autoridades/${id}/editar/`;
-        }
-        function deleteAutoridad(id) {
-            if (confirm('Eliminar autoridad?')) {
-                fetch(`/vat/institucion/autoridades/${id}/eliminar/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
-                })
-                .then(() => location.reload());
-            }
-        }
         function editContacto(id) {
             window.location.href = `/vat/institucion/contactos/${id}/editar/`;
         }
@@ -2382,7 +2237,6 @@
             });
         }
 
-        setupModalForm('formAutoridad', 'modalAutoridad');
         setupModalForm('formContacto', 'modalContacto');
         setupModalForm('formIdentificador', 'modalIdentificador');
         setupModalForm('formUbicacion', 'modalUbicacion');
@@ -2878,7 +2732,7 @@
 
         // Legacy compatibility - prevent any jQuery double-bind
         if (typeof $ !== 'undefined') {
-            $('#formAutoridad, #formContacto, #formIdentificador, #formUbicacion, #formOferta, #formCurso, #formComisionCurso, #formTitulo, #formPlan').off('submit');
+            $('#formContacto, #formIdentificador, #formUbicacion, #formOferta, #formCurso, #formComisionCurso, #formTitulo, #formPlan').off('submit');
         }
 
         var tabStorageKey = 'vat-centro-active-tab-{{ centro.id }}';

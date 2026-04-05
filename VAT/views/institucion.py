@@ -17,13 +17,11 @@ from core.models import Localidad
 from VAT.models import (
     Centro,
     InstitucionContacto,
-    AutoridadInstitucional,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
 )
 from VAT.forms import (
     InstitucionContactoForm,
-    AutoridadInstitucionalForm,
     InstitucionIdentificadorHistForm,
     InstitucionUbicacionForm,
 )
@@ -104,79 +102,6 @@ class InstitucionContactoDeleteView(
     template_name = "vat/institucion/contacto_confirm_delete.html"
     context_object_name = "contacto"
     success_url = reverse_lazy("vat_institucion_contacto_list")
-
-
-# ============================================================================
-# AUTORIDAD INSTITUCIONAL VIEWS
-# ============================================================================
-
-
-class AutoridadInstitucionalListView(LoginRequiredMixin, ListView):
-    model = AutoridadInstitucional
-    template_name = "vat/institucion/autoridad_list.html"
-    context_object_name = "autoridades"
-    paginate_by = 20
-
-    def get_queryset(self):
-        queryset = AutoridadInstitucional.objects.select_related("centro").order_by(
-            "-es_actual", "centro"
-        )
-        centro_id = self.request.GET.get("centro_id")
-        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
-
-        if centro_id:
-            queryset = queryset.filter(centro_id=centro_id)
-        if buscar:
-            queryset = queryset.filter(
-                Q(nombre_completo__icontains=buscar)
-                | Q(centro__nombre__icontains=buscar)
-            )
-
-        return queryset
-
-
-class AutoridadInstitucionalCreateView(LoginRequiredMixin, CreateView):
-    model = AutoridadInstitucional
-    form_class = AutoridadInstitucionalForm
-    template_name = "vat/institucion/autoridad_form.html"
-    success_url = reverse_lazy("vat_autoridad_institucional_list")
-
-    def get_initial(self):
-        initial = super().get_initial()
-        centro_id = self.request.GET.get("centro")
-        if centro_id:
-            initial["centro"] = centro_id
-        return initial
-
-    def form_valid(self, form):
-        messages.success(self.request, "Autoridad creada exitosamente.")
-        return super().form_valid(form)
-
-
-class AutoridadInstitucionalDetailView(LoginRequiredMixin, DetailView):
-    model = AutoridadInstitucional
-    template_name = "vat/institucion/autoridad_detail.html"
-    context_object_name = "autoridad"
-
-
-class AutoridadInstitucionalUpdateView(LoginRequiredMixin, UpdateView):
-    model = AutoridadInstitucional
-    form_class = AutoridadInstitucionalForm
-    template_name = "vat/institucion/autoridad_form.html"
-    success_url = reverse_lazy("vat_autoridad_institucional_list")
-
-    def form_valid(self, form):
-        messages.success(self.request, "Autoridad actualizada exitosamente.")
-        return super().form_valid(form)
-
-
-class AutoridadInstitucionalDeleteView(
-    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
-):
-    model = AutoridadInstitucional
-    template_name = "vat/institucion/autoridad_confirm_delete.html"
-    context_object_name = "autoridad"
-    success_url = reverse_lazy("vat_autoridad_institucional_list")
 
 
 # ============================================================================

@@ -16,7 +16,6 @@ from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect, JsonResponse
 
 from VAT.models import (
-    AutoridadInstitucional,
     Centro,
     Curso,
     ComisionCurso,
@@ -38,7 +37,6 @@ from VAT.forms import (
     CentroAltaForm,
     InstitucionContactoAltaFormSet,
     InstitucionContactoForm,
-    AutoridadInstitucionalForm,
     InstitucionIdentificadorHistForm,
     InstitucionUbicacionForm,
     CursoForm,
@@ -70,6 +68,92 @@ BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
         "boolean": CENTRO_BOOL_OPS,
     },
 )
+
+
+def _build_responsable_principal_data(contacto):
+    nombre_completo = (contacto.nombre_contacto or "").strip()
+    correo = contacto.email_contacto or ""
+    telefono = contacto.telefono_contacto or ""
+    return {
+        "nombre_contacto": nombre_completo,
+        "rol_area": contacto.rol_area or "Responsable institucional",
+        "documento": contacto.documento or "",
+        "telefono_contacto": telefono,
+        "email_contacto": correo,
+        "tipo": "email" if correo else "telefono",
+        "valor": correo or telefono,
+        "es_principal": True,
+    }
+
+
+def _sync_responsable_principal(centro):
+    principal = (
+        centro.contactos_adicionales.filter(es_principal=True).order_by("id").first()
+    )
+    if principal is None:
+        principal = centro.contactos_adicionales.order_by("id").first()
+    if principal is None:
+        return None
+
+    defaults = _build_responsable_principal_data(principal)
+    for field_name, value in defaults.items():
+        setattr(principal, field_name, value)
+    principal.save(
+        update_fields=[
+            "nombre_contacto",
+            "rol_area",
+            "documento",
+            "telefono_contacto",
+            "email_contacto",
+            "tipo",
+            "valor",
+            "es_principal",
+        ]
+    )
+    centro.contactos_adicionales.exclude(pk=principal.pk).filter(
+        es_principal=True
+    ).update(es_principal=False)
+    centro.nombre_referente = principal.nombre_contacto or ""
+    centro.apellido_referente = ""
+    centro.telefono_referente = principal.telefono_contacto or ""
+    centro.correo_referente = principal.email_contacto or ""
+    centro.save(
+        update_fields=[
+            "nombre_referente",
+            "apellido_referente",
+            "telefono_referente",
+            "correo_referente",
+        ]
+    )
+    return principal
+
+
+def _submitted_contact_matches_existing(data, contacto_existente):
+    submitted_es_principal = data.get("contactos-0-es_principal") in {
+        "1",
+        "true",
+        "True",
+        "on",
+    }
+    submitted_values = {
+        "nombre_contacto": (data.get("contactos-0-nombre_contacto", "") or "").strip(),
+        "rol_area": (data.get("contactos-0-rol_area", "") or "").strip(),
+        "documento": (data.get("contactos-0-documento", "") or "").strip(),
+        "telefono_contacto": (
+            data.get("contactos-0-telefono_contacto", "") or ""
+        ).strip(),
+        "email_contacto": (data.get("contactos-0-email_contacto", "") or "").strip(),
+        "es_principal": submitted_es_principal,
+    }
+    existing_values = {
+        "nombre_contacto": (contacto_existente.nombre_contacto or "").strip(),
+        "rol_area": (contacto_existente.rol_area or "").strip(),
+        "documento": (contacto_existente.documento or "").strip(),
+        "telefono_contacto": (contacto_existente.telefono_contacto or "").strip(),
+        "email_contacto": (contacto_existente.email_contacto or "").strip(),
+        "es_principal": bool(contacto_existente.es_principal),
+    }
+    return submitted_values == existing_values
 
 
 class CentroListView(LoginRequiredMixin, ListView):
@@ -134,15 +218,16 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         centro = self.object
 
         # Evaluar listas una sola vez para reutilizar en los counts
-        ctx["autoridades"] = list(
-            centro.autoridades.all().order_by("-es_actual", "-vigencia_desde")
-        )
         ctx["identificadores"] = list(
             centro.identificadores_hist.select_related("ubicacion")
             .all()
             .order_by("-es_actual", "-vigencia_desde")
         )
-        ctx["contactos"] = list(centro.contactos_adicionales.all())
+        ctx["contactos"] = list(
+            centro.contactos_adicionales.all().order_by(
+                "-es_principal", "nombre_contacto"
+            )
+        )
         ctx["ubicaciones"] = centro.ubicaciones.select_related("localidad").all()
 
         # annotate para evitar N+1 al contar comisiones por oferta
@@ -185,7 +270,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         ctx["count_comisiones"] = len(ctx["comisiones"])
         ctx["count_cursos"] = len(ctx["cursos"])
         ctx["count_comisiones_curso"] = len(ctx["comisiones_curso"])
-        ctx["count_autoridades"] = len(ctx["autoridades"])
         ctx["count_identificadores"] = len(ctx["identificadores"])
         ctx["count_contactos"] = len(ctx["contactos"])
 
@@ -206,9 +290,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # Forms para modales
         ctx["contacto_form"] = InstitucionContactoForm(initial={"centro": centro})
-        ctx["autoridad_form"] = AutoridadInstitucionalForm(
-            initial={"centro": centro, "es_actual": True}
-        )
         ctx["identificador_form"] = InstitucionIdentificadorHistForm(
             initial={"centro": centro, "es_actual": True}
         )
@@ -288,7 +369,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
                 "page_title": "Alta de Centro de Formacion",
                 "page_description": (
                     "Registro inicial del centro VAT con datos institucionales, "
-                    "ubicación, contactos y autoridad responsable."
+                    "ubicación y contactos institucionales unificados."
                 ),
                 "show_provincia_field": not self._should_hide_provincia_field(),
                 "cancel_url": reverse("vat_centro_list"),
@@ -322,19 +403,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
 
             contacto_formset.instance = self.object
             contacto_formset.save()
-
-            AutoridadInstitucional.objects.create(
-                centro=self.object,
-                nombre_completo=(
-                    f"{form.cleaned_data['nombre_referente']} "
-                    f"{form.cleaned_data['apellido_referente']}"
-                ).strip(),
-                dni=form.cleaned_data["autoridad_dni"],
-                cargo="Director/a",
-                email=form.cleaned_data["correo_referente"],
-                telefono=form.cleaned_data.get("telefono_referente"),
-                es_actual=True,
-            )
+            _sync_responsable_principal(self.object)
 
             InstitucionIdentificadorHist.objects.create(
                 centro=self.object,
@@ -382,14 +451,13 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_initial(self):
         initial = super().get_initial()
-        autoridad = (
-            self.object.autoridades.filter(es_actual=True)
-            .order_by("-vigencia_desde", "-id")
+        responsable = (
+            self.object.contactos_adicionales.filter(es_principal=True)
+            .order_by("id")
             .first()
-            or self.object.autoridades.order_by("-vigencia_desde", "-id").first()
         )
-        if autoridad:
-            initial["autoridad_dni"] = autoridad.dni
+        if responsable:
+            initial["autoridad_dni"] = responsable.documento
         return initial
 
     def get_form_kwargs(self):
@@ -418,8 +486,8 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
                 "contacto_formset": contacto_formset,
                 "page_title": "Editar Centro de Formacion",
                 "page_description": (
-                    "Actualizá los datos institucionales, la ubicación, los "
-                    "contactos y la autoridad responsable del centro VAT."
+                    "Actualizá los datos institucionales, la ubicación y los "
+                    "contactos institucionales del centro VAT."
                 ),
                 "cancel_url": reverse(
                     "vat_centro_detail", kwargs={"pk": self.object.pk}
@@ -443,7 +511,17 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
         if any(data.get(f"contactos-{index}-id") for index in range(total_forms)):
             return data, None
 
-        if self.object.contactos_adicionales.exists():
+        contactos_existentes = list(self.object.contactos_adicionales.order_by("id"))
+        if total_forms == 1 and len(contactos_existentes) == 1:
+            contacto_existente = contactos_existentes[0]
+            if _submitted_contact_matches_existing(data, contacto_existente):
+                normalized_data = data.copy()
+                normalized_data["contactos-INITIAL_FORMS"] = "1"
+                normalized_data["contactos-0-id"] = str(contacto_existente.pk)
+                normalized_data["contactos-0-centro"] = str(self.object.pk)
+                return normalized_data, None
+
+        if contactos_existentes:
             return (
                 data,
                 (
@@ -477,13 +555,22 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         with transaction.atomic():
+            was_active = (
+                type(self.object)
+                .objects.filter(pk=self.object.pk)
+                .values_list("activo", flat=True)
+                .first()
+            )
             centro = form.save(commit=False)
+            if not was_active:
+                centro.activo = False
             centro.save()
             form.save_m2m()
             self.object = centro
 
             contacto_formset.instance = self.object
             contacto_formset.save()
+            _sync_responsable_principal(self.object)
 
             ubicacion_principal = (
                 self.object.ubicaciones.filter(rol_ubicacion="sede_principal")
@@ -502,25 +589,6 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
             ubicacion_principal.domicilio = form.cleaned_data["domicilio_actividad"]
             ubicacion_principal.es_principal = True
             ubicacion_principal.save()
-
-            autoridad_actual = (
-                self.object.autoridades.filter(es_actual=True)
-                .order_by("-vigencia_desde", "-id")
-                .first()
-                or self.object.autoridades.order_by("-vigencia_desde", "-id").first()
-            )
-            if autoridad_actual is None:
-                autoridad_actual = AutoridadInstitucional(centro=self.object)
-            autoridad_actual.nombre_completo = (
-                f"{form.cleaned_data['nombre_referente']} "
-                f"{form.cleaned_data['apellido_referente']}"
-            ).strip()
-            autoridad_actual.dni = form.cleaned_data["autoridad_dni"]
-            autoridad_actual.cargo = autoridad_actual.cargo or "Director/a"
-            autoridad_actual.email = form.cleaned_data["correo_referente"]
-            autoridad_actual.telefono = form.cleaned_data.get("telefono_referente")
-            autoridad_actual.es_actual = True
-            autoridad_actual.save()
 
             identificador_cue = (
                 self.object.identificadores_hist.filter(tipo_identificador="cue")
