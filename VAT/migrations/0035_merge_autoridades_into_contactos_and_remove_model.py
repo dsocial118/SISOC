@@ -26,9 +26,13 @@ def merge_autoridades_into_contactos(apps, schema_editor):
                 "telefono_contacto": autoridad.telefono,
                 "email_contacto": autoridad.email,
                 "es_principal": autoridad.es_actual,
+                "vigencia_desde": autoridad.vigencia_desde,
                 "vigencia_hasta": autoridad.vigencia_hasta,
             },
         )
+        if created and autoridad.vigencia_desde:
+            contacto.vigencia_desde = autoridad.vigencia_desde
+            contacto.save(update_fields=["vigencia_desde"])
         if created:
             continue
 
@@ -45,6 +49,13 @@ def merge_autoridades_into_contactos(apps, schema_editor):
             if value and not getattr(contacto, field_name):
                 setattr(contacto, field_name, value)
                 updated_fields.append(field_name)
+        if (
+            autoridad.vigencia_desde
+            and contacto.vigencia_desde
+            and autoridad.vigencia_desde < contacto.vigencia_desde
+        ):
+            contacto.vigencia_desde = autoridad.vigencia_desde
+            updated_fields.append("vigencia_desde")
         if autoridad.es_actual and not contacto.es_principal:
             contacto.es_principal = True
             updated_fields.append("es_principal")
