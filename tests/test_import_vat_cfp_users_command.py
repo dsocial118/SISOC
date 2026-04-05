@@ -107,8 +107,8 @@ def test_import_vat_cfp_users_generates_short_username_from_nombre(tmp_path):
 
     usernames = set(User.objects.values_list("username", flat=True))
 
-    assert "escmunformnpro1" in usernames
-    assert "ctrformnprocfp02" in usernames
+    assert "cfp1crucbelg" in usernames
+    assert "cfp2" in usernames
 
 
 def test_import_vat_cfp_users_with_only_nombre_generates_fantasy_email(tmp_path):
@@ -128,11 +128,11 @@ def test_import_vat_cfp_users_with_only_nombre_generates_fantasy_email(tmp_path)
         stdout=StringIO(),
     )
 
-    user_one = User.objects.get(username="ctrcejatafivall")
-    user_two = User.objects.get(username="ctrformnlab1")
+    user_one = User.objects.get(username="cejatafivall")
+    user_two = User.objects.get(username="cfl1")
 
-    assert user_one.email == "ctrcejatafivall@vat.local"
-    assert user_two.email == "ctrformnlab1@vat.local"
+    assert user_one.email == "cejatafivall@vat.local"
+    assert user_two.email == "cfl1@vat.local"
     assert user_one.last_name == "CFP"
     assert user_two.last_name == "CFP"
     assert user_one.profile.temporary_password_plaintext == "1"
@@ -161,7 +161,7 @@ def test_import_vat_cfp_users_reuses_generated_username_on_second_run(tmp_path):
         stdout=StringIO(),
     )
 
-    assert User.objects.filter(username="ctrcejatafivall").count() == 1
+    assert User.objects.filter(username="cejatafivall").count() == 1
 
 
 def test_import_vat_cfp_users_avoids_colliding_with_existing_user(tmp_path):
@@ -174,7 +174,7 @@ def test_import_vat_cfp_users_avoids_colliding_with_existing_user(tmp_path):
     )
 
     User.objects.create_user(
-        username="escmunformnpro1",
+        username="cfp1cruc",
         email="otro@example.com",
         password="previa",
     )
@@ -186,6 +186,6 @@ def test_import_vat_cfp_users_avoids_colliding_with_existing_user(tmp_path):
         stdout=StringIO(),
     )
 
-    imported_user = User.objects.get(email="escmunformnpro11@vat.local")
+    imported_user = User.objects.get(email="cfp1crucbelg@vat.local")
 
-    assert imported_user.username == "escmunformnpro11"
+    assert imported_user.username == "cfp1crucbelg"

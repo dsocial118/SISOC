@@ -89,8 +89,8 @@ def test_bootstrap_vat_referentes_centros_creates_and_assigns_by_row_order(tmp_p
     )
 
     group = Group.objects.get(name="CFP")
-    first_user = User.objects.get(username="escmunformnpro1")
-    second_user = User.objects.get(username="ctrceja")
+    first_user = User.objects.get(username="cfp1crucbelg")
+    second_user = User.objects.get(username="ceja3")
     first_center = Centro.objects.get(codigo="616126000")
     second_center = Centro.objects.get(codigo="900001800")
 

@@ -60,6 +60,28 @@ STOPWORDS = {
     "y",
     "para",
 }
+GENERIC_USERNAME_TOKENS = STOPWORDS | {
+    "centro",
+    "escuela",
+    "municipal",
+    "formacion",
+    "profesional",
+    "educacion",
+    "tecnica",
+    "tecnico",
+    "laboral",
+    "capacitacion",
+    "adultos",
+    "adulto",
+    "jovenes",
+    "joven",
+    "general",
+    "gral",
+    "cfp",
+    "ceja",
+    "cct",
+    "eet",
+}
 TOKEN_REPLACEMENTS = {
     "escuela": "esc",
     "municipal": "mun",
@@ -186,27 +208,83 @@ def shorten_token(token: str) -> str:
     return token[:4]
 
 
+def extract_username_number(tokens: list[str]) -> str:
+    for token in tokens:
+        if token.isdigit():
+            return str(int(token))
+        if token.startswith("n") and token[1:].isdigit():
+            return str(int(token[1:]))
+    return ""
+
+
+def detect_username_marker(tokens: list[str]) -> str:
+    token_set = set(tokens)
+
+    if "ceja" in token_set:
+        return "ceja"
+    if "cfp" in token_set or {"formacion", "profesional"}.issubset(token_set):
+        return "cfp"
+    if {"formacion", "laboral"}.issubset(token_set):
+        return "cfl"
+    if {"capacitacion", "laboral"}.issubset(token_set):
+        return "ccl"
+    if "cct" in token_set:
+        return "cct"
+    if "eet" in token_set or (
+        "escuela" in token_set and {"tecnica", "tecnico"}.intersection(token_set)
+    ):
+        return "eet"
+
+    return ""
+
+
+def build_username_descriptors(tokens: list[str]) -> list[str]:
+    descriptors: list[str] = []
+
+    for token in tokens:
+        if token in GENERIC_USERNAME_TOKENS or token == "n":
+            continue
+        if token.isdigit() or (token.startswith("n") and token[1:].isdigit()):
+            continue
+
+        shortened = shorten_token(token)
+        if not shortened or shortened in descriptors:
+            continue
+
+        descriptors.append(shortened)
+
+    return descriptors
+
+
 def build_username_base(display_name: str) -> str:
     normalized_name = normalize_name_for_username(display_name)
-    tokens = []
-    for raw_token in normalized_name.split():
-        if raw_token in STOPWORDS:
-            continue
-        short_token = shorten_token(raw_token)
-        if short_token:
-            tokens.append(short_token)
-
+    tokens = [token for token in normalized_name.split() if token and token not in STOPWORDS]
     if not tokens:
         return "cfpuser"
 
-    username = ""
-    for token in tokens[:5]:
-        next_value = f"{username}{token}"
+    marker = detect_username_marker(tokens)
+    number = extract_username_number(tokens)
+    descriptors = build_username_descriptors(tokens)
+
+    username_parts: list[str] = []
+    if marker:
+        username_parts.append(marker)
+    if number:
+        username_parts.append(number)
+
+    for descriptor in descriptors[:2]:
+        next_value = "".join(username_parts + [descriptor])
         if len(next_value) > MAX_USERNAME_LENGTH:
             break
-        username = next_value
+        username_parts.append(descriptor)
 
-    return username or "cfpuser"
+    if not username_parts:
+        for token in tokens[:2]:
+            shortened = shorten_token(token)
+            if shortened:
+                username_parts.append(shortened)
+
+    return "".join(username_parts)[:MAX_USERNAME_LENGTH] or "cfpuser"
 
 
 def build_batch_safe_username(

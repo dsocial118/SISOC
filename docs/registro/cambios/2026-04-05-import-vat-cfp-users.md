@@ -9,7 +9,7 @@
 ## Criterio operativo
 
 - El comando puede trabajar incluso con una sola columna `nombre`.
-- Si no existe la columna `Usuario`, puede generar el username automáticamente a partir de una columna `nombre` o equivalente.
+- Si no existe la columna `Usuario`, genera un username automático más corto y legible, priorizando siglas institucionales como `cfp` o `ceja`, el número del centro y hasta dos fragmentos descriptivos.
 - Si el username generado ya existe para otro usuario, genera una variante con sufijo numérico; si la corrida se repite sobre el mismo registro, reutiliza el mismo usuario en lugar de duplicarlo.
 - Si no existe la columna `Email`, genera un correo de fantasía estable con el formato `<username>@vat.local`.
 - La contraseña puede venir en una columna del archivo o por parámetro `--default-password`.
