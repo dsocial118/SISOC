@@ -19,6 +19,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DOCS_PR_DIR = REPO_ROOT / "docs/registro/prs"
 DOCS_FEATURE_DIR = REPO_ROOT / "docs/contexto/features"
 DOCS_RELEASE_PENDING_DIR = REPO_ROOT / "docs/registro/releases/pending"
+CHANGELOG_PATH = REPO_ROOT / "CHANGELOG.md"
+
+AUTO_RELEASE_START = "<!-- AUTO-GENERATED RELEASE START: {release_date} -->"
+AUTO_RELEASE_END = "<!-- AUTO-GENERATED RELEASE END: {release_date} -->"
 
 GENERIC_TOP_LEVEL = {
     ".github",
@@ -516,6 +520,74 @@ def load_pending_release_notes(
     return notes
 
 
+def build_release_changelog_block(
+    release_date: str,
+    notes: list[PendingReleaseNote],
+) -> str:
+    """Construye el bloque auto-generado del changelog para una release."""
+
+    version_label = release_date_to_label(release_date)
+    grouped: dict[str, list[str]] = {
+        label: [] for label in CHANGELOG_CATEGORY_LABELS.values()
+    }
+    for note in notes:
+        bullet = f"- [{note.area}] {note.summary}. (PR #{note.pr_number})"
+        grouped.setdefault(note.category, []).append(bullet)
+
+    sections: list[str] = []
+    for category in (
+        CHANGELOG_CATEGORY_LABELS["nuevas_funcionalidades"],
+        CHANGELOG_CATEGORY_LABELS["actualizaciones"],
+        CHANGELOG_CATEGORY_LABELS["correccion_errores"],
+    ):
+        entries = grouped.get(category) or []
+        if not entries:
+            continue
+        sections.append(f"## {category}\n\n" + "\n".join(entries))
+
+    body = "\n\n".join(sections).strip()
+    start_marker = AUTO_RELEASE_START.format(release_date=release_date)
+    end_marker = AUTO_RELEASE_END.format(release_date=release_date)
+    return (
+        f"{start_marker}\n# Versión SISOC {version_label}\n\n{body}\n" f"{end_marker}\n"
+    )
+
+
+def release_date_to_label(release_date: str) -> str:
+    """Convierte una fecha de release a la etiqueta visible del changelog."""
+
+    return date.fromisoformat(release_date).strftime("%d.%m.%Y")
+
+
+def replace_auto_release_block(
+    changelog_content: str,
+    release_date: str,
+    replacement_block: str,
+) -> str:
+    """Reemplaza el bloque auto-generado de una release y preserva el resto."""
+
+    pattern = re.compile(
+        rf"{re.escape(AUTO_RELEASE_START.format(release_date=release_date))}\n.*?"
+        rf"{re.escape(AUTO_RELEASE_END.format(release_date=release_date))}\n?",
+        re.S,
+    )
+    without_block = pattern.sub("", changelog_content).lstrip()
+    if without_block:
+        return replacement_block + "\n" + without_block
+    return replacement_block
+
+
+def render_changelog(
+    existing_content: str,
+    release_date: str,
+    notes: list[PendingReleaseNote],
+) -> str:
+    """Regenera el changelog para la release objetivo sin perder historial."""
+
+    release_block = build_release_changelog_block(release_date, notes)
+    return replace_auto_release_block(existing_content, release_date, release_block)
+
+
 def read_event_payload(event_path: Path) -> dict[str, Any]:
     """Carga el payload del evento de GitHub."""
 
@@ -637,6 +709,13 @@ def sync_pr_artifacts(
     )
     pending_path = DOCS_RELEASE_PENDING_DIR / f"{release_file_date}-pr-{pr.number}.md"
     write_text_file(pending_path, build_pending_release_note(pending_note))
+
+    existing_changelog = ""
+    if CHANGELOG_PATH.exists():
+        existing_changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
+    notes = load_pending_release_notes(DOCS_RELEASE_PENDING_DIR, release_file_date)
+    updated_changelog = render_changelog(existing_changelog, release_file_date, notes)
+    write_text_file(CHANGELOG_PATH, updated_changelog)
 
 
 def main() -> int:
