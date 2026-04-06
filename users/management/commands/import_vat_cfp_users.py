@@ -571,8 +571,10 @@ class Command(BaseCommand):
                 email = parsed_row.email or build_fantasy_email(username)
 
                 existing_user = user_model.objects.filter(username=username).first()
-                if parsed_row.username and existing_user and not can_update_existing_user(
-                    existing_user
+                if (
+                    parsed_row.username
+                    and existing_user
+                    and not can_update_existing_user(existing_user)
                 ):
                     raise CommandError(
                         "El username "

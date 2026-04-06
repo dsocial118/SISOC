@@ -356,7 +356,9 @@ def has_source_column(header_mapping: dict[str, int], field_name: str) -> bool:
     return field_name in header_mapping
 
 
-def should_update_field(*, created: bool, header_mapping: dict[str, int], field_name: str) -> bool:
+def should_update_field(
+    *, created: bool, header_mapping: dict[str, int], field_name: str
+) -> bool:
     return created or has_source_column(header_mapping, field_name)
 
 
@@ -549,11 +551,14 @@ class Command(BaseCommand):
                 if not dry_run:
                     centro.save()
 
-                    if should_update_field(
-                        created=created,
-                        header_mapping=header_mapping,
-                        field_name="localidad_id",
-                    ) and localidad is not None:
+                    if (
+                        should_update_field(
+                            created=created,
+                            header_mapping=header_mapping,
+                            field_name="localidad_id",
+                        )
+                        and localidad is not None
+                    ):
                         ubicacion = (
                             centro.ubicaciones.filter(rol_ubicacion="sede_principal")
                             .order_by("-es_principal", "id")
@@ -641,17 +646,14 @@ class Command(BaseCommand):
                             field_name="contacto_email",
                         ):
                             contacto.email_contacto = contact_email
-                        if (
-                            should_update_field(
-                                created=created,
-                                header_mapping=header_mapping,
-                                field_name="contacto_email",
-                            )
-                            or should_update_field(
-                                created=created,
-                                header_mapping=header_mapping,
-                                field_name="contacto_telefono",
-                            )
+                        if should_update_field(
+                            created=created,
+                            header_mapping=header_mapping,
+                            field_name="contacto_email",
+                        ) or should_update_field(
+                            created=created,
+                            header_mapping=header_mapping,
+                            field_name="contacto_telefono",
                         ):
                             resolved_email = contacto.email_contacto or ""
                             resolved_phone = contacto.telefono_contacto or ""
