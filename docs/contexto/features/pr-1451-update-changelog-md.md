@@ -31,11 +31,17 @@
 - Empezar por `docs/registro/prs/PR-1451.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `CHANGELOG.md`
+- `docs/contexto/features/pr-1451-update-changelog-md.md`
+- `docs/registro/prs/PR-1451.md`
+- `docs/registro/releases/pending/2026-04-08-pr-1451.md`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-1451-update-changelog-md.md`
+- `docs/registro/prs/PR-1451.md`
+- `docs/registro/releases/pending/2026-04-08-pr-1451.md`
 
 ## Trazabilidad
 
