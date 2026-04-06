@@ -54,9 +54,21 @@ correspondiente. Esto replica el patrón ya existente en `admisiones` (FK→Come
   - Test `test_importar_datos_desde_admision_ok_y_sin_admision` reescrito como
     `test_importar_datos_desde_admision_ok` para reflejar la nueva firma.
 
+## Fase 3 — Views y template
+
+- `acompanamientos/acompanamiento_service.py`:
+  - `obtener_hitos` acepta `admision_id` opcional; busca primero por
+    `acompanamiento__admision_id`, con fallback a `comedor` para registros pre-migración.
+  - Nuevo método `obtener_admisiones_para_selector(comedor)`.
+- `acompanamientos/views.py` (`AcompanamientoDetailView.get_context_data`):
+  - Agrega al contexto: `admisiones_disponibles`, `admision_id_activa`,
+    `tiene_multiples_activos`, `nro_convenio`.
+  - Pasa `admision_id` a `obtener_hitos`.
+- `acompanamientos/templates/acompañamiento_detail.html`:
+  - Selector de convenios/admisiones (botones) con badge "Múltiples convenios activos".
+  - Campo "Número de Convenio" en la sección Información Relevante.
+
 ## Fases siguientes
 
-- **Fase 3:** actualizar views, URLs y templates para navegar entre acompañamientos
-  por admisión/convenio, mostrar selector en legajo y badge de múltiples activos.
 - **Fase 4:** limpiar `Hitos.comedor` y actualizar `crear_hitos` /
   `_ensure_hito_para_comedor` en `comedores/services/comedor_service/impl.py`.
