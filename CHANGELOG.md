@@ -1,11 +1,3 @@
-<!-- AUTO-GENERATED RELEASE START: 2026-04-08 -->
-# Versión SISOC 08.04.2026
-
-## Actualizaciones
-
-- [sin-area] Update CHANGELOG.md. (PR #1451)
-<!-- AUTO-GENERATED RELEASE END: 2026-04-08 -->
-
 <!-- AUTO-GENERATED RELEASE START: 2026-04-06 -->
 # Versión SISOC 06.04.2026
 
