@@ -1,8 +1,9 @@
 import logging
 import re
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.views.generic import ListView, CreateView, DetailView, View
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
@@ -124,11 +125,12 @@ class VoucherParametriaDetailView(LoginRequiredMixin, DetailView):
     template_name = "vat/voucher/parametria_detail.html"
     context_object_name = "parametria"
 
+    vouchers_per_page = 20
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         parametria = self.object
         qs = parametria.vouchers.select_related("ciudadano", "programa")
-        ctx["vouchers"] = qs.order_by("-fecha_asignacion")
         ctx["total"] = qs.count()
         ctx["activos"] = qs.filter(estado="activo").count()
         ctx["agotados"] = qs.filter(estado="agotado").count()
@@ -151,6 +153,26 @@ class VoucherParametriaDetailView(LoginRequiredMixin, DetailView):
             round(ctx["activos"] / ctx["total"] * 100) if ctx["total"] else 0
         )
         ctx["ultimas"] = qs.order_by("-fecha_asignacion")[:5]
+
+        search_query = (self.request.GET.get("busqueda") or "").strip()
+        vouchers_qs = qs.order_by("-fecha_asignacion", "-id")
+        if search_query:
+            vouchers_qs = vouchers_qs.filter(
+                Q(ciudadano__nombre__icontains=search_query)
+                | Q(ciudadano__apellido__icontains=search_query)
+                | Q(ciudadano__documento__icontains=search_query)
+            )
+
+        vouchers_paginator = Paginator(vouchers_qs, self.vouchers_per_page)
+        vouchers_page = vouchers_paginator.get_page(
+            self.request.GET.get("vouchers_page") or 1
+        )
+
+        ctx["search_query"] = search_query
+        ctx["vouchers"] = vouchers_page.object_list
+        ctx["vouchers_total_filtrados"] = vouchers_qs.count()
+        ctx["vouchers_page_obj"] = vouchers_page
+        ctx["vouchers_is_paginated"] = vouchers_page.has_other_pages()
         return ctx
 
 

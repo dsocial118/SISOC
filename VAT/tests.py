@@ -34,6 +34,7 @@ from VAT.models import (
     ModalidadCursada,
     PlanVersionCurricular,
     SesionComision,
+    Voucher,
     VoucherParametria,
 )
 from VAT.services.access_scope import filter_centros_queryset_for_user, is_vat_referente
@@ -2817,3 +2818,79 @@ def test_inscripcion_rapida_comision_curso_crea_inscripcion(client, vat_geo_data
     assert payload["ok"] is True
     assert inscripcion.programa == programa
     assert inscripcion.estado == "inscripta"
+
+
+@pytest.mark.django_db
+def test_voucher_parametria_detail_filters_and_paginates_vouchers(vat_admin_client):
+    admin_user = User.objects.get(username="admin-vat")
+    programa = Programa.objects.create(nombre="Programa Voucher Detail")
+    sexo = Sexo.objects.create(sexo="Femenino")
+    parametria = VoucherParametria.objects.create(
+        nombre="Parametría detalle",
+        programa=programa,
+        cantidad_inicial=10,
+        fecha_vencimiento=date(2028, 4, 6),
+        creado_por=admin_user,
+        activa=True,
+    )
+
+    for index in range(21):
+        ciudadano = Ciudadano.objects.create(
+            apellido=f"Apellido {index}",
+            nombre=f"Nombre {index}",
+            fecha_nacimiento=date(2000, 1, 1),
+            tipo_documento=Ciudadano.DOCUMENTO_DNI,
+            documento=30000000 + index,
+            sexo=sexo,
+        )
+        Voucher.objects.create(
+            parametria=parametria,
+            ciudadano=ciudadano,
+            programa=programa,
+            cantidad_inicial=10,
+            cantidad_usada=0,
+            cantidad_disponible=10,
+            fecha_vencimiento=date(2028, 4, 6),
+            estado="activo",
+        )
+
+    ciudadano_filtrado = Ciudadano.objects.create(
+        apellido="Pérez",
+        nombre="Ana",
+        fecha_nacimiento=date(2001, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=39999123,
+        sexo=sexo,
+    )
+    Voucher.objects.create(
+        parametria=parametria,
+        ciudadano=ciudadano_filtrado,
+        programa=programa,
+        cantidad_inicial=10,
+        cantidad_usada=1,
+        cantidad_disponible=9,
+        fecha_vencimiento=date(2028, 4, 6),
+        estado="activo",
+    )
+
+    detail_url = reverse("vat_voucher_parametria_detail", kwargs={"pk": parametria.pk})
+
+    response = vat_admin_client.get(detail_url)
+
+    assert response.status_code == 200
+    assert response.context["total"] == 22
+    assert response.context["vouchers_page_obj"].paginator.per_page == 20
+    assert len(response.context["vouchers"]) == 20
+    assert response.context["vouchers_is_paginated"] is True
+
+    filtered_response = vat_admin_client.get(detail_url, {"busqueda": "39999123"})
+
+    assert filtered_response.status_code == 200
+    assert filtered_response.context["vouchers_total_filtrados"] == 1
+    assert len(filtered_response.context["vouchers"]) == 1
+    assert filtered_response.context["vouchers"][0].ciudadano_id == ciudadano_filtrado.id
+
+    second_page_response = vat_admin_client.get(detail_url, {"vouchers_page": 2})
+
+    assert second_page_response.status_code == 200
+    assert len(second_page_response.context["vouchers"]) == 2
