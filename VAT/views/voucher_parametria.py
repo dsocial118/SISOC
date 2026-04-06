@@ -186,26 +186,20 @@ class VoucherParametriaAsignarView(LoginRequiredMixin, View):
 
         if not dni:
             messages.error(request, "Ingresá un DNI.")
-            return redirect(
-                reverse("vat_voucher_parametria_detail", kwargs={"pk": pk})
-            )
+            return redirect(reverse("vat_voucher_parametria_detail", kwargs={"pk": pk}))
 
         try:
             ciudadano = Ciudadano.objects.get(documento=dni)
         except Ciudadano.DoesNotExist:
             messages.error(request, f"No se encontró ningún ciudadano con DNI {dni}.")
-            return redirect(
-                reverse("vat_voucher_parametria_detail", kwargs={"pk": pk})
-            )
+            return redirect(reverse("vat_voucher_parametria_detail", kwargs={"pk": pk}))
 
         try:
             resultado = _asignar_desde_parametria(ciudadano, parametria, request.user)
         except Exception as e:
             logger.exception("Error asignando voucher desde parametría")
             messages.error(request, f"Error al asignar: {e}")
-            return redirect(
-                reverse("vat_voucher_parametria_detail", kwargs={"pk": pk})
-            )
+            return redirect(reverse("vat_voucher_parametria_detail", kwargs={"pk": pk}))
 
         nombre = ciudadano.nombre_completo
         if resultado == _CREADO:
@@ -234,14 +228,10 @@ class VoucherParametriaAsignarMasivoView(LoginRequiredMixin, View):
 
         if not dnis:
             messages.error(request, "No ingresaste ningún DNI.")
-            return redirect(
-                reverse("vat_voucher_parametria_detail", kwargs={"pk": pk})
-            )
+            return redirect(reverse("vat_voucher_parametria_detail", kwargs={"pk": pk}))
         if len(dnis) > 500:
             messages.error(request, "Máximo 500 DNIs por operación.")
-            return redirect(
-                reverse("vat_voucher_parametria_detail", kwargs={"pk": pk})
-            )
+            return redirect(reverse("vat_voucher_parametria_detail", kwargs={"pk": pk}))
 
         contadores = {
             _CREADO: [],
