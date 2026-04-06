@@ -175,6 +175,8 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v4.1.7
+              with:
+                  fetch-depth: 0
 
             - name: Set up Python
               uses: actions/setup-python@v5.2.0
@@ -186,9 +188,70 @@ jobs:
                   python -m pip install --upgrade pip
                   pip install djlint==1.34.2
 
-            - name: Run DJLint
+            - name: Detect changed templates
+              id: detect-changed-templates
               run: |
-                  djlint . --check --configuration=.djlintrc
+                  python - <<'PY'
+                  import json
+                  import os
+                  import subprocess
+                  from pathlib import Path
+
+                  TEMPLATE_SUFFIXES = {".html", ".htm", ".djhtml", ".jinja", ".j2"}
+
+                  event_name = os.environ["GITHUB_EVENT_NAME"]
+                  with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as fh:
+                      event = json.load(fh)
+
+                  if event_name == "pull_request":
+                      base_sha = event["pull_request"]["base"]["sha"]
+                      head_sha = event["pull_request"]["head"]["sha"]
+                  elif event_name == "push":
+                      base_sha = event["before"]
+                      head_sha = event["after"]
+                  else:
+                      raise SystemExit(f"Unsupported event: {event_name}")
+
+                  changed_output = subprocess.check_output(
+                      ["git", "diff", "--name-only", base_sha, head_sha],
+                      text=True,
+                  )
+                  changed_templates = []
+                  for raw_path in changed_output.splitlines():
+                      path = Path(raw_path.strip())
+                      if path.suffix.lower() in TEMPLATE_SUFFIXES:
+                          changed_templates.append(str(path))
+
+                  with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+                      fh.write(f"templates={json.dumps(changed_templates)}\n")
+
+                  if changed_templates:
+                      print("Templates to lint:")
+                      for template in changed_templates:
+                          print(template)
+                  else:
+                      print("No changed templates detected.")
+                  PY
+
+            - name: Run DJLint
+              if: steps.detect-changed-templates.outputs.templates != '[]'
+              run: |
+                  python - <<'PY'
+                  import json
+                  import os
+                  import subprocess
+
+                  templates = json.loads(
+                      os.environ["TEMPLATE_FILES_JSON"]
+                  )
+                  print("Running djlint on", len(templates), "template file(s)")
+                  subprocess.run(
+                      ["djlint", *templates, "--check", "--configuration=.djlintrc"],
+                      check=True,
+                  )
+                  PY
+              env:
+                  TEMPLATE_FILES_JSON: ${{ steps.detect-changed-templates.outputs.templates }}
 
     pylint:
         runs-on: ubuntu-latest
