@@ -1454,6 +1454,35 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
+                    <div class="p-3 border-bottom bg-body-tertiary">
+                        <form method="get"
+                              action="{% url 'vat_centro_detail' centro.pk %}#cursos"
+                              class="row g-2 align-items-end">
+                            <div class="col-sm-8 col-lg-6">
+                                <label class="form-label small fw-semibold text-uppercase mb-1"
+                                       style="letter-spacing:.05em">Buscar plan curricular</label>
+                                <input type="search"
+                                       name="busqueda"
+                                       class="form-control form-control-sm"
+                                       placeholder="Ej: auxiliar, servicios o resolución"
+                                       value="{{ planes_centro_search_query }}"
+                                       autocomplete="off" />
+                            </div>
+                            <div class="col-sm-auto">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                    <i class="bi bi-search me-1"></i>Filtrar
+                                </button>
+                            </div>
+                            <div class="col-sm-auto">
+                                <a href="{% url 'vat_centro_detail' centro.pk %}#cursos"
+                                   class="btn btn-outline-secondary btn-sm w-100">Limpiar</a>
+                            </div>
+                        </form>
+                        <div class="text-muted small mt-2">
+                            Mostrando {{ planes_centro_total_filtrados }} plan{{ planes_centro_total_filtrados|pluralize:"es" }}
+                            {% if planes_centro_search_query %}para la búsqueda actual{% endif %}.
+                        </div>
+                    </div>
                     {% if planes_centro %}
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
@@ -1506,10 +1535,64 @@
                                 </tbody>
                             </table>
                         </div>
+                        {% if planes_centro_is_paginated %}
+                            <div class="p-3 pt-2">
+                                <ul class="pagination mb-0">
+                                    {% if planes_centro_page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ planes_centro_page_obj.previous_page_number }}#cursos"
+                                               class="page-link">Anterior</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <a href="#" class="page-link">Anterior</a>
+                                        </li>
+                                    {% endif %}
+                                    {% for i in planes_centro_page_obj.paginator.page_range %}
+                                        {% if planes_centro_page_obj.number == i %}
+                                            <li class="page-item active">
+                                                <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ i }}#cursos"
+                                                   class="page-link">{{ i }}</a>
+                                            </li>
+                                        {% elif i > planes_centro_page_obj.number|add:'-5' and i < planes_centro_page_obj.number|add:'5' %}
+                                            <li class="page-item">
+                                                <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ i }}#cursos"
+                                                   class="page-link">{{ i }}</a>
+                                            </li>
+                                        {% elif i == 1 or i == planes_centro_page_obj.paginator.num_pages %}
+                                            <li class="page-item">
+                                                <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ i }}#cursos"
+                                                   class="page-link">{{ i }}</a>
+                                            </li>
+                                        {% elif i == planes_centro_page_obj.number|add:'-6' or i == planes_centro_page_obj.number|add:'6' %}
+                                            <li class="page-item disabled">
+                                                <a href="#" class="page-link">...</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if planes_centro_page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ planes_centro_page_obj.next_page_number }}#cursos"
+                                               class="page-link">Siguiente</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <a href="#" class="page-link">Siguiente</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        {% endif %}
                     {% else %}
                         <div class="text-center py-4 text-muted">
                             <i class="fas fa-book fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">No hay planes curriculares activos para la provincia de este centro.</p>
+                            <p class="mb-0">
+                                {% if planes_centro_search_query %}
+                                    No hay planes curriculares que coincidan con la búsqueda actual.
+                                {% else %}
+                                    No hay planes curriculares activos para la provincia de este centro.
+                                {% endif %}
+                            </p>
                         </div>
                     {% endif %}
                 </div>

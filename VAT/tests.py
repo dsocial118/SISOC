@@ -2556,6 +2556,83 @@ def test_centro_detail_renderiza_accion_para_crear_curso_desde_plan_curricular(
 
 
 @pytest.mark.django_db
+def test_centro_detail_filtra_y_pagina_planes_curriculares(client, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
+    sector = Sector.objects.create(nombre="Servicios")
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-vat-centro-planes",
+        email="admin-centro-planes@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP 780",
+        codigo="CFP-780",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="15",
+        numero=100,
+        domicilio_actividad="Calle 15 N° 100",
+        telefono="221-7200001",
+        celular="221-7200002",
+        correo="cfp780@vat.test",
+        nombre_referente="Marta",
+        apellido_referente="Suarez",
+        telefono_referente="221-7200003",
+        correo_referente="marta780@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    for index in range(21):
+        PlanVersionCurricular.objects.create(
+            provincia=provincia,
+            nombre=f"Plan {index}",
+            sector=sector,
+            modalidad_cursada=modalidad,
+            normativa=f"Resolución {index}",
+            activo=True,
+        )
+
+    plan_filtrado = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan Especial Administrativo",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Resolución especial 2026",
+        activo=True,
+    )
+
+    client.force_login(user)
+    detail_url = reverse("vat_centro_detail", kwargs={"pk": centro.pk})
+
+    response = client.get(detail_url)
+
+    assert response.status_code == 200
+    assert response.context["planes_centro_page_obj"].paginator.per_page == 20
+    assert len(response.context["planes_centro"]) == 20
+    assert response.context["planes_centro_is_paginated"] is True
+
+    filtered_response = client.get(detail_url, {"busqueda": "Especial Administrativo"})
+
+    assert filtered_response.status_code == 200
+    assert filtered_response.context["planes_centro_total_filtrados"] == 1
+    assert len(filtered_response.context["planes_centro"]) == 1
+    assert filtered_response.context["planes_centro"][0].id == plan_filtrado.id
+
+    second_page_response = client.get(detail_url, {"planes_page": 2})
+
+    assert second_page_response.status_code == 200
+    assert len(second_page_response.context["planes_centro"]) == 2
+
+
+@pytest.mark.django_db
 def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
