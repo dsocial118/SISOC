@@ -55,6 +55,13 @@ def _scoped_comisiones_curso_queryset(user):
     ).filter(curso__centro_id__in=_scoped_centros_ids(user))
 
 
+def _centro_cursos_tab_url(centro_id, refresh=False):
+    base_url = reverse("vat_centro_detail", kwargs={"pk": centro_id})
+    if refresh:
+        return f"{base_url}?refresh=1#cursos"
+    return f"{base_url}#cursos"
+
+
 class CursoCreateView(LoginRequiredMixin, CreateView):
     model = Curso
     form_class = CursoForm
@@ -94,13 +101,11 @@ class CursoCreateView(LoginRequiredMixin, CreateView):
             if context["is_embedded"]
             else "includes/main.html"
         )
-        context["cancel_url"] = (
-            f"{reverse('vat_centro_detail', kwargs={'pk': self.centro.id})}#cursos"
-        )
+        context["cancel_url"] = _centro_cursos_tab_url(self.centro.id)
         return context
 
     def get_success_url(self):
-        return f"{reverse('vat_centro_detail', kwargs={'pk': self.object.centro_id})}#cursos"
+        return _centro_cursos_tab_url(self.object.centro_id, refresh=True)
 
 
 class CursoUpdateView(LoginRequiredMixin, UpdateView):
@@ -137,13 +142,11 @@ class CursoUpdateView(LoginRequiredMixin, UpdateView):
             if context["is_embedded"]
             else "includes/main.html"
         )
-        context["cancel_url"] = (
-            f"{reverse('vat_centro_detail', kwargs={'pk': self.object.centro_id})}#cursos"
-        )
+        context["cancel_url"] = _centro_cursos_tab_url(self.object.centro_id)
         return context
 
     def get_success_url(self):
-        return f"{reverse('vat_centro_detail', kwargs={'pk': self.object.centro_id})}#cursos"
+        return _centro_cursos_tab_url(self.object.centro_id, refresh=True)
 
 
 class CursoDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
@@ -158,7 +161,7 @@ class CursoDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView)
         )
 
     def get_success_url(self):
-        return f"{reverse('vat_centro_detail', kwargs={'pk': self.object.centro_id})}#cursos"
+        return _centro_cursos_tab_url(self.object.centro_id, refresh=True)
 
 
 class ComisionCursoCreateView(LoginRequiredMixin, CreateView):
@@ -207,10 +210,7 @@ class ComisionCursoCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return (
-            f"{reverse('vat_centro_detail', kwargs={'pk': self.object.curso.centro_id})}"
-            "#cursos"
-        )
+        return _centro_cursos_tab_url(self.object.curso.centro_id, refresh=True)
 
 
 class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
@@ -226,10 +226,7 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comision = self.object
-        cancel_url = (
-            f"{reverse('vat_centro_detail', kwargs={'pk': comision.curso.centro_id})}"
-            "#cursos"
-        )
+        cancel_url = _centro_cursos_tab_url(comision.curso.centro_id)
         horario_form = ComisionCursoHorarioForm(initial={"comision_curso": comision.id})
         horario_form.fields["comision_curso"].queryset = ComisionCurso.objects.filter(
             pk=comision.pk
@@ -581,10 +578,7 @@ class ComisionCursoUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return (
-            f"{reverse('vat_centro_detail', kwargs={'pk': self.object.curso.centro_id})}"
-            "#cursos"
-        )
+        return _centro_cursos_tab_url(self.object.curso.centro_id, refresh=True)
 
 
 class ComisionCursoDeleteView(
@@ -598,7 +592,4 @@ class ComisionCursoDeleteView(
         return _scoped_comisiones_curso_queryset(self.request.user)
 
     def get_success_url(self):
-        return (
-            f"{reverse('vat_centro_detail', kwargs={'pk': self.object.curso.centro_id})}"
-            "#cursos"
-        )
+        return _centro_cursos_tab_url(self.object.curso.centro_id, refresh=True)
