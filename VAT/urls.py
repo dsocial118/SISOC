@@ -3,6 +3,7 @@ from core.decorators import permissions_any_required
 
 from VAT.views.centro import (
     CentroCreateView,
+    CentroCursosPanelView,
     CentroDeleteView,
     CentroDetailView,
     CentroListView,
@@ -173,6 +174,13 @@ urlpatterns = [
         "vat/centros/<int:pk>/",
         permissions_any_required(["VAT.view_centro"])(CentroDetailView.as_view()),
         name="vat_centro_detail",
+    ),
+    path(
+        "vat/centros/<int:pk>/panel/cursos/",
+        permissions_any_required(["VAT.view_centro"])(
+            CentroCursosPanelView.as_view()
+        ),
+        name="vat_centro_cursos_panel",
     ),
     path(
         "vat/centros/<int:pk>/eliminar/",
