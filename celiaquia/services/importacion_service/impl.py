@@ -575,9 +575,7 @@ def _consolidar_roles_familiares_doble_rol_importacion(expediente, warnings):
     legajos_a_promover = ExpedienteCiudadano.objects.filter(
         expediente=expediente,
         ciudadano_id__in=ciudadanos_doble_rol,
-    ).exclude(
-        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
-    )
+    ).exclude(rol=ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE)
 
     actualizados = 0
     for legajo in legajos_a_promover:
