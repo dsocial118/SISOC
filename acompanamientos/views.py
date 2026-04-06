@@ -59,7 +59,9 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
             or user_has_permission_code(self.request.user, "auth.role_tecnico_comedor")
         )
 
-        admision_id_int = int(admision_id) if admision_id and admision_id.isdigit() else None
+        admision_id_int = (
+            int(admision_id) if admision_id and admision_id.isdigit() else None
+        )
 
         context["hitos"] = AcompanamientoService.obtener_hitos(
             comedor, admision_id=admision_id_int

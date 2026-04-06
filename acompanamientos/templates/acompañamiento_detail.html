@@ -54,9 +54,7 @@
                                 {% else %}
                                     Admisión #{{ adm.id }}
                                 {% endif %}
-                                {% if not adm.activa %}
-                                    <span class="badge bg-secondary ms-1">Cerrada</span>
-                                {% endif %}
+                                {% if not adm.activa %}<span class="badge bg-secondary ms-1">Cerrada</span>{% endif %}
                             </a>
                         {% endfor %}
                         {% if tiene_multiples_activos %}
