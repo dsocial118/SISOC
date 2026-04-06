@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, Permission, User
 from django.db import models
 
 from core.models import Provincia
@@ -98,6 +98,21 @@ class Profile(models.Model):
         blank=True,
         verbose_name="Expira contraseña inicial en",
     )
+    password_reset_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Reset de contraseña solicitado en",
+        help_text=(
+            "Se completa cuando un usuario mobile solicita desde la app "
+            "que un administrador genere una nueva contraseña temporal."
+        ),
+    )
+    temporary_password_plaintext = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        verbose_name="Contraseña temporal visible",
+    )
     es_coordinador = models.BooleanField(
         default=False,
         verbose_name="Es Coordinador de Gestión",
@@ -109,6 +124,20 @@ class Profile(models.Model):
         related_name="coordinadores",
         verbose_name="Duplas asignadas",
         help_text="Duplas (equipos técnicos) asignadas a este coordinador",
+    )
+    grupos_asignables = models.ManyToManyField(
+        Group,
+        blank=True,
+        related_name="perfiles_delegadores",
+        verbose_name="Grupos que puede asignar",
+        help_text="Define qué grupos puede asignar este usuario al crear/editar otros usuarios.",
+    )
+    roles_asignables = models.ManyToManyField(
+        Permission,
+        blank=True,
+        related_name="perfiles_roles_delegables",
+        verbose_name="Roles que puede asignar",
+        help_text="Permisos auth.role_* que este usuario puede asignar a terceros.",
     )
 
     def __str__(self):

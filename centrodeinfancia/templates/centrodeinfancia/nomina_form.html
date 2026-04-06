@@ -1,4 +1,4 @@
-﻿{% extends "includes/main.html" %}
+{% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
 
 {% block title %}Agregar a Nómina{% endblock %}
@@ -9,26 +9,28 @@
         <h2 class="text-center display-4 mb-4">Agregar a Nómina</h2>
 
         <div class="card mb-3">
-            <div class="card-header font-weight-bold">Buscar Ciudadano</div>
+            <div class="card-header font-weight-bold">Buscar por DNI</div>
             <div class="card-body">
-                <form method="get" class="form-inline">
-                    <div class="form-group mr-2">
-                        <label for="busqueda-dni" class="sr-only">DNI</label>
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label for="busqueda-dni" class="form-label">DNI</label>
                         <input type="text"
                                class="form-control"
                                name="query"
                                id="busqueda-dni"
-                               placeholder="Ingrese DNI (mín 4 dígitos)"
+                               placeholder="Ingrese DNI (mín. 4 dígitos)"
                                value="{{ query }}" />
                     </div>
-                    <button class="btn btn-secondary mt-3" type="submit">Buscar</button>
+                    <div class="col-md-auto">
+                        <button class="btn btn-secondary" type="submit">Buscar</button>
+                    </div>
                 </form>
             </div>
         </div>
 
-        {% if ciudadanos %}
+        {% if ciudadanos and not selected_ciudadano %}
             <div class="card mb-3">
-                <div class="card-header font-weight-bold">Resultados de Búsqueda</div>
+                <div class="card-header font-weight-bold">Resultados de búsqueda</div>
                 <div class="card-body table-responsive">
                     <table class="table table-bordered table-hover">
                         <thead>
@@ -46,14 +48,8 @@
                                     <td>{{ ciudadano.nombre }}</td>
                                     <td>{{ ciudadano.documento }}</td>
                                     <td>
-                                        <button type="button"
-                                                class="btn btn-sm btn-success btn-agregar"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalNomina"
-                                                data-ciudadano-id="{{ ciudadano.id }}"
-                                                data-ciudadano-nombre="{{ ciudadano.apellido }}, {{ ciudadano.nombre }}">
-                                            Agregar
-                                        </button>
+                                        <a href="?query={{ query }}&ciudadano_id={{ ciudadano.id }}"
+                                           class="btn btn-sm btn-success">Completar ficha</a>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -65,134 +61,192 @@
 
         {% if query and no_resultados %}
             <div class="alert alert-info mb-3">
-                <i class="bi bi-exclamation-triangle-fill fs-4"></i>
                 {% if renaper_precarga %}
-                    No se encontraron coincidencias en el sistema. Se precargaron datos desde RENAPER; confirme para crear y agregar a la nómina.
+                    No se encontraron coincidencias en el sistema. Se precargaron datos desde RENAPER; complete la ficha para crear y agregar a la nómina.
                 {% else %}
-                    No se encontraron coincidencias para el DNI buscado.
+                    No se encontraron coincidencias para el DNI buscado. Puede completar la ficha manualmente.
                 {% endif %}
-            </div>
-
-            <div class="card mb-3">
-                <div class="card-header font-weight-bold">Crear Nuevo Ciudadano</div>
-                <div class="card-body">
-                    {% if form_ciudadano.non_field_errors %}
-                        <div class="alert alert-danger">{{ form_ciudadano.non_field_errors }}</div>
-                    {% endif %}
-                    <form method="post">
-                        {% csrf_token %}
-                        {% if renaper_precarga %}<input type="hidden" name="origen_dato" value="renaper" />{% endif %}
-                        {{ form_ciudadano|crispy }}
-                        <div class="mt-4 alert alert-light">
-                            <h5 class="mb-3">
-                                <i class="bi bi-info-circle-fill"></i> Estado y observaciones en la Nómina
-                            </h5>
-                            {{ form_nomina_extra|crispy }}
-                        </div>
-                        <button type="submit"
-                                class="btn btn-primary"
-                                data-submit-with-spinner="Procesando…">Crear y Agregar</button>
-                    </form>
-                </div>
             </div>
         {% endif %}
 
-        <div class="d-flex gap-2">
-            <a href="{% url 'centrodeinfancia_nomina_ver' object.id %}"
-               class="btn btn-secondary">Volver</a>
-        </div>
-    </div>
-
-    <div class="modal fade"
-         id="modalNomina"
-         tabindex="-1"
-         aria-labelledby="modalNominaLabel"
-         aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form method="post" id="form-nomina">
-                    {% csrf_token %}
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalNominaLabel">Agregar a Nómina</h5>
-                        <button type="button"
-                                class="btn-close"
-                                data-bs-dismiss="modal"
-                                aria-label="Cerrar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" name="ciudadano_id" id="ciudadano_id" />
-                        <div class="fs-6 fw-bold py-2 mb-3" id="ciudadano_nombre_display"></div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label for="estado" class="form-label">Estado</label>
-                                <select name="estado" id="estado" class="form-select" required>
-                                    <option value="">Seleccione un estado</option>
-                                    {% for value,label in estados %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
-                                </select>
-                                <div class="invalid-feedback">Seleccione un estado.</div>
-                            </div>
-                            <div class="col-md-12 mt-3">
-                                <label for="observaciones" class="form-label">Observaciones</label>
-                                <textarea name="observaciones" id="observaciones" class="form-control" rows="3"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-success">Agregar</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    </div>
-                </form>
+        {% if selected_ciudadano %}
+            <div class="alert alert-light border mb-3">
+                Se completará la ficha de nómina para:
+                <strong>{{ selected_ciudadano.apellido }}, {{ selected_ciudadano.nombre }}</strong>
+                (DNI {{ selected_ciudadano.documento|default:"-" }}).
             </div>
-        </div>
+        {% endif %}
+
+        {% if mostrar_formulario %}
+            <div class="card mb-3">
+                <div class="card-header font-weight-bold">Ficha de Nómina CDI</div>
+                <div class="card-body">
+                    <form method="post" id="nomina-cdi-form">
+                        {% csrf_token %}
+                        {% if selected_ciudadano %}<input type="hidden" name="ciudadano_id" value="{{ selected_ciudadano.id }}" />{% endif %}
+                        {% if renaper_precarga %}<input type="hidden" name="origen_dato" value="renaper" />{% endif %}
+
+                        <h4 class="mb-3">Datos personales</h4>
+                        <div class="row">
+                            <div class="col-md-3">{{ form.estado|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.dni|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.apellido|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.nombre|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.fecha_nacimiento|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.edad_calculada|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.sexo|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.nacionalidad|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.sala|as_crispy_field }}</div>
+                        </div>
+
+                        <h4 class="mb-3 mt-4">Pertenencia a pueblo originario</h4>
+                        <div class="row">
+                            <div class="col-md-6">{{ form.pertenece_pueblo_originario|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.pueblo_originario_cual|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.habla_lengua_originaria_hogar|as_crispy_field }}</div>
+                        </div>
+
+                        <h4 class="mb-3 mt-4">Desarrollo y salud</h4>
+                        <div class="row">
+                            <div class="col-md-3">{{ form.talla|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.peso|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.calendario_vacunacion_al_dia|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.tiene_discapacidad|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.discapacidad_tipo|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.recibe_apoyo_discapacidad|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.posee_cud|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.posee_obra_social|as_crispy_field }}</div>
+                        </div>
+
+                        <h4 class="mb-3 mt-4">Domicilio</h4>
+                        <div class="row">
+                            <div class="col-md-4">{{ form.calle_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.altura_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.piso_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.departamento_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.provincia_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.municipio_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.localidad_domicilio|as_crispy_field }}</div>
+                        </div>
+
+                        <h4 class="mb-3 mt-4">Responsable legal 1</h4>
+                        <div class="row">
+                            <div class="col-md-3">{{ form.responsable_legal_1_apellido|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_nombre|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.responsable_legal_1_dni|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.responsable_legal_1_telefono|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.responsable_legal_1_percibe_auh|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.responsable_legal_1_percibe_alimenta|as_crispy_field }}</div>
+                        </div>
+
+                        <h4 class="mb-3 mt-4">Responsable legal 2</h4>
+                        <div class="row">
+                            <div class="col-md-3">{{ form.responsable_legal_2_apellido|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_nombre|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.responsable_legal_2_dni|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.responsable_legal_2_telefono|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.responsable_legal_2_percibe_auh|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.responsable_legal_2_percibe_alimenta|as_crispy_field }}</div>
+                        </div>
+
+                        <h4 class="mb-3 mt-4">Persona adulta responsable</h4>
+                        <div class="row">
+                            <div class="col-md-3">{{ form.adulto_responsable_apellido|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.adulto_responsable_nombre|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.adulto_responsable_dni|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.adulto_responsable_telefono|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.adulto_responsable_parentesco|as_crispy_field }}</div>
+                            <div class="col-md-12">{{ form.observaciones|as_crispy_field }}</div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit"
+                                    class="btn btn-primary"
+                                    data-submit-with-spinner="Procesando...">Guardar ficha</button>
+                            <a href="{% url 'centrodeinfancia_nomina_ver' object.id %}"
+                               class="btn btn-secondary">Volver</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <div class="d-flex gap-2">
+                <a href="{% url 'centrodeinfancia_nomina_ver' object.id %}"
+                   class="btn btn-secondary">Volver</a>
+            </div>
+        {% endif %}
     </div>
 {% endblock %}
 
 {% block customJS %}
     <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function() {
-            document.querySelectorAll(".btn-agregar").forEach(function(btn) {
-                btn.addEventListener("click", function() {
-                    const ciudadanoId = this.dataset.ciudadanoId;
-                    const ciudadanoNombre = this.dataset.ciudadanoNombre;
+            const fechaNacimientoInput = document.getElementById("id_fecha_nacimiento");
+            const edadInput = document.getElementById("id_edad_calculada");
+            const puebloSelect = document.getElementById("id_pertenece_pueblo_originario");
+            const puebloCualInput = document.getElementById("id_pueblo_originario_cual");
+            const discapacidadSelect = document.getElementById("id_tiene_discapacidad");
+            const discapacidadTipo = document.getElementById("id_discapacidad_tipo");
+            const discapacidadApoyo = document.getElementById("id_recibe_apoyo_discapacidad");
 
-                    document.getElementById("ciudadano_id").value = ciudadanoId;
-                    document.getElementById("ciudadano_nombre_display").textContent =
-                        "Ciudadano seleccionado: " + ciudadanoNombre;
-                    document.getElementById("estado").value = "";
-                    document.getElementById("observaciones").value = "";
-                    document.getElementById("form-nomina").classList.remove("was-validated");
-                    document.getElementById("estado").classList.remove("is-invalid");
-                });
-            });
-
-            const formNomina = document.getElementById("form-nomina");
-            const estadoSelect = document.getElementById("estado");
-            const ciudadanoIdInput = document.getElementById("ciudadano_id");
-
-            if (!formNomina) {
-                return;
+            function calcularEdad(value) {
+                if (!value || !edadInput) {
+                    return;
+                }
+                const nacimiento = new Date(value + "T00:00:00");
+                if (Number.isNaN(nacimiento.getTime())) {
+                    edadInput.value = "";
+                    return;
+                }
+                const hoy = new Date();
+                let edad = hoy.getFullYear() - nacimiento.getFullYear();
+                const mes = hoy.getMonth() - nacimiento.getMonth();
+                if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+                    edad -= 1;
+                }
+                edadInput.value = edad >= 0 ? edad : "";
             }
 
-            formNomina.addEventListener("submit", function(event) {
-                let valid = true;
-
-                if (!ciudadanoIdInput.value) {
-                    valid = false;
+            function togglePuebloOriginario() {
+                if (!puebloCualInput || !puebloSelect) {
+                    return;
                 }
-
-                if (!estadoSelect.value) {
-                    estadoSelect.classList.add("is-invalid");
-                    valid = false;
-                } else {
-                    estadoSelect.classList.remove("is-invalid");
+                const enabled = puebloSelect.value === "si";
+                puebloCualInput.disabled = !enabled;
+                if (!enabled) {
+                    puebloCualInput.value = "";
                 }
+            }
 
-                if (!valid) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    formNomina.classList.add("was-validated");
+            function toggleDiscapacidad() {
+                if (!discapacidadSelect || !discapacidadTipo || !discapacidadApoyo) {
+                    return;
                 }
-            });
+                const enabled = discapacidadSelect.value === "si";
+                discapacidadTipo.disabled = !enabled;
+                discapacidadApoyo.disabled = !enabled;
+                if (!enabled) {
+                    discapacidadTipo.value = "";
+                    discapacidadApoyo.value = "";
+                }
+            }
+
+            if (fechaNacimientoInput) {
+                calcularEdad(fechaNacimientoInput.value);
+                fechaNacimientoInput.addEventListener("change", function() {
+                    calcularEdad(this.value);
+                });
+            }
+
+            if (puebloSelect) {
+                togglePuebloOriginario();
+                puebloSelect.addEventListener("change", togglePuebloOriginario);
+            }
+
+            if (discapacidadSelect) {
+                toggleDiscapacidad();
+                discapacidadSelect.addEventListener("change", toggleDiscapacidad);
+            }
         });
     </script>
 {% endblock %}

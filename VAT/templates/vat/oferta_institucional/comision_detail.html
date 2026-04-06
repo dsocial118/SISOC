@@ -1,7 +1,7 @@
 {% extends "includes/main.html" %}
 {% load static %}
 
-{% block title %}{{ comision.codigo_comision }} — Comisión{% endblock %}
+{% block title %}{{ comision.codigo_comision }} — {{ comision_tipo_titulo|default:"Comisión" }}{% endblock %}
 
 {% block content %}
     <style>
@@ -104,6 +104,14 @@
     border-top: none;
     border-radius: 0 0 10px 10px;
     overflow: hidden;
+}
+
+/* Solo para Inscriptos: permite que el dropdown de estados desborde sin recorte */
+.ci-panel-inscriptos {
+    overflow: visible;
+}
+.ci-panel-inscriptos .dropdown-menu {
+    z-index: 1100;
 }
 
 /* ── Section header ───────────────────────────── */
@@ -230,6 +238,34 @@
 
 /* ── Audit row ────────────────────────────────── */
 .ci-audit { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .73rem; color: var(--bs-secondary-color); border-top: 1px solid var(--bs-border-color-translucent); padding: .75rem 1.25rem 1.25rem; }
+
+/* ── Modals ───────────────────────────────────── */
+.ci-modal .modal-content {
+    border-radius: 12px;
+    border: 1px solid var(--bs-border-color);
+    overflow: hidden;
+}
+.ci-modal .modal-header {
+    padding: .85rem 1rem;
+    background: #1f3b6d;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+.ci-modal .modal-title {
+    font-size: .98rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+.ci-modal .btn-close {
+    filter: invert(1);
+}
+.ci-modal .modal-body {
+    padding: 1rem;
+}
+.ci-modal .modal-footer {
+    padding: .75rem 1rem;
+    border-top: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+}
     </style>
 
     {# ── HERO ───────────────────────────────────────────────────────── #}
@@ -237,20 +273,19 @@
         {# ── Fila superior: back + título + editar ── #}
         <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
             <div class="d-flex align-items-center gap-3">
-                <a href="{% url 'vat_comision_list' %}" class="ci-back"><i class="bi bi-arrow-left"></i></a>
+                <a href="{{ comision_back_url }}" class="ci-back"><i class="bi bi-arrow-left"></i></a>
                 <div>
                     <div class="ci-hero-title" style="margin-top:0;">{{ comision.nombre|default:comision.codigo_comision }}</div>
                     <div class="ci-hero-sub" style="opacity:.75;font-size:.88rem;">
-                        <i class="bi bi-book me-1"></i>{{ comision.oferta }}
+                        <i class="bi bi-book me-1"></i>{{ comision_subtitle }}
                     </div>
                 </div>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <span class="ci-code-badge">{{ comision.codigo_comision }}</span>
                 <span class="ci-state-badge">{{ comision.get_estado_display }}</span>
-                {% if perms.VAT.change_comision %}
-                    <a href="{% url 'vat_comision_update' comision.id %}"
-                       class="ci-edit-btn"><i class="bi bi-pencil me-1"></i>Editar</a>
+                {% if puede_editar_comision %}
+                    <a href="{{ comision_edit_url }}" class="ci-edit-btn"><i class="bi bi-pencil me-1"></i>Editar</a>
                 {% endif %}
             </div>
         </div>
@@ -366,7 +401,7 @@
                                 <span class="ci-lbl">Nombre</span><span class="ci-val">{{ comision.nombre|default:"—" }}</span>
                             </div>
                             <div class="ci-info-item">
-                                <span class="ci-lbl">Oferta</span><span class="ci-val">{{ comision.oferta }}</span>
+                                <span class="ci-lbl">{{ unidad_label }}</span><span class="ci-val">{{ unidad_valor }}</span>
                             </div>
                             <div class="ci-info-item">
                                 <span class="ci-lbl">Ubicación</span><span class="ci-val">{{ comision.ubicacion|default:"—" }}</span>
@@ -405,12 +440,16 @@
 
                 {# INSCRIPTOS #}
                 <div class="tab-pane fade" id="ci-inscriptos" role="tabpanel">
-                    <div class="ci-panel">
+                    <div class="ci-panel ci-panel-inscriptos">
                         <div class="ci-sec-head">
                             <span class="ci-sec-title"><i class="bi bi-people me-2"></i>Inscriptos</span>
                             {% if perms.VAT.add_inscripcion %}
-                                <a href="{% url 'vat_inscripcion_create' %}?comision={{ comision.id }}"
-                                   class="btn btn-sm btn-primary rounded-3"><i class="bi bi-plus-lg me-1"></i>Inscribir</a>
+                                <button type="button"
+                                        class="btn btn-sm btn-primary rounded-3"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalInscripcionRapida">
+                                    <i class="bi bi-plus-lg me-1"></i>Inscribir
+                                </button>
                             {% endif %}
                         </div>
                         {% if inscripciones %}
@@ -441,7 +480,7 @@
                                         <span class="ci-pill {% if insc.estado == 'inscripta' %}ci-pill-green{% elif insc.estado == 'pre_inscripta' %}ci-pill-yellow{% elif insc.estado == 'validada_presencial' %}ci-pill-blue{% elif insc.estado == 'completada' %}ci-pill-teal{% elif insc.estado == 'abandonada' %}ci-pill-gray{% elif insc.estado == 'rechazada' %}ci-pill-red{% else %}ci-pill-gray{% endif %}">{{ insc.get_estado_display }}</span>
                                         {% if perms.VAT.change_inscripcion and insc.estado == 'pre_inscripta' %}
                                             <form method="post"
-                                                  action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}"
+                                                  action="{% url inscripcion_estado_url_name insc.pk %}"
                                                   class="d-inline">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="estado" value="inscripta" />
@@ -454,7 +493,7 @@
                                                 </button>
                                             </form>
                                             <form method="post"
-                                                  action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}"
+                                                  action="{% url inscripcion_estado_url_name insc.pk %}"
                                                   class="d-inline">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="estado" value="rechazada" />
@@ -469,7 +508,10 @@
                                         {% endif %}
                                         {% if perms.VAT.change_inscripcion %}
                                             <div class="dropdown">
-                                                <button class="ci-dots dropdown-toggle" data-bs-toggle="dropdown">
+                                                <button class="ci-dots dropdown-toggle"
+                                                        data-bs-toggle="dropdown"
+                                                        data-bs-display="dynamic"
+                                                        data-bs-strategy="fixed">
                                                     <i class="bi bi-three-dots-vertical"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3"
@@ -477,8 +519,7 @@
                                                     {% for val, lbl in estado_choices %}
                                                         {% if val != insc.estado %}
                                                             <li>
-                                                                <form method="post"
-                                                                      action="{% url 'vat_inscripcion_cambiar_estado' insc.pk %}">
+                                                                <form method="post" action="{% url inscripcion_estado_url_name insc.pk %}">
                                                                     {% csrf_token %}
                                                                     <input type="hidden" name="estado" value="{{ val }}" />
                                                                     <button type="submit" class="dropdown-item rounded-2">{{ lbl }}</button>
@@ -528,7 +569,7 @@
                                     </div>
                                     <div class="d-flex align-items-center gap-2 flex-shrink-0">
                                         <span class="ci-pill {% if sesion.estado == 'realizada' %}ci-pill-green{% elif sesion.estado == 'cancelada' %}ci-pill-red{% else %}ci-pill-blue{% endif %}">{{ sesion.get_estado_display }}</span>
-                                        <a href="{% url 'vat_asistencia_sesion' sesion.pk %}"
+                                        <a href="{% url asistencia_url_name sesion.pk %}"
                                            class="ci-asist {% if sesion.estado == 'realizada' %}ci-asist-done{% endif %}"><i class="bi bi-check2-square"></i>Asistencia</a>
                                     </div>
                                 </div>
@@ -549,8 +590,12 @@
                         <div class="ci-sec-head">
                             <span class="ci-sec-title"><i class="bi bi-clock me-2"></i>Horarios</span>
                             {% if perms.VAT.add_comisionhorario %}
-                                <a href="{% url 'vat_comision_horario_create' %}?comision={{ comision.id }}"
-                                   class="btn btn-sm btn-primary rounded-3"><i class="bi bi-plus-lg me-1"></i>Agregar</a>
+                                <button type="button"
+                                        class="btn btn-sm btn-primary rounded-3"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalComisionHorario">
+                                    <i class="bi bi-plus-lg me-1"></i>Agregar
+                                </button>
                             {% endif %}
                         </div>
                         {% if horarios %}
@@ -577,11 +622,11 @@
                                             {% endif %}
                                         </span>
                                         {% if perms.VAT.change_comisionhorario %}
-                                            <a href="{% url 'vat_comision_horario_update' horario.pk %}"
+                                            <a href="{% url horario_update_url_name horario.pk %}"
                                                class="ci-iconbtn"><i class="bi bi-pencil"></i></a>
                                         {% endif %}
                                         {% if perms.VAT.delete_comisionhorario %}
-                                            <a href="{% url 'vat_comision_horario_delete' horario.pk %}"
+                                            <a href="{% url horario_delete_url_name horario.pk %}"
                                                class="ci-iconbtn ci-iconbtn-danger"><i class="bi bi-trash"></i></a>
                                         {% endif %}
                                     </div>
@@ -607,20 +652,27 @@
                 <div class="ci-scard">
                     <p class="ci-sc-title">Acciones rápidas</p>
                     <div class="d-grid gap-2">
-                        {% if perms.VAT.change_comision %}
-                            <a href="{% url 'vat_comision_update' comision.id %}"
-                               class="btn btn-primary rounded-3"><i class="bi bi-pencil me-2"></i>Editar comisión</a>
+                        {% if puede_editar_comision %}
+                            <a href="{{ comision_edit_url }}" class="btn btn-primary rounded-3"><i class="bi bi-pencil me-2"></i>Editar comisión</a>
                         {% endif %}
                         {% if perms.VAT.add_inscripcion %}
-                            <a href="{% url 'vat_inscripcion_create' %}?comision={{ comision.id }}"
-                               class="btn btn-outline-primary rounded-3"><i class="bi bi-person-plus me-2"></i>Inscribir ciudadano</a>
+                            <button type="button"
+                                    class="btn btn-outline-primary rounded-3"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalInscripcionRapida">
+                                <i class="bi bi-person-plus me-2"></i>Inscribir ciudadano
+                            </button>
                         {% endif %}
                         {% if perms.VAT.add_comisionhorario %}
-                            <a href="{% url 'vat_comision_horario_create' %}?comision={{ comision.id }}"
-                               class="btn btn-outline-secondary rounded-3"><i class="bi bi-plus-circle me-2"></i>Agregar horario</a>
+                            <button type="button"
+                                    class="btn btn-outline-secondary rounded-3"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalComisionHorario">
+                                <i class="bi bi-plus-circle me-2"></i>Agregar horario
+                            </button>
                         {% endif %}
-                        {% if perms.VAT.delete_comision %}
-                            <a href="{% url 'vat_comision_delete' comision.id %}"
+                        {% if puede_eliminar_comision %}
+                            <a href="{{ comision_delete_url }}"
                                class="btn btn-outline-danger rounded-3"><i class="bi bi-trash me-2"></i>Eliminar</a>
                         {% endif %}
                     </div>
@@ -646,17 +698,343 @@
                 </div>
 
                 <div class="ci-scard">
-                    <p class="ci-sc-title">Oferta asociada</p>
+                    <p class="ci-sc-title">{{ unidad_sidebar_title }}</p>
                     <p class="mb-2"
                        style="font-size:.86rem;
                               font-weight:600;
-                              color:var(--bs-body-color)">{{ comision.oferta }}</p>
-                    <a href="{% url 'vat_oferta_institucional_detail' comision.oferta_id %}"
-                       class="btn btn-outline-secondary btn-sm rounded-3 w-100"><i class="bi bi-box-arrow-up-right me-1"></i>Ver oferta</a>
+                              color:var(--bs-body-color)">{{ unidad_valor }}</p>
+                    <a href="{{ unidad_detail_url }}"
+                       class="btn btn-outline-secondary btn-sm rounded-3 w-100"><i class="bi bi-box-arrow-up-right me-1"></i>{{ unidad_detail_text }}</a>
                 </div>
 
             </div>
         </div>
 
     </div>
+
+    {% if perms.VAT.add_inscripcion %}
+        <div class="modal fade ci-modal"
+             id="modalInscripcionRapida"
+             tabindex="-1"
+             aria-labelledby="modalInscripcionRapidaLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalInscripcionRapidaLabel">Inscribir ciudadano</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <form id="formInscripcionRapida"
+                          method="post"
+                          novalidate
+                          action="{% url inscripcion_rapida_url_name %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="comision" value="{{ comision.id }}" />
+                        <input type="hidden" name="ciudadano_id" id="inscripcionCiudadanoId" />
+                        <div class="modal-body">
+                            <div id="inscripcionRapidaAlert" class="alert d-none" role="alert"></div>
+
+                            <div class="border rounded-3 p-3 mb-3">
+                                <label for="inscripcionDocumentoSearch" class="form-label fw-semibold">Buscar por documento</label>
+                                <div class="input-group">
+                                    <input type="text"
+                                           class="form-control"
+                                           id="inscripcionDocumentoSearch"
+                                           placeholder="Ingrese DNI (mín. 7 dígitos)"
+                                           inputmode="numeric" />
+                                    <button type="button"
+                                            class="btn btn-outline-secondary"
+                                            id="inscripcionBuscarBtn">Buscar</button>
+                                </div>
+                                <div class="form-text">Se buscará en ciudadanos.ciudadano por número de documento.</div>
+                            </div>
+
+                            <div id="inscripcionSelectedCitizen" class="alert alert-success d-none"></div>
+                            <div id="inscripcionSearchResults" class="list-group mb-3 d-none"></div>
+
+                            <div id="inscripcionNoResults" class="alert alert-info d-none mb-3">
+                                No se encontraron coincidencias. Completá el formulario corto para crear el ciudadano e inscribirlo.
+                            </div>
+
+                            <div id="inscripcionQuickCitizenSection"
+                                 class="border rounded-3 p-3 d-none">
+                                <h6 class="mb-3">Crear ciudadano nuevo</h6>
+                                {{ ciudadano_rapido_form.tipo_documento }}
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ ciudadano_rapido_form.apellido.id_for_label }}"
+                                               class="form-label">Apellido</label>
+                                        {{ ciudadano_rapido_form.apellido }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ ciudadano_rapido_form.nombre.id_for_label }}"
+                                               class="form-label">Nombre</label>
+                                        {{ ciudadano_rapido_form.nombre }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ ciudadano_rapido_form.documento.id_for_label }}"
+                                               class="form-label">Documento</label>
+                                        {{ ciudadano_rapido_form.documento }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ ciudadano_rapido_form.fecha_nacimiento.id_for_label }}"
+                                               class="form-label">Fecha de Nacimiento</label>
+                                        {{ ciudadano_rapido_form.fecha_nacimiento }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ ciudadano_rapido_form.sexo.id_for_label }}"
+                                               class="form-label">Sexo</label>
+                                        {{ ciudadano_rapido_form.sexo }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <label for="inscripcionObservaciones" class="form-label">Observaciones</label>
+                                <textarea class="form-control"
+                                          id="inscripcionObservaciones"
+                                          name="observaciones"
+                                          rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Inscribir</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if perms.VAT.add_comisionhorario %}
+        <div class="modal fade ci-modal"
+             id="modalComisionHorario"
+             tabindex="-1"
+             aria-labelledby="modalComisionHorarioLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalComisionHorarioLabel">Agregar Horario</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <form id="formComisionHorario"
+                          method="post"
+                          action="{% url horario_create_url_name %}?{{ horario_create_query_param }}={{ comision.id }}">
+                        {% csrf_token %}
+                        <div class="modal-body">{{ horario_form.as_p }}</div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var form = document.getElementById('formComisionHorario');
+        if (!form) return;
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Guardando...';
+            }
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(function() {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('modalComisionHorario'));
+                if (modal) modal.hide();
+                location.reload();
+            }).catch(function() {
+                alert('Error al guardar el horario.');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Guardar';
+                }
+            });
+        });
+    })();
+        </script>
+    {% endif %}
+
+    {% if perms.VAT.add_inscripcion %}
+        <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var form = document.getElementById('formInscripcionRapida');
+        if (!form) return;
+
+        var searchInput = document.getElementById('inscripcionDocumentoSearch');
+        var searchBtn = document.getElementById('inscripcionBuscarBtn');
+        var resultsBox = document.getElementById('inscripcionSearchResults');
+        var selectedBox = document.getElementById('inscripcionSelectedCitizen');
+        var noResultsBox = document.getElementById('inscripcionNoResults');
+        var quickSection = document.getElementById('inscripcionQuickCitizenSection');
+        var ciudadanoIdInput = document.getElementById('inscripcionCiudadanoId');
+        var alertBox = document.getElementById('inscripcionRapidaAlert');
+        var documentoField = document.getElementById('{{ ciudadano_rapido_form.documento.id_for_label }}');
+
+        function resetAlert() {
+            alertBox.className = 'alert d-none';
+            alertBox.textContent = '';
+        }
+
+        function showAlert(message, level) {
+            alertBox.className = 'alert alert-' + level;
+            alertBox.textContent = message;
+        }
+
+        function clearSelection() {
+            ciudadanoIdInput.value = '';
+            selectedBox.classList.add('d-none');
+            selectedBox.textContent = '';
+        }
+
+        function clearResults() {
+            resultsBox.innerHTML = '';
+            resultsBox.classList.add('d-none');
+        }
+
+        function hideQuickForm() {
+            noResultsBox.classList.add('d-none');
+            quickSection.classList.add('d-none');
+        }
+
+        function showQuickForm(documento) {
+            noResultsBox.classList.remove('d-none');
+            quickSection.classList.remove('d-none');
+            if (documentoField) documentoField.value = documento || '';
+        }
+
+        function renderResults(results) {
+            clearResults();
+            results.forEach(function(item) {
+                var button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'list-group-item list-group-item-action';
+                button.textContent = item.text;
+                button.addEventListener('click', function() {
+                    ciudadanoIdInput.value = item.id;
+                    selectedBox.textContent = 'Ciudadano seleccionado: ' + item.text;
+                    selectedBox.classList.remove('d-none');
+                    hideQuickForm();
+                    clearResults();
+                    resetAlert();
+                });
+                resultsBox.appendChild(button);
+            });
+            resultsBox.classList.remove('d-none');
+        }
+
+        function buscarCiudadano() {
+            var query = (searchInput.value || '').trim();
+            clearSelection();
+            clearResults();
+            hideQuickForm();
+            resetAlert();
+
+            if (!/^\d{7,}$/.test(query)) {
+                showAlert('Ingrese un documento numérico de al menos 7 dígitos.', 'warning');
+                return;
+            }
+
+            fetch('{% url "api_buscar_ciudadanos" %}?q=' + encodeURIComponent(query), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                var results = data.results || [];
+                if (results.length) {
+                    renderResults(results);
+                } else {
+                    showQuickForm(query);
+                }
+            })
+            .catch(function() {
+                showAlert('No se pudo buscar ciudadanos en este momento.', 'danger');
+            });
+        }
+
+        searchBtn.addEventListener('click', buscarCiudadano);
+        searchInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                buscarCiudadano();
+            }
+        });
+        searchInput.addEventListener('input', function() {
+            clearSelection();
+            clearResults();
+            hideQuickForm();
+            resetAlert();
+        });
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            resetAlert();
+
+            var submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Inscribiendo...';
+            }
+
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(response) {
+                return response.json().then(function(data) {
+                    if (!response.ok) {
+                        throw data;
+                    }
+                    return data;
+                });
+            })
+            .then(function() {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('modalInscripcionRapida'));
+                if (modal) modal.hide();
+                location.reload();
+            })
+            .catch(function(error) {
+                var message = error.message || 'No se pudo completar la inscripción.';
+                if (error.errors) {
+                    var fieldMessages = [];
+                    Object.keys(error.errors).forEach(function(key) {
+                        fieldMessages.push(error.errors[key].join(' '));
+                    });
+                    if (fieldMessages.length) {
+                        message = fieldMessages.join(' ');
+                    }
+                }
+                showAlert(message, 'danger');
+            })
+            .finally(function() {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Inscribir';
+                }
+            });
+        });
+    })();
+        </script>
+    {% endif %}
 {% endblock %}

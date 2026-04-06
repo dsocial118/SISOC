@@ -1,0 +1,25 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Eliminar Comisión de Curso{% endblock %}
+
+{% block content %}
+    <div class="container-fluid py-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3">Eliminar comisión de curso</h1>
+                <p>
+                    ¿Seguro que querés eliminar la comisión
+                    <strong>{{ comision_curso.codigo_comision }} - {{ comision_curso.nombre }}</strong>?
+                </p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{% url 'vat_centro_detail' comision_curso.curso.centro_id %}#cursos"
+                           class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,4 +1,4 @@
-﻿"""Tests for test importacion service helpers unit."""
+"""Tests for test importacion service helpers unit."""
 
 from datetime import date, timedelta
 from io import BytesIO
@@ -840,6 +840,12 @@ def test_importacion_helpers_orquesta_beneficiario_y_detecta_responsable(mocker)
         module._tiene_datos_responsable_importacion({"nombre_responsable": "Ana"})
         is True
     )
+    assert (
+        module._tiene_datos_responsable_importacion(
+            {"telefono_responsable": "3415550000"}
+        )
+        is True
+    )
 
 
 def test_importacion_helpers_procesar_responsable_same_document():
@@ -1060,7 +1066,7 @@ def test_importacion_helpers_persistir_legajos_y_guardar_registros_erroneos(mock
                     "timestamp": pd.Timestamp("2020-03-04 10:30:00"),
                     "nombre": "Ana",
                 },
-                "error": "Documento invÃ¡lido",
+                "error": "Documento inválido",
             }
         ],
         batch_size=10,
@@ -1068,7 +1074,7 @@ def test_importacion_helpers_persistir_legajos_y_guardar_registros_erroneos(mock
 
     reg = RegistroErroneo.objects.get(expediente=expediente)
     assert reg.fila_excel == 7
-    assert reg.mensaje_error == "Documento invÃ¡lido"
+    assert reg.mensaje_error == "Documento inválido"
     assert reg.datos_raw["fecha_nacimiento"] == "02/01/2020"
     assert reg.datos_raw["timestamp"] == "04/03/2020"
     assert reg.datos_raw["nombre"] == "Ana"
@@ -1178,7 +1184,7 @@ def test_importacion_helpers_crear_relaciones_familiares_db_real():
     module._crear_relaciones_familiares_importacion(
         relaciones_familiares=[
             {"fila": 2, "responsable_id": c1.id, "hijo_id": c2.id},
-            # Duplicado para caracterizar idempotencia vÃ­a get_or_create
+            # Duplicado para caracterizar idempotencia vía get_or_create
             {"fila": 2, "responsable_id": c1.id, "hijo_id": c2.id},
         ],
         warnings=warnings,
@@ -1332,7 +1338,7 @@ def test_importar_legajos_orquesta_loop_principal_y_postprocesos(mocker):
         {"documento": "111", "tiene_resp": True},
         {"documento": "222", "tiene_resp": False},
         {"documento": "333", "tiene_resp": False},
-        ValidationError("Fila invÃ¡lida"),
+        ValidationError("Fila inválida"),
     ]
     construir_payload = mocker.patch(
         "celiaquia.services.importacion_service._construir_payload_fila_importacion",
@@ -1422,12 +1428,12 @@ def test_importar_legajos_orquesta_loop_principal_y_postprocesos(mocker):
     )
 
     assert result["validos"] == 1
-    assert result["errores"] == 2  # helper error + excepciÃ³n de fila
+    assert result["errores"] == 2  # helper error + excepción de fila
     assert result["excluidos_count"] == 1
     assert result["relaciones_familiares_creadas"] == 1
     assert result["relaciones_cruzadas_consolidadas"] == 2
     assert len(result["detalles_errores"]) == 2
-    assert any("Fila invÃ¡lida" in d["error"] for d in result["detalles_errores"])
+    assert any("Fila inválida" in d["error"] for d in result["detalles_errores"])
     assert construir_payload.call_count == 4
     assert procesar_benef.call_count == 3
     procesar_resp.assert_called_once()

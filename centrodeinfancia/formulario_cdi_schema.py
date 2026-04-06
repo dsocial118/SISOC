@@ -1,4 +1,4 @@
-﻿"""Definiciones compartidas para FormularioCDI."""
+"""Definiciones compartidas para FormularioCDI."""
 
 from __future__ import annotations
 
@@ -28,28 +28,28 @@ def humanizar_codigo(value: str) -> str:
 
 
 OPCIONES_MESES = [
-    ("ENE", "ENE"),
-    ("FEB", "FEB"),
-    ("MAR", "MAR"),
-    ("ABR", "ABR"),
-    ("MAY", "MAY"),
-    ("JUN", "JUN"),
-    ("JUL", "JUL"),
-    ("AGO", "AGO"),
-    ("SET", "SET"),
-    ("OCT", "OCT"),
-    ("NOV", "NOV"),
-    ("DIC", "DIC"),
+    ("enero", "Enero"),
+    ("febrero", "Febrero"),
+    ("marzo", "Marzo"),
+    ("abril", "Abril"),
+    ("mayo", "Mayo"),
+    ("junio", "Junio"),
+    ("julio", "Julio"),
+    ("agosto", "Agosto"),
+    ("septiembre", "Septiembre"),
+    ("octubre", "Octubre"),
+    ("noviembre", "Noviembre"),
+    ("diciembre", "Diciembre"),
 ]
 
 OPCIONES_DIAS_SEMANA = [
-    ("LUNES", "Lunes"),
-    ("MARTES", "Martes"),
-    ("MIERCOLES", "Miercoles"),
-    ("JUEVES", "Jueves"),
-    ("VIERNES", "Viernes"),
-    ("SABADO", "Sabado"),
-    ("DOMINGO", "Domingo"),
+    ("lunes", "Lunes"),
+    ("martes", "Martes"),
+    ("miercoles", "Miércoles"),
+    ("jueves", "Jueves"),
+    ("viernes", "Viernes"),
+    ("sabado", "Sábado"),
+    ("domingo", "Domingo"),
 ]
 
 OPCIONES_GRUPO_ETARIO_SALAS = [
@@ -65,9 +65,9 @@ OPCIONES_GRUPO_ETARIO_DEMANDA = [
     ("lactantes", "Lactantes"),
     ("deambuladores", "Deambuladores"),
     ("un_ano", "Un año"),
-    ("dos_anos", "dos años"),
-    ("tres_anos", "tres años"),
-    ("cuatro_anos", "cuatro años"),
+    ("dos_anos", "Dos años"),
+    ("tres_anos", "Tres años"),
+    ("cuatro_anos", "Cuatro años"),
 ]
 
 OPCIONES_INSTITUCIONES_ARTICULACION = [
@@ -94,21 +94,61 @@ def _construir_opciones(*values: str) -> list[tuple[str, str]]:
 
 
 CAMPOS_OPCIONES = {
-    "tipo_jornada": [
-        ("simple_single_shift", "Jornada simple"),
-        ("multiple_simple_shifts", "Dos o mas jornadas simples"),
-        ("full_double_same_group", "Jornada completa/doble"),
-        ("other", "Otra"),
+    "ambito": [
+        ("sin_informacion", "Sin información"),
+        ("rural", "Rural"),
+        ("urbano", "Urbano"),
     ],
-    "modalidad_gestion": _construir_opciones(
-        "gobierno_nacional",
-        "gobierno_provincial",
-        "gobierno_municipal",
-        "ong",
-        "cogestion_provincial_municipal",
-        "cogestion_ong_provincial_municipal",
-        "otra",
-    ),
+    "tipo_jornada": [
+        (
+            "simple_single_shift",
+            "Jornada simple (un solo turno con un único grupo de niños)",
+        ),
+        (
+            "multiple_simple_shifts",
+            "Dos o más jornadas simples (dos o más turnos a los que asisten distintos grupos de niños)",
+        ),
+        (
+            "full_double_same_group",
+            "Jornada completa/doble (dos o más turnos a los que asiste un mismo grupo de niños)",
+        ),
+        ("other", "Otra (especificar)"),
+    ],
+    "oferta_servicios": [
+        ("lactantes", "Lactantes"),
+        ("deambuladores", "Deambuladores"),
+        ("dos_anos", "2 años"),
+        ("tres_anos", "3 años"),
+        ("cuatro_anos", "4 años"),
+        ("multiedad", "Multiedad"),
+    ],
+    "modalidad_gestion": [
+        ("gobierno_nacional", "Gobierno nacional"),
+        ("gobierno_provincial", "Gobierno provincial"),
+        ("gobierno_municipal", "Gobierno municipal"),
+        (
+            "gestion_privada",
+            "Gestión privada (Organizaciones con fines de lucro)",
+        ),
+        (
+            "gestion_tercer_sector",
+            (
+                "Gestión Tercer Sector (Organizaciones sin fines de lucro; "
+                "incluye organizaciones no gubernamentales, organizaciones "
+                "sociales, movimientos sociales, grupos comunitarios o "
+                "barriales, etc.)"
+            ),
+        ),
+        (
+            "cogestion_provincial_municipal",
+            "Co-gestión: Gob. Provincial y municipal",
+        ),
+        (
+            "cogestion_ong_provincial_municipal",
+            "Co-gestión: ONG/Gob. Provincial/municipal",
+        ),
+        ("otra", "Otra: especificar"),
+    ],
     "modalidad_tenencia": _construir_opciones(
         "propio",
         "alquilado",
@@ -142,7 +182,7 @@ CAMPOS_OPCIONES = {
         "red_o_embotellada_segura",
         "pozo_analisis_vigente",
         "pozo_analisis_vencido_o_sin_control",
-        "otra_con_proceso_sin_garantia_formal",
+        ("otra_con_proceso_sin_garantia_formal"),
         "otra_sin_info_potabilizacion",
     ),
     "eliminacion_excretas": _construir_opciones(
@@ -459,6 +499,7 @@ ETIQUETAS_CAMPOS = {
     "departamento_cdi": "Departamento del CDI",
     "municipio_cdi": "Municipio del CDI",
     "localidad_cdi": "Localidad del CDI",
+    "ambito": "Ámbito",
     "calle_cdi": "Calle del CDI",
     "numero_puerta_cdi": "Numeracion de puerta del CDI",
     "codigo_postal_cdi": "Codigo postal del CDI",
@@ -472,10 +513,9 @@ ETIQUETAS_CAMPOS = {
     "email_referente_cdi": "Referente del CDI mail",
     "meses_funcionamiento": "Meses de funcionamiento del CDI",
     "dias_funcionamiento": "Días de funcionamiento del CDI",
-    "horario_apertura": "Horario de apertura",
-    "horario_cierre": "Horario de cierre",
     "tipo_jornada": "Tipo de jornada",
     "tipo_jornada_otra": "Otra jornada - especificar",
+    "oferta_servicios": "Oferta de servicios",
     "cantidad_total_ninos": "Cantidad de niños que asisten en total",
     "cantidad_total_personal": "Cantidad de personal en total",
     "modalidad_gestion": "Modalidad de gestion",
@@ -592,6 +632,7 @@ SECCIONES_FORMULARIO_CDI = [
         "fields": [
             "nombre_cdi",
             "codigo_cdi",
+            "ambito",
             "provincia_cdi",
             "departamento_cdi",
             "municipio_cdi",
@@ -609,10 +650,9 @@ SECCIONES_FORMULARIO_CDI = [
             "email_referente_cdi",
             "meses_funcionamiento",
             "dias_funcionamiento",
-            "horario_apertura",
-            "horario_cierre",
             "tipo_jornada",
             "tipo_jornada_otra",
+            "oferta_servicios",
             "cantidad_total_ninos",
             "cantidad_total_personal",
         ],

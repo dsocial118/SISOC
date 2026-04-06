@@ -13,9 +13,10 @@ from VAT.models import (
     VoucherUso,
     # Fase 2
     InstitucionContacto,
-    AutoridadInstitucional,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
+    Curso,
+    ComisionCurso,
     # Fase 4
     OfertaInstitucional,
     Comision,
@@ -125,13 +126,27 @@ class SubsectorSerializer(serializers.ModelSerializer):
 
 
 class TituloReferenciaSerializer(serializers.ModelSerializer):
-    sector_nombre = serializers.CharField(source="sector.nombre", read_only=True)
-    subsector_nombre = serializers.CharField(source="subsector.nombre", read_only=True)
+    plan_estudio = serializers.PrimaryKeyRelatedField(
+        queryset=PlanVersionCurricular.objects.all(),
+        allow_null=True,
+        required=False,
+    )
+    sector = serializers.IntegerField(source="plan_estudio.sector_id", read_only=True)
+    sector_nombre = serializers.CharField(
+        source="plan_estudio.sector.nombre", read_only=True
+    )
+    subsector = serializers.IntegerField(
+        source="plan_estudio.subsector_id", read_only=True
+    )
+    subsector_nombre = serializers.CharField(
+        source="plan_estudio.subsector.nombre", read_only=True
+    )
 
     class Meta:
         model = TituloReferencia
         fields = [
             "id",
+            "plan_estudio",
             "sector",
             "sector_nombre",
             "subsector",
@@ -150,9 +165,12 @@ class ModalidadCursadaSerializer(serializers.ModelSerializer):
 
 
 class PlanVersionCurricularSerializer(serializers.ModelSerializer):
-    titulo_referencia_nombre = serializers.CharField(
-        source="titulo_referencia.nombre", read_only=True
+    titulo_referencia = serializers.IntegerField(
+        source="titulo_referencia_id", read_only=True
     )
+    titulo_referencia_nombre = serializers.CharField(source="nombre", read_only=True)
+    sector_nombre = serializers.CharField(source="sector.nombre", read_only=True)
+    subsector_nombre = serializers.CharField(source="subsector.nombre", read_only=True)
     modalidad_cursada_nombre = serializers.CharField(
         source="modalidad_cursada.nombre", read_only=True
     )
@@ -161,16 +179,19 @@ class PlanVersionCurricularSerializer(serializers.ModelSerializer):
         model = PlanVersionCurricular
         fields = [
             "id",
+            "nombre",
             "titulo_referencia",
             "titulo_referencia_nombre",
+            "sector",
+            "sector_nombre",
+            "subsector",
+            "subsector_nombre",
             "modalidad_cursada",
             "modalidad_cursada_nombre",
             "normativa",
-            "version",
             "horas_reloj",
             "nivel_requerido",
             "nivel_certifica",
-            "frecuencia",
             "activo",
         ]
 
@@ -287,29 +308,15 @@ class InstitucionContactoSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "centro",
+            "nombre_contacto",
+            "rol_area",
+            "documento",
+            "telefono_contacto",
+            "email_contacto",
             "tipo",
             "valor",
             "es_principal",
             "observaciones",
-            "vigencia_desde",
-            "vigencia_hasta",
-            "fecha_creacion",
-            "fecha_modificacion",
-        ]
-
-
-class AutoridadInstitucionalSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AutoridadInstitucional
-        fields = [
-            "id",
-            "centro",
-            "nombre_completo",
-            "dni",
-            "cargo",
-            "email",
-            "telefono",
-            "es_actual",
             "vigencia_desde",
             "vigencia_hasta",
             "fecha_creacion",
@@ -353,6 +360,70 @@ class InstitucionUbicacionSerializer(serializers.ModelSerializer):
             "observaciones",
             "vigencia_desde",
             "vigencia_hasta",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+# ============================================================================
+# CURSOS (CAPA OPERATIVA)
+# ============================================================================
+
+
+class CursoSerializer(serializers.ModelSerializer):
+    centro_nombre = serializers.CharField(source="centro.nombre", read_only=True)
+    plan_estudio_nombre = serializers.CharField(source="plan_estudio", read_only=True)
+    modalidad_nombre = serializers.CharField(source="modalidad.nombre", read_only=True)
+    programa = serializers.IntegerField(source="programa_id", read_only=True)
+    programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
+    voucher_parametrias = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+    class Meta:
+        model = Curso
+        fields = [
+            "id",
+            "centro",
+            "centro_nombre",
+            "plan_estudio",
+            "plan_estudio_nombre",
+            "nombre",
+            "modalidad",
+            "modalidad_nombre",
+            "programa",
+            "programa_nombre",
+            "estado",
+            "usa_voucher",
+            "voucher_parametrias",
+            "costo_creditos",
+            "observaciones",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class ComisionCursoSerializer(serializers.ModelSerializer):
+    curso_nombre = serializers.CharField(source="curso.nombre", read_only=True)
+    curso_centro_id = serializers.IntegerField(source="curso.centro_id", read_only=True)
+    ubicacion_nombre = serializers.CharField(
+        source="ubicacion.nombre_ubicacion", read_only=True
+    )
+
+    class Meta:
+        model = ComisionCurso
+        fields = [
+            "id",
+            "curso",
+            "curso_nombre",
+            "curso_centro_id",
+            "ubicacion",
+            "ubicacion_nombre",
+            "codigo_comision",
+            "nombre",
+            "cupo_total",
+            "fecha_inicio",
+            "fecha_fin",
+            "estado",
+            "observaciones",
             "fecha_creacion",
             "fecha_modificacion",
         ]
@@ -416,6 +487,7 @@ class OfertaInstitucionalSerializer(serializers.ModelSerializer):
     )
     programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
     comisiones = ComisionSerializer(many=True, read_only=True)
+    voucher_parametrias = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
         model = OfertaInstitucional
@@ -433,6 +505,7 @@ class OfertaInstitucionalSerializer(serializers.ModelSerializer):
             "estado",
             "costo",
             "usa_voucher",
+            "voucher_parametrias",
             "fecha_publicacion",
             "comisiones",
             "observaciones",
@@ -561,8 +634,17 @@ class VatWebCentroSerializer(serializers.ModelSerializer):
 
 
 class VatWebTituloSerializer(serializers.ModelSerializer):
-    sector_nombre = serializers.CharField(source="sector.nombre", read_only=True)
-    subsector_nombre = serializers.CharField(source="subsector.nombre", read_only=True)
+    plan_estudio = serializers.IntegerField(source="plan_estudio_id", read_only=True)
+    sector = serializers.IntegerField(source="plan_estudio.sector_id", read_only=True)
+    sector_nombre = serializers.CharField(
+        source="plan_estudio.sector.nombre", read_only=True
+    )
+    subsector = serializers.IntegerField(
+        source="plan_estudio.subsector_id", read_only=True
+    )
+    subsector_nombre = serializers.CharField(
+        source="plan_estudio.subsector.nombre", read_only=True
+    )
 
     class Meta:
         model = TituloReferencia
@@ -572,6 +654,7 @@ class VatWebTituloSerializer(serializers.ModelSerializer):
             "codigo_referencia",
             "descripcion",
             "activo",
+            "plan_estudio",
             "sector",
             "sector_nombre",
             "subsector",

@@ -1,7 +1,7 @@
 """Tests for test users pwa forms."""
 
 import pytest
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 
 from comedores.models import Comedor
 from core.models import Provincia
@@ -12,6 +12,8 @@ from users.forms import (
     UserCreationForm,
 )
 from users.models import AccesoComedorPWA, AuditAccesoComedorPWA
+
+MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 
 
 @pytest.fixture
@@ -111,6 +113,26 @@ def test_user_creation_form_creates_mobile_user_associated_to_organization(comed
 
 
 @pytest.mark.django_db
+def test_user_creation_form_assigns_mobile_rendicion_permission_with_checkbox(comedor):
+    form = UserCreationForm(
+        data={
+            "username": "rep_forms_rendicion",
+            "email": "rep_forms_rendicion@example.com",
+            "es_representante_pwa": True,
+            "puede_gestionar_rendiciones_mobile": True,
+            "tipo_asociacion_pwa": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+            "organizaciones_pwa": [comedor.organizacion_id],
+            "comedores_pwa": [comedor.id],
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    user = form.save()
+
+    assert user.has_perm(MOBILE_RENDICION_PERMISSION_CODE) is True
+
+
+@pytest.mark.django_db
 def test_custom_user_change_form_deactivates_mobile_access(comedor):
     create_form = UserCreationForm(
         data={
@@ -155,6 +177,48 @@ def test_custom_user_change_form_deactivates_mobile_access(comedor):
         acceso=acceso,
         accion=AuditAccesoComedorPWA.ACCION_DEACTIVATE,
     ).exists()
+
+
+@pytest.mark.django_db
+def test_custom_user_change_form_can_remove_mobile_rendicion_permission(comedor):
+    permission = Permission.objects.get(
+        content_type__app_label="rendicioncuentasmensual",
+        codename="manage_mobile_rendicion",
+    )
+    create_form = UserCreationForm(
+        data={
+            "username": "rep_edit_rendicion",
+            "email": "rep_edit_rendicion@example.com",
+            "es_representante_pwa": True,
+            "puede_gestionar_rendiciones_mobile": True,
+            "tipo_asociacion_pwa": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+            "organizaciones_pwa": [comedor.organizacion_id],
+            "comedores_pwa": [comedor.id],
+        }
+    )
+    assert create_form.is_valid(), create_form.errors
+    user = create_form.save()
+    assert user.has_perm(MOBILE_RENDICION_PERMISSION_CODE) is True
+
+    edit_form = CustomUserChangeForm(
+        instance=user,
+        data={
+            "username": user.username,
+            "email": user.email,
+            "password": "",
+            "es_representante_pwa": True,
+            "puede_gestionar_rendiciones_mobile": False,
+            "tipo_asociacion_pwa": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+            "organizaciones_pwa": [comedor.organizacion_id],
+            "comedores_pwa": [comedor.id],
+        },
+    )
+    assert edit_form.is_valid(), edit_form.errors
+    edit_form.save()
+    user = type(user).objects.get(pk=user.pk)
+
+    assert user.user_permissions.filter(pk=permission.pk).exists() is False
+    assert user.has_perm(MOBILE_RENDICION_PERMISSION_CODE) is False
 
 
 @pytest.mark.django_db

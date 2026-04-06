@@ -1,6 +1,7 @@
 from django.urls import path
 from core.decorators import permissions_any_required
 from rendicioncuentasmensual.views import (
+    RendicionCuentaMensualGlobalListView,
     RendicionCuentaMensualListView,
     RendicionCuentaMensualDetailView,
     RendicionCuentaMensualDeleteView,
@@ -10,6 +11,17 @@ from rendicioncuentasmensual.views import (
 )
 
 urlpatterns = [
+    path(
+        "rendicioncuentasmensual/listado/",
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(RendicionCuentaMensualGlobalListView.as_view()),
+        name="rendicioncuentasmensual_global_list",
+    ),
     path(
         "rendicioncuentasmensual/<int:comedor_id>/",
         permissions_any_required(

@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
 
     {% url 'vat_oferta_institucional_list' as reset_url %}
-    {% include 'components/search_bar.html' with titulo="Buscar Oferta Institucional" placeholder="Buscar por centro, plan curricular o nombre" help_text="Buscar por centro, plan curricular o nombre" reset_url=reset_url add_url='vat_oferta_institucional_create' add_text='Agregar' query=request.GET.busqueda %}
+    {% include 'components/search_bar.html' with titulo="Buscar Oferta Institucional" placeholder="Buscar por centro, plan de estudio o nombre" help_text="Buscar por centro, plan de estudio o nombre" reset_url=reset_url add_url='vat_oferta_institucional_create' add_text='Agregar' query=request.GET.busqueda %}
 
     <div class="row mt-5 max-width-100">
         <div class="col-12">
@@ -22,7 +22,7 @@
                                         <i class="fas fa-sort sort-icon"></i>
                                     </th>
                                     <th class="sortable" data-column="plan">
-                                        Plan Curricular
+                                        Plan de Estudio
                                         <i class="fas fa-sort sort-icon"></i>
                                     </th>
                                     <th>Ciclo</th>

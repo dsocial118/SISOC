@@ -14,7 +14,6 @@ from .models import (
     VoucherLog,
     # Fase 2
     InstitucionContacto,
-    AutoridadInstitucional,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
     # Fase 4
@@ -33,14 +32,11 @@ from .models import (
 
 @admin.register(Centro)
 class CentroAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "modalidad_institucional", "tipo_gestion", "activo")
-    list_filter = ("activo", "modalidad_institucional", "tipo_gestion")
+    list_display = ("nombre", "tipo_gestion", "activo")
+    list_filter = ("activo", "tipo_gestion")
     search_fields = ("nombre",)
     fieldsets = (
-        (
-            "Información General",
-            {"fields": ("nombre", "codigo", "organizacion_asociada", "referente")},
-        ),
+        ("Información General", {"fields": ("nombre", "codigo", "referente")}),
         (
             "Ubicación",
             {
@@ -54,10 +50,7 @@ class CentroAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        (
-            "Contacto",
-            {"fields": ("telefono", "celular", "correo", "sitio_web", "link_redes")},
-        ),
+        ("Contacto", {"fields": ("telefono", "celular", "correo", "sitio_web")}),
         (
             "Responsable",
             {
@@ -70,18 +63,10 @@ class CentroAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Información DER v4",
-            {
-                "fields": (
-                    "modalidad_institucional",
-                    "tipo_gestion",
-                    "clase_institucion",
-                    "situacion",
-                    "fecha_alta",
-                )
-            },
+            "Clasificación",
+            {"fields": ("tipo_gestion", "clase_institucion", "situacion")},
         ),
-        ("Estado", {"fields": ("foto", "activo")}),
+        ("Estado", {"fields": ("activo",)}),
     )
 
 
@@ -114,15 +99,20 @@ class SubsectorAdmin(admin.ModelAdmin):
 
 @admin.register(TituloReferencia)
 class TituloReferenciaAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "sector", "subsector", "activo")
-    list_filter = ("sector", "subsector", "activo")
-    search_fields = ("nombre", "codigo_referencia")
+    list_display = ("nombre", "plan_estudio", "activo")
+    list_filter = ("plan_estudio", "activo")
+    search_fields = (
+        "nombre",
+        "codigo_referencia",
+        "plan_estudio__sector__nombre",
+        "plan_estudio__subsector__nombre",
+    )
     fieldsets = (
         (
             "Información General",
             {"fields": ("nombre", "codigo_referencia", "descripcion")},
         ),
-        ("Clasificación", {"fields": ("sector", "subsector")}),
+        ("Clasificación", {"fields": ("plan_estudio",)}),
         ("Estado", {"fields": ("activo",)}),
     )
 
@@ -136,19 +126,27 @@ class ModalidadCursadaAdmin(admin.ModelAdmin):
 
 @admin.register(PlanVersionCurricular)
 class PlanVersionCurricularAdmin(admin.ModelAdmin):
-    list_display = ("titulo_referencia", "modalidad_cursada", "version", "activo")
-    list_filter = ("titulo_referencia", "modalidad_cursada", "activo")
-    search_fields = ("titulo_referencia__nombre", "version")
+    list_display = (
+        "sector",
+        "subsector",
+        "modalidad_cursada",
+        "activo",
+    )
+    list_filter = ("sector", "subsector", "modalidad_cursada", "activo")
+    search_fields = ("sector__nombre", "subsector__nombre", "normativa")
     fieldsets = (
         (
             "Información General",
-            {"fields": ("titulo_referencia", "modalidad_cursada", "version")},
+            {
+                "fields": (
+                    "sector",
+                    "subsector",
+                    "modalidad_cursada",
+                )
+            },
         ),
         ("Normativa y Horas", {"fields": ("normativa", "horas_reloj")}),
-        (
-            "Niveles y Frecuencia",
-            {"fields": ("nivel_requerido", "nivel_certifica", "frecuencia")},
-        ),
+        ("Niveles", {"fields": ("nivel_requerido", "nivel_certifica")}),
         ("Estado", {"fields": ("activo",)}),
     )
 
@@ -348,21 +346,6 @@ class InstitucionContactoAdmin(admin.ModelAdmin):
     readonly_fields = ("vigencia_desde", "fecha_creacion", "fecha_modificacion")
 
 
-@admin.register(AutoridadInstitucional)
-class AutoridadInstitucionalAdmin(admin.ModelAdmin):
-    list_display = (
-        "centro",
-        "nombre_completo",
-        "cargo",
-        "dni",
-        "es_actual",
-        "vigencia_desde",
-    )
-    list_filter = ("es_actual", "vigencia_desde")
-    search_fields = ("centro__nombre", "nombre_completo", "dni")
-    readonly_fields = ("vigencia_desde", "fecha_creacion", "fecha_modificacion")
-
-
 @admin.register(InstitucionIdentificadorHist)
 class InstitucionIdentificadorHistAdmin(admin.ModelAdmin):
     list_display = (
@@ -406,7 +389,7 @@ class OfertaInstitucionalAdmin(admin.ModelAdmin):
         "usa_voucher",
     )
     list_filter = ("estado", "centro", "ciclo_lectivo", "usa_voucher")
-    search_fields = ("centro__nombre", "plan_curricular__titulo_referencia__nombre")
+    search_fields = ("centro__nombre", "plan_curricular__titulos__nombre")
     inlines = [ComisionInline]
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
     fieldsets = (
@@ -589,8 +572,8 @@ class ResultadoEvaluacionAdmin(admin.ModelAdmin):
     )
     list_filter = ("aprobo", "evaluacion__tipo", "fecha_registro")
     search_fields = (
-        "inscripcion__ciudadano__nombre",
-        "inscripcion__ciudadano__apellido",
+        "inscripcion__persona__nombre",
+        "inscripcion__persona__apellido",
         "evaluacion__nombre",
     )
     readonly_fields = ("fecha_registro", "fecha_creacion", "fecha_modificacion")

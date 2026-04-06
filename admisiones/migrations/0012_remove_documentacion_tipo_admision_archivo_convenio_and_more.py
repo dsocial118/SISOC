@@ -5,6 +5,66 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
+def remove_documentacion_tipo_if_exists(apps, schema_editor):
+    """Elimina documentacion.tipo solo si la columna sigue existiendo."""
+    if schema_editor.connection.vendor != "mysql":
+        return
+
+    with schema_editor.connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'admisiones_documentacion'
+              AND COLUMN_NAME = 'tipo_id'
+            """
+        )
+        exists = cursor.fetchone()[0] > 0
+
+        if not exists:
+            return
+
+        cursor.execute(
+            """
+            SELECT CONSTRAINT_NAME
+            FROM information_schema.KEY_COLUMN_USAGE
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'admisiones_documentacion'
+              AND COLUMN_NAME = 'tipo_id'
+              AND REFERENCED_TABLE_NAME IS NOT NULL
+            """
+        )
+        fk_result = cursor.fetchone()
+
+        if fk_result:
+            cursor.execute(
+                f"ALTER TABLE `admisiones_documentacion` DROP FOREIGN KEY `{fk_result[0]}`"
+            )
+
+        cursor.execute(
+            """
+            SELECT INDEX_NAME
+            FROM information_schema.STATISTICS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'admisiones_documentacion'
+              AND COLUMN_NAME = 'tipo_id'
+              AND INDEX_NAME != 'PRIMARY'
+            """
+        )
+        for (index_name,) in cursor.fetchall():
+            cursor.execute(
+                f"ALTER TABLE `admisiones_documentacion` DROP INDEX `{index_name}`"
+            )
+
+        cursor.execute("ALTER TABLE `admisiones_documentacion` DROP COLUMN `tipo_id`")
+
+
+def noop(apps, schema_editor):
+    """No-op para el reverso."""
+    pass
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -17,9 +77,19 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name="documentacion",
-            name="tipo",
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.RemoveField(
+                    model_name="documentacion",
+                    name="tipo",
+                ),
+            ],
+            database_operations=[
+                migrations.RunPython(
+                    remove_documentacion_tipo_if_exists,
+                    noop,
+                ),
+            ],
         ),
         migrations.AddField(
             model_name="admision",

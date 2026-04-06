@@ -2,9 +2,12 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -15,8 +18,8 @@ from django.views.generic import (
 
 from ciudadanos.models import Ciudadano
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
-from VAT.forms import InscripcionForm
-from VAT.models import Inscripcion
+from VAT.forms import InscripcionForm, CiudadanoInscripcionRapidaForm
+from VAT.models import Comision, Inscripcion
 from VAT.services.inscripcion_service import InscripcionService
 
 logger = logging.getLogger("django")
@@ -35,7 +38,7 @@ class InscripcionListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = Inscripcion.objects.select_related(
-            "ciudadano", "comision", "programa"
+            "ciudadano", "comision", "comision_curso__curso", "programa"
         ).order_by("-fecha_inscripcion")
 
         ciudadano_id = self.request.GET.get("ciudadano_id")
@@ -54,6 +57,7 @@ class InscripcionListView(LoginRequiredMixin, ListView):
                 Q(ciudadano__apellido__icontains=buscar)
                 | Q(ciudadano__nombre__icontains=buscar)
                 | Q(comision__codigo_comision__icontains=buscar)
+                | Q(comision_curso__codigo_comision__icontains=buscar)
             )
 
         return queryset
@@ -96,9 +100,9 @@ class InscripcionCreateView(LoginRequiredMixin, CreateView):
             messages.error(self.request, str(exc))
             return self.form_invalid(form)
 
-        cantidad_debito = getattr(self.object, "_voucher_debito", 0)
+        cantidad_debito = getattr(self.object, "voucher_debito", 0)
         if cantidad_debito > 0:
-            saldo = getattr(self.object, "_voucher_saldo", 0)
+            saldo = getattr(self.object, "voucher_saldo", 0)
             messages.success(
                 self.request,
                 f"Inscripción creada. Se descontaron {cantidad_debito} créditos del voucher de {self.object.ciudadano} ({saldo} restantes).",
@@ -109,10 +113,112 @@ class InscripcionCreateView(LoginRequiredMixin, CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
+class InscripcionRapidaComisionView(LoginRequiredMixin, View):
+    """Alta rápida de inscripción desde el detalle de comisión vía AJAX."""
+
+    def post(self, request, *args, **kwargs):
+        comision = get_object_or_404(
+            Comision.objects.select_related("oferta__programa"),
+            pk=request.POST.get("comision"),
+        )
+        ciudadano_id = (request.POST.get("ciudadano_id") or "").strip()
+        observaciones = (request.POST.get("observaciones") or "").strip()
+        ciudadano_form = None
+
+        if ciudadano_id:
+            ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
+        else:
+            ciudadano_form = CiudadanoInscripcionRapidaForm(request.POST)
+            if not ciudadano_form.is_valid():
+                return JsonResponse(
+                    {
+                        "ok": False,
+                        "message": "Errores en el formulario de ciudadano.",
+                        "errors": ciudadano_form.errors,
+                    },
+                    status=400,
+                )
+            ciudadano = ciudadano_form.save(commit=False)
+            ciudadano.creado_por = request.user
+            ciudadano.modificado_por = request.user
+            ciudadano.origen_dato = "manual"
+
+        if (
+            ciudadano_id
+            and Inscripcion.objects.filter(
+                ciudadano=ciudadano, comision=comision
+            ).exists()
+        ):
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": "El ciudadano ya está inscripto en esta comisión.",
+                },
+                status=400,
+            )
+
+        try:
+            with transaction.atomic():
+                if ciudadano_form is not None:
+                    ciudadano.save()
+                inscripcion = InscripcionService.crear_inscripcion(
+                    ciudadano=ciudadano,
+                    comision=comision,
+                    programa=comision.oferta.programa,
+                    estado="inscripta",
+                    origen_canal="backoffice",
+                    observaciones=observaciones,
+                    usuario=request.user,
+                )
+        except ValueError as exc:
+            return JsonResponse(
+                {"ok": False, "message": str(exc)},
+                status=400,
+            )
+
+        return JsonResponse(
+            {
+                "ok": True,
+                "message": f"Inscripción creada para {inscripcion.ciudadano.nombre_completo}.",
+                "inscripcion_id": inscripcion.pk,
+            }
+        )
+
+
 class InscripcionDetailView(LoginRequiredMixin, DetailView):
     model = Inscripcion
     template_name = "vat/persona/inscripcion_detail.html"
     context_object_name = "inscripcion"
+
+    def get_queryset(self):
+        return Inscripcion.objects.select_related(
+            "ciudadano", "comision", "comision_curso__curso", "programa"
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        inscripcion = self.object
+        comision = (
+            inscripcion.comision
+            if inscripcion.comision_id
+            else inscripcion.comision_curso
+        )
+        if inscripcion.comision_id:
+            context["comision_detail_url"] = reverse_lazy(
+                "vat_comision_detail", kwargs={"pk": inscripcion.comision_id}
+            )
+            context["permite_editar_inscripcion"] = True
+            context["permite_eliminar_inscripcion"] = True
+        else:
+            context["comision_detail_url"] = reverse_lazy(
+                "vat_comision_curso_detail",
+                kwargs={"pk": inscripcion.comision_curso_id},
+            )
+            context["permite_editar_inscripcion"] = False
+            context["permite_eliminar_inscripcion"] = False
+        context["comision_label"] = f"{comision.codigo_comision} — {comision.nombre}"
+        context["comision_codigo"] = comision.codigo_comision
+        return context
 
 
 class InscripcionUpdateView(LoginRequiredMixin, UpdateView):

@@ -119,36 +119,22 @@ Datos complementarios del centro. Se accede desde el detalle del centro una vez 
 
 ### 3.1 Contactos
 
-Permite registrar múltiples formas de contacto (correos alternativos, redes sociales, sitio web).
+Permite registrar responsables y contactos institucionales en una sola tabla.
 
 **Campos:**
 - **Centro** *(obligatorio)*
-- **Tipo** *(obligatorio)*: email, teléfono, celular, sitio web, redes sociales
-- **Valor** *(obligatorio)*
+- **Nombre y apellido del responsable**
+- **Rol / Área**
+- **Documento**
+- **Teléfono / Correo electrónico**
 - **Es principal**
 - **Observaciones**
 
-> **Ejemplo:** El CFP N° 12 tiene como contacto principal su correo institucional, pero también registra su cuenta de Instagram `@cfp12laplata` (tipo: redes sociales) y un teléfono alternativo de la secretaría.
+> **Ejemplo:** El CFP N° 12 registra a María González como responsable principal de Dirección con DNI 28.456.789, correo `direccion@cfp12.test` y un teléfono alternativo de secretaría en una segunda fila institucional.
 
 ---
 
-### 3.2 Autoridades
-
-Registra las autoridades institucionales con su vigencia.
-
-**Campos:**
-- **Centro** *(obligatorio)*
-- **Nombre completo / DNI** *(obligatorios)*
-- **Cargo** *(obligatorio)*: director, coordinador, representante legal, etc.
-- **Email / Teléfono** *(opcionales)*
-- **Es actual**
-- **Vigencia desde / hasta**
-
-> **Ejemplo:** María González, DNI 28.456.789, Directora desde 01/03/2023 hasta la actualidad (es actual = sí). Carlos Ruiz, ex-Director, vigente de 2018 a 2023 (es actual = no).
-
----
-
-### 3.3 Identificadores
+### 3.2 Identificadores
 
 Registra los códigos oficiales del centro con historial de cambios.
 
@@ -165,7 +151,7 @@ Registra los códigos oficiales del centro con historial de cambios.
 
 ---
 
-### 3.4 Ubicaciones
+### 3.3 Ubicaciones
 
 Múltiples domicilios del centro (sede, anexos, puntos de atención).
 
@@ -438,7 +424,7 @@ Calificación de cada inscripto en cada evaluación.
 
 1. Verificar en **Catálogos → Modalidades Institucionales** que exista la modalidad correcta.
 2. Ir a **Centros de Formación → Agregar Centro** y completar los datos.
-3. Desde el detalle del centro, completar **Datos Institución**: contactos, autoridades, identificadores y ubicaciones.
+3. Desde el detalle del centro, completar **Datos Generales**: contactos institucionales, identificadores y ubicaciones.
 
 ---
 

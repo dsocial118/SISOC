@@ -56,6 +56,16 @@ USUARIOS_COLUMNS = [
         sort_field="rol",
     ),
     ColumnDefinition(
+        key="password_reset_requested_indicator",
+        title="Reset",
+        header={"sortable": True, "sort_key": "password_reset_requested_at"},
+        field={"name": "password_reset_requested_indicator"},
+        default=True,
+        export_field="password_reset_requested_indicator",
+        export_title="Reset",
+        sort_field="password_reset_requested_at",
+    ),
+    ColumnDefinition(
         key="is_active",
         title="Activo",
         header={"sortable": True, "sort_key": "is_active"},

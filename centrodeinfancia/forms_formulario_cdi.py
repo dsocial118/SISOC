@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django import forms
+from django.core.validators import MaxLengthValidator, RegexValidator
 from django.forms import inlineformset_factory
 
 from core.models import Localidad, Municipio, Provincia
@@ -15,16 +16,27 @@ from centrodeinfancia.formulario_cdi_schema import (
     CAMPOS_OPCIONES_MULTIPLES,
     OPCIONES_GRUPO_ETARIO_SALAS,
     OPCIONES_GRUPO_ETARIO_DEMANDA,
+    OPCIONES_DIAS_SEMANA,
 )
 from centrodeinfancia.models import (
+    DepartamentoIpi,
     FormularioCDI,
+    FormularioCDIHorarioFuncionamiento,
     FormularioCDIArticulationFrequency,
     FormularioCDIRoomDistribution,
     FormularioCDIWaitlistByAgeGroup,
+    normalizar_cuit,
 )
 
 
 OPCIONES_BOOLEANAS = [("", "---------"), ("true", "Si"), ("false", "No")]
+TELEFONO_FORMATO_FLEXIBLE_ERROR = (
+    "Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones."
+)
+TELEFONO_FORMATO_FLEXIBLE_VALIDATOR = RegexValidator(
+    regex=r"^\d+(?:-\d+)*$",
+    message=TELEFONO_FORMATO_FLEXIBLE_ERROR,
+)
 
 
 def construir_filas_iniciales_fijas(options, key_name):
@@ -47,6 +59,21 @@ class CampoBooleanoNulable(forms.TypedChoiceField):
 
 
 class FormularioCDIForm(forms.ModelForm):
+    CAMPOS_OTRA_OPCION = (
+        ("tipo_jornada", "other", "tipo_jornada_otra"),
+        ("modalidad_gestion", "otra", "modalidad_gestion_otra"),
+        ("modalidad_tenencia", "otra", "modalidad_tenencia_otra"),
+    )
+    CAMPOS_SI_NO_DEPENDIENTES = (
+        ("tiene_espacio_cocina", "si", "combustible_cocinar"),
+        ("tiene_espacio_exterior", "si", "tiene_juegos_exteriores"),
+    )
+    CAMPOS_VACIAR_SIN_PRESTACIONES = (
+        "calidad_elaboracion_menu",
+        "evaluacion_periodica_menu",
+        "cobertura_capacitacion_manipulacion_alimentos",
+    )
+    DIAS_SEMANA = list(OPCIONES_DIAS_SEMANA)
     meses_funcionamiento = forms.MultipleChoiceField(
         required=False,
         choices=CAMPOS_OPCIONES_MULTIPLES["meses_funcionamiento"],
@@ -88,18 +115,24 @@ class FormularioCDIForm(forms.ModelForm):
             "created_by",
             "deleted_at",
             "deleted_by",
+            "horario_apertura",
+            "horario_cierre",
         )
         labels = ETIQUETAS_CAMPOS
         widgets = {
             "fecha_relevamiento": forms.DateInput(attrs={"type": "date"}),
-            "horario_apertura": forms.TimeInput(attrs={"type": "time"}),
-            "horario_cierre": forms.TimeInput(attrs={"type": "time"}),
             "nombre_completo_respondente": forms.TextInput(attrs={"maxlength": 255}),
             "rol_respondente": forms.TextInput(attrs={"maxlength": 255}),
             "codigo_cdi": forms.TextInput(attrs={"readonly": "readonly"}),
         }
 
     definiciones_secciones = SECCIONES_FORMULARIO_CDI
+    phone_field_names = (
+        "telefono_cdi",
+        "telefono_referente_cdi",
+        "telefono_organizacion",
+        "telefono_referente_organizacion",
+    )
 
     @staticmethod
     def _parsear_pk(value):
@@ -118,57 +151,70 @@ class FormularioCDIForm(forms.ModelForm):
         return instance_value
 
     def _configurar_grupo_geo(self, sufijo):
-        province_field = f"provincia_{sufijo}"
-        municipality_field = f"municipio_{sufijo}"
-        locality_field = f"localidad_{sufijo}"
+        campos = {
+            "provincia": f"provincia_{sufijo}",
+            "departamento": f"departamento_{sufijo}",
+            "municipio": f"municipio_{sufijo}",
+            "localidad": f"localidad_{sufijo}",
+        }
+        instancias = {
+            nombre: getattr(self.instance, campo, None)
+            for nombre, campo in campos.items()
+        }
+        valores = {
+            nombre: self._obtener_valor_enlazado_o_inicial(campo, instancias[nombre])
+            for nombre, campo in campos.items()
+        }
 
-        province_instance = getattr(self.instance, province_field, None)
-        municipality_instance = getattr(self.instance, municipality_field, None)
-        locality_instance = getattr(self.instance, locality_field, None)
-
-        province_value = self._obtener_valor_enlazado_o_inicial(
-            province_field, province_instance
-        )
-        municipality_value = self._obtener_valor_enlazado_o_inicial(
-            municipality_field, municipality_instance
-        )
-        locality_value = self._obtener_valor_enlazado_o_inicial(
-            locality_field, locality_instance
-        )
-
-        province = Provincia.objects.filter(pk=self._parsear_pk(province_value)).first()
-        municipality = Municipio.objects.filter(
-            pk=self._parsear_pk(municipality_value)
+        provincia = Provincia.objects.filter(
+            pk=self._parsear_pk(valores["provincia"])
         ).first()
-        locality = Localidad.objects.filter(pk=self._parsear_pk(locality_value)).first()
+        departamento = DepartamentoIpi.objects.filter(
+            pk=self._parsear_pk(valores["departamento"])
+        ).first()
+        municipio = Municipio.objects.filter(
+            pk=self._parsear_pk(valores["municipio"])
+        ).first()
+        localidad = Localidad.objects.filter(
+            pk=self._parsear_pk(valores["localidad"])
+        ).first()
 
-        self.fields[province_field].queryset = Provincia.objects.all().order_by(
+        self.fields[campos["provincia"]].queryset = Provincia.objects.all().order_by(
             "nombre"
         )
-        self.fields[municipality_field].queryset = (
-            Municipio.objects.filter(provincia=province).order_by("nombre")
-            if province
+        self.fields[campos["departamento"]].queryset = (
+            DepartamentoIpi.objects.filter(provincia=provincia).order_by("nombre")
+            if provincia
+            else DepartamentoIpi.objects.none()
+        )
+        self.fields[campos["municipio"]].queryset = (
+            Municipio.objects.filter(provincia=provincia).order_by("nombre")
+            if provincia
             else Municipio.objects.none()
         )
-        self.fields[locality_field].queryset = (
-            Localidad.objects.filter(municipio=municipality).order_by("nombre")
-            if municipality
+        self.fields[campos["localidad"]].queryset = (
+            Localidad.objects.filter(municipio=municipio).order_by("nombre")
+            if municipio
             else Localidad.objects.none()
         )
 
-        if province:
-            self.fields[province_field].initial = province
-        if municipality:
-            self.fields[municipality_field].initial = municipality
-        if locality:
-            self.fields[locality_field].initial = locality
+        if provincia:
+            self.fields[campos["provincia"]].initial = provincia
+        if departamento:
+            self.fields[campos["departamento"]].initial = departamento
+        if municipio:
+            self.fields[campos["municipio"]].initial = municipio
+        if localidad:
+            self.fields[campos["localidad"]].initial = localidad
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.fields["codigo_cdi"].disabled = True
+        self._configurar_campos_dinamicos_horarios()
         self._configurar_grupo_geo("cdi")
         self._configurar_grupo_geo("organizacion")
+        self._aplicar_validacion_flexible_telefonos()
 
         for field_name, options in CAMPOS_OPCIONES.items():
             if field_name in self.fields:
@@ -194,34 +240,88 @@ class FormularioCDIForm(forms.ModelForm):
             )
             field.widget.attrs["class"] = f"{existing} {widget_class}".strip()
 
-    def clean(self):
+        self.fields["cuit_organizacion_gestora"].widget.attrs["inputmode"] = "numeric"
+        self.fields["cuit_organizacion_gestora"].widget.attrs["maxlength"] = "13"
+        self.fields["cuit_organizacion_gestora"].widget.attrs[
+            "placeholder"
+        ] = "20-44535030-4"
+        self.fields["cuit_organizacion_gestora"].max_length = 13
+        self.fields["cuit_organizacion_gestora"].validators = [
+            validator
+            for validator in self.fields["cuit_organizacion_gestora"].validators
+            if not isinstance(validator, MaxLengthValidator)
+        ]
+
+    def _configurar_campos_dinamicos_horarios(self):
+        horarios_instancia = {}
+        if getattr(self.instance, "pk", None):
+            horarios_instancia = {
+                horario.dia: horario
+                for horario in self.instance.horarios_funcionamiento.all()
+            }
+
+        for dia, etiqueta in self.DIAS_SEMANA:
+            apertura_name = f"horario_{dia}_apertura"
+            cierre_name = f"horario_{dia}_cierre"
+            horario = horarios_instancia.get(dia)
+            self.fields[apertura_name] = forms.TimeField(
+                required=False,
+                label=f"{etiqueta} - apertura",
+                widget=forms.TimeInput(attrs={"type": "time"}),
+                initial=getattr(horario, "hora_apertura", None),
+            )
+            self.fields[cierre_name] = forms.TimeField(
+                required=False,
+                label=f"{etiqueta} - cierre",
+                widget=forms.TimeInput(attrs={"type": "time"}),
+                initial=getattr(horario, "hora_cierre", None),
+            )
+
+    def _aplicar_validacion_flexible_telefonos(self):
+        for field_name in self.phone_field_names:
+            if field_name not in self.fields:
+                continue
+            field = self.fields[field_name]
+            field.validators = [TELEFONO_FORMATO_FLEXIBLE_VALIDATOR]
+            field.widget.attrs["inputmode"] = "tel"
+            field.widget.attrs["pattern"] = r"\d+(?:-\d+)*"
+
+    def clean_cuit_organizacion_gestora(self):
+        value = normalizar_cuit(self.cleaned_data.get("cuit_organizacion_gestora"))
+        if not value:
+            return None
+        if len(value) != 11:
+            raise forms.ValidationError("Ingrese un CUIT válido de 11 dígitos.")
+        return value
+
+    def clean(self):  # pylint: disable=too-many-branches
         cleaned_data = super().clean()
         meals = cleaned_data.get("prestaciones_alimentarias") or []
 
         # Los campos ocultos por la UI no deben bloquear el guardado si
         # quedaron con valores residuales de una interacción previa.
-        if cleaned_data.get("tipo_jornada") != "other":
-            cleaned_data["tipo_jornada_otra"] = ""
-
-        if cleaned_data.get("modalidad_gestion") != "otra":
-            cleaned_data["modalidad_gestion_otra"] = ""
-
-        if cleaned_data.get("modalidad_tenencia") != "otra":
-            cleaned_data["modalidad_tenencia_otra"] = ""
+        for (
+            campo_controlador,
+            valor_habilitante,
+            campo_dependiente,
+        ) in self.CAMPOS_OTRA_OPCION:
+            if cleaned_data.get(campo_controlador) != valor_habilitante:
+                cleaned_data[campo_dependiente] = ""
 
         if "otra" not in meals:
             cleaned_data["prestaciones_alimentarias_otra"] = ""
 
         if "ninguna" in meals:
-            cleaned_data["calidad_elaboracion_menu"] = ""
-            cleaned_data["evaluacion_periodica_menu"] = ""
-            cleaned_data["cobertura_capacitacion_manipulacion_alimentos"] = ""
+            for field_name in self.CAMPOS_VACIAR_SIN_PRESTACIONES:
+                cleaned_data[field_name] = ""
 
-        if cleaned_data.get("tiene_espacio_cocina") != "si":
-            cleaned_data["combustible_cocinar"] = ""
-
-        if cleaned_data.get("tiene_espacio_exterior") != "si":
-            cleaned_data["tiene_juegos_exteriores"] = ""
+        for (
+            campo_controlador,
+            valor_habilitante,
+            campo_dependiente,
+        ) in self.CAMPOS_SI_NO_DEPENDIENTES:
+            if cleaned_data.get(campo_controlador) != valor_habilitante:
+                cleaned_data[campo_dependiente] = ""
 
         if cleaned_data.get("acceso_energia") == "sin_electricidad":
             cleaned_data["seguridad_electrica"] = ""
@@ -229,7 +329,58 @@ class FormularioCDIForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             cleaned_data["codigo_cdi"] = self.instance.codigo_cdi
 
+        dias = cleaned_data.get("dias_funcionamiento") or []
+        horarios = {}
+        for dia, _etiqueta in self.DIAS_SEMANA:
+            apertura = cleaned_data.get(f"horario_{dia}_apertura")
+            cierre = cleaned_data.get(f"horario_{dia}_cierre")
+            if dia not in dias and (apertura or cierre):
+                self.add_error(
+                    f"horario_{dia}_cierre",
+                    "El día debe estar seleccionado para cargar horarios.",
+                )
+            if dia in dias:
+                if bool(apertura) != bool(cierre):
+                    self.add_error(
+                        f"horario_{dia}_cierre",
+                        "Debe completar horario de apertura y cierre.",
+                    )
+                elif apertura and cierre and apertura >= cierre:
+                    self.add_error(
+                        f"horario_{dia}_cierre",
+                        "El horario de cierre debe ser posterior al de apertura.",
+                    )
+                horarios[dia] = {
+                    "hora_apertura": apertura,
+                    "hora_cierre": cierre,
+                }
+        cleaned_data["horarios_funcionamiento_data"] = horarios
+
         return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=commit)
+        if not commit:
+            return instance
+
+        horarios = self.cleaned_data.get("horarios_funcionamiento_data", {})
+        instance.horarios_funcionamiento.exclude(dia__in=horarios.keys()).delete()
+        for dia, horario_data in horarios.items():
+            FormularioCDIHorarioFuncionamiento.objects.update_or_create(
+                formulario=instance,
+                dia=dia,
+                defaults=horario_data,
+            )
+
+        primer_horario = instance.horarios_funcionamiento.order_by("id").first()
+        instance.horario_apertura = (
+            getattr(primer_horario, "hora_apertura", None) if primer_horario else None
+        )
+        instance.horario_cierre = (
+            getattr(primer_horario, "hora_cierre", None) if primer_horario else None
+        )
+        instance.save(update_fields=["horario_apertura", "horario_cierre"])
+        return instance
 
 
 class MezclaEtiquetaFilaFija:

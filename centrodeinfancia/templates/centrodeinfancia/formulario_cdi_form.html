@@ -1,4 +1,4 @@
-﻿{% extends "includes/main.html" %}
+{% extends "includes/main.html" %}
 {% load crispy_forms_tags static %}
 
 {% block title %}
@@ -66,6 +66,24 @@
                 </div>
             {% endfor %}
 
+            <div class="card mb-3" id="horarios-funcionamiento-card">
+                <div class="card-header">
+                    <strong>Horarios de funcionamiento por día</strong>
+                </div>
+                <div class="card-body">
+                    {% for horario in horario_fields %}
+                        <div class="row align-items-start mb-3 formulario-horario-row d-none"
+                             data-dia="{{ horario.dia }}">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">{{ horario.etiqueta }}</label>
+                            </div>
+                            <div class="col-md-4">{{ horario.apertura|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ horario.cierre|as_crispy_field }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
             <div class="card mb-3">
                 <div class="card-header">
                     <strong>Organización de Salas: ¿Cómo se distribuyen los niños y niñas en las salas dentro del CDI? Complete la siguiente tabla consignando para cada grupo existente, la cantidad de salas, la superficie exclusiva en m², la cantidad de niñas y niños que concurren y la cantidad de personal de sala disponible.</strong>
@@ -91,6 +109,7 @@
                                 {% for row_form in formset_distribucion_salas.forms %}
                                     <tr>
                                         <td>
+                                            {{ row_form.id }}
                                             {{ row_form.grupo_etario }}
                                             {{ row_form.etiqueta_fila }}
                                         </td>
@@ -152,6 +171,7 @@
                                 {% for row_form in formset_demanda_insatisfecha.forms %}
                                     <tr>
                                         <td>
+                                            {{ row_form.id }}
                                             {{ row_form.grupo_etario }}
                                             {{ row_form.etiqueta_fila }}
                                         </td>
@@ -190,6 +210,7 @@
                                 {% for row_form in formset_articulacion.forms %}
                                     <tr>
                                         <td>
+                                            {{ row_form.id }}
                                             {{ row_form.tipo_institucion }}
                                             {{ row_form.etiqueta_fila }}
                                         </td>
@@ -221,6 +242,7 @@
 
 {% block customJS %}
     <script nonce="{{ request.csp_nonce }}">
+        var ajaxLoadDepartamentosIpiUrl = "{% url 'centrodeinfancia_ajax_load_departamentos_ipi' %}";
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>
@@ -228,6 +250,17 @@
     <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function() {
             const wrappers = Array.from(document.querySelectorAll("[data-field-name]"));
+            const diasInputs = Array.from(document.querySelectorAll("input[name='dias_funcionamiento']"));
+            const horarioRows = Array.from(document.querySelectorAll(".formulario-horario-row"));
+            const cuitInput = document.getElementById("id_cuit_organizacion_gestora");
+            const horarioCard = document.getElementById("horarios-funcionamiento-card");
+            const diasWrapper = document.querySelector("[data-field-name='dias_funcionamiento']");
+            const diasRow = diasWrapper ? diasWrapper.closest(".row") : null;
+            if (horarioCard && diasRow) {
+                diasRow.insertAdjacentElement("afterend", horarioCard);
+            }
+
+            const horarioTouched = {};
             const showWhen = {
                 tipo_jornada_otra: function() {
                     return document.getElementById("id_tipo_jornada")?.value === "other";
@@ -268,6 +301,88 @@
                     });
                 },
             };
+
+            function formatCuit(value) {
+                const digits = (value || "").replace(/\D/g, "").slice(0, 11);
+                if (digits.length <= 2) {
+                    return digits;
+                }
+                if (digits.length <= 10) {
+                    return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+                }
+                return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10)}`;
+            }
+
+            function getSelectedDias() {
+                return diasInputs
+                    .filter(function(input) { return input.checked; })
+                    .map(function(input) { return input.value; });
+            }
+
+            function getHorarioRow(dia) {
+                return horarioRows.find(function(row) {
+                    return row.dataset.dia === dia;
+                });
+            }
+
+            function copyFirstScheduleToOthers() {
+                const dias = getSelectedDias();
+                if (!dias.length) {
+                    return;
+                }
+                const firstRow = dias
+                    .map(getHorarioRow)
+                    .find(function(row) {
+                        if (!row) {
+                            return false;
+                        }
+                        const openInput = row.querySelector("input[id$='_apertura']");
+                        const closeInput = row.querySelector("input[id$='_cierre']");
+                        return openInput && closeInput && (openInput.value || closeInput.value);
+                    });
+                if (!firstRow) {
+                    return;
+                }
+                const firstOpen = firstRow.querySelector("input[id$='_apertura']");
+                const firstClose = firstRow.querySelector("input[id$='_cierre']");
+                if (!firstOpen || !firstClose || (!firstOpen.value && !firstClose.value)) {
+                    return;
+                }
+
+                dias.slice(1).forEach(function(dia) {
+                    if (horarioTouched[dia]) {
+                        return;
+                    }
+                    const row = getHorarioRow(dia);
+                    if (!row) {
+                        return;
+                    }
+                    const openInput = row.querySelector("input[id$='_apertura']");
+                    const closeInput = row.querySelector("input[id$='_cierre']");
+                    if (openInput && !openInput.value) {
+                        openInput.value = firstOpen.value;
+                    }
+                    if (closeInput && !closeInput.value) {
+                        closeInput.value = firstClose.value;
+                    }
+                });
+            }
+
+            function refreshHorarioRows() {
+                const dias = getSelectedDias();
+                horarioRows.forEach(function(row) {
+                    const visible = dias.includes(row.dataset.dia);
+                    row.classList.toggle("d-none", !visible);
+                    row.querySelectorAll("input").forEach(function(input) {
+                        input.disabled = !visible;
+                        if (!visible) {
+                            input.value = "";
+                            horarioTouched[row.dataset.dia] = false;
+                        }
+                    });
+                });
+                copyFirstScheduleToOthers();
+            }
 
             function refreshVisibility() {
                 wrappers.forEach(function(wrapper) {
@@ -334,10 +449,32 @@
 
             function setupGeoCascade(config) {
                 const provincia = document.querySelector(config.provincia);
+                const departamento = document.querySelector(config.departamento);
                 const municipio = document.querySelector(config.municipio);
                 const localidad = document.querySelector(config.localidad);
-                if (!provincia || !municipio || !localidad) {
+                if (!provincia || !departamento || !municipio || !localidad) {
                     return;
+                }
+
+                async function loadDepartamentos(selectedDepartamento) {
+                    if (!provincia.value) {
+                        replaceOptions(
+                            departamento,
+                            [],
+                            "Seleccione un departamento",
+                            "",
+                        );
+                        return;
+                    }
+                    const departamentos = await fetchOptions(
+                        `${ajaxLoadDepartamentosIpiUrl}?provincia_id=${encodeURIComponent(provincia.value)}`
+                    );
+                    replaceOptions(
+                        departamento,
+                        departamentos,
+                        "Seleccione un departamento",
+                        selectedDepartamento || ""
+                    );
                 }
 
                 async function loadMunicipios(selectedMunicipio, selectedLocalidad) {
@@ -375,6 +512,7 @@
                 }
 
                 provincia.addEventListener("change", function() {
+                    loadDepartamentos("");
                     loadMunicipios("", "");
                 });
                 municipio.addEventListener("change", function() {
@@ -382,12 +520,35 @@
                 });
 
                 if (provincia.value) {
+                    loadDepartamentos(departamento.value);
                     loadMunicipios(municipio.value, localidad.value);
                 }
             }
 
             document.addEventListener("change", refreshVisibility);
+            diasInputs.forEach(function(input) {
+                input.addEventListener("change", refreshHorarioRows);
+            });
+            horarioRows.forEach(function(row) {
+                const dia = row.dataset.dia;
+                row.querySelectorAll("input").forEach(function(input) {
+                    input.addEventListener("input", function() {
+                        horarioTouched[dia] = true;
+                        if (getSelectedDias()[0] === dia) {
+                            copyFirstScheduleToOthers();
+                        }
+                    });
+                });
+            });
             refreshVisibility();
+            refreshHorarioRows();
+
+            if (cuitInput) {
+                cuitInput.addEventListener("input", function() {
+                    cuitInput.value = formatCuit(cuitInput.value);
+                });
+                cuitInput.value = formatCuit(cuitInput.value);
+            }
 
             function toNumber(inputElement) {
                 if (!inputElement) {
@@ -457,11 +618,13 @@
 
             setupGeoCascade({
                 provincia: "#id_provincia_cdi",
+                departamento: "#id_departamento_cdi",
                 municipio: "#id_municipio_cdi",
                 localidad: "#id_localidad_cdi",
             });
             setupGeoCascade({
                 provincia: "#id_provincia_organizacion",
+                departamento: "#id_departamento_organizacion",
                 municipio: "#id_municipio_organizacion",
                 localidad: "#id_localidad_organizacion",
             });

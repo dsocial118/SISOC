@@ -169,10 +169,29 @@ urlpatterns = [
         "espacios/<int:comedor_id>/nomina/<int:pk>/",
         NominaEspacioPWAViewSet.as_view(
             {
+                "get": "retrieve",
                 "patch": "partial_update",
                 "delete": "destroy",
             }
         ),
         name="pwa-nomina-detail",
+    ),
+    path(
+        "espacios/<int:comedor_id>/nomina/<int:pk>/registrar-asistencia/",
+        NominaEspacioPWAViewSet.as_view(
+            {
+                "post": "registrar_asistencia",
+            }
+        ),
+        name="pwa-nomina-registrar-asistencia",
+    ),
+    path(
+        "espacios/<int:comedor_id>/nomina/<int:pk>/historial-asistencia/",
+        NominaEspacioPWAViewSet.as_view(
+            {
+                "get": "historial_asistencia",
+            }
+        ),
+        name="pwa-nomina-historial-asistencia",
     ),
 ]

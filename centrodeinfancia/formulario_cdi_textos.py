@@ -196,7 +196,7 @@ SOBREESCRITURAS_ETIQUETAS_OPCIONES = {
         "ninguna": "No se trabaja en duplas en ninguna sala",
     },
     "cobertura_educadora_titulo_habilitante": {
-        "todas": "Sí, en todas las salas una educadora cuenta cn título habilitante de nivel inicial",
+        "todas": "Sí, en todas las salas una educadora cuenta con título habilitante de nivel inicial",
         "mayoria": "Sí, en la mayoría de las salas una educadora cuenta con título habilitante de nivel inicial",
         "algunas": "Solo en algunas salas una educadora cuenta con título habilitante de nivel inicial",
         "muy_pocas": "Muy pocas salas tienen una educadora con título habilitante",

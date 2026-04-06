@@ -105,10 +105,9 @@ Todo lo demás es solo backoffice.
 - **organismo**: Entidad macro rectora. Identifica la institución superior bajo la cual existen programas de origen.
 - **programa_origen**: Programa específico (ej. INET, VAT) desde el cual se oferta la formación. Conserva trazabilidad del origen.
 - **modalidad_institucional**: Clasifica el tipo/modalidad institucional. Tipifica instituciones dentro del modelo organizacional.
-- **institucion**: Entidad central oferente. Publica oferta formativa, tiene autoridades, contactos, ubicaciones y comisiones.
+- **institucion**: Entidad central oferente. Publica oferta formativa, tiene contactos institucionales unificados, ubicaciones e instancias operativas.
 - **institucion_identificador_hist**: Historial de identificadores (códigos, roles institucionales, vigencias). Evita perder trazabilidad cuando cambian.
-- **institucion_contacto**: Datos de contacto institucional (email, teléfono, web). Determina cuál es el contacto principal.
-- **autoridad_institucional**: Autoridades asociadas a una institución. Registra cargo, vigencia y datos de contacto.
+- **institucion_contacto**: Responsables y contactos institucionales unificados. Conserva rol/área, documento y datos de contacto, y define cuál es el principal.
 - **ubicacion**: Localización física/territorial. Provincia, municipio, localidad, domicilio y coordenadas.
 - **institucion_ubicacion**: Relación institución↔ubicación. Permite múltiples sedes con roles diferenciados y vigencia.
 
@@ -144,8 +143,9 @@ Todo lo demás es solo backoffice.
 | Rol | Permission code | Alcance |
 |---|---|---|
 | Superuser | (Django built-in) | Acceso total |
-| VAT SSE | `auth.role_vat_sse` | Ve todos los centros, puede crear centros y actividades |
-| Referente Centro VAT | `auth.role_referentecentrovat` | Ve solo sus centros asignados, puede editar/eliminar sus centros |
+| CFPINET | `auth.role_vat_sse` | Ve todos los centros, puede crear centros y actividades |
+| CFPJuridicccion | `auth.role_provincia_vat` | Crea y edita centros dentro de su jurisdicción, y administra planes curriculares provinciales |
+| CFP | `auth.role_referentecentrovat` | Ve solo sus centros asignados y gestiona cursos, comisiones, horarios, asistencia e inscripciones dentro de esos centros |
 
 ### 4.2 Roles pendientes de definición
 
@@ -166,7 +166,7 @@ Todo lo demás es solo backoffice.
 
 **Centros**
 - Un centro puede estar activo o inactivo.
-- Solo el referente asignado, superuser o rol VAT SSE pueden editar/eliminar un centro.
+- Solo el referente asignado, superuser o rol CFPINET pueden editar/eliminar un centro.
 - Referente solo ve sus centros; SSE ve todos.
 
 **Actividades (ActividadCentro)**
@@ -208,7 +208,7 @@ Todo lo demás es solo backoffice.
 - Flujo de aprobación (jurisdicción + INET).
 - Reglas de inscripción (canal, validación presencial).
 - Reglas de evaluación y aprobación.
-- Reglas de vigencia en contactos, ubicaciones, autoridades.
+- Reglas de vigencia en contactos, ubicaciones e identificadores institucionales.
 - Reglas de publicación en front.
 
 ---

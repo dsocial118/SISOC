@@ -1,36 +1,64 @@
-﻿from django.conf import settings
+# pylint: disable=too-many-lines
+
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.utils import timezone
 
 from ciudadanos.models import Ciudadano
+from core.fields import UnicodeEmailField
 from core.models import Localidad, Municipio, Provincia
 from core.soft_delete import SoftDeleteModelMixin
-from intervenciones.models.intervenciones import (
-    SubIntervencion,
-    TipoContacto,
-    TipoDestinatario,
-    TipoIntervencion,
-)
-from organizaciones.models import Organizacion
 from centrodeinfancia.formulario_cdi_schema import (
-    OPCIONES_INSTITUCIONES_ARTICULACION,
     CAMPOS_OPCIONES,
     CAMPOS_OPCIONES_MULTIPLES,
-    OPCIONES_GRUPO_ETARIO_SALAS,
-    OPCIONES_GRUPO_ETARIO_DEMANDA,
+    OPCIONES_DIAS_SEMANA,
 )
+import centrodeinfancia.models_cdi_relaciones as _models_cdi_relaciones
+
+FormularioCDIArticulationFrequency = (
+    _models_cdi_relaciones.FormularioCDIArticulationFrequency
+)
+FormularioCDIRoomDistribution = _models_cdi_relaciones.FormularioCDIRoomDistribution
+FormularioCDIWaitlistByAgeGroup = _models_cdi_relaciones.FormularioCDIWaitlistByAgeGroup
+IntervencionCentroInfancia = _models_cdi_relaciones.IntervencionCentroInfancia
+ObservacionCentroInfancia = _models_cdi_relaciones.ObservacionCentroInfancia
 
 
 CUIT_VALIDATOR = RegexValidator(
-    regex=r"^\d{2}-\d{8}-\d{1}$",
-    message="Ingrese un CUIT valido con formato 20-12345678-3.",
+    regex=r"^\d{11}$",
+    message="Ingrese un CUIT válido de 11 dígitos.",
 )
 PHONE_VALIDATOR = RegexValidator(
-    regex=r"^\d{2,4}-\d{2,4}-\d{6,8}$",
-    message="Ingrese un telefono valido con formato 054-011-40333588.",
+    regex=r"^\d+(?:-\d+)*$",
+    message=(
+        "Ingrese un teléfono válido: solo números o grupos numéricos separados por "
+        "guiones."
+    ),
 )
+
+CODIGO_POSTAL_VALIDATORS = [
+    MinValueValidator(0),
+    MaxValueValidator(9999999999),
+]
+
+
+def normalizar_cuit(value):
+    if value in (None, ""):
+        return ""
+    return "".join(ch for ch in str(value) if ch.isdigit())
+
+
+def validar_opciones_multiples(field_name, value):
+    allowed = {item[0] for item in CAMPOS_OPCIONES_MULTIPLES[field_name]}
+    if value in (None, ""):
+        return
+    if not isinstance(value, list):
+        raise ValidationError({field_name: "Seleccione opciones válidas."})
+    invalid_values = [item for item in value if item not in allowed]
+    if invalid_values:
+        raise ValidationError({field_name: "Seleccione opciones válidas."})
 
 
 class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
@@ -42,17 +70,31 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
         verbose_name="Codigo CDI",
     )
-    organizacion = models.ForeignKey(
-        Organizacion,
-        on_delete=models.SET_NULL,
+    organizacion = models.CharField(
+        max_length=1000,
         null=True,
         blank=True,
+        verbose_name="Denominación del organismo u organización que gestiona",
+    )
+    cuit_organizacion_gestiona = models.CharField(
+        max_length=11,
+        blank=True,
+        null=True,
+        validators=[CUIT_VALIDATOR],
+        verbose_name="CUIT del organismo u organización que gestiona",
     )
     provincia = models.ForeignKey(
         Provincia,
         on_delete=models.PROTECT,
         null=True,
         blank=True,
+    )
+    departamento = models.ForeignKey(
+        "DepartamentoIpi",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name="Departamento",
     )
     municipio = models.ForeignKey(
         Municipio,
@@ -66,13 +108,62 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
         blank=True,
     )
+    codigo_postal = models.PositiveBigIntegerField(
+        blank=True,
+        null=True,
+        validators=CODIGO_POSTAL_VALIDATORS,
+        verbose_name="Código postal",
+    )
+    ambito = models.CharField(
+        max_length=32,
+        choices=CAMPOS_OPCIONES["ambito"],
+        default="sin_informacion",
+        verbose_name="Ámbito",
+    )
     calle = models.CharField(max_length=255, blank=True, null=True)
     numero = models.CharField(max_length=50, blank=True, null=True)
+    latitud = models.DecimalField(
+        max_digits=8,
+        decimal_places=6,
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+    )
+    longitud = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
+    )
     telefono = models.CharField(max_length=50, blank=True, null=True)
+    mail = UnicodeEmailField(verbose_name="Mail", blank=True, null=True)
     nombre_referente = models.CharField(max_length=255, blank=True, null=True)
     apellido_referente = models.CharField(max_length=255, blank=True, null=True)
     email_referente = models.EmailField(blank=True, null=True)
     telefono_referente = models.CharField(max_length=50, blank=True, null=True)
+    meses_funcionamiento = models.JSONField(default=list, blank=True)
+    dias_funcionamiento = models.JSONField(default=list, blank=True)
+    tipo_jornada = models.CharField(
+        max_length=64,
+        choices=CAMPOS_OPCIONES["tipo_jornada"],
+        blank=True,
+        null=True,
+    )
+    tipo_jornada_otra = models.CharField(max_length=255, blank=True, null=True)
+    oferta_servicios = models.CharField(
+        max_length=64,
+        choices=CAMPOS_OPCIONES["oferta_servicios"],
+        blank=True,
+        null=True,
+    )
+    modalidad_gestion = models.CharField(
+        max_length=64,
+        choices=CAMPOS_OPCIONES["modalidad_gestion"],
+        blank=True,
+        null=True,
+    )
+    modalidad_gestion_otra = models.CharField(max_length=255, blank=True, null=True)
     fecha_inicio = models.DateField(blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
@@ -84,12 +175,192 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
     def __str__(self):
         return str(self.nombre)
 
+    def clean(self):
+        super().clean()
+        errors = {}
+        if (
+            self.departamento_id
+            and self.provincia_id
+            and self.departamento.provincia_id != self.provincia_id
+        ):
+            errors["departamento"] = (
+                "El departamento no pertenece a la provincia seleccionada."
+            )
+
+        for field_name in ("meses_funcionamiento", "dias_funcionamiento"):
+            try:
+                validar_opciones_multiples(field_name, getattr(self, field_name))
+            except ValidationError as exc:
+                errors.update(exc.message_dict)
+
+        self.cuit_organizacion_gestiona = (
+            normalizar_cuit(self.cuit_organizacion_gestiona) or None
+        )
+
+        if self.tipo_jornada == "other" and not (self.tipo_jornada_otra or "").strip():
+            errors["tipo_jornada_otra"] = "Este campo es obligatorio."
+
+        if self.tipo_jornada != "other":
+            self.tipo_jornada_otra = ""
+
+        if (
+            self.modalidad_gestion == "otra"
+            and not (self.modalidad_gestion_otra or "").strip()
+        ):
+            errors["modalidad_gestion_otra"] = "Este campo es obligatorio."
+
+        if self.modalidad_gestion != "otra":
+            self.modalidad_gestion_otra = ""
+
+        if errors:
+            raise ValidationError(errors)
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if not self.codigo_cdi:
             codigo_cdi = f"CDI-{self.pk:06d}"
             type(self).objects.filter(pk=self.pk).update(codigo_cdi=codigo_cdi)
             self.codigo_cdi = codigo_cdi
+
+
+class CentroDeInfanciaHorarioFuncionamiento(models.Model):
+    centro = models.ForeignKey(
+        CentroDeInfancia,
+        on_delete=models.CASCADE,
+        related_name="horarios_funcionamiento",
+    )
+    dia = models.CharField(max_length=16, choices=OPCIONES_DIAS_SEMANA)
+    hora_apertura = models.TimeField(blank=True, null=True)
+    hora_cierre = models.TimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["centro", "dia"],
+                name="uniq_cdi_horario_funcionamiento_dia",
+            )
+        ]
+        verbose_name = "Horario de funcionamiento del CDI"
+        verbose_name_plural = "Horarios de funcionamiento del CDI"
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if bool(self.hora_apertura) != bool(self.hora_cierre):
+            errors["hora_cierre"] = (
+                "Debe completar horario de apertura y cierre para el día."
+            )
+        if (
+            self.hora_apertura
+            and self.hora_cierre
+            and self.hora_apertura >= self.hora_cierre
+        ):
+            errors["hora_cierre"] = (
+                "El horario de cierre debe ser posterior al de apertura."
+            )
+        if errors:
+            raise ValidationError(errors)
+
+
+class DepartamentoIpi(models.Model):
+    codigo_departamento = models.CharField(max_length=10, unique=True)
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.PROTECT,
+        related_name="departamentos_ipi",
+    )
+    nombre = models.CharField(max_length=255)
+    tamano_demografico = models.CharField(max_length=255, blank=True, null=True)
+    decil_ipi = models.PositiveSmallIntegerField(blank=True, null=True)
+    nivel_inequidad_ipi = models.CharField(max_length=64, blank=True, null=True)
+    porcentaje_ninos_lista_espera_cdi = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    poblacion_0_a_4_anios = models.PositiveIntegerField(blank=True, null=True)
+    porcentaje_poblacion_0_a_4_anios = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    porcentaje_poblacion_0_a_4_anios_con_nbi = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    porcentaje_poblacion_0_a_4_anios_hogares_monoparentales = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    tasa_natalidad_2018 = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    tasa_mortalidad_infantil_2018 = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    porcentaje_familias_barrios_populares = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+    cantidad_barrios_populares = models.PositiveIntegerField(blank=True, null=True)
+    cantidad_asistentes_cdi = models.PositiveIntegerField(blank=True, null=True)
+    cantidad_ninos_lista_espera_cdi = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    poblacion_0_a_4_anios_hogares_monoparentales = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    poblacion_0_a_4_anios_con_nbi = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    total_hogares_censo_2010 = models.PositiveIntegerField(blank=True, null=True)
+    poblacion_total = models.PositiveIntegerField(blank=True, null=True)
+    cantidad_familias_barrios_populares = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    cantidad_establecimientos_nivel_inicial = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+    )
+    tasa_establecimientos_cada_mil_ninos = models.DecimalField(
+        max_digits=20,
+        decimal_places=15,
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ["provincia__nombre", "nombre"]
+        verbose_name = "Departamento IPI"
+        verbose_name_plural = "Departamentos IPI"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["provincia", "nombre"],
+                name="uniq_departamento_ipi_provincia_nombre",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.nombre} ({self.provincia})"
 
 
 class Trabajador(SoftDeleteModelMixin, models.Model):
@@ -118,6 +389,26 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
 
 
 class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
+    class RespuestaSiNoNsNc(models.TextChoices):
+        SI = "si", "Si"
+        NO = "no", "No"
+        NS_NC = "ns_nc", "Ns/Nc"
+
+    class TipoDiscapacidad(models.TextChoices):
+        MOTORA = "motora", "Motora"
+        VISUAL = "visual", "Visual"
+        AUDITIVA = "auditiva", "Auditiva"
+        INTELECTUAL = "intelectual", "Intelectual"
+        MENTAL = "mental", "Mental"
+        VISCERAL = "visceral", "Visceral"
+        MULTIPLE = "multiple", "Múltiple"
+        NS_NC = "ns_nc", "Ns/Nc"
+
+    class SexoChoices(models.TextChoices):
+        FEMENINO = "Femenino", "Femenino"
+        MASCULINO = "Masculino", "Masculino"
+        X = "X", "X"
+
     ESTADO_PENDIENTE = "pendiente"
     ESTADO_ACTIVO = "activo"
     ESTADO_BAJA = "baja"
@@ -144,6 +435,125 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         choices=ESTADO_CHOICES,
         default=ESTADO_PENDIENTE,
     )
+    dni = models.PositiveBigIntegerField(blank=True, null=True)
+    apellido = models.CharField(max_length=255, blank=True, null=True)
+    nombre = models.CharField(max_length=255, blank=True, null=True)
+    fecha_nacimiento = models.DateField(blank=True, null=True)
+    sexo = models.CharField(
+        max_length=20,
+        choices=SexoChoices.choices,
+        blank=True,
+        null=True,
+    )
+    nacionalidad = models.CharField(max_length=255, blank=True, null=True)
+    sala = models.CharField(max_length=255, blank=True, null=True)
+
+    pertenece_pueblo_originario = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+    pueblo_originario_cual = models.CharField(max_length=255, blank=True, null=True)
+    habla_lengua_originaria_hogar = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+
+    talla = models.CharField(max_length=50, blank=True, null=True)
+    peso = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    calendario_vacunacion_al_dia = models.BooleanField(blank=True, null=True)
+    tiene_discapacidad = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+    discapacidad_tipo = models.CharField(
+        max_length=32,
+        choices=TipoDiscapacidad.choices,
+        blank=True,
+        null=True,
+    )
+    recibe_apoyo_discapacidad = models.BooleanField(blank=True, null=True)
+    posee_cud = models.BooleanField(blank=True, null=True)
+    posee_obra_social = models.BooleanField(blank=True, null=True)
+
+    calle_domicilio = models.CharField(max_length=255, blank=True, null=True)
+    altura_domicilio = models.PositiveIntegerField(blank=True, null=True)
+    piso_domicilio = models.CharField(max_length=50, blank=True, null=True)
+    departamento_domicilio = models.CharField(max_length=50, blank=True, null=True)
+    provincia_domicilio = models.ForeignKey(
+        Provincia,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
+    municipio_domicilio = models.ForeignKey(
+        Municipio,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
+    localidad_domicilio = models.ForeignKey(
+        Localidad,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
+
+    responsable_legal_1_apellido = models.CharField(
+        max_length=255, blank=True, null=True
+    )
+    responsable_legal_1_nombre = models.CharField(max_length=255, blank=True, null=True)
+    responsable_legal_1_dni = models.PositiveBigIntegerField(blank=True, null=True)
+    responsable_legal_1_telefono = models.PositiveBigIntegerField(blank=True, null=True)
+    responsable_legal_1_percibe_auh = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+    responsable_legal_1_percibe_alimenta = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+
+    responsable_legal_2_apellido = models.CharField(
+        max_length=255, blank=True, null=True
+    )
+    responsable_legal_2_nombre = models.CharField(max_length=255, blank=True, null=True)
+    responsable_legal_2_dni = models.PositiveBigIntegerField(blank=True, null=True)
+    responsable_legal_2_telefono = models.PositiveBigIntegerField(blank=True, null=True)
+    responsable_legal_2_percibe_auh = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+    responsable_legal_2_percibe_alimenta = models.CharField(
+        max_length=16,
+        choices=RespuestaSiNoNsNc.choices,
+        blank=True,
+        null=True,
+    )
+
+    adulto_responsable_apellido = models.CharField(
+        max_length=255, blank=True, null=True
+    )
+    adulto_responsable_nombre = models.CharField(max_length=255, blank=True, null=True)
+    adulto_responsable_dni = models.PositiveBigIntegerField(blank=True, null=True)
+    adulto_responsable_telefono = models.CharField(max_length=50, blank=True, null=True)
+    adulto_responsable_parentesco = models.CharField(
+        max_length=255, blank=True, null=True
+    )
     observaciones = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -154,74 +564,65 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     def __str__(self):
         return f"{self.ciudadano} en {self.centro} ({self.get_estado_display()})"
 
+    @property
+    def edad(self):
+        if not self.fecha_nacimiento:
+            return None
+        hoy = timezone.now().date()
+        return (
+            hoy.year
+            - self.fecha_nacimiento.year
+            - (
+                (hoy.month, hoy.day)
+                < (self.fecha_nacimiento.month, self.fecha_nacimiento.day)
+            )
+        )
 
-class IntervencionCentroInfancia(SoftDeleteModelMixin, models.Model):
-    centro = models.ForeignKey(
-        CentroDeInfancia,
-        on_delete=models.CASCADE,
-        related_name="intervenciones",
-    )
-    tipo_intervencion = models.ForeignKey(
-        TipoIntervencion,
-        on_delete=models.SET_NULL,
-        null=True,
-        verbose_name="Tipo de intervención",
-    )
-    subintervencion = models.ForeignKey(
-        SubIntervencion,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name="Sub-tipo de intervención",
-    )
-    destinatario = models.ForeignKey(
-        TipoDestinatario,
-        on_delete=models.SET_NULL,
-        null=True,
-        verbose_name="Destinatario",
-    )
-    forma_contacto = models.ForeignKey(
-        TipoContacto,
-        on_delete=models.SET_NULL,
-        null=True,
-        verbose_name="Forma de contacto",
-    )
-    fecha = models.DateTimeField(default=timezone.now)
-    observaciones = models.TextField(blank=True, null=True)
-    tiene_documentacion = models.BooleanField(default=False)
-    documentacion = models.FileField(upload_to="documentacion/", blank=True, null=True)
+    def clean(self):
+        super().clean()
+        errors = {}
 
-    class Meta:
-        verbose_name = "Intervención Centro de Desarrollo Infantil"
-        verbose_name_plural = "Intervenciones Centro de Desarrollo Infantil"
-        ordering = ["-fecha"]
+        if self.pertenece_pueblo_originario != self.RespuestaSiNoNsNc.SI:
+            self.pueblo_originario_cual = None
+        elif not self.pueblo_originario_cual:
+            errors["pueblo_originario_cual"] = (
+                "Este campo es obligatorio cuando pertenece a un pueblo originario."
+            )
 
-    def __str__(self):
-        fecha = self.fecha.strftime("%Y-%m-%d") if self.fecha else "sin fecha"
-        return f"Intervención en {self.centro} - {fecha}"
+        if self.tiene_discapacidad != self.RespuestaSiNoNsNc.SI:
+            self.discapacidad_tipo = None
+            self.recibe_apoyo_discapacidad = None
+        elif not self.discapacidad_tipo:
+            errors["discapacidad_tipo"] = (
+                "Este campo es obligatorio cuando indica discapacidad."
+            )
 
+        relation_rules = (
+            (
+                "municipio_domicilio",
+                "provincia_domicilio",
+                "provincia_id",
+                "El municipio no pertenece a la provincia indicada.",
+            ),
+            (
+                "localidad_domicilio",
+                "municipio_domicilio",
+                "municipio_id",
+                "La localidad no pertenece al municipio indicado.",
+            ),
+        )
+        for child_field, parent_field, relation_attr, message in relation_rules:
+            child_value = getattr(self, child_field)
+            parent_id = getattr(self, f"{parent_field}_id")
+            if (
+                child_value
+                and parent_id
+                and getattr(child_value, relation_attr) != parent_id
+            ):
+                errors[child_field] = message
 
-class ObservacionCentroInfancia(SoftDeleteModelMixin, models.Model):
-    observador = models.CharField(max_length=255, blank=True)
-    centro = models.ForeignKey(
-        to=CentroDeInfancia,
-        on_delete=models.CASCADE,
-        related_name="observaciones",
-    )
-    fecha_visita = models.DateTimeField(default=timezone.now, blank=True)
-    observacion = models.TextField()
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["centro"]),
-        ]
-        verbose_name = "Observación Centro de Desarrollo Infantil"
-        verbose_name_plural = "Observaciones Centro de Desarrollo Infantil"
-
-    def __str__(self):
-        centro = self.centro.nombre if self.centro else "Centro sin nombre"
-        fecha = self.fecha_visita.date() if self.fecha_visita else "sin fecha"
-        return f"Observación {fecha} - {centro}"
+        if errors:
+            raise ValidationError(errors)
 
 
 class FormularioCDI(SoftDeleteModelMixin, models.Model):
@@ -257,7 +658,13 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
         related_name="+",
     )
-    departamento_cdi = models.CharField(max_length=255, blank=True, null=True)
+    departamento_cdi = models.ForeignKey(
+        DepartamentoIpi,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
     municipio_cdi = models.ForeignKey(
         Municipio,
         on_delete=models.SET_NULL,
@@ -272,9 +679,19 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
         related_name="+",
     )
+    ambito = models.CharField(
+        max_length=32,
+        choices=CAMPOS_OPCIONES["ambito"],
+        default="sin_informacion",
+        blank=True,
+    )
     calle_cdi = models.CharField(max_length=255, blank=True, null=True)
     numero_puerta_cdi = models.CharField(max_length=255, blank=True, null=True)
-    codigo_postal_cdi = models.CharField(max_length=12, blank=True, null=True)
+    codigo_postal_cdi = models.PositiveBigIntegerField(
+        blank=True,
+        null=True,
+        validators=CODIGO_POSTAL_VALIDATORS,
+    )
     latitud_geografica_cdi = models.DecimalField(
         max_digits=8,
         decimal_places=6,
@@ -316,6 +733,12 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
     )
     tipo_jornada_otra = models.CharField(max_length=255, blank=True, null=True)
+    oferta_servicios = models.CharField(
+        max_length=64,
+        choices=CAMPOS_OPCIONES["oferta_servicios"],
+        blank=True,
+        null=True,
+    )
     cantidad_total_ninos = models.PositiveIntegerField(blank=True, null=True)
     cantidad_total_personal = models.PositiveIntegerField(blank=True, null=True)
 
@@ -330,7 +753,7 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         max_length=1000, blank=True, null=True
     )
     cuit_organizacion_gestora = models.CharField(
-        max_length=13,
+        max_length=11,
         blank=True,
         null=True,
         validators=[CUIT_VALIDATOR],
@@ -342,7 +765,13 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         null=True,
         related_name="+",
     )
-    departamento_organizacion = models.CharField(max_length=255, blank=True, null=True)
+    departamento_organizacion = models.ForeignKey(
+        DepartamentoIpi,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
     municipio_organizacion = models.ForeignKey(
         Municipio,
         on_delete=models.SET_NULL,
@@ -808,6 +1237,12 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         errors = {}
         relation_rules = (
             (
+                "departamento_cdi",
+                "provincia_cdi",
+                "provincia_id",
+                "El departamento no pertenece a la provincia indicada.",
+            ),
+            (
                 "municipio_cdi",
                 "provincia_cdi",
                 "provincia_id",
@@ -818,6 +1253,12 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
                 "municipio_cdi",
                 "municipio_id",
                 "La localidad no pertenece al municipio indicado.",
+            ),
+            (
+                "departamento_organizacion",
+                "provincia_organizacion",
+                "provincia_id",
+                "El departamento no pertenece a la provincia indicada.",
             ),
             (
                 "municipio_organizacion",
@@ -852,6 +1293,9 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         errors.update(self._collect_required_field_errors())
         errors.update(self._collect_consistency_errors())
         errors.update(self._collect_geography_errors())
+        self.cuit_organizacion_gestora = (
+            normalizar_cuit(self.cuit_organizacion_gestora) or None
+        )
 
         if errors:
             raise ValidationError(errors)
@@ -862,92 +1306,41 @@ class FormularioCDI(SoftDeleteModelMixin, models.Model):
         super().save(*args, **kwargs)
 
 
-class FormularioCDIRoomDistribution(SoftDeleteModelMixin, models.Model):
+class FormularioCDIHorarioFuncionamiento(models.Model):
     formulario = models.ForeignKey(
         FormularioCDI,
         on_delete=models.CASCADE,
-        related_name="filas_distribucion_salas",
+        related_name="horarios_funcionamiento",
     )
-    grupo_etario = models.CharField(max_length=32, choices=OPCIONES_GRUPO_ETARIO_SALAS)
-    cantidad_salas = models.PositiveIntegerField(blank=True, null=True)
-    superficie_exclusiva_m2 = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        blank=True,
-        null=True,
-    )
-    cantidad_ninos = models.PositiveIntegerField(blank=True, null=True)
-    cantidad_personal_sala = models.PositiveIntegerField(blank=True, null=True)
+    dia = models.CharField(max_length=16, choices=OPCIONES_DIAS_SEMANA)
+    hora_apertura = models.TimeField(blank=True, null=True)
+    hora_cierre = models.TimeField(blank=True, null=True)
 
     class Meta:
-        verbose_name = "Formulario CDI - Distribucion de salas"
-        verbose_name_plural = "Formulario CDI - Distribucion de salas"
+        ordering = ["id"]
         constraints = [
             models.UniqueConstraint(
-                fields=["formulario", "grupo_etario"],
-                name="uniq_formulario_cdi_distribucion_salas_grupo_etario",
+                fields=["formulario", "dia"],
+                name="uniq_formulario_cdi_horario_funcionamiento_dia",
             )
         ]
+        verbose_name = "Horario de funcionamiento del formulario CDI"
+        verbose_name_plural = "Horarios de funcionamiento del formulario CDI"
 
-    @property
-    def personal_por_sala(self):
-        if not self.cantidad_salas:
-            return None
-        if self.cantidad_personal_sala is None:
-            return None
-        return self.cantidad_personal_sala / self.cantidad_salas
-
-
-class FormularioCDIWaitlistByAgeGroup(SoftDeleteModelMixin, models.Model):
-    formulario = models.ForeignKey(
-        FormularioCDI,
-        on_delete=models.CASCADE,
-        related_name="filas_demanda_insatisfecha",
-    )
-    grupo_etario = models.CharField(
-        max_length=32, choices=OPCIONES_GRUPO_ETARIO_DEMANDA
-    )
-    cantidad_demanda_insatisfecha = models.PositiveIntegerField(blank=True, null=True)
-
-    class Meta:
-        verbose_name = "Formulario CDI - Lista de espera"
-        verbose_name_plural = "Formulario CDI - Lista de espera"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["formulario", "grupo_etario"],
-                name="uniq_formulario_cdi_waitlist_grupo_etario",
+    def clean(self):
+        super().clean()
+        errors = {}
+        if bool(self.hora_apertura) != bool(self.hora_cierre):
+            errors["hora_cierre"] = (
+                "Debe completar horario de apertura y cierre para el día."
             )
-        ]
-
-
-class FormularioCDIArticulationFrequency(SoftDeleteModelMixin, models.Model):
-    formulario = models.ForeignKey(
-        FormularioCDI,
-        on_delete=models.CASCADE,
-        related_name="filas_articulacion",
-    )
-    tipo_institucion = models.CharField(
-        max_length=64,
-        choices=OPCIONES_INSTITUCIONES_ARTICULACION,
-    )
-    frecuencia = models.CharField(
-        max_length=32,
-        choices=[
-            ("trimestral", "Trimestral"),
-            ("semestral", "Semestral"),
-            ("anual", "Anual"),
-            ("no_se_articula", "No se articula"),
-        ],
-        blank=True,
-        null=True,
-    )
-
-    class Meta:
-        verbose_name = "Formulario CDI - Articulacion institucional"
-        verbose_name_plural = "Formulario CDI - Articulacion institucional"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["formulario", "tipo_institucion"],
-                name="uniq_formulario_cdi_articulacion_tipo_institucion",
+        if (
+            self.hora_apertura
+            and self.hora_cierre
+            and self.hora_apertura >= self.hora_cierre
+        ):
+            errors["hora_cierre"] = (
+                "El horario de cierre debe ser posterior al de apertura."
             )
-        ]
+        if errors:
+            raise ValidationError(errors)

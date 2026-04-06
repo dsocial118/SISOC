@@ -1,4 +1,4 @@
-﻿# GH Action para detectar mojibake
+# GH Action para detectar mojibake
 
 ## Contexto
 

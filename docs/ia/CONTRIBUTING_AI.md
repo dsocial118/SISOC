@@ -79,6 +79,7 @@ Podés proponer mejoras cercanas: sí/no
 - Ejecutar formato/lint sobre archivos tocados antes de probar comandos globales.
 - Ejecutar checks más amplios si el impacto lo requiere.
 - Si no se pudo validar, dejarlo explícito.
+- Si `pylint` marca algo, el orden correcto es corregir el código, volver a correr `pylint` sobre el archivo tocado y recién después evaluar una excepción documentada. No usar `ignore` ni `disable` como atajo para cerrar el cambio.
 
 Secuencia recomendada para reducir fricción:
 
@@ -224,6 +225,7 @@ pylint app/archivo.py --rcfile=.pylintrc
 
 - Python nuevo o modificado debe escribirse ya compatible con `black`; evitar “después lo formateo”.
 - `pylint` se usa contra la configuración real del repo. No introducir patrones que generen warnings obvios y después compensarlos con cambios de formato.
+- Tratar las advertencias de `pylint` como señales de diseño o legibilidad: primero intentar resolver la causa raíz con mejores prácticas y dejar las supresiones como último recurso, localizadas y justificadas.
 - En templates, preferir estructura clara para que `djlint` haga ajustes mínimos y no rehaga bloques completos.
 - Evitar ejecutar `black .`, `djlint .` o `pylint **/*.py` como primer paso si el cambio está acotado a uno o pocos archivos.
 

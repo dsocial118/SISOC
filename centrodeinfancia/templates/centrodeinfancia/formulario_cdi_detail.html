@@ -1,4 +1,4 @@
-﻿{% extends "includes/main.html" %}
+{% extends "includes/main.html" %}
 
 {% block title %}Formulario CDI #{{ formulario.id }}{% endblock %}
 {% block titulo-pagina %}Formulario CDI #{{ formulario.id }}{% endblock %}
@@ -42,6 +42,38 @@
                 </div>
             </div>
         {% endfor %}
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <strong>Horarios de funcionamiento por día</strong>
+            </div>
+            <div class="card-body">
+                {% if horarios_funcionamiento %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Día</th>
+                                    <th>Horario de apertura</th>
+                                    <th>Horario de cierre</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for horario in horarios_funcionamiento %}
+                                    <tr>
+                                        <td>{{ horario.get_dia_display }}</td>
+                                        <td>{{ horario.hora_apertura|time:"H:i"|default:"-" }}</td>
+                                        <td>{{ horario.hora_cierre|time:"H:i"|default:"-" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="mb-0 text-muted">Sin horarios cargados.</p>
+                {% endif %}
+            </div>
+        </div>
 
         <div class="card mb-3">
             <div class="card-header">

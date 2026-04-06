@@ -1,7 +1,8 @@
-﻿from django.contrib import admin
+from django.contrib import admin
 
 from centrodeinfancia.models import (
     CentroDeInfancia,
+    DepartamentoIpi,
     FormularioCDI,
     FormularioCDIArticulationFrequency,
     FormularioCDIRoomDistribution,
@@ -15,8 +16,34 @@ from centrodeinfancia.models import (
 
 @admin.register(CentroDeInfancia)
 class CentroDeInfanciaAdmin(admin.ModelAdmin):
-    list_display = ("id", "nombre", "organizacion", "fecha_creacion")
-    search_fields = ("nombre", "organizacion__nombre")
+    list_display = (
+        "id",
+        "nombre",
+        "organizacion",
+        "provincia",
+        "departamento",
+        "fecha_creacion",
+    )
+    list_select_related = ("provincia", "departamento")
+    search_fields = (
+        "nombre",
+        "organizacion",
+        "provincia__nombre",
+        "departamento__nombre",
+    )
+
+
+@admin.register(DepartamentoIpi)
+class DepartamentoIpiAdmin(admin.ModelAdmin):
+    list_display = (
+        "codigo_departamento",
+        "nombre",
+        "provincia",
+        "decil_ipi",
+        "nivel_inequidad_ipi",
+    )
+    list_filter = ("provincia", "nivel_inequidad_ipi")
+    search_fields = ("codigo_departamento", "nombre", "provincia__nombre")
 
 
 @admin.register(NominaCentroInfancia)
