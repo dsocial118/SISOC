@@ -51,7 +51,6 @@ class Migration(migrations.Migration):
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="informacion_relevante",
                 to="acompanamientos.acompanamiento",
-                # temporal para pasar la migración; se elimina en la siguiente
                 null=True,
             ),
         ),
