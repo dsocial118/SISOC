@@ -236,11 +236,13 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             .annotate(comisiones_count=Count("comisiones"))
             .order_by("-ciclo_lectivo")
         )
-        planes_centro_qs = PlanVersionCurricular.objects.filter(
-            activo=True,
-            provincia_id=centro.provincia_id,
-        ).select_related("sector", "subsector", "modalidad_cursada").prefetch_related(
-            "titulos"
+        planes_centro_qs = (
+            PlanVersionCurricular.objects.filter(
+                activo=True,
+                provincia_id=centro.provincia_id,
+            )
+            .select_related("sector", "subsector", "modalidad_cursada")
+            .prefetch_related("titulos")
         )
         planes_centro_search_query = (self.request.GET.get("busqueda") or "").strip()
         if planes_centro_search_query:

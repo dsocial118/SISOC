@@ -1,4 +1,4 @@
-# Detalle de parametria de vouchers: filtro y paginacion
+# Detalle de parametría de vouchers: filtro y paginación
 
 Fecha: 2026-04-06
 

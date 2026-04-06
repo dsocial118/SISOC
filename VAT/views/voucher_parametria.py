@@ -157,11 +157,12 @@ class VoucherParametriaDetailView(LoginRequiredMixin, DetailView):
         search_query = (self.request.GET.get("busqueda") or "").strip()
         vouchers_qs = qs.order_by("-fecha_asignacion", "-id")
         if search_query:
-            vouchers_qs = vouchers_qs.filter(
-                Q(ciudadano__nombre__icontains=search_query)
-                | Q(ciudadano__apellido__icontains=search_query)
-                | Q(ciudadano__documento__icontains=search_query)
+            search_filter = Q(ciudadano__nombre__icontains=search_query) | Q(
+                ciudadano__apellido__icontains=search_query
             )
+            if search_query.isdigit():
+                search_filter |= Q(ciudadano__documento=int(search_query))
+            vouchers_qs = vouchers_qs.filter(search_filter)
 
         vouchers_paginator = Paginator(vouchers_qs, self.vouchers_per_page)
         vouchers_page = vouchers_paginator.get_page(
@@ -170,7 +171,7 @@ class VoucherParametriaDetailView(LoginRequiredMixin, DetailView):
 
         ctx["search_query"] = search_query
         ctx["vouchers"] = vouchers_page.object_list
-        ctx["vouchers_total_filtrados"] = vouchers_qs.count()
+        ctx["vouchers_total_filtrados"] = vouchers_page.paginator.count
         ctx["vouchers_page_obj"] = vouchers_page
         ctx["vouchers_is_paginated"] = vouchers_page.has_other_pages()
         return ctx
@@ -185,20 +186,26 @@ class VoucherParametriaAsignarView(LoginRequiredMixin, View):
 
         if not dni:
             messages.error(request, "Ingresá un DNI.")
-            return redirect(reverse("vat_voucher_parametria_detail", kwargs={"pk": pk}))
+            return redirect(
+                reverse("vat_voucher_parametria_detail", kwargs={"pk": pk})
+            )
 
         try:
             ciudadano = Ciudadano.objects.get(documento=dni)
         except Ciudadano.DoesNotExist:
             messages.error(request, f"No se encontró ningún ciudadano con DNI {dni}.")
-            return redirect(reverse("vat_voucher_parametria_detail", kwargs={"pk": pk}))
+            return redirect(
+                reverse("vat_voucher_parametria_detail", kwargs={"pk": pk})
+            )
 
         try:
             resultado = _asignar_desde_parametria(ciudadano, parametria, request.user)
         except Exception as e:
             logger.exception("Error asignando voucher desde parametría")
             messages.error(request, f"Error al asignar: {e}")
-            return redirect(reverse("vat_voucher_parametria_detail", kwargs={"pk": pk}))
+            return redirect(
+                reverse("vat_voucher_parametria_detail", kwargs={"pk": pk})
+            )
 
         nombre = ciudadano.nombre_completo
         if resultado == _CREADO:
@@ -227,10 +234,14 @@ class VoucherParametriaAsignarMasivoView(LoginRequiredMixin, View):
 
         if not dnis:
             messages.error(request, "No ingresaste ningún DNI.")
-            return redirect(reverse("vat_voucher_parametria_detail", kwargs={"pk": pk}))
+            return redirect(
+                reverse("vat_voucher_parametria_detail", kwargs={"pk": pk})
+            )
         if len(dnis) > 500:
             messages.error(request, "Máximo 500 DNIs por operación.")
-            return redirect(reverse("vat_voucher_parametria_detail", kwargs={"pk": pk}))
+            return redirect(
+                reverse("vat_voucher_parametria_detail", kwargs={"pk": pk})
+            )
 
         contadores = {
             _CREADO: [],

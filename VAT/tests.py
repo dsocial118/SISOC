@@ -2613,13 +2613,18 @@ def test_centro_detail_filtra_y_pagina_planes_curriculares(client, vat_geo_data)
     detail_url = reverse("vat_centro_detail", kwargs={"pk": centro.pk})
 
     response = client.get(detail_url)
+    content = response.content.decode("utf-8")
 
     assert response.status_code == 200
     assert response.context["planes_centro_page_obj"].paginator.per_page == 20
     assert len(response.context["planes_centro"]) == 20
     assert response.context["planes_centro_is_paginated"] is True
+    assert f'action="{detail_url}#cursos"' in content
+    assert "planes_page=2#cursos" in content
 
-    filtered_response = client.get(detail_url, {"busqueda": "Especial Administrativo"})
+    filtered_response = client.get(
+        detail_url, {"busqueda": "Especial Administrativo"}
+    )
 
     assert filtered_response.status_code == 200
     assert filtered_response.context["planes_centro_total_filtrados"] == 1
@@ -2965,7 +2970,10 @@ def test_voucher_parametria_detail_filters_and_paginates_vouchers(vat_admin_clie
     assert filtered_response.status_code == 200
     assert filtered_response.context["vouchers_total_filtrados"] == 1
     assert len(filtered_response.context["vouchers"]) == 1
-    assert filtered_response.context["vouchers"][0].ciudadano_id == ciudadano_filtrado.id
+    assert (
+        filtered_response.context["vouchers"][0].ciudadano_id
+        == ciudadano_filtrado.id
+    )
 
     second_page_response = vat_admin_client.get(detail_url, {"vouchers_page": 2})
 

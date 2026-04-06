@@ -1,4 +1,4 @@
-# Centro detalle: filtro y paginacion de planes curriculares
+# Centro detalle: filtro y paginación de planes curriculares
 
 Fecha: 2026-04-06
 
