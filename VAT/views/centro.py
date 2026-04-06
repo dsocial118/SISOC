@@ -236,15 +236,36 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             .annotate(comisiones_count=Count("comisiones"))
             .order_by("-ciclo_lectivo")
         )
-        ctx["planes_centro"] = list(
+        planes_centro_qs = (
             PlanVersionCurricular.objects.filter(
                 activo=True,
                 provincia_id=centro.provincia_id,
             )
             .select_related("sector", "subsector", "modalidad_cursada")
             .prefetch_related("titulos")
-            .order_by("sector__nombre", "subsector__nombre", "id")
         )
+        planes_centro_search_query = (self.request.GET.get("busqueda") or "").strip()
+        if planes_centro_search_query:
+            planes_centro_qs = planes_centro_qs.filter(
+                Q(nombre__icontains=planes_centro_search_query)
+                | Q(titulos__nombre__icontains=planes_centro_search_query)
+                | Q(sector__nombre__icontains=planes_centro_search_query)
+                | Q(subsector__nombre__icontains=planes_centro_search_query)
+                | Q(modalidad_cursada__nombre__icontains=planes_centro_search_query)
+                | Q(normativa__icontains=planes_centro_search_query)
+            ).distinct()
+        planes_centro_qs = planes_centro_qs.order_by(
+            "sector__nombre", "subsector__nombre", "id"
+        )
+        planes_centro_paginator = Paginator(planes_centro_qs, 20)
+        planes_centro_page = planes_centro_paginator.get_page(
+            self.request.GET.get("planes_page") or 1
+        )
+        ctx["planes_centro"] = planes_centro_page.object_list
+        ctx["planes_centro_search_query"] = planes_centro_search_query
+        ctx["planes_centro_total_filtrados"] = planes_centro_paginator.count
+        ctx["planes_centro_page_obj"] = planes_centro_page
+        ctx["planes_centro_is_paginated"] = planes_centro_page.has_other_pages()
         ctx["comisiones"] = list(
             Comision.objects.filter(oferta__centro=centro)
             .select_related(
