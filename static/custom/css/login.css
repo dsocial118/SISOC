@@ -1,5 +1,11 @@
 /* Contenedor general */
- body {
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+body {
     margin: 0;
     height: 100vh;
     background-color: #ededed;
@@ -10,6 +16,17 @@
 .login-container {
     display: flex;
     flex: 1;
+    padding-top: 92px;
+}
+
+.login-page footer.app-footer {
+    position: static;
+}
+
+.login-page .login-row {
+    min-height: calc(100vh - 300px);
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
 }
 
 /* Caja del formulario */
@@ -118,6 +135,17 @@ footer.app-footer {
     border: none;
 }
 
+#login-submit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#login-submit-button:disabled {
+    opacity: 0.85;
+    cursor: wait;
+}
+
 .card a {
     color: #828282;
     text-decoration: none !important;
@@ -178,8 +206,12 @@ footer.app-footer {
     }
 
     /* Reducir altura del contenedor en mobile */
-    .login-container .row.vh-100 {
-        min-height: 100vh;
+    .login-page .login-container {
+        padding-top: 80px;
+    }
+
+    .login-page .login-row {
+        min-height: auto;
         padding: 1rem 0;
     }
 

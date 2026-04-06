@@ -181,6 +181,110 @@ def test_web_login_blocks_pwa_user(client, comedor):
 
 
 @pytest.mark.django_db
+def test_web_login_treats_whitespace_only_fields_as_required(client):
+    response = client.post(
+        "/login/",
+        data={"username": "   ", "password": "   "},
+    )
+
+    assert response.status_code == 200
+    assert SESSION_KEY not in client.session
+    assert response.context["form"].errors["username"] == ["Este campo es obligatorio."]
+    assert response.context["form"].errors["password"] == ["Este campo es obligatorio."]
+
+
+@pytest.mark.django_db
+def test_login_page_sets_initial_focus_on_username(client):
+    response = client.get("/login/")
+
+    assert response.status_code == 200
+    assert 'id="id_username"' in response.content.decode("utf-8")
+    assert "autofocus" in response.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_login_page_renders_loading_submit_button(client):
+    response = client.get("/login/")
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert 'id="login-submit-button"' in content
+    assert 'id="login-submit-spinner"' in content
+    assert "spinner-border" in content
+    assert 'id="login-submit-text"' in content
+    assert ">Ingresar<" in content
+
+
+@pytest.mark.django_db
+def test_web_login_allows_valid_username_with_leading_spaces(client):
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username="usuario_valido",
+        email="usuario_valido@example.com",
+        password="ClaveValida123!",
+    )
+
+    response = client.post(
+        "/login/",
+        data={"username": "   usuario_valido", "password": "ClaveValida123!"},
+    )
+
+    assert response.status_code in {302, 303}
+    assert client.session[SESSION_KEY] == str(user.pk)
+
+
+@pytest.mark.django_db
+def test_web_login_shows_generic_message_for_invalid_credentials(client):
+    response = client.post(
+        "/login/",
+        data={"username": "usuario_invalido", "password": "clave_invalida"},
+    )
+
+    assert response.status_code == 200
+    assert SESSION_KEY not in client.session
+    assert response.context["form"].non_field_errors() == [
+        "Usuario o contraseña inválidos."
+    ]
+
+
+@pytest.mark.django_db
+def test_web_login_preserves_username_and_clears_password_after_failed_login(client):
+    response = client.post(
+        "/login/",
+        data={"username": "usuario_invalido", "password": "clave_invalida"},
+    )
+
+    assert response.status_code == 200
+    assert response.context["form"]["username"].value() == "usuario_invalido"
+    assert response.context["form"]["password"].value() in (None, "")
+    content = response.content.decode("utf-8")
+    assert 'value="usuario_invalido"' in content
+    assert 'name="password"' in content
+    assert 'value="clave_invalida"' not in content
+
+
+@pytest.mark.django_db
+def test_web_login_keeps_significant_password_spaces(client):
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username="usuario_con_password_espaciado",
+        email="usuario_con_password_espaciado@example.com",
+        password="  ClaveValida123!",
+    )
+
+    response = client.post(
+        "/login/",
+        data={
+            "username": "usuario_con_password_espaciado",
+            "password": "  ClaveValida123!",
+        },
+    )
+
+    assert response.status_code in {302, 303}
+    assert client.session[SESSION_KEY] == str(user.pk)
+
+
+@pytest.mark.django_db
 def test_password_change_required_requires_authentication():
     client = APIClient()
 
