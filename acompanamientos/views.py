@@ -59,8 +59,21 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
             or user_has_permission_code(self.request.user, "auth.role_tecnico_comedor")
         )
 
-        context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
+        admision_id_int = int(admision_id) if admision_id and admision_id.isdigit() else None
+
+        context["hitos"] = AcompanamientoService.obtener_hitos(
+            comedor, admision_id=admision_id_int
+        )
         context["fechas_hitos"] = AcompanamientoService.obtener_fechas_hitos(comedor)
+
+        admisiones_disponibles = list(
+            AcompanamientoService.obtener_admisiones_para_selector(comedor)
+        )
+        context["admisiones_disponibles"] = admisiones_disponibles
+        context["admision_id_activa"] = admision_id_int
+
+        activas = [a for a in admisiones_disponibles if a.activa]
+        context["tiene_multiples_activos"] = len(activas) > 1
 
         # Configuración de todos los hitos para evitar repetición en el template
         context["hitos_config"] = [
@@ -148,6 +161,13 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
         context["info_relevante"] = info_relevante
         context["numero_if"] = datos_admision.get("numero_if")
         context["numero_disposicion"] = datos_admision.get("numero_disposicion")
+
+        acompanamiento_obj = (
+            getattr(admision, "acompanamiento", None) if admision else None
+        )
+        context["nro_convenio"] = (
+            acompanamiento_obj.nro_convenio if acompanamiento_obj else ""
+        )
 
         prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(
             info_relevante
