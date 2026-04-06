@@ -149,22 +149,60 @@ class AcompanamientoService:
             raise
 
     @staticmethod
-    def obtener_hitos(comedor):
+    def obtener_hitos(comedor, admision_id=None):
         """Obtener los hitos correspondientes a un comedor.
+
+        Si se provee admision_id, prioriza buscar los Hitos vinculados al
+        Acompanamiento de esa admisión. Si no los encuentra, hace fallback
+        por comedor (compatibilidad con registros pre-migración).
 
         Args:
             comedor: Comedor para el cual se solicitan los hitos.
+            admision_id: ID opcional de la admisión para filtrar por acompañamiento.
 
         Returns:
             Hitos | None
         """
         try:
+            if admision_id:
+                hitos = Hitos.objects.filter(
+                    acompanamiento__admision_id=admision_id
+                ).first()
+                if hitos:
+                    return hitos
             return (
                 Hitos.objects.select_related("comedor").filter(comedor=comedor).first()
             )
         except Exception:
             logger.exception(
                 f"Error en AcompanamientoService.obtener_hitos para comedor: {comedor.pk}"
+            )
+            raise
+
+    @staticmethod
+    def obtener_admisiones_para_selector(comedor):
+        """Trae todas las admisiones con Acompanamiento creado para el selector del legajo.
+
+        Args:
+            comedor: Comedor del cual obtener las admisiones.
+
+        Returns:
+            QuerySet de Admision ordenado por id descendente.
+        """
+        try:
+            return (
+                Admision.objects.filter(
+                    comedor=comedor,
+                    enviado_acompaniamiento=True,
+                    acompanamiento__isnull=False,
+                )
+                .select_related("acompanamiento")
+                .order_by("-id")
+            )
+        except Exception:
+            logger.exception(
+                f"Error en AcompanamientoService.obtener_admisiones_para_selector "
+                f"para comedor: {comedor.pk}"
             )
             raise
 
