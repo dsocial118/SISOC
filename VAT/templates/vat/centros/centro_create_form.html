@@ -2,8 +2,8 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}Alta de Centro VAT{% endblock %}
-{% block titulo-pagina %}Alta de Centro VAT{% endblock %}
+{% block title %}{{ page_title|default:"Alta de Centro de Formacion" }}{% endblock %}
+{% block titulo-pagina %}{% endblock %}
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
@@ -26,6 +26,14 @@
             margin: 0 0 .35rem;
             font-size: 1.9rem;
             font-weight: 700;
+        }
+
+        .vp-hero h1 i,
+        .vp-panel-header .card-title i,
+        .vp-panel-header .btn i,
+        .vp-contact-item .btn i,
+        .vp-actions .btn i {
+            margin-right: .5rem;
         }
 
         .vp-hero p {
@@ -53,15 +61,26 @@
             gap: .75rem;
         }
 
+        .vp-panel-header > div {
+            display: flex;
+            flex-direction: column;
+            gap: .35rem;
+            min-width: 0;
+        }
+
         .vp-panel-header .card-title {
             color: #ffffff;
             font-weight: 700;
             margin: 0;
+            line-height: 1.2;
         }
 
         .vp-panel-header .text-muted,
         .vp-panel-header .small {
             color: rgba(240, 247, 255, 0.82) !important;
+            display: block;
+            margin: 0;
+            line-height: 1.35;
         }
 
         .vp-section {
@@ -178,9 +197,8 @@
     <div class="vp-shell">
         <div class="vp-hero">
             <h1>
-                <i class="fas fa-building mr-2"></i>Alta de Institución
+                <i class="fas fa-building mr-2"></i>{{ page_title|default:"Alta de Centro de Formacion" }}
             </h1>
-            <p>Registro inicial del centro VAT con datos institucionales, ubicación, contactos y autoridad responsable.</p>
         </div>
 
         <form method="post"
@@ -233,9 +251,15 @@
                         <div class="col-md-4 vp-field">{{ form.lote|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.manzana|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.entre_calles|as_crispy_field }}</div>
-                        <div class="col-md-4 vp-field">{{ form.provincia|as_crispy_field }}</div>
-                        <div class="col-md-4 vp-field">{{ form.municipio|as_crispy_field }}</div>
-                        <div class="col-md-4 vp-field">{{ form.localidad|as_crispy_field }}</div>
+                        {% if show_provincia_field|default:True %}
+                            <div class="col-md-4 vp-field">{{ form.provincia|as_crispy_field }}</div>
+                            <div class="col-md-4 vp-field">{{ form.municipio|as_crispy_field }}</div>
+                            <div class="col-md-4 vp-field">{{ form.localidad|as_crispy_field }}</div>
+                        {% else %}
+                            {{ form.provincia }}
+                            <div class="col-md-6 vp-field">{{ form.municipio|as_crispy_field }}</div>
+                            <div class="col-md-6 vp-field">{{ form.localidad|as_crispy_field }}</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -265,7 +289,7 @@
                         <h3 class="card-title">
                             <i class="fas fa-address-book mr-2"></i>3.2 Contactos de la institución
                         </h3>
-                        <div class="small">Podés cargar varios contactos y marcar uno como principal.</div>
+                        <div class="small">Podés cargar responsables o contactos adicionales en la misma tabla institucional.</div>
                     </div>
                     <button type="button"
                             class="btn btn-sm btn-outline-light"
@@ -283,15 +307,10 @@
                                 <div class="row">
                                     <div class="col-md-4 vp-field">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
                                     <div class="col-md-3 vp-field">{{ contacto_form.rol_area|as_crispy_field }}</div>
+                                    <div class="col-md-2 vp-field">{{ contacto_form.documento|as_crispy_field }}</div>
                                     <div class="col-md-2 vp-field">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
                                     <div class="col-md-3 vp-field">{{ contacto_form.email_contacto|as_crispy_field }}</div>
-                                    <div class="col-md-3 d-flex align-items-center">
-                                        <div class="form-group mt-4 pt-2 mb-0">
-                                            {{ contacto_form.es_principal }}
-                                            <label for="{{ contacto_form.es_principal.id_for_label }}" class="ml-2 mb-0">Principal</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 d-flex align-items-center justify-content-end">
+                                    <div class="col-md-12 d-flex align-items-center justify-content-end">
                                         <button type="button"
                                                 class="btn btn-outline-danger btn-sm remove-contacto-btn">
                                             <i class="fas fa-trash mr-1"></i>Quitar
@@ -302,53 +321,34 @@
                             </div>
                         {% endfor %}
                     </div>
-                </div>
-            </div>
-
-            <div class="card vp-panel">
-                <div class="vp-panel-header">
-                    <div>
-                        <h3 class="card-title">
-                            <i class="fas fa-user-tie mr-2"></i>4. Autoridades
-                        </h3>
-                        <div class="small">Datos de la autoridad responsable para el alta inicial.</div>
+                    <div class="vp-actions">
+                        <a href="{{ cancel_url }}" class="btn btn-secondary">
+                            <i class="fas fa-times mr-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save mr-1"></i>{{ submit_text|default:"Guardar" }}
+                        </button>
+                        {% if show_save_continue or show_save_continue is None %}
+                            <button type="submit"
+                                    name="save_continue"
+                                    value="1"
+                                    class="btn btn-outline-primary">
+                                <i class="fas fa-arrow-right mr-1"></i>{{ submit_continue_text|default:"Guardar y continuar" }}
+                            </button>
+                        {% endif %}
                     </div>
                 </div>
-                <div class="vp-section">
-                    <div class="row">
-                        <div class="col-md-3 vp-field">{{ form.nombre_referente|as_crispy_field }}</div>
-                        <div class="col-md-3 vp-field">{{ form.apellido_referente|as_crispy_field }}</div>
-                        <div class="col-md-2 vp-field">{{ form.autoridad_dni|as_crispy_field }}</div>
-                        <div class="col-md-2 vp-field">{{ form.telefono_referente|as_crispy_field }}</div>
-                        <div class="col-md-2 vp-field">{{ form.correo_referente|as_crispy_field }}</div>
-                    </div>
-                </div>
-                <div class="vp-actions">
-                    <a href="{{ cancel_url }}" class="btn btn-secondary">
-                        <i class="fas fa-times mr-1"></i>Cancelar
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-1"></i>Guardar
-                    </button>
-                    <button type="submit"
-                            name="save_continue"
-                            value="1"
-                            class="btn btn-outline-primary">
-                        <i class="fas fa-arrow-right mr-1"></i>Guardar y continuar
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
+            </form>
+        </div>
 
-    <template id="contacto-empty-form-template">
-        <div class="vp-contact-item mb-3 contacto-form-item"
-             data-form-index="__prefix__">__FORM_FIELDS__</div>
-    </template>
-{% endblock %}
+        <template id="contacto-empty-form-template">
+            <div class="vp-contact-item mb-3 contacto-form-item"
+                 data-form-index="__prefix__">__FORM_FIELDS__</div>
+        </template>
+    {% endblock %}
 
-{% block customJS %}
-    <script nonce="{{ request.csp_nonce }}">
+    {% block customJS %}
+        <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
         var contactoEmptyFormHtml = `{% filter escapejs %}
@@ -357,15 +357,10 @@
                 <div class="row">
                     <div class="col-md-4">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
                     <div class="col-md-3">{{ contacto_form.rol_area|as_crispy_field }}</div>
+                    <div class="col-md-2">{{ contacto_form.documento|as_crispy_field }}</div>
                     <div class="col-md-2">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
                     <div class="col-md-3">{{ contacto_form.email_contacto|as_crispy_field }}</div>
-                    <div class="col-md-3 d-flex align-items-center">
-                        <div class="form-group mt-4 pt-2">
-                            {{ contacto_form.es_principal }}
-                            <label for="{{ contacto_form.es_principal.id_for_label }}" class="ml-2">Principal</label>
-                        </div>
-                    </div>
-                    <div class="col-md-3 d-flex align-items-center justify-content-end">
+                    <div class="col-md-12 d-flex align-items-center justify-content-end">
                         <button type="button" class="btn btn-outline-danger btn-sm remove-contacto-btn">
                             <i class="fas fa-trash mr-1"></i>Quitar
                         </button>
@@ -373,6 +368,6 @@
                 </div>
             {% endwith %}
         {% endfilter %}`;
-    </script>
-    <script src="{% static 'custom/js/centro_create_form.js' %}"></script>
-{% endblock %}
+        </script>
+        <script src="{% static 'custom/js/centro_create_form.js' %}"></script>
+    {% endblock %}

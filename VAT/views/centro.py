@@ -13,10 +13,9 @@ from django.db.models import Count, Q
 from django import forms
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse
 
 from VAT.models import (
-    AutoridadInstitucional,
     Centro,
     Curso,
     ComisionCurso,
@@ -36,10 +35,8 @@ from VAT.services.centro_filter_config import (
 )
 from VAT.forms import (
     CentroAltaForm,
-    CentroForm,
     InstitucionContactoAltaFormSet,
     InstitucionContactoForm,
-    AutoridadInstitucionalForm,
     InstitucionIdentificadorHistForm,
     InstitucionUbicacionForm,
     CursoForm,
@@ -52,6 +49,8 @@ from VAT.forms import (
 from VAT.services.access_scope import (
     can_user_access_centro,
     can_user_add_vat_entities,
+    can_user_create_centro,
+    can_user_edit_centro,
     filter_centros_queryset_for_user,
     is_vat_referente,
 )
@@ -69,6 +68,92 @@ BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
         "boolean": CENTRO_BOOL_OPS,
     },
 )
+
+
+def _build_responsable_principal_data(contacto):
+    nombre_completo = (contacto.nombre_contacto or "").strip()
+    correo = contacto.email_contacto or ""
+    telefono = contacto.telefono_contacto or ""
+    return {
+        "nombre_contacto": nombre_completo,
+        "rol_area": contacto.rol_area or "Responsable institucional",
+        "documento": contacto.documento or "",
+        "telefono_contacto": telefono,
+        "email_contacto": correo,
+        "tipo": "email" if correo else "telefono",
+        "valor": correo or telefono,
+        "es_principal": True,
+    }
+
+
+def _sync_responsable_principal(centro):
+    principal = (
+        centro.contactos_adicionales.filter(es_principal=True).order_by("id").first()
+    )
+    if principal is None:
+        principal = centro.contactos_adicionales.order_by("id").first()
+    if principal is None:
+        return None
+
+    defaults = _build_responsable_principal_data(principal)
+    for field_name, value in defaults.items():
+        setattr(principal, field_name, value)
+    principal.save(
+        update_fields=[
+            "nombre_contacto",
+            "rol_area",
+            "documento",
+            "telefono_contacto",
+            "email_contacto",
+            "tipo",
+            "valor",
+            "es_principal",
+        ]
+    )
+    centro.contactos_adicionales.exclude(pk=principal.pk).filter(
+        es_principal=True
+    ).update(es_principal=False)
+    centro.nombre_referente = principal.nombre_contacto or ""
+    centro.apellido_referente = ""
+    centro.telefono_referente = principal.telefono_contacto or ""
+    centro.correo_referente = principal.email_contacto or ""
+    centro.save(
+        update_fields=[
+            "nombre_referente",
+            "apellido_referente",
+            "telefono_referente",
+            "correo_referente",
+        ]
+    )
+    return principal
+
+
+def _submitted_contact_matches_existing(data, contacto_existente):
+    submitted_es_principal = data.get("contactos-0-es_principal") in {
+        "1",
+        "true",
+        "True",
+        "on",
+    }
+    submitted_values = {
+        "nombre_contacto": (data.get("contactos-0-nombre_contacto", "") or "").strip(),
+        "rol_area": (data.get("contactos-0-rol_area", "") or "").strip(),
+        "documento": (data.get("contactos-0-documento", "") or "").strip(),
+        "telefono_contacto": (
+            data.get("contactos-0-telefono_contacto", "") or ""
+        ).strip(),
+        "email_contacto": (data.get("contactos-0-email_contacto", "") or "").strip(),
+        "es_principal": submitted_es_principal,
+    }
+    existing_values = {
+        "nombre_contacto": (contacto_existente.nombre_contacto or "").strip(),
+        "rol_area": (contacto_existente.rol_area or "").strip(),
+        "documento": (contacto_existente.documento or "").strip(),
+        "telefono_contacto": (contacto_existente.telefono_contacto or "").strip(),
+        "email_contacto": (contacto_existente.email_contacto or "").strip(),
+        "es_principal": bool(contacto_existente.es_principal),
+    }
+    return submitted_values == existing_values
 
 
 class CentroListView(LoginRequiredMixin, ListView):
@@ -104,7 +189,7 @@ class CentroListView(LoginRequiredMixin, ListView):
             }
         )
 
-        ctx["can_add"] = can_user_add_vat_entities(user)
+        ctx["can_add"] = can_user_create_centro(user)
 
         ctx["table_headers"] = [
             {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
@@ -133,15 +218,16 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         centro = self.object
 
         # Evaluar listas una sola vez para reutilizar en los counts
-        ctx["autoridades"] = list(
-            centro.autoridades.all().order_by("-es_actual", "-vigencia_desde")
-        )
         ctx["identificadores"] = list(
             centro.identificadores_hist.select_related("ubicacion")
             .all()
             .order_by("-es_actual", "-vigencia_desde")
         )
-        ctx["contactos"] = list(centro.contactos_adicionales.all())
+        ctx["contactos"] = list(
+            centro.contactos_adicionales.all().order_by(
+                "-es_principal", "nombre_contacto"
+            )
+        )
         ctx["ubicaciones"] = centro.ubicaciones.select_related("localidad").all()
 
         # annotate para evitar N+1 al contar comisiones por oferta
@@ -150,6 +236,36 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             .annotate(comisiones_count=Count("comisiones"))
             .order_by("-ciclo_lectivo")
         )
+        planes_centro_qs = (
+            PlanVersionCurricular.objects.filter(
+                activo=True,
+                provincia_id=centro.provincia_id,
+            )
+            .select_related("sector", "subsector", "modalidad_cursada")
+            .prefetch_related("titulos")
+        )
+        planes_centro_search_query = (self.request.GET.get("busqueda") or "").strip()
+        if planes_centro_search_query:
+            planes_centro_qs = planes_centro_qs.filter(
+                Q(nombre__icontains=planes_centro_search_query)
+                | Q(titulos__nombre__icontains=planes_centro_search_query)
+                | Q(sector__nombre__icontains=planes_centro_search_query)
+                | Q(subsector__nombre__icontains=planes_centro_search_query)
+                | Q(modalidad_cursada__nombre__icontains=planes_centro_search_query)
+                | Q(normativa__icontains=planes_centro_search_query)
+            ).distinct()
+        planes_centro_qs = planes_centro_qs.order_by(
+            "sector__nombre", "subsector__nombre", "id"
+        )
+        planes_centro_paginator = Paginator(planes_centro_qs, 20)
+        planes_centro_page = planes_centro_paginator.get_page(
+            self.request.GET.get("planes_page") or 1
+        )
+        ctx["planes_centro"] = planes_centro_page.object_list
+        ctx["planes_centro_search_query"] = planes_centro_search_query
+        ctx["planes_centro_total_filtrados"] = planes_centro_paginator.count
+        ctx["planes_centro_page_obj"] = planes_centro_page
+        ctx["planes_centro_is_paginated"] = planes_centro_page.has_other_pages()
         ctx["comisiones"] = list(
             Comision.objects.filter(oferta__centro=centro)
             .select_related(
@@ -160,13 +276,13 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
         ctx["cursos"] = list(
             Curso.objects.filter(centro=centro)
-            .select_related("ubicacion__localidad", "modalidad")
-            .prefetch_related("comisiones")
-            .order_by("-fecha_inicio")
+            .select_related("modalidad")
+            .prefetch_related("comisiones", "voucher_parametrias")
+            .order_by("-fecha_creacion")
         )
         ctx["comisiones_curso"] = list(
             ComisionCurso.objects.filter(curso__centro=centro)
-            .select_related("curso")
+            .select_related("curso", "ubicacion__localidad")
             .order_by("codigo_comision")
         )
 
@@ -175,7 +291,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         ctx["count_comisiones"] = len(ctx["comisiones"])
         ctx["count_cursos"] = len(ctx["cursos"])
         ctx["count_comisiones_curso"] = len(ctx["comisiones_curso"])
-        ctx["count_autoridades"] = len(ctx["autoridades"])
         ctx["count_identificadores"] = len(ctx["identificadores"])
         ctx["count_contactos"] = len(ctx["contactos"])
 
@@ -196,9 +311,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # Forms para modales
         ctx["contacto_form"] = InstitucionContactoForm(initial={"centro": centro})
-        ctx["autoridad_form"] = AutoridadInstitucionalForm(
-            initial={"centro": centro, "es_actual": True}
-        )
         ctx["identificador_form"] = InstitucionIdentificadorHistForm(
             initial={"centro": centro, "es_actual": True}
         )
@@ -219,20 +331,18 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             )
         )
         ctx["curso_form"] = CursoForm(initial={"centro": centro})
-        ctx["curso_form"].fields["centro"].queryset = Centro.objects.filter(
-            pk=centro.pk
-        )
-        ctx["curso_form"].fields["ubicacion"].queryset = (
-            centro.ubicaciones.select_related("localidad").order_by(
-                "es_principal", "rol_ubicacion"
-            )
-        )
         ctx["comision_curso_form"] = ComisionCursoForm()
         ctx["comision_curso_form"].fields["curso"].queryset = centro.cursos.order_by(
             "nombre"
         )
+        ctx["comision_curso_form"].fields["ubicacion"].queryset = (
+            centro.ubicaciones.select_related("localidad").order_by(
+                "es_principal", "rol_ubicacion"
+            )
+        )
         ctx["titulo_form"] = TituloReferenciaForm()
         ctx["plan_form"] = PlanVersionCurricularForm()
+        ctx["can_edit_centro"] = can_user_edit_centro(self.request.user, centro)
 
         return ctx
 
@@ -243,8 +353,29 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     template_name = "vat/centros/centro_create_form.html"
     success_url = reverse_lazy("vat_centro_list")
 
+    def _get_creator_provincia(self):
+        profile = getattr(self.request.user, "profile", None)
+        return getattr(profile, "provincia", None)
+
+    def _should_hide_provincia_field(self):
+        return self._get_creator_provincia() is not None
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        creator_provincia = self._get_creator_provincia()
+        kwargs["hide_provincia"] = self._should_hide_provincia_field()
+        kwargs["provincia_inicial"] = creator_provincia
+
+        data = kwargs.get("data")
+        if data is not None and creator_provincia is not None:
+            data = data.copy()
+            data["provincia"] = str(creator_provincia.pk)
+            kwargs["data"] = data
+
+        return kwargs
+
     def dispatch(self, request, *args, **kwargs):
-        if not can_user_add_vat_entities(request.user):
+        if not can_user_create_centro(request.user):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -256,7 +387,16 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         ctx.update(
             {
                 "contacto_formset": contacto_formset,
+                "page_title": "Alta de Centro de Formacion",
+                "page_description": (
+                    "Registro inicial del centro VAT con datos institucionales, "
+                    "ubicación y contactos institucionales unificados."
+                ),
+                "show_provincia_field": not self._should_hide_provincia_field(),
                 "cancel_url": reverse("vat_centro_list"),
+                "submit_text": "Guardar",
+                "submit_continue_text": "Guardar y continuar",
+                "show_save_continue": True,
             }
         )
         return ctx
@@ -264,34 +404,27 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     def post(self, request, *args, **kwargs):
         self.object = None
         form = self.get_form()
+        creator_provincia = self._get_creator_provincia()
         contacto_formset = InstitucionContactoAltaFormSet(
             self.request.POST,
             prefix="contactos",
         )
 
+        if creator_provincia is not None:
+            form.instance.provincia = creator_provincia
+
         if form.is_valid() and contacto_formset.is_valid():
             return self.form_valid(form, contacto_formset)
         return self.form_invalid(form, contacto_formset)
 
-    def form_valid(self, form, contacto_formset):
+    def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         with transaction.atomic():
+            form.instance.activo = True
             self.object = form.save()
 
             contacto_formset.instance = self.object
             contacto_formset.save()
-
-            AutoridadInstitucional.objects.create(
-                centro=self.object,
-                nombre_completo=(
-                    f"{form.cleaned_data['nombre_referente']} "
-                    f"{form.cleaned_data['apellido_referente']}"
-                ).strip(),
-                dni=form.cleaned_data["autoridad_dni"],
-                cargo="Director/a",
-                email=form.cleaned_data["correo_referente"],
-                telefono=form.cleaned_data.get("telefono_referente"),
-                es_actual=True,
-            )
+            _sync_responsable_principal(self.object)
 
             InstitucionIdentificadorHist.objects.create(
                 centro=self.object,
@@ -312,7 +445,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
 
-    def form_invalid(self, form, contacto_formset):
+    def form_invalid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         return self.render_to_response(
             self.get_context_data(
                 form=form,
@@ -328,24 +461,182 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
 
 class CentroUpdateView(LoginRequiredMixin, UpdateView):
     model = Centro
-    form_class = CentroForm
-    template_name = "vat/centros/centro_form.html"
+    form_class = CentroAltaForm
+    template_name = "vat/centros/centro_create_form.html"
 
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
-        if not (
-            can_user_add_vat_entities(request.user)
-            or (
-                is_vat_referente(request.user)
-                and centro.referente_id == request.user.id
-            )
-        ):
+        if not can_user_edit_centro(request.user, centro):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
-    def form_valid(self, form):
+    def get_initial(self):
+        initial = super().get_initial()
+        responsable = (
+            self.object.contactos_adicionales.filter(es_principal=True)
+            .order_by("id")
+            .first()
+        )
+        if responsable:
+            initial["autoridad_dni"] = responsable.documento
+        return initial
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["hide_provincia"] = True
+        kwargs["provincia_inicial"] = self.object.provincia
+
+        data = kwargs.get("data")
+        if data is not None and self.object.provincia_id is not None:
+            data = data.copy()
+            data["provincia"] = str(self.object.provincia_id)
+            kwargs["data"] = data
+
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        contacto_formset = kwargs.get("contacto_formset")
+        if contacto_formset is None:
+            contacto_formset = InstitucionContactoAltaFormSet(
+                instance=self.object,
+                prefix="contactos",
+            )
+        context.update(
+            {
+                "contacto_formset": contacto_formset,
+                "page_title": "Editar Centro de Formacion",
+                "page_description": (
+                    "Actualizá los datos institucionales, la ubicación y los "
+                    "contactos institucionales del centro VAT."
+                ),
+                "cancel_url": reverse(
+                    "vat_centro_detail", kwargs={"pk": self.object.pk}
+                ),
+                "submit_text": "Guardar",
+                "show_provincia_field": False,
+                "show_save_continue": False,
+            }
+        )
+        return context
+
+    def _normalize_contacto_formset_data(self, data):
+        if data is None:
+            return data, None
+
+        total_forms = int(data.get("contactos-TOTAL_FORMS", 0) or 0)
+        initial_forms = int(data.get("contactos-INITIAL_FORMS", 0) or 0)
+        if total_forms == 0 or initial_forms != 0:
+            return data, None
+
+        if any(data.get(f"contactos-{index}-id") for index in range(total_forms)):
+            return data, None
+
+        contactos_existentes = list(self.object.contactos_adicionales.order_by("id"))
+        if total_forms == 1 and len(contactos_existentes) == 1:
+            contacto_existente = contactos_existentes[0]
+            if _submitted_contact_matches_existing(data, contacto_existente):
+                normalized_data = data.copy()
+                normalized_data["contactos-INITIAL_FORMS"] = "1"
+                normalized_data["contactos-0-id"] = str(contacto_existente.pk)
+                normalized_data["contactos-0-centro"] = str(self.object.pk)
+                return normalized_data, None
+
+        if contactos_existentes:
+            return (
+                data,
+                (
+                    "No se pudo guardar la edición de contactos porque faltan los "
+                    "identificadores de filas existentes. Recargá la página e intentá "
+                    "nuevamente."
+                ),
+            )
+
+        return data, None
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        mutable_post, contacto_formset_error = self._normalize_contacto_formset_data(
+            request.POST
+        )
+        if mutable_post is not request.POST:
+            request.POST = mutable_post
+        form = self.get_form()
+        contacto_formset = InstitucionContactoAltaFormSet(
+            request.POST,
+            instance=self.object,
+            prefix="contactos",
+        )
+        form.instance.provincia = self.object.provincia
+        if contacto_formset_error:
+            form.add_error(None, contacto_formset_error)
+        if form.is_valid() and contacto_formset.is_valid():
+            return self.form_valid(form, contacto_formset)
+        return self.form_invalid(form, contacto_formset)
+
+    def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
+        with transaction.atomic():
+            was_active = (
+                type(self.object)
+                .objects.filter(pk=self.object.pk)
+                .values_list("activo", flat=True)
+                .first()
+            )
+            centro = form.save(commit=False)
+            if not was_active:
+                centro.activo = False
+            centro.save()
+            form.save_m2m()
+            self.object = centro
+
+            contacto_formset.instance = self.object
+            contacto_formset.save()
+            _sync_responsable_principal(self.object)
+
+            ubicacion_principal = (
+                self.object.ubicaciones.filter(rol_ubicacion="sede_principal")
+                .order_by("-es_principal", "-vigencia_desde", "-id")
+                .first()
+                or self.object.ubicaciones.order_by(
+                    "-es_principal", "-vigencia_desde", "-id"
+                ).first()
+            )
+            if ubicacion_principal is None:
+                ubicacion_principal = InstitucionUbicacion(
+                    centro=self.object,
+                    rol_ubicacion="sede_principal",
+                )
+            ubicacion_principal.localidad = form.cleaned_data["localidad"]
+            ubicacion_principal.domicilio = form.cleaned_data["domicilio_actividad"]
+            ubicacion_principal.es_principal = True
+            ubicacion_principal.save()
+
+            identificador_cue = (
+                self.object.identificadores_hist.filter(tipo_identificador="cue")
+                .order_by("-es_actual", "-vigencia_desde", "-id")
+                .first()
+            )
+            if identificador_cue is None:
+                identificador_cue = InstitucionIdentificadorHist(
+                    centro=self.object,
+                    tipo_identificador="cue",
+                )
+            identificador_cue.valor_identificador = form.cleaned_data["codigo"]
+            identificador_cue.rol_institucional = "sede"
+            identificador_cue.ubicacion = ubicacion_principal
+            identificador_cue.es_actual = True
+            identificador_cue.save()
+
         messages.success(self.request, "Centro actualizado correctamente.")
-        return super().form_valid(form)
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form, contacto_formset):  # pylint: disable=arguments-differ
+        return self.render_to_response(
+            self.get_context_data(
+                form=form,
+                contacto_formset=contacto_formset,
+            )
+        )
 
     def get_success_url(self):
         return reverse("vat_centro_detail", kwargs={"pk": self.object.pk})
@@ -390,7 +681,7 @@ def centros_ajax(request):
         paginator = Paginator(qs, 10)
         page_obj = paginator.get_page(page)
 
-        can_add = can_user_add_vat_entities(user)
+        can_add = can_user_create_centro(user)
 
         context = {
             "centros": page_obj,

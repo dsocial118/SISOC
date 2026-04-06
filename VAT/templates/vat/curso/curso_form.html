@@ -1,4 +1,4 @@
-{% extends "includes/main.html" %}
+{% extends base_template|default:"includes/main.html" %}
 {% load static %}
 
 {% block title %}
@@ -12,7 +12,13 @@
 {% block content %}
     <div class="container-fluid py-4">
         <div class="d-flex align-items-center gap-2 mb-4">
-            <a href="{{ cancel_url }}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+            {% if is_embedded %}
+                <button type="button" class="btn btn-light" id="closeEmbeddedCursoForm">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            {% else %}
+                <a href="{{ cancel_url }}" class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
+            {% endif %}
             <h1 class="h3 mb-0" style="color: #1f3a93;">
                 {% if form.instance.id %}
                     <i class="bi bi-pencil-square me-2"></i>Editar Curso
@@ -26,21 +32,90 @@
             <div class="card-body p-4">
                 <form method="post" novalidate>
                     {% csrf_token %}
-                    <div class="row g-3">
-                        {% for field in form %}
-                            <div class="col-md-6">
-                                <label for="{{ field.id_for_label }}" class="form-label fw-600">
-                                    {{ field.label }}
-                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                </label>
-                                {{ field }}
-                                {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="{{ form.plan_estudio.id_for_label }}" class="form-label fw-600">{{ form.plan_estudio.label }}</label>
+                            {{ form.plan_estudio }}
+                            {% if form.plan_estudio.errors %}<div class="text-danger small mt-1">{{ form.plan_estudio.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="{{ form.nombre.id_for_label }}" class="form-label fw-600">
+                                {{ form.nombre.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}<div class="text-danger small mt-1">{{ form.nombre.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="{{ form.estado.id_for_label }}" class="form-label fw-600">
+                                {{ form.estado.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.estado }}
+                            {% if form.estado.errors %}<div class="text-danger small mt-1">{{ form.estado.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-3 d-flex align-items-center pt-3">
+                            <div>
+                                <div class="form-check form-switch">
+                                    {{ form.usa_voucher }}
+                                    <label class="form-check-label fw-600"
+                                           for="{{ form.usa_voucher.id_for_label }}">
+                                        {{ form.usa_voucher.label }}
+                                    </label>
+                                </div>
+                                {% if form.usa_voucher.help_text %}<div class="form-text text-muted">{{ form.usa_voucher.help_text }}</div>{% endif %}
                             </div>
-                        {% endfor %}
+                        </div>
+                        <div class="col-md-5" id="campo-vouchers" style="display:none">
+                            <label for="{{ form.voucher_parametrias.id_for_label }}"
+                                   class="form-label fw-600">{{ form.voucher_parametrias.label }}</label>
+                            {{ form.voucher_parametrias }}
+                            {% if form.voucher_parametrias.help_text %}
+                                <div class="form-text text-muted">{{ form.voucher_parametrias.help_text }}</div>
+                            {% endif %}
+                            {% if form.voucher_parametrias.errors %}
+                                <div class="text-danger small mt-1">{{ form.voucher_parametrias.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3" id="campo-costo-creditos" style="display:none">
+                            <label for="{{ form.costo_creditos.id_for_label }}"
+                                   class="form-label fw-600">{{ form.costo_creditos.label }}</label>
+                            {{ form.costo_creditos }}
+                            {% if form.costo_creditos.help_text %}
+                                <div class="form-text text-muted">{{ form.costo_creditos.help_text }}</div>
+                            {% endif %}
+                            {% if form.costo_creditos.errors %}
+                                <div class="text-danger small mt-1">{{ form.costo_creditos.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="form-text text-muted mb-2">La modalidad se toma automáticamente del plan de estudio seleccionado.</div>
+                            <label for="{{ form.observaciones.id_for_label }}" class="form-label fw-600">{{ form.observaciones.label }}</label>
+                            {{ form.observaciones }}
+                            {% if form.observaciones.errors %}
+                                <div class="text-danger small mt-1">{{ form.observaciones.errors.0 }}</div>
+                            {% endif %}
+                        </div>
                     </div>
 
                     <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Cancelar</a>
+                        {% if is_embedded %}
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    id="cancelEmbeddedCursoForm">Cancelar</button>
+                        {% else %}
+                            <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Cancelar</a>
+                        {% endif %}
                         <button type="submit" class="btn btn-primary">
                             {% if form.instance.id %}
                                 Actualizar
@@ -53,4 +128,64 @@
             </div>
         </div>
     </div>
+
+    <style>
+    .form-control, .form-select { border: 1px solid #e0e0e0; border-radius: 0.5rem; padding: 0.75rem 1rem; }
+    .form-control:focus, .form-select:focus { border-color: #1f3a93; box-shadow: 0 0 0 0.2rem rgba(31, 58, 147, 0.15); }
+    .input-group-text { border: 1px solid #e0e0e0 !important; }
+    .fw-600 { font-weight: 600 !important; }
+    </style>
+    <script nonce="{{ request.csp_nonce }}">
+(function () {
+    const isEmbedded = {{ is_embedded|yesno:"true,false" }};
+    const toggle = document.getElementById('{{ form.usa_voucher.id_for_label }}');
+    const vouchersSelect = document.getElementById('{{ form.voucher_parametrias.id_for_label }}');
+    const costoInput = document.getElementById('{{ form.costo_creditos.id_for_label }}');
+    const campoCosto = document.getElementById('campo-costo-creditos');
+    const campoVouchers = document.getElementById('campo-vouchers');
+
+    function actualizarCosto() {
+        campoCosto.style.display = toggle.checked ? 'block' : 'none';
+        campoVouchers.style.display = toggle.checked ? 'block' : 'none';
+        if (!toggle.checked) {
+            if (costoInput) {
+                costoInput.required = false;
+                costoInput.value = '0';
+            }
+            if (vouchersSelect) {
+                Array.from(vouchersSelect.options).forEach(function (option) {
+                    option.selected = false;
+                });
+            }
+        } else {
+            if (costoInput) {
+                costoInput.required = true;
+                if (!costoInput.value || costoInput.value === '0') {
+                    costoInput.value = '1';
+                }
+            }
+        }
+    }
+
+    toggle.addEventListener('change', actualizarCosto);
+
+    if (isEmbedded) {
+        const closeModal = function () {
+            if (window.parent && window.parent !== window) {
+                const modalElement = window.parent.document.getElementById('modalCursoEditar');
+                if (modalElement && window.parent.bootstrap) {
+                    window.parent.bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+                }
+            }
+        };
+
+        const closeBtn = document.getElementById('closeEmbeddedCursoForm');
+        const cancelBtn = document.getElementById('cancelEmbeddedCursoForm');
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    }
+
+    actualizarCosto();
+})();
+    </script>
 {% endblock %}

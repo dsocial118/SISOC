@@ -61,11 +61,6 @@ from VAT.views.institucion import (
     InstitucionContactoDetailView,
     InstitucionContactoUpdateView,
     InstitucionContactoDeleteView,
-    AutoridadInstitucionalListView,
-    AutoridadInstitucionalCreateView,
-    AutoridadInstitucionalDetailView,
-    AutoridadInstitucionalUpdateView,
-    AutoridadInstitucionalDeleteView,
     InstitucionIdentificadorHistListView,
     InstitucionIdentificadorHistCreateView,
     InstitucionIdentificadorHistDetailView,
@@ -118,9 +113,16 @@ from VAT.views.curso import (
     CursoCreateView,
     CursoUpdateView,
     CursoDeleteView,
+    ComisionCursoDetailView,
     ComisionCursoCreateView,
     ComisionCursoUpdateView,
     ComisionCursoDeleteView,
+    ComisionCursoHorarioCreateView,
+    ComisionCursoHorarioUpdateView,
+    ComisionCursoHorarioDeleteView,
+    InscripcionCursoCambiarEstadoView,
+    InscripcionRapidaComisionCursoView,
+    AsistenciaSesionCursoView,
 )
 
 from VAT.views.persona import (
@@ -201,6 +203,13 @@ urlpatterns = [
         name="vat_comision_curso_create",
     ),
     path(
+        "vat/cursos/comisiones/<int:pk>/",
+        permissions_any_required(["VAT.view_comisioncurso"])(
+            ComisionCursoDetailView.as_view()
+        ),
+        name="vat_comision_curso_detail",
+    ),
+    path(
         "vat/cursos/comisiones/<int:pk>/editar/",
         permissions_any_required(["VAT.change_comisioncurso"])(
             ComisionCursoUpdateView.as_view()
@@ -213,6 +222,48 @@ urlpatterns = [
             ComisionCursoDeleteView.as_view()
         ),
         name="vat_comision_curso_delete",
+    ),
+    path(
+        "vat/cursos/comisiones/horarios/nuevo/",
+        permissions_any_required(["VAT.add_comisionhorario"])(
+            ComisionCursoHorarioCreateView.as_view()
+        ),
+        name="vat_comision_curso_horario_create",
+    ),
+    path(
+        "vat/cursos/comisiones/horarios/<int:pk>/editar/",
+        permissions_any_required(["VAT.change_comisionhorario"])(
+            ComisionCursoHorarioUpdateView.as_view()
+        ),
+        name="vat_comision_curso_horario_update",
+    ),
+    path(
+        "vat/cursos/comisiones/horarios/<int:pk>/eliminar/",
+        permissions_any_required(["VAT.delete_comisionhorario"])(
+            ComisionCursoHorarioDeleteView.as_view()
+        ),
+        name="vat_comision_curso_horario_delete",
+    ),
+    path(
+        "vat/cursos/comisiones/sesiones/<int:sesion_pk>/asistencia/",
+        permissions_any_required(
+            ["VAT.add_asistenciasesion", "VAT.change_asistenciasesion"]
+        )(AsistenciaSesionCursoView.as_view()),
+        name="vat_asistencia_sesion_curso",
+    ),
+    path(
+        "vat/cursos/inscripciones/<int:pk>/cambiar-estado/",
+        permissions_any_required(["VAT.change_inscripcion"])(
+            InscripcionCursoCambiarEstadoView.as_view()
+        ),
+        name="vat_inscripcion_curso_cambiar_estado",
+    ),
+    path(
+        "vat/cursos/inscripciones/rapida-comision/",
+        permissions_any_required(["VAT.add_inscripcion"])(
+            InscripcionRapidaComisionCursoView.as_view()
+        ),
+        name="vat_inscripcion_rapida_comision_curso",
     ),
     # Modalidades Institucionales
     path(
@@ -527,42 +578,6 @@ urlpatterns = [
             InstitucionContactoDeleteView.as_view()
         ),
         name="vat_institucion_contacto_delete",
-    ),
-    # Institución - Autoridades
-    path(
-        "vat/institucion/autoridades/",
-        permissions_any_required(["VAT.view_autoridadinstitucional"])(
-            AutoridadInstitucionalListView.as_view()
-        ),
-        name="vat_autoridad_institucional_list",
-    ),
-    path(
-        "vat/institucion/autoridades/nuevo/",
-        permissions_any_required(["VAT.add_autoridadinstitucional"])(
-            AutoridadInstitucionalCreateView.as_view()
-        ),
-        name="vat_autoridad_institucional_create",
-    ),
-    path(
-        "vat/institucion/autoridades/<int:pk>/",
-        permissions_any_required(["VAT.view_autoridadinstitucional"])(
-            AutoridadInstitucionalDetailView.as_view()
-        ),
-        name="vat_autoridad_institucional_detail",
-    ),
-    path(
-        "vat/institucion/autoridades/<int:pk>/editar/",
-        permissions_any_required(["VAT.change_autoridadinstitucional"])(
-            AutoridadInstitucionalUpdateView.as_view()
-        ),
-        name="vat_autoridad_institucional_update",
-    ),
-    path(
-        "vat/institucion/autoridades/<int:pk>/eliminar/",
-        permissions_any_required(["VAT.delete_autoridadinstitucional"])(
-            AutoridadInstitucionalDeleteView.as_view()
-        ),
-        name="vat_autoridad_institucional_delete",
     ),
     # Institución - Identificadores
     path(

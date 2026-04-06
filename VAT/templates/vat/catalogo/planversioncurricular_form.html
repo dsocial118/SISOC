@@ -1,63 +1,226 @@
 {% extends "includes/main.html" %}
-{% block title %}
-    {% if form.instance.pk %}
-        Editar
-    {% else %}
-        Nuevo
-    {% endif %}
-    Plan de Estudio
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block titulo-pagina %}{{ page_title }}{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <style>
+        .vp-shell {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .vp-hero {
+            background: linear-gradient(135deg, #183a67 0%, #25518b 55%, #3b74b8 100%);
+            color: #fff;
+            border-radius: 18px;
+            padding: 1.75rem 2rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 18px 45px rgba(24, 58, 103, 0.18);
+        }
+
+        .vp-hero h1 {
+            margin: 0 0 .35rem;
+            font-size: 1.9rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .vp-hero p {
+            margin: 0;
+            max-width: 760px;
+            color: rgba(255, 255, 255, 0.82);
+            line-height: 1.5;
+        }
+
+        .vp-panel {
+            border: 0;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+            margin-bottom: 1rem;
+        }
+
+        .vp-panel-header {
+            padding: 1.15rem 1.35rem;
+            border-bottom: 1px solid rgba(126, 179, 255, 0.18);
+            background: linear-gradient(135deg, #132c4d 0%, #1d446f 55%, #2d649e 100%);
+            color: #f8fbff;
+        }
+
+        .vp-panel-header > div {
+            display: flex;
+            flex-direction: column;
+            gap: .4rem;
+        }
+
+        .vp-panel-header .card-title {
+            color: #ffffff;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.25;
+        }
+
+        .vp-panel-header .small,
+        .vp-panel-header .text-muted {
+            color: rgba(240, 247, 255, 0.82) !important;
+            display: block;
+            line-height: 1.45;
+            margin: 0;
+        }
+
+        .vp-section {
+            padding: 1.35rem;
+            border-bottom: 1px solid rgba(126, 179, 255, 0.2);
+            background: linear-gradient(180deg, rgba(14, 31, 53, 0.96) 0%, rgba(18, 38, 64, 0.95) 100%);
+        }
+
+        .vp-section:last-child {
+            border-bottom: 0;
+        }
+
+        .vp-field label,
+        .vp-section .form-group label,
+        .vp-section .control-label,
+        .vp-section .form-check-label,
+        .vp-section small,
+        .vp-section .help-block,
+        .vp-section .text-muted {
+            color: #c9ddf6 !important;
+            font-weight: 600;
+        }
+
+        .vp-field .form-control,
+        .vp-field .form-select,
+        .vp-field textarea,
+        .vp-field select,
+        .vp-field input {
+            border-radius: 12px;
+            border: 1px solid #d8e1ee;
+            box-shadow: none;
+        }
+
+        .vp-field input[type="checkbox"] {
+            accent-color: #4a8ddb;
+        }
+
+        .vp-field .form-control:focus,
+        .vp-field .form-select:focus,
+        .vp-field textarea:focus,
+        .vp-field select:focus,
+        .vp-field input:focus {
+            border-color: #3b74b8;
+            box-shadow: 0 0 0 .2rem rgba(59, 116, 184, 0.12);
+        }
+
+        .vp-actions {
+            display: flex;
+            gap: .75rem;
+            justify-content: flex-end;
+            padding: 1.1rem 1.25rem;
+            background: linear-gradient(180deg, rgba(10, 21, 37, 0.98) 0%, rgba(15, 30, 50, 0.98) 100%);
+            border-top: 1px solid rgba(126, 179, 255, 0.18);
+            border-radius: 0 0 18px 18px;
+            flex-wrap: wrap;
+        }
+
+        .vp-actions .btn-secondary {
+            color: #d8e7f8;
+            border-color: rgba(179, 206, 237, 0.38);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .vp-actions .btn-secondary:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .vp-actions .btn-primary {
+            background: linear-gradient(135deg, #2e6fbc 0%, #4a8ddb 100%);
+            border-color: #4a8ddb;
+        }
+    </style>
 {% endblock %}
-{% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'vat_planversioncurricular_list' %}">Planes de Estudio</a>
-        </li>
-        <li class="breadcrumb-item active">
-            {% if form.instance.pk %}
-                Editar
-            {% else %}
-                Nuevo
-            {% endif %}
-        </li>
-    </ol>
-{% endblock %}
+
 {% block content %}
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title">
-                        {% if form.instance.pk %}
-                            Editar Plan de Estudio
-                        {% else %}
-                            Nuevo Plan de Estudio
-                        {% endif %}
-                    </h3>
-                </div>
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="card-body">
-                        {% for field in form %}
-                            <div class="form-group">
-                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                {{ field }}
-                                {% if field.errors %}<small class="text-danger">{{ field.errors }}</small>{% endif %}
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <div class="card-footer">
-                        <button type="submit" class="btn btn-primary">
-                            {% if form.instance.pk %}
-                                Actualizar
-                            {% else %}
-                                Crear
-                            {% endif %}
-                        </button>
-                        <a href="{% url 'vat_planversioncurricular_list' %}"
-                           class="btn btn-secondary">Cancelar</a>
-                    </div>
-                </form>
-            </div>
+    {% include 'components/alert_message.html' with show_django_messages=True %}
+
+    <div class="vp-shell">
+        <div class="vp-hero">
+            <h1>
+                <i class="fas fa-clipboard-list me-2"></i>{{ page_title }}
+            </h1>
+            <p>
+                Definí el nombre del plan y su estructura académica con sector, subsector, modalidad, normativa estructurada y condiciones de certificación.
+            </p>
         </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+            <div class="card vp-panel">
+                <div class="vp-panel-header">
+                    <div>
+                        <h3 class="card-title">
+                            <i class="fas fa-sitemap me-2"></i>1. Clasificación Académica
+                        </h3>
+                        <div class="small">Definí el nombre, sector, subsector y modalidad de cursado del plan.</div>
+                    </div>
+                </div>
+                <div class="vp-section">
+                    <div class="row">
+                        <div class="col-md-12 vp-field">{{ form.nombre|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.sector|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.subsector|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.modalidad_cursada|as_crispy_field }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card vp-panel">
+                <div class="vp-panel-header">
+                    <div>
+                        <h3 class="card-title">
+                            <i class="fas fa-book me-2"></i>2. Datos del Plan
+                        </h3>
+                        <div class="small">Completá normativa estructurada, carga horaria y configuración de certificación.</div>
+                    </div>
+                </div>
+                <div class="vp-section">
+                    <div class="mb-3">
+                        <label class="form-label mb-1">Normativa</label>
+                        <div class="small text-muted">Solo se edita el formato estructurado con tipo, número y año.</div>
+                    </div>
+                    {% if form.normativa_texto_actual %}
+                        <div class="alert alert-secondary mb-3">
+                            <strong>Normativa libre cargada en base:</strong>
+                            {{ form.normativa_texto_actual }}
+                        </div>
+                    {% endif %}
+                    <div class="row">
+                        <div class="col-md-4 vp-field">{{ form.normativa_tipo|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.normativa_numero|as_crispy_field }}</div>
+                        <div class="col-md-4 vp-field">{{ form.normativa_anio|as_crispy_field }}</div>
+                        <div class="col-md-2 vp-field">{{ form.horas_reloj|as_crispy_field }}</div>
+                        <div class="col-md-3 vp-field">{{ form.nivel_requerido|as_crispy_field }}</div>
+                        <div class="col-md-3 vp-field">{{ form.nivel_certifica|as_crispy_field }}</div>
+                        <div class="col-md-3 vp-field">{{ form.activo|as_crispy_field }}</div>
+                    </div>
+                </div>
+                <div class="vp-actions">
+                    <a href="{{ cancel_url }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>{{ submit_text }}
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 {% endblock %}

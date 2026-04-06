@@ -35,17 +35,20 @@ def test_list_pwa_and_non_pwa_paths(mocker):
 
     # rama pwa
     mocker.patch("comedores.api_views.is_pwa_user", return_value=True)
-    mocker.patch.object(view, "_get_scoped_comedor_ids", return_value=[1])
-    qs = SimpleNamespace(filter=lambda **_k: [{"id": 1}])
-    svc = mocker.patch(
-        "comedores.api_views.ComedorService.get_filtered_comedores", return_value=qs
+    rows = [{"id": 1}]
+    pwa_rows = mocker.patch.object(
+        view,
+        "_get_pwa_spaces_selector_rows",
+        return_value=rows,
     )
+    svc = mocker.patch("comedores.api_views.ComedorService.get_filtered_comedores")
     mocker.patch.object(view, "paginate_queryset", return_value=None)
 
     resp = view.list(req)
     assert resp.status_code == 200
-    assert resp.data == [{"id": 1}]
-    assert svc.called
+    assert resp.data == rows
+    pwa_rows.assert_called_once_with(user)
+    svc.assert_not_called()
 
     # rama no pwa con paginación
     mocker.patch("comedores.api_views.is_pwa_user", return_value=False)

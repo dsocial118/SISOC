@@ -497,7 +497,7 @@ def _consolidar_roles_cruzados_importacion(expediente, warnings):
                 relaciones_cruzadas_creadas += 1
 
         # Consolidar beneficiarios que son responsables de otros
-        _consolidar_beneficiarios_que_son_responsables(expediente, warnings)
+        _consolidar_roles_familiares_doble_rol_importacion(expediente, warnings)
 
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.error("Error en post-procesamiento de relaciones cruzadas: %s", exc)
@@ -530,6 +530,57 @@ def _consolidar_beneficiarios_que_son_responsables(expediente, warnings):
 
     actualizados = 0
     for legajo in legajos_beneficiarios:
+        legajo.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+        legajo.save(update_fields=["rol"])
+        actualizados += 1
+        logger.info(
+            "Actualizado legajo %s a BENEFICIARIO_Y_RESPONSABLE (doc: %s)",
+            legajo.id,
+            legajo.ciudadano.documento,
+        )
+
+    if actualizados > 0:
+        _agregar_warning_general_importacion(
+            warnings,
+            "consolidacion_roles",
+            f"Se actualizaron {actualizados} beneficiarios a doble rol",
+        )
+
+
+def _consolidar_roles_familiares_doble_rol_importacion(expediente, warnings):
+    """Actualiza legajos a doble rol segun relaciones familiares efectivas."""
+    from ciudadanos.models import GrupoFamiliar
+
+    ciudadanos_expediente = list(
+        ExpedienteCiudadano.objects.filter(expediente=expediente).values_list(
+            "ciudadano_id", flat=True
+        )
+    )
+    if not ciudadanos_expediente:
+        return
+
+    relaciones_qs = GrupoFamiliar.objects.filter(
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+        ciudadano_1_id__in=ciudadanos_expediente,
+        ciudadano_2_id__in=ciudadanos_expediente,
+    )
+    responsables_ids = set(relaciones_qs.values_list("ciudadano_1_id", flat=True))
+    beneficiarios_con_responsable_ids = set(
+        relaciones_qs.values_list("ciudadano_2_id", flat=True)
+    )
+    ciudadanos_doble_rol = responsables_ids & beneficiarios_con_responsable_ids
+    if not ciudadanos_doble_rol:
+        return
+
+    legajos_a_promover = ExpedienteCiudadano.objects.filter(
+        expediente=expediente,
+        ciudadano_id__in=ciudadanos_doble_rol,
+    ).exclude(
+        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+    )
+
+    actualizados = 0
+    for legajo in legajos_a_promover:
         legajo.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
         legajo.save(update_fields=["rol"])
         actualizados += 1
@@ -1308,6 +1359,51 @@ def _beneficiario_tiene_conflicto_importacion(
     return False
 
 
+def _marcar_legajo_existente_como_doble_rol_importacion(
+    *, ciudadano, expediente, legajos_crear, abiertos
+):
+    cid = ciudadano.pk
+
+    for legajo in legajos_crear:
+        legajo_ciudadano_id = getattr(legajo, "ciudadano_id", None) or getattr(
+            getattr(legajo, "ciudadano", None), "pk", None
+        )
+        if (
+            legajo_ciudadano_id == cid
+            and legajo.rol == ExpedienteCiudadano.ROLE_RESPONSABLE
+        ):
+            legajo.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+            abiertos[cid] = {
+                "ciudadano_id": cid,
+                "estado_cupo": EstadoCupo.NO_EVAL,
+                "es_titular_activo": False,
+                "expediente_id": expediente.id,
+                "expediente__estado__nombre": expediente.estado.nombre,
+            }
+            return True
+
+    legajo_existente = ExpedienteCiudadano.objects.filter(
+        expediente=expediente,
+        ciudadano=ciudadano,
+    ).first()
+    if not legajo_existente:
+        return False
+
+    if legajo_existente.rol != ExpedienteCiudadano.ROLE_RESPONSABLE:
+        return False
+
+    legajo_existente.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+    legajo_existente.save(update_fields=["rol"])
+    abiertos[cid] = {
+        "ciudadano_id": cid,
+        "estado_cupo": EstadoCupo.NO_EVAL,
+        "es_titular_activo": False,
+        "expediente_id": expediente.id,
+        "expediente__estado__nombre": expediente.estado.nombre,
+    }
+    return True
+
+
 def _registrar_legajo_beneficiario_importacion(
     ciudadano,
     expediente,
@@ -1570,6 +1666,17 @@ def _procesar_beneficiario_importacion(
     )
     if not ciudadano:
         return "error", None
+
+    if (
+        ciudadano.pk in existentes_ids
+        and _marcar_legajo_existente_como_doble_rol_importacion(
+            ciudadano=ciudadano,
+            expediente=expediente,
+            legajos_crear=legajos_crear,
+            abiertos=abiertos,
+        )
+    ):
+        return "ok", ciudadano.pk
 
     if _beneficiario_tiene_conflicto_importacion(
         ciudadano=ciudadano,

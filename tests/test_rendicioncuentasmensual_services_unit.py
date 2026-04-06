@@ -34,6 +34,11 @@ def test_crear_rendicion_cuenta_mensual_success(mocker):
         comedor=comedor,
         mes=1,
         anio=2026,
+        convenio=None,
+        numero_rendicion=None,
+        periodo_inicio=None,
+        periodo_fin=None,
+        estado="elaboracion",
         documento_adjunto="doc.pdf",
         observaciones="obs",
     )
@@ -122,21 +127,19 @@ def test_eliminar_rendicion_cuenta_mensual_logs_and_raises(mocker):
 
 def test_obtener_rendiciones_cuentas_mensuales_success(mocker):
     comedor = object()
-    prefetch_result = object()
-    mock_filter = mocker.patch(
-        "rendicioncuentasmensual.services.RendicionCuentaMensual.objects.filter"
+    queryset = object()
+    project_qs_mock = mocker.patch.object(
+        RendicionCuentaMensualService,
+        "_get_project_queryset",
+        return_value=queryset,
     )
-    mock_filter.return_value.prefetch_related.return_value = prefetch_result
 
     result = RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(
         comedor
     )
 
-    assert result is prefetch_result
-    mock_filter.assert_called_once_with(comedor=comedor)
-    mock_filter.return_value.prefetch_related.assert_called_once_with(
-        "archivos_adjuntos"
-    )
+    assert result is queryset
+    project_qs_mock.assert_called_once_with(comedor)
 
 
 def test_get_archivos_adjuntos_data_acepta_key_legacy_y_nueva():
@@ -198,17 +201,20 @@ def test_obtener_rendicion_cuenta_mensual_logs_and_raises(mocker):
 
 def test_cantidad_rendiciones_cuentas_mensuales_success(mocker):
     comedor = object()
-    mock_filter = mocker.patch(
-        "rendicioncuentasmensual.services.RendicionCuentaMensual.objects.filter"
+    project_qs = mocker.Mock()
+    project_qs.count.return_value = 5
+    project_qs_mock = mocker.patch.object(
+        RendicionCuentaMensualService,
+        "_get_project_queryset",
+        return_value=project_qs,
     )
-    mock_filter.return_value.count.return_value = 5
 
     assert (
         RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales(comedor)
         == 5
     )
-    mock_filter.assert_called_once_with(comedor=comedor)
-    mock_filter.return_value.count.assert_called_once_with()
+    project_qs_mock.assert_called_once_with(comedor)
+    project_qs.count.assert_called_once_with()
 
 
 def test_cantidad_rendiciones_cuentas_mensuales_logs_and_raises(mocker):
@@ -223,3 +229,49 @@ def test_cantidad_rendiciones_cuentas_mensuales_logs_and_raises(mocker):
         RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales(comedor)
 
     mock_exc.assert_called_once()
+
+
+def test_obtener_scope_proyecto_con_codigo_y_organizacion(mocker):
+    organizacion = SimpleNamespace(nombre="Organizacion A")
+    comedor = SimpleNamespace(
+        organizacion=organizacion,
+        organizacion_id=5,
+        codigo_de_proyecto="PROY-01",
+        nombre="Comedor Base",
+    )
+    rendicion = SimpleNamespace(comedor=comedor)
+    expected = [
+        SimpleNamespace(nombre="Comedor 1"),
+        SimpleNamespace(nombre="Comedor 2"),
+    ]
+    filter_mock = mocker.patch(
+        "rendicioncuentasmensual.services.Comedor.objects.filter",
+        return_value=SimpleNamespace(order_by=lambda *_args: expected),
+    )
+
+    result = RendicionCuentaMensualService.obtener_scope_proyecto(rendicion)
+
+    assert result["organizacion"] is organizacion
+    assert result["proyecto_codigo"] == "PROY-01"
+    assert result["comedores_relacionados"] == expected
+    filter_mock.assert_called_once_with(
+        codigo_de_proyecto="PROY-01",
+        deleted_at__isnull=True,
+        organizacion_id=5,
+    )
+
+
+def test_obtener_scope_proyecto_sin_codigo_retorna_comedor_actual():
+    comedor = SimpleNamespace(
+        organizacion=None,
+        organizacion_id=None,
+        codigo_de_proyecto="",
+        nombre="Comedor Unico",
+    )
+    rendicion = SimpleNamespace(comedor=comedor)
+
+    result = RendicionCuentaMensualService.obtener_scope_proyecto(rendicion)
+
+    assert result["organizacion"] is None
+    assert result["proyecto_codigo"] == ""
+    assert result["comedores_relacionados"] == [comedor]

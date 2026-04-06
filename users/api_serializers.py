@@ -129,7 +129,8 @@ class OperadorCreateResponseSerializer(serializers.ModelSerializer):
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(required=False)
+    username = serializers.CharField(required=False, max_length=150)
 
     def _raise_read_only(self):
         raise NotImplementedError("Serializer de solo lectura.")
@@ -139,6 +140,22 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         return self._raise_read_only()
+
+    def validate(self, attrs):
+        email = (attrs.get("email") or "").strip()
+        username = (attrs.get("username") or "").strip()
+
+        if bool(email) == bool(username):
+            raise serializers.ValidationError(
+                {"detail": ("Debe enviar email o username para solicitar el reseteo.")}
+            )
+
+        if username:
+            attrs["username"] = username
+            attrs.pop("email", None)
+        else:
+            attrs["email"] = email
+        return attrs
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
@@ -161,6 +178,29 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError({"detail": "Token inválido o expirado."})
 
+        try:
+            password_validation.validate_password(attrs.get("new_password"), user=user)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(
+                {"new_password": list(getattr(exc, "messages", [str(exc)]))}
+            ) from exc
+        return attrs
+
+
+class PasswordChangeRequiredSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def _raise_read_only(self):
+        raise NotImplementedError("Serializer de solo lectura.")
+
+    def create(self, validated_data):
+        return self._raise_read_only()
+
+    def update(self, instance, validated_data):
+        return self._raise_read_only()
+
+    def validate(self, attrs):
+        user = self.context["request"].user
         try:
             password_validation.validate_password(attrs.get("new_password"), user=user)
         except DjangoValidationError as exc:

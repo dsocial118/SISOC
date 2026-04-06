@@ -56,6 +56,36 @@ class VatWebCentroViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = VatWebCentroSerializer
     permission_classes = [HasAPIKeyOrToken]
 
+    @extend_schema(
+        summary="Listar centros VAT Web",
+        responses=VatWebCentroSerializer(many=True),
+        examples=[
+            OpenApiExample(
+                "Listado de centros",
+                value=[
+                    {
+                        "id": 10,
+                        "nombre": "CFP 777",
+                        "codigo": "CFP-777",
+                        "activo": True,
+                        "provincia": 2,
+                        "provincia_nombre": "Buenos Aires",
+                        "municipio": 15,
+                        "municipio_nombre": "La Plata",
+                        "localidad": 120,
+                        "localidad_nombre": "Tolosa",
+                        "domicilio_actividad": "Calle 1 Nro 123",
+                        "telefono": "221-4000000",
+                        "correo": "cfp777@example.org",
+                    }
+                ],
+                response_only=True,
+            )
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     def get_queryset(self):
         queryset = Centro.objects.select_related(
             "provincia", "municipio", "localidad"
@@ -117,6 +147,33 @@ class VatWebCentroViewSet(viewsets.ReadOnlyModelViewSet):
 class VatWebTituloViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = VatWebTituloSerializer
     permission_classes = [HasAPIKeyOrToken]
+
+    @extend_schema(
+        summary="Listar títulos VAT Web",
+        responses=VatWebTituloSerializer(many=True),
+        examples=[
+            OpenApiExample(
+                "Listado de títulos",
+                value=[
+                    {
+                        "id": 52,
+                        "nombre": "Operador en Soldadura",
+                        "codigo_referencia": "SOL-001",
+                        "descripcion": "Trayecto inicial de soldadura",
+                        "activo": True,
+                        "plan_estudio": 14,
+                        "sector": 3,
+                        "sector_nombre": "Industria",
+                        "subsector": 11,
+                        "subsector_nombre": "Metalmecánica",
+                    }
+                ],
+                response_only=True,
+            )
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         queryset = TituloReferencia.objects.select_related(
@@ -196,6 +253,55 @@ class VatWebTituloViewSet(viewsets.ReadOnlyModelViewSet):
 class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = VatWebCursoSerializer
     permission_classes = [HasAPIKeyOrToken]
+
+    @extend_schema(
+        summary="Listar cursos VAT Web",
+        responses=VatWebCursoSerializer(many=True),
+        examples=[
+            OpenApiExample(
+                "Listado de cursos",
+                value=[
+                    {
+                        "id": 3,
+                        "codigo_comision": "CUR-2026-03",
+                        "nombre": "Soldadura Inicial - Comisión A",
+                        "estado": "activa",
+                        "estado_oferta": "publicada",
+                        "fecha_inicio": "2026-04-10",
+                        "fecha_fin": "2026-08-30",
+                        "cupo": 30,
+                        "total_inscriptos": 12,
+                        "cupos_disponibles": 18,
+                        "centro_id": 10,
+                        "centro_nombre": "CFP 777",
+                        "titulo_id": 52,
+                        "titulo_nombre": "Operador en Soldadura",
+                        "plan_curricular_id": 14,
+                        "plan_curricular_nombre": "Plan Soldadura 2026",
+                        "programa_id": 6,
+                        "programa_nombre": "Formación Laboral",
+                        "ciclo_lectivo": 2026,
+                        "costo": "0.00",
+                        "usa_voucher": False,
+                        "observaciones": "Comisión presencial turno tarde",
+                        "horarios": [
+                            {
+                                "id": 101,
+                                "dia_semana": 2,
+                                "dia_nombre": "Martes",
+                                "hora_desde": "18:00:00",
+                                "hora_hasta": "21:00:00",
+                                "aula_espacio": "Taller 1",
+                            }
+                        ],
+                    }
+                ],
+                response_only=True,
+            )
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         queryset = (

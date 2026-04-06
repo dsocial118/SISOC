@@ -1,6 +1,9 @@
 import logging
 
+from django.db.models import Count, Prefetch
 from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -17,9 +20,11 @@ from VAT.models import (
     InscripcionOferta,
     Voucher,
     InstitucionContacto,
-    AutoridadInstitucional,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
+    Curso,
+    ComisionCurso,
+    VoucherParametria,
     OfertaInstitucional,
     Comision,
     ComisionHorario,
@@ -41,9 +46,10 @@ from VAT.serializers import (
     InscripcionOfertaSerializer,
     VoucherSerializer,
     InstitucionContactoSerializer,
-    AutoridadInstitucionalSerializer,
     InstitucionIdentificadorHistSerializer,
     InstitucionUbicacionSerializer,
+    CursoSerializer,
+    ComisionCursoSerializer,
     OfertaInstitucionalSerializer,
     ComisionSerializer,
     ComisionHorarioSerializer,
@@ -260,6 +266,20 @@ class InscripcionOfertaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(estado=estado)
         return queryset
 
+    def perform_create(self, serializer):
+        data = serializer.validated_data
+        try:
+            inscripcion = InscripcionService.crear_inscripcion_oferta(
+                ciudadano=data["ciudadano"],
+                comision=data["oferta"],
+                estado=data.get("estado", "inscrito"),
+                inscrito_por=getattr(self.request, "user", None),
+            )
+        except ValueError as exc:
+            raise ValidationError({"error": [str(exc)]}) from exc
+
+        serializer.instance = inscripcion
+
 
 @extend_schema(tags=["VAT - Vouchers"])
 class VoucherViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
@@ -340,20 +360,6 @@ class InstitucionContactoViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Institución"])
-class AutoridadInstitucionalViewSet(viewsets.ModelViewSet):
-    queryset = AutoridadInstitucional.objects.select_related("centro").order_by("cargo")
-    serializer_class = AutoridadInstitucionalSerializer
-    permission_classes = [HasAPIKey]
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        centro_id = self.request.query_params.get("centro_id")
-        if centro_id:
-            queryset = queryset.filter(centro_id=centro_id)
-        return queryset
-
-
-@extend_schema(tags=["VAT - Institución"])
 class InstitucionIdentificadorHistViewSet(viewsets.ModelViewSet):
     queryset = InstitucionIdentificadorHist.objects.select_related("centro").order_by(
         "-vigencia_desde"
@@ -388,6 +394,124 @@ class InstitucionUbicacionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(centro_id=centro_id)
         if rol_ubicacion:
             queryset = queryset.filter(rol_ubicacion=rol_ubicacion)
+        return queryset
+
+
+@extend_schema(
+    tags=["VAT - Cursos"],
+    parameters=[
+        OpenApiParameter(
+            "centro_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra cursos por centro.",
+        ),
+        OpenApiParameter(
+            "modalidad_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra cursos por modalidad.",
+        ),
+        OpenApiParameter(
+            "programa_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra cursos por programa.",
+        ),
+        OpenApiParameter(
+            "estado",
+            OpenApiTypes.STR,
+            OpenApiParameter.QUERY,
+            description="Filtra cursos por estado.",
+        ),
+    ],
+)
+class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+    queryset = (
+        Curso.objects.select_related("centro", "modalidad")
+        .prefetch_related(
+            Prefetch(
+                "voucher_parametrias",
+                queryset=VoucherParametria.objects.select_related("programa").order_by(
+                    "programa_id", "id"
+                ),
+            )
+        )
+        .order_by("-fecha_creacion", "nombre")
+    )
+    serializer_class = CursoSerializer
+    permission_classes = [HasAPIKey]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        centro_id = self.request.query_params.get("centro_id")
+        modalidad_id = self.request.query_params.get("modalidad_id")
+        programa_id = self.request.query_params.get("programa_id")
+        estado = self.request.query_params.get("estado")
+        if centro_id:
+            queryset = queryset.filter(centro_id=centro_id)
+        if modalidad_id:
+            queryset = queryset.filter(modalidad_id=modalidad_id)
+        if programa_id:
+            queryset = (
+                queryset.annotate(
+                    programas_distintos=Count(
+                        "voucher_parametrias__programa_id",
+                        distinct=True,
+                    )
+                )
+                .filter(
+                    voucher_parametrias__programa_id=programa_id,
+                    programas_distintos=1,
+                )
+                .distinct()
+            )
+        if estado:
+            queryset = queryset.filter(estado=estado)
+        return queryset
+
+
+@extend_schema(
+    tags=["VAT - Cursos"],
+    parameters=[
+        OpenApiParameter(
+            "curso_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra comisiones por curso.",
+        ),
+        OpenApiParameter(
+            "centro_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra comisiones por centro (via curso).",
+        ),
+        OpenApiParameter(
+            "estado",
+            OpenApiTypes.STR,
+            OpenApiParameter.QUERY,
+            description="Filtra comisiones de curso por estado.",
+        ),
+    ],
+)
+class ComisionCursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+    queryset = ComisionCurso.objects.select_related(
+        "curso", "curso__centro", "ubicacion"
+    ).order_by("codigo_comision")
+    serializer_class = ComisionCursoSerializer
+    permission_classes = [HasAPIKey]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        curso_id = self.request.query_params.get("curso_id")
+        centro_id = self.request.query_params.get("centro_id")
+        estado = self.request.query_params.get("estado")
+        if curso_id:
+            queryset = queryset.filter(curso_id=curso_id)
+        if centro_id:
+            queryset = queryset.filter(curso__centro_id=centro_id)
+        if estado:
+            queryset = queryset.filter(estado=estado)
         return queryset
 
 

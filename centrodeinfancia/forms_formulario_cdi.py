@@ -59,6 +59,20 @@ class CampoBooleanoNulable(forms.TypedChoiceField):
 
 
 class FormularioCDIForm(forms.ModelForm):
+    CAMPOS_OTRA_OPCION = (
+        ("tipo_jornada", "other", "tipo_jornada_otra"),
+        ("modalidad_gestion", "otra", "modalidad_gestion_otra"),
+        ("modalidad_tenencia", "otra", "modalidad_tenencia_otra"),
+    )
+    CAMPOS_SI_NO_DEPENDIENTES = (
+        ("tiene_espacio_cocina", "si", "combustible_cocinar"),
+        ("tiene_espacio_exterior", "si", "tiene_juegos_exteriores"),
+    )
+    CAMPOS_VACIAR_SIN_PRESTACIONES = (
+        "calidad_elaboracion_menu",
+        "evaluacion_periodica_menu",
+        "cobertura_capacitacion_manipulacion_alimentos",
+    )
     DIAS_SEMANA = list(OPCIONES_DIAS_SEMANA)
     meses_funcionamiento = forms.MultipleChoiceField(
         required=False,
@@ -286,28 +300,28 @@ class FormularioCDIForm(forms.ModelForm):
 
         # Los campos ocultos por la UI no deben bloquear el guardado si
         # quedaron con valores residuales de una interacción previa.
-        if cleaned_data.get("tipo_jornada") != "other":
-            cleaned_data["tipo_jornada_otra"] = ""
-
-        if cleaned_data.get("modalidad_gestion") != "otra":
-            cleaned_data["modalidad_gestion_otra"] = ""
-
-        if cleaned_data.get("modalidad_tenencia") != "otra":
-            cleaned_data["modalidad_tenencia_otra"] = ""
+        for (
+            campo_controlador,
+            valor_habilitante,
+            campo_dependiente,
+        ) in self.CAMPOS_OTRA_OPCION:
+            if cleaned_data.get(campo_controlador) != valor_habilitante:
+                cleaned_data[campo_dependiente] = ""
 
         if "otra" not in meals:
             cleaned_data["prestaciones_alimentarias_otra"] = ""
 
         if "ninguna" in meals:
-            cleaned_data["calidad_elaboracion_menu"] = ""
-            cleaned_data["evaluacion_periodica_menu"] = ""
-            cleaned_data["cobertura_capacitacion_manipulacion_alimentos"] = ""
+            for field_name in self.CAMPOS_VACIAR_SIN_PRESTACIONES:
+                cleaned_data[field_name] = ""
 
-        if cleaned_data.get("tiene_espacio_cocina") != "si":
-            cleaned_data["combustible_cocinar"] = ""
-
-        if cleaned_data.get("tiene_espacio_exterior") != "si":
-            cleaned_data["tiene_juegos_exteriores"] = ""
+        for (
+            campo_controlador,
+            valor_habilitante,
+            campo_dependiente,
+        ) in self.CAMPOS_SI_NO_DEPENDIENTES:
+            if cleaned_data.get(campo_controlador) != valor_habilitante:
+                cleaned_data[campo_dependiente] = ""
 
         if cleaned_data.get("acceso_energia") == "sin_electricidad":
             cleaned_data["seguridad_electrica"] = ""

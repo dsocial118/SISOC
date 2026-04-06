@@ -11,14 +11,20 @@ from rest_framework.response import Response
 
 from pwa.models import AuditoriaSesionPWA
 from pwa.services.auditoria_service import registrar_evento_auth
-from users.services_pwa import is_pwa_user
 from users.api_serializers import (
+    PasswordChangeRequiredSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     UserContextSerializer,
 )
 from users.rate_limits import hit_rate_limit
-from users.services_auth import confirm_password_reset, request_password_reset_for_email
+from users.services_auth import (
+    change_password_for_authenticated_user,
+    confirm_password_reset,
+    request_password_reset_for_email,
+    request_password_reset_for_username,
+)
+from users.services_pwa import is_pwa_user
 
 
 class LoginSerializer(serializers.Serializer):
@@ -165,10 +171,12 @@ class PasswordResetRequestViewSet(viewsets.ViewSet):
         serializer.is_valid(raise_exception=True)
 
         ip = request.META.get("REMOTE_ADDR", "anon")
-        email = serializer.validated_data["email"].lower()
+        email = serializer.validated_data.get("email")
+        username = serializer.validated_data.get("username")
+        identity_value = (email or username or "").lower()
         if hit_rate_limit(
             scope="password_reset_request",
-            identity=f"{ip}:{email}",
+            identity=f"{ip}:{identity_value}",
             limit=5,
             window_seconds=900,
         ):
@@ -181,13 +189,14 @@ class PasswordResetRequestViewSet(viewsets.ViewSet):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        request_password_reset_for_email(
-            email=serializer.validated_data["email"], request=request
-        )
+        if email:
+            request_password_reset_for_email(email=email, request=request)
+        elif username:
+            request_password_reset_for_username(username=username)
         return Response(
             {
                 "detail": (
-                    "Si el correo existe en el sistema, se envio un enlace para restablecer la contraseña."
+                    "Si el usuario existe en el sistema, se registró la solicitud de reseteo."
                 )
             },
             status=status.HTTP_200_OK,
@@ -233,6 +242,37 @@ class PasswordResetConfirmViewSet(viewsets.ViewSet):
             )
 
         Token.objects.filter(user=user).delete()
+        return Response(
+            {"detail": "Contraseña actualizada correctamente."},
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(tags=["Auth"])
+class PasswordChangeRequiredViewSet(viewsets.ViewSet):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=PasswordChangeRequiredSerializer)
+    @transaction.atomic
+    def create(self, request):
+        serializer = PasswordChangeRequiredSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+
+        profile = getattr(request.user, "profile", None)
+        if not getattr(profile, "must_change_password", False):
+            return Response(
+                {"detail": "El usuario no requiere cambio obligatorio de contraseña."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        change_password_for_authenticated_user(
+            user=request.user,
+            new_password=serializer.validated_data["new_password"],
+        )
         return Response(
             {"detail": "Contraseña actualizada correctamente."},
             status=status.HTTP_200_OK,

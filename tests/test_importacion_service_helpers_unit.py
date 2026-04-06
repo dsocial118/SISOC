@@ -269,6 +269,93 @@ def test_consolida_beneficiario_que_tambien_es_responsable():
     ]
 
 
+def test_procesar_beneficiario_promueve_responsable_previo_a_doble_rol():
+    expediente = _crear_expediente_test()
+    estado_legajo = _crear_estado_legajo_test()
+    ciudadano = _crear_ciudadano_test(33000003)
+    legajo_responsable = ExpedienteCiudadano(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+    )
+
+    detalles_errores = []
+    existentes_ids = {ciudadano.pk}
+    abiertos = {}
+    resultado, cid = module._procesar_beneficiario_importacion(
+        payload={"documento": str(ciudadano.documento)},
+        usuario=expediente.usuario_provincia,
+        expediente=expediente,
+        estado_id=estado_legajo.id,
+        offset=2,
+        detalles_errores=detalles_errores,
+        existentes_ids=existentes_ids,
+        en_programa={},
+        abiertos=abiertos,
+        excluidos=[],
+        legajos_crear=[legajo_responsable],
+        get_or_create_ciudadano=lambda **_kwargs: ciudadano,
+        es_mismo_documento_resp=False,
+    )
+
+    assert resultado == "ok"
+    assert cid == ciudadano.pk
+    assert legajo_responsable.rol == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+    assert abiertos[ciudadano.pk]["expediente_id"] == expediente.id
+
+
+def test_consolidacion_final_promueve_responsable_que_tambien_es_hijo():
+    expediente = _crear_expediente_test()
+    estado_legajo = _crear_estado_legajo_test()
+    ciudadano_abuelo = _crear_ciudadano_test(33000010)
+    ciudadano_padre = _crear_ciudadano_test(33000011)
+    ciudadano_hijo = _crear_ciudadano_test(33000012)
+
+    legajo_padre = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano_padre,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano_abuelo,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano_hijo,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
+    )
+
+    GrupoFamiliar.objects.create(
+        ciudadano_1=ciudadano_abuelo,
+        ciudadano_2=ciudadano_padre,
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+    )
+    GrupoFamiliar.objects.create(
+        ciudadano_1=ciudadano_padre,
+        ciudadano_2=ciudadano_hijo,
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+    )
+
+    warnings = []
+    module._consolidar_roles_familiares_doble_rol_importacion(expediente, warnings)
+    legajo_padre.refresh_from_db()
+
+    assert legajo_padre.rol == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+    assert warnings == [
+        {
+            "fila": "general",
+            "campo": "consolidacion_roles",
+            "detalle": "Se actualizaron 1 beneficiarios a doble rol",
+        }
+    ]
+
+
 def test_importacion_helpers_payload_row_and_defaults_validation():
     warnings = []
 
