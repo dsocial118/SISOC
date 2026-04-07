@@ -19,6 +19,14 @@
       "value": ""
     },
     {
+      "key": "provincia_id",
+      "value": ""
+    },
+    {
+      "key": "municipio_id",
+      "value": ""
+    },
+    {
       "key": "plan_id",
       "value": ""
     },
@@ -37,7 +45,105 @@
   ],
   "item": [
     {
-      "name": "0 - Inicio Operativo",
+      "name": "0 - Ubicacion",
+      "description": "Requests auxiliares para obtener provincia y municipio antes de filtrar centros.",
+      "item": [
+        {
+          "name": "Listar provincias",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/provincias/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "provincias",
+                ""
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('provincia_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar municipios por provincia_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/municipios/?provincia_id={{provincia_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "municipios",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "provincia_id",
+                  "value": "{{provincia_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('municipio_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1 - Inicio Operativo",
       "description": "Request inicial para validar API key y disponibilidad de un endpoint operativo antes de encadenar el resto del flujo.",
       "item": [
         {
@@ -87,7 +193,7 @@
       ]
     },
     {
-      "name": "1 - Planes Curriculares",
+      "name": "2 - Planes Curriculares",
       "description": "Obtiene planes curriculares operativos. Guarda plan_id y sector_id con el primer registro devuelto.",
       "item": [
         {
@@ -183,7 +289,7 @@
       ]
     },
     {
-      "name": "2 - Centros",
+      "name": "3 - Centros",
       "description": "Obtiene centros operativos. Guarda centro_id con el primer registro devuelto.",
       "item": [
         {
@@ -237,11 +343,68 @@
             }
           ],
           "response": []
+        },
+        {
+          "name": "Listar centros por provincia_id y municipio_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/centros/?activo=true&provincia_id={{provincia_id}}&municipio_id={{municipio_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "centros",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                },
+                {
+                  "key": "provincia_id",
+                  "value": "{{provincia_id}}"
+                },
+                {
+                  "key": "municipio_id",
+                  "value": "{{municipio_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('centro_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
         }
       ]
     },
     {
-      "name": "3 - Cursos por Centro",
+      "name": "4 - Cursos por Centro",
       "description": "Consulta cursos operativos filtrados por centro_id. Guarda curso_id con el primer registro devuelto.",
       "item": [
         {
@@ -334,7 +497,7 @@
       ]
     },
     {
-      "name": "4 - Comisiones de Curso por Curso",
+      "name": "5 - Comisiones de Curso por Curso",
       "description": "Consulta comisiones operativas filtradas por curso_id. También deja una variante por centro_id.",
       "item": [
         {
