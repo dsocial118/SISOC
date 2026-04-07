@@ -36,6 +36,45 @@ ROLE_PERMISSION_QUERYSET = (
 class BackofficeAuthenticationForm(AuthenticationForm):
     """Bloquea login web para usuarios de uso exclusivo PWA."""
 
+    error_messages = {
+        **AuthenticationForm.error_messages,
+        "invalid_login": "Usuario o contraseña inválidos.",
+    }
+
+    def __init__(self, *args, request=None, **kwargs):
+        super().__init__(request=request, *args, **kwargs)
+        self.fields[User.USERNAME_FIELD].error_messages[
+            "required"
+        ] = "Este campo es obligatorio."
+        self.fields["password"].error_messages[
+            "required"
+        ] = "Este campo es obligatorio."
+
+    def clean(self):
+        username_field_name = User.USERNAME_FIELD
+        username = self.data.get(username_field_name) or ""
+        password = self.data.get("password") or ""
+        mutable_data = self.data.copy()
+        required_message = "Este campo es obligatorio."
+        trimmed_username = username.strip()
+
+        mutable_data[username_field_name] = trimmed_username
+        self.data = mutable_data
+
+        if not trimmed_username and username_field_name not in self.errors:
+            self.add_error(username_field_name, required_message)
+        if not password.strip() and "password" not in self.errors:
+            self.add_error("password", required_message)
+        if self.errors:
+            self.data["password"] = ""
+            return self.cleaned_data
+
+        try:
+            return super().clean()
+        except forms.ValidationError:
+            self.data["password"] = ""
+            raise
+
     def confirm_login_allowed(self, user):
         super().confirm_login_allowed(user)
         if is_pwa_user(user):

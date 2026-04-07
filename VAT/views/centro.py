@@ -9,8 +9,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.db import transaction
-from django.db.models import Count, Q
-from django import forms
+from django.db.models import Count, Prefetch, Q
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect, JsonResponse
@@ -23,8 +23,9 @@ from VAT.models import (
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
     PlanVersionCurricular,
-    TituloReferencia,
+    VoucherParametria,
 )
+from VAT.cache_utils import get_planes_centro_cache_version
 from VAT.services.centro_filter_config import (
     FIELD_MAP as CENTRO_FILTER_MAP,
     FIELD_TYPES as CENTRO_FIELD_TYPES,
@@ -41,10 +42,6 @@ from VAT.forms import (
     InstitucionUbicacionForm,
     CursoForm,
     ComisionCursoForm,
-    OfertaInstitucionalForm,
-    ComisionForm,
-    TituloReferenciaForm,
-    PlanVersionCurricularForm,
 )
 from VAT.services.access_scope import (
     can_user_access_centro,
@@ -54,6 +51,7 @@ from VAT.services.access_scope import (
     filter_centros_queryset_for_user,
     is_vat_referente,
 )
+from core.models import Localidad
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -68,6 +66,191 @@ BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
         "boolean": CENTRO_BOOL_OPS,
     },
 )
+
+
+PLANES_CENTRO_PAGE_SIZE = 20
+CURSOS_PANEL_CACHE_TTL_SECONDS = 60
+
+
+def _get_centro_detail_queryset():
+    return Centro.objects.select_related(
+        "referente",
+        "provincia",
+        "municipio",
+        "localidad",
+    )
+
+
+def _get_localidades_queryset_for_centro(centro):
+    queryset = Localidad.objects.order_by("nombre")
+    if centro.municipio_id:
+        return queryset.filter(municipio_id=centro.municipio_id)
+    if centro.provincia_id:
+        return queryset.filter(municipio__provincia_id=centro.provincia_id)
+    return queryset
+
+
+def _scope_centro_field_to_current_centro(form, centro):
+    centro_field = form.fields.get("centro")
+    if centro_field is None:
+        return form
+
+    centro_field.queryset = Centro.objects.filter(pk=centro.pk)
+    centro_field.initial = centro.pk
+    return form
+
+
+def _build_contacto_form(centro):
+    form = InstitucionContactoForm(initial={"centro": centro})
+    return _scope_centro_field_to_current_centro(form, centro)
+
+
+def _build_identificador_form(centro):
+    form = InstitucionIdentificadorHistForm(
+        initial={"centro": centro, "es_actual": True}
+    )
+    return _scope_centro_field_to_current_centro(form, centro)
+
+
+def _build_ubicacion_form(centro):
+    form = InstitucionUbicacionForm(initial={"centro": centro})
+    form.fields["localidad"].queryset = _get_localidades_queryset_for_centro(centro)
+    return _scope_centro_field_to_current_centro(form, centro)
+
+
+def _build_planes_centro_queryset(centro, search_query):
+    queryset = (
+        PlanVersionCurricular.objects.filter(
+            activo=True,
+            provincia_id=centro.provincia_id,
+        )
+        .select_related("sector", "subsector", "modalidad_cursada")
+        .prefetch_related("titulos")
+    )
+
+    if search_query:
+        queryset = queryset.filter(
+            Q(nombre__icontains=search_query)
+            | Q(titulos__nombre__icontains=search_query)
+            | Q(sector__nombre__icontains=search_query)
+            | Q(subsector__nombre__icontains=search_query)
+            | Q(modalidad_cursada__nombre__icontains=search_query)
+            | Q(normativa__icontains=search_query)
+        ).distinct()
+
+    return queryset.order_by("sector__nombre", "subsector__nombre", "id")
+
+
+def _build_planes_centro_cache_key(centro, search_query, page_number):
+    provincia_key = centro.provincia_id or "sin-provincia"
+    normalized_search = (search_query or "").strip().lower()
+    cache_version = get_planes_centro_cache_version()
+    return (
+        "vat:centro:cursos:planes:"
+        f"{cache_version}:{provincia_key}:{normalized_search}:{page_number}:"
+        f"{PLANES_CENTRO_PAGE_SIZE}"
+    )
+
+
+def _get_planes_centro_page(
+    centro,
+    search_query,
+    page_number,
+    bypass_cache=False,
+):
+    normalized_search = (search_query or "").strip()
+    normalized_page = page_number or 1
+    cache_key = _build_planes_centro_cache_key(
+        centro,
+        normalized_search,
+        normalized_page,
+    )
+    cached = None if bypass_cache else cache.get(cache_key)
+
+    if cached is not None:
+        paginator = Paginator(range(cached["total_count"]), PLANES_CENTRO_PAGE_SIZE)
+        page_obj = paginator.get_page(normalized_page)
+        plans_by_id = {
+            plan.pk: plan
+            for plan in PlanVersionCurricular.objects.filter(pk__in=cached["plan_ids"])
+            .select_related("sector", "subsector", "modalidad_cursada")
+            .prefetch_related("titulos")
+        }
+        ordered_plans = [
+            plans_by_id[plan_id]
+            for plan_id in cached["plan_ids"]
+            if plan_id in plans_by_id
+        ]
+        return ordered_plans, cached["total_count"], page_obj
+
+    queryset = _build_planes_centro_queryset(centro, normalized_search)
+    paginator = Paginator(queryset, PLANES_CENTRO_PAGE_SIZE)
+    page_obj = paginator.get_page(normalized_page)
+    plans = list(page_obj.object_list)
+
+    cache.set(
+        cache_key,
+        {
+            "plan_ids": [plan.pk for plan in plans],
+            "total_count": paginator.count,
+        },
+        CURSOS_PANEL_CACHE_TTL_SECONDS,
+    )
+    return plans, paginator.count, page_obj
+
+
+def _build_cursos_panel_context(request, centro):
+    search_query = (request.GET.get("busqueda") or "").strip()
+    page_number = request.GET.get("planes_page") or 1
+    planes_centro, total_filtrados, page_obj = _get_planes_centro_page(
+        centro,
+        search_query,
+        page_number,
+        bypass_cache=request.GET.get("refresh") == "1",
+    )
+    cursos = list(
+        Curso.objects.filter(centro=centro)
+        .select_related("modalidad", "plan_estudio")
+        .annotate(comisiones_count=Count("comisiones"))
+        .prefetch_related(
+            Prefetch(
+                "voucher_parametrias",
+                queryset=VoucherParametria.objects.select_related("programa").order_by(
+                    "nombre"
+                ),
+            )
+        )
+        .order_by("-fecha_creacion")
+    )
+    comisiones_curso = list(
+        ComisionCurso.objects.filter(curso__centro=centro)
+        .select_related("curso", "ubicacion__localidad")
+        .order_by("codigo_comision")
+    )
+    curso_form = _scope_centro_field_to_current_centro(
+        CursoForm(initial={"centro": centro}),
+        centro,
+    )
+    comision_curso_form = ComisionCursoForm()
+    comision_curso_form.fields["curso"].queryset = centro.cursos.order_by("nombre")
+    comision_curso_form.fields[
+        "ubicacion"
+    ].queryset = centro.ubicaciones.select_related("localidad").order_by(
+        "es_principal",
+        "rol_ubicacion",
+    )
+
+    return {
+        "planes_centro": planes_centro,
+        "planes_centro_search_query": search_query,
+        "planes_centro_total_filtrados": total_filtrados,
+        "planes_centro_page_obj": page_obj,
+        "planes_centro_is_paginated": page_obj.has_other_pages(),
+        "cursos": cursos,
+        "comisiones_curso": comisiones_curso,
+        "curso_form": curso_form,
+        "comision_curso_form": comision_curso_form,
+    }
 
 
 def _build_responsable_principal_data(contacto):
@@ -202,10 +385,12 @@ class CentroListView(LoginRequiredMixin, ListView):
         return ctx
 
 
-class CentroDetailView(LoginRequiredMixin, DetailView):
+class CentroAccessMixin:
     model = Centro
-    template_name = "vat/centros/centro_detail.html"
     context_object_name = "centro"
+
+    def get_queryset(self):
+        return _get_centro_detail_queryset()
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
@@ -213,13 +398,17 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             raise PermissionDenied
         return obj
 
+
+class CentroDetailView(CentroAccessMixin, LoginRequiredMixin, DetailView):
+    template_name = "vat/centros/centro_detail.html"
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         centro = self.object
 
         # Evaluar listas una sola vez para reutilizar en los counts
         ctx["identificadores"] = list(
-            centro.identificadores_hist.select_related("ubicacion")
+            centro.identificadores_hist.select_related("ubicacion__localidad")
             .all()
             .order_by("-es_actual", "-vigencia_desde")
         )
@@ -228,122 +417,33 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
                 "-es_principal", "nombre_contacto"
             )
         )
-        ctx["ubicaciones"] = centro.ubicaciones.select_related("localidad").all()
-
-        # annotate para evitar N+1 al contar comisiones por oferta
-        ctx["ofertas"] = list(
-            centro.ofertas_institucionales.select_related("plan_curricular", "programa")
-            .annotate(comisiones_count=Count("comisiones"))
-            .order_by("-ciclo_lectivo")
-        )
-        planes_centro_qs = (
-            PlanVersionCurricular.objects.filter(
-                activo=True,
-                provincia_id=centro.provincia_id,
-            )
-            .select_related("sector", "subsector", "modalidad_cursada")
-            .prefetch_related("titulos")
-        )
-        planes_centro_search_query = (self.request.GET.get("busqueda") or "").strip()
-        if planes_centro_search_query:
-            planes_centro_qs = planes_centro_qs.filter(
-                Q(nombre__icontains=planes_centro_search_query)
-                | Q(titulos__nombre__icontains=planes_centro_search_query)
-                | Q(sector__nombre__icontains=planes_centro_search_query)
-                | Q(subsector__nombre__icontains=planes_centro_search_query)
-                | Q(modalidad_cursada__nombre__icontains=planes_centro_search_query)
-                | Q(normativa__icontains=planes_centro_search_query)
-            ).distinct()
-        planes_centro_qs = planes_centro_qs.order_by(
-            "sector__nombre", "subsector__nombre", "id"
-        )
-        planes_centro_paginator = Paginator(planes_centro_qs, 20)
-        planes_centro_page = planes_centro_paginator.get_page(
-            self.request.GET.get("planes_page") or 1
-        )
-        ctx["planes_centro"] = planes_centro_page.object_list
-        ctx["planes_centro_search_query"] = planes_centro_search_query
-        ctx["planes_centro_total_filtrados"] = planes_centro_paginator.count
-        ctx["planes_centro_page_obj"] = planes_centro_page
-        ctx["planes_centro_is_paginated"] = planes_centro_page.has_other_pages()
-        ctx["comisiones"] = list(
-            Comision.objects.filter(oferta__centro=centro)
-            .select_related(
-                "oferta__plan_curricular",
-                "oferta__programa",
-            )
-            .order_by("codigo_comision")
-        )
-        ctx["cursos"] = list(
-            Curso.objects.filter(centro=centro)
-            .select_related("modalidad")
-            .prefetch_related("comisiones", "voucher_parametrias")
-            .order_by("-fecha_creacion")
-        )
-        ctx["comisiones_curso"] = list(
-            ComisionCurso.objects.filter(curso__centro=centro)
-            .select_related("curso", "ubicacion__localidad")
-            .order_by("codigo_comision")
-        )
-
-        # Todos los counts desde datos ya cargados, sin queries adicionales
-        ctx["count_ofertas"] = len(ctx["ofertas"])
-        ctx["count_comisiones"] = len(ctx["comisiones"])
-        ctx["count_cursos"] = len(ctx["cursos"])
-        ctx["count_comisiones_curso"] = len(ctx["comisiones_curso"])
+        ctx["ubicaciones"] = list(centro.ubicaciones.select_related("localidad").all())
+        ctx["count_ofertas"] = centro.ofertas_institucionales.count()
+        ctx["count_comisiones"] = Comision.objects.filter(
+            oferta__centro_id=centro.pk
+        ).count()
+        ctx["count_cursos"] = Curso.objects.filter(centro_id=centro.pk).count()
         ctx["count_identificadores"] = len(ctx["identificadores"])
         ctx["count_contactos"] = len(ctx["contactos"])
 
-        # Títulos y planes activos (catálogo disponible)
-        ctx["titulos"] = list(
-            TituloReferencia.objects.filter(activo=True).select_related(
-                "plan_estudio",
-                "plan_estudio__sector",
-                "plan_estudio__subsector",
-                "plan_estudio__modalidad_cursada",
-            )
+        ctx["contacto_form"] = _build_contacto_form(centro)
+        ctx["identificador_form"] = _build_identificador_form(centro)
+        ctx["ubicacion_form"] = _build_ubicacion_form(centro)
+        ctx["cursos_panel_url"] = reverse(
+            "vat_centro_cursos_panel",
+            kwargs={"pk": centro.pk},
         )
-        ctx["planes"] = list(
-            PlanVersionCurricular.objects.filter(activo=True)
-            .select_related("sector", "subsector", "modalidad_cursada")
-            .prefetch_related("titulos")
-        )
-
-        # Forms para modales
-        ctx["contacto_form"] = InstitucionContactoForm(initial={"centro": centro})
-        ctx["identificador_form"] = InstitucionIdentificadorHistForm(
-            initial={"centro": centro, "es_actual": True}
-        )
-        ctx["ubicacion_form"] = InstitucionUbicacionForm(initial={"centro": centro})
-        ctx["oferta_form"] = OfertaInstitucionalForm(initial={"centro": centro})
-        ctx["oferta_form"].fields["centro"].queryset = Centro.objects.filter(
-            pk=centro.pk
-        )
-        ctx["oferta_form"].fields["centro"].initial = centro.pk
-        ctx["oferta_form"].fields["centro"].widget = forms.HiddenInput()
-        ctx["comision_form"] = ComisionForm()
-        ctx["comision_form"].fields["oferta"].queryset = (
-            centro.ofertas_institucionales.order_by("-ciclo_lectivo")
-        )
-        ctx["comision_form"].fields["ubicacion"].queryset = (
-            centro.ubicaciones.select_related("localidad").order_by(
-                "es_principal", "rol_ubicacion"
-            )
-        )
-        ctx["curso_form"] = CursoForm(initial={"centro": centro})
-        ctx["comision_curso_form"] = ComisionCursoForm()
-        ctx["comision_curso_form"].fields["curso"].queryset = centro.cursos.order_by(
-            "nombre"
-        )
-        ctx["comision_curso_form"].fields["ubicacion"].queryset = (
-            centro.ubicaciones.select_related("localidad").order_by(
-                "es_principal", "rol_ubicacion"
-            )
-        )
-        ctx["titulo_form"] = TituloReferenciaForm()
-        ctx["plan_form"] = PlanVersionCurricularForm()
         ctx["can_edit_centro"] = can_user_edit_centro(self.request.user, centro)
 
+        return ctx
+
+
+class CentroCursosPanelView(CentroAccessMixin, LoginRequiredMixin, DetailView):
+    template_name = "vat/centros/partials/centro_cursos_panel.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update(_build_cursos_panel_context(self.request, self.object))
         return ctx
 
 

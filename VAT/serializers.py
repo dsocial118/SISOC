@@ -38,9 +38,6 @@ class CentroSerializer(serializers.ModelSerializer):
     provincia_nombre = serializers.CharField(source="provincia.nombre", read_only=True)
     municipio_nombre = serializers.CharField(source="municipio.nombre", read_only=True)
     localidad_nombre = serializers.CharField(source="localidad.nombre", read_only=True)
-    modalidad_institucional_nombre = serializers.CharField(
-        source="modalidad_institucional.nombre", read_only=True
-    )
 
     class Meta:
         model = Centro
@@ -63,12 +60,9 @@ class CentroSerializer(serializers.ModelSerializer):
             "correo",
             "nombre_referente",
             "apellido_referente",
-            "modalidad_institucional",
-            "modalidad_institucional_nombre",
             "tipo_gestion",
             "clase_institucion",
             "situacion",
-            "fecha_alta",
         ]
 
 

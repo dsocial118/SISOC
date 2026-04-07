@@ -19,6 +19,22 @@
 
 <!-- AUTO-GENERATED RELEASE END: 2026-04-06 -->
 
+<!-- AUTO-GENERATED RELEASE START: 2026-04-01 -->
+# Versión SISOC 01.04.2026
+
+## Actualizaciones
+
+- Evolución del módulo VAT en alta y edición de centros, con contactos institucionales unificados, edición reutilizando el formulario de alta, campos de planes curriculares más completos y soporte para cursos creados desde el detalle de centro.
+- Ajustes funcionales en planes y cursos VAT para derivar programa desde vouchers, mover la ubicación a la comisión de curso y exigir nombre persistido en planes curriculares.
+- Refuerzo de accesos, fixtures y sincronización técnica en VAT, junto con la integración de Resend en la configuración base y nuevas guías documentadas en `docs/`.
+
+## Corrección de Errores
+
+- Correcciones en búsqueda, paginación y mensajes de detalle para centros y vouchers, incluyendo normalización de DNI numérico y encoding correcto de parámetros en links de paginación.
+- Endurecimiento de migraciones y cargas VAT para convivir con datos legacy, evitando fallos en MySQL al migrar ubicaciones nulas y corrigiendo inconsistencias detectadas en imports y revisiones.
+
+<!-- AUTO-GENERATED RELEASE END: 2026-04-06 -->
+
 # Versión SISOC 31.03.2026
 
 ## Nuevas Funcionalidades
