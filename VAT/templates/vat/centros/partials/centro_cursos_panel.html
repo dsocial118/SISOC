@@ -94,7 +94,7 @@
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Programa</th>
+                                <th>Plan Curricular</th>
                                 <th>Sector</th>
                                 <th>Subsector</th>
                                 <th>Modalidad</th>
@@ -246,7 +246,7 @@
                                             </span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ curso.programa.nombre|default:"-" }}</td>
+                                    <td>{{ curso.plan_estudio|default:"-" }}</td>
                                     <td>{{ curso.modalidad.nombre }}</td>
                                     <td>{{ curso.comisiones_count }}</td>
                                     <td>
