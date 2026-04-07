@@ -201,6 +201,7 @@ LEGACY_ALIAS_TO_PERMISSION_CODES: dict[str, tuple[str, ...]] = {
     # Otros legacy usados en checks
     "Gestor prestaciones": ("core.view_montoprestacionprograma",),
     "Exportar a csv": ("auth.role_exportar_a_csv",),
+    "Enviar credenciales masivas": ("auth.role_enviar_credenciales_masivas",),
 }
 
 
