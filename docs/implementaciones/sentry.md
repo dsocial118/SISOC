@@ -1,10 +1,10 @@
-# Implementación de Sentry en SISOC
+# Implementacion de Sentry en SISOC
 
-Esta guía explica cómo está integrada la app `sentry` en SISOC y cómo usarla en QA/Producción.
+Esta guia explica como esta integrada la app `sentry` en SISOC y como usarla en QA, Homologacion y Produccion.
 
-## 1. Qué hace la implementación actual
+## 1. Que hace la implementacion actual
 
-La integración se apoya en 5 piezas:
+La integracion se apoya en 5 piezas:
 
 1. `sentry/apps.py`
    - En `SentryConfig.ready()` llama `initialize_sentry_sdk()` al iniciar Django.
@@ -12,26 +12,26 @@ La integración se apoya en 5 piezas:
    - Inicializa `sentry_sdk` una sola vez por proceso.
    - Solo activa Sentry si se cumplen condiciones de entorno.
 3. `sentry/handlers.py`
-   - Handler de logging que reenvía eventos `ERROR`/`CRITICAL` a Sentry.
+   - Handler de logging que reenvia eventos `ERROR`/`CRITICAL` a Sentry.
 4. `sentry/middleware.py`
    - Adjunta contexto de usuario autenticado (`id`, `username`) en cada request.
 5. `sentry/context_processors.py` + `templates/includes/scripts/sentry_replay.html`
    - Exponen config de Sentry al frontend e inicializan Session Replay en templates base.
 
-Además, `config/settings.py` ya incluye:
+Ademas, `config/settings.py` ya incluye:
 
 - `sentry.apps.SentryConfig` en `INSTALLED_APPS`.
 - `sentry.middleware.SentryUserContextMiddleware` en `MIDDLEWARE`.
 - Handler `sentry.handlers.SentryEventHandler` en `LOGGING`.
 
-## 2. Cuándo se inicializa Sentry
+## 2. Cuando se inicializa Sentry
 
-`initialize_sentry_sdk()` inicializa Sentry únicamente cuando:
+`initialize_sentry_sdk()` inicializa Sentry unicamente cuando:
 
 1. `SENTRY_ENABLED=true` (si no existe, por defecto se toma `true`).
-2. `ENVIRONMENT` es `qa` o `prd`.
+2. `ENVIRONMENT` es `qa`, `homologacion` o `prd`.
 3. `SENTRY_DSN` (definido por variable de entorno) tiene valor.
-4. `SENTRY_DSN` es un DSN válido (incluye `public_key@...`).
+4. `SENTRY_DSN` es un DSN valido (incluye `public_key@...`).
 
 Si `ENVIRONMENT=dev`, Sentry no se inicializa aunque haya DSN.
 
@@ -44,10 +44,10 @@ SENTRY_ENABLED=true
 SENTRY_DSN=
 SENTRY_RELEASE=
 SENTRY_SEND_DEFAULT_PII=false
-# Rates/replay definidos en config/settings.py según ENVIRONMENT
+# Rates/replay definidos en config/settings.py segun ENVIRONMENT
 ```
 
-### Recomendación para QA/PRD
+### Recomendacion para QA/Homologacion/PRD
 
 Notas:
 
@@ -55,24 +55,26 @@ Notas:
 - `SENTRY_LOG_EVENT_LEVEL` se define en `config/settings.py` con default `WARNING`.
 - El environment enviado a Sentry se deriva siempre de `ENVIRONMENT` (sin variable extra):
   - `qa -> sisoc-qa`
+  - `homologacion -> sisoc-homologacion`
   - `prd -> sisoc-prd`
-- Mantener `SENTRY_SEND_DEFAULT_PII=false` salvo necesidad explícita.
+- Mantener `SENTRY_SEND_DEFAULT_PII=false` salvo necesidad explicita.
 - Los rates se definen condicionalmente en `config/settings.py`:
   - `ENVIRONMENT=qa`: `SENTRY_ERROR_SAMPLE_RATE=0.75`, `SENTRY_TRACES_SAMPLE_RATE=0.75`, sin replay.
+  - `ENVIRONMENT=homologacion`: `SENTRY_ERROR_SAMPLE_RATE=1.0`, `SENTRY_TRACES_SAMPLE_RATE=1.0`, replay habilitado.
   - `ENVIRONMENT=prd`: `SENTRY_ERROR_SAMPLE_RATE=1.0`, `SENTRY_TRACES_SAMPLE_RATE=1.0`, replay al 100%.
 
-## 4. Qué se reporta automáticamente
+## 4. Que se reporta automaticamente
 
-1. Excepciones no manejadas en Django (integración `DjangoIntegration`).
-2. Logs con nivel configurable (`SENTRY_LOG_EVENT_LEVEL`, default `WARNING`) vía handler custom.
+1. Excepciones no manejadas en Django (integracion `DjangoIntegration`).
+2. Logs con nivel configurable (`SENTRY_LOG_EVENT_LEVEL`, default `WARNING`) via handler custom.
 3. Contexto de usuario autenticado en requests web:
    - `id`: `user.pk`
    - `username`: `user.get_username()`
 4. Session Replay en frontend (templates base) cuando `SENTRY_REPLAY_ENABLED=true`.
 
-## 5. Cómo reportar errores desde código
+## 5. Como reportar errores desde codigo
 
-Patrón recomendado en SISOC: usar `logging`.
+Patron recomendado en SISOC: usar `logging`.
 
 ```python
 import logging
@@ -88,12 +90,12 @@ except Exception:
 
 Comportamiento:
 
-- Con `logger.exception(...)` (o `exc_info=True`) el handler envía `capture_exception`.
-- Con `logger.warning/error/critical(...)` sin traceback, envía `capture_message` con el nivel correspondiente.
+- Con `logger.exception(...)` (o `exc_info=True`) el handler envia `capture_exception`.
+- Con `logger.warning/error/critical(...)` sin traceback, envia `capture_message` con el nivel correspondiente.
 
 ## 6. Smoke test manual
 
-Con el entorno levantado y `ENVIRONMENT=qa|prd`:
+Con el entorno levantado y `ENVIRONMENT=qa|homologacion|prd`:
 
 ```bash
 docker compose exec django python manage.py shell -c "import logging; logging.getLogger('sentry.smoke').error('Smoke test Sentry: mensaje de error')"
@@ -101,7 +103,7 @@ docker compose exec django python manage.py shell -c "import logging; logging.ge
 
 Luego verificar en Sentry que aparezca el evento en el proyecto correcto.
 
-## 7. Validación automatizada
+## 7. Validacion automatizada
 
 Tests existentes:
 
@@ -111,35 +113,35 @@ docker compose exec django pytest sentry/tests.py -q
 
 Cobertura actual:
 
-- Inicialización con/sin DSN.
-- Restricción por entorno (`dev` no inicializa).
-- Mapeo de entorno (`qa` y `prd`).
-- Captura de excepción/mensaje por handler.
+- Inicializacion con/sin DSN.
+- Restriccion por entorno (`dev` no inicializa).
+- Mapeo de entorno (`qa`, `homologacion` y `prd`).
+- Captura de excepcion/mensaje por handler.
 - Contexto de usuario en middleware.
 
-## 8. Troubleshooting rápido
+## 8. Troubleshooting rapido
 
 ### No llegan eventos a Sentry
 
 Revisar:
 
-1. `ENVIRONMENT` sea `qa` o `prd`.
+1. `ENVIRONMENT` sea `qa`, `homologacion` o `prd`.
 2. `SENTRY_ENABLED=true`.
 3. `SENTRY_DSN` definido en variables de entorno.
-4. `SENTRY_DSN` con formato válido: `https://<public_key>@o<org>.ingest.sentry.io/<project_id>`.
-5. Revisar logs de arranque por warning `SENTRY_DSN inválido...`.
+4. `SENTRY_DSN` con formato valido: `https://<public_key>@o<org>.ingest.sentry.io/<project_id>`.
+5. Revisar logs de arranque por warning `SENTRY_DSN invalido...`.
 6. Reinicio del contenedor Django tras cambiar `.env`.
 7. Que el evento sea `ERROR` o mayor.
 
 ### El evento llega sin usuario
 
-- El request era anónimo o no autenticado.
-- Verificar que `AuthenticationMiddleware` y `SentryUserContextMiddleware` estén activos en `MIDDLEWARE`.
+- El request era anonimo o no autenticado.
+- Verificar que `AuthenticationMiddleware` y `SentryUserContextMiddleware` esten activos en `MIDDLEWARE`.
 
 ### Eventos duplicados
 
 - Evitar combinar para el mismo error:
   - `logger.exception(...)`
-  - y además `sentry_sdk.capture_exception(...)`
+  - y ademas `sentry_sdk.capture_exception(...)`
 
-Usar un único mecanismo por error para evitar duplicados.
+Usar un unico mecanismo por error para evitar duplicados.
