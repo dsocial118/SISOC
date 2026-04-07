@@ -722,6 +722,7 @@ LISTADO_DEFINED_GROUPS = (
             "auth.role_coordinadorceliaquia",
             "auth.role_dashboard_centrodefamilia",
             "auth.role_dashboard_comedor",
+            "auth.role_enviar_credenciales_masivas",
             "auth.role_exportar_a_csv",
             "auth.role_organizaciones",
             "auth.role_provinciaceliaquia",
