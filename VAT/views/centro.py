@@ -218,7 +218,7 @@ def _build_cursos_panel_context(request, centro):
         bypass_cache=request.GET.get("refresh") == "1",
     )
     from VAT.models import Sector
-    sectores = Sector.objects.filter(activo=True).order_by("nombre")
+    sectores = Sector.objects.all().order_by("nombre")
     cursos = list(
         Curso.objects.filter(centro=centro)
         .select_related("modalidad", "plan_estudio")
