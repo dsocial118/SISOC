@@ -8,6 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.test import RequestFactory
 from django.urls import reverse
+from rest_framework.test import APIClient
+from rest_framework_api_key.models import APIKey
 
 from VAT import serializers as vat_serializers
 from VAT.api_views import CursoViewSet
@@ -67,6 +69,19 @@ def vat_admin_client(client, db):
         password="test1234",
     )
     client.force_login(user)
+    return client
+
+
+@pytest.fixture
+def vat_api_key(db):
+    _, key = APIKey.objects.create_key(name="vat-tests")
+    return key
+
+
+@pytest.fixture
+def vat_api_client(vat_api_key):
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Api-Key {vat_api_key}")
     return client
 
 
@@ -1942,6 +1957,210 @@ def vat_curso_base(db, vat_geo_data):
 
 
 @pytest.mark.django_db
+def test_api_vat_centros_lista_con_api_key(vat_api_client, vat_curso_base):
+    centro, _, _ = vat_curso_base
+
+    response = vat_api_client.get("/api/vat/centros/?activo=true")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] >= 1
+    assert payload["results"][0]["id"] == centro.id
+    assert payload["results"][0]["provincia"] == centro.provincia_id
+
+
+@pytest.mark.django_db
+def test_api_vat_cursos_lista_por_centro(vat_api_client, vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso API VAT",
+        modalidad=modalidad,
+        estado="activo",
+    )
+
+    response = vat_api_client.get(f"/api/vat/cursos/?centro_id={centro.id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    assert payload["results"][0]["id"] == curso.id
+    assert payload["results"][0]["centro"] == centro.id
+
+
+@pytest.mark.django_db
+def test_api_vat_cursos_lista_por_provincia_y_municipio(vat_api_client, vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso API VAT Geografico",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    otra_provincia = Provincia.objects.create(nombre="Otra Provincia VAT")
+    otro_municipio = Municipio.objects.create(
+        nombre="Otro Municipio VAT",
+        provincia=otra_provincia,
+    )
+    otra_localidad = Localidad.objects.create(
+        nombre="Otra Localidad VAT",
+        municipio=otro_municipio,
+    )
+    otro_centro = Centro.objects.create(
+        nombre="Centro API VAT Alternativo",
+        codigo="CFP-ALT-VAT-1",
+        provincia=otra_provincia,
+        municipio=otro_municipio,
+        localidad=otra_localidad,
+        calle="9",
+        numero=10,
+        domicilio_actividad="Calle 9 N° 10",
+        telefono="221-9999991",
+        celular="221-9999992",
+        correo="alternativo@vat.test",
+        nombre_referente="Luis",
+        apellido_referente="Perez",
+        telefono_referente="221-9999993",
+        correo_referente="luis@vat.test",
+        tipo_gestion="Privada",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    Curso.objects.create(
+        centro=otro_centro,
+        nombre="Curso API VAT Excluido",
+        modalidad=modalidad,
+        estado="activo",
+    )
+
+    response = vat_api_client.get(
+        f"/api/vat/cursos/?provincia_id={centro.provincia_id}&municipio_id={centro.municipio_id}"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    result_ids = {item["id"] for item in payload["results"]}
+    assert curso.id in result_ids
+    assert all(item["centro"] == centro.id for item in payload["results"])
+
+
+@pytest.mark.django_db
+def test_api_vat_comisiones_curso_lista_por_curso(vat_api_client, vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso API Comision VAT",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="API-COM-01",
+        nombre="Comision API VAT",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+
+    response = vat_api_client.get(f"/api/vat/comisiones-curso/?curso_id={curso.id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    assert payload["results"][0]["id"] == comision.id
+    assert payload["results"][0]["curso"] == curso.id
+
+
+@pytest.mark.django_db
+def test_api_vat_comisiones_curso_lista_por_provincia_y_municipio(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso API VAT Geografico Comision",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="API-GEO-01",
+        nombre="Comision API VAT Geografica",
+        cupo_total=15,
+        fecha_inicio=date(2026, 4, 2),
+        fecha_fin=date(2026, 4, 29),
+        estado="activa",
+    )
+    otra_provincia = Provincia.objects.create(nombre="Provincia Geo Comision")
+    otro_municipio = Municipio.objects.create(
+        nombre="Municipio Geo Comision",
+        provincia=otra_provincia,
+    )
+    otra_localidad = Localidad.objects.create(
+        nombre="Localidad Geo Comision",
+        municipio=otro_municipio,
+    )
+    otro_centro = Centro.objects.create(
+        nombre="Centro API VAT Comision Alternativo",
+        codigo="CFP-ALT-VAT-2",
+        provincia=otra_provincia,
+        municipio=otro_municipio,
+        localidad=otra_localidad,
+        calle="10",
+        numero=20,
+        domicilio_actividad="Calle 10 N° 20",
+        telefono="221-8888881",
+        celular="221-8888882",
+        correo="alternativo-comision@vat.test",
+        nombre_referente="Laura",
+        apellido_referente="Suarez",
+        telefono_referente="221-8888883",
+        correo_referente="laura@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    otra_ubicacion = InstitucionUbicacion.objects.create(
+        centro=otro_centro,
+        localidad=otra_localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 10 N° 20",
+        es_principal=True,
+    )
+    otro_curso = Curso.objects.create(
+        centro=otro_centro,
+        nombre="Curso API VAT Comision Excluida",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    ComisionCurso.objects.create(
+        curso=otro_curso,
+        ubicacion=otra_ubicacion,
+        codigo_comision="API-GEO-02",
+        nombre="Comision API VAT Excluida",
+        cupo_total=10,
+        fecha_inicio=date(2026, 4, 3),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+
+    response = vat_api_client.get(
+        f"/api/vat/comisiones-curso/?provincia_id={centro.provincia_id}&municipio_id={centro.municipio_id}"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    result_ids = {item["id"] for item in payload["results"]}
+    assert comision.id in result_ids
+    assert all(item["curso_centro_id"] == centro.id for item in payload["results"])
+
+
+@pytest.mark.django_db
 def test_comision_curso_permita_cupo_independiente_del_curso(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     curso = Curso.objects.create(
@@ -2424,9 +2643,7 @@ def test_curso_form_filtra_plan_estudio_por_provincia_del_centro(vat_curso_base)
 
 
 @pytest.mark.django_db
-def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(
-    client, vat_geo_data
-):
+def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
     group, _ = Group.objects.get_or_create(name="CFP")
@@ -2545,7 +2762,7 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
         modalidad=modalidad,
         estado="planificado",
     )
-    ComisionCurso.objects.create(
+    comision = ComisionCurso.objects.create(
         curso=_curso,
         ubicacion=ubicacion,
         codigo_comision="FIL-01",
@@ -2564,7 +2781,7 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'data-panel-rendered="1"' in content
     assert 'id="tablaCursosCentro"' in content
     assert 'class="curso-row"' in content
-    assert f'data-curso-id="{curso.id}"' in content
+    assert f'data-curso-id="{_curso.id}"' in content
     assert 'id="tablaComisionesCursoCentro"' in content
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
@@ -2630,9 +2847,7 @@ def test_centro_cursos_panel_renderiza_accion_para_crear_curso_desde_plan_curric
 
 
 @pytest.mark.django_db
-def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(
-    client, vat_geo_data
-):
+def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
     sector = Sector.objects.create(nombre="Servicios")

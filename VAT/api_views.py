@@ -407,6 +407,18 @@ class InstitucionUbicacionViewSet(viewsets.ModelViewSet):
             description="Filtra cursos por centro.",
         ),
         OpenApiParameter(
+            "provincia_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra cursos por provincia del centro.",
+        ),
+        OpenApiParameter(
+            "municipio_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra cursos por municipio del centro.",
+        ),
+        OpenApiParameter(
             "modalidad_id",
             OpenApiTypes.INT,
             OpenApiParameter.QUERY,
@@ -445,11 +457,17 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         centro_id = self.request.query_params.get("centro_id")
+        provincia_id = self.request.query_params.get("provincia_id")
+        municipio_id = self.request.query_params.get("municipio_id")
         modalidad_id = self.request.query_params.get("modalidad_id")
         programa_id = self.request.query_params.get("programa_id")
         estado = self.request.query_params.get("estado")
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
+        if provincia_id:
+            queryset = queryset.filter(centro__provincia_id=provincia_id)
+        if municipio_id:
+            queryset = queryset.filter(centro__municipio_id=municipio_id)
         if modalidad_id:
             queryset = queryset.filter(modalidad_id=modalidad_id)
         if programa_id:
@@ -487,6 +505,18 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
             description="Filtra comisiones por centro (via curso).",
         ),
         OpenApiParameter(
+            "provincia_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra comisiones por provincia del centro del curso.",
+        ),
+        OpenApiParameter(
+            "municipio_id",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            description="Filtra comisiones por municipio del centro del curso.",
+        ),
+        OpenApiParameter(
             "estado",
             OpenApiTypes.STR,
             OpenApiParameter.QUERY,
@@ -505,11 +535,17 @@ class ComisionCursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         queryset = super().get_queryset()
         curso_id = self.request.query_params.get("curso_id")
         centro_id = self.request.query_params.get("centro_id")
+        provincia_id = self.request.query_params.get("provincia_id")
+        municipio_id = self.request.query_params.get("municipio_id")
         estado = self.request.query_params.get("estado")
         if curso_id:
             queryset = queryset.filter(curso_id=curso_id)
         if centro_id:
             queryset = queryset.filter(curso__centro_id=centro_id)
+        if provincia_id:
+            queryset = queryset.filter(curso__centro__provincia_id=provincia_id)
+        if municipio_id:
+            queryset = queryset.filter(curso__centro__municipio_id=municipio_id)
         if estado:
             queryset = queryset.filter(estado=estado)
         return queryset

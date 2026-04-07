@@ -230,11 +230,11 @@ def _build_cursos_panel_context(request, centro):
     )
     comision_curso_form = ComisionCursoForm()
     comision_curso_form.fields["curso"].queryset = centro.cursos.order_by("nombre")
-    comision_curso_form.fields["ubicacion"].queryset = (
-        centro.ubicaciones.select_related("localidad").order_by(
-            "es_principal",
-            "rol_ubicacion",
-        )
+    comision_curso_form.fields[
+        "ubicacion"
+    ].queryset = centro.ubicaciones.select_related("localidad").order_by(
+        "es_principal",
+        "rol_ubicacion",
     )
 
     return {
@@ -414,9 +414,7 @@ class CentroDetailView(CentroAccessMixin, LoginRequiredMixin, DetailView):
                 "-es_principal", "nombre_contacto"
             )
         )
-        ctx["ubicaciones"] = list(
-            centro.ubicaciones.select_related("localidad").all()
-        )
+        ctx["ubicaciones"] = list(centro.ubicaciones.select_related("localidad").all())
         ctx["count_ofertas"] = centro.ofertas_institucionales.count()
         ctx["count_comisiones"] = Comision.objects.filter(
             oferta__centro_id=centro.pk
