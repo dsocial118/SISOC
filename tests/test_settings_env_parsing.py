@@ -65,3 +65,34 @@ def test_settings_email_backend_falls_back_to_console_when_smtp_is_incomplete(
     module = _load_settings_module()
 
     assert module.EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend"
+
+
+def test_settings_homologacion_usa_perfil_similar_a_produccion(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "homologacion")
+
+    module = _load_settings_module()
+
+    assert module.DEFAULT_SCHEME == "https"
+    assert module.GESTIONAR_INTEGRATION_ENABLED is True
+    assert module.DB_CONN_MAX_AGE == 60
+    assert module.DB_CONN_HEALTH_CHECKS is True
+    assert module.SECURE_SSL_REDIRECT is True
+    assert module.SESSION_COOKIE_SECURE is True
+    assert module.CSRF_COOKIE_SECURE is True
+    assert module.SENTRY_REPLAY_ENABLED is True
+    assert module.SENTRY_TRACES_SAMPLE_RATE == 1.0
+    assert (
+        module.STORAGES["staticfiles"]["BACKEND"]
+        == "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+    )
+
+
+def test_settings_qa_mantiene_runtime_no_productivo(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "qa")
+
+    module = _load_settings_module()
+
+    assert module.DEFAULT_SCHEME == "http"
+    assert module.GESTIONAR_INTEGRATION_ENABLED is False
+    assert module.SECURE_SSL_REDIRECT is False
+    assert module.SENTRY_REPLAY_ENABLED is False

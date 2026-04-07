@@ -54,20 +54,22 @@ Cada aplicación del repositorio representa un módulo funcional (ej. `comedores
 2. (Opcional) Colocar un dump en `./docker/mysql/local-dump.sql`.  
 3. Levantar servicios:
    ```bash
-   docker-compose up
+   docker compose up
    ```
 4. Acceder a la app en [http://localhost:8000](http://localhost:8000).
 
+`docker-compose.yml` queda reservado para desarrollo/local y es el unico compose versionado que levanta `mysql`.
+
 ## Reiniciar base de datos con nuevo dump
 ```bash
-docker-compose down
+docker compose down
 docker volume rm sisoc_mysql_data
 # colocar nuevo dump en ./docker/mysql/local-dump.sql
-docker-compose up
+docker compose up
 ```
 
 ## Debug con VSCode
-- Iniciar servicios con `docker-compose up`.  
+- Iniciar servicios con `docker compose up`.
 - Seleccionar la configuración `Django in Docker` en el panel de debugging.  
 
 ---
@@ -161,6 +163,19 @@ curl -X GET http://localhost:8000/api/comedores/      -H "Authorization: Bearer 
 - **Semana 0 (jueves)** → abrir branch `development`.  
 - **Semana 2 (lunes, freeze)** → congelar `development`, crear tag `YY.MM.DD-rc1`.  
 - **Semana 2 (miércoles noche)** → deploy a PRD si QA aprueba último `rcX`.  
+
+##Entornos y compose de deploy
+- `qa`: branch `development`, compose `docker-compose.deploy.yml` + `docker-compose.qa.yml`.
+- `homologacion`: branch `homologacion`, compose `docker-compose.deploy.yml` + `docker-compose.homologacion.yml`.
+- `produccion`: branch `main`, compose `docker-compose.deploy.yml` + `docker-compose.produccion.yml`.
+- Los compose de deploy no levantan `mysql`; todos asumen base externa y comparten el servicio `django`.
+
+##Comandos de referencia
+```bash
+docker compose -f docker-compose.deploy.yml -f docker-compose.qa.yml up -d --build
+docker compose -f docker-compose.deploy.yml -f docker-compose.homologacion.yml up -d --build
+docker compose -f docker-compose.deploy.yml -f docker-compose.produccion.yml up -d --build
+```
 
 ##Checklist
 - [ ] Branch `development` congelada sin features nuevos  
