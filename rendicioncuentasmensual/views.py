@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 from django.http import FileResponse, JsonResponse
 from django.urls import reverse, reverse_lazy
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponseRedirect
 from django.views.generic import (
     ListView,
@@ -20,6 +20,7 @@ from core.soft_delete.view_helpers import (
     SoftDeleteDeleteViewMixin,
     is_soft_deletable_instance,
 )
+from iam.services import user_has_permission_code
 from rendicioncuentasmensual.models import RendicionCuentaMensual, DocumentacionAdjunta
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from rendicioncuentasmensual.forms import (
@@ -100,6 +101,7 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_detail.html"
     context_object_name = "rendicion_cuenta_mensual"
+    REVIEW_PERMISSION_CODE = "rendicioncuentasmensual.change_rendicioncuentamensual"
 
     @staticmethod
     def _format_validation_error(error):
@@ -115,12 +117,26 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
             return " ".join(str(item) for item in error.messages)
         return str(error)
 
+    @classmethod
+    def _user_can_review_documentos(cls, user):
+        return user_has_permission_code(user, cls.REVIEW_PERMISSION_CODE)
+
     def post(self, request, *args, **kwargs):
         rendicion = self.get_object()
         documento_id = request.POST.get("documento_id")
         estado = (request.POST.get("estado") or "").strip()
         observaciones = request.POST.get("observaciones")
         is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
+        if not self._user_can_review_documentos(request.user):
+            if is_ajax:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "No tiene permisos para revisar documentos.",
+                    },
+                    status=403,
+                )
+            raise PermissionDenied
 
         documento = rendicion.archivos_adjuntos.filter(
             id=documento_id,
@@ -129,7 +145,10 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
         if not documento:
             if is_ajax:
                 return JsonResponse(
-                    {"success": False, "message": "El documento seleccionado no existe."},
+                    {
+                        "success": False,
+                        "message": "El documento seleccionado no existe.",
+                    },
                     status=404,
                 )
             messages.error(request, "El documento seleccionado no existe.")
@@ -210,6 +229,9 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
             RendicionCuentaMensualService.rendicion_esta_completamente_validada(
                 rendicion
             )
+        )
+        context["puede_revisar_documentos"] = self._user_can_review_documentos(
+            self.request.user
         )
         return context
 

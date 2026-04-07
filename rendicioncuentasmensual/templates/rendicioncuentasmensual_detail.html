@@ -171,7 +171,7 @@
                                 </tr>
                                 {% if categoria.archivos %}
                                     {% for archivo in categoria.archivos %}
-                                        <tr class="{% if archivo.estado == 'presentado' or archivo.observaciones %}documento-row-with-details{% endif %}">
+                                        <tr class="{% if archivo.observaciones or archivo.estado == 'presentado' and puede_revisar_documentos %}documento-row-with-details{% endif %}">
                                             <td>{{ archivo.nombre }}</td>
                                             <td id="estado-cell-{{ archivo.id }}">
                                                 {% if archivo.get_estado_visual == 'subsanado' %}
@@ -185,7 +185,7 @@
                                                 {% endif %}
                                             </td>
                                             <td id="revision-cell-{{ archivo.id }}">
-                                                {% if archivo.estado == 'presentado' %}
+                                                {% if puede_revisar_documentos and archivo.estado == 'presentado' %}
                                                     <form id="revision-documento-{{ archivo.id }}" method="post">
                                                         {% csrf_token %}
                                                         <input type="hidden" name="documento_id" value="{{ archivo.id }}" />
@@ -234,11 +234,11 @@
                                                 </div>
                                             </td>
                                         </tr>
-                                        {% if archivo.estado == 'presentado' or archivo.observaciones %}
+                                        {% if archivo.observaciones or archivo.estado == 'presentado' and puede_revisar_documentos %}
                                             <tr id="observaciones-row-{{ archivo.id }}"
-                                                class="documento-detail-row {% if archivo.estado == 'presentado' %}d-none{% endif %}">
+                                                class="documento-detail-row {% if archivo.estado == 'presentado' and puede_revisar_documentos %}d-none{% endif %}">
                                                 <td colspan="5" class="text-start pt-0 pb-1">
-                                                    {% if archivo.estado == 'presentado' %}
+                                                    {% if puede_revisar_documentos and archivo.estado == 'presentado' %}
                                                         <div class="d-flex align-items-start gap-2">
                                                             <textarea id="observaciones-{{ archivo.id }}"
                                                                       name="observaciones"
@@ -339,7 +339,7 @@
                                                             {% endif %}
                                                         </td>
                                                         <td id="revision-cell-{{ subsanacion.id }}">
-                                                            {% if subsanacion.estado == 'presentado' %}
+                                                            {% if puede_revisar_documentos and subsanacion.estado == 'presentado' %}
                                                                 <form id="revision-documento-{{ subsanacion.id }}" method="post">
                                                                     {% csrf_token %}
                                                                     <input type="hidden" name="documento_id" value="{{ subsanacion.id }}" />

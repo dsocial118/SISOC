@@ -224,7 +224,7 @@ def test_revision_de_rendicion_envia_push_a_usuarios_del_scope_con_permiso(
     payload = sent[0]["payload"]
     assert payload["data"]["tipo"] == "rendicion_detalle"
     assert payload["data"]["rendicion_id"] == rendicion.id
-    assert payload["data"]["space_id"] == espacio_1.id
+    assert payload["data"]["space_id"] == espacio_2.id
     assert payload["data"]["url"] == (
-        f"/app-org/espacios/{espacio_1.id}/rendicion/{rendicion.id}"
+        f"/app-org/espacios/{espacio_2.id}/rendicion/{rendicion.id}"
     )

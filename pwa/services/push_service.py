@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from iam.services import user_has_permission_code
 from pwa.models import PushSubscriptionPWA
+from users.services_pwa import get_accessible_comedor_ids
 from users.models import AccesoComedorPWA
 
 try:
@@ -62,12 +63,17 @@ def deactivate_push_subscription(*, user, endpoint: str) -> bool:
     return bool(updated)
 
 
-def build_rendicion_push_payload(*, comunicado, rendicion) -> dict:
+def build_rendicion_push_payload(
+    *,
+    comunicado,
+    rendicion,
+    target_comedor_id: int | None = None,
+) -> dict:
+    comedor_id = target_comedor_id or rendicion.comedor_id
     return {
         "title": comunicado.titulo,
         "body": comunicado.cuerpo.replace(
-            "[SISOC_ACCION]rendicion_detalle:"
-            f"{rendicion.id}[/SISOC_ACCION]",
+            "[SISOC_ACCION]rendicion_detalle:" f"{rendicion.id}[/SISOC_ACCION]",
             "",
         ).strip(),
         "icon": "/icono.png",
@@ -76,11 +82,28 @@ def build_rendicion_push_payload(*, comunicado, rendicion) -> dict:
         "data": {
             "tipo": "rendicion_detalle",
             "rendicion_id": rendicion.id,
-            "space_id": rendicion.comedor_id,
+            "space_id": comedor_id,
             "comunicado_id": comunicado.id,
-            "url": f"/app-org/espacios/{rendicion.comedor_id}/rendicion/{rendicion.id}",
+            "url": f"/app-org/espacios/{comedor_id}/rendicion/{rendicion.id}",
         },
     }
+
+
+def _resolve_target_comedor_id_for_user(
+    *,
+    user,
+    comedor_ids: list[int],
+    rendicion,
+) -> int | None:
+    accessible_comedor_ids = set(get_accessible_comedor_ids(user))
+    scoped_comedor_ids = [
+        comedor_id for comedor_id in comedor_ids if comedor_id in accessible_comedor_ids
+    ]
+    if not scoped_comedor_ids:
+        return None
+    if rendicion.comedor_id in scoped_comedor_ids:
+        return rendicion.comedor_id
+    return scoped_comedor_ids[0]
 
 
 def _deactivate_subscription_for_delivery_failure(subscription) -> None:
@@ -144,9 +167,7 @@ def _get_users_with_permission_for_project_scope(
         .distinct()
     )
     users = list(User.objects.filter(id__in=user_ids, is_active=True).order_by("id"))
-    return [
-        user for user in users if user_has_permission_code(user, permission_code)
-    ]
+    return [user for user in users if user_has_permission_code(user, permission_code)]
 
 
 def notify_rendicion_revision_push(
@@ -166,12 +187,29 @@ def notify_rendicion_revision_push(
     if not users:
         return 0
 
-    payload = build_rendicion_push_payload(comunicado=comunicado, rendicion=rendicion)
+    payloads_by_user_id = {}
+    for user in users:
+        target_comedor_id = _resolve_target_comedor_id_for_user(
+            user=user,
+            comedor_ids=comedor_ids,
+            rendicion=rendicion,
+        )
+        if target_comedor_id is None:
+            continue
+        payloads_by_user_id[user.id] = build_rendicion_push_payload(
+            comunicado=comunicado,
+            rendicion=rendicion,
+            target_comedor_id=target_comedor_id,
+        )
+    if not payloads_by_user_id:
+        return 0
+
     sent = 0
     for subscription in PushSubscriptionPWA.objects.filter(
         user__in=users,
         activo=True,
     ).select_related("user"):
-        if _send_push(subscription, payload):
+        payload = payloads_by_user_id.get(subscription.user_id)
+        if payload and _send_push(subscription, payload):
             sent += 1
     return sent
