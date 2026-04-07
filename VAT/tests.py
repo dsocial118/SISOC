@@ -8,6 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.test import RequestFactory
 from django.urls import reverse
+from rest_framework.test import APIClient
+from rest_framework_api_key.models import APIKey
 
 from VAT import serializers as vat_serializers
 from VAT.api_views import CursoViewSet
@@ -67,6 +69,19 @@ def vat_admin_client(client, db):
         password="test1234",
     )
     client.force_login(user)
+    return client
+
+
+@pytest.fixture
+def vat_api_key(db):
+    _, key = APIKey.objects.create_key(name="vat-tests")
+    return key
+
+
+@pytest.fixture
+def vat_api_client(vat_api_key):
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Api-Key {vat_api_key}")
     return client
 
 
@@ -1939,6 +1954,67 @@ def vat_curso_base(db, vat_geo_data):
         es_principal=True,
     )
     return centro, ubicacion, modalidad
+
+
+@pytest.mark.django_db
+def test_api_vat_centros_lista_con_api_key(vat_api_client, vat_curso_base):
+    centro, _, _ = vat_curso_base
+
+    response = vat_api_client.get("/api/vat/centros/?activo=true")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] >= 1
+    assert payload["results"][0]["id"] == centro.id
+    assert payload["results"][0]["provincia"] == centro.provincia_id
+
+
+@pytest.mark.django_db
+def test_api_vat_cursos_lista_por_centro(vat_api_client, vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso API VAT",
+        modalidad=modalidad,
+        estado="activo",
+    )
+
+    response = vat_api_client.get(f"/api/vat/cursos/?centro_id={centro.id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    assert payload["results"][0]["id"] == curso.id
+    assert payload["results"][0]["centro"] == centro.id
+
+
+@pytest.mark.django_db
+def test_api_vat_comisiones_curso_lista_por_curso(vat_api_client, vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso API Comision VAT",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="API-COM-01",
+        nombre="Comision API VAT",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+
+    response = vat_api_client.get(f"/api/vat/comisiones-curso/?curso_id={curso.id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    assert payload["results"][0]["id"] == comision.id
+    assert payload["results"][0]["curso"] == curso.id
 
 
 @pytest.mark.django_db
