@@ -1,0 +1,10 @@
+services:
+  django:
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+    volumes:
+      - .:/sisoc/
+    restart: unless-stopped

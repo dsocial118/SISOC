@@ -8,17 +8,16 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.utils.crypto import get_random_string
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework.authtoken.models import Token
 
-from users.services_pwa import is_pwa_user
-
 from users.profile_utils import get_profile_or_none
+from users.services_pwa import is_pwa_user
 
 User = get_user_model()
 logger = logging.getLogger("django")
@@ -49,7 +48,7 @@ def build_password_reset_link(*, user, request=None) -> str:
             .replace("https://", "")
             .rstrip("/")
         )
-        scheme = "https" if settings.ENVIRONMENT == "prd" else "http"
+        scheme = getattr(settings, "DEFAULT_SCHEME", "http")
 
     return f"{scheme}://{domain}{path}"
 
@@ -59,7 +58,7 @@ def send_password_reset_link(*, user, reset_link: str) -> None:
         "user": user,
         "reset_link": reset_link,
     }
-    subject = "SISOC - Restablecer contraseña"
+    subject = "SISOC - Restablecer contrasena"
     message = render_to_string("user/password_reset_email.txt", context)
 
     send_mail(
@@ -152,7 +151,7 @@ def confirm_password_reset(
 
 
 def change_password_for_authenticated_user(*, user, new_password: str) -> User:
-    """Actualiza la contraseña del usuario autenticado y limpia flags de primer ingreso."""
+    """Actualiza la contrasena del usuario autenticado y limpia flags de primer ingreso."""
     user.set_password(new_password)
     user.save(update_fields=["password"])
 
@@ -178,7 +177,7 @@ def change_password_for_authenticated_user(*, user, new_password: str) -> User:
 
 
 def generate_temporary_password_for_user(*, user) -> str:
-    """Genera una nueva contraseña temporal para un usuario y obliga cambio en primer login."""
+    """Genera una nueva contrasena temporal para un usuario y obliga cambio en primer login."""
     temporary_password = get_random_string(12)
     user.set_password(temporary_password)
     user.save(update_fields=["password"])
