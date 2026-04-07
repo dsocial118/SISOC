@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from comedores.models import Comedor
@@ -141,10 +142,30 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         null=True,
         blank=True,
     )
+    documento_subsanado = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        related_name="subsanaciones",
+        verbose_name="Documento subsanado",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         verbose_name = "Documento Adjunto"
         verbose_name_plural = "Documentos Adjuntos"
+
+    def get_estado_visual(self):
+        override = getattr(self, "estado_visual_override", None)
+        if override:
+            return override
+        return self.estado
+
+    def get_estado_visual_display(self):
+        override = getattr(self, "estado_visual_display_override", None)
+        if override:
+            return override
+        return self.get_estado_display()
 
     @classmethod
     def categorias_mobile(cls):
@@ -238,6 +259,22 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         verbose_name="Observaciones",
         blank=True,
         null=True,
+    )
+    usuario_creador = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="rendiciones_cuentas_mensuales_creadas",
+        blank=True,
+        null=True,
+        verbose_name="Usuario creador",
+    )
+    usuario_ultima_modificacion = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="rendiciones_cuentas_mensuales_modificadas",
+        blank=True,
+        null=True,
+        verbose_name="Usuario última modificación",
     )
     ultima_modificacion = models.DateTimeField(
         auto_now=True,

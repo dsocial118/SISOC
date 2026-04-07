@@ -1,9 +1,12 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-from django.urls import reverse_lazy
+from django.http import FileResponse, JsonResponse
+from django.urls import reverse, reverse_lazy
+from django.core.exceptions import ValidationError
+from django.http import HttpResponseRedirect
 from django.views.generic import (
     ListView,
     DetailView,
@@ -98,6 +101,99 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
     template_name = "rendicioncuentasmensual_detail.html"
     context_object_name = "rendicion_cuenta_mensual"
 
+    @staticmethod
+    def _format_validation_error(error):
+        if hasattr(error, "message_dict"):
+            messages_list = []
+            for value in error.message_dict.values():
+                if isinstance(value, (list, tuple)):
+                    messages_list.extend(str(item) for item in value)
+                else:
+                    messages_list.append(str(value))
+            return " ".join(messages_list)
+        if hasattr(error, "messages"):
+            return " ".join(str(item) for item in error.messages)
+        return str(error)
+
+    def post(self, request, *args, **kwargs):
+        rendicion = self.get_object()
+        documento_id = request.POST.get("documento_id")
+        estado = (request.POST.get("estado") or "").strip()
+        observaciones = request.POST.get("observaciones")
+        is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+        documento = rendicion.archivos_adjuntos.filter(
+            id=documento_id,
+            deleted_at__isnull=True,
+        ).first()
+        if not documento:
+            if is_ajax:
+                return JsonResponse(
+                    {"success": False, "message": "El documento seleccionado no existe."},
+                    status=404,
+                )
+            messages.error(request, "El documento seleccionado no existe.")
+            return HttpResponseRedirect(
+                reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
+            )
+
+        try:
+            RendicionCuentaMensualService.actualizar_estado_documento_revision(
+                documento=documento,
+                estado=estado,
+                observaciones=observaciones,
+                actor=request.user,
+            )
+        except ValidationError as exc:
+            if is_ajax:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": self._format_validation_error(exc),
+                    },
+                    status=400,
+                )
+            messages.error(request, self._format_validation_error(exc))
+        else:
+            if is_ajax:
+                documento.refresh_from_db()
+                rendicion.refresh_from_db()
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": "Estado del documento actualizado correctamente.",
+                        "documento": {
+                            "id": documento.id,
+                            "estado": documento.estado,
+                            "estado_display": documento.get_estado_display(),
+                            "estado_visual": documento.get_estado_visual(),
+                            "estado_visual_display": documento.get_estado_visual_display(),
+                            "observaciones": documento.observaciones or "",
+                        },
+                        "rendicion": {
+                            "estado": rendicion.estado,
+                            "estado_display": rendicion.get_estado_display(),
+                            "puede_descargar_pdf": (
+                                RendicionCuentaMensualService.rendicion_esta_completamente_validada(
+                                    rendicion
+                                )
+                            ),
+                            "download_url": (
+                                reverse(
+                                    "rendicioncuentasmensual_detail",
+                                    kwargs={"pk": rendicion.pk},
+                                )
+                                + "descargar-pdf/"
+                            ),
+                        },
+                    }
+                )
+            messages.success(request, "Estado del documento actualizado correctamente.")
+
+        return HttpResponseRedirect(
+            reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         rendicion = RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(
@@ -110,7 +206,41 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
         context["scope_proyecto"] = (
             RendicionCuentaMensualService.obtener_scope_proyecto(rendicion)
         )
+        context["puede_descargar_pdf"] = (
+            RendicionCuentaMensualService.rendicion_esta_completamente_validada(
+                rendicion
+            )
+        )
         return context
+
+
+class RendicionCuentaMensualDownloadPdfView(LoginRequiredMixin, DetailView):
+    model = RendicionCuentaMensual
+
+    def get(self, request, *args, **kwargs):
+        rendicion = RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(
+            self.kwargs.get("pk")
+        )
+        try:
+            pdf_buffer = RendicionCuentaMensualService.generar_pdf_descarga_rendicion(
+                rendicion
+            )
+        except ValidationError as exc:
+            messages.error(
+                request,
+                RendicionCuentaMensualDetailView._format_validation_error(exc),
+            )
+            return HttpResponseRedirect(
+                reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
+            )
+
+        filename = f"rendicion-{rendicion.numero_rendicion or rendicion.id}.pdf"
+        return FileResponse(
+            pdf_buffer,
+            as_attachment=True,
+            filename=filename,
+            content_type="application/pdf",
+        )
 
 
 class RendicionCuentaMensualCreateView(LoginRequiredMixin, CreateView):
@@ -124,6 +254,9 @@ class RendicionCuentaMensualCreateView(LoginRequiredMixin, CreateView):
 
         rendicion = form.save(commit=False)
         rendicion.comedor = comedor
+        if self.request.user.is_authenticated:
+            rendicion.usuario_creador = self.request.user
+            rendicion.usuario_ultima_modificacion = self.request.user
         rendicion.save()
 
         archivos = self.request.FILES.getlist("archivo")
@@ -159,6 +292,9 @@ class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         rendicion = self.get_object()
         form.instance.comedor = rendicion.comedor
+        form.instance.usuario_creador = rendicion.usuario_creador
+        if self.request.user.is_authenticated:
+            form.instance.usuario_ultima_modificacion = self.request.user
         form.instance.ultima_modificacion = rendicion.ultima_modificacion
         form.instance.fecha_creacion = rendicion.fecha_creacion
         rendicion = form.save()
