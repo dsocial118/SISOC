@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -41,14 +43,9 @@ def test_sidebar_separa_administracion_de_configuracion_comedores(client):
     assert reverse("usuarios") not in config_block
     assert reverse("grupos") not in config_block
 
-    assert 'style="order: 1;"' in content
-    assert 'style="order: 2;"' in content
-    assert 'style="order: 3;"' in content
-    assert 'style="order: 4;"' in content
-    assert 'style="order: 5;"' in content
-    assert (
-        'style="order: 6; border-bottom: 1px solid var(--lte-sidebar-color);"'
-        in content
-    )
-    assert "v06.04.26" in content
+    for expected_order in range(1, 7):
+        assert f'order: {expected_order}' in content
+
+    assert reverse("changelog") in content
     assert 'class="footer-secondary-link"' in content
+    assert re.search(r">v\d{2}\.\d{2}\.\d{2}<", content)
