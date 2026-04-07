@@ -105,7 +105,7 @@
                         <ul class="pagination mb-0">
                             {% if planes_centro_page_obj.has_previous %}
                                 <li class="page-item">
-                                    <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ planes_centro_page_obj.previous_page_number }}#cursos"
+                                    <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}{% if planes_centro_sector_id %}sector_id={{ planes_centro_sector_id }}&{% endif %}planes_page={{ planes_centro_page_obj.previous_page_number }}#cursos"
                                        class="page-link">Anterior</a>
                                 </li>
                             {% else %}
@@ -116,17 +116,17 @@
                             {% for i in planes_centro_page_obj.paginator.page_range %}
                                 {% if planes_centro_page_obj.number == i %}
                                     <li class="page-item active">
-                                        <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ i }}#cursos"
+                                        <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}{% if planes_centro_sector_id %}sector_id={{ planes_centro_sector_id }}&{% endif %}planes_page={{ i }}#cursos"
                                            class="page-link">{{ i }}</a>
                                     </li>
                                 {% elif i > planes_centro_page_obj.number|add:'-5' and i < planes_centro_page_obj.number|add:'5' %}
                                     <li class="page-item">
-                                        <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ i }}#cursos"
+                                        <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}{% if planes_centro_sector_id %}sector_id={{ planes_centro_sector_id }}&{% endif %}planes_page={{ i }}#cursos"
                                            class="page-link">{{ i }}</a>
                                     </li>
                                 {% elif i == 1 or i == planes_centro_page_obj.paginator.num_pages %}
                                     <li class="page-item">
-                                        <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ i }}#cursos"
+                                        <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}{% if planes_centro_sector_id %}sector_id={{ planes_centro_sector_id }}&{% endif %}planes_page={{ i }}#cursos"
                                            class="page-link">{{ i }}</a>
                                     </li>
                                 {% elif i == planes_centro_page_obj.number|add:'-6' or i == planes_centro_page_obj.number|add:'6' %}
@@ -137,7 +137,7 @@
                             {% endfor %}
                             {% if planes_centro_page_obj.has_next %}
                                 <li class="page-item">
-                                    <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ planes_centro_page_obj.next_page_number }}#cursos"
+                                    <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}{% if planes_centro_sector_id %}sector_id={{ planes_centro_sector_id }}&{% endif %}planes_page={{ planes_centro_page_obj.next_page_number }}#cursos"
                                        class="page-link">Siguiente</a>
                                 </li>
                             {% else %}
@@ -180,7 +180,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Nombre</th>
-                                <th>Programa</th>
+                                <th>Plan Curricular</th>
                                 <th>Modalidad</th>
                                 <th>Comisiones</th>
                                 <th>Estado</th>
@@ -203,7 +203,7 @@
                                             </span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ curso.programa.nombre|default:"-" }}</td>
+                                    <td>{{ curso.plan_estudio|default:"-" }}</td>
                                     <td>{{ curso.modalidad.nombre }}</td>
                                     <td>{{ curso.comisiones_count }}</td>
                                     <td>

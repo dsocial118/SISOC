@@ -48,6 +48,7 @@ class ContentSecurityPolicyMiddleware:
             style_src_tokens.append("'unsafe-inline'")
         else:
             style_src_tokens.append(f"'nonce-{request.csp_nonce}'")
+            style_src_tokens.append("'unsafe-inline'")  # Necesario para Select2
 
         # CSP policy que permite recursos del mismo origen, Google Maps API, y Bootstrap CDN
         # `unsafe-inline` en script-src se controla por flag para compatibilidad temporal.

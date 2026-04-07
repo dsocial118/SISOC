@@ -144,13 +144,20 @@ def _build_planes_centro_queryset(centro, search_query, sector_id=None):
     return queryset.order_by("sector__nombre", "subsector__nombre", "id")
 
 
-def _build_planes_centro_cache_key(centro, search_query, page_number):
+def _build_planes_centro_cache_key(
+    centro,
+    search_query,
+    page_number,
+    sector_id=None,
+):
     provincia_key = centro.provincia_id or "sin-provincia"
     normalized_search = (search_query or "").strip().lower()
+    sector_key = sector_id or "todos"
     cache_version = get_planes_centro_cache_version()
     return (
         "vat:centro:cursos:planes:"
-        f"{cache_version}:{provincia_key}:{normalized_search}:{page_number}:"
+        f"{cache_version}:{provincia_key}:{normalized_search}:{sector_key}:"
+        f"{page_number}:"
         f"{PLANES_CENTRO_PAGE_SIZE}"
     )
 
@@ -159,6 +166,7 @@ def _get_planes_centro_page(
     centro,
     search_query,
     page_number,
+    sector_id=None,
     bypass_cache=False,
 ):
     normalized_search = (search_query or "").strip()
@@ -167,6 +175,7 @@ def _get_planes_centro_page(
         centro,
         normalized_search,
         normalized_page,
+        sector_id,
     )
     cached = None if bypass_cache else cache.get(cache_key)
 
@@ -186,9 +195,6 @@ def _get_planes_centro_page(
         ]
         return ordered_plans, cached["total_count"], page_obj
 
-    sector_id = None
-    if hasattr(_get_planes_centro_page, "_sector_id"):
-        sector_id = getattr(_get_planes_centro_page, "_sector_id")
     queryset = _build_planes_centro_queryset(centro, normalized_search, sector_id)
     paginator = Paginator(queryset, PLANES_CENTRO_PAGE_SIZE)
     page_obj = paginator.get_page(normalized_page)
@@ -207,14 +213,14 @@ def _get_planes_centro_page(
 
 def _build_cursos_panel_context(request, centro):
     search_query = (request.GET.get("busqueda") or "").strip()
-    sector_id = request.GET.get("sector_id") or None
+    sector_id_raw = request.GET.get("sector_id")
+    sector_id = int(sector_id_raw) if sector_id_raw and sector_id_raw.isdigit() else None
     page_number = request.GET.get("planes_page") or 1
-    # Propagar sector_id a _get_planes_centro_page
-    setattr(_get_planes_centro_page, "_sector_id", int(sector_id) if sector_id else None)
     planes_centro, total_filtrados, page_obj = _get_planes_centro_page(
         centro,
         search_query,
         page_number,
+        sector_id=sector_id,
         bypass_cache=request.GET.get("refresh") == "1",
     )
     from VAT.models import Sector

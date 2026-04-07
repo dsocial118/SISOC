@@ -16,6 +16,7 @@ from VAT import serializers as vat_serializers
 from VAT.api_views import CursoViewSet
 from VAT.forms import (
     ComisionCursoForm,
+    CentroAltaForm,
     CursoForm,
     InstitucionContactoAltaForm,
     InstitucionContactoForm,
@@ -232,9 +233,42 @@ def test_centro_create_rechaza_referente_sin_grupo_cfp(vat_admin_client, vat_geo
     assert response.status_code == 200
     assert Centro.objects.filter(codigo="500144900").count() == 0
     assert (
-        "El referente seleccionado debe tener el rol CFP."
+        "El referente seleccionado debe tener un rol valido de referente VAT."
         in response.content.decode("utf-8")
     )
+
+
+@pytest.mark.django_db
+def test_centro_alta_form_configura_referente_como_buscador(vat_referente_user):
+    vat_referente_user.first_name = "Ana"
+    vat_referente_user.last_name = "Pérez"
+    vat_referente_user.save(update_fields=["first_name", "last_name"])
+
+    form = CentroAltaForm()
+    referente_field = form.fields["referente"]
+
+    assert "js-referente-select" in referente_field.widget.attrs["class"]
+    assert referente_field.widget.attrs["data-placeholder"] == "Buscar referente..."
+    assert referente_field.label_from_instance(vat_referente_user) == "referente-vat - Ana Pérez"
+
+
+@pytest.mark.django_db
+def test_centro_alta_form_incluye_alias_legacy_de_referente_vat():
+    legacy_group, _ = Group.objects.get_or_create(name="ReferenteCentroVAT")
+    legacy_user = User.objects.create_user(
+        username="referente-legacy-form",
+        password="test1234",
+    )
+    legacy_user.groups.add(legacy_group)
+
+    form = CentroAltaForm()
+    queryset_usernames = list(
+        form.fields["referente"].queryset.order_by("username").values_list(
+            "username", flat=True
+        )
+    )
+
+    assert "referente-legacy-form" in queryset_usernames
 
 
 @pytest.mark.django_db
@@ -2855,6 +2889,7 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
     sector = Sector.objects.create(nombre="Servicios")
+    otro_sector = Sector.objects.create(nombre="Gastronomia")
     group, _ = Group.objects.get_or_create(name="CFP")
     user = User.objects.create_superuser(
         username="admin-vat-centro-planes",
@@ -2903,6 +2938,14 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
         normativa="Resolución especial 2026",
         activo=True,
     )
+    plan_otro_sector = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan Cocina Profesional",
+        sector=otro_sector,
+        modalidad_cursada=modalidad,
+        normativa="Resolución gastronomica 2026",
+        activo=True,
+    )
 
     client.force_login(user)
     detail_url = reverse("vat_centro_detail", kwargs={"pk": centro.pk})
@@ -2929,10 +2972,24 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
     assert len(filtered_response.context["planes_centro"]) == 1
     assert filtered_response.context["planes_centro"][0].id == plan_filtrado.id
 
+    filtered_by_sector_response = client.get(
+        panel_url,
+        {"sector_id": str(otro_sector.id)},
+    )
+
+    assert filtered_by_sector_response.status_code == 200
+    assert filtered_by_sector_response.context["planes_centro_total_filtrados"] == 1
+    assert len(filtered_by_sector_response.context["planes_centro"]) == 1
+    assert filtered_by_sector_response.context["planes_centro"][0].id == plan_otro_sector.id
+    assert filtered_by_sector_response.context["planes_centro_sector_id"] == otro_sector.id
+    filtered_by_sector_content = filtered_by_sector_response.content.decode("utf-8")
+    assert 'name="sector_id"' in filtered_by_sector_content
+    assert f'value="{otro_sector.id}" selected' in filtered_by_sector_content
+
     second_page_response = client.get(panel_url, {"planes_page": 2})
 
     assert second_page_response.status_code == 200
-    assert len(second_page_response.context["planes_centro"]) == 2
+    assert len(second_page_response.context["planes_centro"]) == 3
 
 
 @pytest.mark.django_db

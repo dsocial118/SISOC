@@ -7,6 +7,7 @@
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <link rel="stylesheet" href="{% static 'admin/css/select2templated.css' %}" />
     <style>
         .vp-shell {
             max-width: 1200px;
@@ -128,6 +129,42 @@
         .vp-field textarea:focus,
         .vp-field select:focus,
         .vp-field input:focus {
+            border-color: #3b74b8;
+            box-shadow: 0 0 0 .2rem rgba(59, 116, 184, 0.12);
+        }
+
+        .vp-field .select2-container {
+            width: 100% !important;
+        }
+
+        .vp-field .select2-container--default .select2-selection--single {
+            min-height: 46px;
+            border-radius: 12px;
+            border: 1px solid #d8e1ee;
+            display: flex;
+            align-items: center;
+            box-shadow: none;
+            background: #fff;
+        }
+
+        .vp-field .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #212529;
+            line-height: 1.4;
+            padding-left: .85rem;
+            padding-right: 2.2rem;
+        }
+
+        .vp-field .select2-container--default .select2-selection--single .select2-selection__placeholder {
+            color: #6c757d;
+        }
+
+        .vp-field .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 100%;
+            right: .55rem;
+        }
+
+        .vp-field .select2-container--default.select2-container--focus .select2-selection--single,
+        .vp-field .select2-container--default.select2-container--open .select2-selection--single {
             border-color: #3b74b8;
             box-shadow: 0 0 0 .2rem rgba(59, 116, 184, 0.12);
         }
