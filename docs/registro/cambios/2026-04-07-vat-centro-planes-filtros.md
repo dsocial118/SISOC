@@ -6,7 +6,7 @@
 
 ## Cambio aplicado
 - Se agregaron filtros combinados por `sector`, `subsector` y `modalidad` en el panel `vat_centro_cursos_panel`.
-- Se incorporó un selector de cantidad por página con opciones `20`, `50` y `100`.
+- Se incorporó un selector de cantidad por página con opciones `5`, `10`, `15`, `20`, `50` y `100`, usando `5` como valor por defecto.
 - La paginación ahora preserva todos los filtros activos mediante un querystring persistente.
 - Se agregó un resumen visual con cantidad de planes por sector dentro del resultado filtrado.
 - Se ampliaron los tests en `VAT/tests.py` para cubrir filtros combinados y el selector de tamaño de página.

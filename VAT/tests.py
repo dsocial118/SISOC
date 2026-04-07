@@ -2966,14 +2966,15 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
 
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
-    assert response.context["planes_centro_page_obj"].paginator.per_page == 20
-    assert len(response.context["planes_centro"]) == 20
+    assert response.context["planes_centro_page_obj"].paginator.per_page == 5
+    assert len(response.context["planes_centro"]) == 5
     assert response.context["planes_centro_is_paginated"] is True
     assert f'action="{detail_url}#cursos"' in content
     assert "planes_page=2#cursos" in content
     assert 'name="subsector_id"' in content
     assert 'name="modalidad_id"' in content
     assert 'name="planes_per_page"' in content
+    assert '<option value="5" selected>5</option>' in content
 
     filtered_response = client.get(
         panel_url,
@@ -3026,7 +3027,7 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
     second_page_response = client.get(panel_url, {"planes_page": 2})
 
     assert second_page_response.status_code == 200
-    assert len(second_page_response.context["planes_centro"]) == 3
+    assert len(second_page_response.context["planes_centro"]) == 5
 
 
 @pytest.mark.django_db
