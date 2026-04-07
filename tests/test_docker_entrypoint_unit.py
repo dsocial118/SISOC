@@ -53,13 +53,14 @@ def test_run_django_commands_incluye_makemigrations_en_dev_por_defecto(
     mock_run_server.assert_called_once_with()
 
 
-def test_run_django_commands_omite_makemigrations_en_prd_por_defecto(
-    mocker, monkeypatch
+@pytest.mark.parametrize("environment", ["prd", "homologacion"])
+def test_run_django_commands_omite_makemigrations_en_entorno_deploy_por_defecto(
+    mocker, monkeypatch, environment
 ):
     module = _load_entrypoint_module()
     mock_run_command = mocker.patch.object(module, "run_command")
     mock_run_server = mocker.patch.object(module, "run_server")
-    monkeypatch.setenv("ENVIRONMENT", "prd")
+    monkeypatch.setenv("ENVIRONMENT", environment)
     monkeypatch.delenv("RUN_MAKEMIGRATIONS_ON_START", raising=False)
 
     module.run_django_commands()
@@ -104,3 +105,21 @@ def test_run_django_commands_respeta_flag_explicito_para_makemigrations(
 
     stages = [call.kwargs["stage"] for call in mock_run_command.call_args_list]
     assert stages[0] == "makemigrations"
+
+
+@pytest.mark.parametrize("environment", ["qa", "homologacion", "prd"])
+def test_run_server_usa_gunicorn_en_entornos_deploy(mocker, monkeypatch, environment):
+    module = _load_entrypoint_module()
+    mock_cache_busting = mocker.patch.object(module, "cache_busting")
+    mock_run_command = mocker.patch.object(module, "run_command")
+    monkeypatch.setenv("ENVIRONMENT", environment)
+    monkeypatch.setenv("GUNICORN_WORKERS", "2")
+    monkeypatch.setenv("GUNICORN_THREADS", "1")
+
+    module.run_server()
+
+    mock_cache_busting.assert_called_once_with()
+    mock_run_command.assert_called_once()
+    args, kwargs = mock_run_command.call_args
+    assert args[0][:2] == ["gunicorn", "config.wsgi:application"]
+    assert kwargs["stage"] == "gunicorn"

@@ -13,9 +13,13 @@ from config.runtime import is_running_tests
 load_dotenv()
 
 # Entorno
+ENVIRONMENT = (
+    os.environ.get("ENVIRONMENT", "dev").strip().lower()
+)  # dev|qa|homologacion|prd
+PRODUCTION_LIKE_ENVIRONMENTS = {"homologacion", "prd"}
+IS_PRODUCTION_LIKE_ENVIRONMENT = ENVIRONMENT in PRODUCTION_LIKE_ENVIRONMENTS
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
-ENVIRONMENT = os.environ.get("ENVIRONMENT", "dev")  # dev|qa|prd
-GESTIONAR_INTEGRATION_ENABLED = ENVIRONMENT == "prd"
+GESTIONAR_INTEGRATION_ENABLED = IS_PRODUCTION_LIKE_ENVIRONMENT
 ENABLE_API_DOCS = True
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -35,7 +39,7 @@ hosts = [
 ]
 ALLOWED_HOSTS = hosts
 
-DEFAULT_SCHEME = "https" if ENVIRONMENT == "prd" else "http"
+DEFAULT_SCHEME = "https" if IS_PRODUCTION_LIKE_ENVIRONMENT else "http"
 
 
 def _to_origin(h: str) -> str:
@@ -258,10 +262,11 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # DB
 DB_CONN_MAX_AGE = int(
-    os.getenv("DB_CONN_MAX_AGE", "60" if ENVIRONMENT == "prd" else "0")
+    os.getenv("DB_CONN_MAX_AGE", "60" if IS_PRODUCTION_LIKE_ENVIRONMENT else "0")
 )
 DB_CONN_HEALTH_CHECKS = os.getenv(
-    "DB_CONN_HEALTH_CHECKS", "true" if ENVIRONMENT == "prd" else "false"
+    "DB_CONN_HEALTH_CHECKS",
+    "true" if IS_PRODUCTION_LIKE_ENVIRONMENT else "false",
 ).strip().lower() in ("1", "true", "yes", "on")
 
 DATABASES = {
@@ -371,7 +376,7 @@ if ENVIRONMENT == "qa":
     SENTRY_REPLAY_ENABLED = False
     SENTRY_REPLAYS_SESSION_SAMPLE_RATE = 0.0
     SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE = 0.0
-elif ENVIRONMENT == "prd":
+elif IS_PRODUCTION_LIKE_ENVIRONMENT:
     SENTRY_ERROR_SAMPLE_RATE = 1.0
     SENTRY_TRACES_SAMPLE_RATE = 1.0
     SENTRY_PROFILES_SAMPLE_RATE = 0.0
@@ -551,7 +556,7 @@ if DEBUG and not RUNNING_TESTS:
     SILKY_PYTHON_PROFILER = True
 
 # Seguridad por entorno
-if ENVIRONMENT == "prd":
+if IS_PRODUCTION_LIKE_ENVIRONMENT:
     STORAGES = {
         "default": {
             "BACKEND": "django.core.files.storage.FileSystemStorage",
