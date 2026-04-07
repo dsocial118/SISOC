@@ -18,6 +18,7 @@ Fecha: 2026-04-07
   - storage de estaticos con `ManifestStaticFilesStorage`
   - disponibilidad de Sentry
   - integracion GESTIONAR habilitada
+- Se normalizaron a ASCII seguro los textos nuevos de `docker/django/entrypoint.py` y `users/services_auth.py` para evitar secuencias mojibake en logs y mails.
 
 ## Decision principal
 
@@ -38,3 +39,4 @@ Para deploys se eligio un esquema base + overrides por entorno para evitar drift
 - `docker compose -f docker-compose.deploy.yml -f docker-compose.homologacion.yml config -q`
 - `docker compose -f docker-compose.deploy.yml -f docker-compose.produccion.yml config -q`
 - `pytest -q tests/test_settings_env_parsing.py tests/test_docker_entrypoint_unit.py sentry/tests.py tests/test_users_auth_flows.py -k "homologacion or deploy or password_reset_link"`
+- `pytest -q tests/test_docker_entrypoint_unit.py tests/test_source_encoding_regressions.py tests/test_users_auth_flows.py::test_build_password_reset_link_usa_default_scheme_sin_request tests/test_users_auth_flows.py::test_send_password_reset_link_uses_ascii_safe_subject`
