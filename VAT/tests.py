@@ -2643,9 +2643,7 @@ def test_curso_form_filtra_plan_estudio_por_provincia_del_centro(vat_curso_base)
 
 
 @pytest.mark.django_db
-def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(
-    client, vat_geo_data
-):
+def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
     group, _ = Group.objects.get_or_create(name="CFP")
@@ -2849,9 +2847,7 @@ def test_centro_cursos_panel_renderiza_accion_para_crear_curso_desde_plan_curric
 
 
 @pytest.mark.django_db
-def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(
-    client, vat_geo_data
-):
+def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
     sector = Sector.objects.create(nombre="Servicios")
