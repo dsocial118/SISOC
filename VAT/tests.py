@@ -2762,7 +2762,7 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
         modalidad=modalidad,
         estado="planificado",
     )
-    ComisionCurso.objects.create(
+    comision = ComisionCurso.objects.create(
         curso=_curso,
         ubicacion=ubicacion,
         codigo_comision="FIL-01",
@@ -2781,7 +2781,7 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'data-panel-rendered="1"' in content
     assert 'id="tablaCursosCentro"' in content
     assert 'class="curso-row"' in content
-    assert f'data-curso-id="{curso.id}"' in content
+    assert f'data-curso-id="{_curso.id}"' in content
     assert 'id="tablaComisionesCursoCentro"' in content
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
