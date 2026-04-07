@@ -14,23 +14,54 @@
                 <form method="get"
                       action="{% url 'vat_centro_detail' centro.pk %}#cursos"
                       class="row g-2 align-items-end">
-                    <div class="col-sm-8 col-lg-6">
+                    <div class="col-lg-4">
                         <label class="form-label small fw-semibold text-uppercase mb-1"
                                style="letter-spacing:.05em">Buscar plan curricular</label>
-                        <div class="input-group input-group-sm">
-                            <input type="search"
-                                   name="busqueda"
-                                   class="form-control form-control-sm"
-                                   placeholder="Ej: auxiliar, servicios o resolución"
-                                   value="{{ planes_centro_search_query }}"
-                                   autocomplete="off" />
-                            <select name="sector_id" class="form-select form-select-sm" style="max-width: 180px;">
-                                <option value="">Todos los sectores</option>
-                                {% for sector in planes_centro_sectores %}
-                                    <option value="{{ sector.id }}" {% if planes_centro_sector_id == sector.id %}selected{% endif %}>{{ sector.nombre }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                        <input type="search"
+                               name="busqueda"
+                               class="form-control form-control-sm"
+                               placeholder="Ej: auxiliar, servicios o resolución"
+                               value="{{ planes_centro_search_query }}"
+                               autocomplete="off" />
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label class="form-label small fw-semibold text-uppercase mb-1"
+                               style="letter-spacing:.05em">Sector</label>
+                        <select name="sector_id" class="form-select form-select-sm">
+                            <option value="">Todos los sectores</option>
+                            {% for sector in planes_centro_sectores %}
+                                <option value="{{ sector.id }}" {% if planes_centro_sector_id == sector.id %}selected{% endif %}>{{ sector.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label class="form-label small fw-semibold text-uppercase mb-1"
+                               style="letter-spacing:.05em">Subsector</label>
+                        <select name="subsector_id" class="form-select form-select-sm">
+                            <option value="">{% if planes_centro_sector_id %}Todos los subsectores{% else %}Elegí un sector primero{% endif %}</option>
+                            {% for subsector in planes_centro_subsectores %}
+                                <option value="{{ subsector.id }}" {% if planes_centro_subsector_id == subsector.id %}selected{% endif %}>{{ subsector.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label class="form-label small fw-semibold text-uppercase mb-1"
+                               style="letter-spacing:.05em">Modalidad</label>
+                        <select name="modalidad_id" class="form-select form-select-sm">
+                            <option value="">Todas las modalidades</option>
+                            {% for modalidad in planes_centro_modalidades %}
+                                <option value="{{ modalidad.id }}" {% if planes_centro_modalidad_id == modalidad.id %}selected{% endif %}>{{ modalidad.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-1">
+                        <label class="form-label small fw-semibold text-uppercase mb-1"
+                               style="letter-spacing:.05em">Ver</label>
+                        <select name="planes_per_page" class="form-select form-select-sm">
+                            {% for option in planes_centro_page_size_options %}
+                                <option value="{{ option }}" {% if planes_centro_page_size == option %}selected{% endif %}>{{ option }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="col-sm-auto">
                         <button type="submit" class="btn btn-primary btn-sm w-100">
@@ -45,8 +76,18 @@
                 <div class="text-muted small mt-2">
                     Mostrando {{ planes_centro_total_filtrados }} plan{{ planes_centro_total_filtrados|pluralize:"es" }}
                     {% if planes_centro_search_query %}para la búsqueda actual{% endif %}
+                    {% if planes_centro_total_sectores %}en {{ planes_centro_total_sectores }} sector{{ planes_centro_total_sectores|pluralize:"es" }}{% endif %}
                     .
                 </div>
+                {% if planes_centro_por_sector %}
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        {% for item in planes_centro_por_sector %}
+                            <span class="badge rounded-pill bg-light text-dark border">
+                                {{ item.sector__nombre|default:"Sin sector" }}: {{ item.total }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             {% if planes_centro %}
                 <div class="table-responsive">
@@ -105,7 +146,7 @@
                         <ul class="pagination mb-0">
                             {% if planes_centro_page_obj.has_previous %}
                                 <li class="page-item">
-                                    <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}{% if planes_centro_sector_id %}sector_id={{ planes_centro_sector_id }}&{% endif %}planes_page={{ planes_centro_page_obj.previous_page_number }}#cursos"
+                                    <a href="?{% if planes_centro_querystring %}{{ planes_centro_querystring }}&{% endif %}planes_page={{ planes_centro_page_obj.previous_page_number }}#cursos"
                                        class="page-link">Anterior</a>
                                 </li>
                             {% else %}
@@ -116,17 +157,17 @@
                             {% for i in planes_centro_page_obj.paginator.page_range %}
                                 {% if planes_centro_page_obj.number == i %}
                                     <li class="page-item active">
-                                        <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}{% if planes_centro_sector_id %}sector_id={{ planes_centro_sector_id }}&{% endif %}planes_page={{ i }}#cursos"
+                                        <a href="?{% if planes_centro_querystring %}{{ planes_centro_querystring }}&{% endif %}planes_page={{ i }}#cursos"
                                            class="page-link">{{ i }}</a>
                                     </li>
                                 {% elif i > planes_centro_page_obj.number|add:'-5' and i < planes_centro_page_obj.number|add:'5' %}
                                     <li class="page-item">
-                                        <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}{% if planes_centro_sector_id %}sector_id={{ planes_centro_sector_id }}&{% endif %}planes_page={{ i }}#cursos"
+                                        <a href="?{% if planes_centro_querystring %}{{ planes_centro_querystring }}&{% endif %}planes_page={{ i }}#cursos"
                                            class="page-link">{{ i }}</a>
                                     </li>
                                 {% elif i == 1 or i == planes_centro_page_obj.paginator.num_pages %}
                                     <li class="page-item">
-                                        <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}{% if planes_centro_sector_id %}sector_id={{ planes_centro_sector_id }}&{% endif %}planes_page={{ i }}#cursos"
+                                        <a href="?{% if planes_centro_querystring %}{{ planes_centro_querystring }}&{% endif %}planes_page={{ i }}#cursos"
                                            class="page-link">{{ i }}</a>
                                     </li>
                                 {% elif i == planes_centro_page_obj.number|add:'-6' or i == planes_centro_page_obj.number|add:'6' %}
@@ -137,7 +178,7 @@
                             {% endfor %}
                             {% if planes_centro_page_obj.has_next %}
                                 <li class="page-item">
-                                    <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}{% if planes_centro_sector_id %}sector_id={{ planes_centro_sector_id }}&{% endif %}planes_page={{ planes_centro_page_obj.next_page_number }}#cursos"
+                                    <a href="?{% if planes_centro_querystring %}{{ planes_centro_querystring }}&{% endif %}planes_page={{ planes_centro_page_obj.next_page_number }}#cursos"
                                        class="page-link">Siguiente</a>
                                 </li>
                             {% else %}
@@ -154,6 +195,8 @@
                     <p class="mb-0">
                         {% if planes_centro_search_query %}
                             No hay planes curriculares que coincidan con la búsqueda actual.
+                        {% elif planes_centro_sector_id or planes_centro_subsector_id or planes_centro_modalidad_id %}
+                            No hay planes curriculares que coincidan con los filtros seleccionados.
                         {% else %}
                             No hay planes curriculares activos para la provincia de este centro.
                         {% endif %}

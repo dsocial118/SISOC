@@ -2888,8 +2888,10 @@ def test_centro_cursos_panel_renderiza_accion_para_crear_curso_desde_plan_curric
 def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
+    modalidad_hibrida = ModalidadCursada.objects.create(nombre="Hibrida", activo=True)
     sector = Sector.objects.create(nombre="Servicios")
     otro_sector = Sector.objects.create(nombre="Gastronomia")
+    subsector = Subsector.objects.create(sector=sector, nombre="Administracion")
     group, _ = Group.objects.get_or_create(name="CFP")
     user = User.objects.create_superuser(
         username="admin-vat-centro-planes",
@@ -2934,6 +2936,7 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
         provincia=provincia,
         nombre="Plan Especial Administrativo",
         sector=sector,
+        subsector=subsector,
         modalidad_cursada=modalidad,
         normativa="Resolución especial 2026",
         activo=True,
@@ -2942,7 +2945,7 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
         provincia=provincia,
         nombre="Plan Cocina Profesional",
         sector=otro_sector,
-        modalidad_cursada=modalidad,
+        modalidad_cursada=modalidad_hibrida,
         normativa="Resolución gastronomica 2026",
         activo=True,
     )
@@ -2961,6 +2964,9 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
     assert response.context["planes_centro_is_paginated"] is True
     assert f'action="{detail_url}#cursos"' in content
     assert "planes_page=2#cursos" in content
+    assert 'name="subsector_id"' in content
+    assert 'name="modalidad_id"' in content
+    assert 'name="planes_per_page"' in content
 
     filtered_response = client.get(
         panel_url,
@@ -2972,6 +2978,28 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
     assert len(filtered_response.context["planes_centro"]) == 1
     assert filtered_response.context["planes_centro"][0].id == plan_filtrado.id
 
+    filtered_combined_response = client.get(
+        panel_url,
+        {
+            "sector_id": str(sector.id),
+            "subsector_id": str(subsector.id),
+            "modalidad_id": str(modalidad.id),
+            "planes_per_page": "50",
+        },
+    )
+
+    assert filtered_combined_response.status_code == 200
+    assert filtered_combined_response.context["planes_centro_total_filtrados"] == 1
+    assert filtered_combined_response.context["planes_centro_page_obj"].paginator.per_page == 50
+    assert filtered_combined_response.context["planes_centro_page_size"] == 50
+    assert filtered_combined_response.context["planes_centro_subsector_id"] == subsector.id
+    assert filtered_combined_response.context["planes_centro_modalidad_id"] == modalidad.id
+    assert filtered_combined_response.context["planes_centro"][0].id == plan_filtrado.id
+    filtered_combined_content = filtered_combined_response.content.decode("utf-8")
+    assert f'value="{subsector.id}" selected' in filtered_combined_content
+    assert f'value="{modalidad.id}" selected' in filtered_combined_content
+    assert 'Servicios: 1' in filtered_combined_content
+
     filtered_by_sector_response = client.get(
         panel_url,
         {"sector_id": str(otro_sector.id)},
@@ -2982,9 +3010,11 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
     assert len(filtered_by_sector_response.context["planes_centro"]) == 1
     assert filtered_by_sector_response.context["planes_centro"][0].id == plan_otro_sector.id
     assert filtered_by_sector_response.context["planes_centro_sector_id"] == otro_sector.id
+    assert filtered_by_sector_response.context["planes_centro_modalidad_id"] is None
     filtered_by_sector_content = filtered_by_sector_response.content.decode("utf-8")
     assert 'name="sector_id"' in filtered_by_sector_content
     assert f'value="{otro_sector.id}" selected' in filtered_by_sector_content
+    assert 'Gastronomia: 1' in filtered_by_sector_content
 
     second_page_response = client.get(panel_url, {"planes_page": 2})
 

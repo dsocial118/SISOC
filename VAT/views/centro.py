@@ -69,6 +69,7 @@ BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
 
 
 PLANES_CENTRO_PAGE_SIZE = 20
+PLANES_CENTRO_PAGE_SIZE_OPTIONS = (20, 50, 100)
 CURSOS_PANEL_CACHE_TTL_SECONDS = 60
 
 
@@ -118,7 +119,25 @@ def _build_ubicacion_form(centro):
     return _scope_centro_field_to_current_centro(form, centro)
 
 
-def _build_planes_centro_queryset(centro, search_query, sector_id=None):
+def _parse_planes_centro_page_size(raw_value):
+    try:
+        page_size = int(raw_value)
+    except (TypeError, ValueError):
+        return PLANES_CENTRO_PAGE_SIZE
+
+    if page_size in PLANES_CENTRO_PAGE_SIZE_OPTIONS:
+        return page_size
+
+    return PLANES_CENTRO_PAGE_SIZE
+
+
+def _build_planes_centro_queryset(
+    centro,
+    search_query,
+    sector_id=None,
+    subsector_id=None,
+    modalidad_id=None,
+):
     queryset = (
         PlanVersionCurricular.objects.filter(
             activo=True,
@@ -141,6 +160,12 @@ def _build_planes_centro_queryset(centro, search_query, sector_id=None):
     if sector_id:
         queryset = queryset.filter(sector_id=sector_id)
 
+    if subsector_id:
+        queryset = queryset.filter(subsector_id=subsector_id)
+
+    if modalidad_id:
+        queryset = queryset.filter(modalidad_cursada_id=modalidad_id)
+
     return queryset.order_by("sector__nombre", "subsector__nombre", "id")
 
 
@@ -149,16 +174,22 @@ def _build_planes_centro_cache_key(
     search_query,
     page_number,
     sector_id=None,
+    subsector_id=None,
+    modalidad_id=None,
+    page_size=PLANES_CENTRO_PAGE_SIZE,
 ):
     provincia_key = centro.provincia_id or "sin-provincia"
     normalized_search = (search_query or "").strip().lower()
     sector_key = sector_id or "todos"
+    subsector_key = subsector_id or "todos"
+    modalidad_key = modalidad_id or "todas"
     cache_version = get_planes_centro_cache_version()
     return (
         "vat:centro:cursos:planes:"
         f"{cache_version}:{provincia_key}:{normalized_search}:{sector_key}:"
+        f"{subsector_key}:{modalidad_key}:{page_size}:"
         f"{page_number}:"
-        f"{PLANES_CENTRO_PAGE_SIZE}"
+        f"{page_size}"
     )
 
 
@@ -167,6 +198,9 @@ def _get_planes_centro_page(
     search_query,
     page_number,
     sector_id=None,
+    subsector_id=None,
+    modalidad_id=None,
+    page_size=PLANES_CENTRO_PAGE_SIZE,
     bypass_cache=False,
 ):
     normalized_search = (search_query or "").strip()
@@ -176,11 +210,14 @@ def _get_planes_centro_page(
         normalized_search,
         normalized_page,
         sector_id,
+        subsector_id,
+        modalidad_id,
+        page_size,
     )
     cached = None if bypass_cache else cache.get(cache_key)
 
     if cached is not None:
-        paginator = Paginator(range(cached["total_count"]), PLANES_CENTRO_PAGE_SIZE)
+        paginator = Paginator(range(cached["total_count"]), page_size)
         page_obj = paginator.get_page(normalized_page)
         plans_by_id = {
             plan.pk: plan
@@ -195,8 +232,14 @@ def _get_planes_centro_page(
         ]
         return ordered_plans, cached["total_count"], page_obj
 
-    queryset = _build_planes_centro_queryset(centro, normalized_search, sector_id)
-    paginator = Paginator(queryset, PLANES_CENTRO_PAGE_SIZE)
+    queryset = _build_planes_centro_queryset(
+        centro,
+        normalized_search,
+        sector_id,
+        subsector_id,
+        modalidad_id,
+    )
+    paginator = Paginator(queryset, page_size)
     page_obj = paginator.get_page(normalized_page)
     plans = list(page_obj.object_list)
 
@@ -214,17 +257,60 @@ def _get_planes_centro_page(
 def _build_cursos_panel_context(request, centro):
     search_query = (request.GET.get("busqueda") or "").strip()
     sector_id_raw = request.GET.get("sector_id")
+    subsector_id_raw = request.GET.get("subsector_id")
+    modalidad_id_raw = request.GET.get("modalidad_id")
     sector_id = int(sector_id_raw) if sector_id_raw and sector_id_raw.isdigit() else None
+    subsector_id = (
+        int(subsector_id_raw)
+        if subsector_id_raw and subsector_id_raw.isdigit()
+        else None
+    )
+    modalidad_id = (
+        int(modalidad_id_raw)
+        if modalidad_id_raw and modalidad_id_raw.isdigit()
+        else None
+    )
+    page_size = _parse_planes_centro_page_size(request.GET.get("planes_per_page"))
     page_number = request.GET.get("planes_page") or 1
+    planes_queryset = _build_planes_centro_queryset(
+        centro,
+        search_query,
+        sector_id,
+        subsector_id,
+        modalidad_id,
+    )
     planes_centro, total_filtrados, page_obj = _get_planes_centro_page(
         centro,
         search_query,
         page_number,
         sector_id=sector_id,
+        subsector_id=subsector_id,
+        modalidad_id=modalidad_id,
+        page_size=page_size,
         bypass_cache=request.GET.get("refresh") == "1",
     )
-    from VAT.models import Sector
+    from VAT.models import ModalidadCursada, Sector, Subsector
+
     sectores = Sector.objects.all().order_by("nombre")
+    modalidades = ModalidadCursada.objects.filter(activo=True).order_by("nombre")
+    subsectores = Subsector.objects.select_related("sector").order_by(
+        "sector__nombre", "nombre"
+    )
+    if sector_id:
+        subsectores = subsectores.filter(sector_id=sector_id)
+    elif subsector_id:
+        subsectores = subsectores.filter(pk=subsector_id)
+    else:
+        subsectores = subsectores.none()
+
+    planes_por_sector = list(
+        planes_queryset.values("sector__nombre")
+        .annotate(total=Count("id"))
+        .order_by("sector__nombre")
+    )
+    planes_query_params = request.GET.copy()
+    planes_query_params.pop("planes_page", None)
+    planes_query_params.pop("refresh", None)
     cursos = list(
         Curso.objects.filter(centro=centro)
         .select_related("modalidad", "plan_estudio")
@@ -261,14 +347,23 @@ def _build_cursos_panel_context(request, centro):
         "planes_centro": planes_centro,
         "planes_centro_search_query": search_query,
         "planes_centro_sector_id": int(sector_id) if sector_id else None,
+        "planes_centro_subsector_id": int(subsector_id) if subsector_id else None,
+        "planes_centro_modalidad_id": int(modalidad_id) if modalidad_id else None,
+        "planes_centro_page_size": page_size,
+        "planes_centro_page_size_options": PLANES_CENTRO_PAGE_SIZE_OPTIONS,
         "planes_centro_total_filtrados": total_filtrados,
         "planes_centro_page_obj": page_obj,
         "planes_centro_is_paginated": page_obj.has_other_pages(),
+        "planes_centro_querystring": planes_query_params.urlencode(),
+        "planes_centro_total_sectores": len(planes_por_sector),
+        "planes_centro_por_sector": planes_por_sector,
         "cursos": cursos,
         "comisiones_curso": comisiones_curso,
         "curso_form": curso_form,
         "comision_curso_form": comision_curso_form,
         "planes_centro_sectores": sectores,
+        "planes_centro_subsectores": subsectores,
+        "planes_centro_modalidades": modalidades,
     }
 
 
