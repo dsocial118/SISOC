@@ -2643,7 +2643,7 @@ def test_curso_form_filtra_plan_estudio_por_provincia_del_centro(vat_curso_base)
 
 
 @pytest.mark.django_db
-def test_centro_detail_renderiza_marcadores_para_filtrar_comisiones_por_curso(
+def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(
     client, vat_geo_data
 ):
     provincia, municipio, localidad = vat_geo_data
@@ -2702,10 +2702,85 @@ def test_centro_detail_renderiza_marcadores_para_filtrar_comisiones_por_curso(
     )
 
     client.force_login(user)
-    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+    detail_url = reverse("vat_centro_detail", kwargs={"pk": centro.pk})
+    panel_url = reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk})
+    response = client.get(detail_url)
     content = response.content.decode("utf-8")
 
     assert response.status_code == 200
+    assert f'data-cursos-panel-url="{panel_url}"' in content
+    assert 'id="centroCursosPanelContainer"' in content
+    assert 'data-panel-loaded="0"' in content
+    assert 'id="tablaCursosCentro"' not in content
+    assert 'id="tablaComisionesCursoCentro"' not in content
+    assert "loadCursosPanel" in content
+
+
+@pytest.mark.django_db
+def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_curso(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-vat-centro-detail-panel",
+        email="admin-centro-detail-panel@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP 777 Panel",
+        codigo="CFP-777-PANEL",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="12",
+        numero=345,
+        domicilio_actividad="Calle 12 N° 345",
+        telefono="221-7000001",
+        celular="221-7000002",
+        correo="cfp777-panel@vat.test",
+        nombre_referente="Laura",
+        apellido_referente="Diaz",
+        telefono_referente="221-7000003",
+        correo_referente="laura@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 12 N° 345",
+        es_principal=True,
+    )
+    _curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Filtrable",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    ComisionCurso.objects.create(
+        curso=_curso,
+        ubicacion=ubicacion,
+        codigo_comision="FIL-01",
+        nombre="Comisión Filtrable",
+        cupo_total=30,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="planificada",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert 'data-panel-rendered="1"' in content
     assert 'id="tablaCursosCentro"' in content
     assert 'class="curso-row"' in content
     assert f'data-curso-id="{curso.id}"' in content
@@ -2713,11 +2788,10 @@ def test_centro_detail_renderiza_marcadores_para_filtrar_comisiones_por_curso(
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
     assert 'title="Gestionar Comisión"' in content
-    assert "setupCursoComisionFilter" in content
 
 
 @pytest.mark.django_db
-def test_centro_detail_renderiza_accion_para_crear_curso_desde_plan_curricular(
+def test_centro_cursos_panel_renderiza_accion_para_crear_curso_desde_plan_curricular(
     client, vat_geo_data
 ):
     provincia, municipio, localidad = vat_geo_data
@@ -2763,19 +2837,21 @@ def test_centro_detail_renderiza_accion_para_crear_curso_desde_plan_curricular(
     plan.titulos.add(titulo)
 
     client.force_login(user)
-    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+    response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
     content = response.content.decode("utf-8")
 
     assert response.status_code == 200
+    assert 'data-panel-rendered="1"' in content
     assert 'title="Nuevo curso con este plan"' in content
     assert f'data-plan-estudio-id="{plan.id}"' in content
     assert 'data-lock-plan-estudio="1"' in content
     assert 'id="planEstudioSeleccionadoInfo"' in content
-    assert "setPlanEstudioFieldLock" in content
 
 
 @pytest.mark.django_db
-def test_centro_detail_filtra_y_pagina_planes_curriculares(client, vat_geo_data):
+def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(
+    client, vat_geo_data
+):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
     sector = Sector.objects.create(nombre="Servicios")
@@ -2830,25 +2906,30 @@ def test_centro_detail_filtra_y_pagina_planes_curriculares(client, vat_geo_data)
 
     client.force_login(user)
     detail_url = reverse("vat_centro_detail", kwargs={"pk": centro.pk})
+    panel_url = reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk})
 
-    response = client.get(detail_url)
+    response = client.get(panel_url)
     content = response.content.decode("utf-8")
 
     assert response.status_code == 200
+    assert 'data-panel-rendered="1"' in content
     assert response.context["planes_centro_page_obj"].paginator.per_page == 20
     assert len(response.context["planes_centro"]) == 20
     assert response.context["planes_centro_is_paginated"] is True
     assert f'action="{detail_url}#cursos"' in content
     assert "planes_page=2#cursos" in content
 
-    filtered_response = client.get(detail_url, {"busqueda": "Especial Administrativo"})
+    filtered_response = client.get(
+        panel_url,
+        {"busqueda": "Especial Administrativo"},
+    )
 
     assert filtered_response.status_code == 200
     assert filtered_response.context["planes_centro_total_filtrados"] == 1
     assert len(filtered_response.context["planes_centro"]) == 1
     assert filtered_response.context["planes_centro"][0].id == plan_filtrado.id
 
-    second_page_response = client.get(detail_url, {"planes_page": 2})
+    second_page_response = client.get(panel_url, {"planes_page": 2})
 
     assert second_page_response.status_code == 200
     assert len(second_page_response.context["planes_centro"]) == 2

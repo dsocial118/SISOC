@@ -287,6 +287,12 @@ class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
         verbose_name = "Plan de Estudio"
         verbose_name_plural = "Planes de Estudio"
         ordering = ["sector", "modalidad_cursada"]
+        indexes = [
+            models.Index(
+                fields=["provincia", "activo"],
+                name="vat_plan_prov_act_idx",
+            ),
+        ]
 
     @property
     def titulo_referencia(self):
