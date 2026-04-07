@@ -10,8 +10,9 @@ from duplas.models import Dupla
 from organizaciones.models import Organizacion
 from admisiones.models.admisiones import InformeTecnico
 from relevamientos.models import ClasificacionComedor, Relevamiento
-from rendicioncuentasmensual.models import RendicionCuentaMensual
 from rendicioncuentasmensual.models import DocumentacionAdjunta
+from rendicioncuentasmensual.models import RendicionCuentaMensual
+from rendicioncuentasmensual.services import RendicionCuentaMensualService
 
 
 class SimpleUbicacionSerializer(serializers.ModelSerializer):
@@ -907,9 +908,12 @@ class NominaUpdateSerializer(NoSaveSerializer):
 class ComprobanteRendicionSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     estado_label = serializers.CharField(source="get_estado_display", read_only=True)
+    estado_visual = serializers.SerializerMethodField()
+    estado_label_visual = serializers.SerializerMethodField()
     categoria_label = serializers.CharField(
         source="get_categoria_display", read_only=True
     )
+    subsanaciones = serializers.SerializerMethodField()
 
     class Meta:
         model = DocumentacionAdjunta
@@ -918,12 +922,16 @@ class ComprobanteRendicionSerializer(serializers.ModelSerializer):
             "nombre",
             "categoria",
             "categoria_label",
+            "documento_subsanado",
             "url",
             "estado",
             "estado_label",
+            "estado_visual",
+            "estado_label_visual",
             "observaciones",
             "fecha_creacion",
             "ultima_modificacion",
+            "subsanaciones",
         )
 
     def get_url(self, obj):
@@ -932,6 +940,19 @@ class ComprobanteRendicionSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         url = obj.archivo.url
         return request.build_absolute_uri(url) if request else url
+
+    def get_estado_visual(self, obj):
+        return obj.get_estado_visual()
+
+    def get_estado_label_visual(self, obj):
+        return obj.get_estado_visual_display()
+
+    def get_subsanaciones(self, obj):
+        return ComprobanteRendicionSerializer(
+            getattr(obj, "subsanaciones_historial", []),
+            many=True,
+            context=self.context,
+        ).data
 
 
 class RendicionMensualListSerializer(serializers.ModelSerializer):
@@ -981,15 +1002,9 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
         )
 
     def get_documentacion(self, obj):
-        documentos = list(
-            getattr(obj, "archivos_adjuntos")
-            .filter(deleted_at__isnull=True)
-            .order_by("categoria", "fecha_creacion", "id")
+        grouped = RendicionCuentaMensualService._construir_documentacion_para_detalle(
+            obj
         )
-        grouped = {}
-        for documento in documentos:
-            grouped.setdefault(documento.categoria, []).append(documento)
-
         serializer_context = {"request": self.context.get("request")}
         payload = []
         for categoria in DocumentacionAdjunta.categorias_mobile():

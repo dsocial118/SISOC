@@ -1,16 +1,159 @@
 import logging
+import os
+from io import BytesIO
 
 from django.core.exceptions import ValidationError
+from django.http import FileResponse
 from django.db import transaction
+from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from pypdf import PdfReader, PdfWriter
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
 
+from comunicados.models import Comunicado, EstadoComunicado, SubtipoComunicado, TipoComunicado
 from comedores.models import Comedor
+from pwa.services.mensajes_service import MOBILE_RENDICION_PERMISSION_CODE
+from pwa.services.push_service import notify_rendicion_revision_push
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
 
 logger = logging.getLogger("django")
 
 
 class RendicionCuentaMensualService:
+    MOBILE_MESSAGE_ACTION_PREFIX = "[SISOC_ACCION]"
+    MOBILE_MESSAGE_ACTION_SUFFIX = "[/SISOC_ACCION]"
+    CATEGORIAS_CON_HISTORIAL_SUBSANACION = {
+        DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        DocumentacionAdjunta.CATEGORIA_OTROS,
+    }
+
+    @staticmethod
+    def _obtener_comedores_destino_notificacion(rendicion):
+        comedor = getattr(rendicion, "comedor", None)
+        if not comedor:
+            return []
+
+        proyecto_codigo = (getattr(comedor, "codigo_de_proyecto", "") or "").strip()
+        if not proyecto_codigo:
+            return [comedor]
+
+        filters = {
+            "codigo_de_proyecto": proyecto_codigo,
+            "deleted_at__isnull": True,
+        }
+        organizacion_id = getattr(comedor, "organizacion_id", None)
+        if organizacion_id:
+            filters["organizacion_id"] = organizacion_id
+        return list(Comedor.objects.filter(**filters).order_by("nombre", "id"))
+
+    @staticmethod
+    def _aplicar_usuario_ultima_modificacion(rendicion, actor):
+        if getattr(actor, "is_authenticated", False):
+            rendicion.usuario_ultima_modificacion = actor
+
+    @staticmethod
+    def _archivar_notificaciones_mobile_rendicion(rendicion):
+        if not rendicion or not getattr(rendicion, "id", None):
+            return 0
+        marker = (
+            f"{RendicionCuentaMensualService.MOBILE_MESSAGE_ACTION_PREFIX}"
+            f"rendicion_detalle:{rendicion.id}"
+            f"{RendicionCuentaMensualService.MOBILE_MESSAGE_ACTION_SUFFIX}"
+        )
+        return Comunicado.objects.filter(
+            tipo=TipoComunicado.EXTERNO,
+            subtipo=SubtipoComunicado.COMEDORES,
+            estado=EstadoComunicado.PUBLICADO,
+            cuerpo__contains=marker,
+        ).update(
+            estado=EstadoComunicado.ARCHIVADO,
+            fecha_publicacion=None,
+        )
+
+    @staticmethod
+    def _crear_notificacion_mobile_revision_documento(*, documento, actor):
+        rendicion = getattr(documento, "rendicion_cuenta_mensual", None)
+        if not rendicion or not actor:
+            return None
+        RendicionCuentaMensualService._archivar_notificaciones_mobile_rendicion(
+            rendicion
+        )
+        if rendicion.estado == RendicionCuentaMensual.ESTADO_FINALIZADA:
+            return None
+        comedores_destino = (
+            RendicionCuentaMensualService._obtener_comedores_destino_notificacion(
+                rendicion
+            )
+        )
+        if not comedores_destino:
+            return None
+
+        numero_rendicion = getattr(rendicion, "numero_rendicion", None) or rendicion.id
+        estado_legible = documento.get_estado_display()
+        comedor = getattr(rendicion, "comedor", None)
+        proyecto_codigo = (getattr(comedor, "codigo_de_proyecto", "") or "").strip()
+        convenio = (getattr(rendicion, "convenio", "") or "").strip()
+        proyecto_label = proyecto_codigo or "Sin proyecto"
+        convenio_label = convenio or "Sin convenio"
+        titulo = (
+            f"Proyecto {proyecto_label} | Convenio {convenio_label} | "
+            f"Rendici?n {numero_rendicion}: documento {estado_legible.lower()}"
+        )
+
+        cuerpo_lineas = [
+            (
+                "Se actualiz? el estado de un documento de la rendici?n "
+                f"{numero_rendicion}."
+            ),
+            f"Proyecto: {proyecto_label}.",
+            f"Convenio: {convenio_label}.",
+            f"Documento: {documento.nombre}.",
+            f"Estado: {estado_legible}.",
+        ]
+
+        if documento.observaciones:
+            cuerpo_lineas.append(f"Observaciones: {documento.observaciones}.")
+
+        if rendicion.estado == RendicionCuentaMensual.ESTADO_SUBSANAR:
+            cuerpo_lineas.append(
+                "La rendición quedó en Presentación a subsanar. "
+                "Revisá las observaciones y actualizá la documentación indicada."
+            )
+        elif rendicion.estado == RendicionCuentaMensual.ESTADO_FINALIZADA:
+            cuerpo_lineas.append(
+                "La rendición quedó en Presentación finalizada."
+            )
+        cuerpo_lineas.append(
+            (
+                f"{RendicionCuentaMensualService.MOBILE_MESSAGE_ACTION_PREFIX}"
+                f"rendicion_detalle:{rendicion.id}"
+                f"{RendicionCuentaMensualService.MOBILE_MESSAGE_ACTION_SUFFIX}"
+            )
+        )
+
+        comunicado = Comunicado.objects.create(
+            titulo=titulo,
+            cuerpo="\n".join(cuerpo_lineas),
+            estado=EstadoComunicado.PUBLICADO,
+            tipo=TipoComunicado.EXTERNO,
+            subtipo=SubtipoComunicado.COMEDORES,
+            para_todos_comedores=False,
+            fecha_publicacion=timezone.now(),
+            usuario_creador=actor,
+            usuario_ultima_modificacion=actor,
+        )
+        comunicado.comedores.add(*comedores_destino)
+        notify_rendicion_revision_push(
+            comunicado=comunicado,
+            rendicion=rendicion,
+            permission_code=MOBILE_RENDICION_PERMISSION_CODE,
+            comedor_ids=[comedor_destino.id for comedor_destino in comedores_destino],
+        )
+        return comunicado
+
     @staticmethod
     def _get_archivos_adjuntos_data(data):
         return data.get("archivos_adjuntos", data.get("arvhios_adjuntos"))
@@ -46,6 +189,18 @@ class RendicionCuentaMensualService:
         )
 
     @staticmethod
+    def _documentos_vigentes_queryset(rendicion):
+        subsanaciones_activas = DocumentacionAdjunta.objects.filter(
+            deleted_at__isnull=True,
+            documento_subsanado_id=OuterRef("pk"),
+        )
+        return (
+            RendicionCuentaMensualService._documentos_activos_queryset(rendicion)
+            .annotate(tiene_subsanacion_activa=Exists(subsanaciones_activas))
+            .filter(tiene_subsanacion_activa=False)
+        )
+
+    @staticmethod
     def _sincronizar_flag_documento_adjunto(rendicion):
         tiene_documentos = RendicionCuentaMensualService._documentos_activos_queryset(
             rendicion
@@ -53,6 +208,33 @@ class RendicionCuentaMensualService:
         if rendicion.documento_adjunto != tiene_documentos:
             rendicion.documento_adjunto = tiene_documentos
             rendicion.save(update_fields=["documento_adjunto", "ultima_modificacion"])
+
+    @staticmethod
+    def _sincronizar_estado_rendicion_por_documentos(rendicion):
+        documentos = list(
+            RendicionCuentaMensualService._documentos_vigentes_queryset(rendicion)
+        )
+        if documentos and all(
+            documento.estado == DocumentacionAdjunta.ESTADO_VALIDADO
+            for documento in documentos
+        ):
+            nuevo_estado = RendicionCuentaMensual.ESTADO_FINALIZADA
+        elif any(
+            documento.estado == DocumentacionAdjunta.ESTADO_SUBSANAR
+            for documento in documentos
+        ):
+            nuevo_estado = RendicionCuentaMensual.ESTADO_SUBSANAR
+        else:
+            nuevo_estado = RendicionCuentaMensual.ESTADO_REVISION
+
+        if rendicion.estado != nuevo_estado:
+            rendicion.estado = nuevo_estado
+            rendicion.save(update_fields=["estado", "ultima_modificacion"])
+        if nuevo_estado != RendicionCuentaMensual.ESTADO_SUBSANAR:
+            RendicionCuentaMensualService._archivar_notificaciones_mobile_rendicion(
+                rendicion
+            )
+        return rendicion
 
     @staticmethod
     def _validar_numero_y_periodo(
@@ -117,15 +299,110 @@ class RendicionCuentaMensualService:
         return config
 
     @staticmethod
-    def _validar_rendicion_editable(rendicion):
-        if rendicion.estado not in (
-            RendicionCuentaMensual.ESTADO_ELABORACION,
-            RendicionCuentaMensual.ESTADO_SUBSANAR,
+    def _obtener_documento_subsanado_para_carga(
+        *, rendicion, categoria, documento_subsanado_id
+    ):
+        documentos_categoria = RendicionCuentaMensualService._documentos_activos_queryset(
+            rendicion
+        ).filter(categoria=categoria)
+
+        if (
+            categoria
+            in RendicionCuentaMensualService.CATEGORIAS_CON_HISTORIAL_SUBSANACION
         ):
+            if not documento_subsanado_id:
+                raise ValidationError(
+                    {
+                        "detail": (
+                            "Debe seleccionar el documento observado que quiere subsanar."
+                        )
+                    }
+                )
+            documento = documentos_categoria.filter(id=documento_subsanado_id).first()
+            if not documento or documento.estado != DocumentacionAdjunta.ESTADO_SUBSANAR:
+                raise ValidationError(
+                    {
+                        "detail": (
+                            "El documento seleccionado no está pendiente de subsanación."
+                        )
+                    }
+                )
+            if documento.subsanaciones.filter(deleted_at__isnull=True).exists():
+                raise ValidationError(
+                    {
+                        "detail": (
+                            "Ese documento ya tiene una subsanación cargada pendiente de revisión."
+                        )
+                    }
+                )
+            return documento
+
+        documento = (
+            documentos_categoria.filter(estado=DocumentacionAdjunta.ESTADO_SUBSANAR)
+            .order_by("fecha_creacion", "id")
+            .first()
+        )
+        if not documento:
             raise ValidationError(
                 {
                     "detail": (
-                        "La documentación solo puede modificarse en elaboración o subsanación."
+                        "No hay un documento observado para reemplazar en esa categoría."
+                    )
+                }
+            )
+        return documento
+
+    @staticmethod
+    def _validar_carga_documentacion_mobile(
+        *, rendicion, categoria, documento_subsanado_id=None
+    ):
+        config = DocumentacionAdjunta.get_categoria_config(categoria)
+        if not config:
+            raise ValidationError(
+                {"categoria": "La categoría de documentación es inválida."}
+            )
+
+        if rendicion.estado == RendicionCuentaMensual.ESTADO_ELABORACION:
+            if (
+                not config["multiple"]
+                and RendicionCuentaMensualService._documentos_activos_queryset(rendicion)
+                .filter(categoria=categoria)
+                .exists()
+            ):
+                raise ValidationError(
+                    {
+                        "categoria": (
+                            "Esta categoría admite un único documento activo por rendición."
+                        )
+                    }
+                )
+            return {"config": config, "documento_subsanado": None}
+
+        if rendicion.estado != RendicionCuentaMensual.ESTADO_SUBSANAR:
+            raise ValidationError(
+                {
+                    "detail": (
+                        "La documentación solo puede modificarse en elaboración o durante una subsanación habilitada."
+                    )
+                }
+            )
+
+        documento_subsanado = (
+            RendicionCuentaMensualService._obtener_documento_subsanado_para_carga(
+                rendicion=rendicion,
+                categoria=categoria,
+                documento_subsanado_id=documento_subsanado_id,
+            )
+        )
+        return {"config": config, "documento_subsanado": documento_subsanado}
+
+    @staticmethod
+    def _validar_rendicion_editable(rendicion):
+        if rendicion.estado != RendicionCuentaMensual.ESTADO_ELABORACION:
+            raise ValidationError(
+                {
+                    "detail": (
+                        "La documentación solo puede modificarse en elaboración."
                     )
                 }
             )
@@ -143,8 +420,87 @@ class RendicionCuentaMensualService:
         return grouped
 
     @staticmethod
+    def _construir_documentacion_para_detalle(rendicion):
+        documentos = list(
+            RendicionCuentaMensualService._documentos_activos_queryset(rendicion)
+        )
+        grouped = {
+            item["codigo"]: [] for item in DocumentacionAdjunta.categorias_mobile()
+        }
+        documentos_activos_por_id = {documento.id: documento for documento in documentos}
+
+        for categoria in DocumentacionAdjunta.categorias_mobile():
+            codigo = categoria["codigo"]
+            documentos_categoria = [
+                documento for documento in documentos if documento.categoria == codigo
+            ]
+            if (
+                codigo
+                not in RendicionCuentaMensualService.CATEGORIAS_CON_HISTORIAL_SUBSANACION
+            ):
+                archivos = sorted(
+                    documentos_categoria,
+                    key=lambda item: (item.fecha_creacion, item.id),
+                )
+                for archivo in archivos:
+                    archivo.subsanaciones_historial = []
+                grouped[codigo] = archivos
+                continue
+
+            hijos_por_documento = {}
+            for documento in documentos_categoria:
+                parent_id = documento.documento_subsanado_id
+                if parent_id and parent_id in documentos_activos_por_id:
+                    hijos_por_documento.setdefault(parent_id, []).append(documento)
+
+            raices = [
+                documento
+                for documento in documentos_categoria
+                if not documento.documento_subsanado_id
+                or documento.documento_subsanado_id not in documentos_activos_por_id
+            ]
+
+            archivos = []
+            for raiz in sorted(raices, key=lambda item: (item.fecha_creacion, item.id)):
+                cadena = []
+                pendientes = [raiz]
+                while pendientes:
+                    actual = pendientes.pop(0)
+                    cadena.append(actual)
+                    pendientes.extend(
+                        sorted(
+                            hijos_por_documento.get(actual.id, []),
+                            key=lambda item: (item.fecha_creacion, item.id),
+                        )
+                    )
+
+                principal = max(
+                    cadena,
+                    key=lambda item: (item.fecha_creacion, item.id),
+                )
+                principal.estado_visual_override = principal.estado
+                principal.estado_visual_display_override = (
+                    principal.get_estado_display()
+                )
+                principal.subsanaciones_historial = sorted(
+                    [item for item in cadena if item.id != principal.id],
+                    key=lambda item: (item.fecha_creacion, item.id),
+                    reverse=True,
+                )
+                for historico in principal.subsanaciones_historial:
+                    historico.estado_visual_override = "subsanado"
+                    historico.estado_visual_display_override = "Subsanado"
+                archivos.append(principal)
+
+            grouped[codigo] = archivos
+
+        return grouped
+
+    @staticmethod
     def obtener_documentacion_para_detalle(rendicion):
-        grouped = RendicionCuentaMensualService.obtener_resumen_documentacion(rendicion)
+        grouped = RendicionCuentaMensualService._construir_documentacion_para_detalle(
+            rendicion
+        )
         categorias = []
         for categoria in DocumentacionAdjunta.categorias_mobile():
             categorias.append(
@@ -154,6 +510,141 @@ class RendicionCuentaMensualService:
                 }
             )
         return categorias
+
+    @staticmethod
+    def rendicion_esta_completamente_validada(rendicion):
+        return rendicion.estado == RendicionCuentaMensual.ESTADO_FINALIZADA
+
+    @staticmethod
+    def obtener_documentos_para_descarga_pdf(rendicion):
+        documentos = []
+        for categoria in RendicionCuentaMensualService.obtener_documentacion_para_detalle(
+            rendicion
+        ):
+            for archivo in categoria["archivos"]:
+                documentos.append(archivo)
+                documentos.extend(getattr(archivo, "subsanaciones_historial", []))
+        return documentos
+
+    @staticmethod
+    def _generar_pdf_desde_imagen(archivo, nombre):
+        buffer = BytesIO()
+        pdf_buffer = BytesIO()
+        try:
+            archivo.open("rb")
+            buffer.write(archivo.read())
+        finally:
+            try:
+                archivo.close()
+            except Exception:
+                pass
+
+        image_reader = ImageReader(BytesIO(buffer.getvalue()))
+        image_width, image_height = image_reader.getSize()
+        page_width, page_height = A4
+        margin = 36
+        available_width = page_width - (margin * 2)
+        available_height = page_height - (margin * 2) - 24
+        scale = min(
+            available_width / image_width,
+            available_height / image_height,
+        )
+        draw_width = image_width * scale
+        draw_height = image_height * scale
+        draw_x = (page_width - draw_width) / 2
+        draw_y = (page_height - draw_height) / 2 - 10
+
+        pdf = canvas.Canvas(pdf_buffer, pagesize=A4)
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(margin, page_height - margin, nombre)
+        pdf.drawImage(
+            image_reader,
+            draw_x,
+            max(draw_y, margin),
+            width=draw_width,
+            height=draw_height,
+            preserveAspectRatio=True,
+            mask="auto",
+        )
+        pdf.showPage()
+        pdf.save()
+        return pdf_buffer.getvalue()
+
+    @staticmethod
+    def _generar_pdf_placeholder(nombre):
+        pdf_buffer = BytesIO()
+        pdf = canvas.Canvas(pdf_buffer, pagesize=A4)
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawString(40, 800, nombre)
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(
+            40,
+            772,
+            "No se pudo incrustar este archivo en el PDF consolidado.",
+        )
+        pdf.showPage()
+        pdf.save()
+        return pdf_buffer.getvalue()
+
+    @staticmethod
+    def generar_pdf_descarga_rendicion(rendicion):
+        if not RendicionCuentaMensualService.rendicion_esta_completamente_validada(
+            rendicion
+        ):
+            raise ValidationError(
+                {
+                    "detail": (
+                        "La descarga consolidada solo está disponible cuando la rendición está finalizada."
+                    )
+                }
+            )
+
+        writer = PdfWriter()
+        documentos = RendicionCuentaMensualService.obtener_documentos_para_descarga_pdf(
+            rendicion
+        )
+        if not documentos:
+            raise ValidationError(
+                {"detail": "La rendición no tiene documentación para descargar."}
+            )
+
+        for documento in documentos:
+            extension = os.path.splitext(documento.archivo.name or "")[1].lower()
+            try:
+                if extension == ".pdf":
+                    documento.archivo.open("rb")
+                    reader = PdfReader(documento.archivo)
+                    for page in reader.pages:
+                        writer.add_page(page)
+                elif extension in {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}:
+                    pdf_bytes = (
+                        RendicionCuentaMensualService._generar_pdf_desde_imagen(
+                            documento.archivo, documento.nombre
+                        )
+                    )
+                    reader = PdfReader(BytesIO(pdf_bytes))
+                    for page in reader.pages:
+                        writer.add_page(page)
+                else:
+                    reader = PdfReader(
+                        BytesIO(
+                            RendicionCuentaMensualService._generar_pdf_placeholder(
+                                documento.nombre
+                            )
+                        )
+                    )
+                    for page in reader.pages:
+                        writer.add_page(page)
+            finally:
+                try:
+                    documento.archivo.close()
+                except Exception:
+                    pass
+
+        output = BytesIO()
+        writer.write(output)
+        output.seek(0)
+        return output
 
     @staticmethod
     def obtener_scope_proyecto(rendicion):
@@ -185,7 +676,11 @@ class RendicionCuentaMensualService:
 
     @staticmethod
     def validar_documentacion_obligatoria(rendicion):
-        grouped = RendicionCuentaMensualService.obtener_resumen_documentacion(rendicion)
+        grouped = {}
+        for documento in RendicionCuentaMensualService._documentos_vigentes_queryset(
+            rendicion
+        ):
+            grouped.setdefault(documento.categoria, []).append(documento)
         faltantes = []
         for categoria in DocumentacionAdjunta.categorias_mobile():
             if categoria["required"] and not grouped.get(categoria["codigo"]):
@@ -203,7 +698,7 @@ class RendicionCuentaMensualService:
 
     @staticmethod
     @transaction.atomic
-    def crear_rendicion_mobile(*, comedor, data):
+    def crear_rendicion_mobile(*, comedor, data, actor=None):
         convenio = (data.get("convenio") or "").strip()
         numero_rendicion = data.get("numero_rendicion")
         periodo_inicio = data.get("periodo_inicio")
@@ -228,6 +723,10 @@ class RendicionCuentaMensualService:
             estado=RendicionCuentaMensual.ESTADO_ELABORACION,
             observaciones=observaciones or None,
             documento_adjunto=False,
+            usuario_creador=actor if getattr(actor, "is_authenticated", False) else None,
+            usuario_ultima_modificacion=(
+                actor if getattr(actor, "is_authenticated", False) else None
+            ),
         )
 
     @staticmethod
@@ -238,11 +737,22 @@ class RendicionCuentaMensualService:
         categoria,
         archivo,
         nombre,
+        actor=None,
+        documento_subsanado_id=None,
     ):
-        RendicionCuentaMensualService._validar_rendicion_editable(rendicion)
-        RendicionCuentaMensualService._validar_categoria_documental(
-            rendicion, categoria
+        validacion = RendicionCuentaMensualService._validar_carga_documentacion_mobile(
+            rendicion=rendicion,
+            categoria=categoria,
+            documento_subsanado_id=documento_subsanado_id,
         )
+        documento_subsanado = validacion["documento_subsanado"]
+
+        if (
+            documento_subsanado
+            and categoria
+            not in RendicionCuentaMensualService.CATEGORIAS_CON_HISTORIAL_SUBSANACION
+        ):
+            documento_subsanado.delete()
 
         documento = DocumentacionAdjunta.objects.create(
             nombre=nombre,
@@ -250,29 +760,136 @@ class RendicionCuentaMensualService:
             estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
             archivo=archivo,
             rendicion_cuenta_mensual=rendicion,
+            documento_subsanado=documento_subsanado,
         )
+        RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(
+            rendicion, actor
+        )
+        if getattr(actor, "is_authenticated", False):
+            rendicion.save(
+                update_fields=["usuario_ultima_modificacion", "ultima_modificacion"]
+            )
         RendicionCuentaMensualService._sincronizar_flag_documento_adjunto(rendicion)
         return documento
 
     @staticmethod
     @transaction.atomic
-    def eliminar_documentacion_mobile(*, rendicion, documento):
+    def eliminar_documentacion_mobile(*, rendicion, documento, actor=None):
         RendicionCuentaMensualService._validar_rendicion_editable(rendicion)
         if documento.rendicion_cuenta_mensual_id != rendicion.id:
             raise ValidationError(
                 {"detail": "El documento no pertenece a la rendición."}
             )
         documento.delete()
+        RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(
+            rendicion, actor
+        )
+        if getattr(actor, "is_authenticated", False):
+            rendicion.save(
+                update_fields=["usuario_ultima_modificacion", "ultima_modificacion"]
+            )
         RendicionCuentaMensualService._sincronizar_flag_documento_adjunto(rendicion)
 
     @staticmethod
     @transaction.atomic
-    def presentar_rendicion_mobile(rendicion):
+    def presentar_rendicion_mobile(rendicion, actor=None):
         RendicionCuentaMensualService.validar_documentacion_obligatoria(rendicion)
         RendicionCuentaMensualService._sincronizar_flag_documento_adjunto(rendicion)
+        documentos_vigentes = list(
+            RendicionCuentaMensualService._documentos_vigentes_queryset(rendicion)
+        )
+        if any(
+            documento.estado == DocumentacionAdjunta.ESTADO_SUBSANAR
+            for documento in documentos_vigentes
+        ):
+            raise ValidationError(
+                {
+                    "detail": (
+                        "Todavía hay documentación observada pendiente de subsanar."
+                    )
+                }
+            )
         rendicion.estado = RendicionCuentaMensual.ESTADO_REVISION
-        rendicion.save(update_fields=["estado", "ultima_modificacion"])
+        RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(
+            rendicion, actor
+        )
+        update_fields = ["estado", "ultima_modificacion"]
+        if getattr(actor, "is_authenticated", False):
+            update_fields.append("usuario_ultima_modificacion")
+        rendicion.save(update_fields=update_fields)
+        RendicionCuentaMensualService._archivar_notificaciones_mobile_rendicion(
+            rendicion
+        )
         return rendicion
+
+    @staticmethod
+    @transaction.atomic
+    def actualizar_estado_documento_revision(
+        *, documento, estado, observaciones=None, actor=None
+    ):
+        if estado not in (
+            DocumentacionAdjunta.ESTADO_VALIDADO,
+            DocumentacionAdjunta.ESTADO_SUBSANAR,
+        ):
+            raise ValidationError({"estado": "El estado seleccionado es inválido."})
+
+        if documento.estado != DocumentacionAdjunta.ESTADO_PRESENTADO:
+            raise ValidationError(
+                {
+                    "detail": (
+                        "Solo se pueden revisar documentos en estado Presentado."
+                    )
+                }
+            )
+
+        rendicion = documento.rendicion_cuenta_mensual
+        if not rendicion or rendicion.estado not in (
+            RendicionCuentaMensual.ESTADO_REVISION,
+            RendicionCuentaMensual.ESTADO_SUBSANAR,
+        ):
+            raise ValidationError(
+                {
+                    "detail": (
+                        "La rendición no admite revisión de documentos en su estado actual."
+                    )
+                }
+            )
+
+        observaciones_limpias = (observaciones or "").strip()
+        if (
+            estado == DocumentacionAdjunta.ESTADO_SUBSANAR
+            and not observaciones_limpias
+        ):
+            raise ValidationError(
+                {
+                    "observaciones": (
+                        "Debe ingresar observaciones para enviar el documento a subsanar."
+                    )
+                }
+            )
+
+        documento.estado = estado
+        documento.observaciones = (
+            observaciones_limpias or None
+            if estado == DocumentacionAdjunta.ESTADO_SUBSANAR
+            else None
+        )
+        documento.save(update_fields=["estado", "observaciones", "ultima_modificacion"])
+        RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(
+            rendicion, actor
+        )
+        if getattr(actor, "is_authenticated", False):
+            rendicion.save(
+                update_fields=["usuario_ultima_modificacion", "ultima_modificacion"]
+            )
+        RendicionCuentaMensualService._sincronizar_estado_rendicion_por_documentos(
+            rendicion
+        )
+        RendicionCuentaMensualService._crear_notificacion_mobile_revision_documento(
+            documento=documento,
+            actor=actor,
+        )
+        return documento
 
     @staticmethod
     @transaction.atomic

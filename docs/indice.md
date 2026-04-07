@@ -16,6 +16,7 @@
 - `docs/operacion/operaciones.md`: tareas recurrentes, cron jobs y endpoints de health de producción.
 - `docs/operacion/infraestructura.md`: inventario de infraestructura operativo (entornos, arquitectura, networking, deploy, observabilidad, seguridad y roadmap infra).
 - `docs/operacion/comandos_administracion.md`: utilidades de management (`manage.py`) disponibles para el equipo.
+- `docs/operacion/pwa_web_push_deploy.md`: checklist de despliegue y validacion de web push para la PWA.
 
 ### 3. Seguridad
 - `docs/seguridad/security_baseline.md`: baseline de seguridad general del proyecto.
