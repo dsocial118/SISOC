@@ -2833,6 +2833,72 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
 
 @pytest.mark.django_db
 @override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
+def test_centro_cursos_panel_mantiene_columna_programa_para_cursos_con_vouchers(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
+    programa = Programa.objects.create(nombre="Programa Derivado Panel")
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-vat-centro-panel-programa",
+        email="admin-centro-panel-programa@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP 778 Panel",
+        codigo="CFP-778-PANEL",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="13",
+        numero=456,
+        domicilio_actividad="Calle 13 NÂ° 456",
+        telefono="221-7000004",
+        celular="221-7000005",
+        correo="cfp778-panel@vat.test",
+        nombre_referente="Lucia",
+        apellido_referente="Perez",
+        telefono_referente="221-7000006",
+        correo_referente="lucia@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="FormaciÃ³n Profesional",
+        situacion="InstituciÃ³n de ETP",
+        activo=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso con programa derivado",
+        modalidad=modalidad,
+        estado="planificado",
+        usa_voucher=True,
+        costo_creditos=1,
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Panel Programa",
+        programa=programa,
+        cantidad_inicial=3,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=user,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert curso.plan_estudio_id is None
+    assert "<th>Programa</th>" in content
+    assert programa.nombre in content
+    assert "<th>Plan Curricular</th>" not in content
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
 def test_centro_cursos_panel_renderiza_accion_para_crear_curso_desde_plan_curricular(
     client, vat_geo_data
 ):
