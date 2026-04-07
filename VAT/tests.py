@@ -5,8 +5,9 @@ import pytest
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.test import RequestFactory
+from django.test import RequestFactory, override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework_api_key.models import APIKey
@@ -2715,6 +2716,7 @@ def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(client, vat_geo_d
 
 
 @pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
 def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_curso(
     client, vat_geo_data
 ):
@@ -2789,6 +2791,7 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
 
 
 @pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
 def test_centro_cursos_panel_renderiza_accion_para_crear_curso_desde_plan_curricular(
     client, vat_geo_data
 ):
@@ -2847,6 +2850,7 @@ def test_centro_cursos_panel_renderiza_accion_para_crear_curso_desde_plan_curric
 
 
 @pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
 def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
@@ -2929,6 +2933,66 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
 
     assert second_page_response.status_code == 200
     assert len(second_page_response.context["planes_centro"]) == 2
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
+def test_centro_cursos_panel_invalida_cache_al_crear_planes(client, vat_geo_data):
+    cache.clear()
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
+    sector = Sector.objects.create(nombre="Servicios")
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-vat-centro-cache-planes",
+        email="admin-centro-cache-planes@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Cache",
+        codigo="CFP-CACHE",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="16",
+        numero=100,
+        domicilio_actividad="Calle 16 N° 100",
+        telefono="221-7300001",
+        celular="221-7300002",
+        correo="cfpcache@vat.test",
+        nombre_referente="Marta",
+        apellido_referente="Cache",
+        telefono_referente="221-7300003",
+        correo_referente="marta-cache@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    panel_url = reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk})
+
+    client.force_login(user)
+
+    empty_response = client.get(panel_url)
+    assert empty_response.status_code == 200
+    assert empty_response.context["planes_centro_total_filtrados"] == 0
+
+    plan = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan Cache",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Resolución cache 2026",
+        activo=True,
+    )
+
+    refreshed_response = client.get(panel_url)
+    assert refreshed_response.status_code == 200
+    assert refreshed_response.context["planes_centro_total_filtrados"] == 1
+    assert len(refreshed_response.context["planes_centro"]) == 1
+    assert refreshed_response.context["planes_centro"][0].id == plan.id
 
 
 @pytest.mark.django_db
