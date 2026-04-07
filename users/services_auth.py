@@ -49,7 +49,7 @@ def build_password_reset_link(*, user, request=None) -> str:
             .replace("https://", "")
             .rstrip("/")
         )
-        scheme = "https" if settings.ENVIRONMENT == "prd" else "http"
+        scheme = getattr(settings, "DEFAULT_SCHEME", "http")
 
     return f"{scheme}://{domain}{path}"
 
@@ -59,7 +59,7 @@ def send_password_reset_link(*, user, reset_link: str) -> None:
         "user": user,
         "reset_link": reset_link,
     }
-    subject = "SISOC - Restablecer contraseña"
+    subject = "SISOC - Restablecer contraseÃƒÂ±a"
     message = render_to_string("user/password_reset_email.txt", context)
 
     send_mail(
@@ -152,7 +152,7 @@ def confirm_password_reset(
 
 
 def change_password_for_authenticated_user(*, user, new_password: str) -> User:
-    """Actualiza la contraseña del usuario autenticado y limpia flags de primer ingreso."""
+    """Actualiza la contraseÃƒÂ±a del usuario autenticado y limpia flags de primer ingreso."""
     user.set_password(new_password)
     user.save(update_fields=["password"])
 
@@ -178,7 +178,7 @@ def change_password_for_authenticated_user(*, user, new_password: str) -> User:
 
 
 def generate_temporary_password_for_user(*, user) -> str:
-    """Genera una nueva contraseña temporal para un usuario y obliga cambio en primer login."""
+    """Genera una nueva contraseÃƒÂ±a temporal para un usuario y obliga cambio en primer login."""
     temporary_password = get_random_string(12)
     user.set_password(temporary_password)
     user.save(update_fields=["password"])

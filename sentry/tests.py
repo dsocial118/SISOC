@@ -5,8 +5,8 @@ from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory
 
 from sentry.context_processors import sentry_frontend
-from sentry.middleware import SentryUserContextMiddleware
 from sentry.handlers import SentryEventHandler
+from sentry.middleware import SentryUserContextMiddleware
 from sentry import services
 
 
@@ -99,6 +99,27 @@ def test_initialize_sentry_qa_inits_with_qa_identifier(monkeypatch):
     assert calls[0]["environment"] == "sisoc-qa"
 
 
+def test_initialize_sentry_homologacion_inits_with_own_identifier(monkeypatch):
+    monkeypatch.setenv("SENTRY_ENABLED", "true")
+    monkeypatch.setattr(
+        services.settings, "SENTRY_DSN", "https://public@example.ingest.sentry.io/1"
+    )
+    monkeypatch.setenv("ENVIRONMENT", "homologacion")
+    monkeypatch.setattr(services, "_SENTRY_INITIALIZED", False)
+
+    calls = []
+
+    def fake_init(**kwargs):
+        calls.append(kwargs)
+
+    monkeypatch.setattr(services.sentry_sdk, "init", fake_init)
+
+    services.initialize_sentry_sdk()
+
+    assert len(calls) == 1
+    assert calls[0]["environment"] == "sisoc-homologacion"
+
+
 def test_initialize_sentry_ignores_sentry_environment_env_var(monkeypatch):
     monkeypatch.setenv("SENTRY_ENABLED", "true")
     monkeypatch.setattr(
@@ -140,7 +161,7 @@ def test_initialize_sentry_invalid_dsn_does_not_init(monkeypatch, caplog):
         services.initialize_sentry_sdk()
 
     assert init_called["count"] == 0
-    assert "SENTRY_DSN inválido." in caplog.text
+    assert "SENTRY_DSN invalido." in caplog.text
 
 
 def test_initialize_sentry_non_production_does_not_init(monkeypatch):
@@ -269,6 +290,26 @@ def test_get_sentry_frontend_config_enabled_for_qa(monkeypatch):
     assert config["traces_sample_rate"] == 0.2
     assert config["replays_session_sample_rate"] == 0.2
     assert config["replays_on_error_sample_rate"] == 1.0
+
+
+def test_get_sentry_frontend_config_enabled_for_homologacion(monkeypatch):
+    monkeypatch.setenv("SENTRY_ENABLED", "true")
+    monkeypatch.setenv("ENVIRONMENT", "homologacion")
+    monkeypatch.setattr(services.settings, "SENTRY_ERROR_SAMPLE_RATE", 1.0)
+    monkeypatch.setattr(services.settings, "SENTRY_TRACES_SAMPLE_RATE", 1.0)
+    monkeypatch.setattr(services.settings, "SENTRY_REPLAY_ENABLED", True)
+    monkeypatch.setattr(services.settings, "SENTRY_REPLAYS_SESSION_SAMPLE_RATE", 1.0)
+    monkeypatch.setattr(services.settings, "SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE", 1.0)
+    monkeypatch.setattr(
+        services.settings, "SENTRY_DSN", "https://public@example.ingest.sentry.io/1"
+    )
+
+    config = services.get_sentry_frontend_config()
+
+    assert config["enabled"] is True
+    assert config["environment"] == "sisoc-homologacion"
+    assert config["sample_rate"] == 1.0
+    assert config["replay_enabled"] is True
 
 
 def test_get_sentry_frontend_config_disabled_in_dev(monkeypatch):

@@ -22,6 +22,7 @@ from organizaciones.models import Organizacion
 from users.forms import CustomUserChangeForm, GroupForm, UserCreationForm
 from users.models import AccesoComedorPWA
 from users.services import UsuariosService
+from users.services_auth import build_password_reset_link
 from users.services_group_permissions import sync_permissions_for_group
 from users.temporary_passwords import store_temporary_password
 
@@ -280,6 +281,23 @@ def test_password_reset_request_hides_non_existing_user():
 
     assert response.status_code == 200
     assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+@override_settings(
+    DEFAULT_SCHEME="https",
+    DOMINIO="https://homologacion.sisoc.example.gov.ar/",
+)
+def test_build_password_reset_link_usa_default_scheme_sin_request():
+    user = User.objects.create_user(
+        username="reset_homologacion",
+        email="reset_homologacion@example.com",
+        password="Secreta123!",
+    )
+
+    link = build_password_reset_link(user=user)
+
+    assert link.startswith("https://homologacion.sisoc.example.gov.ar/")
 
 
 @pytest.mark.django_db

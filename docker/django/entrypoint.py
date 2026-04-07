@@ -11,23 +11,26 @@ import pymysql
 if not logging.getLogger().handlers:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("django")
+DEPLOY_GUNICORN_ENVIRONMENTS = {"qa", "homologacion", "prd"}
 
 
 def run_command(cmd, *, stage, **kwargs):
     """
-    Ejecuta un comando y falla explícitamente si el exit code es distinto de cero.
+    Ejecuta un comando y falla explÃƒÂ­citamente si el exit code es distinto de cero.
     """
-    logger.info("▶ %s: %s", stage, " ".join(cmd))
+    logger.info("Ã¢â€“Â¶ %s: %s", stage, " ".join(cmd))
     try:
         return subprocess.run(cmd, check=True, **kwargs)
     except subprocess.CalledProcessError as exc:
-        logger.error("❌ Falló %s (exit=%s): %s", stage, exc.returncode, " ".join(cmd))
+        logger.error(
+            "Ã¢ÂÅ’ FallÃƒÂ³ %s (exit=%s): %s", stage, exc.returncode, " ".join(cmd)
+        )
         raise
 
 
 def wait_for_mysql():
     """
-    Espera a que MySQL esté disponible antes de continuar.
+    Espera a que MySQL estÃƒÂ© disponible antes de continuar.
     Usa las variables de entorno DATABASE_HOST, DATABASE_PORT, DATABASE_USER y DATABASE_PASSWORD.
     Se puede omitir con la variable WAIT_FOR_DB=false.
     """
@@ -42,14 +45,14 @@ def wait_for_mysql():
 
     if not all([host, user, password]):
         logger.error(
-            "❌ Error: Faltan variables de entorno para la conexión a la base de datos"
+            "Ã¢ÂÅ’ Error: Faltan variables de entorno para la conexiÃƒÂ³n a la base de datos"
         )
         logger.error(
-            "   Asegúrese de definir DATABASE_HOST, DATABASE_USER y DATABASE_PASSWORD"
+            "   AsegÃƒÂºrese de definir DATABASE_HOST, DATABASE_USER y DATABASE_PASSWORD"
         )
         return
 
-    logger.info("⏳ Esperando que MySQL esté disponible...")
+    logger.info("Ã¢ÂÂ³ Esperando que MySQL estÃƒÂ© disponible...")
     while True:
         try:
             conn = pymysql.connect(host=host, port=port, user=user, password=password)
@@ -58,12 +61,12 @@ def wait_for_mysql():
         except pymysql.MySQLError:
             time.sleep(5)
     time.sleep(10)
-    logger.info("✅ MySQL está listo.")
+    logger.info("Ã¢Å“â€¦ MySQL estÃƒÂ¡ listo.")
 
 
 def run_django_commands():
     """
-    Ejecuta los comandos de Django necesarios para la preparación y el funcionamiento de la aplicación.
+    Ejecuta los comandos de Django necesarios para la preparaciÃƒÂ³n y el funcionamiento de la aplicaciÃƒÂ³n.
     """
     environment = os.getenv("ENVIRONMENT", "dev").lower()
     run_makemigrations_on_start = (
@@ -80,12 +83,12 @@ def run_django_commands():
             stage="makemigrations",
         )
     else:
-        logger.info("⏭ Omitiendo makemigrations en arranque (flag desactivado).")
+        logger.info("Ã¢ÂÂ­ Omitiendo makemigrations en arranque (flag desactivado).")
 
     run_command(["python", "manage.py", "migrate", "auth"], stage="migrate auth")
     run_command(["python", "manage.py", "migrate", "--noinput"], stage="migrate")
 
-    # Cargar los fixtures condicionalmente, si se quiere forzar añadir `--force`
+    # Cargar los fixtures condicionalmente, si se quiere forzar aÃƒÂ±adir `--force`
     run_command(["python", "manage.py", "load_fixtures"], stage="load_fixtures")
 
     run_command(
@@ -98,14 +101,14 @@ def run_django_commands():
 
 def run_server():
     """
-    Inicia el servidor de Django. Usa Gunicorn en producción o el servidor de desarrollo si no.
+    Inicia el servidor de Django. Usa Gunicorn en producciÃƒÂ³n o el servidor de desarrollo si no.
     """
     environment = os.getenv("ENVIRONMENT", "dev").lower()
-    deploy_gunicorn = environment in ("prd", "qa")
+    deploy_gunicorn = environment in DEPLOY_GUNICORN_ENVIRONMENTS
 
     if deploy_gunicorn:
         cache_busting()
-        logger.info("🚀 Iniciando Django en modo producción con Gunicorn...")
+        logger.info("Ã°Å¸Å¡â‚¬ Iniciando Django en modo producciÃƒÂ³n con Gunicorn...")
         workers = os.getenv("GUNICORN_WORKERS", "4")
         threads = os.getenv("GUNICORN_THREADS", "1")
         cmd = [
@@ -122,7 +125,7 @@ def run_server():
             cmd.extend(["--threads", threads])
         run_command(cmd, stage="gunicorn")
     else:
-        logger.info("🧪 Iniciando Django en modo desarrollo...")
+        logger.info("Ã°Å¸Â§Âª Iniciando Django en modo desarrollo...")
         run_command(
             ["python", "manage.py", "runserver", "0.0.0.0:8000"],
             stage="runserver",
@@ -132,11 +135,11 @@ def run_server():
 def cache_busting():
     static_root = (
         Path(__file__).resolve().parent.parent / "static_root"
-    )  # Raíz del proyecto
+    )  # RaÃƒÂ­z del proyecto
     if static_root.exists() and static_root.is_dir():
-        logger.info("🧹 Eliminando carpeta de estáticos: %s", static_root)
+        logger.info("Ã°Å¸Â§Â¹ Eliminando carpeta de estÃƒÂ¡ticos: %s", static_root)
         shutil.rmtree(static_root)
-    logger.info("📦 Ejecutando collectstatic para cache busting...")
+    logger.info("Ã°Å¸â€œÂ¦ Ejecutando collectstatic para cache busting...")
     run_command(
         ["python", "manage.py", "collectstatic", "--noinput"],
         stage="collectstatic",
