@@ -5,6 +5,7 @@ from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import Group, Permission, User
+from django.core.validators import FileExtensionValidator
 from django.db import transaction
 from django.utils.crypto import get_random_string
 from django.utils import timezone
@@ -794,3 +795,12 @@ class GroupForm(forms.ModelForm):
         if qs.exists():
             raise forms.ValidationError("Ya existe un grupo con ese nombre.")
         return name
+
+
+class BulkCredentialsUploadForm(forms.Form):
+    archivo = forms.FileField(
+        label="Archivo Excel",
+        validators=[FileExtensionValidator(["xlsx"])],
+        widget=forms.ClearableFileInput(attrs={"accept": ".xlsx"}),
+        help_text=("Cargue un archivo .xlsx con encabezados usuario, mail y password."),
+    )
