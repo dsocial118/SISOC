@@ -11,8 +11,9 @@ from django.contrib.auth.views import (
     PasswordResetDoneView,
     PasswordResetView,
 )
+from django.core.exceptions import ValidationError
 from django.db.models import Count
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -24,6 +25,7 @@ from core.services.column_preferences import build_columns_context
 
 from .forms import (
     BackofficeAuthenticationForm,
+    BulkCredentialsUploadForm,
     CustomUserChangeForm,
     GroupForm,
     UserCreationForm,
@@ -31,6 +33,11 @@ from .forms import (
 from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
 from .services import UsuariosService
 from .services_auth import generate_temporary_password_for_user
+from .services_bulk_credentials import (
+    TEMPLATE_FILENAME,
+    generate_bulk_credentials_template,
+    process_bulk_credentials_file,
+)
 from .temporary_passwords import clear_temporary_password, get_temporary_password
 
 
@@ -212,6 +219,68 @@ class UserActiveView(AdminRequiredMixin, UpdateView):
         self.object.save(update_fields=["is_active"])
         messages.success(request, "Usuario activado correctamente.")
         return HttpResponseRedirect(self.success_url)
+
+
+class BulkCredentialsTemplateView(AdminRequiredMixin, View):
+    required_permissions = (
+        "auth.change_user",
+        "auth.role_enviar_credenciales_masivas",
+    )
+    require_all_permissions = True
+
+    def get(self, request, *args, **kwargs):
+        content = generate_bulk_credentials_template()
+        response = HttpResponse(
+            content,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{TEMPLATE_FILENAME}"'
+        return response
+
+
+class BulkCredentialsUploadView(AdminRequiredMixin, FormView):
+    template_name = "user/bulk_credentials_form.html"
+    form_class = BulkCredentialsUploadForm
+    required_permissions = (
+        "auth.change_user",
+        "auth.role_enviar_credenciales_masivas",
+    )
+    require_all_permissions = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.setdefault("results", None)
+        context["form_title"] = "Enviar credenciales masivas"
+        context["template_download_url"] = reverse("usuarios_credenciales_plantilla")
+        return context
+
+    def form_valid(self, form):
+        try:
+            results = process_bulk_credentials_file(
+                uploaded_file=form.cleaned_data["archivo"],
+                request=self.request,
+            )
+        except ValidationError as exc:
+            form.add_error("archivo", " ".join(exc.messages))
+            return self.form_invalid(form)
+
+        summary = results["summary"]
+        messages.success(
+            self.request,
+            (
+                "Proceso finalizado. "
+                f"Enviados: {summary['enviadas']} | "
+                f"Actualizados: {summary['actualizadas']} | "
+                f"Sin cambios: {summary['sin_cambios']} | "
+                f"Rechazados: {summary['rechazadas']}"
+            ),
+        )
+        return self.render_to_response(
+            self.get_context_data(
+                form=self.form_class(),
+                results=results,
+            )
+        )
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")

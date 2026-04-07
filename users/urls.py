@@ -2,6 +2,8 @@ from django.urls import path
 from django.contrib.auth.views import LogoutView
 from core.decorators import permissions_all_required, permissions_any_required
 from users.views import (
+    BulkCredentialsTemplateView,
+    BulkCredentialsUploadView,
     FirstLoginPasswordChangeView,
     GroupCreateView,
     UserCreateView,
@@ -59,6 +61,20 @@ urlpatterns = [
             UserGenerateTemporaryPasswordView.as_view()
         ),
         name="usuario_generar_password_temporal",
+    ),
+    path(
+        "usuarios/credenciales-masivas/",
+        permissions_all_required(
+            ["auth.change_user", "auth.role_enviar_credenciales_masivas"]
+        )(BulkCredentialsUploadView.as_view()),
+        name="usuarios_credenciales_masivas",
+    ),
+    path(
+        "usuarios/credenciales-masivas/plantilla/",
+        permissions_all_required(
+            ["auth.change_user", "auth.role_enviar_credenciales_masivas"]
+        )(BulkCredentialsTemplateView.as_view()),
+        name="usuarios_credenciales_plantilla",
     ),
     path(
         "usuarios/borrar/<int:pk>/",

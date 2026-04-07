@@ -24,6 +24,7 @@ TECHNICAL_ROLE_PERMISSION_CODES = (
     "auth.role_tecnico_comedor",
     "auth.role_abogado_dupla",
 )
+BULK_CREDENTIALS_PERMISSION_CODE = "auth.role_enviar_credenciales_masivas"
 
 BENEFICIARIO_ADVANCED_FILTER = AdvancedFilterEngine(
     field_map=BENEFICIARIO_FILTER_MAP,
@@ -54,6 +55,19 @@ class UsuariosService:
         if not user or not user.is_authenticated:
             return False
         return bool(user.is_superuser or user.has_perm("auth.change_user"))
+
+    @staticmethod
+    def can_manage_bulk_credentials(user: User) -> bool:
+        """Determina si el usuario puede enviar credenciales masivas."""
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+
+        return bool(
+            user_has_permission_code(user, "auth.change_user")
+            and user_has_permission_code(user, BULK_CREDENTIALS_PERMISSION_CODE)
+        )
 
     @staticmethod
     def get_filtered_usuarios(request_or_get):
@@ -196,6 +210,18 @@ class UsuariosService:
             "filters_action": reverse("usuarios"),
             "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.USUARIOS,
             "show_add_button": True,
+            "additional_buttons": (
+                [
+                    {
+                        "label": "Credenciales masivas",
+                        "url": reverse("usuarios_credenciales_masivas"),
+                        "class": "btn btn-outline-primary btn-lg",
+                        "title": "Actualizar y enviar credenciales desde Excel",
+                    }
+                ]
+                if UsuariosService.can_manage_bulk_credentials(request.user)
+                else []
+            ),
         }
 
     @staticmethod
