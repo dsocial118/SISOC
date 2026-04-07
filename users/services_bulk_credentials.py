@@ -10,6 +10,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.core.validators import validate_email
 from django.db import transaction
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -104,7 +105,10 @@ def _load_workbook_rows(
     except Exception as exc:
         raise ValidationError("No se pudo leer el archivo Excel cargado.") from exc
 
-    worksheet = workbook.active
+    if SHEET_NAME in workbook.sheetnames:
+        worksheet = workbook[SHEET_NAME]
+    else:
+        worksheet = workbook.active
     rows = list(worksheet.iter_rows(values_only=True))
     if not rows:
         raise ValidationError("El archivo Excel está vacío.")
@@ -175,6 +179,10 @@ def _validate_row_data(row: ParsedCredentialRow) -> None:
         raise ValidationError("La columna usuario es obligatoria.")
     if not row.mail:
         raise ValidationError("La columna mail es obligatoria.")
+    try:
+        validate_email(row.mail)
+    except ValidationError:
+        raise ValidationError(f"El mail '{row.mail}' no tiene un formato válido.")
     if not row.password:
         raise ValidationError("La columna password es obligatoria.")
 

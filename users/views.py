@@ -31,7 +31,7 @@ from .forms import (
     UserCreationForm,
 )
 from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
-from .services import UsuariosService
+from .services import BULK_CREDENTIALS_PERMISSION_CODE, UsuariosService
 from .services_auth import generate_temporary_password_for_user
 from .services_bulk_credentials import (
     TEMPLATE_FILENAME,
@@ -224,7 +224,7 @@ class UserActiveView(AdminRequiredMixin, UpdateView):
 class BulkCredentialsTemplateView(AdminRequiredMixin, View):
     required_permissions = (
         "auth.change_user",
-        "auth.role_enviar_credenciales_masivas",
+        BULK_CREDENTIALS_PERMISSION_CODE,
     )
     require_all_permissions = True
 
@@ -243,7 +243,7 @@ class BulkCredentialsUploadView(AdminRequiredMixin, FormView):
     form_class = BulkCredentialsUploadForm
     required_permissions = (
         "auth.change_user",
-        "auth.role_enviar_credenciales_masivas",
+        BULK_CREDENTIALS_PERMISSION_CODE,
     )
     require_all_permissions = True
 
