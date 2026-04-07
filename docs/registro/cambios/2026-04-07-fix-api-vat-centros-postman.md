@@ -13,6 +13,7 @@ Se corrigio el serializer de `api/vat/centros/`, que estaba declarando campos in
   - `GET /api/vat/comisiones-curso/?curso_id=...`
 - Se agrego a la coleccion Postman un request inicial de validacion sobre `planes-curriculares` para comprobar autenticacion y disponibilidad antes del flujo completo.
 - Se agregaron variables `provincia_id` y `municipio_id` y requests auxiliares de ubicacion para encadenar `provincia -> municipio -> centro -> curso -> comision`.
+- Se agregaron filtros geograficos directos `provincia_id` y `municipio_id` en `GET /api/vat/cursos/` y `GET /api/vat/comisiones-curso/`.
 
 ## Impacto
 

@@ -8,7 +8,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:8000"
+      "value": "http://localhost:8001"
     },
     {
       "key": "apiPrefix",
@@ -405,7 +405,7 @@
     },
     {
       "name": "4 - Cursos por Centro",
-      "description": "Consulta cursos operativos filtrados por centro_id. Guarda curso_id con el primer registro devuelto.",
+      "description": "Consulta cursos operativos filtrados por centro_id o por ubicacion geografica. Guarda curso_id con el primer registro devuelto.",
       "item": [
         {
           "name": "Listar cursos por centro_id",
@@ -493,12 +493,65 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Listar cursos por provincia_id y municipio_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/?provincia_id={{provincia_id}}&municipio_id={{municipio_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "provincia_id",
+                  "value": "{{provincia_id}}"
+                },
+                {
+                  "key": "municipio_id",
+                  "value": "{{municipio_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('curso_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
         }
       ]
     },
     {
       "name": "5 - Comisiones de Curso por Curso",
-      "description": "Consulta comisiones operativas filtradas por curso_id. También deja una variante por centro_id.",
+      "description": "Consulta comisiones operativas filtradas por curso_id, centro_id o ubicacion geografica.",
       "item": [
         {
           "name": "Listar comisiones de curso por curso_id",
@@ -574,6 +627,41 @@
                 {
                   "key": "centro_id",
                   "value": "{{centro_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar comisiones de curso por provincia_id y municipio_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/comisiones-curso/?provincia_id={{provincia_id}}&municipio_id={{municipio_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "comisiones-curso",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "provincia_id",
+                  "value": "{{provincia_id}}"
+                },
+                {
+                  "key": "municipio_id",
+                  "value": "{{municipio_id}}"
                 }
               ]
             }
