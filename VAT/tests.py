@@ -239,7 +239,7 @@ def test_centro_create_rechaza_referente_sin_grupo_cfp(vat_admin_client, vat_geo
 
 
 @pytest.mark.django_db
-def test_centro_alta_form_configura_referente_como_buscador(vat_referente_user):
+def test_centro_alta_form_configura_referente_como_select_estandar(vat_referente_user):
     vat_referente_user.first_name = "Ana"
     vat_referente_user.last_name = "Pérez"
     vat_referente_user.save(update_fields=["first_name", "last_name"])
@@ -247,19 +247,25 @@ def test_centro_alta_form_configura_referente_como_buscador(vat_referente_user):
     form = CentroAltaForm()
     referente_field = form.fields["referente"]
 
-    assert "js-referente-select" in referente_field.widget.attrs["class"]
-    assert referente_field.widget.attrs["data-placeholder"] == "Buscar referente..."
+    assert referente_field.widget.attrs["class"] == "form-control"
+    assert referente_field.empty_label == "Seleccionar referente..."
     assert referente_field.label_from_instance(vat_referente_user) == "referente-vat - Ana Pérez"
 
 
 @pytest.mark.django_db
-def test_centro_alta_form_incluye_alias_legacy_de_referente_vat():
-    legacy_group, _ = Group.objects.get_or_create(name="ReferenteCentroVAT")
-    legacy_user = User.objects.create_user(
+def test_centro_alta_form_no_incluye_grupos_legacy_de_referente():
+    legacy_group_vat, _ = Group.objects.get_or_create(name="ReferenteCentroVAT")
+    legacy_group_centro, _ = Group.objects.get_or_create(name="ReferenteCentro")
+    legacy_user_vat = User.objects.create_user(
         username="referente-legacy-form",
         password="test1234",
     )
-    legacy_user.groups.add(legacy_group)
+    legacy_user_centro = User.objects.create_user(
+        username="referente-centro-form",
+        password="test1234",
+    )
+    legacy_user_vat.groups.add(legacy_group_vat)
+    legacy_user_centro.groups.add(legacy_group_centro)
 
     form = CentroAltaForm()
     queryset_usernames = list(
@@ -268,7 +274,8 @@ def test_centro_alta_form_incluye_alias_legacy_de_referente_vat():
         )
     )
 
-    assert "referente-legacy-form" in queryset_usernames
+    assert "referente-legacy-form" not in queryset_usernames
+    assert "referente-centro-form" not in queryset_usernames
 
 
 @pytest.mark.django_db

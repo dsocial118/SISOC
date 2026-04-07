@@ -391,12 +391,7 @@ class CentroAltaForm(CentroForm):
     referente = ReferenteModelChoiceField(
         queryset=User.objects.none(),
         label="Referente",
-        widget=forms.Select(
-            attrs={
-                "class": "form-control js-referente-select",
-                "data-placeholder": "Buscar referente...",
-            }
-        ),
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
     autoridad_dni = forms.CharField(
         label="Documento del director/a (DNI)",
@@ -422,7 +417,7 @@ class CentroAltaForm(CentroForm):
             self.fields[hidden_field].widget = forms.HiddenInput()
         self.fields["autoridad_dni"].required = False
         self.fields["autoridad_dni"].widget = forms.HiddenInput()
-        self.fields["referente"].empty_label = None
+        self.fields["referente"].empty_label = "Seleccionar referente..."
         self.fields["provincia"].empty_label = "Seleccionar jurisdicción..."
         self.fields["municipio"].empty_label = "Seleccionar municipio..."
         self.fields["localidad"].empty_label = "Seleccionar localidad..."

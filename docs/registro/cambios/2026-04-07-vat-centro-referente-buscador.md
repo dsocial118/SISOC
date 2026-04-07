@@ -1,23 +1,21 @@
 # 2026-04-07 - VAT centros: referente con buscador
 
 ## Contexto
-- El campo `Referente` en el alta y edición de centros VAT mostraba un select plano con muchos usuarios CFP.
-- Con catálogos grandes de usuarios, la selección manual se volvía lenta y propensa a errores.
+- El campo `Referente` en el alta y edición de centros VAT debía listar usuarios válidos del sistema para asociarlos al centro.
+- La mejora previa con `select2` introdujo inconsistencias visuales y un fallo de renderizado en el navegador donde el campo mostraba `No results found` aun teniendo opciones válidas.
 
 ## Cambio aplicado
-- Se configuró el campo `referente` de `CentroAltaForm` como select buscable usando `select2`.
-- Las opciones ahora muestran `username` y nombre completo cuando está disponible para mejorar la búsqueda.
-- El queryset del campo incluye `CFP` y aliases legacy del mismo rol (`ReferenteCentroVAT`, `ReferenteCentro`) para compatibilidad con datos existentes.
-- Se incorporó el CSS de `select2` y la inicialización del buscador en el template compartido de alta/edición de centros.
-- Se ajustó el CSS puntual del alta de centros para eliminar los bordes superpuestos de `select2` y alinear el campo `Referente` con el mismo formato visual de los demás `form-control`.
-- Se ocultó el `select` nativo hasta que `select2` termina de inicializarse para evitar el parpadeo visual del campo `Referente` al cargar la pantalla.
-- Se reemplazó el fondo blanco fijo del `Select2` por variables del tema Bootstrap para respetar el modo oscuro usado por la pantalla y mantener consistencia visual con el resto del formulario.
-- Se agregó una regresión en `VAT/tests.py` para validar los atributos del widget y el formato de etiqueta de opciones.
+- Se mantuvo el campo `referente` como `select` estándar para recuperar el mismo formato visual que el resto de los `form-control` del formulario.
+- Las opciones muestran `username` y nombre completo cuando está disponible para mejorar la identificación del usuario.
+- El queryset del campo quedó restringido nuevamente solo a usuarios del grupo `CFP`.
+- Se amplió el queryset del campo para incluir usuarios asociados al grupo legacy `ReferenteCentro`, detectado en la base local, además de `CFP` y `ReferenteCentroVAT`.
+- Se descartó esa ampliación por requerimiento funcional: `Referente` debe listar exclusivamente usuarios `CFP`, aunque existan grupos legacy en la base.
+- Se agregó una regresión en `VAT/tests.py` para validar el formato estándar del widget, el `empty_label`, el formato de etiqueta de opciones y que los grupos legacy no aparezcan.
 
 ## Impacto esperado
-- En `vat/centros/nuevo/` y `vat/centros/<id>/editar/`, el campo `Referente` permite buscar rápidamente entre usuarios CFP.
-- En bases con datos legacy, también aparecen los referentes históricos cargados bajo grupos equivalentes del mismo rol VAT.
+- En `vat/centros/nuevo/` y `vat/centros/<id>/editar/`, el campo `Referente` vuelve a mostrarse igual que los demás selects del formulario.
+- En bases con datos legacy, los usuarios fuera de `CFP` ya no aparecen en el selector.
 - La mejora no cambia el contrato del formulario ni la validación existente del referente.
 
 ## Validación
-- `pytest VAT/tests.py -k "test_centro_alta_form_configura_referente_como_buscador or test_centro_create_rechaza_referente_sin_grupo_cfp" -vv`
+- `docker compose exec django pytest VAT/tests.py -k "test_centro_alta_form_configura_referente_como_select_estandar or test_centro_alta_form_no_incluye_grupos_legacy_de_referente" -q`
