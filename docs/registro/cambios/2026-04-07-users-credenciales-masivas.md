@@ -26,7 +26,7 @@ En el modulo web de usuarios hacia falta una operatoria para enviar credenciales
   - eliminacion de tokens DRF del usuario.
 - Cada fila se procesa dentro de su propia transaccion. Si falla la validacion o el envio del mail de una fila, los cambios de esa fila se revierten y el resto del archivo continua.
 - Se agrego un permiso dedicado `auth.role_enviar_credenciales_masivas`, visible en el registry IAM y asignado por bootstrap al grupo `Admin`.
-- El listado de usuarios muestra el boton `Credenciales masivas` solo cuando el actor tiene `auth.change_user` y `auth.role_enviar_credenciales_masivas` o es superuser.
+- El listado de usuarios muestra el boton `ENVIO DE CREDENCIALES` solo cuando el actor tiene `auth.change_user` y `auth.role_enviar_credenciales_masivas` o es superuser, reutilizando el mismo estilo azul del boton `Exportar`.
 
 ## Archivos principales
 

@@ -133,9 +133,9 @@ def test_user_list_context_shows_bulk_credentials_button_only_with_role_permissi
     context = UsuariosService.get_usuarios_list_context(request)
     assert context["additional_buttons"] == [
         {
-            "label": "Credenciales masivas",
+            "label": "ENVIO DE CREDENCIALES",
             "url": "/usuarios/credenciales-masivas/",
-            "class": "btn btn-outline-primary btn-lg",
+            "class": "btn btn-lg btn-export-csv",
             "title": "Actualizar y enviar credenciales desde Excel",
         }
     ]

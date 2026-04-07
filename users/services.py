@@ -213,9 +213,9 @@ class UsuariosService:
             "additional_buttons": (
                 [
                     {
-                        "label": "Credenciales masivas",
+                        "label": "ENVIO DE CREDENCIALES",
                         "url": reverse("usuarios_credenciales_masivas"),
-                        "class": "btn btn-outline-primary btn-lg",
+                        "class": "btn btn-lg btn-export-csv",
                         "title": "Actualizar y enviar credenciales desde Excel",
                     }
                 ]
