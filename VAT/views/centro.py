@@ -117,7 +117,7 @@ def _build_ubicacion_form(centro):
     return _scope_centro_field_to_current_centro(form, centro)
 
 
-def _build_planes_centro_queryset(centro, search_query):
+def _build_planes_centro_queryset(centro, search_query, sector_id=None):
     queryset = (
         PlanVersionCurricular.objects.filter(
             activo=True,
@@ -136,6 +136,9 @@ def _build_planes_centro_queryset(centro, search_query):
             | Q(modalidad_cursada__nombre__icontains=search_query)
             | Q(normativa__icontains=search_query)
         ).distinct()
+
+    if sector_id:
+        queryset = queryset.filter(sector_id=sector_id)
 
     return queryset.order_by("sector__nombre", "subsector__nombre", "id")
 
@@ -180,7 +183,10 @@ def _get_planes_centro_page(
         ]
         return ordered_plans, cached["total_count"], page_obj
 
-    queryset = _build_planes_centro_queryset(centro, normalized_search)
+    sector_id = None
+    if hasattr(_get_planes_centro_page, "_sector_id"):
+        sector_id = getattr(_get_planes_centro_page, "_sector_id")
+    queryset = _build_planes_centro_queryset(centro, normalized_search, sector_id)
     paginator = Paginator(queryset, PLANES_CENTRO_PAGE_SIZE)
     page_obj = paginator.get_page(normalized_page)
     plans = list(page_obj.object_list)
@@ -198,13 +204,18 @@ def _get_planes_centro_page(
 
 def _build_cursos_panel_context(request, centro):
     search_query = (request.GET.get("busqueda") or "").strip()
+    sector_id = request.GET.get("sector_id") or None
     page_number = request.GET.get("planes_page") or 1
+    # Propagar sector_id a _get_planes_centro_page
+    setattr(_get_planes_centro_page, "_sector_id", int(sector_id) if sector_id else None)
     planes_centro, total_filtrados, page_obj = _get_planes_centro_page(
         centro,
         search_query,
         page_number,
         bypass_cache=request.GET.get("refresh") == "1",
     )
+    from VAT.models import Sector
+    sectores = Sector.objects.filter(activo=True).order_by("nombre")
     cursos = list(
         Curso.objects.filter(centro=centro)
         .select_related("modalidad", "plan_estudio")
@@ -240,6 +251,7 @@ def _build_cursos_panel_context(request, centro):
     return {
         "planes_centro": planes_centro,
         "planes_centro_search_query": search_query,
+        "planes_centro_sector_id": int(sector_id) if sector_id else None,
         "planes_centro_total_filtrados": total_filtrados,
         "planes_centro_page_obj": page_obj,
         "planes_centro_is_paginated": page_obj.has_other_pages(),
@@ -247,6 +259,7 @@ def _build_cursos_panel_context(request, centro):
         "comisiones_curso": comisiones_curso,
         "curso_form": curso_form,
         "comision_curso_form": comision_curso_form,
+        "planes_centro_sectores": sectores,
     }
 
 

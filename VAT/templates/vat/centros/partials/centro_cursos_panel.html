@@ -17,12 +17,20 @@
                     <div class="col-sm-8 col-lg-6">
                         <label class="form-label small fw-semibold text-uppercase mb-1"
                                style="letter-spacing:.05em">Buscar plan curricular</label>
-                        <input type="search"
-                               name="busqueda"
-                               class="form-control form-control-sm"
-                               placeholder="Ej: auxiliar, servicios o resolución"
-                               value="{{ planes_centro_search_query }}"
-                               autocomplete="off" />
+                        <div class="input-group input-group-sm">
+                            <input type="search"
+                                   name="busqueda"
+                                   class="form-control form-control-sm"
+                                   placeholder="Ej: auxiliar, servicios o resolución"
+                                   value="{{ planes_centro_search_query }}"
+                                   autocomplete="off" />
+                            <select name="sector_id" class="form-select form-select-sm" style="max-width: 180px;">
+                                <option value="">Todos los sectores</option>
+                                {% for sector in planes_centro_sectores %}
+                                    <option value="{{ sector.id }}" {% if planes_centro_sector_id == sector.id %}selected{% endif %}>{{ sector.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
                     <div class="col-sm-auto">
                         <button type="submit" class="btn btn-primary btn-sm w-100">
