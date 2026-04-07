@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.db import transaction
 
 from celiaquia.models import Expediente, ExpedienteCiudadano
-from core.models import Nacionalidad, Sexo
+from core.models import Localidad, Nacionalidad, Sexo
 from iam.services import user_has_permission_code
 
 logger = logging.getLogger("django")
@@ -30,6 +30,10 @@ def _is_provincial(user) -> bool:
         return bool(user.profile.es_usuario_provincial and user.profile.provincia_id)
     except:
         return False
+
+
+def _get_nacionalidad_argentina():
+    return Nacionalidad.objects.filter(nacionalidad__iexact="Argentina").first()
 
 
 @method_decorator(csrf_protect, name="dispatch")
@@ -65,6 +69,8 @@ class EditarLegajoView(View):
                 )
 
         ciudadano = legajo.ciudadano
+        nacionalidad_argentina = _get_nacionalidad_argentina()
+        localidad = ciudadano.localidad
 
         data = {
             "success": True,
@@ -79,13 +85,20 @@ class EditarLegajoView(View):
                     else ""
                 ),
                 "sexo": ciudadano.sexo_id if ciudadano.sexo else "",
-                "nacionalidad": getattr(ciudadano, "nacionalidad_id", "") or "",
+                "nacionalidad": getattr(ciudadano, "nacionalidad_id", "")
+                or getattr(nacionalidad_argentina, "pk", "")
+                or "",
                 "telefono": ciudadano.telefono or "",
                 "email": ciudadano.email or "",
                 "calle": ciudadano.calle or "",
                 "altura": ciudadano.altura or "",
                 "codigo_postal": ciudadano.codigo_postal or "",
-                "municipio": ciudadano.municipio_id if ciudadano.municipio else "",
+                "municipio": (
+                    ciudadano.municipio_id
+                    if ciudadano.municipio
+                    else getattr(localidad, "municipio_id", "")
+                )
+                or "",
                 "localidad": ciudadano.localidad_id if ciudadano.localidad else "",
             },
         }
@@ -163,16 +176,20 @@ class EditarLegajoView(View):
                 except Sexo.DoesNotExist:
                     raise ValidationError("Sexo inválido.")
 
-                # Nacionalidad (obligatorio)
-                nacionalidad_id = request.POST.get("nacionalidad", "").strip()
-                if not nacionalidad_id:
-                    raise ValidationError("Nacionalidad es obligatoria.")
-                try:
-                    ciudadano.nacionalidad = Nacionalidad.objects.get(
-                        pk=nacionalidad_id
-                    )
-                except Nacionalidad.DoesNotExist:
-                    raise ValidationError("Nacionalidad inválida.")
+                # Nacionalidad (fija en Argentina para este flujo)
+                nacionalidad_argentina = _get_nacionalidad_argentina()
+                if nacionalidad_argentina:
+                    ciudadano.nacionalidad = nacionalidad_argentina
+                else:
+                    nacionalidad_id = request.POST.get("nacionalidad", "").strip()
+                    if not nacionalidad_id:
+                        raise ValidationError("Nacionalidad es obligatoria.")
+                    try:
+                        ciudadano.nacionalidad = Nacionalidad.objects.get(
+                            pk=nacionalidad_id
+                        )
+                    except Nacionalidad.DoesNotExist:
+                        raise ValidationError("Nacionalidad inválida.")
 
                 # Teléfono (opcional)
                 telefono = request.POST.get("telefono", "").strip()
@@ -195,16 +212,17 @@ class EditarLegajoView(View):
                 ciudadano.codigo_postal = codigo_postal or None
 
                 # Municipio y Localidad (obligatorio)
-                municipio_id = request.POST.get("municipio", "").strip()
                 localidad_id = request.POST.get("localidad", "").strip()
-                if not municipio_id or not localidad_id:
+                if not localidad_id:
                     raise ValidationError("Municipio y Localidad son obligatorios.")
-                from core.models import Municipio, Localidad
 
                 try:
-                    ciudadano.municipio = Municipio.objects.get(pk=municipio_id)
-                    ciudadano.localidad = Localidad.objects.get(pk=localidad_id)
-                except (Municipio.DoesNotExist, Localidad.DoesNotExist):
+                    localidad = Localidad.objects.select_related("municipio").get(
+                        pk=localidad_id
+                    )
+                    ciudadano.localidad = localidad
+                    ciudadano.municipio = localidad.municipio
+                except Localidad.DoesNotExist:
                     raise ValidationError("Municipio o Localidad inválido.")
 
                 # Guardar cambios
