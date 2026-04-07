@@ -9,7 +9,6 @@ Fecha: 2026-04-07
   - `docker-compose.qa.yml`
   - `docker-compose.homologacion.yml`
   - `docker-compose.produccion.yml`
-- Se agrego `.env.homologacion` para el nuevo entorno deploy-like.
 - `config/settings.py` ahora soporta `ENVIRONMENT=homologacion`.
 - Homologacion pasa a comportarse como un entorno similar a produccion para:
   - esquema HTTPS por defecto
@@ -25,6 +24,8 @@ Fecha: 2026-04-07
 Se mantuvo `docker-compose.yml` exclusivamente para desarrollo/local porque es el unico caso en el repo donde tiene sentido levantar `mysql` junto con `django`.
 
 Para deploys se eligio un esquema base + overrides por entorno para evitar drift entre QA, homologacion y produccion, sin duplicar toda la definicion del servicio `django`.
+
+Todos los deploys versionados leen ahora el `.env` normal del host mediante `docker-compose.deploy.yml`; los overrides ya no dependen de archivos `.env.<entorno>`.
 
 ## Impacto operativo
 
