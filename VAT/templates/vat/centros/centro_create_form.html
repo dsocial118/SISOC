@@ -7,10 +7,6 @@
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
-    <link rel="stylesheet" href="{% static 'admin/css/select2templated.css' %}" />
-    <script nonce="{{ request.csp_nonce }}">
-        document.documentElement.classList.add("js");
-    </script>
     <style>
         .vp-shell {
             max-width: 1200px;
@@ -134,70 +130,6 @@
         .vp-field input:focus {
             border-color: #3b74b8;
             box-shadow: 0 0 0 .2rem rgba(59, 116, 184, 0.12);
-        }
-
-        .js .vp-field .js-referente-select {
-            opacity: 0;
-        }
-
-        .vp-field .js-referente-select + .select2-container {
-            display: none !important;
-        }
-
-        .vp-field .js-referente-select + .select2-container.vp-select2-ready {
-            display: inline-block !important;
-        }
-
-        .vp-field .select2-container.select2-container--default {
-            width: 100% !important;
-            border: 0 !important;
-            border-radius: 12px !important;
-        }
-
-        .vp-field .select2-container.select2-container--default .select2-selection--single {
-            min-height: 46px;
-            border-radius: 12px;
-            border: 1px solid #d8e1ee !important;
-            display: flex;
-            align-items: center;
-            box-shadow: none !important;
-            background: var(--bs-body-bg) !important;
-            color: var(--bs-body-color) !important;
-        }
-
-        .vp-field .select2-container.select2-container--default .select2-selection__rendered {
-            border: 0 !important;
-            background: transparent !important;
-        }
-
-        .vp-field .select2-container.select2-container--default .select2-selection--single .select2-selection__rendered {
-            color: var(--bs-body-color) !important;
-            line-height: 1.4;
-            padding-left: .85rem;
-            padding-right: 2.2rem;
-        }
-
-        .vp-field .select2-container.select2-container--default .select2-selection--single .select2-selection__placeholder {
-            color: var(--bs-secondary-color) !important;
-        }
-
-        .vp-field .select2-container.select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 100%;
-            right: .55rem;
-        }
-
-        .vp-field .select2-container.select2-container--default .select2-selection--single .select2-selection__arrow b {
-            border-color: var(--bs-body-color) transparent transparent transparent !important;
-        }
-
-        .vp-field .select2-container.select2-container--default.select2-container--focus .select2-selection--single,
-        .vp-field .select2-container.select2-container--default.select2-container--open .select2-selection--single {
-            border-color: #3b74b8 !important;
-            box-shadow: 0 0 0 .2rem rgba(59, 116, 184, 0.12) !important;
-        }
-
-        .vp-field .select2-container.select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
-            border-color: transparent transparent var(--bs-body-color) transparent !important;
         }
 
         .vp-contact-item {

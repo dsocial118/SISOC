@@ -2,70 +2,9 @@ document.addEventListener("DOMContentLoaded", function () {
     var provinciaSelect = document.getElementById("id_provincia");
     var municipioSelect = document.getElementById("id_municipio");
     var localidadSelect = document.getElementById("id_localidad");
-    var referenteSelect = document.getElementById("id_referente");
     var addContactoBtn = document.getElementById("add-contacto-btn");
     var contactosContainer = document.getElementById("contactos-formset");
     var totalFormsInput = document.getElementById("id_contactos-TOTAL_FORMS");
-
-    if (
-        referenteSelect &&
-        window.jQuery &&
-        window.jQuery.fn &&
-        window.jQuery.fn.select2
-    ) {
-        var $referente = window.jQuery(referenteSelect);
-
-        // Snapshot de las opciones renderizadas por Django antes de que
-        // cualquier otro script pueda tocarlas.
-        var referenteData = Array.prototype.map.call(
-            referenteSelect.options,
-            function (opt) {
-                return {
-                    id: opt.value,
-                    text: opt.textContent,
-                    selected: opt.selected,
-                };
-            }
-        ).filter(function (item) {
-            return item.id !== "";
-        });
-
-        if ($referente.data("select2")) {
-            $referente.select2("destroy");
-        }
-
-        // Reconstruimos el <select> a partir del snapshot por si algo
-        // lo vació antes de esta inicialización.
-        referenteSelect.innerHTML = "";
-        var emptyOpt = document.createElement("option");
-        emptyOpt.value = "";
-        referenteSelect.appendChild(emptyOpt);
-        referenteData.forEach(function (item) {
-            var o = document.createElement("option");
-            o.value = item.id;
-            o.textContent = item.text;
-            if (item.selected) {
-                o.selected = true;
-            }
-            referenteSelect.appendChild(o);
-        });
-
-        $referente.select2({
-            width: "100%",
-            placeholder:
-                referenteSelect.dataset.placeholder || "Buscar referente...",
-            allowClear: true,
-            minimumResultsForSearch: 0,
-            data: referenteData,
-            language: {
-                noResults: function () {
-                    return "No se encontraron referentes";
-                },
-            },
-        });
-
-        $referente.next(".select2-container").addClass("vp-select2-ready");
-    }
 
     function buildEmptyOption(label) {
         var option = document.createElement("option");
