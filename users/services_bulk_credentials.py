@@ -181,8 +181,8 @@ def _validate_row_data(row: ParsedCredentialRow) -> None:
         raise ValidationError("La columna mail es obligatoria.")
     try:
         validate_email(row.mail)
-    except ValidationError:
-        raise ValidationError(f"El mail '{row.mail}' no tiene un formato válido.")
+    except ValidationError as exc:
+        raise ValidationError("El formato del mail es inválido.") from exc
     if not row.password:
         raise ValidationError("La columna password es obligatoria.")
 
