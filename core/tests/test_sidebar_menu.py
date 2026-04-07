@@ -46,6 +46,9 @@ def test_sidebar_separa_administracion_de_configuracion_comedores(client):
     assert 'style="order: 3;"' in content
     assert 'style="order: 4;"' in content
     assert 'style="order: 5;"' in content
-    assert 'style="order: 6; border-bottom: 1px solid var(--lte-sidebar-color);"' in content
+    assert (
+        'style="order: 6; border-bottom: 1px solid var(--lte-sidebar-color);"'
+        in content
+    )
     assert "v06.04.26" in content
     assert 'class="footer-secondary-link"' in content

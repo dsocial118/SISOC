@@ -5,7 +5,9 @@
         <img src="{% static 'custom/img/Presidencia_footer.svg' %}"
              alt="Presidencia Logo"
              class="footer-logo img-fluid" />
-        <a href="{% url 'changelog' %}" class="footer-secondary-link" aria-label="{{ footer_version_label }}">
+        <a href="{% url 'changelog' %}"
+           class="footer-secondary-link"
+           aria-label="{{ footer_version_label }}">
             <i class="bi bi-clock-fill"></i>
             <span>{{ footer_version_label }}</span>
         </a>

@@ -24,7 +24,9 @@ def footer_version(request):
     if cached_label is not None:
         return {"footer_version_label": cached_label}
 
-    from core.views import get_current_version  # pylint: disable=import-outside-toplevel
+    from core.views import (
+        get_current_version,
+    )  # pylint: disable=import-outside-toplevel
 
     label = _build_footer_version_label(get_current_version())
     cache.set(cache_key, label, 300)
