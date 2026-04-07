@@ -9,6 +9,9 @@
 - Las opciones ahora muestran `username` y nombre completo cuando está disponible para mejorar la búsqueda.
 - El queryset del campo incluye `CFP` y aliases legacy del mismo rol (`ReferenteCentroVAT`, `ReferenteCentro`) para compatibilidad con datos existentes.
 - Se incorporó el CSS de `select2` y la inicialización del buscador en el template compartido de alta/edición de centros.
+- Se ajustó el CSS puntual del alta de centros para eliminar los bordes superpuestos de `select2` y alinear el campo `Referente` con el mismo formato visual de los demás `form-control`.
+- Se ocultó el `select` nativo hasta que `select2` termina de inicializarse para evitar el parpadeo visual del campo `Referente` al cargar la pantalla.
+- Se reemplazó el fondo blanco fijo del `Select2` por variables del tema Bootstrap para respetar el modo oscuro usado por la pantalla y mantener consistencia visual con el resto del formulario.
 - Se agregó una regresión en `VAT/tests.py` para validar los atributos del widget y el formato de etiqueta de opciones.
 
 ## Impacto esperado

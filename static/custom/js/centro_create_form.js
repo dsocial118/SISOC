@@ -63,6 +63,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
             },
         });
+
+        $referente.next(".select2-container").addClass("vp-select2-ready");
     }
 
     function buildEmptyOption(label) {
