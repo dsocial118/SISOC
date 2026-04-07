@@ -25,6 +25,7 @@ from VAT.models import (
     PlanVersionCurricular,
     VoucherParametria,
 )
+from VAT.cache_utils import get_planes_centro_cache_version
 from VAT.services.centro_filter_config import (
     FIELD_MAP as CENTRO_FILTER_MAP,
     FIELD_TYPES as CENTRO_FIELD_TYPES,
@@ -146,9 +147,11 @@ def _build_planes_centro_queryset(centro, search_query, sector_id=None):
 def _build_planes_centro_cache_key(centro, search_query, page_number):
     provincia_key = centro.provincia_id or "sin-provincia"
     normalized_search = (search_query or "").strip().lower()
+    cache_version = get_planes_centro_cache_version()
     return (
         "vat:centro:cursos:planes:"
-        f"{provincia_key}:{normalized_search}:{page_number}:{PLANES_CENTRO_PAGE_SIZE}"
+        f"{cache_version}:{provincia_key}:{normalized_search}:{page_number}:"
+        f"{PLANES_CENTRO_PAGE_SIZE}"
     )
 
 
