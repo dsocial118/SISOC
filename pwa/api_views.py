@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
@@ -24,6 +25,8 @@ from pwa.api_serializers import (
     NominaEspacioPWACreateUpdateSerializer,
     NominaEspacioPWAListSerializer,
     NominaRenaperPreviewSerializer,
+    PushSubscriptionPWAConfigSerializer,
+    PushSubscriptionPWASerializer,
     RegistroAsistenciaNominaPWAListSerializer,
     SexoSerializer,
 )
@@ -42,6 +45,11 @@ from pwa.services.mensajes_service import (
     get_mensaje_for_espacio,
     list_mensajes_for_espacio,
     marcar_mensaje_como_visto,
+)
+from pwa.services.push_service import (
+    deactivate_push_subscription,
+    upsert_push_subscription,
+    web_push_enabled,
 )
 from pwa.services.nomina_service import (
     create_nomina_persona,
@@ -100,6 +108,40 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
             for item in serialized_all_items
             if item["seccion"] == "espacio" and not item["visto"]
         )
+        unread_general_ids = sorted(
+            {
+                item["id"]
+                for item in serialized_all_items
+                if item["seccion"] == "general" and not item["visto"]
+            }
+        )
+        unread_rendicion_ids = sorted(
+            {
+                item["accion"]["rendicion_id"]
+                for item in serialized_all_items
+                if item["seccion"] == "espacio"
+                and not item["visto"]
+                and item["accion"]
+                and item["accion"].get("tipo") == "rendicion_detalle"
+                and item["accion"].get("rendicion_id")
+            }
+        )
+        unread_espacio_non_rendicion_count = sum(
+            1
+            for item in serialized_all_items
+            if item["seccion"] == "espacio"
+            and not item["visto"]
+            and not (
+                item["accion"]
+                and item["accion"].get("tipo") == "rendicion_detalle"
+                and item["accion"].get("rendicion_id")
+            )
+        )
+        unread_grouped_count = (
+            len(unread_general_ids)
+            + unread_espacio_non_rendicion_count
+            + len(unread_rendicion_ids)
+        )
         paginator = Paginator(items, 20)
         page_number = request.query_params.get("page", 1)
         page_obj = paginator.get_page(page_number)
@@ -121,6 +163,12 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
                 "unread_count": unread_count,
                 "unread_general_count": unread_general_count,
                 "unread_espacio_count": unread_espacio_count,
+                "unread_grouped_count": unread_grouped_count,
+                "unread_general_ids": unread_general_ids,
+                "unread_rendicion_ids": unread_rendicion_ids,
+                "unread_espacio_non_rendicion_count": (
+                    unread_espacio_non_rendicion_count
+                ),
                 "results": serialized_items,
                 "secciones": {
                     "generales": [
@@ -193,6 +241,64 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
             },
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["PWA Push"])
+class PushConfigPWAViewSet(viewsets.ViewSet):
+    """Configuración de web push para la PWA."""
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsPWAAuthenticatedToken]
+
+    def list(self, request):
+        serializer = PushSubscriptionPWAConfigSerializer(
+            {
+                "enabled": bool(web_push_enabled()),
+                "public_key": settings.PWA_WEB_PUSH_PUBLIC_KEY,
+            }
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["PWA Push"])
+class PushSubscriptionPWAViewSet(viewsets.ViewSet):
+    """Alta y baja de suscripciones web push por usuario/dispositivo."""
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsPWAAuthenticatedToken]
+
+    def create(self, request):
+        serializer = PushSubscriptionPWASerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        subscription, created = upsert_push_subscription(
+            user=request.user,
+            user_agent=request.META.get("HTTP_USER_AGENT"),
+            **serializer.validated_data,
+        )
+        response_serializer = PushSubscriptionPWASerializer(subscription)
+        return Response(
+            response_serializer.data,
+            status=(
+                status.HTTP_201_CREATED
+                if created
+                else status.HTTP_200_OK
+            ),
+        )
+
+    def destroy(self, request):
+        endpoint = str(request.data.get("endpoint") or "").strip()
+        if not endpoint:
+            return Response(
+                {"detail": "endpoint es obligatorio."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        deleted = deactivate_push_subscription(user=request.user, endpoint=endpoint)
+        if not deleted:
+            return Response(
+                {"detail": "Suscripción no encontrada."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(tags=["PWA Colaboradores"])

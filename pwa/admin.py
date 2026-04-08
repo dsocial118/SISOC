@@ -9,6 +9,7 @@ from pwa.models import (
     InscriptoActividadEspacioPWA,
     LecturaMensajePWA,
     NominaEspacioPWA,
+    PushSubscriptionPWA,
     RegistroAsistenciaNominaPWA,
 )
 
@@ -91,6 +92,24 @@ class LecturaMensajePWAAdmin(admin.ModelAdmin):
         "user__username",
     )
     readonly_fields = ("fecha_creacion", "fecha_actualizacion")
+
+
+@admin.register(PushSubscriptionPWA)
+class PushSubscriptionPWAAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "activo",
+        "fecha_actualizacion",
+        "fecha_baja",
+    )
+    list_filter = ("activo",)
+    search_fields = ("user__username", "endpoint", "user_agent")
+    readonly_fields = (
+        "fecha_creacion",
+        "fecha_actualizacion",
+        "fecha_baja",
+    )
 
 
 @admin.register(ColaboradorEspacioPWA)

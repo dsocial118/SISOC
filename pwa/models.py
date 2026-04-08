@@ -176,6 +176,40 @@ class LecturaMensajePWA(models.Model):
         )
 
 
+class PushSubscriptionPWA(models.Model):
+    """Suscripción web push asociada a un usuario/dispositivo PWA."""
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="push_subscriptions_pwa",
+    )
+    endpoint = models.URLField(max_length=500, unique=True)
+    p256dh = models.CharField(max_length=255)
+    auth = models.CharField(max_length=255)
+    content_encoding = models.CharField(max_length=30, default="aes128gcm")
+    user_agent = models.CharField(max_length=512, null=True, blank=True)
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    fecha_baja = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Suscripción push PWA"
+        verbose_name_plural = "Suscripciones push PWA"
+        ordering = ("-fecha_actualizacion", "-id")
+        indexes = [
+            models.Index(fields=["user", "activo"], name="pwa_push_user_activo_idx"),
+            models.Index(
+                fields=["fecha_actualizacion"],
+                name="pwa_push_updated_at_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Push user {self.user_id} activo={self.activo}"
+
+
 class ColaboradorEspacioPWA(models.Model):
     """Colaborador asociado a un espacio (comedor) para la app PWA."""
 

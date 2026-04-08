@@ -16,6 +16,7 @@ from VAT import serializers as vat_serializers
 from VAT.api_views import CursoViewSet
 from VAT.forms import (
     ComisionCursoForm,
+    CentroAltaForm,
     CursoForm,
     InstitucionContactoAltaForm,
     InstitucionContactoForm,
@@ -232,9 +233,49 @@ def test_centro_create_rechaza_referente_sin_grupo_cfp(vat_admin_client, vat_geo
     assert response.status_code == 200
     assert Centro.objects.filter(codigo="500144900").count() == 0
     assert (
-        "El referente seleccionado debe tener el rol CFP."
+        "El referente seleccionado debe tener un rol valido de referente VAT."
         in response.content.decode("utf-8")
     )
+
+
+@pytest.mark.django_db
+def test_centro_alta_form_configura_referente_como_select_estandar(vat_referente_user):
+    vat_referente_user.first_name = "Ana"
+    vat_referente_user.last_name = "Pérez"
+    vat_referente_user.save(update_fields=["first_name", "last_name"])
+
+    form = CentroAltaForm()
+    referente_field = form.fields["referente"]
+
+    assert referente_field.widget.attrs["class"] == "form-control"
+    assert referente_field.empty_label == "Seleccionar referente..."
+    assert referente_field.label_from_instance(vat_referente_user) == "referente-vat - Ana Pérez"
+
+
+@pytest.mark.django_db
+def test_centro_alta_form_no_incluye_grupos_legacy_de_referente():
+    legacy_group_vat, _ = Group.objects.get_or_create(name="ReferenteCentroVAT")
+    legacy_group_centro, _ = Group.objects.get_or_create(name="ReferenteCentro")
+    legacy_user_vat = User.objects.create_user(
+        username="referente-legacy-form",
+        password="test1234",
+    )
+    legacy_user_centro = User.objects.create_user(
+        username="referente-centro-form",
+        password="test1234",
+    )
+    legacy_user_vat.groups.add(legacy_group_vat)
+    legacy_user_centro.groups.add(legacy_group_centro)
+
+    form = CentroAltaForm()
+    queryset_usernames = list(
+        form.fields["referente"].queryset.order_by("username").values_list(
+            "username", flat=True
+        )
+    )
+
+    assert "referente-legacy-form" not in queryset_usernames
+    assert "referente-centro-form" not in queryset_usernames
 
 
 @pytest.mark.django_db
@@ -2854,7 +2895,10 @@ def test_centro_cursos_panel_renderiza_accion_para_crear_curso_desde_plan_curric
 def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
+    modalidad_hibrida = ModalidadCursada.objects.create(nombre="Hibrida", activo=True)
     sector = Sector.objects.create(nombre="Servicios")
+    otro_sector = Sector.objects.create(nombre="Gastronomia")
+    subsector = Subsector.objects.create(sector=sector, nombre="Administracion")
     group, _ = Group.objects.get_or_create(name="CFP")
     user = User.objects.create_superuser(
         username="admin-vat-centro-planes",
@@ -2899,8 +2943,17 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
         provincia=provincia,
         nombre="Plan Especial Administrativo",
         sector=sector,
+        subsector=subsector,
         modalidad_cursada=modalidad,
         normativa="Resolución especial 2026",
+        activo=True,
+    )
+    plan_otro_sector = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan Cocina Profesional",
+        sector=otro_sector,
+        modalidad_cursada=modalidad_hibrida,
+        normativa="Resolución gastronomica 2026",
         activo=True,
     )
 
@@ -2913,11 +2966,15 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
 
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
-    assert response.context["planes_centro_page_obj"].paginator.per_page == 20
-    assert len(response.context["planes_centro"]) == 20
+    assert response.context["planes_centro_page_obj"].paginator.per_page == 5
+    assert len(response.context["planes_centro"]) == 5
     assert response.context["planes_centro_is_paginated"] is True
     assert f'action="{detail_url}#cursos"' in content
     assert "planes_page=2#cursos" in content
+    assert 'name="subsector_id"' in content
+    assert 'name="modalidad_id"' in content
+    assert 'name="planes_per_page"' in content
+    assert '<option value="5" selected>5</option>' in content
 
     filtered_response = client.get(
         panel_url,
@@ -2929,10 +2986,48 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
     assert len(filtered_response.context["planes_centro"]) == 1
     assert filtered_response.context["planes_centro"][0].id == plan_filtrado.id
 
+    filtered_combined_response = client.get(
+        panel_url,
+        {
+            "sector_id": str(sector.id),
+            "subsector_id": str(subsector.id),
+            "modalidad_id": str(modalidad.id),
+            "planes_per_page": "50",
+        },
+    )
+
+    assert filtered_combined_response.status_code == 200
+    assert filtered_combined_response.context["planes_centro_total_filtrados"] == 1
+    assert filtered_combined_response.context["planes_centro_page_obj"].paginator.per_page == 50
+    assert filtered_combined_response.context["planes_centro_page_size"] == 50
+    assert filtered_combined_response.context["planes_centro_subsector_id"] == subsector.id
+    assert filtered_combined_response.context["planes_centro_modalidad_id"] == modalidad.id
+    assert filtered_combined_response.context["planes_centro"][0].id == plan_filtrado.id
+    filtered_combined_content = filtered_combined_response.content.decode("utf-8")
+    assert f'value="{subsector.id}" selected' in filtered_combined_content
+    assert f'value="{modalidad.id}" selected' in filtered_combined_content
+    assert 'Servicios: 1' in filtered_combined_content
+
+    filtered_by_sector_response = client.get(
+        panel_url,
+        {"sector_id": str(otro_sector.id)},
+    )
+
+    assert filtered_by_sector_response.status_code == 200
+    assert filtered_by_sector_response.context["planes_centro_total_filtrados"] == 1
+    assert len(filtered_by_sector_response.context["planes_centro"]) == 1
+    assert filtered_by_sector_response.context["planes_centro"][0].id == plan_otro_sector.id
+    assert filtered_by_sector_response.context["planes_centro_sector_id"] == otro_sector.id
+    assert filtered_by_sector_response.context["planes_centro_modalidad_id"] is None
+    filtered_by_sector_content = filtered_by_sector_response.content.decode("utf-8")
+    assert 'name="sector_id"' in filtered_by_sector_content
+    assert f'value="{otro_sector.id}" selected' in filtered_by_sector_content
+    assert 'Gastronomia: 1' in filtered_by_sector_content
+
     second_page_response = client.get(panel_url, {"planes_page": 2})
 
     assert second_page_response.status_code == 200
-    assert len(second_page_response.context["planes_centro"]) == 2
+    assert len(second_page_response.context["planes_centro"]) == 5
 
 
 @pytest.mark.django_db
