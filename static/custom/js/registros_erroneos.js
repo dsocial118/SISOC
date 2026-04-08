@@ -2,34 +2,63 @@
 document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     
-    // Filtrar localidades por municipio
+    // Filtrar y sincronizar localidades/municipios
     document.querySelectorAll('.select-municipio').forEach(selectMunicipio => {
         const registroId = selectMunicipio.dataset.registroId;
         const selectLocalidad = document.querySelector(`.select-localidad[data-registro-id="${registroId}"]`);
-        
+
         if (!selectLocalidad) return;
-        
-        const todasLocalidades = Array.from(selectLocalidad.options).slice(1);
-        
-        selectMunicipio.addEventListener('change', function() {
-            const municipioId = this.value;
+
+        const todasLocalidades = Array.from(selectLocalidad.options)
+            .slice(1)
+            .map(option => option.cloneNode(true));
+
+        function repoblarLocalidades(municipioId, localidadSeleccionada = '') {
             selectLocalidad.innerHTML = '<option value="">Seleccionar...</option>';
-            
-            if (!municipioId) {
-                todasLocalidades.forEach(opt => {
-                    selectLocalidad.appendChild(opt.cloneNode(true));
-                });
-            } else {
-                todasLocalidades.forEach(opt => {
-                    if (opt.dataset.municipio === municipioId) {
-                        selectLocalidad.appendChild(opt.cloneNode(true));
+
+            todasLocalidades.forEach(option => {
+                if (!municipioId || option.dataset.municipio === municipioId) {
+                    const optionClonada = option.cloneNode(true);
+                    if (localidadSeleccionada && optionClonada.value === localidadSeleccionada) {
+                        optionClonada.selected = true;
                     }
-                });
+                    selectLocalidad.appendChild(optionClonada);
+                }
+            });
+
+            if (
+                localidadSeleccionada &&
+                !Array.from(selectLocalidad.options).some(option => option.value === localidadSeleccionada)
+            ) {
+                selectLocalidad.value = '';
             }
+        }
+
+        function sincronizarMunicipioDesdeLocalidad() {
+            const optionSeleccionada = selectLocalidad.selectedOptions[0];
+            const municipioId = optionSeleccionada?.dataset?.municipio || '';
+
+            if (!municipioId) {
+                return;
+            }
+
+            if (selectMunicipio.value !== municipioId) {
+                selectMunicipio.value = municipioId;
+            }
+
+            repoblarLocalidades(municipioId, selectLocalidad.value);
+        }
+
+        selectMunicipio.addEventListener('change', function() {
+            repoblarLocalidades(this.value, selectLocalidad.value);
         });
-        
-        if (selectMunicipio.value) {
-            selectMunicipio.dispatchEvent(new Event('change'));
+
+        selectLocalidad.addEventListener('change', sincronizarMunicipioDesdeLocalidad);
+
+        if (selectLocalidad.value) {
+            sincronizarMunicipioDesdeLocalidad();
+        } else {
+            repoblarLocalidades(selectMunicipio.value, '');
         }
     });
     
