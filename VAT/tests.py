@@ -1,5 +1,5 @@
 import importlib
-from datetime import date
+from datetime import date, time
 
 import pytest
 from django.contrib.auth.models import Group, User
@@ -2319,6 +2319,45 @@ def test_comision_curso_create_view_renderiza_formulario(client, vat_curso_base)
 
 
 @pytest.mark.django_db
+def test_comision_curso_create_view_rechaza_fecha_fin_anterior_a_inicio(
+    client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-fechas",
+        email="admin-comision-curso-fechas@vat.test",
+        password="test1234",
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso con validacion de fechas",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_comision_curso_create"),
+        data={
+            "curso": str(curso.id),
+            "ubicacion": str(ubicacion.id),
+            "cupo_total": 20,
+            "fecha_inicio": "2026-04-30",
+            "fecha_fin": "2026-04-01",
+            "estado": "planificada",
+            "observaciones": "",
+        },
+    )
+
+    assert response.status_code == 200
+    assert (
+        "La fecha de fin debe ser mayor o igual a la fecha de inicio."
+        in response.content.decode("utf-8")
+    )
+    assert not ComisionCurso.objects.filter(curso=curso).exists()
+
+
+@pytest.mark.django_db
 def test_comision_curso_update_view_renderiza_formulario(client, vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     user = User.objects.create_superuser(
@@ -2834,9 +2873,18 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
     assert 'id="tablaCursosCentro"' in content
+    assert 'id="cursosFilterSearch"' in content
+    assert 'id="cursosFilterEstado"' in content
+    assert 'id="cursosFilterPageSize"' in content
+    assert 'id="cursosFilterClear"' in content
     assert 'class="curso-row"' in content
     assert f'data-curso-id="{_curso.id}"' in content
     assert 'id="tablaComisionesCursoCentro"' in content
+    assert 'id="comisionesFilterSearch"' in content
+    assert 'id="comisionesFilterCurso"' in content
+    assert 'id="comisionesFilterEstado"' in content
+    assert 'id="comisionesFilterPageSize"' in content
+    assert 'id="comisionesFilterClear"' in content
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
     assert 'title="Gestionar Comisión"' in content
@@ -3179,6 +3227,15 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
         fecha_fin=date(2026, 5, 1),
         estado="activa",
     )
+    dia = Dia.objects.create(nombre="Martes")
+    horario = ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde=time(9, 0),
+        hora_hasta=time(11, 0),
+        aula_espacio="Aula 3",
+        vigente=True,
+    )
 
     client.force_login(user)
     response = client.get(
@@ -3192,8 +3249,19 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
     assert curso.nombre in content
     assert reverse("vat_comision_curso_update", kwargs={"pk": comision.pk}) in content
     assert reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk}) in content
+    assert 'data-bs-target="#modalEditarComisionCurso"' in content
+    assert 'id="modalEditarComisionCurso"' in content
+    assert 'id="formEditarComisionCurso"' in content
+    assert 'data-bs-target="#modalEliminarComisionCurso"' in content
+    assert 'id="modalEliminarComisionCurso"' in content
+    assert 'id="formEliminarComisionCurso"' in content
     assert reverse("vat_inscripcion_rapida_comision_curso") in content
     assert reverse("vat_comision_curso_horario_create") in content
+    assert 'data-bs-target="#modalComisionHorario"' in content
+    assert 'data-horario-mode="edit"' in content
+    assert reverse("vat_comision_curso_horario_update", kwargs={"pk": horario.pk}) in content
+    assert 'data-bs-target="#modalEliminarComisionHorario"' in content
+    assert reverse("vat_comision_curso_horario_delete", kwargs={"pk": horario.pk}) in content
     assert "Información" in content
     assert "Inscriptos" in content
     assert "Sesiones" in content
@@ -3281,6 +3349,89 @@ def test_comision_curso_horario_create_genera_sesiones(client, vat_geo_data):
         SesionComision.objects.filter(comision_curso=comision, horario=horario).count()
         == 3
     )
+
+
+@pytest.mark.django_db
+def test_comision_curso_horario_create_rechaza_hora_hasta_menor_a_hora_desde(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial Horario Invalido", activo=True
+    )
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-horario-invalido",
+        email="admin-comision-curso-horario-invalido@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Horarios Invalidos",
+        codigo="CFP-HOR-INV",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="14",
+        numero=101,
+        domicilio_actividad="Calle 14 N° 101",
+        telefono="221-1111113",
+        celular="221-2222224",
+        correo="cfphorinv@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Gomez",
+        telefono_referente="221-3333335",
+        correo_referente="ana-hor-inv@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 14 N° 101",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso con horario invalido",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="HOR-INV-01",
+        nombre="Comisión Horario Inválido",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 6),
+        fecha_fin=date(2026, 4, 20),
+        estado="activa",
+    )
+    dia = Dia.objects.create(nombre="Martes")
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_comision_curso_horario_create"),
+        data={
+            "comision_curso": comision.pk,
+            "dia_semana": dia.pk,
+            "hora_desde": "11:00",
+            "hora_hasta": "09:00",
+            "aula_espacio": "Aula 2",
+            "vigente": "on",
+        },
+    )
+
+    assert response.status_code == 200
+    assert (
+        "La hora hasta no puede ser menor a la hora desde."
+        in response.content.decode("utf-8")
+    )
+    assert not ComisionHorario.objects.filter(comision_curso=comision).exists()
 
 
 @pytest.mark.django_db

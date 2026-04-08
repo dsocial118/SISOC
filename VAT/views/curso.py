@@ -227,6 +227,16 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         comision = self.object
         cancel_url = _centro_cursos_tab_url(comision.curso.centro_id)
+        comision_form = ComisionCursoForm(instance=comision)
+        scoped_centros = filter_centros_queryset_for_user(
+            Centro.objects.all(), self.request.user
+        )
+        comision_form.fields["curso"].queryset = Curso.objects.filter(
+            centro_id__in=scoped_centros.values_list("id", flat=True)
+        ).select_related("centro")
+        comision_form.fields["ubicacion"].queryset = InstitucionUbicacion.objects.filter(
+            centro_id=comision.curso.centro_id
+        ).select_related("localidad")
         horario_form = ComisionCursoHorarioForm(initial={"comision_curso": comision.id})
         horario_form.fields["comision_curso"].queryset = ComisionCurso.objects.filter(
             pk=comision.pk
@@ -234,6 +244,7 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         context.update(
             {
                 "comision_curso": comision,
+                "comision_form": comision_form,
                 "cancel_url": cancel_url,
                 "horario_form": horario_form,
                 "ciudadano_rapido_form": CiudadanoInscripcionRapidaForm(

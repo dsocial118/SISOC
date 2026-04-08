@@ -116,8 +116,6 @@
                             <tr>
                                 <th>Plan Curricular</th>
                                 <th>Sector</th>
-                                <th>Subsector</th>
-                                <th>Modalidad</th>
                                 <th>Normativa</th>
                                 <th>Estado</th>
                                 {% if perms.VAT.add_curso %}<th class="text-center">Acciones</th>{% endif %}
@@ -130,8 +128,6 @@
                                         <strong>{{ plan.titulo_referencia|default:plan }}</strong>
                                     </td>
                                     <td>{{ plan.sector|default:"-" }}</td>
-                                    <td>{{ plan.subsector|default:"-" }}</td>
-                                    <td>{{ plan.modalidad_cursada|default:"-" }}</td>
                                     <td>{{ plan.normativa|default:"-" }}</td>
                                     <td>
                                         {% if plan.activo %}
@@ -238,13 +234,57 @@
         </div>
         <div class="card-body p-0">
             {% if cursos %}
+                <div class="p-3 border-bottom bg-body-tertiary">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-sm-7 col-lg-6">
+                            <label for="cursosFilterSearch"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Buscar curso</label>
+                            <input type="search"
+                                   id="cursosFilterSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Ej: auxiliar, diseño o electricidad"
+                                   autocomplete="off" />
+                        </div>
+                        <div class="col-sm-3 col-lg-3">
+                            <label for="cursosFilterEstado"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Estado</label>
+                            <select id="cursosFilterEstado" class="form-select form-select-sm">
+                                <option value="">Todos los estados</option>
+                                <option value="activo">Activo</option>
+                                <option value="planificado">Planificado</option>
+                                <option value="finalizado">Finalizado</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3 col-lg-2">
+                            <label for="cursosFilterPageSize"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Ver</label>
+                            <select id="cursosFilterPageSize" class="form-select form-select-sm">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="todos">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-auto">
+                            <button type="button"
+                                    id="cursosFilterClear"
+                                    class="btn btn-outline-secondary btn-sm w-100">Limpiar</button>
+                        </div>
+                    </div>
+                    <div class="text-muted small mt-2" id="cursosFilterSummary">
+                        Mostrando {{ cursos|length }} curso{{ cursos|length|pluralize:"s" }}.
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0" id="tablaCursosCentro">
                         <thead class="table-light">
                             <tr>
                                 <th>Nombre</th>
                                 <th>Plan Curricular</th>
-                                <th>Modalidad</th>
                                 <th>Comisiones</th>
                                 <th>Estado</th>
                                 <th class="text-center">Acciones</th>
@@ -255,6 +295,8 @@
                                 <tr class="curso-row"
                                     data-curso-id="{{ curso.id }}"
                                     data-curso-nombre="{{ curso.nombre }}"
+                                    data-curso-plan="{{ curso.plan_estudio|default:'' }}"
+                                    data-curso-estado="{{ curso.estado }}"
                                     tabindex="0"
                                     role="button"
                                     aria-label="Filtrar comisiones del curso {{ curso.nombre }}">
@@ -267,7 +309,6 @@
                                         {% endif %}
                                     </td>
                                     <td>{{ curso.plan_estudio|default:"-" }}</td>
-                                    <td>{{ curso.modalidad.nombre }}</td>
                                     <td>{{ curso.comisiones_count }}</td>
                                     <td>
                                         <span class="badge {% if curso.estado == 'activo' %}bg-success{% elif curso.estado == 'planificado' %}bg-warning text-dark{% elif curso.estado == 'finalizado' %}bg-secondary{% else %}bg-danger{% endif %}">
@@ -321,6 +362,11 @@
                         </tbody>
                     </table>
                 </div>
+                <div id="cursosTableEmptyState"
+                     class="text-center py-4 text-muted d-none">
+                    <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
+                    <p class="mb-0">No hay cursos que coincidan con los filtros seleccionados.</p>
+                </div>
             {% else %}
                 <div class="text-center py-4 text-muted">
                     <i class="fas fa-chalkboard-teacher fa-2x mb-2 opacity-50"></i>
@@ -342,14 +388,68 @@
         </div>
         <div class="card-body p-0">
             {% if comisiones_curso %}
+                <div class="p-3 border-bottom bg-body-tertiary">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-sm-6 col-lg-5">
+                            <label for="comisionesFilterSearch"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Buscar comisión</label>
+                            <input type="search"
+                                   id="comisionesFilterSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Ej: código, nombre, curso o ubicación"
+                                   autocomplete="off" />
+                        </div>
+                        <div class="col-sm-3 col-lg-3">
+                            <label for="comisionesFilterCurso"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Curso</label>
+                            <select id="comisionesFilterCurso" class="form-select form-select-sm">
+                                <option value="">Todos los cursos</option>
+                                {% for curso in cursos %}
+                                    <option value="{{ curso.id }}">{{ curso.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-3 col-lg-2">
+                            <label for="comisionesFilterEstado"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Estado</label>
+                            <select id="comisionesFilterEstado" class="form-select form-select-sm">
+                                <option value="">Todos</option>
+                                <option value="activa">Activa</option>
+                                <option value="planificada">Planificada</option>
+                                <option value="cerrada">Cerrada</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3 col-lg-2">
+                            <label for="comisionesFilterPageSize"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Ver</label>
+                            <select id="comisionesFilterPageSize" class="form-select form-select-sm">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="todos">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-auto">
+                            <button type="button"
+                                    id="comisionesFilterClear"
+                                    class="btn btn-outline-secondary btn-sm w-100">Limpiar</button>
+                        </div>
+                    </div>
+                    <div class="text-muted small mt-2" id="comisionesFilterSummary">
+                        Mostrando {{ comisiones_curso|length }} comisión{{ comisiones_curso|length|pluralize:"es" }}.
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0" id="tablaComisionesCursoCentro">
                         <thead class="table-light">
                             <tr>
-                                <th>Código</th>
                                 <th>Nombre</th>
                                 <th>Curso</th>
-                                <th>Ubicación</th>
                                 <th>Periodo</th>
                                 <th>Cupo Total</th>
                                 <th>Estado</th>
@@ -360,13 +460,13 @@
                             {% for comision in comisiones_curso %}
                                 <tr class="comision-curso-row"
                                     data-curso-id="{{ comision.curso_id }}"
-                                    data-curso-nombre="{{ comision.curso.nombre }}">
-                                    <td>
-                                        <strong>{{ comision.codigo_comision }}</strong>
-                                    </td>
+                                    data-curso-nombre="{{ comision.curso.nombre }}"
+                                    data-comision-codigo="{{ comision.codigo_comision }}"
+                                    data-comision-nombre="{{ comision.nombre }}"
+                                    data-comision-ubicacion="{{ comision.ubicacion|default:'' }}"
+                                    data-comision-estado="{{ comision.estado }}">
                                     <td>{{ comision.nombre }}</td>
                                     <td>{{ comision.curso.nombre }}</td>
-                                    <td>{{ comision.ubicacion|default:"-" }}</td>
                                     <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} - {{ comision.fecha_fin|date:"d/m/Y" }}</td>
                                     <td>{{ comision.cupo_total }}</td>
                                     <td>
@@ -419,7 +519,7 @@
                 <div id="comisionesCursoEmptyState"
                      class="text-center py-4 text-muted d-none">
                     <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
-                    <p class="mb-0">El curso seleccionado no tiene comisiones registradas.</p>
+                    <p class="mb-0">No hay comisiones que coincidan con los filtros seleccionados.</p>
                 </div>
             {% else %}
                 <div class="text-center py-4 text-muted">

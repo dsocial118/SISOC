@@ -1390,6 +1390,15 @@ class ComisionHorario(models.Model):
                 "Debés vincular el horario a una comisión o a una comisión de curso."
             )
 
+        if (
+            self.hora_desde is not None
+            and self.hora_hasta is not None
+            and self.hora_hasta < self.hora_desde
+        ):
+            errors["hora_hasta"] = (
+                "La hora hasta no puede ser menor a la hora desde."
+            )
+
         existing = ComisionHorario.objects.exclude(pk=self.pk).filter(
             dia_semana=self.dia_semana,
             hora_desde=self.hora_desde,

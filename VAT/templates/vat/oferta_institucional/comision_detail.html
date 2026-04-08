@@ -285,7 +285,20 @@
                 <span class="ci-code-badge">{{ comision.codigo_comision }}</span>
                 <span class="ci-state-badge">{{ comision.get_estado_display }}</span>
                 {% if puede_editar_comision %}
-                    <a href="{{ comision_edit_url }}" class="ci-edit-btn"><i class="bi bi-pencil me-1"></i>Editar</a>
+                    <button type="button"
+                            class="ci-edit-btn"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalEditarComisionCurso"
+                            data-edit-url="{{ comision_edit_url }}"
+                            data-curso-id="{{ comision.curso_id }}"
+                            data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
+                            data-cupo-total="{{ comision.cupo_total }}"
+                            data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
+                            data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
+                            data-estado="{{ comision.estado }}"
+                            data-observaciones="{{ comision.observaciones|default:'' }}">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </button>
                 {% endif %}
             </div>
         </div>
@@ -622,12 +635,33 @@
                                             {% endif %}
                                         </span>
                                         {% if perms.VAT.change_comisionhorario %}
-                                            <a href="{% url horario_update_url_name horario.pk %}"
-                                               class="ci-iconbtn"><i class="bi bi-pencil"></i></a>
+                                            <button type="button"
+                                                    class="ci-iconbtn"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalComisionHorario"
+                                                    data-horario-mode="edit"
+                                                    data-edit-url="{% url horario_update_url_name horario.pk %}"
+                                                    data-dia-semana-id="{{ horario.dia_semana_id }}"
+                                                    data-hora-desde="{{ horario.hora_desde|time:'H:i' }}"
+                                                    data-hora-hasta="{{ horario.hora_hasta|time:'H:i' }}"
+                                                    data-aula-espacio="{{ horario.aula_espacio|default:'' }}"
+                                                    data-vigente="{{ horario.vigente|yesno:'1,0' }}"
+                                                    title="Editar horario"
+                                                    aria-label="Editar horario {{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} a {{ horario.hora_hasta|time:'H:i' }}">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
                                         {% endif %}
                                         {% if perms.VAT.delete_comisionhorario %}
-                                            <a href="{% url horario_delete_url_name horario.pk %}"
-                                               class="ci-iconbtn ci-iconbtn-danger"><i class="bi bi-trash"></i></a>
+                                            <button type="button"
+                                                    class="ci-iconbtn ci-iconbtn-danger"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalEliminarComisionHorario"
+                                                    data-delete-url="{% url horario_delete_url_name horario.pk %}"
+                                                    data-horario-resumen="{{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} - {{ horario.hora_hasta|time:'H:i' }}{% if horario.aula_espacio %} · {{ horario.aula_espacio }}{% endif %}"
+                                                    title="Eliminar horario"
+                                                    aria-label="Eliminar horario {{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} a {{ horario.hora_hasta|time:'H:i' }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -653,7 +687,20 @@
                     <p class="ci-sc-title">Acciones rápidas</p>
                     <div class="d-grid gap-2">
                         {% if puede_editar_comision %}
-                            <a href="{{ comision_edit_url }}" class="btn btn-primary rounded-3"><i class="bi bi-pencil me-2"></i>Editar comisión</a>
+                            <button type="button"
+                                    class="btn btn-primary rounded-3"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalEditarComisionCurso"
+                                    data-edit-url="{{ comision_edit_url }}"
+                                    data-curso-id="{{ comision.curso_id }}"
+                                    data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
+                                    data-cupo-total="{{ comision.cupo_total }}"
+                                    data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
+                                    data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
+                                    data-estado="{{ comision.estado }}"
+                                    data-observaciones="{{ comision.observaciones|default:'' }}">
+                                <i class="bi bi-pencil me-2"></i>Editar comisión
+                            </button>
                         {% endif %}
                         {% if perms.VAT.add_inscripcion %}
                             <button type="button"
@@ -672,8 +719,14 @@
                             </button>
                         {% endif %}
                         {% if puede_eliminar_comision %}
-                            <a href="{{ comision_delete_url }}"
-                               class="btn btn-outline-danger rounded-3"><i class="bi bi-trash me-2"></i>Eliminar</a>
+                            <button type="button"
+                                    class="btn btn-outline-danger rounded-3"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalEliminarComisionCurso"
+                                    data-delete-url="{{ comision_delete_url }}"
+                                    data-comision-resumen="{{ comision.codigo_comision }} - {{ comision.nombre|default:comision.codigo_comision }}">
+                                <i class="bi bi-trash me-2"></i>Eliminar
+                            </button>
                         {% endif %}
                     </div>
                 </div>
@@ -810,6 +863,67 @@
         </div>
     {% endif %}
 
+    {% if puede_editar_comision %}
+        <div class="modal fade ci-modal"
+             id="modalEditarComisionCurso"
+             tabindex="-1"
+             aria-labelledby="modalEditarComisionCursoLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalEditarComisionCursoLabel">Editar Comisión de Curso</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <form id="formEditarComisionCurso"
+                          method="post"
+                          action="{{ comision_edit_url }}">
+                        {% csrf_token %}
+                        <div class="modal-body">{{ comision_form.as_p }}</div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Actualizar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if puede_eliminar_comision %}
+        <div class="modal fade ci-modal"
+             id="modalEliminarComisionCurso"
+             tabindex="-1"
+             aria-labelledby="modalEliminarComisionCursoLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalEliminarComisionCursoLabel">Eliminar Comisión de Curso</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <form id="formEliminarComisionCurso" method="post" action="{{ comision_delete_url }}">
+                        {% csrf_token %}
+                        <div class="modal-body">
+                            <p class="mb-2">¿Seguro que querés eliminar esta comisión?</p>
+                            <div class="alert alert-light border mb-0" id="comisionCursoEliminarResumen"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
     {% if perms.VAT.add_comisionhorario %}
         <div class="modal fade ci-modal"
              id="modalComisionHorario"
@@ -838,13 +952,145 @@
                 </div>
             </div>
         </div>
+        {% if perms.VAT.delete_comisionhorario %}
+            <div class="modal fade ci-modal"
+                 id="modalEliminarComisionHorario"
+                 tabindex="-1"
+                 aria-labelledby="modalEliminarComisionHorarioLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalEliminarComisionHorarioLabel">Eliminar Horario</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <form id="formEliminarComisionHorario" method="post" action="">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                                <p class="mb-2">¿Seguro que querés eliminar este horario?</p>
+                                <div class="alert alert-light border mb-0" id="horarioEliminarResumen"></div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
         <script nonce="{{ request.csp_nonce }}">
     (function() {
         var form = document.getElementById('formComisionHorario');
-        if (!form) return;
+        var modalEl = document.getElementById('modalComisionHorario');
+        var titleEl = document.getElementById('modalComisionHorarioLabel');
+        if (!form || !modalEl || !titleEl) return;
+
+        var createAction = form.getAttribute('action');
+        var submitBtn = form.querySelector('button[type="submit"]');
+        var comisionField = form.querySelector('[name="comision_curso"]');
+        var horaDesdeField = form.querySelector('[name="hora_desde"]');
+        var horaHastaField = form.querySelector('[name="hora_hasta"]');
+        var currentComisionId = '{{ comision.id }}';
+
+        function updateHorarioTimeValidation() {
+            if (!horaDesdeField || !horaHastaField) {
+                return true;
+            }
+
+            var horaDesde = horaDesdeField.value;
+            var horaHasta = horaHastaField.value;
+            horaHastaField.min = horaDesde || '';
+
+            if (horaDesde && horaHasta && horaHasta < horaDesde) {
+                horaHastaField.setCustomValidity(
+                    'La hora hasta no puede ser menor a la hora desde.'
+                );
+                return false;
+            }
+
+            horaHastaField.setCustomValidity('');
+            return true;
+        }
+
+        function setFormValue(name, value) {
+            var field = form.querySelector('[name="' + name + '"]');
+            if (!field) return;
+            if (field.type === 'checkbox') {
+                field.checked = value === '1' || value === 'true' || value === true;
+                return;
+            }
+            field.value = value || '';
+            if (name === 'hora_desde' || name === 'hora_hasta') {
+                updateHorarioTimeValidation();
+            }
+        }
+
+        function lockComisionField() {
+            if (!comisionField) return;
+            var hiddenField = form.querySelector('#id_comision_curso_locked_value');
+            if (!hiddenField) {
+                hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = 'comision_curso';
+                hiddenField.id = 'id_comision_curso_locked_value';
+                form.appendChild(hiddenField);
+            }
+            comisionField.value = currentComisionId;
+            hiddenField.value = currentComisionId;
+            comisionField.disabled = true;
+        }
+
+        modalEl.addEventListener('show.bs.modal', function(event) {
+            var trigger = event.relatedTarget;
+            var mode = trigger
+                ? (trigger.getAttribute('data-horario-mode') || 'create')
+                : 'create';
+
+            form.reset();
+            form.setAttribute('action', createAction);
+            lockComisionField();
+
+            if (mode === 'edit' && trigger) {
+                titleEl.textContent = 'Editar Horario';
+                form.setAttribute('action', trigger.getAttribute('data-edit-url') || createAction);
+                setFormValue('dia_semana', trigger.getAttribute('data-dia-semana-id'));
+                setFormValue('hora_desde', trigger.getAttribute('data-hora-desde'));
+                setFormValue('hora_hasta', trigger.getAttribute('data-hora-hasta'));
+                setFormValue('aula_espacio', trigger.getAttribute('data-aula-espacio'));
+                setFormValue('vigente', trigger.getAttribute('data-vigente'));
+                if (submitBtn) {
+                    submitBtn.innerHTML = 'Actualizar';
+                }
+                return;
+            }
+
+            titleEl.textContent = 'Agregar Horario';
+            if (submitBtn) {
+                submitBtn.innerHTML = 'Guardar';
+            }
+
+            updateHorarioTimeValidation();
+        });
+
+        if (horaDesdeField) {
+            horaDesdeField.addEventListener('change', updateHorarioTimeValidation);
+            horaDesdeField.addEventListener('input', updateHorarioTimeValidation);
+        }
+        if (horaHastaField) {
+            horaHastaField.addEventListener('change', updateHorarioTimeValidation);
+            horaHastaField.addEventListener('input', updateHorarioTimeValidation);
+        }
+
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            var submitBtn = form.querySelector('button[type="submit"]');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
             if (submitBtn) {
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = 'Guardando...';
@@ -856,7 +1102,7 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             }).then(function() {
-                var modal = bootstrap.Modal.getInstance(document.getElementById('modalComisionHorario'));
+                var modal = bootstrap.Modal.getInstance(modalEl);
                 if (modal) modal.hide();
                 location.reload();
             }).catch(function() {
@@ -864,6 +1110,172 @@
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = 'Guardar';
+                }
+            });
+        });
+
+        var deleteModalEl = document.getElementById('modalEliminarComisionHorario');
+        var deleteForm = document.getElementById('formEliminarComisionHorario');
+        var deleteSummary = document.getElementById('horarioEliminarResumen');
+        if (deleteModalEl && deleteForm) {
+            deleteModalEl.addEventListener('show.bs.modal', function(event) {
+                var trigger = event.relatedTarget;
+                if (!trigger) return;
+                deleteForm.setAttribute(
+                    'action',
+                    trigger.getAttribute('data-delete-url') || ''
+                );
+                if (deleteSummary) {
+                    deleteSummary.textContent = trigger.getAttribute('data-horario-resumen') || '';
+                }
+            });
+
+            deleteForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var deleteSubmitBtn = deleteForm.querySelector('button[type="submit"]');
+                if (deleteSubmitBtn) {
+                    deleteSubmitBtn.disabled = true;
+                    deleteSubmitBtn.innerHTML = 'Eliminando...';
+                }
+                fetch(deleteForm.action, {
+                    method: 'POST',
+                    body: new FormData(deleteForm),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).then(function() {
+                    var modal = bootstrap.Modal.getInstance(deleteModalEl);
+                    if (modal) modal.hide();
+                    location.reload();
+                }).catch(function() {
+                    alert('Error al eliminar el horario.');
+                    if (deleteSubmitBtn) {
+                        deleteSubmitBtn.disabled = false;
+                        deleteSubmitBtn.innerHTML = 'Eliminar';
+                    }
+                });
+            });
+        }
+    })();
+        </script>
+    {% endif %}
+
+    {% if puede_editar_comision %}
+        <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var modalEl = document.getElementById('modalEditarComisionCurso');
+        var formEl = document.getElementById('formEditarComisionCurso');
+        var titleEl = document.getElementById('modalEditarComisionCursoLabel');
+        if (!modalEl || !formEl || !titleEl) return;
+
+        var submitBtn = formEl.querySelector('button[type="submit"]');
+        var defaultAction = formEl.getAttribute('action') || '';
+
+        function setFormValue(name, value) {
+            var field = formEl.querySelector('[name="' + name + '"]');
+            if (!field) return;
+            if (field.type === 'checkbox') {
+                field.checked = value === '1' || value === 'true' || value === true;
+                return;
+            }
+            field.value = value || '';
+        }
+
+        modalEl.addEventListener('show.bs.modal', function(event) {
+            var trigger = event.relatedTarget;
+            if (!trigger) return;
+
+            titleEl.textContent = 'Editar Comisión de Curso';
+            formEl.setAttribute('action', trigger.getAttribute('data-edit-url') || defaultAction);
+            setFormValue('curso', trigger.getAttribute('data-curso-id'));
+            setFormValue('ubicacion', trigger.getAttribute('data-ubicacion-id'));
+            setFormValue('cupo_total', trigger.getAttribute('data-cupo-total'));
+            setFormValue('fecha_inicio', trigger.getAttribute('data-fecha-inicio'));
+            setFormValue('fecha_fin', trigger.getAttribute('data-fecha-fin'));
+            setFormValue('estado', trigger.getAttribute('data-estado'));
+            setFormValue('observaciones', trigger.getAttribute('data-observaciones'));
+        });
+
+        formEl.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!formEl.checkValidity()) {
+                formEl.reportValidity();
+                return;
+            }
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Actualizando...';
+            }
+
+            fetch(formEl.action, {
+                method: 'POST',
+                body: new FormData(formEl),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(function(response) {
+                if (response.redirected) {
+                    var modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                    location.reload();
+                    return;
+                }
+                throw new Error('invalid-form');
+            }).catch(function() {
+                alert('No se pudo actualizar la comisión. Revisá los datos e intentá nuevamente.');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Actualizar';
+                }
+            });
+        });
+    })();
+        </script>
+    {% endif %}
+
+    {% if puede_eliminar_comision %}
+        <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var modalEl = document.getElementById('modalEliminarComisionCurso');
+        var formEl = document.getElementById('formEliminarComisionCurso');
+        var summaryEl = document.getElementById('comisionCursoEliminarResumen');
+        if (!modalEl || !formEl) return;
+
+        modalEl.addEventListener('show.bs.modal', function(event) {
+            var trigger = event.relatedTarget;
+            if (!trigger) return;
+            formEl.setAttribute('action', trigger.getAttribute('data-delete-url') || '{{ comision_delete_url }}');
+            if (summaryEl) {
+                summaryEl.textContent = trigger.getAttribute('data-comision-resumen') || '';
+            }
+        });
+
+        formEl.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var submitBtn = formEl.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Eliminando...';
+            }
+
+            fetch(formEl.action, {
+                method: 'POST',
+                body: new FormData(formEl),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(function(response) {
+                if (response.redirected) {
+                    window.location.href = '{{ comision_back_url }}';
+                    return;
+                }
+                throw new Error('delete-failed');
+            }).catch(function() {
+                alert('No se pudo eliminar la comisión. Intentá nuevamente.');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Eliminar';
                 }
             });
         });

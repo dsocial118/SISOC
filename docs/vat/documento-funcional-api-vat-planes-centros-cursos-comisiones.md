@@ -32,6 +32,43 @@ Permiso aplicado en estos endpoints:
 
 - `HasAPIKey`
 
+## Paginación de respuestas
+
+Los endpoints listados en este flujo se consumen con paginación basada en páginas.
+
+En términos funcionales, esto significa que la API separa:
+
+- el total de registros existentes,
+- el subconjunto de registros devueltos en la página actual,
+- la navegación hacia la página siguiente o anterior.
+
+La estructura de respuesta esperable para endpoints listados incluye:
+
+- `count`: total de registros disponibles para ese endpoint y esos filtros,
+- `next`: URL de la próxima página, si existe,
+- `previous`: URL de la página anterior, si existe,
+- `results`: registros concretos devueltos en la página actual.
+
+Ejemplo funcional:
+
+- si `count` devuelve `2041`, eso significa que el universo total de centros disponibles para esa consulta es de 2041,
+- si `results` trae 10 elementos, eso no significa que existan solo 10 centros, sino que la API está mostrando una sola página,
+- para seguir recorriendo la información se debe usar `next` o pedir explícitamente `?page=2`, `?page=3`, etc.
+
+Implicancias para consumo:
+
+- para conocer el total no hace falta recorrer todas las páginas: alcanza con leer `count`,
+- para obtener todos los registros sí hace falta iterar por páginas,
+- hoy la API no documenta en este flujo un parámetro de `page_size` configurable por query string,
+- por lo tanto, el consumidor debe asumir navegación paginada estándar.
+
+Uso funcional de la paginación:
+
+- mostrar totales globales sin descargar toda la colección,
+- construir tablas o selectores paginados,
+- recorrer progresivamente grandes volúmenes de centros, cursos o comisiones,
+- evitar respuestas demasiado pesadas en integraciones o frontends.
+
 ## Qué datos habilita esta API
 
 Consumir esta API permite construir un recorrido operativo sobre la oferta formativa de VAT con cuatro niveles principales:
@@ -185,6 +222,13 @@ Uso funcional:
 - encontrar centros por zona geográfica,
 - mostrar ficha básica del centro,
 - seleccionar un centro para consultar su oferta de cursos.
+
+Consideraciones de paginación para centros:
+
+- `GET /api/vat/centros/` no devuelve todos los centros en un único bloque,
+- el total del padrón filtrado se obtiene desde `count`,
+- los centros concretos de la página actual vienen en `results`,
+- para recorrer el padrón completo se debe avanzar con `next` o con `?page=<n>`.
 
 ### 4. Cursos
 
@@ -353,3 +397,5 @@ Consumir la API operativa de VAT en este flujo permite obtener una visión compl
 - y en qué comisiones concretas se materializa.
 
 Es una API útil para tableros operativos, integraciones internas, navegación administrativa y consultas de oferta formativa con segmentación territorial.
+
+Además, su paginación permite distinguir con claridad entre el total disponible y el subconjunto actualmente descargado, algo clave cuando se consumen padrones grandes como el de centros.
