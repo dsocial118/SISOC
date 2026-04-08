@@ -15,7 +15,10 @@ from openpyxl import Workbook, load_workbook
 from rest_framework.authtoken.models import Token
 
 from users.forms import BulkCredentialsUploadForm
-from users.services_bulk_credentials import process_bulk_credentials_file
+from users.services_bulk_credentials import (
+    BulkCredentialsEmailTimeoutError,
+    process_bulk_credentials_file,
+)
 from users.services import UsuariosService
 from users.views import BulkCredentialsTemplateView, BulkCredentialsUploadView
 
@@ -420,6 +423,83 @@ def test_process_bulk_credentials_rolls_back_row_when_email_send_fails(mocker):
         "rechazadas": 1,
     }
     assert user.email == "rollback@example.com"
+    assert user.password == original_password
+    assert user.check_password("Inicial123!") is True
+    assert profile.temporary_password_plaintext is None
+    assert Token.objects.filter(user=user).exists() is True
+
+
+@pytest.mark.django_db
+def test_process_bulk_credentials_retries_email_timeout_and_succeeds(mocker):
+    user = User.objects.create_user(
+        username="bulk_retry",
+        email="retry@example.com",
+        password="Inicial123!",
+    )
+    send_once = mocker.patch(
+        "users.services_bulk_credentials._send_bulk_credentials_email_once",
+        side_effect=[BulkCredentialsEmailTimeoutError("smtp timeout"), None],
+    )
+    sleep = mocker.patch("users.services_bulk_credentials.time.sleep")
+    upload = _build_excel_file(
+        [("bulk_retry", "retry@example.com", "Inicial123!")],
+    )
+
+    result = process_bulk_credentials_file(
+        uploaded_file=upload,
+        send_type="standard",
+    )
+
+    assert result["summary"] == {
+        "procesadas": 1,
+        "enviadas": 1,
+        "actualizadas": 0,
+        "sin_cambios": 1,
+        "rechazadas": 0,
+    }
+    assert result["rows"][0]["estado"] == "enviada"
+    assert send_once.call_count == 2
+    sleep.assert_called_once()
+
+
+@pytest.mark.django_db
+def test_process_bulk_credentials_rejects_row_when_email_timeout_persists(mocker):
+    user = User.objects.create_user(
+        username="bulk_timeout",
+        email="timeout@example.com",
+        password="Inicial123!",
+    )
+    Token.objects.create(user=user)
+    original_password = user.password
+    send_once = mocker.patch(
+        "users.services_bulk_credentials._send_bulk_credentials_email_once",
+        side_effect=BulkCredentialsEmailTimeoutError("smtp timeout"),
+    )
+    sleep = mocker.patch("users.services_bulk_credentials.time.sleep")
+    upload = _build_excel_file(
+        [("bulk_timeout", "timeout@example.com", "TemporalNueva123!")],
+    )
+
+    result = process_bulk_credentials_file(
+        uploaded_file=upload,
+        send_type="standard",
+    )
+
+    user.refresh_from_db()
+    profile = user.profile
+    assert result["summary"] == {
+        "procesadas": 1,
+        "enviadas": 0,
+        "actualizadas": 0,
+        "sin_cambios": 0,
+        "rechazadas": 1,
+    }
+    assert (
+        result["rows"][0]["mensaje"]
+        == "No se pudo enviar el correo para esta fila luego de reintentar."
+    )
+    assert send_once.call_count == 2
+    sleep.assert_called_once()
     assert user.password == original_password
     assert user.check_password("Inicial123!") is True
     assert profile.temporary_password_plaintext is None
