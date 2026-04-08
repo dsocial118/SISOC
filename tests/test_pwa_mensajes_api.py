@@ -387,7 +387,7 @@ def test_mensaje_de_rendicion_se_oculta_si_el_usuario_no_tiene_permiso_mobile_re
 
     assert response.status_code == 200
     titulos = [item["titulo"] for item in response.data["results"]]
-    assert "RendiciÃ³n 88: documento a subsanar" not in titulos
+    assert "Rendición 88: documento a subsanar" not in titulos
 
 
 @pytest.mark.django_db
@@ -448,7 +448,7 @@ def test_mensaje_de_rendicion_se_oculta_si_el_usuario_no_esta_en_el_scope_de_la_
 
     assert response.status_code == 200
     titulos = [item["titulo"] for item in response.data["results"]]
-    assert "RendiciÃ³n 99: documento a subsanar" not in titulos
+    assert "Rendición 99: documento a subsanar" not in titulos
 
 
 @pytest.mark.django_db
