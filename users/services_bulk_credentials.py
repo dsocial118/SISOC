@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import signal
 import smtplib
 import threading
@@ -32,15 +33,56 @@ DEFAULT_BULK_CREDENTIALS_SEND_TYPE = "standard"
 SHEET_NAME = "credenciales"
 BULK_CREDENTIALS_EMAIL_MAX_ATTEMPTS = 2
 BULK_CREDENTIALS_EMAIL_RETRY_BACKOFF_SECONDS = 1
+BULK_CREDENTIALS_BATCH_TIMEOUT_BUFFER_SECONDS = 5
+BULK_CREDENTIALS_MIN_SECONDS_TO_START_NEXT_ROW = 5
 
 
 class BulkCredentialsEmailTimeoutError(TimeoutError):
     """Timeout controlado para cortar un intento de envio antes del timeout web."""
 
 
+def _safe_positive_int(value, default: int) -> int:
+    try:
+        parsed = int(str(value).strip())
+    except (TypeError, ValueError):
+        return default
+    return parsed if parsed > 0 else default
+
+
 def _get_bulk_credentials_email_attempt_timeout_seconds() -> int:
     configured_timeout = int(getattr(settings, "EMAIL_TIMEOUT", 10) or 10)
     return max(1, configured_timeout)
+
+
+def _get_bulk_credentials_batch_timeout_seconds() -> int:
+    worker_timeout = _safe_positive_int(os.getenv("GUNICORN_TIMEOUT", ""), 30)
+    return max(
+        BULK_CREDENTIALS_MIN_SECONDS_TO_START_NEXT_ROW,
+        worker_timeout - BULK_CREDENTIALS_BATCH_TIMEOUT_BUFFER_SECONDS,
+    )
+
+
+def _get_bulk_credentials_batch_deadline() -> float:
+    return time.monotonic() + float(_get_bulk_credentials_batch_timeout_seconds())
+
+
+def _get_remaining_processing_seconds(deadline: float | None) -> float | None:
+    if deadline is None:
+        return None
+    return max(0.0, deadline - time.monotonic())
+
+
+def _has_enough_batch_time(deadline: float | None) -> bool:
+    remaining_seconds = _get_remaining_processing_seconds(deadline)
+    if remaining_seconds is None:
+        return True
+    return remaining_seconds >= BULK_CREDENTIALS_MIN_SECONDS_TO_START_NEXT_ROW
+
+
+def _get_batch_timeout_message() -> str:
+    return (
+        "Se alcanzo el tiempo maximo del lote. " "Reintente con una planilla mas chica."
+    )
 
 
 def _supports_signal_timeout_guard() -> bool:
@@ -339,19 +381,38 @@ def _send_bulk_credentials_email_once(
 def send_bulk_credentials_email(
     *,
     user,
+    recipient_email: str,
     plain_password: str,
     login_url: str,
     send_type: str | None = None,
     nombre_del_centro: str = "",
+    max_total_seconds: float | None = None,
 ) -> None:
     timeout_seconds = _get_bulk_credentials_email_attempt_timeout_seconds()
+    total_deadline = (
+        time.monotonic() + max_total_seconds
+        if max_total_seconds is not None and max_total_seconds > 0
+        else None
+    )
     last_error = None
 
     for attempt in range(1, BULK_CREDENTIALS_EMAIL_MAX_ATTEMPTS + 1):
+        remaining_total_seconds = _get_remaining_processing_seconds(total_deadline)
+        if remaining_total_seconds is not None and remaining_total_seconds < 1:
+            raise ValidationError(_get_batch_timeout_message())
+
+        attempt_timeout_seconds = timeout_seconds
+        if remaining_total_seconds is not None:
+            attempt_timeout_seconds = min(
+                timeout_seconds,
+                max(1, int(remaining_total_seconds)),
+            )
+
         try:
-            with _mail_send_timeout_guard(timeout_seconds):
+            with _mail_send_timeout_guard(attempt_timeout_seconds):
                 _send_bulk_credentials_email_once(
                     user=user,
+                    recipient_email=recipient_email,
                     plain_password=plain_password,
                     login_url=login_url,
                     send_type=send_type,
@@ -377,6 +438,15 @@ def send_bulk_credentials_email(
                 exc_info=True,
             )
             if attempt < BULK_CREDENTIALS_EMAIL_MAX_ATTEMPTS:
+                remaining_total_seconds = _get_remaining_processing_seconds(
+                    total_deadline
+                )
+                if (
+                    remaining_total_seconds is not None
+                    and remaining_total_seconds
+                    <= BULK_CREDENTIALS_EMAIL_RETRY_BACKOFF_SECONDS + 1
+                ):
+                    break
                 time.sleep(BULK_CREDENTIALS_EMAIL_RETRY_BACKOFF_SECONDS)
 
     raise ValidationError(
@@ -425,6 +495,14 @@ def _update_password_state(*, user, plain_password: str) -> None:
     Token.objects.filter(user=user).delete()
 
 
+def _password_matches_current_state(*, user, plain_password: str) -> bool:
+    profile = getattr(user, "profile", None)
+    temporary_password = getattr(profile, "temporary_password_plaintext", None)
+    if temporary_password is not None:
+        return temporary_password == plain_password
+    return user.check_password(plain_password)
+
+
 def process_bulk_credentials_file(
     *,
     uploaded_file,
@@ -445,8 +523,26 @@ def process_bulk_credentials_file(
         "rechazadas": 0,
     }
     login_url = _build_login_url(request=request)
+    processing_deadline = _get_bulk_credentials_batch_deadline()
 
-    for row in rows:
+    for row_index, row in enumerate(rows):
+        if not _has_enough_batch_time(processing_deadline):
+            timeout_message = _get_batch_timeout_message()
+            for pending_row in rows[row_index:]:
+                summary["procesadas"] += 1
+                summary["rechazadas"] += 1
+                results.append(
+                    {
+                        "fila": pending_row.fila,
+                        "usuario": pending_row.usuario,
+                        "mail_destino": pending_row.mail,
+                        "estado": "rechazada",
+                        "mensaje": timeout_message,
+                        "password_actualizada": False,
+                    }
+                )
+            break
+
         summary["procesadas"] += 1
         row_result = {
             "fila": row.fila,
@@ -470,7 +566,10 @@ def process_bulk_credentials_file(
 
                 password_updated = False
 
-                if not user.check_password(row.password):
+                if not _password_matches_current_state(
+                    user=user,
+                    plain_password=row.password,
+                ):
                     _update_password_state(user=user, plain_password=row.password)
                     password_updated = True
 
@@ -481,6 +580,9 @@ def process_bulk_credentials_file(
                     login_url=login_url,
                     send_type=send_type_config.key,
                     nombre_del_centro=row.nombre_del_centro,
+                    max_total_seconds=_get_remaining_processing_seconds(
+                        processing_deadline
+                    ),
                 )
 
                 row_result["password_actualizada"] = password_updated
