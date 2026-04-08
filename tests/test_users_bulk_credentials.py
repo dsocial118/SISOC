@@ -100,6 +100,34 @@ def test_bulk_credentials_template_download_requires_both_permissions():
 
 
 @pytest.mark.django_db
+def test_bulk_credentials_template_download_supports_inet_template():
+    user = User.objects.create_superuser(
+        username="users_bulk_inet_template",
+        email="inet-template@example.com",
+        password="Secreta123!",
+    )
+
+    response = BulkCredentialsTemplateView.as_view()(
+        _build_request(
+            "get",
+            "/usuarios/credenciales-masivas/plantilla/",
+            user,
+            data={"tipo_envio": "inet"},
+        ),
+    )
+
+    assert response.status_code == 200
+    assert (
+        response["Content-Disposition"]
+        == 'attachment; filename="plantilla_credenciales_usuarios_inet.xlsx"'
+    )
+    workbook = load_workbook(BytesIO(response.content))
+    worksheet = workbook.active
+    header = [cell.value for cell in next(worksheet.iter_rows(max_row=1))]
+    assert header == ["usuario", "mail", "password", "Nombre del Centro"]
+
+
+@pytest.mark.django_db
 @override_settings(ROOT_URLCONF="tests.urls_users_bulk_credentials")
 def test_user_list_context_shows_bulk_credentials_button_only_with_role_permission(
     mocker,
@@ -155,7 +183,10 @@ def test_process_bulk_credentials_updates_email_and_password_and_sends_email():
         [("bulk_target", "nuevo@example.com", "Nueva123!")],
     )
 
-    result = process_bulk_credentials_file(uploaded_file=upload)
+    result = process_bulk_credentials_file(
+        uploaded_file=upload,
+        send_type="standard",
+    )
 
     user.refresh_from_db()
     profile = user.profile
@@ -193,7 +224,10 @@ def test_process_bulk_credentials_same_data_sends_email_without_updating():
         [("bulk_same", "same@example.com", "Misma123!")],
     )
 
-    result = process_bulk_credentials_file(uploaded_file=upload)
+    result = process_bulk_credentials_file(
+        uploaded_file=upload,
+        send_type="standard",
+    )
 
     user.refresh_from_db()
     assert result["summary"] == {
@@ -225,7 +259,10 @@ def test_process_bulk_credentials_rejects_unknown_user_and_continues():
         ],
     )
 
-    result = process_bulk_credentials_file(uploaded_file=upload)
+    result = process_bulk_credentials_file(
+        uploaded_file=upload,
+        send_type="standard",
+    )
 
     known_user.refresh_from_db()
     assert result["summary"] == {
@@ -250,9 +287,22 @@ def test_process_bulk_credentials_rejects_missing_required_headers():
     )
 
     with pytest.raises(ValidationError) as exc:
-        process_bulk_credentials_file(uploaded_file=upload)
+        process_bulk_credentials_file(uploaded_file=upload, send_type="standard")
 
     assert "columnas obligatorias" in " ".join(exc.value.messages)
+
+
+@pytest.mark.django_db
+def test_process_bulk_credentials_rejects_missing_inet_center_column():
+    upload = _build_excel_file(
+        [("bulk_user", "user@example.com", "Temporal123!")],
+        headers=("usuario", "mail", "password"),
+    )
+
+    with pytest.raises(ValidationError) as exc:
+        process_bulk_credentials_file(uploaded_file=upload, send_type="inet")
+
+    assert "nombre_del_centro" in " ".join(exc.value.messages)
 
 
 @pytest.mark.django_db
@@ -267,7 +317,10 @@ def test_process_bulk_credentials_rejects_empty_required_cell():
         [("bulk_invalid", "", "Temporal123!")],
     )
 
-    result = process_bulk_credentials_file(uploaded_file=upload)
+    result = process_bulk_credentials_file(
+        uploaded_file=upload,
+        send_type="standard",
+    )
 
     assert result["summary"] == {
         "procesadas": 1,
@@ -297,7 +350,10 @@ def test_process_bulk_credentials_rolls_back_row_when_email_send_fails(mocker):
         [("bulk_rollback", "nuevo_rollback@example.com", "TemporalNueva123!")],
     )
 
-    result = process_bulk_credentials_file(uploaded_file=upload)
+    result = process_bulk_credentials_file(
+        uploaded_file=upload,
+        send_type="standard",
+    )
 
     user.refresh_from_db()
     profile = user.profile
@@ -340,13 +396,17 @@ def test_bulk_credentials_upload_view_processes_file_and_shows_summary():
     upload = _build_excel_file(
         [("bulk_view_target", "nuevo_view_target@example.com", "NuevaView123!")]
     )
-    form = BulkCredentialsUploadForm(data={}, files={"archivo": upload})
+    form = BulkCredentialsUploadForm(
+        data={"tipo_envio": "standard"},
+        files={"archivo": upload},
+    )
     assert form.is_valid(), form.errors
 
     request = _build_request(
         "post",
         "/usuarios/credenciales-masivas/",
         user,
+        data={"tipo_envio": "standard"},
         files={"archivo": upload},
     )
     view = BulkCredentialsUploadView()
@@ -368,3 +428,46 @@ def test_bulk_credentials_upload_view_processes_file_and_shows_summary():
     assert target.email == "nuevo_view_target@example.com"
     assert target.check_password("NuevaView123!") is True
     assert len(mail.outbox) == 1
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_process_bulk_credentials_inet_uses_inet_email_template():
+    user = User.objects.create_user(
+        username="bulk_inet",
+        email="inet-old@example.com",
+        password="ViejaInet123!",
+    )
+    upload = _build_excel_file(
+        [("bulk_inet", "inet-new@example.com", "NuevaInet123!", "CFP INET 401")],
+        headers=("usuario", "mail", "password", "Nombre del Centro"),
+    )
+
+    result = process_bulk_credentials_file(
+        uploaded_file=upload,
+        send_type="inet",
+    )
+
+    user.refresh_from_db()
+    assert result["summary"] == {
+        "procesadas": 1,
+        "enviadas": 1,
+        "actualizadas": 1,
+        "sin_cambios": 0,
+        "rechazadas": 0,
+    }
+    assert result["send_type"] == "inet"
+    assert result["send_type_label"] == "INET"
+    assert len(mail.outbox) == 1
+    assert (
+        mail.outbox[0].subject == "Acceso a la plataforma y capacitación virtual – INET"
+    )
+    assert mail.outbox[0].to == ["inet-new@example.com"]
+    assert "CFP INET 401" in mail.outbox[0].body
+    assert (
+        "Capacitacion a instituciones de FP para beneficiarios de VAT (1)"
+        in mail.outbox[0].body
+    )
+    assert "En todas se abordaran los mismos temas." in mail.outbox[0].body
+    assert "https://youtu.be/vR_lODbOdJg" in mail.outbox[0].body
+    assert "Nos vemos pronto." in mail.outbox[0].body

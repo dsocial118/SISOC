@@ -26,10 +26,17 @@ def test_csp_agrega_header_y_nonce(mocker, settings):
     assert request.csp_nonce == expected_nonce
     assert "Content-Security-Policy" in response
     csp = response["Content-Security-Policy"]
-    assert "script-src 'self'" in csp
-    assert f"'nonce-{expected_nonce}'" in csp
-    assert "'unsafe-inline'" not in csp
-    assert "'unsafe-eval'" not in csp
+    script_src = next(
+        part.strip() for part in csp.split(";") if part.strip().startswith("script-src ")
+    )
+    style_src = next(
+        part.strip() for part in csp.split(";") if part.strip().startswith("style-src ")
+    )
+    assert "script-src 'self'" in script_src
+    assert f"'nonce-{expected_nonce}'" in script_src
+    assert "'unsafe-inline'" not in script_src
+    assert "'unsafe-eval'" not in script_src
+    assert f"'nonce-{expected_nonce}'" in style_src
 
 
 def test_csp_no_agrega_header_si_esta_deshabilitado(settings):
