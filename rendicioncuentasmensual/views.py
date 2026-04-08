@@ -104,7 +104,7 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
     REVIEW_PERMISSION_CODE = "rendicioncuentasmensual.change_rendicioncuentamensual"
 
     @staticmethod
-    def _format_validation_error(error):
+    def format_validation_error(error):
         if hasattr(error, "message_dict"):
             messages_list = []
             for value in error.message_dict.values():
@@ -168,11 +168,11 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
                 return JsonResponse(
                     {
                         "success": False,
-                        "message": self._format_validation_error(exc),
+                        "message": self.format_validation_error(exc),
                     },
                     status=400,
                 )
-            messages.error(request, self._format_validation_error(exc))
+            messages.error(request, self.format_validation_error(exc))
         else:
             if is_ajax:
                 documento.refresh_from_db()
@@ -250,7 +250,7 @@ class RendicionCuentaMensualDownloadPdfView(LoginRequiredMixin, DetailView):
         except ValidationError as exc:
             messages.error(
                 request,
-                RendicionCuentaMensualDetailView._format_validation_error(exc),
+                RendicionCuentaMensualDetailView.format_validation_error(exc),
             )
             return HttpResponseRedirect(
                 reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})

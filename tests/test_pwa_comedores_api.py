@@ -565,7 +565,9 @@ def test_crear_rendicion_mobile_con_datos_generales(comedores):
     assert response.data["estado"] == "elaboracion"
     assert response.data["periodo_inicio"] == "2026-01-01"
     assert response.data["periodo_fin"] == "2026-01-31"
-    rendicion = RendicionCuentaMensual.objects.get(numero_rendicion=1, comedor=comedor_1)
+    rendicion = RendicionCuentaMensual.objects.get(
+        numero_rendicion=1, comedor=comedor_1
+    )
     assert rendicion.usuario_creador == representante
     assert rendicion.usuario_ultima_modificacion == representante
 

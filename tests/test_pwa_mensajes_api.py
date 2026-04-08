@@ -286,7 +286,9 @@ def test_revision_de_rendicion_genera_mensaje_mobile_visible_en_el_espacio(espac
         categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
         estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
         rendicion_cuenta_mensual=rendicion,
-        archivo=SimpleUploadedFile("comprobante.pdf", b"pdf", content_type="application/pdf"),
+        archivo=SimpleUploadedFile(
+            "comprobante.pdf", b"pdf", content_type="application/pdf"
+        ),
     )
 
     RendicionCuentaMensualService.actualizar_estado_documento_revision(
@@ -301,11 +303,15 @@ def test_revision_de_rendicion_genera_mensaje_mobile_visible_en_el_espacio(espac
     assert response.status_code == 200
     titulos = [item["titulo"] for item in response.data["results"]]
     expected_title_prefix = "Proyecto PROY-55 | Convenio Convenio test |"
-    assert any(item.startswith(expected_title_prefix) and "documento a subsanar" in item for item in titulos)
+    assert any(
+        item.startswith(expected_title_prefix) and "documento a subsanar" in item
+        for item in titulos
+    )
     mensaje = next(
         item
         for item in response.data["results"]
-        if item["titulo"].startswith(expected_title_prefix) and "documento a subsanar" in item["titulo"]
+        if item["titulo"].startswith(expected_title_prefix)
+        and "documento a subsanar" in item["titulo"]
     )
 
     detail_response = client.get(
@@ -314,7 +320,10 @@ def test_revision_de_rendicion_genera_mensaje_mobile_visible_en_el_espacio(espac
     assert detail_response.status_code == 200
     assert "Proyecto: PROY-55." in detail_response.data["cuerpo"]
     assert "Convenio: Convenio test." in detail_response.data["cuerpo"]
-    assert "Observaciones: Volver a subir el documento completo." in detail_response.data["cuerpo"]
+    assert (
+        "Observaciones: Volver a subir el documento completo."
+        in detail_response.data["cuerpo"]
+    )
     assert "[SISOC_ACCION]" not in detail_response.data["cuerpo"]
     assert detail_response.data["accion"] == {
         "tipo": "rendicion_detalle",
@@ -362,7 +371,9 @@ def test_mensaje_de_rendicion_se_oculta_si_el_usuario_no_tiene_permiso_mobile_re
         categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
         estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
         rendicion_cuenta_mensual=rendicion,
-        archivo=SimpleUploadedFile("comprobante.pdf", b"pdf", content_type="application/pdf"),
+        archivo=SimpleUploadedFile(
+            "comprobante.pdf", b"pdf", content_type="application/pdf"
+        ),
     )
 
     RendicionCuentaMensualService.actualizar_estado_documento_revision(
@@ -421,7 +432,9 @@ def test_mensaje_de_rendicion_se_oculta_si_el_usuario_no_esta_en_el_scope_de_la_
         categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
         estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
         rendicion_cuenta_mensual=rendicion,
-        archivo=SimpleUploadedFile("comprobante.pdf", b"pdf", content_type="application/pdf"),
+        archivo=SimpleUploadedFile(
+            "comprobante.pdf", b"pdf", content_type="application/pdf"
+        ),
     )
 
     RendicionCuentaMensualService.actualizar_estado_documento_revision(
@@ -493,7 +506,9 @@ def test_mensaje_de_rendicion_se_archiva_cuando_la_subsanacion_se_reenvia(
         estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
         observaciones="Volver a subir el documento completo",
         rendicion_cuenta_mensual=rendicion,
-        archivo=SimpleUploadedFile("comprobante.pdf", b"pdf", content_type="application/pdf"),
+        archivo=SimpleUploadedFile(
+            "comprobante.pdf", b"pdf", content_type="application/pdf"
+        ),
     )
 
     RendicionCuentaMensualService._crear_notificacion_mobile_revision_documento(
@@ -511,12 +526,14 @@ def test_mensaje_de_rendicion_se_archiva_cuando_la_subsanacion_se_reenvia(
     RendicionCuentaMensualService.adjuntar_documentacion_mobile(
         rendicion=rendicion,
         categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
-        archivo=SimpleUploadedFile(
-            "comprobante-nuevo.pdf",
-            b"pdf nuevo",
-            content_type="application/pdf",
-        ),
-        nombre="comprobante-nuevo.pdf",
+        documento_data={
+            "archivo": SimpleUploadedFile(
+                "comprobante-nuevo.pdf",
+                b"pdf nuevo",
+                content_type="application/pdf",
+            ),
+            "nombre": "comprobante-nuevo.pdf",
+        },
         actor=representante,
         documento_subsanado_id=observado.id,
     )

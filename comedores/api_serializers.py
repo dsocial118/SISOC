@@ -1002,9 +1002,7 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
         )
 
     def get_documentacion(self, obj):
-        grouped = RendicionCuentaMensualService._construir_documentacion_para_detalle(
-            obj
-        )
+        grouped = RendicionCuentaMensualService.obtener_resumen_documentacion(obj)
         serializer_context = {"request": self.context.get("request")}
         payload = []
         for categoria in DocumentacionAdjunta.categorias_mobile():
