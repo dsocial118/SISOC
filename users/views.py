@@ -34,8 +34,10 @@ from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
 from .services import BULK_CREDENTIALS_PERMISSION_CODE, UsuariosService
 from .services_auth import generate_temporary_password_for_user
 from .services_bulk_credentials import (
-    TEMPLATE_FILENAME,
     generate_bulk_credentials_template,
+    get_bulk_credentials_send_type_config,
+    get_bulk_credentials_send_type_contexts,
+    get_bulk_credentials_template_filename,
     process_bulk_credentials_file,
 )
 from .temporary_passwords import clear_temporary_password, get_temporary_password
@@ -229,12 +231,17 @@ class BulkCredentialsTemplateView(AdminRequiredMixin, View):
     require_all_permissions = True
 
     def get(self, request, *args, **kwargs):
-        content = generate_bulk_credentials_template()
+        send_type = request.GET.get("tipo_envio")
+        send_type_config = get_bulk_credentials_send_type_config(send_type)
+        content = generate_bulk_credentials_template(send_type_config.key)
         response = HttpResponse(
             content,
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-        response["Content-Disposition"] = f'attachment; filename="{TEMPLATE_FILENAME}"'
+        response["Content-Disposition"] = (
+            "attachment; filename="
+            f'"{get_bulk_credentials_template_filename(send_type_config.key)}"'
+        )
         return response
 
 
@@ -252,12 +259,16 @@ class BulkCredentialsUploadView(AdminRequiredMixin, FormView):
         context.setdefault("results", None)
         context["form_title"] = "Enviar credenciales masivas"
         context["template_download_url"] = reverse("usuarios_credenciales_plantilla")
+        context["send_type_options"] = get_bulk_credentials_send_type_contexts()
         return context
 
     def form_valid(self, form):
+        send_type = form.cleaned_data["tipo_envio"]
+        send_type_config = get_bulk_credentials_send_type_config(send_type)
         try:
             results = process_bulk_credentials_file(
                 uploaded_file=form.cleaned_data["archivo"],
+                send_type=send_type,
                 request=self.request,
             )
         except ValidationError as exc:
@@ -268,7 +279,7 @@ class BulkCredentialsUploadView(AdminRequiredMixin, FormView):
         messages.success(
             self.request,
             (
-                "Proceso finalizado. "
+                f"Proceso finalizado para {send_type_config.label}. "
                 f"Enviados: {summary['enviadas']} | "
                 f"Actualizados: {summary['actualizadas']} | "
                 f"Sin cambios: {summary['sin_cambios']} | "
