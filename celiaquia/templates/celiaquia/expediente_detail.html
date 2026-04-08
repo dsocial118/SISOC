@@ -953,18 +953,9 @@
                                                         {% endfor %}
                                                     </select>
                                                 </div>
-                                                <div class="col-md-4">
-                                                    <label class="form-label">Nacionalidad *</label>
-                                                    <select class="form-select" name="nacionalidad" required>
-                                                        <option value="">Seleccionar...</option>
-                                                        {% for nac in nacionalidades %}
-                                                            <option value="{{ nac.id }}"
-                                                                    {% if registro.datos_raw.nacionalidad|stringformat:"s" == nac.id|stringformat:"s" or registro.datos_raw.nacionalidad|lower == nac.nacionalidad|lower %}selected{% endif %}>
-                                                                {{ nac.nacionalidad }}
-                                                            </option>
-                                                        {% endfor %}
-                                                    </select>
-                                                </div>
+                                                <input type="hidden"
+                                                       name="nacionalidad"
+                                                       value="{{ registro.nacionalidad_default_id|default:nacionalidad_argentina_id|default:'' }}" />
                                                 <div class="col-md-4">
                                                     <label class="form-label">Municipio *</label>
                                                     <select class="form-select select-municipio"
@@ -974,7 +965,7 @@
                                                         <option value="">Seleccionar...</option>
                                                         {% for mun in municipios %}
                                                             <option value="{{ mun.id }}"
-                                                                    {% if registro.datos_raw.municipio|stringformat:"s" == mun.id|stringformat:"s" %}selected{% endif %}>
+                                                                    {% if registro.municipio_autocomplete_id|stringformat:"s" == mun.id|stringformat:"s" %}selected{% endif %}>
                                                                 {{ mun.nombre }}
                                                             </option>
                                                         {% endfor %}
@@ -1615,16 +1606,10 @@
                                 {% for sexo in sexos %}<option value="{{ sexo.id }}">{{ sexo.sexo }}</option>{% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label for="editar-nacionalidad" class="form-label">Nacionalidad *</label>
-                            <select class="form-select"
-                                    id="editar-nacionalidad"
-                                    name="nacionalidad"
-                                    required>
-                                <option value="">Seleccionar...</option>
-                                {% for nac in nacionalidades %}<option value="{{ nac.id }}">{{ nac.nacionalidad }}</option>{% endfor %}
-                            </select>
-                        </div>
+                        <input type="hidden"
+                               id="editar-nacionalidad"
+                               name="nacionalidad"
+                               value="{{ nacionalidad_argentina_id|default:'' }}" />
                         <div class="col-md-6">
                             <label for="editar-telefono" class="form-label">Teléfono</label>
                             <input type="text" class="form-control" id="editar-telefono" name="telefono" />

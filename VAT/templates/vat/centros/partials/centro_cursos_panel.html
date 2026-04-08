@@ -30,7 +30,10 @@
                         <select name="sector_id" class="form-select form-select-sm">
                             <option value="">Todos los sectores</option>
                             {% for sector in planes_centro_sectores %}
-                                <option value="{{ sector.id }}" {% if planes_centro_sector_id == sector.id %}selected{% endif %}>{{ sector.nombre }}</option>
+                                <option value="{{ sector.id }}"
+                                        {% if planes_centro_sector_id == sector.id %}selected{% endif %}>
+                                    {{ sector.nombre }}
+                                </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -38,9 +41,18 @@
                         <label class="form-label small fw-semibold text-uppercase mb-1"
                                style="letter-spacing:.05em">Subsector</label>
                         <select name="subsector_id" class="form-select form-select-sm">
-                            <option value="">{% if planes_centro_sector_id %}Todos los subsectores{% else %}Elegí un sector primero{% endif %}</option>
+                            <option value="">
+                                {% if planes_centro_sector_id %}
+                                    Todos los subsectores
+                                {% else %}
+                                    Elegí un sector primero
+                                {% endif %}
+                            </option>
                             {% for subsector in planes_centro_subsectores %}
-                                <option value="{{ subsector.id }}" {% if planes_centro_subsector_id == subsector.id %}selected{% endif %}>{{ subsector.nombre }}</option>
+                                <option value="{{ subsector.id }}"
+                                        {% if planes_centro_subsector_id == subsector.id %}selected{% endif %}>
+                                    {{ subsector.nombre }}
+                                </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -50,7 +62,10 @@
                         <select name="modalidad_id" class="form-select form-select-sm">
                             <option value="">Todas las modalidades</option>
                             {% for modalidad in planes_centro_modalidades %}
-                                <option value="{{ modalidad.id }}" {% if planes_centro_modalidad_id == modalidad.id %}selected{% endif %}>{{ modalidad.nombre }}</option>
+                                <option value="{{ modalidad.id }}"
+                                        {% if planes_centro_modalidad_id == modalidad.id %}selected{% endif %}>
+                                    {{ modalidad.nombre }}
+                                </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -59,7 +74,10 @@
                                style="letter-spacing:.05em">Ver</label>
                         <select name="planes_per_page" class="form-select form-select-sm">
                             {% for option in planes_centro_page_size_options %}
-                                <option value="{{ option }}" {% if planes_centro_page_size == option %}selected{% endif %}>{{ option }}</option>
+                                <option value="{{ option }}"
+                                        {% if planes_centro_page_size == option %}selected{% endif %}>
+                                    {{ option }}
+                                </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -76,7 +94,9 @@
                 <div class="text-muted small mt-2">
                     Mostrando {{ planes_centro_total_filtrados }} plan{{ planes_centro_total_filtrados|pluralize:"es" }}
                     {% if planes_centro_search_query %}para la búsqueda actual{% endif %}
-                    {% if planes_centro_total_sectores %}en {{ planes_centro_total_sectores }} sector{{ planes_centro_total_sectores|pluralize:"es" }}{% endif %}
+                    {% if planes_centro_total_sectores %}
+                        en {{ planes_centro_total_sectores }} sector{{ planes_centro_total_sectores|pluralize:"es" }}
+                    {% endif %}
                     .
                 </div>
                 {% if planes_centro_por_sector %}

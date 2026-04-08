@@ -166,6 +166,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "sentry.context_processors.sentry_frontend",
+                "core.context_processors.footer_version",
             ],
         },
     },
@@ -212,6 +213,15 @@ EMAIL_USE_TLS = _safe_bool_env("EMAIL_USE_TLS", True)
 EMAIL_USE_SSL = _safe_bool_env("EMAIL_USE_SSL", False)
 EMAIL_TIMEOUT = _safe_int_env("EMAIL_TIMEOUT", 10)
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@sisoc.local")
+PWA_WEB_PUSH_PUBLIC_KEY = os.getenv("PWA_WEB_PUSH_PUBLIC_KEY", "").strip()
+PWA_WEB_PUSH_PRIVATE_KEY = os.getenv("PWA_WEB_PUSH_PRIVATE_KEY", "").strip()
+PWA_WEB_PUSH_SUBJECT = os.getenv(
+    "PWA_WEB_PUSH_SUBJECT",
+    f"mailto:{DEFAULT_FROM_EMAIL}",
+).strip()
+PWA_WEB_PUSH_ENABLED = bool(
+    PWA_WEB_PUSH_PUBLIC_KEY and PWA_WEB_PUSH_PRIVATE_KEY and PWA_WEB_PUSH_SUBJECT
+)
 
 email_backend_errors = []
 if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":

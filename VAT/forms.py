@@ -272,9 +272,10 @@ class CentroForm(forms.ModelForm):
 
     def clean_referente(self):
         referente = self.cleaned_data.get("referente")
-        if referente and not referente.groups.filter(
-            name__in=REFERENTE_GROUP_NAMES
-        ).exists():
+        if (
+            referente
+            and not referente.groups.filter(name__in=REFERENTE_GROUP_NAMES).exists()
+        ):
             raise ValidationError(
                 "El referente seleccionado debe tener un rol valido de referente VAT."
             )

@@ -259,7 +259,9 @@ def _build_cursos_panel_context(request, centro):
     sector_id_raw = request.GET.get("sector_id")
     subsector_id_raw = request.GET.get("subsector_id")
     modalidad_id_raw = request.GET.get("modalidad_id")
-    sector_id = int(sector_id_raw) if sector_id_raw and sector_id_raw.isdigit() else None
+    sector_id = (
+        int(sector_id_raw) if sector_id_raw and sector_id_raw.isdigit() else None
+    )
     subsector_id = (
         int(subsector_id_raw)
         if subsector_id_raw and subsector_id_raw.isdigit()

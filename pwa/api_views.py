@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
@@ -24,6 +25,8 @@ from pwa.api_serializers import (
     NominaEspacioPWACreateUpdateSerializer,
     NominaEspacioPWAListSerializer,
     NominaRenaperPreviewSerializer,
+    PushSubscriptionPWAConfigSerializer,
+    PushSubscriptionPWASerializer,
     RegistroAsistenciaNominaPWAListSerializer,
     SexoSerializer,
 )
@@ -43,6 +46,11 @@ from pwa.services.mensajes_service import (
     list_mensajes_for_espacio,
     marcar_mensaje_como_visto,
 )
+from pwa.services.push_service import (
+    deactivate_push_subscription,
+    upsert_push_subscription,
+    web_push_enabled,
+)
 from pwa.services.nomina_service import (
     create_nomina_persona,
     get_periodo_mensual_actual,
@@ -51,6 +59,13 @@ from pwa.services.nomina_service import (
     soft_delete_nomina_persona,
     split_gender_bucket,
     update_nomina_persona,
+)
+from pwa.view_helpers import (
+    build_mensaje_espacio_summary,
+    normalize_renaper_error_message,
+    renaper_unavailable_message,
+    serialize_ciudadano_local,
+    serialize_renaper_data,
 )
 from users.api_permissions import IsPWAAuthenticatedToken
 from users.api_permissions import IsPWARepresentativeForComedor
@@ -89,17 +104,7 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
             },
         )
         serialized_all_items = serializer.data
-        unread_count = sum(1 for item in serialized_all_items if not item["visto"])
-        unread_general_count = sum(
-            1
-            for item in serialized_all_items
-            if item["seccion"] == "general" and not item["visto"]
-        )
-        unread_espacio_count = sum(
-            1
-            for item in serialized_all_items
-            if item["seccion"] == "espacio" and not item["visto"]
-        )
+        summary = build_mensaje_espacio_summary(serialized_all_items)
         paginator = Paginator(items, 20)
         page_number = request.query_params.get("page", 1)
         page_obj = paginator.get_page(page_number)
@@ -118,9 +123,7 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
                 "count": paginator.count,
                 "num_pages": paginator.num_pages,
                 "current_page": page_obj.number,
-                "unread_count": unread_count,
-                "unread_general_count": unread_general_count,
-                "unread_espacio_count": unread_espacio_count,
+                **summary,
                 "results": serialized_items,
                 "secciones": {
                     "generales": [
@@ -193,6 +196,60 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
             },
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["PWA Push"])
+class PushConfigPWAViewSet(viewsets.ViewSet):
+    """Configuración de web push para la PWA."""
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsPWAAuthenticatedToken]
+
+    def list(self, request):
+        serializer = PushSubscriptionPWAConfigSerializer(
+            {
+                "enabled": bool(web_push_enabled()),
+                "public_key": settings.PWA_WEB_PUSH_PUBLIC_KEY,
+            }
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["PWA Push"])
+class PushSubscriptionPWAViewSet(viewsets.ViewSet):
+    """Alta y baja de suscripciones web push por usuario/dispositivo."""
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsPWAAuthenticatedToken]
+
+    def create(self, request):
+        serializer = PushSubscriptionPWASerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        subscription, created = upsert_push_subscription(
+            user=request.user,
+            user_agent=request.META.get("HTTP_USER_AGENT"),
+            **serializer.validated_data,
+        )
+        response_serializer = PushSubscriptionPWASerializer(subscription)
+        return Response(
+            response_serializer.data,
+            status=(status.HTTP_201_CREATED if created else status.HTTP_200_OK),
+        )
+
+    def destroy(self, request):
+        endpoint = str(request.data.get("endpoint") or "").strip()
+        if not endpoint:
+            return Response(
+                {"detail": "endpoint es obligatorio."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        deleted = deactivate_push_subscription(user=request.user, endpoint=endpoint)
+        if not deleted:
+            return Response(
+                {"detail": "Suscripción no encontrada."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(tags=["PWA Colaboradores"])
@@ -328,27 +385,6 @@ class ColaboradorEspacioPWAViewSet(viewsets.ViewSet):
         serializer = ColaboradorActividadCatalogoSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @staticmethod
-    def _renaper_unavailable_message():
-        return (
-            "No se pudo conectar con RENAPER en este momento. "
-            "Probá nuevamente en unos minutos."
-        )
-
-    @classmethod
-    def _normalize_renaper_error_message(cls, message):
-        normalized_message = str(
-            message or "No se pudieron obtener datos desde RENAPER."
-        )
-        lowered = normalized_message.lower()
-        if (
-            "timed out" in lowered
-            or "connectionpool" in lowered
-            or "max retries exceeded" in lowered
-        ):
-            return cls._renaper_unavailable_message()
-        return normalized_message
-
     def preview_dni(self, request, comedor_id=None):
         serializer = NominaRenaperPreviewSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -386,14 +422,12 @@ class ColaboradorEspacioPWAViewSet(viewsets.ViewSet):
             renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(dni)
         except Exception:
             return Response(
-                {"detail": self._renaper_unavailable_message()},
+                {"detail": renaper_unavailable_message()},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not renaper_result.get("success"):
-            message = self._normalize_renaper_error_message(
-                renaper_result.get("message")
-            )
+            message = normalize_renaper_error_message(renaper_result.get("message"))
             return Response(
                 {"detail": message},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -809,83 +843,6 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         serializer = SexoSerializer(Sexo.objects.order_by("id"), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @staticmethod
-    def _renaper_unavailable_message():
-        return (
-            "No se pudo conectar con RENAPER en este momento. "
-            "Probá nuevamente en unos minutos."
-        )
-
-    @staticmethod
-    def _serialize_ciudadano_local(ciudadano, dni):
-        sexo_local = (
-            getattr(ciudadano.sexo, "sexo", "")
-            if getattr(ciudadano, "sexo", None)
-            else ""
-        )
-        fecha_local = (
-            ciudadano.fecha_nacimiento.isoformat()
-            if getattr(ciudadano, "fecha_nacimiento", None)
-            else None
-        )
-        return {
-            "nombre": ciudadano.nombre or "",
-            "apellido": ciudadano.apellido or "",
-            "documento": str(ciudadano.documento or dni),
-            "fecha_nacimiento": fecha_local,
-            "sexo": sexo_local,
-        }
-
-    @classmethod
-    def _normalize_renaper_error_message(cls, message):
-        normalized_message = str(
-            message or "No se pudieron obtener datos desde RENAPER."
-        )
-        lowered = normalized_message.lower()
-        if (
-            "timed out" in lowered
-            or "connectionpool" in lowered
-            or "max retries exceeded" in lowered
-        ):
-            return cls._renaper_unavailable_message()
-        return normalized_message
-
-    @staticmethod
-    def _resolve_sexo_label(sexo_value):
-        sexo_label = ""
-        if not sexo_value:
-            return sexo_label
-        if hasattr(sexo_value, "sexo"):
-            sexo_label = getattr(sexo_value, "sexo", "") or ""
-        elif isinstance(sexo_value, str):
-            sexo_normalizado = sexo_value.strip().upper()
-            if sexo_normalizado in ("M", "MASCULINO"):
-                sexo_label = "Masculino"
-            elif sexo_normalizado in ("F", "FEMENINO"):
-                sexo_label = "Femenino"
-            elif sexo_normalizado in ("X", "NO BINARIO", "NB"):
-                sexo_label = "X"
-            else:
-                sexo_label = sexo_value.strip()
-        else:
-            sexo_obj = Sexo.objects.filter(pk=sexo_value).first()
-            sexo_label = getattr(sexo_obj, "sexo", "") if sexo_obj else ""
-        return sexo_label
-
-    @classmethod
-    def _serialize_renaper_data(cls, data, dni):
-        fecha_nacimiento = data.get("fecha_nacimiento")
-        if fecha_nacimiento and hasattr(fecha_nacimiento, "isoformat"):
-            fecha_nacimiento = fecha_nacimiento.isoformat()
-
-        return {
-            "nombre": data.get("nombre") or "",
-            "apellido": data.get("apellido") or "",
-            "documento": str(data.get("documento") or dni),
-            "fecha_nacimiento": fecha_nacimiento,
-            "sexo": cls._resolve_sexo_label(data.get("sexo")),
-        }
-
     def preview_dni(self, request, comedor_id=None):
         serializer = NominaRenaperPreviewSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -898,7 +855,7 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         ).first()
         if ciudadano_local:
             return Response(
-                self._serialize_ciudadano_local(ciudadano_local, dni),
+                serialize_ciudadano_local(ciudadano_local, dni),
                 status=status.HTTP_200_OK,
             )
 
@@ -906,21 +863,18 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
             renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(dni)
         except Exception:
             return Response(
-                {"detail": self._renaper_unavailable_message()},
+                {"detail": renaper_unavailable_message()},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not renaper_result.get("success"):
-            message = self._normalize_renaper_error_message(
-                renaper_result.get("message")
-            )
+            message = normalize_renaper_error_message(renaper_result.get("message"))
             return Response(
                 {"detail": message},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        data = renaper_result.get("data") or {}
         return Response(
-            self._serialize_renaper_data(data, dni),
+            serialize_renaper_data(renaper_result.get("data") or {}, dni, Sexo),
             status=status.HTTP_200_OK,
         )

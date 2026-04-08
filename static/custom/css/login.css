@@ -1,15 +1,28 @@
+:root {
+    --login-header-height: 77px;
+    --login-footer-height: 136px;
+}
+
 /* Contenedor general */
- body {
+body {
     margin: 0;
-    height: 100vh;
+    min-height: 100vh;
     background-color: #ededed;
-    font-family: 'Montserrat', sans-serif;
+    font-family: "Montserrat", sans-serif;
     color: #1d274184;
+}
+
+.login-page {
+    display: flex;
+    flex-direction: column;
 }
 
 .login-container {
     display: flex;
     flex: 1;
+    align-items: center;
+    padding-top: var(--login-header-height);
+    padding-bottom: var(--login-footer-height);
 }
 
 /* Caja del formulario */
@@ -22,7 +35,7 @@ h2 {
     color: #fff;
     font-size: 2rem;
     margin-bottom: 1.5rem;
-    font-family: 'Montserrat', sans-serif;
+    font-family: "Montserrat", sans-serif;
 }
 
 
@@ -36,7 +49,7 @@ input {
     margin-bottom: 1rem;
     background-color: rgba(255, 255, 255, 0.1);
     color: #fff;
-    font-family: 'Montserrat', sans-serif;
+    font-family: "Montserrat", sans-serif;
 }
 
 button {
@@ -47,14 +60,14 @@ button {
     color: #fff;
     width: 100%;
     cursor: pointer;
-    font-family: 'Montserrat', sans-serif;
+    font-family: "Montserrat", sans-serif;
 }
 
 footer {
     color: #fff;
     font-size: 0.8rem;
     margin-top: 2rem;
-        font-family: 'Montserrat', sans-serif;
+    font-family: "Montserrat", sans-serif;
 }
 
 header.main-header {
@@ -69,6 +82,14 @@ footer.app-footer {
     bottom: 0;
     right: 0;
     left: 0;
+}
+
+.login-row {
+    min-height: calc(
+        100vh - var(--login-header-height) - var(--login-footer-height)
+    );
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
 }
 
 .card {
@@ -129,6 +150,10 @@ footer.app-footer {
 
 /* Media queries para responsive mobile */
 @media (max-width: 767px) {
+    :root {
+        --login-header-height: 73px;
+    }
+
     /* Ajustar padding del card en mobile */
     .card {
         padding: 1.5rem 1rem;
@@ -177,10 +202,15 @@ footer.app-footer {
         font-size: 1rem;
     }
 
-    /* Reducir altura del contenedor en mobile */
-    .login-container .row.vh-100 {
-        min-height: 100vh;
-        padding: 1rem 0;
+    .login-container {
+        align-items: stretch;
+        padding-bottom: 1rem;
+    }
+
+    .login-row {
+        min-height: auto;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
     }
 
     /* Ajustar tamaño de fuente del enlace en mobile */

@@ -3,8 +3,12 @@ services:
     build:
       context: .
       dockerfile: ./docker/django/Dockerfile
+    env_file:
+      - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
     volumes:
       - .:/sisoc/
     restart: unless-stopped
+    ports:
+      - "8001:8000"
