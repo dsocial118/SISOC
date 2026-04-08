@@ -1426,13 +1426,11 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== EDITAR LEGAJO ===== */
   const modalEditarLegajo = document.getElementById('modalEditarLegajo');
   if (modalEditarLegajo) {
-    // Configurar filtrado de localidades por municipio
     const selectMunicipio = document.getElementById('editar-municipio');
     const selectLocalidad = document.getElementById('editar-localidad');
     
     if (selectMunicipio && selectLocalidad) {
-      selectMunicipio.addEventListener('change', function() {
-        const municipioId = this.value;
+      const filtrarLocalidadesPorMunicipio = (municipioId) => {
         const opciones = selectLocalidad.querySelectorAll('option');
         
         opciones.forEach(option => {
@@ -1457,7 +1455,27 @@ document.addEventListener('DOMContentLoaded', () => {
             selectLocalidad.value = '';
           }
         }
+      };
+
+      const sincronizarMunicipioDesdeLocalidad = () => {
+        const optionSeleccionada = selectLocalidad.selectedOptions[0];
+        const municipioId = optionSeleccionada?.dataset?.municipio || '';
+        if (!municipioId) {
+          return;
+        }
+
+        if (selectMunicipio.value !== municipioId) {
+          selectMunicipio.value = municipioId;
+        }
+
+        filtrarLocalidadesPorMunicipio(municipioId);
+      };
+
+      selectMunicipio.addEventListener('change', function() {
+        filtrarLocalidadesPorMunicipio(this.value);
       });
+
+      selectLocalidad.addEventListener('change', sincronizarMunicipioDesdeLocalidad);
     }
     
     modalEditarLegajo.addEventListener('show.bs.modal', async function(event) {
@@ -1519,6 +1537,7 @@ document.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => {
             if (legajo.localidad) {
               document.getElementById('editar-localidad').value = legajo.localidad;
+              selectLocalidad.dispatchEvent(new Event('change'));
             }
           }, 100);
           

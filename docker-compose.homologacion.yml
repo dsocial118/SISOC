@@ -1,6 +1,4 @@
 services:
   django:
-    env_file:
-      - .env.homologacion
     ports:
       - "8001:8000"
