@@ -123,8 +123,9 @@ BULK_CREDENTIALS_SEND_TYPES = {
         email_template_name="user/bulk_credentials_email.txt",
         description=(
             "Carga un archivo .xlsx con encabezados usuario, mail y password. "
-            "Se valida el usuario existente, se sincronizan los datos vigentes "
-            "y luego se envia el correo de credenciales."
+            "Se valida el usuario existente, se actualiza la password vigente "
+            "si corresponde y luego se envia el correo al mail informado en "
+            "la planilla."
         ),
     ),
     "inet": BulkCredentialsSendTypeConfig(
@@ -312,6 +313,7 @@ def get_bulk_credentials_template_filename(send_type: str | None = None) -> str:
 def _send_bulk_credentials_email_once(
     *,
     user,
+    recipient_email: str,
     plain_password: str,
     login_url: str,
     send_type: str | None = None,
@@ -329,7 +331,7 @@ def _send_bulk_credentials_email_once(
         subject=send_type_config.email_subject,
         message=message,
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
+        recipient_list=[recipient_email],
         fail_silently=False,
     )
 
@@ -398,15 +400,6 @@ def _validate_row_data(
         raise ValidationError("El formato del mail es invalido.") from exc
 
 
-def _validate_unique_email(*, user, email: str) -> None:
-    if not email:
-        return
-
-    duplicated = User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists()
-    if duplicated:
-        raise ValidationError("Ya existe otro usuario con ese mail.")
-
-
 def _update_password_state(*, user, plain_password: str) -> None:
     user.set_password(plain_password)
     user.save(update_fields=["password"])
@@ -458,9 +451,9 @@ def process_bulk_credentials_file(
         row_result = {
             "fila": row.fila,
             "usuario": row.usuario,
+            "mail_destino": row.mail,
             "estado": "rechazada",
             "mensaje": "",
-            "email_actualizado": False,
             "password_actualizada": False,
         }
 
@@ -475,15 +468,7 @@ def process_bulk_credentials_file(
                 if not user:
                     raise ValidationError("No existe un usuario con ese nombre.")
 
-                _validate_unique_email(user=user, email=row.mail)
-
-                email_updated = False
                 password_updated = False
-
-                if user.email != row.mail:
-                    user.email = row.mail
-                    user.save(update_fields=["email"])
-                    email_updated = True
 
                 if not user.check_password(row.password):
                     _update_password_state(user=user, plain_password=row.password)
@@ -491,18 +476,18 @@ def process_bulk_credentials_file(
 
                 send_bulk_credentials_email(
                     user=user,
+                    recipient_email=row.mail,
                     plain_password=row.password,
                     login_url=login_url,
                     send_type=send_type_config.key,
                     nombre_del_centro=row.nombre_del_centro,
                 )
 
-                row_result["email_actualizado"] = email_updated
                 row_result["password_actualizada"] = password_updated
                 row_result["estado"] = "enviada"
                 row_result["mensaje"] = "Credenciales enviadas correctamente."
 
-                if email_updated or password_updated:
+                if password_updated:
                     summary["actualizadas"] += 1
                 else:
                     summary["sin_cambios"] += 1
