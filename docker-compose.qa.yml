@@ -1,4 +1,0 @@
-services:
-  django:
-    ports:
-      - "8001:8000"
