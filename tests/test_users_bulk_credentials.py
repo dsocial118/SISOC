@@ -164,14 +164,14 @@ def test_user_list_context_shows_bulk_credentials_button_only_with_role_permissi
             "label": "ENVIO DE CREDENCIALES",
             "url": "/usuarios/credenciales-masivas/",
             "class": "btn btn-lg btn-export-csv",
-            "title": "Actualizar y enviar credenciales desde Excel",
+            "title": "Actualizar password y enviar credenciales desde Excel",
         }
     ]
 
 
 @pytest.mark.django_db
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-def test_process_bulk_credentials_updates_email_and_password_and_sends_email():
+def test_process_bulk_credentials_updates_password_and_sends_to_mail_from_excel():
     user = User.objects.create_user(
         username="bulk_target",
         email="viejo@example.com",
@@ -198,9 +198,9 @@ def test_process_bulk_credentials_updates_email_and_password_and_sends_email():
         "rechazadas": 0,
     }
     assert result["rows"][0]["estado"] == "enviada"
-    assert result["rows"][0]["email_actualizado"] is True
+    assert result["rows"][0]["mail_destino"] == "nuevo@example.com"
     assert result["rows"][0]["password_actualizada"] is True
-    assert user.email == "nuevo@example.com"
+    assert user.email == "viejo@example.com"
     assert user.check_password("Nueva123!") is True
     assert profile.must_change_password is True
     assert profile.password_changed_at is None
@@ -237,7 +237,7 @@ def test_process_bulk_credentials_same_data_sends_email_without_updating():
         "sin_cambios": 1,
         "rechazadas": 0,
     }
-    assert result["rows"][0]["email_actualizado"] is False
+    assert result["rows"][0]["mail_destino"] == "same@example.com"
     assert result["rows"][0]["password_actualizada"] is False
     assert user.email == "same@example.com"
     assert user.check_password("Misma123!") is True
@@ -307,14 +307,22 @@ def test_process_bulk_credentials_rejects_missing_inet_center_column():
 
 @pytest.mark.django_db
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-def test_process_bulk_credentials_rejects_empty_required_cell():
+def test_process_bulk_credentials_reports_missing_mail_and_continues():
     User.objects.create_user(
         username="bulk_invalid",
         email="bulk_invalid@example.com",
         password="Temporal123!",
     )
+    User.objects.create_user(
+        username="bulk_valid",
+        email="bulk_valid@example.com",
+        password="Temporal123!",
+    )
     upload = _build_excel_file(
-        [("bulk_invalid", "", "Temporal123!")],
+        [
+            ("bulk_invalid", "", "Temporal123!"),
+            ("bulk_valid", "destino@example.com", "Temporal123!"),
+        ],
     )
 
     result = process_bulk_credentials_file(
@@ -323,14 +331,61 @@ def test_process_bulk_credentials_rejects_empty_required_cell():
     )
 
     assert result["summary"] == {
-        "procesadas": 1,
-        "enviadas": 0,
+        "procesadas": 2,
+        "enviadas": 1,
         "actualizadas": 0,
-        "sin_cambios": 0,
+        "sin_cambios": 1,
         "rechazadas": 1,
     }
     assert "mail es obligatoria" in result["rows"][0]["mensaje"]
-    assert len(mail.outbox) == 0
+    assert result["rows"][0]["mail_destino"] == ""
+    assert result["rows"][1]["estado"] == "enviada"
+    assert result["rows"][1]["mail_destino"] == "destino@example.com"
+    assert len(mail.outbox) == 1
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_process_bulk_credentials_allows_shared_recipient_email():
+    first_user = User.objects.create_user(
+        username="bulk_shared_one",
+        email="one@example.com",
+        password="Inicial123!",
+    )
+    second_user = User.objects.create_user(
+        username="bulk_shared_two",
+        email="two@example.com",
+        password="Inicial123!",
+    )
+    upload = _build_excel_file(
+        [
+            ("bulk_shared_one", "shared@example.com", "NuevaOne123!"),
+            ("bulk_shared_two", "shared@example.com", "NuevaTwo123!"),
+        ],
+    )
+
+    result = process_bulk_credentials_file(
+        uploaded_file=upload,
+        send_type="standard",
+    )
+
+    first_user.refresh_from_db()
+    second_user.refresh_from_db()
+    assert result["summary"] == {
+        "procesadas": 2,
+        "enviadas": 2,
+        "actualizadas": 2,
+        "sin_cambios": 0,
+        "rechazadas": 0,
+    }
+    assert first_user.email == "one@example.com"
+    assert second_user.email == "two@example.com"
+    assert first_user.check_password("NuevaOne123!") is True
+    assert second_user.check_password("NuevaTwo123!") is True
+    assert [email.to for email in mail.outbox] == [
+        ["shared@example.com"],
+        ["shared@example.com"],
+    ]
 
 
 @pytest.mark.django_db
@@ -425,9 +480,10 @@ def test_bulk_credentials_upload_view_processes_file_and_shows_summary():
     assert response.status_code == 200
     assert captured_context["results"]["summary"]["enviadas"] == 1
     assert captured_context["results"]["rows"][0]["estado"] == "enviada"
-    assert target.email == "nuevo_view_target@example.com"
+    assert target.email == "view_target@example.com"
     assert target.check_password("NuevaView123!") is True
     assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["nuevo_view_target@example.com"]
 
 
 @pytest.mark.django_db
@@ -458,6 +514,7 @@ def test_process_bulk_credentials_inet_uses_inet_email_template():
     }
     assert result["send_type"] == "inet"
     assert result["send_type_label"] == "INET"
+    assert user.email == "inet-old@example.com"
     assert len(mail.outbox) == 1
     assert (
         mail.outbox[0].subject == "Acceso a la plataforma y capacitación virtual – INET"
