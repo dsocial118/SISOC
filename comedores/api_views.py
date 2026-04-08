@@ -1027,8 +1027,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             RendicionCuentaMensualService.adjuntar_documentacion_mobile(
                 rendicion=rendicion,
                 categoria=categoria,
-                archivo=archivo,
-                nombre=nombre,
+                documento_data={"archivo": archivo, "nombre": nombre},
                 actor=request.user,
                 documento_subsanado_id=documento_subsanado_id,
             )

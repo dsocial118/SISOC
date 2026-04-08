@@ -917,6 +917,12 @@ class PushSubscriptionPWAConfigSerializer(serializers.Serializer):
     enabled = serializers.BooleanField()
     public_key = serializers.CharField(allow_blank=True)
 
+    def create(self, validated_data):
+        return validated_data
+
+    def update(self, instance, validated_data):
+        return instance
+
 
 class PushSubscriptionPWASerializer(serializers.ModelSerializer):
     endpoint = serializers.URLField(max_length=500)

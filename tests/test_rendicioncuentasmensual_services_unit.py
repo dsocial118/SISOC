@@ -187,10 +187,7 @@ def test_obtener_documentacion_para_detalle_anida_subsanaciones_en_historial(
         observado.id,
     ]
     assert archivo.subsanaciones_historial[0].get_estado_visual() == "subsanado"
-    assert (
-        archivo.subsanaciones_historial[0].get_estado_visual_display()
-        == "Subsanado"
-    )
+    assert archivo.subsanaciones_historial[0].get_estado_visual_display() == "Subsanado"
 
 
 @pytest.mark.django_db
@@ -335,9 +332,7 @@ def test_obtener_documentacion_para_detalle_mantiene_vigente_reemplazo_categoria
 
 
 @pytest.mark.django_db
-def test_obtener_documentos_para_descarga_pdf_respeta_orden_visible(
-    settings, tmp_path
-):
+def test_obtener_documentos_para_descarga_pdf_respeta_orden_visible(settings, tmp_path):
     settings.MEDIA_ROOT = str(tmp_path)
     rendicion = RendicionCuentaMensual.objects.create(
         mes=4,
@@ -383,7 +378,11 @@ def test_obtener_documentos_para_descarga_pdf_respeta_orden_visible(
         rendicion
     )
 
-    assert [item.id for item in documentos] == [formulario.id, subsanacion.id, comprobante.id]
+    assert [item.id for item in documentos] == [
+        formulario.id,
+        subsanacion.id,
+        comprobante.id,
+    ]
 
 
 def test_obtener_rendiciones_cuentas_mensuales_success(mocker):

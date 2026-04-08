@@ -25,23 +25,22 @@
                         <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
                             <h2 class="mb-0 fw-bold">Rendicion {{ rendicion.numero_rendicion|default:rendicion.id }}</h2>
                             <div class="d-flex flex-wrap gap-2" id="rendicion-estado-badge-container">
-                            {% if rendicion.estado == 'finalizada' %}
-                                <span class="badge-validacion validado" id="rendicion-estado-badge">Finalizada</span>
-                            {% elif rendicion.estado == 'subsanar' %}
-                                <span class="badge-validacion no-validado" id="rendicion-estado-badge">A subsanar</span>
-                            {% elif rendicion.estado == 'revision' %}
-                                <span class="badge-validacion pendiente" id="rendicion-estado-badge">En revision</span>
-                            {% else %}
-                                <span class="badge-validacion pendiente" id="rendicion-estado-badge">En elaboracion</span>
-                            {% endif %}
+                                {% if rendicion.estado == 'finalizada' %}
+                                    <span class="badge-validacion validado" id="rendicion-estado-badge">Finalizada</span>
+                                {% elif rendicion.estado == 'subsanar' %}
+                                    <span class="badge-validacion no-validado" id="rendicion-estado-badge">A subsanar</span>
+                                {% elif rendicion.estado == 'revision' %}
+                                    <span class="badge-validacion pendiente" id="rendicion-estado-badge">En revision</span>
+                                {% else %}
+                                    <span class="badge-validacion pendiente" id="rendicion-estado-badge">En elaboracion</span>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <div id="rendicion-download-action">
                             {% if puede_descargar_pdf %}
-                                <a href="./descargar-pdf/"
-                                   class="btn btn-sm btn-success">
+                                <a href="./descargar-pdf/" class="btn btn-sm btn-success">
                                     <i class="fas fa-file-pdf"></i>
                                     Generar descarga
                                 </a>
@@ -263,11 +262,11 @@
                                                             </button>
                                                         </div>
                                                     {% else %}
-                                                                <div class="ps-3" id="observaciones-display-{{ archivo.id }}">
-                                                                    <strong>Observaciones:</strong> {{ archivo.observaciones }}
-                                                                </div>
-                                                            {% endif %}
-                                                        </td>
+                                                        <div class="ps-3" id="observaciones-display-{{ archivo.id }}">
+                                                            <strong>Observaciones:</strong> {{ archivo.observaciones }}
+                                                        </div>
+                                                    {% endif %}
+                                                </td>
                                             </tr>
                                         {% endif %}
                                     {% endfor %}
@@ -279,21 +278,13 @@
                                                         <td>{{ subsanacion.nombre }}</td>
                                                         <td id="estado-cell-{{ subsanacion.id }}">
                                                             {% if subsanacion.get_estado_visual == 'subsanado' %}
-                                                                <span class="historial-documento-estado">
-                                                                    {{ subsanacion.get_estado_visual_display }}
-                                                                </span>
+                                                                <span class="historial-documento-estado">{{ subsanacion.get_estado_visual_display }}</span>
                                                             {% elif subsanacion.estado == 'validado' %}
-                                                                <span class="historial-documento-estado">
-                                                                    {{ subsanacion.get_estado_display }}
-                                                                </span>
+                                                                <span class="historial-documento-estado">{{ subsanacion.get_estado_display }}</span>
                                                             {% elif subsanacion.estado == 'subsanar' %}
-                                                                <span class="historial-documento-estado">
-                                                                    {{ subsanacion.get_estado_display }}
-                                                                </span>
+                                                                <span class="historial-documento-estado">{{ subsanacion.get_estado_display }}</span>
                                                             {% else %}
-                                                                <span class="historial-documento-estado">
-                                                                    {{ subsanacion.get_estado_display }}
-                                                                </span>
+                                                                <span class="historial-documento-estado">{{ subsanacion.get_estado_display }}</span>
                                                             {% endif %}
                                                         </td>
                                                         <td id="revision-cell-{{ subsanacion.id }}">

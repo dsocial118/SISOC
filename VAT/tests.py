@@ -249,7 +249,10 @@ def test_centro_alta_form_configura_referente_como_select_estandar(vat_referente
 
     assert referente_field.widget.attrs["class"] == "form-control"
     assert referente_field.empty_label == "Seleccionar referente..."
-    assert referente_field.label_from_instance(vat_referente_user) == "referente-vat - Ana Pérez"
+    assert (
+        referente_field.label_from_instance(vat_referente_user)
+        == "referente-vat - Ana Pérez"
+    )
 
 
 @pytest.mark.django_db
@@ -269,9 +272,9 @@ def test_centro_alta_form_no_incluye_grupos_legacy_de_referente():
 
     form = CentroAltaForm()
     queryset_usernames = list(
-        form.fields["referente"].queryset.order_by("username").values_list(
-            "username", flat=True
-        )
+        form.fields["referente"]
+        .queryset.order_by("username")
+        .values_list("username", flat=True)
     )
 
     assert "referente-legacy-form" not in queryset_usernames
@@ -2998,15 +3001,22 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
 
     assert filtered_combined_response.status_code == 200
     assert filtered_combined_response.context["planes_centro_total_filtrados"] == 1
-    assert filtered_combined_response.context["planes_centro_page_obj"].paginator.per_page == 50
+    assert (
+        filtered_combined_response.context["planes_centro_page_obj"].paginator.per_page
+        == 50
+    )
     assert filtered_combined_response.context["planes_centro_page_size"] == 50
-    assert filtered_combined_response.context["planes_centro_subsector_id"] == subsector.id
-    assert filtered_combined_response.context["planes_centro_modalidad_id"] == modalidad.id
+    assert (
+        filtered_combined_response.context["planes_centro_subsector_id"] == subsector.id
+    )
+    assert (
+        filtered_combined_response.context["planes_centro_modalidad_id"] == modalidad.id
+    )
     assert filtered_combined_response.context["planes_centro"][0].id == plan_filtrado.id
     filtered_combined_content = filtered_combined_response.content.decode("utf-8")
     assert f'value="{subsector.id}" selected' in filtered_combined_content
     assert f'value="{modalidad.id}" selected' in filtered_combined_content
-    assert 'Servicios: 1' in filtered_combined_content
+    assert "Servicios: 1" in filtered_combined_content
 
     filtered_by_sector_response = client.get(
         panel_url,
@@ -3016,13 +3026,18 @@ def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo
     assert filtered_by_sector_response.status_code == 200
     assert filtered_by_sector_response.context["planes_centro_total_filtrados"] == 1
     assert len(filtered_by_sector_response.context["planes_centro"]) == 1
-    assert filtered_by_sector_response.context["planes_centro"][0].id == plan_otro_sector.id
-    assert filtered_by_sector_response.context["planes_centro_sector_id"] == otro_sector.id
+    assert (
+        filtered_by_sector_response.context["planes_centro"][0].id
+        == plan_otro_sector.id
+    )
+    assert (
+        filtered_by_sector_response.context["planes_centro_sector_id"] == otro_sector.id
+    )
     assert filtered_by_sector_response.context["planes_centro_modalidad_id"] is None
     filtered_by_sector_content = filtered_by_sector_response.content.decode("utf-8")
     assert 'name="sector_id"' in filtered_by_sector_content
     assert f'value="{otro_sector.id}" selected' in filtered_by_sector_content
-    assert 'Gastronomia: 1' in filtered_by_sector_content
+    assert "Gastronomia: 1" in filtered_by_sector_content
 
     second_page_response = client.get(panel_url, {"planes_page": 2})
 

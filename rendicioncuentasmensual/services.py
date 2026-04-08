@@ -3,21 +3,29 @@ import os
 from io import BytesIO
 
 from django.core.exceptions import ValidationError
-from django.http import FileResponse
 from django.db import transaction
 from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from pypdf import PdfReader, PdfWriter
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.utils import ImageReader
-from reportlab.pdfgen import canvas
 
-from comunicados.models import Comunicado, EstadoComunicado, SubtipoComunicado, TipoComunicado
+from comunicados.models import (
+    Comunicado,
+    EstadoComunicado,
+    SubtipoComunicado,
+    TipoComunicado,
+)
 from comedores.models import Comedor
 from pwa.services.mensajes_service import MOBILE_RENDICION_PERMISSION_CODE
 from pwa.services.push_service import notify_rendicion_revision_push
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
+from rendicioncuentasmensual.service_helpers import (
+    cerrar_archivo_seguro,
+    construir_documentacion_para_detalle,
+    generar_pdf_desde_imagen,
+    generar_pdf_placeholder,
+    leer_pdf_documento,
+)
 
 logger = logging.getLogger("django")
 
@@ -123,9 +131,7 @@ class RendicionCuentaMensualService:
                 "Revisá las observaciones y actualizá la documentación indicada."
             )
         elif rendicion.estado == RendicionCuentaMensual.ESTADO_FINALIZADA:
-            cuerpo_lineas.append(
-                "La rendición quedó en Presentación finalizada."
-            )
+            cuerpo_lineas.append("La rendición quedó en Presentación finalizada.")
         cuerpo_lineas.append(
             (
                 f"{RendicionCuentaMensualService.MOBILE_MESSAGE_ACTION_PREFIX}"
@@ -302,9 +308,11 @@ class RendicionCuentaMensualService:
     def _obtener_documento_subsanado_para_carga(
         *, rendicion, categoria, documento_subsanado_id
     ):
-        documentos_categoria = RendicionCuentaMensualService._documentos_activos_queryset(
-            rendicion
-        ).filter(categoria=categoria)
+        documentos_categoria = (
+            RendicionCuentaMensualService._documentos_activos_queryset(
+                rendicion
+            ).filter(categoria=categoria)
+        )
 
         if (
             categoria
@@ -319,7 +327,10 @@ class RendicionCuentaMensualService:
                     }
                 )
             documento = documentos_categoria.filter(id=documento_subsanado_id).first()
-            if not documento or documento.estado != DocumentacionAdjunta.ESTADO_SUBSANAR:
+            if (
+                not documento
+                or documento.estado != DocumentacionAdjunta.ESTADO_SUBSANAR
+            ):
                 raise ValidationError(
                     {
                         "detail": (
@@ -365,7 +376,9 @@ class RendicionCuentaMensualService:
         if rendicion.estado == RendicionCuentaMensual.ESTADO_ELABORACION:
             if (
                 not config["multiple"]
-                and RendicionCuentaMensualService._documentos_activos_queryset(rendicion)
+                and RendicionCuentaMensualService._documentos_activos_queryset(
+                    rendicion
+                )
                 .filter(categoria=categoria)
                 .exists()
             ):
@@ -400,11 +413,7 @@ class RendicionCuentaMensualService:
     def _validar_rendicion_editable(rendicion):
         if rendicion.estado != RendicionCuentaMensual.ESTADO_ELABORACION:
             raise ValidationError(
-                {
-                    "detail": (
-                        "La documentación solo puede modificarse en elaboración."
-                    )
-                }
+                {"detail": ("La documentación solo puede modificarse en elaboración.")}
             )
 
     @staticmethod
@@ -424,77 +433,11 @@ class RendicionCuentaMensualService:
         documentos = list(
             RendicionCuentaMensualService._documentos_activos_queryset(rendicion)
         )
-        grouped = {
-            item["codigo"]: [] for item in DocumentacionAdjunta.categorias_mobile()
-        }
-        documentos_activos_por_id = {documento.id: documento for documento in documentos}
-
-        for categoria in DocumentacionAdjunta.categorias_mobile():
-            codigo = categoria["codigo"]
-            documentos_categoria = [
-                documento for documento in documentos if documento.categoria == codigo
-            ]
-            if (
-                codigo
-                not in RendicionCuentaMensualService.CATEGORIAS_CON_HISTORIAL_SUBSANACION
-            ):
-                archivos = sorted(
-                    documentos_categoria,
-                    key=lambda item: (item.fecha_creacion, item.id),
-                )
-                for archivo in archivos:
-                    archivo.subsanaciones_historial = []
-                grouped[codigo] = archivos
-                continue
-
-            hijos_por_documento = {}
-            for documento in documentos_categoria:
-                parent_id = documento.documento_subsanado_id
-                if parent_id and parent_id in documentos_activos_por_id:
-                    hijos_por_documento.setdefault(parent_id, []).append(documento)
-
-            raices = [
-                documento
-                for documento in documentos_categoria
-                if not documento.documento_subsanado_id
-                or documento.documento_subsanado_id not in documentos_activos_por_id
-            ]
-
-            archivos = []
-            for raiz in sorted(raices, key=lambda item: (item.fecha_creacion, item.id)):
-                cadena = []
-                pendientes = [raiz]
-                while pendientes:
-                    actual = pendientes.pop(0)
-                    cadena.append(actual)
-                    pendientes.extend(
-                        sorted(
-                            hijos_por_documento.get(actual.id, []),
-                            key=lambda item: (item.fecha_creacion, item.id),
-                        )
-                    )
-
-                principal = max(
-                    cadena,
-                    key=lambda item: (item.fecha_creacion, item.id),
-                )
-                principal.estado_visual_override = principal.estado
-                principal.estado_visual_display_override = (
-                    principal.get_estado_display()
-                )
-                principal.subsanaciones_historial = sorted(
-                    [item for item in cadena if item.id != principal.id],
-                    key=lambda item: (item.fecha_creacion, item.id),
-                    reverse=True,
-                )
-                for historico in principal.subsanaciones_historial:
-                    historico.estado_visual_override = "subsanado"
-                    historico.estado_visual_display_override = "Subsanado"
-                archivos.append(principal)
-
-            grouped[codigo] = archivos
-
-        return grouped
+        return construir_documentacion_para_detalle(
+            documentos,
+            DocumentacionAdjunta.categorias_mobile(),
+            RendicionCuentaMensualService.CATEGORIAS_CON_HISTORIAL_SUBSANACION,
+        )
 
     @staticmethod
     def obtener_documentacion_para_detalle(rendicion):
@@ -518,7 +461,9 @@ class RendicionCuentaMensualService:
     @staticmethod
     def obtener_documentos_para_descarga_pdf(rendicion):
         documentos = []
-        for categoria in RendicionCuentaMensualService.obtener_documentacion_para_detalle(
+        for (
+            categoria
+        ) in RendicionCuentaMensualService.obtener_documentacion_para_detalle(
             rendicion
         ):
             for archivo in categoria["archivos"]:
@@ -528,63 +473,11 @@ class RendicionCuentaMensualService:
 
     @staticmethod
     def _generar_pdf_desde_imagen(archivo, nombre):
-        buffer = BytesIO()
-        pdf_buffer = BytesIO()
-        try:
-            archivo.open("rb")
-            buffer.write(archivo.read())
-        finally:
-            try:
-                archivo.close()
-            except Exception:
-                pass
-
-        image_reader = ImageReader(BytesIO(buffer.getvalue()))
-        image_width, image_height = image_reader.getSize()
-        page_width, page_height = A4
-        margin = 36
-        available_width = page_width - (margin * 2)
-        available_height = page_height - (margin * 2) - 24
-        scale = min(
-            available_width / image_width,
-            available_height / image_height,
-        )
-        draw_width = image_width * scale
-        draw_height = image_height * scale
-        draw_x = (page_width - draw_width) / 2
-        draw_y = (page_height - draw_height) / 2 - 10
-
-        pdf = canvas.Canvas(pdf_buffer, pagesize=A4)
-        pdf.setFont("Helvetica-Bold", 11)
-        pdf.drawString(margin, page_height - margin, nombre)
-        pdf.drawImage(
-            image_reader,
-            draw_x,
-            max(draw_y, margin),
-            width=draw_width,
-            height=draw_height,
-            preserveAspectRatio=True,
-            mask="auto",
-        )
-        pdf.showPage()
-        pdf.save()
-        return pdf_buffer.getvalue()
+        return generar_pdf_desde_imagen(archivo, nombre)
 
     @staticmethod
     def _generar_pdf_placeholder(nombre):
-        pdf_buffer = BytesIO()
-        pdf = canvas.Canvas(pdf_buffer, pagesize=A4)
-        pdf.setFont("Helvetica-Bold", 14)
-        pdf.drawString(40, 800, nombre)
-        pdf.setFont("Helvetica", 11)
-        pdf.drawString(
-            40,
-            772,
-            "No se pudo incrustar este archivo en el PDF consolidado.",
-        )
-        pdf.showPage()
-        pdf.save()
-        return pdf_buffer.getvalue()
+        return generar_pdf_placeholder(nombre)
 
     @staticmethod
     def generar_pdf_descarga_rendicion(rendicion):
@@ -612,15 +505,12 @@ class RendicionCuentaMensualService:
             extension = os.path.splitext(documento.archivo.name or "")[1].lower()
             try:
                 if extension == ".pdf":
-                    documento.archivo.open("rb")
-                    reader = PdfReader(documento.archivo)
+                    reader = leer_pdf_documento(documento.archivo)
                     for page in reader.pages:
                         writer.add_page(page)
                 elif extension in {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}:
-                    pdf_bytes = (
-                        RendicionCuentaMensualService._generar_pdf_desde_imagen(
-                            documento.archivo, documento.nombre
-                        )
+                    pdf_bytes = RendicionCuentaMensualService._generar_pdf_desde_imagen(
+                        documento.archivo, documento.nombre
                     )
                     reader = PdfReader(BytesIO(pdf_bytes))
                     for page in reader.pages:
@@ -636,10 +526,7 @@ class RendicionCuentaMensualService:
                     for page in reader.pages:
                         writer.add_page(page)
             finally:
-                try:
-                    documento.archivo.close()
-                except Exception:
-                    pass
+                cerrar_archivo_seguro(documento.archivo)
 
         output = BytesIO()
         writer.write(output)
@@ -723,7 +610,9 @@ class RendicionCuentaMensualService:
             estado=RendicionCuentaMensual.ESTADO_ELABORACION,
             observaciones=observaciones or None,
             documento_adjunto=False,
-            usuario_creador=actor if getattr(actor, "is_authenticated", False) else None,
+            usuario_creador=(
+                actor if getattr(actor, "is_authenticated", False) else None
+            ),
             usuario_ultima_modificacion=(
                 actor if getattr(actor, "is_authenticated", False) else None
             ),
@@ -735,11 +624,12 @@ class RendicionCuentaMensualService:
         *,
         rendicion,
         categoria,
-        archivo,
-        nombre,
+        documento_data,
         actor=None,
         documento_subsanado_id=None,
     ):
+        archivo = documento_data["archivo"]
+        nombre = documento_data["nombre"]
         validacion = RendicionCuentaMensualService._validar_carga_documentacion_mobile(
             rendicion=rendicion,
             categoria=categoria,
@@ -835,11 +725,7 @@ class RendicionCuentaMensualService:
 
         if documento.estado != DocumentacionAdjunta.ESTADO_PRESENTADO:
             raise ValidationError(
-                {
-                    "detail": (
-                        "Solo se pueden revisar documentos en estado Presentado."
-                    )
-                }
+                {"detail": ("Solo se pueden revisar documentos en estado Presentado.")}
             )
 
         rendicion = documento.rendicion_cuenta_mensual
@@ -856,10 +742,7 @@ class RendicionCuentaMensualService:
             )
 
         observaciones_limpias = (observaciones or "").strip()
-        if (
-            estado == DocumentacionAdjunta.ESTADO_SUBSANAR
-            and not observaciones_limpias
-        ):
+        if estado == DocumentacionAdjunta.ESTADO_SUBSANAR and not observaciones_limpias:
             raise ValidationError(
                 {
                     "observaciones": (

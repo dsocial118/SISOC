@@ -44,7 +44,7 @@ def test_sidebar_separa_administracion_de_configuracion_comedores(client):
     assert reverse("grupos") not in config_block
 
     for expected_order in range(1, 7):
-        assert f'order: {expected_order}' in content
+        assert f"order: {expected_order}" in content
 
     assert reverse("changelog") in content
     assert 'class="footer-secondary-link"' in content
