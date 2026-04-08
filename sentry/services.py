@@ -12,6 +12,7 @@ _SENTRY_INITIALIZED = False
 _SENTRY_ENVIRONMENT_IDENTIFIERS = {
     "prd": "sisoc-prd",
     "qa": "sisoc-qa",
+    "homologacion": "sisoc-homologacion",
 }
 _SENTRY_LOG_LEVELS = {
     "critical": logging.CRITICAL,
@@ -35,7 +36,7 @@ def _env_to_float(value: str, default: float = 0.0) -> float:
         return float(value)
     except (TypeError, ValueError):
         logger.warning(
-            "Valor inválido para float en configuración de Sentry: %s", value
+            "Valor invalido para float en configuracion de Sentry: %s", value
         )
         return default
 
@@ -48,7 +49,7 @@ def _env_to_log_level(value: str, default: int = logging.ERROR) -> int:
     log_level = _SENTRY_LOG_LEVELS.get(normalized)
     if log_level is None:
         logger.warning(
-            "Valor inválido para nivel de log en configuración de Sentry: %s", value
+            "Valor invalido para nivel de log en configuracion de Sentry: %s", value
         )
         return default
 
@@ -145,7 +146,7 @@ def initialize_sentry_sdk() -> None:
         Dsn(dsn)
     except (BadDsn, ValueError) as exc:
         logger.warning(
-            "SENTRY_DSN inválido. Se omite inicialización de Sentry. Motivo: %s",
+            "SENTRY_DSN invalido. Se omite inicializacion de Sentry. Motivo: %s",
             exc,
         )
         return

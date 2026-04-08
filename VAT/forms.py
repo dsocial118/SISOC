@@ -46,6 +46,14 @@ class VoucherParametriaSelectMultiple(forms.SelectMultiple):
         return option
 
 
+class ReferenteModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        full_name = f"{obj.first_name} {obj.last_name}".strip()
+        if full_name:
+            return f"{obj.username} - {full_name}"
+        return obj.username
+
+
 HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
     (f"{h:02d}:30", f"{h:02d}:30") for h in range(0, 24)
 ]
@@ -85,6 +93,7 @@ NORMATIVA_ANIO_CHOICES = [("", "Seleccionar año...")] + [
 ]
 
 NORMATIVA_STORAGE_SEPARATOR = " || "
+REFERENTE_GROUP_NAMES = ("CFP",)
 
 
 def _clean_non_empty_text(value, field_label):
@@ -244,17 +253,24 @@ class CentroForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields["referente"].queryset = User.objects.filter(
-            groups__name="CFP"
-        ).only("id", "username", "first_name", "last_name")
+        self.fields["referente"].queryset = (
+            User.objects.filter(groups__name__in=REFERENTE_GROUP_NAMES)
+            .only("id", "username", "first_name", "last_name")
+            .distinct()
+        )
         self.fields["referente"].error_messages[
             "invalid_choice"
-        ] = "El referente seleccionado debe tener el rol CFP."
+        ] = "El referente seleccionado debe tener un rol valido de referente VAT."
 
     def clean_referente(self):
         referente = self.cleaned_data.get("referente")
-        if referente and not referente.groups.filter(name="CFP").exists():
-            raise ValidationError("El referente seleccionado debe tener el rol CFP.")
+        if (
+            referente
+            and not referente.groups.filter(name__in=REFERENTE_GROUP_NAMES).exists()
+        ):
+            raise ValidationError(
+                "El referente seleccionado debe tener un rol valido de referente VAT."
+            )
         return referente
 
 
@@ -371,6 +387,11 @@ class CentroAltaForm(CentroForm):
     situacion = forms.ChoiceField(
         label="Estado ETP",
         choices=ESTADO_ETP_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    referente = ReferenteModelChoiceField(
+        queryset=User.objects.none(),
+        label="Referente",
         widget=forms.Select(attrs={"class": "form-control"}),
     )
     autoridad_dni = forms.CharField(

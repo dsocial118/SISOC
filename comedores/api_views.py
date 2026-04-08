@@ -877,6 +877,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 rendicion = RendicionCuentaMensualService.crear_rendicion_mobile(
                     comedor=comedor,
                     data=serializer.validated_data,
+                    actor=request.user,
                 )
             except ValidationError as exc:
                 return Response(
@@ -1013,12 +1014,22 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
         categoria = categoria_override or (request.data.get("categoria") or "").strip()
         nombre = (request.data.get("nombre") or "").strip() or archivo.name
+        documento_subsanado_id = request.data.get("documento_subsanado_id")
+        if documento_subsanado_id not in (None, ""):
+            try:
+                documento_subsanado_id = int(documento_subsanado_id)
+            except (TypeError, ValueError):
+                return Response(
+                    {"detail": "documento_subsanado_id inválido."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         try:
             RendicionCuentaMensualService.adjuntar_documentacion_mobile(
                 rendicion=rendicion,
                 categoria=categoria,
-                archivo=archivo,
-                nombre=nombre,
+                documento_data={"archivo": archivo, "nombre": nombre},
+                actor=request.user,
+                documento_subsanado_id=documento_subsanado_id,
             )
         except ValidationError as exc:
             return Response(
@@ -1078,6 +1089,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             RendicionCuentaMensualService.eliminar_documentacion_mobile(
                 rendicion=rendicion,
                 documento=documento,
+                actor=request.user,
             )
         except ValidationError as exc:
             return Response(
@@ -1163,7 +1175,10 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             raise Http404("Rendición no encontrada.")
 
         try:
-            RendicionCuentaMensualService.presentar_rendicion_mobile(rendicion)
+            RendicionCuentaMensualService.presentar_rendicion_mobile(
+                rendicion,
+                actor=request.user,
+            )
         except ValidationError as exc:
             return Response(
                 {"detail": self._format_validation_error(exc)},

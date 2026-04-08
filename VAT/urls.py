@@ -177,9 +177,7 @@ urlpatterns = [
     ),
     path(
         "vat/centros/<int:pk>/panel/cursos/",
-        permissions_any_required(["VAT.view_centro"])(
-            CentroCursosPanelView.as_view()
-        ),
+        permissions_any_required(["VAT.view_centro"])(CentroCursosPanelView.as_view()),
         name="vat_centro_cursos_panel",
     ),
     path(

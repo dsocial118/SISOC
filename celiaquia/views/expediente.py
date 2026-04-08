@@ -108,6 +108,52 @@ def _can_manage_registros_erroneos(user) -> bool:
     )
 
 
+def _get_nacionalidad_argentina():
+    return Nacionalidad.objects.filter(nacionalidad__iexact="Argentina").first()
+
+
+def _get_nacionalidad_argentina_id():
+    argentina = _get_nacionalidad_argentina()
+    return getattr(argentina, "pk", "") or ""
+
+
+def _resolver_localidad_registro_erroneo(localidad_value):
+    if localidad_value in (None, ""):
+        return None
+
+    localidad_str = str(localidad_value).strip()
+    if not localidad_str:
+        return None
+
+    localidades = Localidad.objects.select_related("municipio")
+    if localidad_str.isdigit():
+        return localidades.filter(pk=int(localidad_str)).first()
+    return localidades.filter(nombre__iexact=localidad_str).first()
+
+
+def _resolver_municipio_id_desde_localidad(localidad_value):
+    localidad = _resolver_localidad_registro_erroneo(localidad_value)
+    if not localidad or not localidad.municipio_id:
+        return ""
+    return str(localidad.municipio_id)
+
+
+def _aplicar_defaults_registro_erroneo(datos):
+    datos_con_defaults = dict(datos)
+
+    nacionalidad_argentina_id = _get_nacionalidad_argentina_id()
+    if nacionalidad_argentina_id:
+        datos_con_defaults["nacionalidad"] = str(nacionalidad_argentina_id)
+
+    municipio_id = _resolver_municipio_id_desde_localidad(
+        datos_con_defaults.get("localidad")
+    )
+    if municipio_id:
+        datos_con_defaults["municipio"] = municipio_id
+
+    return datos_con_defaults
+
+
 def _normalizar_datos_registro_erroneo(payload):
     datos_normalizados = {}
     for field in IMPORTACION_EDITABLE_FIELDS:
@@ -145,7 +191,8 @@ def _consolidar_datos_registro_erroneo(datos_previos, datos_nuevos):
     if responsable_tocado and responsable_vacio:
         for field in IMPORTACION_RESPONSABLE_FIELDS:
             datos_consolidados.pop(field, None)
-    return datos_consolidados
+
+    return _aplicar_defaults_registro_erroneo(datos_consolidados)
 
 
 def _resolver_provincia_id_registro_erroneo(user, expediente):
@@ -796,15 +843,16 @@ class ExpedienteDetailView(DetailView):
         )
 
         # Obtener registros erróneos
-        registros_erroneos = expediente.registros_erroneos.filter(
-            procesado=False
-        ).order_by("fila_excel")
+        registros_erroneos = list(
+            expediente.registros_erroneos.filter(procesado=False).order_by("fila_excel")
+        )
 
         # Datos para desplegables en registros erróneos
         from core.models import Sexo, Municipio, Localidad
 
         sexos = Sexo.objects.all()
         nacionalidades = Nacionalidad.objects.all().order_by("nacionalidad")
+        nacionalidad_argentina_id = str(_get_nacionalidad_argentina_id() or "")
         municipios = []
         localidades = []
 
@@ -821,12 +869,22 @@ class ExpedienteDetailView(DetailView):
                 "municipio__nombre", "nombre"
             )
 
+        for registro in registros_erroneos:
+            datos_render = _aplicar_defaults_registro_erroneo(
+                _normalizar_datos_registro_erroneo(registro.datos_raw or {})
+            )
+            registro.nacionalidad_default_id = datos_render.get(
+                "nacionalidad", nacionalidad_argentina_id
+            )
+            registro.municipio_autocomplete_id = datos_render.get("municipio", "")
+
         ctx.update(
             {
                 "legajos": legajos_enriquecidos,
                 "registros_erroneos": registros_erroneos,
                 "sexos": sexos,
                 "nacionalidades": nacionalidades,
+                "nacionalidad_argentina_id": nacionalidad_argentina_id,
                 "municipios": municipios,
                 "localidades": localidades,
                 "confirm_form": ConfirmarEnvioForm(),
@@ -1526,7 +1584,9 @@ class ReprocesarRegistrosErroneosView(View):
             )
 
         for registro in registros:
-            datos = _normalizar_datos_registro_erroneo(registro.datos_raw.copy())
+            datos = _aplicar_defaults_registro_erroneo(
+                _normalizar_datos_registro_erroneo(registro.datos_raw.copy())
+            )
             try:
                 (
                     datos_beneficiario,
