@@ -27,6 +27,8 @@ Para deploys se eligio un esquema base + overrides por entorno para evitar drift
 
 Todos los deploys versionados leen ahora el `.env` normal del host mediante `docker-compose.deploy.yml`; los overrides ya no dependen de archivos `.env.<entorno>`.
 
+Los archivos `.env.qa`, `.env.homologacion` y `.env.prod` se conservan trackeados como plantillas base saneadas para armar el `.env` real de cada servidor.
+
 ## Impacto operativo
 
 - QA sigue siendo un entorno no productivo y no hereda automaticamente todo el hardening de produccion.
