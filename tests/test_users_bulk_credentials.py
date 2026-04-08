@@ -507,6 +507,95 @@ def test_process_bulk_credentials_rejects_row_when_email_timeout_persists(mocker
 
 
 @pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_process_bulk_credentials_avoids_hash_check_when_temporary_password_matches(
+    mocker,
+):
+    user = User.objects.create_user(
+        username="bulk_temp_password",
+        email="bulk-temp@example.com",
+        password="Temporal123!",
+    )
+    profile = user.profile
+    profile.must_change_password = True
+    profile.temporary_password_plaintext = "Temporal123!"
+    profile.save(
+        update_fields=[
+            "must_change_password",
+            "temporary_password_plaintext",
+        ]
+    )
+    mocker.patch.object(
+        User,
+        "check_password",
+        side_effect=AssertionError("No deberia calcular hash en este caso"),
+    )
+    upload = _build_excel_file(
+        [("bulk_temp_password", "bulk-temp@example.com", "Temporal123!")],
+    )
+
+    result = process_bulk_credentials_file(
+        uploaded_file=upload,
+        send_type="standard",
+    )
+
+    assert result["summary"] == {
+        "procesadas": 1,
+        "enviadas": 1,
+        "actualizadas": 0,
+        "sin_cambios": 1,
+        "rechazadas": 0,
+    }
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_process_bulk_credentials_rejects_pending_rows_when_batch_budget_is_exhausted(
+    mocker,
+):
+    User.objects.create_user(
+        username="bulk_budget_first",
+        email="first@example.com",
+        password="Temporal123!",
+    )
+    User.objects.create_user(
+        username="bulk_budget_second",
+        email="second@example.com",
+        password="Temporal123!",
+    )
+    budget_check = mocker.patch(
+        "users.services_bulk_credentials._has_enough_batch_time",
+        side_effect=[True, False],
+    )
+    upload = _build_excel_file(
+        [
+            ("bulk_budget_first", "first@example.com", "Temporal123!"),
+            ("bulk_budget_second", "second@example.com", "Temporal123!"),
+        ],
+    )
+
+    result = process_bulk_credentials_file(
+        uploaded_file=upload,
+        send_type="standard",
+    )
+
+    assert result["summary"] == {
+        "procesadas": 2,
+        "enviadas": 1,
+        "actualizadas": 0,
+        "sin_cambios": 1,
+        "rechazadas": 1,
+    }
+    assert result["rows"][0]["estado"] == "enviada"
+    assert result["rows"][1]["estado"] == "rechazada"
+    assert (
+        result["rows"][1]["mensaje"]
+        == "Se alcanzo el tiempo maximo del lote. Reintente con una planilla mas chica."
+    )
+    assert budget_check.call_count == 2
+
+
+@pytest.mark.django_db
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     ROOT_URLCONF="tests.urls_users_bulk_credentials",
