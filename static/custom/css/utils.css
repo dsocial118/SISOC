@@ -5,14 +5,50 @@
 
 .footer-content {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     width: 100%;
+    position: relative;
 }
 
 .footer-logo {
     max-height: 75px;
     width: auto;
-    margin-bottom: 8px;
+}
+
+.footer-secondary-link {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: rgba(255, 255, 255, 0.68);
+    text-decoration: none;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.footer-secondary-link i {
+    font-size: 0.72rem;
+}
+
+.footer-secondary-link:hover,
+.footer-secondary-link:focus {
+    color: rgba(255, 255, 255, 0.92);
+}
+
+@media (max-width: 767px) {
+    .footer-content {
+        justify-content: space-between;
+        padding: 0 1rem;
+    }
+
+    .footer-secondary-link {
+        right: 16px;
+    }
 }

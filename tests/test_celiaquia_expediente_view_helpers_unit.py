@@ -72,6 +72,25 @@ def test_resolver_provincia_registro_erroneo_fallback_a_usuario_expediente():
     assert provincia_id == 33
 
 
+def test_aplicar_defaults_registro_erroneo_fuerza_argentina_y_municipio_por_localidad(
+    mocker,
+):
+    mocker.patch.object(module, "_get_nacionalidad_argentina_id", return_value=1)
+    mocker.patch.object(
+        module,
+        "_resolver_municipio_id_desde_localidad",
+        return_value="77",
+    )
+
+    datos = module._aplicar_defaults_registro_erroneo(
+        {"nacionalidad": "9", "municipio": "", "localidad": "55"}
+    )
+
+    assert datos["nacionalidad"] == "1"
+    assert datos["municipio"] == "77"
+    assert datos["localidad"] == "55"
+
+
 def test_provincial_helpers_object_does_not_exist_branches(mocker):
     user = SimpleNamespace(is_authenticated=True)
     mocker.patch.object(
@@ -767,6 +786,14 @@ def test_actualizar_registro_erroneo_view_paths(mocker):
     mocker.patch(
         "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
         return_value=1,
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._get_nacionalidad_argentina_id",
+        return_value="1",
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._resolver_municipio_id_desde_localidad",
+        return_value="1",
     )
     mocker.patch("celiaquia.views.expediente._validar_datos_registro_erroneo")
     ok = view.post(req_ok, pk=1, registro_id=2)
