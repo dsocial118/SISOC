@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 import logging
+import signal
+import smtplib
+import threading
+import time
 import unicodedata
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import timedelta
 from io import BytesIO
@@ -25,6 +30,52 @@ logger = logging.getLogger("django")
 
 DEFAULT_BULK_CREDENTIALS_SEND_TYPE = "standard"
 SHEET_NAME = "credenciales"
+BULK_CREDENTIALS_EMAIL_MAX_ATTEMPTS = 2
+BULK_CREDENTIALS_EMAIL_RETRY_BACKOFF_SECONDS = 1
+
+
+class BulkCredentialsEmailTimeoutError(TimeoutError):
+    """Timeout controlado para cortar un intento de envio antes del timeout web."""
+
+
+def _get_bulk_credentials_email_attempt_timeout_seconds() -> int:
+    configured_timeout = int(getattr(settings, "EMAIL_TIMEOUT", 10) or 10)
+    return max(1, configured_timeout)
+
+
+def _supports_signal_timeout_guard() -> bool:
+    return (
+        threading.current_thread() is threading.main_thread()
+        and hasattr(signal, "SIGALRM")
+        and hasattr(signal, "ITIMER_REAL")
+        and hasattr(signal, "getitimer")
+        and hasattr(signal, "setitimer")
+    )
+
+
+@contextmanager
+def _mail_send_timeout_guard(timeout_seconds: int):
+    if timeout_seconds <= 0 or not _supports_signal_timeout_guard():
+        yield
+        return
+
+    previous_handler = signal.getsignal(signal.SIGALRM)
+    previous_timer = signal.getitimer(signal.ITIMER_REAL)
+
+    def _raise_mail_timeout(signum, frame):  # pragma: no cover - depende de signal
+        raise BulkCredentialsEmailTimeoutError(
+            "Timeout enviando credenciales al servidor de correo."
+        )
+
+    signal.signal(signal.SIGALRM, _raise_mail_timeout)
+    signal.setitimer(signal.ITIMER_REAL, float(timeout_seconds))
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
+        if previous_timer != (0.0, 0.0):
+            signal.setitimer(signal.ITIMER_REAL, *previous_timer)
 
 
 @dataclass(frozen=True)
@@ -258,7 +309,7 @@ def get_bulk_credentials_template_filename(send_type: str | None = None) -> str:
     return send_type_config.template_filename
 
 
-def send_bulk_credentials_email(
+def _send_bulk_credentials_email_once(
     *,
     user,
     plain_password: str,
@@ -281,6 +332,54 @@ def send_bulk_credentials_email(
         recipient_list=[user.email],
         fail_silently=False,
     )
+
+
+def send_bulk_credentials_email(
+    *,
+    user,
+    plain_password: str,
+    login_url: str,
+    send_type: str | None = None,
+    nombre_del_centro: str = "",
+) -> None:
+    timeout_seconds = _get_bulk_credentials_email_attempt_timeout_seconds()
+    last_error = None
+
+    for attempt in range(1, BULK_CREDENTIALS_EMAIL_MAX_ATTEMPTS + 1):
+        try:
+            with _mail_send_timeout_guard(timeout_seconds):
+                _send_bulk_credentials_email_once(
+                    user=user,
+                    plain_password=plain_password,
+                    login_url=login_url,
+                    send_type=send_type,
+                    nombre_del_centro=nombre_del_centro,
+                )
+            return
+        except (
+            BulkCredentialsEmailTimeoutError,
+            TimeoutError,
+            smtplib.SMTPException,
+            OSError,
+        ) as exc:
+            last_error = exc
+            logger.warning(
+                (
+                    "Fallo enviando credenciales por correo. "
+                    "usuario=%s intento=%s/%s tipo=%s"
+                ),
+                user.username,
+                attempt,
+                BULK_CREDENTIALS_EMAIL_MAX_ATTEMPTS,
+                send_type or DEFAULT_BULK_CREDENTIALS_SEND_TYPE,
+                exc_info=True,
+            )
+            if attempt < BULK_CREDENTIALS_EMAIL_MAX_ATTEMPTS:
+                time.sleep(BULK_CREDENTIALS_EMAIL_RETRY_BACKOFF_SECONDS)
+
+    raise ValidationError(
+        "No se pudo enviar el correo para esta fila luego de reintentar."
+    ) from last_error
 
 
 def _validate_row_data(
