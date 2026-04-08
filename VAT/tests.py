@@ -239,7 +239,7 @@ def test_centro_create_rechaza_referente_sin_grupo_cfp(vat_admin_client, vat_geo
 
 
 @pytest.mark.django_db
-def test_centro_alta_form_configura_referente_como_select_estandar(vat_referente_user):
+def test_centro_alta_form_configura_referente_como_buscador_simple(vat_referente_user):
     vat_referente_user.first_name = "Ana"
     vat_referente_user.last_name = "Pérez"
     vat_referente_user.save(update_fields=["first_name", "last_name"])
@@ -247,9 +247,17 @@ def test_centro_alta_form_configura_referente_como_select_estandar(vat_referente
     form = CentroAltaForm()
     referente_field = form.fields["referente"]
 
-    assert referente_field.widget.attrs["class"] == "form-control"
+    assert referente_field.widget.attrs["class"] == "referente-hidden-select"
+    assert referente_field.widget.attrs["tabindex"] == "-1"
     assert referente_field.empty_label == "Seleccionar referente..."
     assert referente_field.label_from_instance(vat_referente_user) == "referente-vat - Ana Pérez"
+    assert form.referente_search_options == [
+        {
+            "id": str(vat_referente_user.pk),
+            "username": "referente-vat",
+            "label": "referente-vat - Ana Pérez",
+        }
+    ]
 
 
 @pytest.mark.django_db
