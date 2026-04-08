@@ -173,9 +173,7 @@ curl -X GET http://localhost:8000/api/comedores/      -H "Authorization: Bearer 
 
 ##Comandos de referencia
 ```bash
-docker compose -f docker-compose.deploy.yml -f docker-compose.qa.yml up -d --build
-docker compose -f docker-compose.deploy.yml -f docker-compose.homologacion.yml up -d --build
-docker compose -f docker-compose.deploy.yml -f docker-compose.produccion.yml up -d --build
+docker compose -f docker-compose.deploy.yml up -d --build
 ```
 
 ##Checklist
