@@ -19,7 +19,7 @@ Extender el flujo de envio masivo de credenciales en `users` para soportar varia
 
 ### INET
 - Columnas: `usuario`, `mail`, `password`, `Nombre del Centro`
-- Subject: `Acceso a la plataforma y capacitacion virtual - INET`
+- Subject: `Acceso a la plataforma y capacitación virtual – INET`
 - Template: correo especifico con nombre del centro, acceso a SISOC, sesiones de capacitacion y video de referencia
 
 ## Impacto en UX

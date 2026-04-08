@@ -16,6 +16,8 @@ El flujo inicial de envio masivo de credenciales en `users` solo soportaba un fo
 - Se agrega el tipo `INET` con columnas `usuario`, `mail`, `password`, `Nombre del Centro`.
 - El boton `Descargar plantilla` reutiliza el tipo seleccionado para bajar el Excel correcto sin abrir un flujo separado.
 - El correo `INET` usa un template propio con saludo por centro, acceso a la plataforma, agenda de capacitaciones y video de referencia.
+- El asunto del correo `INET` se toma literal del documento provisto por el equipo: `Acceso a la plataforma y capacitación virtual – INET`.
+- Se actualizo el cuerpo `INET` segun `Template Sisoc (1).docx`, incluyendo la aclaracion de temas comunes, el link corto actualizado del video y el cierre `Nos vemos pronto`.
 
 ## Validacion
 
@@ -24,4 +26,4 @@ El flujo inicial de envio masivo de credenciales en `users` solo soportaba un fo
 
 ## Supuesto
 
-- Las fechas, links y datos de capacitacion del template `INET` se tomaron del `.docx` provisto por el equipo y quedan hardcodeados en esta iteracion.
+- Las fechas, links, asunto y datos de capacitacion del template `INET` se toman del `.docx` provisto por el equipo y quedan hardcodeados en esta iteracion.

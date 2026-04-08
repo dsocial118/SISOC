@@ -460,7 +460,7 @@ def test_process_bulk_credentials_inet_uses_inet_email_template():
     assert result["send_type_label"] == "INET"
     assert len(mail.outbox) == 1
     assert (
-        mail.outbox[0].subject == "Acceso a la plataforma y capacitacion virtual - INET"
+        mail.outbox[0].subject == "Acceso a la plataforma y capacitación virtual – INET"
     )
     assert mail.outbox[0].to == ["inet-new@example.com"]
     assert "CFP INET 401" in mail.outbox[0].body
@@ -468,4 +468,6 @@ def test_process_bulk_credentials_inet_uses_inet_email_template():
         "Capacitacion a instituciones de FP para beneficiarios de VAT (1)"
         in mail.outbox[0].body
     )
-    assert "https://www.youtube.com/watch?v=ogA9iiTiXlI" in mail.outbox[0].body
+    assert "En todas se abordaran los mismos temas." in mail.outbox[0].body
+    assert "https://youtu.be/vR_lODbOdJg" in mail.outbox[0].body
+    assert "Nos vemos pronto." in mail.outbox[0].body

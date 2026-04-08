@@ -82,7 +82,7 @@ BULK_CREDENTIALS_SEND_TYPES = {
         required_columns=("usuario", "mail", "password", "nombre_del_centro"),
         template_headers=("usuario", "mail", "password", "Nombre del Centro"),
         template_filename="plantilla_credenciales_usuarios_inet.xlsx",
-        email_subject="Acceso a la plataforma y capacitacion virtual - INET",
+        email_subject="Acceso a la plataforma y capacitación virtual – INET",
         email_template_name="user/bulk_credentials_email_inet.txt",
         description=(
             "Carga un archivo .xlsx con encabezados usuario, mail, password y "
