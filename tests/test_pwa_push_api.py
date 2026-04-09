@@ -125,6 +125,49 @@ def test_push_subscription_endpoints_create_and_delete(
 
 
 @pytest.mark.django_db
+def test_push_subscription_upsert_soporta_endpoint_largo_en_mysql(
+    espacios_push,
+):
+    espacio_1, _, _ = espacios_push
+    user = _create_pwa_user(comedor=espacio_1, username="push_long_endpoint_user")
+    authed_client = _auth_client_for_user(user)
+    long_endpoint = "https://push.example.com/subscription/" + ("x" * 320)
+
+    create_response = authed_client.post(
+        "/api/pwa/push/subscriptions/",
+        {
+            "endpoint": long_endpoint,
+            "p256dh": "p256dh-key",
+            "auth": "auth-key",
+            "content_encoding": "aes128gcm",
+        },
+        format="json",
+    )
+
+    assert create_response.status_code == 201
+
+    update_response = authed_client.post(
+        "/api/pwa/push/subscriptions/",
+        {
+            "endpoint": long_endpoint,
+            "p256dh": "p256dh-key-updated",
+            "auth": "auth-key-updated",
+            "content_encoding": "aes128gcm",
+        },
+        format="json",
+    )
+
+    assert update_response.status_code == 200
+    assert PushSubscriptionPWA.objects.count() == 1
+
+    subscription = PushSubscriptionPWA.objects.get(user=user)
+    assert subscription.endpoint == long_endpoint
+    assert len(subscription.endpoint_hash) == 64
+    assert subscription.p256dh == "p256dh-key-updated"
+    assert subscription.auth == "auth-key-updated"
+
+
+@pytest.mark.django_db
 def test_revision_de_rendicion_envia_push_a_usuarios_del_scope_con_permiso(
     monkeypatch,
     espacios_push,

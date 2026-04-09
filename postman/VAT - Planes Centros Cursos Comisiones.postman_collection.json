@@ -290,7 +290,7 @@
     },
     {
       "name": "3 - Centros",
-      "description": "Obtiene centros operativos. Guarda centro_id con el primer registro devuelto.",
+      "description": "Obtiene centros operativos. Guarda centro_id con el primer registro devuelto. La respuesta es paginada: `count` informa el total, `results` contiene la pagina actual y `next`/`previous` permiten navegar.",
       "item": [
         {
           "name": "Listar centros activos",
@@ -338,6 +338,116 @@
                   "if (rows.length && rows[0].id) {",
                   "  pm.collectionVariables.set('centro_id', String(rows[0].id));",
                   "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Ejemplo paginacion centros activos - page=2",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/centros/?activo=true&page=2",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "centros",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                },
+                {
+                  "key": "page",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "Ejemplo para inspeccionar la segunda pagina del padron de centros. Sirve para verificar que `count` refleja el total y que `results` devuelve solo la pagina actual."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('La respuesta paginada contiene count y results', function () {",
+                  "  pm.expect(body).to.have.property('count');",
+                  "  pm.expect(body).to.have.property('results');",
+                  "  pm.expect(Array.isArray(body.results)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Ejemplo paginacion centros activos - page=3",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/centros/?activo=true&page=3",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "centros",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                },
+                {
+                  "key": "page",
+                  "value": "3"
+                }
+              ]
+            },
+            "description": "Ejemplo para recorrer una pagina adicional del listado y validar navegacion paginada sobre el padron completo de centros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('La respuesta paginada contiene previous y results', function () {",
+                  "  pm.expect(body).to.have.property('results');",
+                  "  pm.expect(Array.isArray(body.results)).to.eql(true);",
+                  "  pm.expect(body).to.have.property('previous');",
+                  "});"
                 ]
               }
             }

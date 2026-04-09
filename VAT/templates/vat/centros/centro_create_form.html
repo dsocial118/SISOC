@@ -45,7 +45,7 @@
         .vp-panel {
             border: 0;
             border-radius: 18px;
-            overflow: hidden;
+            overflow: visible;
             box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
             margin-bottom: 1rem;
         }
@@ -87,6 +87,7 @@
             padding: 1.35rem;
             border-bottom: 1px solid rgba(126, 179, 255, 0.2);
             background: linear-gradient(180deg, rgba(14, 31, 53, 0.96) 0%, rgba(18, 38, 64, 0.95) 100%);
+            overflow: visible;
         }
 
         .vp-section:last-child {
@@ -130,6 +131,61 @@
         .vp-field input:focus {
             border-color: #3b74b8;
             box-shadow: 0 0 0 .2rem rgba(59, 116, 184, 0.12);
+        }
+
+        .vp-field .referente-hidden-select {
+            display: none;
+        }
+
+        .vp-field .referente-search-wrapper {
+            position: relative;
+        }
+
+        .vp-field .referente-search-results {
+            position: absolute;
+            top: calc(100% + .35rem);
+            left: 0;
+            right: 0;
+            z-index: 20;
+            border: 1px solid rgba(126, 179, 255, 0.28);
+            border-radius: 12px;
+            background: rgba(14, 31, 53, 0.98);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+            max-height: 220px;
+            overflow-y: auto;
+            padding: .35rem 0;
+        }
+
+        .vp-field .referente-search-results[hidden] {
+            display: none !important;
+        }
+
+        .vp-field .referente-search-option {
+            display: block;
+            width: 100%;
+            border: 0;
+            background: transparent;
+            color: #dceafe;
+            text-align: left;
+            padding: .55rem .85rem;
+        }
+
+        .vp-field .referente-search-option:hover,
+        .vp-field .referente-search-option:focus {
+            background: rgba(74, 141, 219, 0.18);
+            outline: none;
+        }
+
+        .vp-field .referente-search-empty {
+            color: #c9ddf6;
+            padding: .55rem .85rem;
+        }
+
+        .vp-field .referente-search-error {
+            display: block;
+            margin-top: .35rem;
+            color: #ffb4b4;
+            font-size: .875rem;
         }
 
         .vp-contact-item {
@@ -228,7 +284,23 @@
                         <div class="col-md-4 vp-field">{{ form.clase_institucion|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.tipo_gestion|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.situacion|as_crispy_field }}</div>
-                        <div class="col-md-6 vp-field">{{ form.referente|as_crispy_field }}</div>
+                        <div class="col-md-6 vp-field">
+                            <div id="div_id_referente" class="form-group">
+                                <label for="id_referente_search" class="requiredField">
+                                    {{ form.referente.label }}<span class="asteriskField">*</span>
+                                </label>
+                                <div class="referente-search-wrapper">
+                                    <input type="search"
+                                           id="id_referente_search"
+                                           class="form-control{% if form.referente.errors %} is-invalid{% endif %}"
+                                           placeholder="Buscar referente por usuario o nombre"
+                                           autocomplete="off" />
+                                    <div id="referente-search-results" class="referente-search-results" hidden></div>
+                                </div>
+                                {{ form.referente }}
+                                {% for error in form.referente.errors %}<span class="referente-search-error">{{ error }}</span>{% endfor %}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -351,6 +423,15 @@
         <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+        var referenteSearchOptions = [
+            {% for option in form.referente_search_options %}
+                {
+                    id: "{{ option.id|escapejs }}",
+                    username: "{{ option.username|escapejs }}",
+                    label: "{{ option.label|escapejs }}"
+                }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
         var contactoEmptyFormHtml = `{% filter escapejs %}
             {% with contacto_form=contacto_formset.empty_form %}
                 {% for hidden in contacto_form.hidden_fields %}{{ hidden }}{% endfor %}

@@ -1,232 +1,5 @@
 <div data-panel-rendered="1">
     <div class="card shadow-sm mb-4">
-        <div class="card-header bg-light centro-section-header">
-            <div>
-                <h6 class="mb-0 text-primary">
-                    <i class="fas fa-book me-2"></i>
-                    Planes Curriculares
-                </h6>
-                <small class="text-muted">Todos los planes curriculares activos de la provincia del centro.</small>
-            </div>
-        </div>
-        <div class="card-body p-0">
-            <div class="p-3 border-bottom bg-body-tertiary">
-                <form method="get"
-                      action="{% url 'vat_centro_detail' centro.pk %}#cursos"
-                      class="row g-2 align-items-end">
-                    <div class="col-lg-4">
-                        <label class="form-label small fw-semibold text-uppercase mb-1"
-                               style="letter-spacing:.05em">Buscar plan curricular</label>
-                        <input type="search"
-                               name="busqueda"
-                               class="form-control form-control-sm"
-                               placeholder="Ej: auxiliar, servicios o resolución"
-                               value="{{ planes_centro_search_query }}"
-                               autocomplete="off" />
-                    </div>
-                    <div class="col-sm-6 col-lg-2">
-                        <label class="form-label small fw-semibold text-uppercase mb-1"
-                               style="letter-spacing:.05em">Sector</label>
-                        <select name="sector_id" class="form-select form-select-sm">
-                            <option value="">Todos los sectores</option>
-                            {% for sector in planes_centro_sectores %}
-                                <option value="{{ sector.id }}"
-                                        {% if planes_centro_sector_id == sector.id %}selected{% endif %}>
-                                    {{ sector.nombre }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-sm-6 col-lg-2">
-                        <label class="form-label small fw-semibold text-uppercase mb-1"
-                               style="letter-spacing:.05em">Subsector</label>
-                        <select name="subsector_id" class="form-select form-select-sm">
-                            <option value="">
-                                {% if planes_centro_sector_id %}
-                                    Todos los subsectores
-                                {% else %}
-                                    Elegí un sector primero
-                                {% endif %}
-                            </option>
-                            {% for subsector in planes_centro_subsectores %}
-                                <option value="{{ subsector.id }}"
-                                        {% if planes_centro_subsector_id == subsector.id %}selected{% endif %}>
-                                    {{ subsector.nombre }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-sm-6 col-lg-2">
-                        <label class="form-label small fw-semibold text-uppercase mb-1"
-                               style="letter-spacing:.05em">Modalidad</label>
-                        <select name="modalidad_id" class="form-select form-select-sm">
-                            <option value="">Todas las modalidades</option>
-                            {% for modalidad in planes_centro_modalidades %}
-                                <option value="{{ modalidad.id }}"
-                                        {% if planes_centro_modalidad_id == modalidad.id %}selected{% endif %}>
-                                    {{ modalidad.nombre }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-sm-6 col-lg-1">
-                        <label class="form-label small fw-semibold text-uppercase mb-1"
-                               style="letter-spacing:.05em">Ver</label>
-                        <select name="planes_per_page" class="form-select form-select-sm">
-                            {% for option in planes_centro_page_size_options %}
-                                <option value="{{ option }}"
-                                        {% if planes_centro_page_size == option %}selected{% endif %}>
-                                    {{ option }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-sm-auto">
-                        <button type="submit" class="btn btn-primary btn-sm w-100">
-                            <i class="bi bi-search me-1"></i>Filtrar
-                        </button>
-                    </div>
-                    <div class="col-sm-auto">
-                        <a href="{% url 'vat_centro_detail' centro.pk %}#cursos"
-                           class="btn btn-outline-secondary btn-sm w-100">Limpiar</a>
-                    </div>
-                </form>
-                <div class="text-muted small mt-2">
-                    Mostrando {{ planes_centro_total_filtrados }} plan{{ planes_centro_total_filtrados|pluralize:"es" }}
-                    {% if planes_centro_search_query %}para la búsqueda actual{% endif %}
-                    {% if planes_centro_total_sectores %}
-                        en {{ planes_centro_total_sectores }} sector{{ planes_centro_total_sectores|pluralize:"es" }}
-                    {% endif %}
-                    .
-                </div>
-                {% if planes_centro_por_sector %}
-                    <div class="d-flex flex-wrap gap-2 mt-2">
-                        {% for item in planes_centro_por_sector %}
-                            <span class="badge rounded-pill bg-light text-dark border">
-                                {{ item.sector__nombre|default:"Sin sector" }}: {{ item.total }}
-                            </span>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-            {% if planes_centro %}
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Plan Curricular</th>
-                                <th>Sector</th>
-                                <th>Subsector</th>
-                                <th>Modalidad</th>
-                                <th>Normativa</th>
-                                <th>Estado</th>
-                                {% if perms.VAT.add_curso %}<th class="text-center">Acciones</th>{% endif %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for plan in planes_centro %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ plan.titulo_referencia|default:plan }}</strong>
-                                    </td>
-                                    <td>{{ plan.sector|default:"-" }}</td>
-                                    <td>{{ plan.subsector|default:"-" }}</td>
-                                    <td>{{ plan.modalidad_cursada|default:"-" }}</td>
-                                    <td>{{ plan.normativa|default:"-" }}</td>
-                                    <td>
-                                        {% if plan.activo %}
-                                            <span class="badge bg-success">Activo</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">Inactivo</span>
-                                        {% endif %}
-                                    </td>
-                                    {% if perms.VAT.add_curso %}
-                                        <td class="text-center">
-                                            <button type="button"
-                                                    class="btn btn-sm btn-outline-primary"
-                                                    title="Nuevo curso con este plan"
-                                                    aria-label="Nuevo curso con el plan {{ plan.titulo_referencia|default:plan }}"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalCurso"
-                                                    data-curso-mode="create"
-                                                    data-plan-estudio-id="{{ plan.id }}"
-                                                    data-plan-estudio-label="{{ plan.titulo_referencia|default:plan }}"
-                                                    data-lock-plan-estudio="1">
-                                                <i class="fas fa-plus"></i>
-                                            </button>
-                                        </td>
-                                    {% endif %}
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% if planes_centro_is_paginated %}
-                    <div class="p-3 pt-2">
-                        <ul class="pagination mb-0">
-                            {% if planes_centro_page_obj.has_previous %}
-                                <li class="page-item">
-                                    <a href="?{% if planes_centro_querystring %}{{ planes_centro_querystring }}&{% endif %}planes_page={{ planes_centro_page_obj.previous_page_number }}#cursos"
-                                       class="page-link">Anterior</a>
-                                </li>
-                            {% else %}
-                                <li class="page-item disabled">
-                                    <a href="#" class="page-link">Anterior</a>
-                                </li>
-                            {% endif %}
-                            {% for i in planes_centro_page_obj.paginator.page_range %}
-                                {% if planes_centro_page_obj.number == i %}
-                                    <li class="page-item active">
-                                        <a href="?{% if planes_centro_querystring %}{{ planes_centro_querystring }}&{% endif %}planes_page={{ i }}#cursos"
-                                           class="page-link">{{ i }}</a>
-                                    </li>
-                                {% elif i > planes_centro_page_obj.number|add:'-5' and i < planes_centro_page_obj.number|add:'5' %}
-                                    <li class="page-item">
-                                        <a href="?{% if planes_centro_querystring %}{{ planes_centro_querystring }}&{% endif %}planes_page={{ i }}#cursos"
-                                           class="page-link">{{ i }}</a>
-                                    </li>
-                                {% elif i == 1 or i == planes_centro_page_obj.paginator.num_pages %}
-                                    <li class="page-item">
-                                        <a href="?{% if planes_centro_querystring %}{{ planes_centro_querystring }}&{% endif %}planes_page={{ i }}#cursos"
-                                           class="page-link">{{ i }}</a>
-                                    </li>
-                                {% elif i == planes_centro_page_obj.number|add:'-6' or i == planes_centro_page_obj.number|add:'6' %}
-                                    <li class="page-item disabled">
-                                        <a href="#" class="page-link">...</a>
-                                    </li>
-                                {% endif %}
-                            {% endfor %}
-                            {% if planes_centro_page_obj.has_next %}
-                                <li class="page-item">
-                                    <a href="?{% if planes_centro_querystring %}{{ planes_centro_querystring }}&{% endif %}planes_page={{ planes_centro_page_obj.next_page_number }}#cursos"
-                                       class="page-link">Siguiente</a>
-                                </li>
-                            {% else %}
-                                <li class="page-item disabled">
-                                    <a href="#" class="page-link">Siguiente</a>
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </div>
-                {% endif %}
-            {% else %}
-                <div class="text-center py-4 text-muted">
-                    <i class="fas fa-book fa-2x mb-2 opacity-50"></i>
-                    <p class="mb-0">
-                        {% if planes_centro_search_query %}
-                            No hay planes curriculares que coincidan con la búsqueda actual.
-                        {% elif planes_centro_sector_id or planes_centro_subsector_id or planes_centro_modalidad_id %}
-                            No hay planes curriculares que coincidan con los filtros seleccionados.
-                        {% else %}
-                            No hay planes curriculares activos para la provincia de este centro.
-                        {% endif %}
-                    </p>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="card shadow-sm mb-4">
         <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
             <div>
                 <h6 class="mb-0 text-primary">
@@ -235,16 +8,70 @@
                 </h6>
                 <small class="text-muted">Cursos configurados para este centro.</small>
             </div>
+            {% if perms.VAT.add_curso %}
+                <button type="button"
+                        class="btn btn-sm btn-primary"
+                        title="Nuevo Curso"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalCurso"
+                        data-curso-mode="create">
+                    <i class="fas fa-plus me-1"></i>Nuevo Curso
+                </button>
+            {% endif %}
         </div>
         <div class="card-body p-0">
             {% if cursos %}
+                <div class="p-3 border-bottom bg-body-tertiary">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-sm-7 col-lg-6">
+                            <label for="cursosFilterSearch"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Buscar curso</label>
+                            <input type="search"
+                                   id="cursosFilterSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Ej: auxiliar, diseño o electricidad"
+                                   autocomplete="off" />
+                        </div>
+                        <div class="col-sm-3 col-lg-3">
+                            <label for="cursosFilterEstado"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Estado</label>
+                            <select id="cursosFilterEstado" class="form-select form-select-sm">
+                                <option value="">Todos los estados</option>
+                                <option value="activo">Activo</option>
+                                <option value="planificado">Planificado</option>
+                                <option value="finalizado">Finalizado</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3 col-lg-2">
+                            <label for="cursosFilterPageSize"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Ver</label>
+                            <select id="cursosFilterPageSize" class="form-select form-select-sm">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="todos">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-auto">
+                            <button type="button"
+                                    id="cursosFilterClear"
+                                    class="btn btn-outline-secondary btn-sm w-100">Limpiar</button>
+                        </div>
+                    </div>
+                    <div class="text-muted small mt-2" id="cursosFilterSummary">
+                        Mostrando {{ cursos|length }} curso{{ cursos|length|pluralize:"s" }}.
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0" id="tablaCursosCentro">
                         <thead class="table-light">
                             <tr>
-                                <th>Nombre</th>
                                 <th>Plan Curricular</th>
-                                <th>Modalidad</th>
+                                <th>Curso FP</th>
                                 <th>Comisiones</th>
                                 <th>Estado</th>
                                 <th class="text-center">Acciones</th>
@@ -255,9 +82,12 @@
                                 <tr class="curso-row"
                                     data-curso-id="{{ curso.id }}"
                                     data-curso-nombre="{{ curso.nombre }}"
+                                    data-curso-plan="{{ curso.plan_estudio_label|default:'' }}"
+                                    data-curso-estado="{{ curso.estado }}"
                                     tabindex="0"
                                     role="button"
                                     aria-label="Filtrar comisiones del curso {{ curso.nombre }}">
+                                    <td>{{ curso.plan_estudio_label }}</td>
                                     <td class="fw-bold">
                                         {{ curso.nombre }}
                                         {% if curso.usa_voucher %}
@@ -266,8 +96,6 @@
                                             </span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ curso.plan_estudio|default:"-" }}</td>
-                                    <td>{{ curso.modalidad.nombre }}</td>
                                     <td>{{ curso.comisiones_count }}</td>
                                     <td>
                                         <span class="badge {% if curso.estado == 'activo' %}bg-success{% elif curso.estado == 'planificado' %}bg-warning text-dark{% elif curso.estado == 'finalizado' %}bg-secondary{% else %}bg-danger{% endif %}">
@@ -321,6 +149,10 @@
                         </tbody>
                     </table>
                 </div>
+                <div id="cursosTableEmptyState" class="text-center py-4 text-muted d-none">
+                    <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
+                    <p class="mb-0">No hay cursos que coincidan con los filtros seleccionados.</p>
+                </div>
             {% else %}
                 <div class="text-center py-4 text-muted">
                     <i class="fas fa-chalkboard-teacher fa-2x mb-2 opacity-50"></i>
@@ -342,6 +174,60 @@
         </div>
         <div class="card-body p-0">
             {% if comisiones_curso %}
+                <div class="p-3 border-bottom bg-body-tertiary">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-sm-6 col-lg-5">
+                            <label for="comisionesFilterSearch"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Buscar comisión</label>
+                            <input type="search"
+                                   id="comisionesFilterSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Ej: código, nombre, curso o ubicación"
+                                   autocomplete="off" />
+                        </div>
+                        <div class="col-sm-3 col-lg-3">
+                            <label for="comisionesFilterCurso"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Curso</label>
+                            <select id="comisionesFilterCurso" class="form-select form-select-sm">
+                                <option value="">Todos los cursos</option>
+                                {% for curso in cursos %}<option value="{{ curso.id }}">{{ curso.nombre }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-3 col-lg-2">
+                            <label for="comisionesFilterEstado"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Estado</label>
+                            <select id="comisionesFilterEstado" class="form-select form-select-sm">
+                                <option value="">Todos</option>
+                                <option value="activa">Activa</option>
+                                <option value="planificada">Planificada</option>
+                                <option value="cerrada">Cerrada</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3 col-lg-2">
+                            <label for="comisionesFilterPageSize"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Ver</label>
+                            <select id="comisionesFilterPageSize" class="form-select form-select-sm">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="todos">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-auto">
+                            <button type="button"
+                                    id="comisionesFilterClear"
+                                    class="btn btn-outline-secondary btn-sm w-100">Limpiar</button>
+                        </div>
+                    </div>
+                    <div class="text-muted small mt-2" id="comisionesFilterSummary">
+                        Mostrando {{ comisiones_curso|length }} comisión{{ comisiones_curso|length|pluralize:"es" }}.
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0" id="tablaComisionesCursoCentro">
                         <thead class="table-light">
@@ -350,9 +236,11 @@
                                 <th>Nombre</th>
                                 <th>Curso</th>
                                 <th>Ubicación</th>
-                                <th>Periodo</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
                                 <th>Cupo Total</th>
                                 <th>Estado</th>
+                                <th>Observaciones</th>
                                 <th class="text-end">Acciones</th>
                             </tr>
                         </thead>
@@ -360,20 +248,24 @@
                             {% for comision in comisiones_curso %}
                                 <tr class="comision-curso-row"
                                     data-curso-id="{{ comision.curso_id }}"
-                                    data-curso-nombre="{{ comision.curso.nombre }}">
-                                    <td>
-                                        <strong>{{ comision.codigo_comision }}</strong>
-                                    </td>
+                                    data-curso-nombre="{{ comision.curso.nombre }}"
+                                    data-comision-codigo="{{ comision.codigo_comision }}"
+                                    data-comision-nombre="{{ comision.nombre }}"
+                                    data-comision-ubicacion="{{ comision.ubicacion|default:'' }}"
+                                    data-comision-estado="{{ comision.estado }}">
+                                    <td>{{ comision.codigo_comision }}</td>
                                     <td>{{ comision.nombre }}</td>
                                     <td>{{ comision.curso.nombre }}</td>
                                     <td>{{ comision.ubicacion|default:"-" }}</td>
-                                    <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} - {{ comision.fecha_fin|date:"d/m/Y" }}</td>
+                                    <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }}</td>
+                                    <td class="text-muted small">{{ comision.fecha_fin|date:"d/m/Y" }}</td>
                                     <td>{{ comision.cupo_total }}</td>
                                     <td>
                                         <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
                                             {{ comision.get_estado_display }}
                                         </span>
                                     </td>
+                                    <td>{{ comision.observaciones|default:"-" }}</td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
                                             {% if perms.VAT.view_comisioncurso %}
@@ -419,7 +311,7 @@
                 <div id="comisionesCursoEmptyState"
                      class="text-center py-4 text-muted d-none">
                     <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
-                    <p class="mb-0">El curso seleccionado no tiene comisiones registradas.</p>
+                    <p class="mb-0">No hay comisiones que coincidan con los filtros seleccionados.</p>
                 </div>
             {% else %}
                 <div class="text-center py-4 text-muted">
@@ -457,6 +349,23 @@
                             {% for field in curso_form %}
                                 {% if field.is_hidden %}
                                     {{ field }}
+                                {% elif field.html_name == 'plan_estudio' %}
+                                    <div class="col-12 mb-3">
+                                        <label for="openPlanCurricularSelector" class="form-label fw-bold">
+                                            {{ field.label }}
+                                            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        <div class="d-none">{{ field }}</div>
+                                        <button type="button"
+                                                id="openPlanCurricularSelector"
+                                                class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center">
+                                            <span id="planCurricularSelectorButtonLabel">Seleccionar plan curricular</span>
+                                            <i class="fas fa-table-list"></i>
+                                        </button>
+                                        <div id="planCurricularSelectorSummary" class="small text-muted mt-2">No hay plan curricular seleccionado.</div>
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                    </div>
                                 {% elif field.html_name == 'voucher_parametrias' %}
                                     <div class="col-12 mb-3">
                                         <label for="{{ field.id_for_label }}" class="form-label fw-bold">
@@ -486,6 +395,111 @@
                         <button type="submit" class="btn btn-primary">Guardar</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade"
+         id="modalPlanCurricularSelector"
+         tabindex="-1"
+         aria-labelledby="modalPlanCurricularSelectorLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalPlanCurricularSelectorLabel">Seleccionar Plan Curricular</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 align-items-end mb-3">
+                        <div class="col-lg-6">
+                            <label for="planCurricularSelectorSearch"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Buscar</label>
+                            <input type="search"
+                                   id="planCurricularSelectorSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Buscar por plan, sector, modalidad o normativa"
+                                   autocomplete="off" />
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <label for="planCurricularSelectorSector"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Sector</label>
+                            <select id="planCurricularSelectorSector" class="form-select form-select-sm">
+                                <option value="">Todos los sectores</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <label for="planCurricularSelectorModalidad"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Modalidad</label>
+                            <select id="planCurricularSelectorModalidad"
+                                    class="form-select form-select-sm">
+                                <option value="">Todas las modalidades</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-responsive border rounded">
+                        <table class="table table-hover align-middle mb-0"
+                               id="tablaPlanCurricularSelector">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Plan Curricular</th>
+                                    <th>Sector</th>
+                                    <th>Modalidad</th>
+                                    <th>Normativa</th>
+                                    <th class="text-end">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for plan in curso_form.plan_estudio.field.queryset %}
+                                    <tr data-plan-selector-row="1"
+                                        data-plan-id="{{ plan.id }}"
+                                        data-plan-label="{% if plan.nombre %}{{ plan.nombre }}{% elif plan.titulo_referencia %}{{ plan.titulo_referencia.nombre }}{% else %}{{ plan.sector.nombre }}{% endif %}"
+                                        data-plan-sector="{{ plan.sector.nombre|default:'' }}"
+                                        data-plan-modalidad="{{ plan.modalidad_cursada.nombre|default:'' }}"
+                                        data-plan-normativa="{{ plan.normativa|default:'' }}">
+                                        <td class="fw-semibold">
+                                            {% if plan.nombre %}
+                                                {{ plan.nombre }}
+                                            {% elif plan.titulo_referencia %}
+                                                {{ plan.titulo_referencia.nombre }}
+                                            {% else %}
+                                                {{ plan.sector.nombre }}
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ plan.sector.nombre|default:"-" }}</td>
+                                        <td>{{ plan.modalidad_cursada.nombre|default:"-" }}</td>
+                                        <td>{{ plan.normativa|default:"-" }}</td>
+                                        <td class="text-end">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-primary"
+                                                    data-plan-selector-choose="1">Seleccionar</button>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">
+                                            No hay planes curriculares activos disponibles para este centro.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="planCurricularSelectorEmpty"
+                         class="text-center py-4 text-muted d-none">
+                        <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
+                        <p class="mb-0">No hay planes curriculares que coincidan con los filtros.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
             </div>
         </div>
     </div>
