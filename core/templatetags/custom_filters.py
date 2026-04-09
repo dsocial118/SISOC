@@ -129,7 +129,7 @@ def safe_getattr(obj, attr_name):
 
 @register.filter
 def edad(fecha_nacimiento):
-    """Calcula la edad en aÃ±os a partir de una fecha de nacimiento"""
+    """Calcula la edad en años a partir de una fecha de nacimiento"""
     if not fecha_nacimiento:
         return None
 
@@ -143,7 +143,7 @@ def edad(fecha_nacimiento):
 
 @register.filter
 def es_menor_18(fecha_nacimiento):
-    """Verifica si una persona es menor de 18 aÃ±os"""
+    """Verifica si una persona es menor de 18 años"""
     if not fecha_nacimiento:
         return False
 
@@ -153,7 +153,7 @@ def es_menor_18(fecha_nacimiento):
 
 @register.filter
 def es_mayor_65_menor_66(fecha_nacimiento):
-    """Verifica si una persona tiene 65 aÃ±os o mÃ¡s (hasta 66 aÃ±os inclusive)"""
+    """Verifica si una persona tiene 65 años o más (hasta 66 años inclusive)"""
     if not fecha_nacimiento:
         return False
 
@@ -226,9 +226,9 @@ def default_full_width(value):
 
 @register.filter
 def boolean_icon(value):
-    if value in [True, 1, "1", "true", "True", "SI", "SÃ­", "si"]:
+    if value in [True, 1, "1", "true", "True", "SI", "Sí", "si"]:
         return format_html(
-            '<img src="{}" alt="SÃ­" width="20">',
+            '<img src="{}" alt="Sí" width="20">',
             static("custom/img/check_ok.svg"),
         )
 
@@ -267,7 +267,7 @@ def _is_positive_number(value):
 @register.filter
 def dias_prestacion_semana(prestacion):
     """
-    Cuenta cuÃ¡ntos dÃ­as a la semana el comedor presta servicio, en base a los
+    Cuenta cuántos días a la semana el comedor presta servicio, en base a los
     campos *_<comida>_actual (p.ej. lunes_desayuno_actual) o a los campos
     aprobadas_<comida>_<dia> (p.ej. aprobadas_desayuno_lunes). Si no hay datos,
     devuelve "-".
