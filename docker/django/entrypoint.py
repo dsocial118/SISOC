@@ -12,6 +12,8 @@ if not logging.getLogger().handlers:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("django")
 DEPLOY_GUNICORN_ENVIRONMENTS = {"qa", "homologacion", "prd"}
+SERVICE_ROLE_WEB = "web"
+SERVICE_ROLE_BULK_CREDENTIALS_WORKER = "bulk_credentials_worker"
 
 
 def run_command(cmd, *, stage, **kwargs):
@@ -34,7 +36,8 @@ def run_command(cmd, *, stage, **kwargs):
 def wait_for_mysql():
     """
     Espera a que MySQL este disponible antes de continuar.
-    Usa las variables de entorno DATABASE_HOST, DATABASE_PORT, DATABASE_USER y DATABASE_PASSWORD.
+    Usa las variables de entorno DATABASE_HOST, DATABASE_PORT,
+    DATABASE_USER y DATABASE_PASSWORD.
     Se puede omitir con la variable WAIT_FOR_DB=false.
     """
     host = os.getenv("DATABASE_HOST")
@@ -48,17 +51,28 @@ def wait_for_mysql():
 
     if not all([host, user, password]):
         logger.error(
-            "[error] Faltan variables de entorno para la conexion a la base de datos"
+            (
+                "[error] Faltan variables de entorno para "
+                "la conexion a la base de datos"
+            )
         )
         logger.error(
-            "   Asegurese de definir DATABASE_HOST, DATABASE_USER y DATABASE_PASSWORD"
+            (
+                "   Asegurese de definir DATABASE_HOST, DATABASE_USER "
+                "y DATABASE_PASSWORD"
+            )
         )
         return
 
     logger.info("[wait] Esperando que MySQL este disponible...")
     while True:
         try:
-            conn = pymysql.connect(host=host, port=port, user=user, password=password)
+            conn = pymysql.connect(
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+            )
             conn.close()
             break
         except pymysql.MySQLError:
@@ -69,7 +83,8 @@ def wait_for_mysql():
 
 def run_django_commands():
     """
-    Ejecuta los comandos de Django necesarios para la preparacion y el funcionamiento de la aplicacion.
+    Ejecuta los comandos de Django necesarios para la preparacion
+    y el funcionamiento de la aplicacion.
     """
     environment = os.getenv("ENVIRONMENT", "dev").lower()
     run_makemigrations_on_start = (
@@ -102,9 +117,28 @@ def run_django_commands():
     run_server()
 
 
+def run_bulk_credentials_worker():
+    """Inicia el worker dedicado de credenciales masivas."""
+    logger.info("[worker] Iniciando worker de credenciales masivas...")
+    run_command(
+        ["python", "manage.py", "process_bulk_credentials_jobs"],
+        stage="bulk_credentials_worker",
+    )
+
+
+def main():
+    wait_for_mysql()
+    service_role = os.getenv("DJANGO_SERVICE_ROLE", SERVICE_ROLE_WEB).strip().lower()
+    if service_role == SERVICE_ROLE_BULK_CREDENTIALS_WORKER:
+        run_bulk_credentials_worker()
+        return
+    run_django_commands()
+
+
 def run_server():
     """
-    Inicia el servidor de Django. Usa Gunicorn en produccion o el servidor de desarrollo si no.
+    Inicia el servidor de Django. Usa Gunicorn en produccion
+    o el servidor de desarrollo si no.
     """
     environment = os.getenv("ENVIRONMENT", "dev").lower()
     deploy_gunicorn = environment in DEPLOY_GUNICORN_ENVIRONMENTS
@@ -151,5 +185,4 @@ def cache_busting():
 
 
 if __name__ == "__main__":
-    wait_for_mysql()
-    run_django_commands()
+    main()

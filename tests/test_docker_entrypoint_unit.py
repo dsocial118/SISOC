@@ -123,3 +123,45 @@ def test_run_server_usa_gunicorn_en_entornos_deploy(mocker, monkeypatch, environ
     args, kwargs = mock_run_command.call_args
     assert args[0][:2] == ["gunicorn", "config.wsgi:application"]
     assert kwargs["stage"] == "gunicorn"
+
+
+def test_run_bulk_credentials_worker_lanza_comando_dedicado(mocker):
+    module = _load_entrypoint_module()
+    mock_run_command = mocker.patch.object(module, "run_command")
+
+    module.run_bulk_credentials_worker()
+
+    mock_run_command.assert_called_once_with(
+        ["python", "manage.py", "process_bulk_credentials_jobs"],
+        stage="bulk_credentials_worker",
+    )
+
+
+def test_main_ejecuta_worker_segun_service_role(mocker, monkeypatch):
+    module = _load_entrypoint_module()
+    mocker.patch.object(module, "wait_for_mysql")
+    mock_run_worker = mocker.patch.object(module, "run_bulk_credentials_worker")
+    mock_run_django = mocker.patch.object(module, "run_django_commands")
+    monkeypatch.setenv(
+        "DJANGO_SERVICE_ROLE",
+        module.SERVICE_ROLE_BULK_CREDENTIALS_WORKER,
+    )
+
+    module.main()
+
+    mock_run_worker.assert_called_once_with()
+    mock_run_django.assert_not_called()
+
+
+def test_main_ejecuta_web_por_defecto(mocker, monkeypatch):
+    module = _load_entrypoint_module()
+    mock_wait = mocker.patch.object(module, "wait_for_mysql")
+    mock_run_worker = mocker.patch.object(module, "run_bulk_credentials_worker")
+    mock_run_django = mocker.patch.object(module, "run_django_commands")
+    monkeypatch.delenv("DJANGO_SERVICE_ROLE", raising=False)
+
+    module.main()
+
+    mock_wait.assert_called_once_with()
+    mock_run_django.assert_called_once_with()
+    mock_run_worker.assert_not_called()
