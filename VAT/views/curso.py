@@ -532,8 +532,8 @@ class ComisionCursoHorarioCreateView(LoginRequiredMixin, CreateView):
         return response
 
     def form_valid(self, form):
-        redirect_url = self.get_success_url()
         response = super().form_valid(form)
+        redirect_url = self.get_success_url()
         cantidad = SesionComisionService.generar_para_horario(self.object)
         if cantidad:
             success_message = f"Horario creado. Se generaron {cantidad} sesiones."
