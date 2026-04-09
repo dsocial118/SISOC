@@ -27,7 +27,9 @@ def test_csp_agrega_header_y_nonce(mocker, settings):
     assert "Content-Security-Policy" in response
     csp = response["Content-Security-Policy"]
     script_src = next(
-        part.strip() for part in csp.split(";") if part.strip().startswith("script-src ")
+        part.strip()
+        for part in csp.split(";")
+        if part.strip().startswith("script-src ")
     )
     style_src = next(
         part.strip() for part in csp.split(";") if part.strip().startswith("style-src ")
