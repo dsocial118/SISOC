@@ -970,6 +970,7 @@ def test_rendicion_en_subsanar_no_permite_borrar_documentacion_manualmente(
 
 
 @pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.test_urls_pwa_comedores_api")
 def test_rendicion_en_subsanar_permite_agregar_historial_para_comprobantes(
     comedores, settings, tmp_path
 ):
@@ -1039,16 +1040,22 @@ def test_rendicion_en_subsanar_permite_agregar_historial_para_comprobantes(
         for item in response.data["documentacion"]
         if item["codigo"] == DocumentacionAdjunta.CATEGORIA_COMPROBANTES
     )
-    assert len(comprobantes["archivos"]) == 1
-    nuevo_payload = comprobantes["archivos"][0]
+    assert len(comprobantes["archivos"]) == 2
+    nuevo_payload = next(
+        item
+        for item in comprobantes["archivos"]
+        if item["documento_subsanado"] == observado.id
+    )
+    observado_payload = next(
+        item for item in comprobantes["archivos"] if item["id"] == observado.id
+    )
     assert nuevo_payload["estado"] == DocumentacionAdjunta.ESTADO_PRESENTADO
     assert nuevo_payload["estado_visual"] == DocumentacionAdjunta.ESTADO_PRESENTADO
     assert nuevo_payload["estado_label_visual"] == "Presentado"
     assert nuevo_payload["documento_subsanado"] == observado.id
-    assert len(nuevo_payload["subsanaciones"]) == 1
-    observado_payload = nuevo_payload["subsanaciones"][0]
+    assert nuevo_payload["subsanaciones"] == []
     assert observado_payload["id"] == observado.id
     assert observado_payload["estado"] == DocumentacionAdjunta.ESTADO_SUBSANAR
-    assert observado_payload["estado_visual"] == "subsanado"
-    assert observado_payload["estado_label_visual"] == "Subsanado"
+    assert observado_payload["estado_visual"] == DocumentacionAdjunta.ESTADO_SUBSANAR
+    assert observado_payload["estado_label_visual"] == "A Subsanar"
     assert observado_payload["observaciones"] == "Subir una versión legible"

@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 import logging
+import os
+import signal
+import smtplib
+import threading
+import time
 import unicodedata
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import timedelta
 from io import BytesIO
@@ -23,18 +29,162 @@ from users.models import Profile
 User = get_user_model()
 logger = logging.getLogger("django")
 
-REQUIRED_COLUMNS = ("usuario", "mail", "password")
-EMAIL_SUBJECT = "SISOC - Credenciales de acceso"
-TEMPLATE_FILENAME = "plantilla_credenciales_usuarios.xlsx"
+DEFAULT_BULK_CREDENTIALS_SEND_TYPE = "standard"
 SHEET_NAME = "credenciales"
+BULK_CREDENTIALS_EMAIL_MAX_ATTEMPTS = 2
+BULK_CREDENTIALS_EMAIL_RETRY_BACKOFF_SECONDS = 1
+BULK_CREDENTIALS_BATCH_TIMEOUT_BUFFER_SECONDS = 5
+BULK_CREDENTIALS_MIN_SECONDS_TO_START_NEXT_ROW = 5
+
+
+class BulkCredentialsEmailTimeoutError(TimeoutError):
+    """Timeout controlado para cortar un intento de envio antes del timeout web."""
+
+
+def _safe_positive_int(value, default: int) -> int:
+    try:
+        parsed = int(str(value).strip())
+    except (TypeError, ValueError):
+        return default
+    return parsed if parsed > 0 else default
+
+
+def _get_bulk_credentials_email_attempt_timeout_seconds() -> int:
+    configured_timeout = int(getattr(settings, "EMAIL_TIMEOUT", 10) or 10)
+    return max(1, configured_timeout)
+
+
+def _get_bulk_credentials_batch_timeout_seconds() -> int:
+    worker_timeout = _safe_positive_int(os.getenv("GUNICORN_TIMEOUT", ""), 30)
+    return max(
+        BULK_CREDENTIALS_MIN_SECONDS_TO_START_NEXT_ROW,
+        worker_timeout - BULK_CREDENTIALS_BATCH_TIMEOUT_BUFFER_SECONDS,
+    )
+
+
+def _get_bulk_credentials_batch_deadline() -> float:
+    return time.monotonic() + float(_get_bulk_credentials_batch_timeout_seconds())
+
+
+def _get_remaining_processing_seconds(deadline: float | None) -> float | None:
+    if deadline is None:
+        return None
+    return max(0.0, deadline - time.monotonic())
+
+
+def _has_enough_batch_time(deadline: float | None) -> bool:
+    remaining_seconds = _get_remaining_processing_seconds(deadline)
+    if remaining_seconds is None:
+        return True
+    return remaining_seconds >= BULK_CREDENTIALS_MIN_SECONDS_TO_START_NEXT_ROW
+
+
+def _get_batch_timeout_message() -> str:
+    return (
+        "Se alcanzo el tiempo maximo del lote. " "Reintente con una planilla mas chica."
+    )
+
+
+def _supports_signal_timeout_guard() -> bool:
+    return (
+        threading.current_thread() is threading.main_thread()
+        and hasattr(signal, "SIGALRM")
+        and hasattr(signal, "ITIMER_REAL")
+        and hasattr(signal, "getitimer")
+        and hasattr(signal, "setitimer")
+    )
+
+
+@contextmanager
+def _mail_send_timeout_guard(timeout_seconds: int):
+    if timeout_seconds <= 0 or not _supports_signal_timeout_guard():
+        yield
+        return
+
+    previous_handler = signal.getsignal(signal.SIGALRM)
+    previous_timer = signal.getitimer(signal.ITIMER_REAL)
+
+    def _raise_mail_timeout(signum, frame):  # pragma: no cover - depende de signal
+        raise BulkCredentialsEmailTimeoutError(
+            "Timeout enviando credenciales al servidor de correo."
+        )
+
+    signal.signal(signal.SIGALRM, _raise_mail_timeout)
+    signal.setitimer(signal.ITIMER_REAL, float(timeout_seconds))
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
+        if previous_timer != (0.0, 0.0):
+            signal.setitimer(signal.ITIMER_REAL, *previous_timer)
+
+
+@dataclass(frozen=True)
+class BulkCredentialsSendTypeConfig:
+    key: str
+    label: str
+    required_columns: tuple[str, ...]
+    template_headers: tuple[str, ...]
+    template_filename: str
+    email_subject: str
+    email_template_name: str
+    description: str
 
 
 @dataclass(frozen=True)
 class ParsedCredentialRow:
     fila: int
-    usuario: str
-    mail: str
-    password: str
+    data: dict[str, str]
+
+    @property
+    def usuario(self) -> str:
+        return self.data.get("usuario", "")
+
+    @property
+    def mail(self) -> str:
+        return self.data.get("mail", "")
+
+    @property
+    def password(self) -> str:
+        return self.data.get("password", "")
+
+    @property
+    def nombre_del_centro(self) -> str:
+        return self.data.get("nombre_del_centro", "")
+
+
+BULK_CREDENTIALS_SEND_TYPES = {
+    "standard": BulkCredentialsSendTypeConfig(
+        key="standard",
+        label="Estandar",
+        required_columns=("usuario", "mail", "password"),
+        template_headers=("usuario", "mail", "password"),
+        template_filename="plantilla_credenciales_usuarios.xlsx",
+        email_subject="SISOC - Credenciales de acceso",
+        email_template_name="user/bulk_credentials_email.txt",
+        description=(
+            "Carga un archivo .xlsx con encabezados usuario, mail y password. "
+            "Se valida el usuario existente, se actualiza la password vigente "
+            "si corresponde y luego se envia el correo al mail informado en "
+            "la planilla."
+        ),
+    ),
+    "inet": BulkCredentialsSendTypeConfig(
+        key="inet",
+        label="INET",
+        required_columns=("usuario", "mail", "password", "nombre_del_centro"),
+        template_headers=("usuario", "mail", "password", "Nombre del Centro"),
+        template_filename="plantilla_credenciales_usuarios_inet.xlsx",
+        email_subject="Acceso a la plataforma y capacitación virtual – INET",
+        email_template_name="user/bulk_credentials_email_inet.txt",
+        description=(
+            "Carga un archivo .xlsx con encabezados usuario, mail, password y "
+            "Nombre del Centro. Ademas del acceso, el correo incluye la "
+            "capacitacion virtual y el video de referencia para INET."
+        ),
+    ),
+}
 
 
 def _normalize_header(value: object) -> str:
@@ -59,6 +209,38 @@ def _clean_cell(value: object) -> str:
     return str(value).strip()
 
 
+def get_bulk_credentials_send_type_config(
+    send_type: str | None = None,
+) -> BulkCredentialsSendTypeConfig:
+    normalized_send_type = (
+        str(send_type or DEFAULT_BULK_CREDENTIALS_SEND_TYPE).strip().lower()
+    )
+    config = BULK_CREDENTIALS_SEND_TYPES.get(normalized_send_type)
+    if not config:
+        raise ValidationError("El tipo de envio seleccionado no es valido.")
+    return config
+
+
+def get_bulk_credentials_send_type_choices() -> list[tuple[str, str]]:
+    return [
+        (config.key, config.label) for config in BULK_CREDENTIALS_SEND_TYPES.values()
+    ]
+
+
+def get_bulk_credentials_send_type_contexts() -> list[dict[str, object]]:
+    contexts = []
+    for config in BULK_CREDENTIALS_SEND_TYPES.values():
+        contexts.append(
+            {
+                "key": config.key,
+                "label": config.label,
+                "required_columns": config.template_headers,
+                "description": config.description,
+            }
+        )
+    return contexts
+
+
 def _build_login_url(*, request=None) -> str:
     try:
         path = reverse("login")
@@ -79,14 +261,25 @@ def _build_login_url(*, request=None) -> str:
     return f"{scheme}://{domain}{path}"
 
 
-def _build_header_map(headers: list[str]) -> dict[str, int]:
+def _build_header_map(
+    headers: list[str],
+    *,
+    send_type_config: BulkCredentialsSendTypeConfig,
+) -> dict[str, int]:
     header_map: dict[str, int] = {}
     for index, header in enumerate(headers):
         normalized = _normalize_header(header)
-        if normalized in REQUIRED_COLUMNS and normalized not in header_map:
+        if (
+            normalized in send_type_config.required_columns
+            and normalized not in header_map
+        ):
             header_map[normalized] = index
 
-    missing = [column for column in REQUIRED_COLUMNS if column not in header_map]
+    missing = [
+        column
+        for column in send_type_config.required_columns
+        if column not in header_map
+    ]
     if missing:
         missing_text = ", ".join(missing)
         raise ValidationError(
@@ -98,7 +291,9 @@ def _build_header_map(headers: list[str]) -> dict[str, int]:
 
 def _load_workbook_rows(
     uploaded_file,
-) -> tuple[dict[str, int], list[ParsedCredentialRow]]:
+    *,
+    send_type_config: BulkCredentialsSendTypeConfig,
+) -> list[ParsedCredentialRow]:
     try:
         uploaded_file.seek(0)
         workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
@@ -111,10 +306,10 @@ def _load_workbook_rows(
         worksheet = workbook.active
     rows = list(worksheet.iter_rows(values_only=True))
     if not rows:
-        raise ValidationError("El archivo Excel está vacío.")
+        raise ValidationError("El archivo Excel esta vacio.")
 
     headers = [_clean_cell(value) for value in rows[0]]
-    header_map = _build_header_map(headers)
+    header_map = _build_header_map(headers, send_type_config=send_type_config)
 
     parsed_rows: list[ParsedCredentialRow] = []
     for row_number, row in enumerate(rows[1:], start=2):
@@ -128,9 +323,7 @@ def _load_workbook_rows(
         parsed_rows.append(
             ParsedCredentialRow(
                 fila=row_number,
-                usuario=values["usuario"],
-                mail=values["mail"],
-                password=values["password"],
+                data=values,
             )
         )
 
@@ -139,61 +332,142 @@ def _load_workbook_rows(
             "El archivo Excel no contiene filas con datos para procesar."
         )
 
-    return header_map, parsed_rows
+    return parsed_rows
 
 
-def generate_bulk_credentials_template() -> bytes:
+def generate_bulk_credentials_template(send_type: str | None = None) -> bytes:
+    send_type_config = get_bulk_credentials_send_type_config(send_type)
     workbook = Workbook()
     worksheet = workbook.active
     worksheet.title = SHEET_NAME
-    worksheet.append(list(REQUIRED_COLUMNS))
+    worksheet.append(list(send_type_config.template_headers))
 
     output = BytesIO()
     workbook.save(output)
     return output.getvalue()
 
 
-def send_bulk_credentials_email(
+def get_bulk_credentials_template_filename(send_type: str | None = None) -> str:
+    send_type_config = get_bulk_credentials_send_type_config(send_type)
+    return send_type_config.template_filename
+
+
+def _send_bulk_credentials_email_once(
     *,
     user,
+    recipient_email: str,
     plain_password: str,
     login_url: str,
+    send_type: str | None = None,
+    nombre_del_centro: str = "",
 ) -> None:
+    send_type_config = get_bulk_credentials_send_type_config(send_type)
     context = {
         "user": user,
         "plain_password": plain_password,
         "login_url": login_url,
+        "nombre_del_centro": nombre_del_centro,
     }
-    message = render_to_string("user/bulk_credentials_email.txt", context)
+    message = render_to_string(send_type_config.email_template_name, context)
     send_mail(
-        subject=EMAIL_SUBJECT,
+        subject=send_type_config.email_subject,
         message=message,
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
+        recipient_list=[recipient_email],
         fail_silently=False,
     )
 
 
-def _validate_row_data(row: ParsedCredentialRow) -> None:
-    if not row.usuario:
-        raise ValidationError("La columna usuario es obligatoria.")
-    if not row.mail:
-        raise ValidationError("La columna mail es obligatoria.")
+def send_bulk_credentials_email(
+    *,
+    user,
+    recipient_email: str,
+    plain_password: str,
+    login_url: str,
+    send_type: str | None = None,
+    nombre_del_centro: str = "",
+    max_total_seconds: float | None = None,
+) -> None:
+    timeout_seconds = _get_bulk_credentials_email_attempt_timeout_seconds()
+    total_deadline = (
+        time.monotonic() + max_total_seconds
+        if max_total_seconds is not None and max_total_seconds > 0
+        else None
+    )
+    last_error = None
+
+    for attempt in range(1, BULK_CREDENTIALS_EMAIL_MAX_ATTEMPTS + 1):
+        remaining_total_seconds = _get_remaining_processing_seconds(total_deadline)
+        if remaining_total_seconds is not None and remaining_total_seconds < 1:
+            raise ValidationError(_get_batch_timeout_message())
+
+        attempt_timeout_seconds = timeout_seconds
+        if remaining_total_seconds is not None:
+            attempt_timeout_seconds = min(
+                timeout_seconds,
+                max(1, int(remaining_total_seconds)),
+            )
+
+        try:
+            with _mail_send_timeout_guard(attempt_timeout_seconds):
+                _send_bulk_credentials_email_once(
+                    user=user,
+                    recipient_email=recipient_email,
+                    plain_password=plain_password,
+                    login_url=login_url,
+                    send_type=send_type,
+                    nombre_del_centro=nombre_del_centro,
+                )
+            return
+        except (
+            BulkCredentialsEmailTimeoutError,
+            TimeoutError,
+            smtplib.SMTPException,
+            OSError,
+        ) as exc:
+            last_error = exc
+            logger.warning(
+                (
+                    "Fallo enviando credenciales por correo. "
+                    "usuario=%s intento=%s/%s tipo=%s"
+                ),
+                user.username,
+                attempt,
+                BULK_CREDENTIALS_EMAIL_MAX_ATTEMPTS,
+                send_type or DEFAULT_BULK_CREDENTIALS_SEND_TYPE,
+                exc_info=True,
+            )
+            if attempt < BULK_CREDENTIALS_EMAIL_MAX_ATTEMPTS:
+                remaining_total_seconds = _get_remaining_processing_seconds(
+                    total_deadline
+                )
+                if (
+                    remaining_total_seconds is not None
+                    and remaining_total_seconds
+                    <= BULK_CREDENTIALS_EMAIL_RETRY_BACKOFF_SECONDS + 1
+                ):
+                    break
+                time.sleep(BULK_CREDENTIALS_EMAIL_RETRY_BACKOFF_SECONDS)
+
+    raise ValidationError(
+        "No se pudo enviar el correo para esta fila luego de reintentar."
+    ) from last_error
+
+
+def _validate_row_data(
+    row: ParsedCredentialRow,
+    *,
+    send_type_config: BulkCredentialsSendTypeConfig,
+) -> None:
+    for column in send_type_config.required_columns:
+        if row.data.get(column):
+            continue
+        raise ValidationError(f"La columna {column} es obligatoria.")
+
     try:
         validate_email(row.mail)
     except ValidationError as exc:
-        raise ValidationError("El formato del mail es inválido.") from exc
-    if not row.password:
-        raise ValidationError("La columna password es obligatoria.")
-
-
-def _validate_unique_email(*, user, email: str) -> None:
-    if not email:
-        return
-
-    duplicated = User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists()
-    if duplicated:
-        raise ValidationError("Ya existe otro usuario con ese mail.")
+        raise ValidationError("El formato del mail es invalido.") from exc
 
 
 def _update_password_state(*, user, plain_password: str) -> None:
@@ -221,8 +495,25 @@ def _update_password_state(*, user, plain_password: str) -> None:
     Token.objects.filter(user=user).delete()
 
 
-def process_bulk_credentials_file(*, uploaded_file, request=None) -> dict:
-    _, rows = _load_workbook_rows(uploaded_file)
+def _password_matches_current_state(*, user, plain_password: str) -> bool:
+    profile = getattr(user, "profile", None)
+    temporary_password = getattr(profile, "temporary_password_plaintext", None)
+    if temporary_password is not None:
+        return temporary_password == plain_password
+    return user.check_password(plain_password)
+
+
+def process_bulk_credentials_file(
+    *,
+    uploaded_file,
+    send_type: str | None = None,
+    request=None,
+) -> dict:
+    send_type_config = get_bulk_credentials_send_type_config(send_type)
+    rows = _load_workbook_rows(
+        uploaded_file,
+        send_type_config=send_type_config,
+    )
     results: list[dict[str, object]] = []
     summary = {
         "procesadas": 0,
@@ -232,20 +523,38 @@ def process_bulk_credentials_file(*, uploaded_file, request=None) -> dict:
         "rechazadas": 0,
     }
     login_url = _build_login_url(request=request)
+    processing_deadline = _get_bulk_credentials_batch_deadline()
 
-    for row in rows:
+    for row_index, row in enumerate(rows):
+        if not _has_enough_batch_time(processing_deadline):
+            timeout_message = _get_batch_timeout_message()
+            for pending_row in rows[row_index:]:
+                summary["procesadas"] += 1
+                summary["rechazadas"] += 1
+                results.append(
+                    {
+                        "fila": pending_row.fila,
+                        "usuario": pending_row.usuario,
+                        "mail_destino": pending_row.mail,
+                        "estado": "rechazada",
+                        "mensaje": timeout_message,
+                        "password_actualizada": False,
+                    }
+                )
+            break
+
         summary["procesadas"] += 1
         row_result = {
             "fila": row.fila,
             "usuario": row.usuario,
+            "mail_destino": row.mail,
             "estado": "rechazada",
             "mensaje": "",
-            "email_actualizado": False,
             "password_actualizada": False,
         }
 
         try:
-            _validate_row_data(row)
+            _validate_row_data(row, send_type_config=send_type_config)
             with transaction.atomic():
                 user = (
                     User.objects.select_related("profile")
@@ -255,32 +564,32 @@ def process_bulk_credentials_file(*, uploaded_file, request=None) -> dict:
                 if not user:
                     raise ValidationError("No existe un usuario con ese nombre.")
 
-                _validate_unique_email(user=user, email=row.mail)
-
-                email_updated = False
                 password_updated = False
 
-                if user.email != row.mail:
-                    user.email = row.mail
-                    user.save(update_fields=["email"])
-                    email_updated = True
-
-                if not user.check_password(row.password):
+                if not _password_matches_current_state(
+                    user=user,
+                    plain_password=row.password,
+                ):
                     _update_password_state(user=user, plain_password=row.password)
                     password_updated = True
 
                 send_bulk_credentials_email(
                     user=user,
+                    recipient_email=row.mail,
                     plain_password=row.password,
                     login_url=login_url,
+                    send_type=send_type_config.key,
+                    nombre_del_centro=row.nombre_del_centro,
+                    max_total_seconds=_get_remaining_processing_seconds(
+                        processing_deadline
+                    ),
                 )
 
-                row_result["email_actualizado"] = email_updated
                 row_result["password_actualizada"] = password_updated
                 row_result["estado"] = "enviada"
                 row_result["mensaje"] = "Credenciales enviadas correctamente."
 
-                if email_updated or password_updated:
+                if password_updated:
                     summary["actualizadas"] += 1
                 else:
                     summary["sin_cambios"] += 1
@@ -293,7 +602,8 @@ def process_bulk_credentials_file(*, uploaded_file, request=None) -> dict:
             summary["rechazadas"] += 1
             row_result["mensaje"] = "No se pudo enviar el correo para esta fila."
             logger.exception(
-                "Fallo procesando envío masivo de credenciales. fila=%s usuario=%s",
+                "Fallo procesando envio masivo de credenciales. tipo=%s fila=%s usuario=%s",
+                send_type_config.key,
                 row.fila,
                 row.usuario,
             )
@@ -304,4 +614,6 @@ def process_bulk_credentials_file(*, uploaded_file, request=None) -> dict:
         "summary": summary,
         "rows": results,
         "filename": getattr(uploaded_file, "name", ""),
+        "send_type": send_type_config.key,
+        "send_type_label": send_type_config.label,
     }
