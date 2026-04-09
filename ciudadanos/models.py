@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 from django.core.validators import MaxValueValidator as MaxValidator
@@ -124,6 +125,27 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     def nombre_completo(self) -> str:
         return f"{self.nombre} {self.apellido}".strip()
 
+    @staticmethod
+    def documento_prefix_filter(cleaned, field_name="documento"):
+        prefix = int(cleaned)
+        prefix_len = len(cleaned)
+        max_digits = 19
+        max_bigint = 9223372036854775807
+        prefix_filter = Q(**{field_name: prefix})
+        for digits in range(prefix_len + 1, max_digits + 1):
+            multiplier = 10 ** (digits - prefix_len)
+            lower_bound = prefix * multiplier
+            upper_bound = ((prefix + 1) * multiplier) - 1
+            if lower_bound > max_bigint:
+                break
+            prefix_filter |= Q(
+                **{
+                    f"{field_name}__gte": lower_bound,
+                    f"{field_name}__lte": min(upper_bound, max_bigint),
+                }
+            )
+        return prefix_filter
+
     @classmethod
     def buscar_por_documento(cls, query, max_results=10, exclude_id=None):
         cleaned = (query or "").strip()
@@ -131,7 +153,7 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         # generan consultas amplias y pueden degradar fuertemente en MySQL.
         if len(cleaned) < 7 or not cleaned.isdigit():
             return cls.objects.none()
-        qs = cls.objects.filter(documento__startswith=cleaned)
+        qs = cls.objects.filter(cls.documento_prefix_filter(cleaned))
         if exclude_id:
             qs = qs.exclude(pk=exclude_id)
         return qs.only("id", "nombre", "apellido", "documento").order_by("documento")[
