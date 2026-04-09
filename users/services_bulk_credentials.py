@@ -85,39 +85,50 @@ def _get_batch_timeout_message() -> str:
     )
 
 
-def _supports_signal_timeout_guard() -> bool:
-    return (
-        threading.current_thread() is threading.main_thread()
-        and hasattr(signal, "SIGALRM")
-        and hasattr(signal, "ITIMER_REAL")
-        and hasattr(signal, "getitimer")
-        and hasattr(signal, "setitimer")
-    )
+def _get_signal_timeout_guard_components():
+    if threading.current_thread() is not threading.main_thread():
+        return None
+
+    signal_alarm = getattr(signal, "SIGALRM", None)
+    timer_real = getattr(signal, "ITIMER_REAL", None)
+    getitimer = getattr(signal, "getitimer", None)
+    setitimer = getattr(signal, "setitimer", None)
+    if (
+        signal_alarm is None
+        or timer_real is None
+        or not callable(getitimer)
+        or not callable(setitimer)
+    ):
+        return None
+
+    return signal_alarm, timer_real, getitimer, setitimer
 
 
 @contextmanager
 def _mail_send_timeout_guard(timeout_seconds: int):
-    if timeout_seconds <= 0 or not _supports_signal_timeout_guard():
+    timeout_components = _get_signal_timeout_guard_components()
+    if timeout_seconds <= 0 or timeout_components is None:
         yield
         return
 
-    previous_handler = signal.getsignal(signal.SIGALRM)
-    previous_timer = signal.getitimer(signal.ITIMER_REAL)
+    signal_alarm, timer_real, getitimer, setitimer = timeout_components
+    previous_handler = signal.getsignal(signal_alarm)
+    previous_timer = getitimer(timer_real)
 
     def _raise_mail_timeout(signum, frame):  # pragma: no cover - depende de signal
         raise BulkCredentialsEmailTimeoutError(
             "Timeout enviando credenciales al servidor de correo."
         )
 
-    signal.signal(signal.SIGALRM, _raise_mail_timeout)
-    signal.setitimer(signal.ITIMER_REAL, float(timeout_seconds))
+    signal.signal(signal_alarm, _raise_mail_timeout)
+    setitimer(timer_real, float(timeout_seconds))
     try:
         yield
     finally:
-        signal.setitimer(signal.ITIMER_REAL, 0)
-        signal.signal(signal.SIGALRM, previous_handler)
+        setitimer(timer_real, 0)
+        signal.signal(signal_alarm, previous_handler)
         if previous_timer != (0.0, 0.0):
-            signal.setitimer(signal.ITIMER_REAL, *previous_timer)
+            setitimer(timer_real, *previous_timer)
 
 
 @dataclass(frozen=True)
@@ -394,7 +405,7 @@ def get_bulk_credentials_template_filename(send_type: str | None = None) -> str:
     return send_type_config.template_filename
 
 
-def _send_bulk_credentials_email_once(
+def _send_bulk_credentials_email_once(  # pylint: disable=too-many-arguments
     *,
     user,
     recipient_email: str,
@@ -420,27 +431,33 @@ def _send_bulk_credentials_email_once(
     )
 
 
+EMAIL_ERROR_MESSAGES = (
+    (
+        (BulkCredentialsEmailTimeoutError, TimeoutError),
+        "Timeout al comunicarse con el servidor de correo.",
+    ),
+    (
+        smtplib.SMTPAuthenticationError,
+        "El servidor de correo rechazo la autenticacion.",
+    ),
+    (smtplib.SMTPConnectError, "No se pudo conectar al servidor de correo."),
+    (smtplib.SMTPServerDisconnected, "El servidor de correo cerro la conexion."),
+    (
+        smtplib.SMTPRecipientsRefused,
+        "El servidor de correo rechazo el destinatario indicado.",
+    ),
+    (smtplib.SMTPDataError, "El servidor de correo rechazo el mensaje enviado."),
+    (smtplib.SMTPException, "Ocurrio un error del servidor de correo."),
+    (OSError, "Ocurrio un error de red al enviar el correo."),
+)
+
+
 def build_bulk_credentials_error_message(exc: Exception) -> str:
     if isinstance(exc, ValidationError):
         return " ".join(exc.messages)
-    if isinstance(exc, BulkCredentialsEmailTimeoutError) or isinstance(
-        exc, TimeoutError
-    ):
-        return "Timeout al comunicarse con el servidor de correo."
-    if isinstance(exc, smtplib.SMTPAuthenticationError):
-        return "El servidor de correo rechazo la autenticacion."
-    if isinstance(exc, smtplib.SMTPConnectError):
-        return "No se pudo conectar al servidor de correo."
-    if isinstance(exc, smtplib.SMTPServerDisconnected):
-        return "El servidor de correo cerro la conexion."
-    if isinstance(exc, smtplib.SMTPRecipientsRefused):
-        return "El servidor de correo rechazo el destinatario indicado."
-    if isinstance(exc, smtplib.SMTPDataError):
-        return "El servidor de correo rechazo el mensaje enviado."
-    if isinstance(exc, smtplib.SMTPException):
-        return "Ocurrio un error del servidor de correo."
-    if isinstance(exc, OSError):
-        return "Ocurrio un error de red al enviar el correo."
+    for error_types, message in EMAIL_ERROR_MESSAGES:
+        if isinstance(exc, error_types):
+            return message
     return "Ocurrio un error inesperado al procesar la fila."
 
 
@@ -451,7 +468,7 @@ def _build_email_retry_failure_message(last_error: Exception | None) -> str:
     return f"{base_message} El envio se reintento sin exito."
 
 
-def send_bulk_credentials_email(
+def send_bulk_credentials_email(  # pylint: disable=too-many-arguments
     *,
     user,
     recipient_email: str,
@@ -687,9 +704,7 @@ def process_bulk_credentials_file(
             summary["enviadas"] += 1
         except ValidationError as exc:
             summary["rechazadas"] += 1
-            row_result["mensaje"] = build_bulk_credentials_error_message(
-                exc
-            )
+            row_result["mensaje"] = build_bulk_credentials_error_message(exc)
         except Exception as exc:
             summary["rechazadas"] += 1
             row_result["mensaje"] = build_bulk_credentials_error_message(exc)

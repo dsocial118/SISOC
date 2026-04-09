@@ -128,9 +128,7 @@ def run_bulk_credentials_worker():
 
 def main():
     wait_for_mysql()
-    service_role = (
-        os.getenv("DJANGO_SERVICE_ROLE", SERVICE_ROLE_WEB).strip().lower()
-    )
+    service_role = os.getenv("DJANGO_SERVICE_ROLE", SERVICE_ROLE_WEB).strip().lower()
     if service_role == SERVICE_ROLE_BULK_CREDENTIALS_WORKER:
         run_bulk_credentials_worker()
         return
@@ -147,9 +145,7 @@ def run_server():
 
     if deploy_gunicorn:
         cache_busting()
-        logger.info(
-            "[server] Iniciando Django en modo produccion con Gunicorn..."
-        )
+        logger.info("[server] Iniciando Django en modo produccion con Gunicorn...")
         workers = os.getenv("GUNICORN_WORKERS", "4")
         threads = os.getenv("GUNICORN_THREADS", "1")
         cmd = [

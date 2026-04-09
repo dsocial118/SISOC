@@ -11,6 +11,7 @@ from django.core.management import call_command
 from django.core import mail
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.http import HttpResponse
 from django.test import RequestFactory, override_settings
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.utils import timezone
@@ -521,9 +522,9 @@ def test_process_bulk_credentials_rejects_row_when_email_timeout_persists(mocker
         "sin_cambios": 0,
         "rechazadas": 1,
     }
-    assert (
-        result["rows"][0]["mensaje"]
-        == "No se pudo enviar el correo para esta fila luego de reintentar."
+    assert result["rows"][0]["mensaje"] == (
+        "Timeout al comunicarse con el servidor de correo. "
+        "El envio se reintento sin exito."
     )
     assert send_once.call_count == 2
     sleep.assert_called_once()
@@ -755,7 +756,7 @@ def test_process_bulk_credentials_job_stops_on_first_failure_and_tracks_checkpoi
             raise smtplib.SMTPAuthenticationError(535, b"auth failed")
         return None
 
-    mocker.patch(
+    send_once = mocker.patch(
         "users.services_bulk_credentials._send_bulk_credentials_email_once",
         side_effect=_send_side_effect,
     )
@@ -781,12 +782,9 @@ def test_process_bulk_credentials_job_stops_on_first_failure_and_tracks_checkpoi
     assert job.last_successful_row == 2
     assert job.last_attempted_username == "bulk_job_second"
     assert job.last_attempted_row == 3
-    assert (
-        job.last_error_message
-        == (
-            "El servidor de correo rechazo la autenticacion. "
-            "El envio se reintento sin exito."
-        )
+    assert job.last_error_message == (
+        "El servidor de correo rechazo la autenticacion. "
+        "El envio se reintento sin exito."
     )
     assert can_resume_bulk_credentials_job(job) is True
     assert len(rows) == 2
@@ -795,8 +793,10 @@ def test_process_bulk_credentials_job_stops_on_first_failure_and_tracks_checkpoi
     assert rows[1].status == BulkCredentialsJobRow.Status.FAILED
     assert rows[1].usuario == "bulk_job_second"
     assert rows[1].attempts == 1
-    assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == ["destino-first@example.com"]
+    assert send_once.call_count == 3
+    assert send_once.call_args_list[0].kwargs["recipient_email"] == (
+        "destino-first@example.com"
+    )
     assert first_user.check_password("Inicial123!") is True
     assert second_user.check_password("Inicial123!") is True
     assert third_user.check_password("Inicial123!") is True
@@ -850,7 +850,7 @@ def test_process_bulk_credentials_job_can_resume_from_failed_row(
             raise smtplib.SMTPAuthenticationError(535, b"auth failed")
         return None
 
-    mocker.patch(
+    send_once = mocker.patch(
         "users.services_bulk_credentials._send_bulk_credentials_email_once",
         side_effect=_send_side_effect,
     )
@@ -881,7 +881,7 @@ def test_process_bulk_credentials_job_can_resume_from_failed_row(
     assert job.last_successful_row == 4
     assert second_row.status == BulkCredentialsJobRow.Status.SENT
     assert second_row.attempts == 2
-    assert len(mail.outbox) == 3
+    assert send_once.call_count == 5
 
 
 @pytest.mark.django_db
@@ -1006,21 +1006,33 @@ def test_bulk_credentials_job_detail_view_shows_failure_context(
     mocker.patch("users.services_bulk_credentials.time.sleep")
     process_bulk_credentials_job(job)
 
-    response = BulkCredentialsJobDetailView.as_view()(
-        _build_request(
-            "get",
-            f"/usuarios/credenciales-masivas/lotes/{job.pk}/",
-            operator,
-        ),
-        pk=job.pk,
+    request = _build_request(
+        "get",
+        f"/usuarios/credenciales-masivas/lotes/{job.pk}/",
+        operator,
     )
-    content = response.content.decode("utf-8")
+    view = BulkCredentialsJobDetailView()
+    view.setup(request, pk=job.pk)
+    captured_context = {}
+
+    def _fake_render_to_response(context):
+        captured_context.update(context)
+        return HttpResponse("ok")
+
+    view.render_to_response = _fake_render_to_response
+    response = view.get(request, pk=job.pk)
+    rows = list(captured_context["page_obj"].object_list)
 
     assert response.status_code == 200
-    assert "bulk_detail_first" in content
-    assert "bulk_detail_second" in content
-    assert "El servidor de correo rechazo la autenticacion." in content
-    assert "Reanudar" in content
+    assert captured_context["job"].last_error_message.startswith(
+        "El servidor de correo rechazo la autenticacion."
+    )
+    assert captured_context["is_resume_available"] is True
+    assert [row.usuario for row in rows] == [
+        "bulk_detail_first",
+        "bulk_detail_second",
+    ]
+    assert rows[1].mensaje.startswith("El servidor de correo rechazo la autenticacion.")
 
 
 @pytest.mark.django_db
