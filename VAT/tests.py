@@ -2817,7 +2817,7 @@ def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(client, vat_geo_d
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
+@override_settings(ROOT_URLCONF="config.urls")
 def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_curso(
     client, vat_geo_data
 ):
@@ -2921,7 +2921,7 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
+@override_settings(ROOT_URLCONF="config.urls")
 def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     client, vat_geo_data
 ):
@@ -3008,7 +3008,7 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
+@override_settings(ROOT_URLCONF="config.urls")
 @pytest.mark.django_db
 def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
