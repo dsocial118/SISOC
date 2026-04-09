@@ -3,7 +3,7 @@
 
 ## Nuevas Funcionalidades
 
-- Detalle de VAT con navegación más útil en centros y parametrías, incorporando filtro y paginación en los listados de planes curriculares y vouchers asignados.
+- Detalle de VAT con navegación más útil en centros y parametrías, incorporando filtro y paginación en los listados de planes curriculares y vouchers asignados..
 - Importación masiva de VAT más robusta, con normalización de centros y usuarios CFP, validaciones geográficas más precisas y progreso visible en los comandos de carga.
 
 ## Actualizaciones
