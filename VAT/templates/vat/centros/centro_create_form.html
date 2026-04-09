@@ -295,14 +295,10 @@
                                            class="form-control{% if form.referente.errors %} is-invalid{% endif %}"
                                            placeholder="Buscar referente por usuario o nombre"
                                            autocomplete="off" />
-                                    <div id="referente-search-results"
-                                         class="referente-search-results"
-                                         hidden></div>
+                                    <div id="referente-search-results" class="referente-search-results" hidden></div>
                                 </div>
                                 {{ form.referente }}
-                                {% for error in form.referente.errors %}
-                                    <span class="referente-search-error">{{ error }}</span>
-                                {% endfor %}
+                                {% for error in form.referente.errors %}<span class="referente-search-error">{{ error }}</span>{% endfor %}
                             </div>
                         </div>
                     </div>

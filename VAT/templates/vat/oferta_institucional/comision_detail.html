@@ -908,11 +908,14 @@
                                 data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                     </div>
-                    <form id="formEliminarComisionCurso" method="post" action="{{ comision_delete_url }}">
+                    <form id="formEliminarComisionCurso"
+                          method="post"
+                          action="{{ comision_delete_url }}">
                         {% csrf_token %}
                         <div class="modal-body">
                             <p class="mb-2">¿Seguro que querés eliminar esta comisión?</p>
-                            <div class="alert alert-light border mb-0" id="comisionCursoEliminarResumen"></div>
+                            <div class="alert alert-light border mb-0"
+                                 id="comisionCursoEliminarResumen"></div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -924,7 +927,7 @@
         </div>
     {% endif %}
 
-    {% if perms.VAT.add_comisionhorario %}
+    {% if perms.VAT.add_comisionhorario or perms.VAT.change_comisionhorario %}
         <div class="modal fade ci-modal"
              id="modalComisionHorario"
              tabindex="-1"
@@ -941,9 +944,12 @@
                     </div>
                     <form id="formComisionHorario"
                           method="post"
-                          action="{% url horario_create_url_name %}?{{ horario_create_query_param }}={{ comision.id }}">
+                          action="{% if perms.VAT.add_comisionhorario %}{% url horario_create_url_name %}?{{ horario_create_query_param }}={{ comision.id }}{% endif %}">
                         {% csrf_token %}
-                        <div class="modal-body">{{ horario_form.as_p }}</div>
+                        <div class="modal-body">
+                            <div id="comisionHorarioAlert" class="alert d-none" role="alert"></div>
+                            {{ horario_form.as_p }}
+                        </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                             <button type="submit" class="btn btn-primary">Guardar</button>
@@ -952,41 +958,44 @@
                 </div>
             </div>
         </div>
-        {% if perms.VAT.delete_comisionhorario %}
-            <div class="modal fade ci-modal"
-                 id="modalEliminarComisionHorario"
-                 tabindex="-1"
-                 aria-labelledby="modalEliminarComisionHorarioLabel"
-                 aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalEliminarComisionHorarioLabel">Eliminar Horario</h5>
-                            <button type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                        </div>
-                        <form id="formEliminarComisionHorario" method="post" action="">
-                            {% csrf_token %}
-                            <div class="modal-body">
-                                <p class="mb-2">¿Seguro que querés eliminar este horario?</p>
-                                <div class="alert alert-light border mb-0" id="horarioEliminarResumen"></div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-danger">Eliminar</button>
-                            </div>
-                        </form>
+    {% endif %}
+    {% if perms.VAT.delete_comisionhorario %}
+        <div class="modal fade ci-modal"
+             id="modalEliminarComisionHorario"
+             tabindex="-1"
+             aria-labelledby="modalEliminarComisionHorarioLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalEliminarComisionHorarioLabel">Eliminar Horario</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                     </div>
+                    <form id="formEliminarComisionHorario" method="post" action="">
+                        {% csrf_token %}
+                        <div class="modal-body">
+                            <p class="mb-2">¿Seguro que querés eliminar este horario?</p>
+                            <div class="alert alert-light border mb-0" id="horarioEliminarResumen"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                        </div>
+                    </form>
                 </div>
             </div>
-        {% endif %}
+        </div>
+    {% endif %}
+    {% if perms.VAT.add_comisionhorario or perms.VAT.change_comisionhorario %}
         <script nonce="{{ request.csp_nonce }}">
     (function() {
         var form = document.getElementById('formComisionHorario');
         var modalEl = document.getElementById('modalComisionHorario');
         var titleEl = document.getElementById('modalComisionHorarioLabel');
+        var alertBox = document.getElementById('comisionHorarioAlert');
         if (!form || !modalEl || !titleEl) return;
 
         var createAction = form.getAttribute('action');
@@ -995,6 +1004,22 @@
         var horaDesdeField = form.querySelector('[name="hora_desde"]');
         var horaHastaField = form.querySelector('[name="hora_hasta"]');
         var currentComisionId = '{{ comision.id }}';
+        var submitDefaultLabel = 'Guardar';
+
+        function resetAlert() {
+            if (!alertBox) return;
+            alertBox.className = 'alert d-none';
+            alertBox.textContent = '';
+        }
+
+        function showAlert(message, level) {
+            if (!alertBox) {
+                alert(message);
+                return;
+            }
+            alertBox.className = 'alert alert-' + level;
+            alertBox.textContent = message;
+        }
 
         function updateHorarioTimeValidation() {
             if (!horaDesdeField || !horaHastaField) {
@@ -1051,11 +1076,13 @@
                 : 'create';
 
             form.reset();
+            resetAlert();
             form.setAttribute('action', createAction);
             lockComisionField();
 
             if (mode === 'edit' && trigger) {
                 titleEl.textContent = 'Editar Horario';
+                submitDefaultLabel = 'Actualizar';
                 form.setAttribute('action', trigger.getAttribute('data-edit-url') || createAction);
                 setFormValue('dia_semana', trigger.getAttribute('data-dia-semana-id'));
                 setFormValue('hora_desde', trigger.getAttribute('data-hora-desde'));
@@ -1063,14 +1090,15 @@
                 setFormValue('aula_espacio', trigger.getAttribute('data-aula-espacio'));
                 setFormValue('vigente', trigger.getAttribute('data-vigente'));
                 if (submitBtn) {
-                    submitBtn.innerHTML = 'Actualizar';
+                    submitBtn.innerHTML = submitDefaultLabel;
                 }
                 return;
             }
 
             titleEl.textContent = 'Agregar Horario';
+            submitDefaultLabel = 'Guardar';
             if (submitBtn) {
-                submitBtn.innerHTML = 'Guardar';
+                submitBtn.innerHTML = submitDefaultLabel;
             }
 
             updateHorarioTimeValidation();
@@ -1087,6 +1115,7 @@
 
         form.addEventListener('submit', function(e) {
             e.preventDefault();
+            resetAlert();
             if (!form.checkValidity()) {
                 form.reportValidity();
                 return;
@@ -1101,61 +1130,104 @@
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
-            }).then(function() {
+            }).then(function(response) {
+                return response.json().catch(function() {
+                    return {};
+                }).then(function(data) {
+                    if (!response.ok) {
+                        throw data;
+                    }
+                    return data;
+                });
+            }).then(function(data) {
                 var modal = bootstrap.Modal.getInstance(modalEl);
                 if (modal) modal.hide();
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                    return;
+                }
                 location.reload();
-            }).catch(function() {
-                alert('Error al guardar el horario.');
+            }).catch(function(error) {
+                var message = error.message || 'Error al guardar el horario.';
+                if (error.errors) {
+                    var fieldMessages = [];
+                    Object.keys(error.errors).forEach(function(key) {
+                        fieldMessages.push(error.errors[key].join(' '));
+                    });
+                    if (fieldMessages.length) {
+                        message = fieldMessages.join(' ');
+                    }
+                }
+                showAlert(message, 'danger');
+            }).finally(function() {
                 if (submitBtn) {
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = 'Guardar';
+                    submitBtn.innerHTML = submitDefaultLabel;
                 }
             });
         });
-
+    })();
+        </script>
+    {% endif %}
+    {% if perms.VAT.delete_comisionhorario %}
+        <script nonce="{{ request.csp_nonce }}">
+    (function() {
         var deleteModalEl = document.getElementById('modalEliminarComisionHorario');
         var deleteForm = document.getElementById('formEliminarComisionHorario');
         var deleteSummary = document.getElementById('horarioEliminarResumen');
-        if (deleteModalEl && deleteForm) {
-            deleteModalEl.addEventListener('show.bs.modal', function(event) {
-                var trigger = event.relatedTarget;
-                if (!trigger) return;
-                deleteForm.setAttribute(
-                    'action',
-                    trigger.getAttribute('data-delete-url') || ''
-                );
-                if (deleteSummary) {
-                    deleteSummary.textContent = trigger.getAttribute('data-horario-resumen') || '';
-                }
-            });
+        if (!deleteModalEl || !deleteForm) return;
 
-            deleteForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                var deleteSubmitBtn = deleteForm.querySelector('button[type="submit"]');
-                if (deleteSubmitBtn) {
-                    deleteSubmitBtn.disabled = true;
-                    deleteSubmitBtn.innerHTML = 'Eliminando...';
+        deleteModalEl.addEventListener('show.bs.modal', function(event) {
+            var trigger = event.relatedTarget;
+            if (!trigger) return;
+            deleteForm.setAttribute(
+                'action',
+                trigger.getAttribute('data-delete-url') || ''
+            );
+            if (deleteSummary) {
+                deleteSummary.textContent = trigger.getAttribute('data-horario-resumen') || '';
+            }
+        });
+
+        deleteForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var deleteSubmitBtn = deleteForm.querySelector('button[type="submit"]');
+            if (deleteSubmitBtn) {
+                deleteSubmitBtn.disabled = true;
+                deleteSubmitBtn.innerHTML = 'Eliminando...';
+            }
+            fetch(deleteForm.action, {
+                method: 'POST',
+                body: new FormData(deleteForm),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
-                fetch(deleteForm.action, {
-                    method: 'POST',
-                    body: new FormData(deleteForm),
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
+            }).then(function(response) {
+                return response.json().catch(function() {
+                    return {};
+                }).then(function(data) {
+                    if (!response.ok) {
+                        throw data;
                     }
-                }).then(function() {
-                    var modal = bootstrap.Modal.getInstance(deleteModalEl);
-                    if (modal) modal.hide();
-                    location.reload();
-                }).catch(function() {
-                    alert('Error al eliminar el horario.');
-                    if (deleteSubmitBtn) {
-                        deleteSubmitBtn.disabled = false;
-                        deleteSubmitBtn.innerHTML = 'Eliminar';
-                    }
+                    return data;
                 });
+            }).then(function(data) {
+                var modal = bootstrap.Modal.getInstance(deleteModalEl);
+                if (modal) modal.hide();
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                    return;
+                }
+                location.reload();
+            }).catch(function(error) {
+                alert(error.message || 'Error al eliminar el horario.');
+            }).finally(function() {
+                if (deleteSubmitBtn) {
+                    deleteSubmitBtn.disabled = false;
+                    deleteSubmitBtn.innerHTML = 'Eliminar';
+                }
             });
-        }
+        });
     })();
         </script>
     {% endif %}

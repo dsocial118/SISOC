@@ -1395,9 +1395,7 @@ class ComisionHorario(models.Model):
             and self.hora_hasta is not None
             and self.hora_hasta < self.hora_desde
         ):
-            errors["hora_hasta"] = (
-                "La hora hasta no puede ser menor a la hora desde."
-            )
+            errors["hora_hasta"] = "La hora hasta no puede ser menor a la hora desde."
 
         existing = ComisionHorario.objects.exclude(pk=self.pk).filter(
             dia_semana=self.dia_semana,

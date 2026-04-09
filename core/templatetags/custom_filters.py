@@ -1,7 +1,7 @@
+import builtins as python_builtins
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from urllib.parse import quote_plus
-import builtins
 
 from django import template
 from django.templatetags.static import static
@@ -48,7 +48,7 @@ def has_any_perm(user, permission_codes):
 
 @register.filter
 def has_any_group(user, group_names):
-    if not user or not builtins.getattr(user, "is_authenticated", False):
+    if not user or not python_builtins.getattr(user, "is_authenticated", False):
         return False
 
     if not group_names:
@@ -102,16 +102,14 @@ def is_url(value):
         return False
 
 
-@register.filter
-def getattr(obj, attr_name):
+@register.filter(name="getattr")
+def safe_getattr(obj, attr_name):
     """
     Obtiene un atributo de un objeto de forma segura, manejando relaciones
     Usage: {{ obj|getattr:"field_name" }}
     """
-    import builtins
-
     try:
-        value = builtins.getattr(obj, attr_name, None)
+        value = python_builtins.getattr(obj, attr_name, None)
         if value is None:
             return "-"
 
@@ -131,7 +129,7 @@ def getattr(obj, attr_name):
 
 @register.filter
 def edad(fecha_nacimiento):
-    """Calcula la edad en años a partir de una fecha de nacimiento"""
+    """Calcula la edad en aÃ±os a partir de una fecha de nacimiento"""
     if not fecha_nacimiento:
         return None
 
@@ -145,7 +143,7 @@ def edad(fecha_nacimiento):
 
 @register.filter
 def es_menor_18(fecha_nacimiento):
-    """Verifica si una persona es menor de 18 años"""
+    """Verifica si una persona es menor de 18 aÃ±os"""
     if not fecha_nacimiento:
         return False
 
@@ -155,7 +153,7 @@ def es_menor_18(fecha_nacimiento):
 
 @register.filter
 def es_mayor_65_menor_66(fecha_nacimiento):
-    """Verifica si una persona tiene 65 años o más (hasta 66 años inclusive)"""
+    """Verifica si una persona tiene 65 aÃ±os o mÃ¡s (hasta 66 aÃ±os inclusive)"""
     if not fecha_nacimiento:
         return False
 
@@ -167,27 +165,25 @@ def _normalize_coordinate(value, min_value, max_value):
     if value is None:
         return None
 
+    text = value
     if isinstance(value, str):
         text = value.strip()
-        if not text:
+        if text:
+            text = text.replace(",", ".")
+        if not text or text.count(".") > 1:
             return None
-        text = text.replace(",", ".")
-        if text.count(".") > 1:
-            return None
-    else:
-        text = value
 
     try:
         decimal_value = Decimal(str(text))
     except (InvalidOperation, ValueError):
         return None
 
+    min_decimal = Decimal(str(min_value))
+    max_decimal = Decimal(str(max_value))
     if decimal_value.is_nan() or decimal_value.is_infinite():
         return None
 
-    min_decimal = Decimal(str(min_value))
-    max_decimal = Decimal(str(max_value))
-    if decimal_value < min_decimal or decimal_value > max_decimal:
+    if not min_decimal <= decimal_value <= max_decimal:
         return None
 
     return format(decimal_value, "f")
@@ -230,9 +226,9 @@ def default_full_width(value):
 
 @register.filter
 def boolean_icon(value):
-    if value in [True, 1, "1", "true", "True", "SI", "Sí", "si"]:
+    if value in [True, 1, "1", "true", "True", "SI", "SÃ­", "si"]:
         return format_html(
-            '<img src="{}" alt="Sí" width="20">',
+            '<img src="{}" alt="SÃ­" width="20">',
             static("custom/img/check_ok.svg"),
         )
 
@@ -271,7 +267,7 @@ def _is_positive_number(value):
 @register.filter
 def dias_prestacion_semana(prestacion):
     """
-    Cuenta cuántos días a la semana el comedor presta servicio, en base a los
+    Cuenta cuÃ¡ntos dÃ­as a la semana el comedor presta servicio, en base a los
     campos *_<comida>_actual (p.ej. lunes_desayuno_actual) o a los campos
     aprobadas_<comida>_<dia> (p.ej. aprobadas_desayuno_lunes). Si no hay datos,
     devuelve "-".
@@ -279,14 +275,12 @@ def dias_prestacion_semana(prestacion):
     if prestacion is None:
         return "-"
 
-    import builtins
-
     dias_con_servicio = 0
     for day in _DAYS:
         for meal in _MEALS:
             values = (
-                builtins.getattr(prestacion, f"{day}_{meal}_actual", None),
-                builtins.getattr(prestacion, f"aprobadas_{meal}_{day}", None),
+                python_builtins.getattr(prestacion, f"{day}_{meal}_actual", None),
+                python_builtins.getattr(prestacion, f"aprobadas_{meal}_{day}", None),
             )
             if any(_is_positive_number(value) for value in values):
                 dias_con_servicio += 1

@@ -73,6 +73,15 @@ def vat_admin_client(client, db):
     return client
 
 
+def _grant_vat_referente_access(user, *permissions):
+    legacy_permission, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_centroreferentevat",
+        defaults={"name": "ReferenteCentroVAT legacy"},
+    )
+    user.user_permissions.add(legacy_permission, *permissions)
+
+
 @pytest.fixture
 def vat_api_key(db):
     _, key = APIKey.objects.create_key(name="vat-tests")
@@ -2883,8 +2892,8 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
     assert 'id="tablaCursosCentro"' in content
-    assert '<th>Plan Curricular</th>' in content
-    assert '<th>Curso FP</th>' in content
+    assert "<th>Plan Curricular</th>" in content
+    assert "<th>Curso FP</th>" in content
     assert 'id="cursosFilterSearch"' in content
     assert 'id="cursosFilterEstado"' in content
     assert 'id="cursosFilterPageSize"' in content
@@ -2892,15 +2901,15 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'class="curso-row"' in content
     assert f'data-curso-id="{_curso.id}"' in content
     assert 'data-curso-plan="Plan Industrial Inicial"' in content
-    assert '<td>Plan Industrial Inicial</td>' in content
+    assert "<td>Plan Industrial Inicial</td>" in content
     assert 'id="tablaComisionesCursoCentro"' in content
-    assert '<th>Código</th>' in content
-    assert '<th>Ubicación</th>' in content
-    assert '<th>Fecha Inicio</th>' in content
-    assert '<th>Fecha Fin</th>' in content
-    assert '<th>Observaciones</th>' in content
-    assert 'FIL-01' in content
-    assert 'Comisión Filtrable' in content
+    assert "<th>Código</th>" in content
+    assert "<th>Ubicación</th>" in content
+    assert "<th>Fecha Inicio</th>" in content
+    assert "<th>Fecha Fin</th>" in content
+    assert "<th>Observaciones</th>" in content
+    assert "FIL-01" in content
+    assert "Comisión Filtrable" in content
     assert 'id="comisionesFilterSearch"' in content
     assert 'id="comisionesFilterCurso"' in content
     assert 'id="comisionesFilterEstado"' in content
@@ -2978,7 +2987,7 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
 
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
-    assert 'Planes Curriculares' not in content
+    assert "Planes Curriculares" not in content
     assert 'title="Nuevo Curso"' in content
     assert 'id="planEstudioSeleccionadoInfo"' in content
     assert 'id="modalPlanCurricularSelector"' in content
@@ -2987,12 +2996,12 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert 'id="planCurricularSelectorSector"' in content
     assert 'id="planCurricularSelectorModalidad"' in content
     assert 'id="tablaPlanCurricularSelector"' in content
-    assert 'Plan Curricular' in content
+    assert "Plan Curricular" in content
     assert (
-        'Se listan todos los planes curriculares activos de la provincia del centro.'
+        "Se listan todos los planes curriculares activos de la provincia del centro."
         in content
     )
-    assert 'Seleccionar plan curricular' in content
+    assert "Seleccionar plan curricular" in content
     assert f'value="{plan.id}"' in content
     assert f'value="{plan_inactivo.id}"' not in content
     assert f'value="{plan_otra_provincia.id}"' not in content
@@ -3000,8 +3009,6 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
 
 @pytest.mark.django_db
 @override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
-
-
 @pytest.mark.django_db
 def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
@@ -3100,13 +3107,73 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
     assert reverse("vat_comision_curso_horario_create") in content
     assert 'data-bs-target="#modalComisionHorario"' in content
     assert 'data-horario-mode="edit"' in content
-    assert reverse("vat_comision_curso_horario_update", kwargs={"pk": horario.pk}) in content
+    assert (
+        reverse("vat_comision_curso_horario_update", kwargs={"pk": horario.pk})
+        in content
+    )
     assert 'data-bs-target="#modalEliminarComisionHorario"' in content
-    assert reverse("vat_comision_curso_horario_delete", kwargs={"pk": horario.pk}) in content
+    assert (
+        reverse("vat_comision_curso_horario_delete", kwargs={"pk": horario.pk})
+        in content
+    )
     assert "Información" in content
     assert "Inscriptos" in content
     assert "Sesiones" in content
     assert "Horarios" in content
+
+
+def _build_comision_curso_horario_context(vat_geo_data, user, suffix):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(
+        nombre=f"Presencial Horario {suffix}", activo=True
+    )
+    centro = Centro.objects.create(
+        nombre=f"CFP Horarios {suffix}",
+        codigo=f"CFP-HOR-{suffix}",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="14",
+        numero=100,
+        domicilio_actividad=f"Calle 14 N° 100 {suffix}",
+        telefono="221-1111111",
+        celular="221-2222222",
+        correo=f"cfphor-{suffix}@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Gomez",
+        telefono_referente="221-3333333",
+        correo_referente=f"ana-hor-{suffix}@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio=f"Calle 14 N° 100 {suffix}",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre=f"Curso con horarios {suffix}",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision=f"HOR-{suffix}",
+        nombre=f"Comisión Horario {suffix}",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 6),
+        fecha_fin=date(2026, 4, 20),
+        estado="activa",
+    )
+    dia = Dia.objects.create(nombre=f"Lunes {suffix}")
+    return comision, dia
 
 
 @pytest.mark.django_db
@@ -3273,6 +3340,191 @@ def test_comision_curso_horario_create_rechaza_hora_hasta_menor_a_hora_desde(
         in response.content.decode("utf-8")
     )
     assert not ComisionHorario.objects.filter(comision_curso=comision).exists()
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
+def test_comision_curso_horario_create_ajax_devuelve_json_con_errores(
+    client, vat_geo_data
+):
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-horario-ajax-create",
+        email="admin-comision-curso-horario-ajax-create@vat.test",
+        password="test1234",
+    )
+    comision, dia = _build_comision_curso_horario_context(
+        vat_geo_data, user, "AJAX-CREATE"
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_comision_curso_horario_create"),
+        data={
+            "comision_curso": comision.pk,
+            "dia_semana": dia.pk,
+            "hora_desde": "11:00",
+            "hora_hasta": "09:00",
+            "aula_espacio": "Aula 2",
+            "vigente": "on",
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    payload = response.json()
+
+    assert response.status_code == 400
+    assert payload["ok"] is False
+    assert (
+        payload["errors"]["hora_hasta"][0]
+        == "La hora hasta no puede ser menor a la hora desde."
+    )
+    assert not ComisionHorario.objects.filter(comision_curso=comision).exists()
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
+def test_comision_curso_horario_update_ajax_devuelve_json_con_errores(
+    client, vat_geo_data
+):
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-horario-ajax-update",
+        email="admin-comision-curso-horario-ajax-update@vat.test",
+        password="test1234",
+    )
+    comision, dia = _build_comision_curso_horario_context(
+        vat_geo_data, user, "AJAX-UPDATE"
+    )
+    horario = ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde=time(9, 0),
+        hora_hasta=time(11, 0),
+        aula_espacio="Aula 5",
+        vigente=True,
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_comision_curso_horario_update", kwargs={"pk": horario.pk}),
+        data={
+            "comision_curso": comision.pk,
+            "dia_semana": dia.pk,
+            "hora_desde": "13:00",
+            "hora_hasta": "12:00",
+            "aula_espacio": "Aula 6",
+            "vigente": "on",
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    payload = response.json()
+    horario.refresh_from_db()
+
+    assert response.status_code == 400
+    assert payload["ok"] is False
+    assert (
+        payload["errors"]["hora_hasta"][0]
+        == "La hora hasta no puede ser menor a la hora desde."
+    )
+    assert horario.hora_desde == time(9, 0)
+    assert horario.hora_hasta == time(11, 0)
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
+def test_comision_curso_horario_delete_ajax_devuelve_json_ok(client, vat_geo_data):
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-horario-ajax-delete",
+        email="admin-comision-curso-horario-ajax-delete@vat.test",
+        password="test1234",
+    )
+    comision, dia = _build_comision_curso_horario_context(
+        vat_geo_data, user, "AJAX-DELETE"
+    )
+    horario = ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde=time(9, 0),
+        hora_hasta=time(11, 0),
+        aula_espacio="Aula 7",
+        vigente=True,
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_comision_curso_horario_delete", kwargs={"pk": horario.pk}),
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    payload = response.json()
+
+    assert response.status_code == 200
+    assert payload["ok"] is True
+    assert payload["redirect_url"] == reverse(
+        "vat_comision_curso_detail", kwargs={"pk": comision.pk}
+    )
+    assert not ComisionHorario.objects.filter(pk=horario.pk).exists()
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
+def test_comision_curso_detail_renderiza_modales_horario_sin_permiso_de_alta(
+    client, vat_geo_data
+):
+    user = User.objects.create_user(
+        username="referente-horario-sin-alta",
+        email="referente-horario-sin-alta@vat.test",
+        password="test1234",
+    )
+    change_permission = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="change_comisionhorario",
+    )
+    delete_permission = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="delete_comisionhorario",
+    )
+    detail_permission = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="view_comisioncurso",
+    )
+    _grant_vat_referente_access(
+        user,
+        detail_permission,
+        change_permission,
+        delete_permission,
+    )
+    comision, dia = _build_comision_curso_horario_context(
+        vat_geo_data, user, "SIN-ALTA"
+    )
+    horario = ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde=time(9, 0),
+        hora_hasta=time(11, 0),
+        aula_espacio="Aula 8",
+        vigente=True,
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+    )
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert reverse("vat_comision_curso_horario_create") not in content
+    assert 'id="modalComisionHorario"' in content
+    assert 'id="modalEliminarComisionHorario"' in content
+    assert 'data-horario-mode="edit"' in content
+    assert (
+        reverse("vat_comision_curso_horario_update", kwargs={"pk": horario.pk})
+        in content
+    )
+    assert (
+        reverse("vat_comision_curso_horario_delete", kwargs={"pk": horario.pk})
+        in content
+    )
 
 
 @pytest.mark.django_db

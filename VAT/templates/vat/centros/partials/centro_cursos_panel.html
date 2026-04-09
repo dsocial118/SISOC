@@ -149,8 +149,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div id="cursosTableEmptyState"
-                     class="text-center py-4 text-muted d-none">
+                <div id="cursosTableEmptyState" class="text-center py-4 text-muted d-none">
                     <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
                     <p class="mb-0">No hay cursos que coincidan con los filtros seleccionados.</p>
                 </div>
@@ -193,9 +192,7 @@
                                    style="letter-spacing:.05em">Curso</label>
                             <select id="comisionesFilterCurso" class="form-select form-select-sm">
                                 <option value="">Todos los cursos</option>
-                                {% for curso in cursos %}
-                                    <option value="{{ curso.id }}">{{ curso.nombre }}</option>
-                                {% endfor %}
+                                {% for curso in cursos %}<option value="{{ curso.id }}">{{ curso.nombre }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="col-sm-3 col-lg-2">
@@ -354,8 +351,7 @@
                                     {{ field }}
                                 {% elif field.html_name == 'plan_estudio' %}
                                     <div class="col-12 mb-3">
-                                        <label for="openPlanCurricularSelector"
-                                               class="form-label fw-bold">
+                                        <label for="openPlanCurricularSelector" class="form-label fw-bold">
                                             {{ field.label }}
                                             {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
                                         </label>
@@ -366,8 +362,7 @@
                                             <span id="planCurricularSelectorButtonLabel">Seleccionar plan curricular</span>
                                             <i class="fas fa-table-list"></i>
                                         </button>
-                                        <div id="planCurricularSelectorSummary"
-                                             class="small text-muted mt-2">No hay plan curricular seleccionado.</div>
+                                        <div id="planCurricularSelectorSummary" class="small text-muted mt-2">No hay plan curricular seleccionado.</div>
                                         {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
                                         {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                                     </div>
@@ -442,13 +437,15 @@
                             <label for="planCurricularSelectorModalidad"
                                    class="form-label small fw-semibold text-uppercase mb-1"
                                    style="letter-spacing:.05em">Modalidad</label>
-                            <select id="planCurricularSelectorModalidad" class="form-select form-select-sm">
+                            <select id="planCurricularSelectorModalidad"
+                                    class="form-select form-select-sm">
                                 <option value="">Todas las modalidades</option>
                             </select>
                         </div>
                     </div>
                     <div class="table-responsive border rounded">
-                        <table class="table table-hover align-middle mb-0" id="tablaPlanCurricularSelector">
+                        <table class="table table-hover align-middle mb-0"
+                               id="tablaPlanCurricularSelector">
                             <thead class="table-light">
                                 <tr>
                                     <th>Plan Curricular</th>
@@ -466,16 +463,22 @@
                                         data-plan-sector="{{ plan.sector.nombre|default:'' }}"
                                         data-plan-modalidad="{{ plan.modalidad_cursada.nombre|default:'' }}"
                                         data-plan-normativa="{{ plan.normativa|default:'' }}">
-                                        <td class="fw-semibold">{% if plan.nombre %}{{ plan.nombre }}{% elif plan.titulo_referencia %}{{ plan.titulo_referencia.nombre }}{% else %}{{ plan.sector.nombre }}{% endif %}</td>
+                                        <td class="fw-semibold">
+                                            {% if plan.nombre %}
+                                                {{ plan.nombre }}
+                                            {% elif plan.titulo_referencia %}
+                                                {{ plan.titulo_referencia.nombre }}
+                                            {% else %}
+                                                {{ plan.sector.nombre }}
+                                            {% endif %}
+                                        </td>
                                         <td>{{ plan.sector.nombre|default:"-" }}</td>
                                         <td>{{ plan.modalidad_cursada.nombre|default:"-" }}</td>
                                         <td>{{ plan.normativa|default:"-" }}</td>
                                         <td class="text-end">
                                             <button type="button"
                                                     class="btn btn-sm btn-outline-primary"
-                                                    data-plan-selector-choose="1">
-                                                Seleccionar
-                                            </button>
+                                                    data-plan-selector-choose="1">Seleccionar</button>
                                         </td>
                                     </tr>
                                 {% empty %}
