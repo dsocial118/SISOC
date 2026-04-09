@@ -595,7 +595,7 @@
                             data-bs-target="#datos-generales"
                             type="button"
                             role="tab">
-                        <i class="fas fa-info-circle me-1"></i>Datos Generales
+                        <i class="fas fa-info-circle me-1"></i>Datos del Establecimiento
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -634,7 +634,7 @@
                     <div class="details-grid">
                         <article class="details-item">
                             <div class="details-label text-muted">
-                                <i class="fas fa-hashtag"></i>Codigo
+                                <i class="fas fa-hashtag"></i>CUE
                             </div>
                             <p class="details-value">{{ centro.codigo|default:"-" }}</p>
                         </article>
@@ -1552,8 +1552,8 @@
                             <table class="table table-hover mb-0" id="tablaCursosCentro">
                                 <thead class="table-light">
                                     <tr>
+                                        <th>Curso FP</th>
                                         <th>Nombre</th>
-                                        <th>Programa</th>
                                         <th>Comisiones</th>
                                         <th>Estado</th>
                                         <th class="text-center">Acciones</th>
@@ -1561,7 +1561,8 @@
                                 </thead>
                                 <tbody>
                                     {% for curso in cursos %}
-                                        <tr class="curso-row" data-curso-id="{{ curso.id }}" data-curso-nombre="{{ curso.nombre }}" tabindex="0" role="button" aria-label="Filtrar comisiones del curso {{ curso.nombre }}">
+                                        <tr class="curso-row" data-curso-id="{{ curso.id }}" data-curso-nombre="{{ curso.nombre }}" data-curso-plan="{{ curso.plan_estudio_label|default:'' }}" tabindex="0" role="button" aria-label="Filtrar comisiones del curso {{ curso.nombre }}">
+                                            <td>{{ curso.plan_estudio_label }}</td>
                                             <td class="fw-bold">
                                                 {{ curso.nombre }}
                                                 {% if curso.usa_voucher %}
@@ -1570,7 +1571,6 @@
                                                     </span>
                                                 {% endif %}
                                             </td>
-                                            <td>{{ curso.programa.nombre|default:"-" }}</td>
                                             <td>{{ curso.comisiones.count }}</td>
                                             <td>
                                                 <span class="badge {% if curso.estado == 'activo' %}bg-success{% elif curso.estado == 'planificado' %}bg-warning text-dark{% elif curso.estado == 'finalizado' %}bg-secondary{% else %}bg-danger{% endif %}">
@@ -1626,26 +1626,34 @@
                             <table class="table table-hover mb-0" id="tablaComisionesCursoCentro">
                                 <thead class="table-light">
                                     <tr>
+                                        <th>Código</th>
                                         <th>Nombre</th>
                                         <th>Curso</th>
-                                        <th>Periodo</th>
+                                        <th>Ubicación</th>
+                                        <th>Fecha Inicio</th>
+                                        <th>Fecha Fin</th>
                                         <th>Cupo Total</th>
                                         <th>Estado</th>
+                                        <th>Observaciones</th>
                                         <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for comision in comisiones_curso %}
-                                        <tr class="comision-curso-row" data-curso-id="{{ comision.curso_id }}" data-curso-nombre="{{ comision.curso.nombre }}">
+                                        <tr class="comision-curso-row" data-curso-id="{{ comision.curso_id }}" data-curso-nombre="{{ comision.curso.nombre }}" data-comision-codigo="{{ comision.codigo_comision }}" data-comision-nombre="{{ comision.nombre }}" data-comision-ubicacion="{{ comision.ubicacion|default:'' }}" data-comision-estado="{{ comision.estado }}">
+                                            <td>{{ comision.codigo_comision }}</td>
                                             <td>{{ comision.nombre }}</td>
                                             <td>{{ comision.curso.nombre }}</td>
-                                            <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} - {{ comision.fecha_fin|date:"d/m/Y" }}</td>
+                                            <td>{{ comision.ubicacion|default:"-" }}</td>
+                                            <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }}</td>
+                                            <td class="text-muted small">{{ comision.fecha_fin|date:"d/m/Y" }}</td>
                                             <td>{{ comision.cupo_total }}</td>
                                             <td>
                                                 <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
                                                     {{ comision.get_estado_display }}
                                                 </span>
                                             </td>
+                                            <td>{{ comision.observaciones|default:"-" }}</td>
                                             <td class="text-end">
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     {% if perms.VAT.view_comisioncurso %}
@@ -2957,8 +2965,26 @@
             var titleEl = document.getElementById('modalCursoLabel');
             var planEstudioInfoEl = document.getElementById('planEstudioSeleccionadoInfo');
             if (!modalEl || !formEl || !titleEl) return;
+            if (modalEl.dataset.cursoFormInitialized === '1') return;
+            modalEl.dataset.cursoFormInitialized = '1';
 
             var createAction = formEl.getAttribute('action');
+            var selectorModalEl = document.getElementById('modalPlanCurricularSelector');
+            var selectorSearchInput = document.getElementById('planCurricularSelectorSearch');
+            var selectorSectorInput = document.getElementById('planCurricularSelectorSector');
+            var selectorModalidadInput = document.getElementById('planCurricularSelectorModalidad');
+            var selectorSummaryEl = document.getElementById('planCurricularSelectorSummary');
+            var selectorButtonLabelEl = document.getElementById('planCurricularSelectorButtonLabel');
+            var selectorEmptyStateEl = document.getElementById('planCurricularSelectorEmpty');
+            var selectorOpenButton = document.getElementById('openPlanCurricularSelector');
+            var selectorRows = selectorModalEl
+                ? Array.from(selectorModalEl.querySelectorAll('[data-plan-selector-row]'))
+                : [];
+            var shouldReturnToCursoModal = false;
+
+            function normalizePlanSelectorValue(value) {
+                return (value || '').toString().trim().toLowerCase();
+            }
 
             function setFormValue(name, value) {
                 var field = formEl.querySelector('[name="' + name + '"]');
@@ -2983,6 +3009,19 @@
                 }
 
                 field.value = value || '';
+            }
+
+            function getPlanEstudioSelect() {
+                return formEl.querySelector('[name="plan_estudio"]');
+            }
+
+            function getPlanEstudioSelectedOption() {
+                var select = getPlanEstudioSelect();
+                if (!select) return null;
+
+                return Array.from(select.options).find(function(option) {
+                    return option.value && option.value === select.value;
+                }) || null;
             }
 
             function setPlanEstudioFieldLock(planEstudioId, lockField) {
@@ -3016,17 +3055,206 @@
                 }
             }
 
+            function syncPlanSelectorTableSelection() {
+                var planEstudioSelect = getPlanEstudioSelect();
+                var selectedValue = planEstudioSelect ? planEstudioSelect.value : '';
+
+                selectorRows.forEach(function(row) {
+                    var isSelected = selectedValue && row.dataset.planId === selectedValue;
+                    row.classList.toggle('table-primary', Boolean(isSelected));
+                    row.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+                });
+            }
+
+            function populatePlanSelectorFilters() {
+                if (!selectorSectorInput || !selectorModalidadInput) return;
+
+                var selectedSector = selectorSectorInput.value || '';
+                var selectedModalidad = selectorModalidadInput.value || '';
+                var sectors = [];
+                var modalidades = [];
+
+                selectorRows.forEach(function(row) {
+                    var sector = row.dataset.planSector || '';
+                    var modalidad = row.dataset.planModalidad || '';
+
+                    if (sector && !sectors.includes(sector)) {
+                        sectors.push(sector);
+                    }
+
+                    if (modalidad && !modalidades.includes(modalidad)) {
+                        modalidades.push(modalidad);
+                    }
+                });
+
+                sectors.sort();
+                modalidades.sort();
+
+                selectorSectorInput.innerHTML = '<option value="">Todos los sectores</option>';
+                selectorModalidadInput.innerHTML = '<option value="">Todas las modalidades</option>';
+
+                sectors.forEach(function(sector) {
+                    var option = document.createElement('option');
+                    option.value = sector;
+                    option.textContent = sector;
+                    option.selected = sector === selectedSector;
+                    selectorSectorInput.appendChild(option);
+                });
+
+                modalidades.forEach(function(modalidad) {
+                    var option = document.createElement('option');
+                    option.value = modalidad;
+                    option.textContent = modalidad;
+                    option.selected = modalidad === selectedModalidad;
+                    selectorModalidadInput.appendChild(option);
+                });
+            }
+
             function setPlanEstudioInfo(planLabel, locked) {
                 if (!planEstudioInfoEl) return;
 
-                if (locked && planLabel) {
-                    planEstudioInfoEl.textContent = 'Plan de estudio seleccionado: ' + planLabel;
+                if (planLabel) {
+                    planEstudioInfoEl.textContent = locked
+                        ? 'Plan curricular fijado: ' + planLabel
+                        : 'Plan curricular seleccionado: ' + planLabel;
                     planEstudioInfoEl.classList.remove('d-none');
                     return;
                 }
 
                 planEstudioInfoEl.textContent = '';
                 planEstudioInfoEl.classList.add('d-none');
+            }
+
+            function updatePlanSelectorSummary() {
+                var selectedOption = getPlanEstudioSelectedOption();
+                var planLabel = selectedOption ? selectedOption.text.trim() : '';
+
+                if (selectorSummaryEl) {
+                    selectorSummaryEl.textContent = planLabel || 'No hay plan curricular seleccionado.';
+                    selectorSummaryEl.classList.toggle('text-muted', !planLabel);
+                }
+
+                if (selectorButtonLabelEl) {
+                    selectorButtonLabelEl.textContent = planLabel
+                        ? 'Cambiar plan curricular'
+                        : 'Seleccionar plan curricular';
+                }
+
+                setPlanEstudioInfo(planLabel, false);
+                syncPlanSelectorTableSelection();
+            }
+
+            function applyPlanSelectorFilters() {
+                var searchValue = normalizePlanSelectorValue(
+                    selectorSearchInput ? selectorSearchInput.value : ''
+                );
+                var sectorValue = selectorSectorInput ? selectorSectorInput.value : '';
+                var modalidadValue = selectorModalidadInput
+                    ? selectorModalidadInput.value
+                    : '';
+                var visibleRows = 0;
+
+                selectorRows.forEach(function(row) {
+                    var matchesSearch = !searchValue || [
+                        row.dataset.planLabel,
+                        row.dataset.planSector,
+                        row.dataset.planModalidad,
+                        row.dataset.planNormativa,
+                    ].some(function(value) {
+                        return normalizePlanSelectorValue(value).includes(searchValue);
+                    });
+                    var matchesSector = !sectorValue || row.dataset.planSector === sectorValue;
+                    var matchesModalidad = !modalidadValue || row.dataset.planModalidad === modalidadValue;
+                    var isVisible = matchesSearch && matchesSector && matchesModalidad;
+
+                    row.classList.toggle('d-none', !isVisible);
+                    if (isVisible) {
+                        visibleRows += 1;
+                    }
+                });
+
+                if (selectorEmptyStateEl) {
+                    selectorEmptyStateEl.classList.toggle('d-none', visibleRows !== 0);
+                }
+            }
+
+            selectorRows.forEach(function(row) {
+                function choosePlan() {
+                    setFormValue('plan_estudio', row.dataset.planId || '');
+                    updatePlanSelectorSummary();
+
+                    if (selectorModalEl && window.bootstrap && window.bootstrap.Modal) {
+                        shouldReturnToCursoModal = true;
+                        window.bootstrap.Modal.getOrCreateInstance(selectorModalEl).hide();
+                    }
+                }
+
+                row.addEventListener('click', function(event) {
+                    if (event.target.closest('[data-plan-selector-choose]')) {
+                        return;
+                    }
+                    choosePlan();
+                });
+
+                var chooseButton = row.querySelector('[data-plan-selector-choose]');
+                if (chooseButton) {
+                    chooseButton.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        choosePlan();
+                    });
+                }
+            });
+
+            if (selectorSearchInput) {
+                selectorSearchInput.addEventListener('input', applyPlanSelectorFilters);
+            }
+
+            if (selectorSectorInput) {
+                selectorSectorInput.addEventListener('change', applyPlanSelectorFilters);
+            }
+
+            if (selectorModalidadInput) {
+                selectorModalidadInput.addEventListener('change', applyPlanSelectorFilters);
+            }
+
+            if (selectorOpenButton && selectorModalEl && window.bootstrap && window.bootstrap.Modal) {
+                selectorOpenButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    shouldReturnToCursoModal = true;
+                    populatePlanSelectorFilters();
+                    applyPlanSelectorFilters();
+                    syncPlanSelectorTableSelection();
+                    window.bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                    window.bootstrap.Modal.getOrCreateInstance(selectorModalEl).show();
+                });
+            }
+
+            if (selectorModalEl) {
+                selectorModalEl.addEventListener('show.bs.modal', function() {
+                    populatePlanSelectorFilters();
+                    applyPlanSelectorFilters();
+                    syncPlanSelectorTableSelection();
+                });
+
+                selectorModalEl.addEventListener('shown.bs.modal', function() {
+                    if (selectorSearchInput) {
+                        selectorSearchInput.focus();
+                    }
+                });
+
+                selectorModalEl.addEventListener('hidden.bs.modal', function() {
+                    if (shouldReturnToCursoModal && window.bootstrap && window.bootstrap.Modal) {
+                        shouldReturnToCursoModal = false;
+                        window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                        return;
+                    }
+                });
+            }
+
+            var planEstudioSelect = getPlanEstudioSelect();
+            if (planEstudioSelect) {
+                planEstudioSelect.addEventListener('change', updatePlanSelectorSummary);
             }
 
             modalEl.addEventListener('show.bs.modal', function(event) {
@@ -3049,7 +3277,7 @@
                     setFormValue('observaciones', triggerButton.getAttribute('data-observaciones'));
                     setFormValue('voucher_parametrias', triggerButton.getAttribute('data-voucher-ids'));
                     setPlanEstudioFieldLock('', false);
-                    setPlanEstudioInfo('', false);
+                    updatePlanSelectorSummary();
                     return;
                 }
 
@@ -3058,8 +3286,13 @@
                 formEl.setAttribute('action', createAction);
                 setFormValue('plan_estudio', planEstudioId);
                 setPlanEstudioFieldLock(planEstudioId, lockPlanEstudio);
-                setPlanEstudioInfo(planEstudioLabel, lockPlanEstudio);
+                if (lockPlanEstudio) {
+                    setPlanEstudioInfo(planEstudioLabel, true);
+                }
+                updatePlanSelectorSummary();
             });
+
+            updatePlanSelectorSummary();
         }
 
         setupCursoFormModal();

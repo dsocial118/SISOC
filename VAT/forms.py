@@ -1258,9 +1258,10 @@ class CursoForm(forms.ModelForm):
         queryset=PlanVersionCurricular.objects.filter(activo=True)
         .select_related("sector", "modalidad_cursada")
         .order_by("sector__nombre", "modalidad_cursada__nombre"),
-        label="Plan de Estudio",
+        label="Plan Curricular",
         required=True,
         widget=forms.Select(attrs={"class": "form-control"}),
+        help_text="Se listan todos los planes curriculares activos de la provincia del centro.",
     )
     nombre = forms.CharField(
         label="Nombre",

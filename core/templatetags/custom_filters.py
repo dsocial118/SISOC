@@ -1,6 +1,7 @@
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from urllib.parse import quote_plus
+import builtins
 
 from django import template
 from django.templatetags.static import static
@@ -43,6 +44,25 @@ def has_any_perm(user, permission_codes):
     if not resolved:
         return False
     return any(user_has_permission_code(user, code) for code in resolved)
+
+
+@register.filter
+def has_any_group(user, group_names):
+    if not user or not builtins.getattr(user, "is_authenticated", False):
+        return False
+
+    if not group_names:
+        return False
+
+    if isinstance(group_names, str):
+        names = [part.strip() for part in group_names.split(",") if part.strip()]
+    else:
+        names = [str(part).strip() for part in group_names if str(part).strip()]
+
+    if not names:
+        return False
+
+    return user.groups.filter(name__in=names).exists()
 
 
 @register.filter

@@ -254,70 +254,41 @@ def _get_planes_centro_page(
     return plans, paginator.count, page_obj
 
 
+def _get_plan_estudio_label(plan_estudio):
+    if not plan_estudio:
+        return ""
+
+    nombre = (plan_estudio.nombre or "").strip()
+    if nombre:
+        return nombre
+
+    titulos_prefetch = getattr(plan_estudio, "_prefetched_objects_cache", {}).get(
+        "titulos"
+    )
+    if titulos_prefetch:
+        titulo_nombre = (titulos_prefetch[0].nombre or "").strip()
+        if titulo_nombre:
+            return titulo_nombre
+
+    titulo_referencia = plan_estudio.titulo_referencia
+    if titulo_referencia:
+        titulo_nombre = (titulo_referencia.nombre or "").strip()
+        if titulo_nombre:
+            return titulo_nombre
+
+    if plan_estudio.sector_id:
+        return (plan_estudio.sector.nombre or "").strip()
+
+    return ""
+
+
 def _build_cursos_panel_context(request, centro):
-    search_query = (request.GET.get("busqueda") or "").strip()
-    sector_id_raw = request.GET.get("sector_id")
-    subsector_id_raw = request.GET.get("subsector_id")
-    modalidad_id_raw = request.GET.get("modalidad_id")
-    sector_id = (
-        int(sector_id_raw) if sector_id_raw and sector_id_raw.isdigit() else None
-    )
-    subsector_id = (
-        int(subsector_id_raw)
-        if subsector_id_raw and subsector_id_raw.isdigit()
-        else None
-    )
-    modalidad_id = (
-        int(modalidad_id_raw)
-        if modalidad_id_raw and modalidad_id_raw.isdigit()
-        else None
-    )
-    page_size = _parse_planes_centro_page_size(request.GET.get("planes_per_page"))
-    page_number = request.GET.get("planes_page") or 1
-    planes_queryset = _build_planes_centro_queryset(
-        centro,
-        search_query,
-        sector_id,
-        subsector_id,
-        modalidad_id,
-    )
-    planes_centro, total_filtrados, page_obj = _get_planes_centro_page(
-        centro,
-        search_query,
-        page_number,
-        sector_id=sector_id,
-        subsector_id=subsector_id,
-        modalidad_id=modalidad_id,
-        page_size=page_size,
-        bypass_cache=request.GET.get("refresh") == "1",
-    )
-    from VAT.models import ModalidadCursada, Sector, Subsector
-
-    sectores = Sector.objects.all().order_by("nombre")
-    modalidades = ModalidadCursada.objects.filter(activo=True).order_by("nombre")
-    subsectores = Subsector.objects.select_related("sector").order_by(
-        "sector__nombre", "nombre"
-    )
-    if sector_id:
-        subsectores = subsectores.filter(sector_id=sector_id)
-    elif subsector_id:
-        subsectores = subsectores.filter(pk=subsector_id)
-    else:
-        subsectores = subsectores.none()
-
-    planes_por_sector = list(
-        planes_queryset.values("sector__nombre")
-        .annotate(total=Count("id"))
-        .order_by("sector__nombre")
-    )
-    planes_query_params = request.GET.copy()
-    planes_query_params.pop("planes_page", None)
-    planes_query_params.pop("refresh", None)
     cursos = list(
         Curso.objects.filter(centro=centro)
         .select_related("modalidad", "plan_estudio")
         .annotate(comisiones_count=Count("comisiones"))
         .prefetch_related(
+            "plan_estudio__titulos",
             Prefetch(
                 "voucher_parametrias",
                 queryset=VoucherParametria.objects.select_related("programa").order_by(
@@ -327,6 +298,9 @@ def _build_cursos_panel_context(request, centro):
         )
         .order_by("-fecha_creacion")
     )
+    for curso in cursos:
+        curso.plan_estudio_label = _get_plan_estudio_label(curso.plan_estudio)
+
     comisiones_curso = list(
         ComisionCurso.objects.filter(curso__centro=centro)
         .select_related("curso", "ubicacion__localidad")
@@ -346,26 +320,10 @@ def _build_cursos_panel_context(request, centro):
     )
 
     return {
-        "planes_centro": planes_centro,
-        "planes_centro_search_query": search_query,
-        "planes_centro_sector_id": int(sector_id) if sector_id else None,
-        "planes_centro_subsector_id": int(subsector_id) if subsector_id else None,
-        "planes_centro_modalidad_id": int(modalidad_id) if modalidad_id else None,
-        "planes_centro_page_size": page_size,
-        "planes_centro_page_size_options": PLANES_CENTRO_PAGE_SIZE_OPTIONS,
-        "planes_centro_total_filtrados": total_filtrados,
-        "planes_centro_page_obj": page_obj,
-        "planes_centro_is_paginated": page_obj.has_other_pages(),
-        "planes_centro_querystring": planes_query_params.urlencode(),
-        "planes_centro_total_sectores": len(planes_por_sector),
-        "planes_centro_por_sector": planes_por_sector,
         "cursos": cursos,
         "comisiones_curso": comisiones_curso,
         "curso_form": curso_form,
         "comision_curso_form": comision_curso_form,
-        "planes_centro_sectores": sectores,
-        "planes_centro_subsectores": subsectores,
-        "planes_centro_modalidades": modalidades,
     }
 
 
