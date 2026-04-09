@@ -6,7 +6,11 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from iam.services import user_has_permission_code
-from pwa.models import PushSubscriptionPWA
+from pwa.models import (
+    PushSubscriptionPWA,
+    build_push_endpoint_hash,
+    normalize_push_endpoint,
+)
 from users.services_pwa import get_accessible_comedor_ids
 from users.models import AccesoComedorPWA
 
@@ -34,9 +38,12 @@ def upsert_push_subscription(
     user_agent: str | None = None,
 ):
     now = timezone.now()
+    normalized_endpoint = normalize_push_endpoint(endpoint)
+    endpoint_hash = build_push_endpoint_hash(normalized_endpoint)
     subscription, created = PushSubscriptionPWA.objects.update_or_create(
-        endpoint=endpoint,
+        endpoint_hash=endpoint_hash,
         defaults={
+            "endpoint": normalized_endpoint,
             "user": user,
             "p256dh": p256dh,
             "auth": auth,
@@ -51,9 +58,10 @@ def upsert_push_subscription(
 
 
 def deactivate_push_subscription(*, user, endpoint: str) -> bool:
+    endpoint_hash = build_push_endpoint_hash(endpoint)
     updated = PushSubscriptionPWA.objects.filter(
         user=user,
-        endpoint=endpoint,
+        endpoint_hash=endpoint_hash,
         activo=True,
     ).update(
         activo=False,
