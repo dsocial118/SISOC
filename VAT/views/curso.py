@@ -62,6 +62,38 @@ def _centro_cursos_tab_url(centro_id, refresh=False):
     return f"{base_url}#cursos"
 
 
+def _is_ajax_request(request):
+    return request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+
+def _serialize_form_errors(form):
+    return {
+        field_name: [error["message"] for error in errors]
+        for field_name, errors in form.errors.get_json_data().items()
+    }
+
+
+def _horario_json_error_response(form):
+    return JsonResponse(
+        {
+            "ok": False,
+            "message": "No se pudo guardar el horario. Revisá los datos e intentá nuevamente.",
+            "errors": _serialize_form_errors(form),
+        },
+        status=400,
+    )
+
+
+def _horario_json_success_response(redirect_url, message):
+    return JsonResponse(
+        {
+            "ok": True,
+            "message": message,
+            "redirect_url": redirect_url,
+        }
+    )
+
+
 class CursoCreateView(LoginRequiredMixin, CreateView):
     model = Curso
     form_class = CursoForm
@@ -227,6 +259,18 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         comision = self.object
         cancel_url = _centro_cursos_tab_url(comision.curso.centro_id)
+        comision_form = ComisionCursoForm(instance=comision)
+        scoped_centros = filter_centros_queryset_for_user(
+            Centro.objects.all(), self.request.user
+        )
+        comision_form.fields["curso"].queryset = Curso.objects.filter(
+            centro_id__in=scoped_centros.values_list("id", flat=True)
+        ).select_related("centro")
+        comision_form.fields["ubicacion"].queryset = (
+            InstitucionUbicacion.objects.filter(
+                centro_id=comision.curso.centro_id
+            ).select_related("localidad")
+        )
         horario_form = ComisionCursoHorarioForm(initial={"comision_curso": comision.id})
         horario_form.fields["comision_curso"].queryset = ComisionCurso.objects.filter(
             pk=comision.pk
@@ -234,6 +278,7 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         context.update(
             {
                 "comision_curso": comision,
+                "comision_form": comision_form,
                 "cancel_url": cancel_url,
                 "horario_form": horario_form,
                 "ciudadano_rapido_form": CiudadanoInscripcionRapidaForm(
@@ -480,15 +525,23 @@ class ComisionCursoHorarioCreateView(LoginRequiredMixin, CreateView):
         ).order_by("codigo_comision")
         return form
 
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+        if _is_ajax_request(self.request):
+            return _horario_json_error_response(form)
+        return response
+
     def form_valid(self, form):
+        redirect_url = self.get_success_url()
         response = super().form_valid(form)
         cantidad = SesionComisionService.generar_para_horario(self.object)
         if cantidad:
-            messages.success(
-                self.request, f"Horario creado. Se generaron {cantidad} sesiones."
-            )
+            success_message = f"Horario creado. Se generaron {cantidad} sesiones."
         else:
-            messages.success(self.request, "Horario creado exitosamente.")
+            success_message = "Horario creado exitosamente."
+        messages.success(self.request, success_message)
+        if _is_ajax_request(self.request):
+            return _horario_json_success_response(redirect_url, success_message)
         return response
 
     def get_success_url(self):
@@ -516,12 +569,20 @@ class ComisionCursoHorarioUpdateView(LoginRequiredMixin, UpdateView):
         ).order_by("codigo_comision")
         return form
 
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+        if _is_ajax_request(self.request):
+            return _horario_json_error_response(form)
+        return response
+
     def form_valid(self, form):
+        redirect_url = self.get_success_url()
         response = super().form_valid(form)
         cantidad = SesionComisionService.regenerar_para_horario(self.object)
-        messages.success(
-            self.request, f"Horario actualizado. {cantidad} sesiones regeneradas."
-        )
+        success_message = f"Horario actualizado. {cantidad} sesiones regeneradas."
+        messages.success(self.request, success_message)
+        if _is_ajax_request(self.request):
+            return _horario_json_success_response(redirect_url, success_message)
         return response
 
     def get_success_url(self):
@@ -543,8 +604,16 @@ class ComisionCursoHorarioDeleteView(LoginRequiredMixin, DeleteView):
         )
 
     def form_valid(self, form):
+        success_url = self.get_success_url()
         SesionComisionService.eliminar_para_horario(self.object)
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        messages.success(self.request, "Horario eliminado exitosamente.")
+        if _is_ajax_request(self.request):
+            return _horario_json_success_response(
+                success_url,
+                "Horario eliminado exitosamente.",
+            )
+        return response
 
     def get_success_url(self):
         return reverse(

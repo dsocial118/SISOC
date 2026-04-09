@@ -261,6 +261,14 @@ class CentroForm(forms.ModelForm):
         self.fields["referente"].error_messages[
             "invalid_choice"
         ] = "El referente seleccionado debe tener un rol valido de referente VAT."
+        self.referente_search_options = [
+            {
+                "id": str(user.pk),
+                "username": user.username,
+                "label": self.fields["referente"].label_from_instance(user),
+            }
+            for user in self.fields["referente"].queryset.order_by("username")
+        ]
 
     def clean_referente(self):
         referente = self.cleaned_data.get("referente")
@@ -418,6 +426,8 @@ class CentroAltaForm(CentroForm):
             self.fields[hidden_field].widget = forms.HiddenInput()
         self.fields["autoridad_dni"].required = False
         self.fields["autoridad_dni"].widget = forms.HiddenInput()
+        self.fields["referente"].widget.attrs["class"] = "referente-hidden-select"
+        self.fields["referente"].widget.attrs["tabindex"] = "-1"
         self.fields["referente"].empty_label = "Seleccionar referente..."
         self.fields["provincia"].empty_label = "Seleccionar jurisdicción..."
         self.fields["municipio"].empty_label = "Seleccionar municipio..."
@@ -1248,9 +1258,10 @@ class CursoForm(forms.ModelForm):
         queryset=PlanVersionCurricular.objects.filter(activo=True)
         .select_related("sector", "modalidad_cursada")
         .order_by("sector__nombre", "modalidad_cursada__nombre"),
-        label="Plan de Estudio",
+        label="Plan Curricular",
         required=True,
         widget=forms.Select(attrs={"class": "form-control"}),
+        help_text="Se listan todos los planes curriculares activos de la provincia del centro.",
     )
     nombre = forms.CharField(
         label="Nombre",
