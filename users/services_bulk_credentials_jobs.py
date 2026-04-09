@@ -220,6 +220,189 @@ def _build_row_log_defaults(row) -> dict[str, object]:
     }
 
 
+def _sync_job_total_rows(*, job: BulkCredentialsJob, total_rows: int) -> None:
+    if job.total_rows == total_rows:
+        return
+    job.total_rows = total_rows
+    job.save(update_fields=["total_rows"])
+
+
+def _mark_job_completed(*, job: BulkCredentialsJob) -> BulkCredentialsJob:
+    now = timezone.now()
+    job.status = BulkCredentialsJob.Status.COMPLETED
+    job.finished_at = now
+    job.last_activity_at = now
+    job.last_error_message = ""
+    job.last_error_at = None
+    job.save(
+        update_fields=[
+            "status",
+            "finished_at",
+            "last_activity_at",
+            "last_error_message",
+            "last_error_at",
+        ]
+    )
+    return job
+
+
+def _start_job_row_attempt(*, job: BulkCredentialsJob, row_index: int, row) -> None:
+    now = timezone.now()
+    job.status = BulkCredentialsJob.Status.PROCESSING
+    job.next_row_index = row_index
+    job.last_attempted_row = row.fila
+    job.last_attempted_username = row.usuario
+    job.last_activity_at = now
+    job.save(
+        update_fields=[
+            "status",
+            "next_row_index",
+            "last_attempted_row",
+            "last_attempted_username",
+            "last_activity_at",
+        ]
+    )
+
+
+def _get_job_row_log(*, job: BulkCredentialsJob, row):
+    row_log, created = BulkCredentialsJobRow.objects.get_or_create(
+        job=job,
+        fila=row.fila,
+        defaults=_build_row_log_defaults(row),
+    )
+    return (
+        row_log,
+        (None if created else row_log.status),
+        (False if created else row_log.password_actualizada),
+    )
+
+
+def _build_row_processing_state(*, row_log, old_status, old_password_updated):
+    return {
+        "row_log": row_log,
+        "old_status": old_status,
+        "old_password_updated": old_password_updated,
+    }
+
+
+def _build_row_progress(*, row_index: int, total_rows: int):
+    next_row_index = row_index + 1
+    return {
+        "next_row_index": next_row_index,
+        "is_last_row": next_row_index >= total_rows,
+    }
+
+
+def _save_failed_row_log(*, row_log: BulkCredentialsJobRow, row, message: str) -> None:
+    row_log.usuario = row.usuario
+    row_log.mail_destino = row.mail
+    row_log.status = BulkCredentialsJobRow.Status.FAILED
+    row_log.password_actualizada = False
+    row_log.mensaje = message
+    row_log.attempts += 1
+    row_log.processed_at = timezone.now()
+    row_log.save()
+
+
+def _record_row_failure(
+    *,
+    job: BulkCredentialsJob,
+    row,
+    row_state,
+    message: str,
+) -> BulkCredentialsJob:
+    row_log = row_state["row_log"]
+    _save_failed_row_log(row_log=row_log, row=row, message=message)
+    _apply_row_outcome(
+        job=job,
+        old_status=row_state["old_status"],
+        old_password_updated=row_state["old_password_updated"],
+        new_status=row_log.status,
+        new_password_updated=row_log.password_actualizada,
+    )
+
+    now = timezone.now()
+    job.status = BulkCredentialsJob.Status.FAILED
+    job.last_error_message = message
+    job.last_error_at = now
+    job.finished_at = now
+    job.last_activity_at = now
+    job.save(
+        update_fields=[
+            "processed_rows",
+            "sent_rows",
+            "updated_password_rows",
+            "unchanged_password_rows",
+            "rejected_rows",
+            "status",
+            "last_error_message",
+            "last_error_at",
+            "finished_at",
+            "last_activity_at",
+        ]
+    )
+    return job
+
+
+def _record_row_success(
+    *,
+    job: BulkCredentialsJob,
+    row,
+    row_state,
+    result: dict[str, object],
+    progress,
+) -> BulkCredentialsJob:
+    row_log = row_state["row_log"]
+    row_log.usuario = row.usuario
+    row_log.mail_destino = row.mail
+    row_log.status = BulkCredentialsJobRow.Status.SENT
+    row_log.password_actualizada = bool(result["password_actualizada"])
+    row_log.mensaje = str(result["mensaje"])
+    row_log.attempts += 1
+    row_log.processed_at = timezone.now()
+    row_log.save()
+
+    _apply_row_outcome(
+        job=job,
+        old_status=row_state["old_status"],
+        old_password_updated=row_state["old_password_updated"],
+        new_status=row_log.status,
+        new_password_updated=row_log.password_actualizada,
+    )
+
+    now = timezone.now()
+    job.next_row_index = progress["next_row_index"]
+    job.last_successful_row = row.fila
+    job.last_successful_username = row.usuario
+    job.last_activity_at = now
+    update_fields = [
+        "processed_rows",
+        "sent_rows",
+        "updated_password_rows",
+        "unchanged_password_rows",
+        "rejected_rows",
+        "next_row_index",
+        "last_successful_row",
+        "last_successful_username",
+        "last_activity_at",
+    ]
+    if progress["is_last_row"]:
+        job.status = BulkCredentialsJob.Status.COMPLETED
+        job.finished_at = now
+        job.last_error_message = ""
+        job.last_error_at = None
+        update_fields.extend(
+            [
+                "status",
+                "finished_at",
+                "last_error_message",
+                "last_error_at",
+            ]
+        )
+    job.save(update_fields=update_fields)
+    return job
+
+
 def _record_job_level_failure(
     *,
     job: BulkCredentialsJob,
@@ -243,18 +426,15 @@ def _record_job_level_failure(
     return job
 
 
-def process_bulk_credentials_job(job: BulkCredentialsJob) -> BulkCredentialsJob:
-    send_type_config = get_bulk_credentials_send_type_config(job.send_type)
-    login_url = _build_login_url()
-
+def _load_job_rows(job: BulkCredentialsJob, *, send_type_config):
     try:
         job.archivo.open("rb")
-        rows = _load_workbook_rows(
+        return _load_workbook_rows(
             job.archivo,
             send_type_config=send_type_config,
         )
     except ValidationError as exc:
-        return _record_job_level_failure(
+        _record_job_level_failure(
             job=job,
             message=build_bulk_credentials_error_message(exc),
         )
@@ -263,7 +443,7 @@ def process_bulk_credentials_job(job: BulkCredentialsJob) -> BulkCredentialsJob:
             "Fallo leyendo archivo de lote de credenciales. job_id=%s",
             job.id,
         )
-        return _record_job_level_failure(
+        _record_job_level_failure(
             job=job,
             message=build_bulk_credentials_error_message(exc),
         )
@@ -272,54 +452,30 @@ def process_bulk_credentials_job(job: BulkCredentialsJob) -> BulkCredentialsJob:
             job.archivo.close()
         except Exception:
             pass
+    return None
 
-    if job.total_rows != len(rows):
-        job.total_rows = len(rows)
-        job.save(update_fields=["total_rows"])
 
-    if job.next_row_index >= len(rows):
-        now = timezone.now()
-        job.status = BulkCredentialsJob.Status.COMPLETED
-        job.finished_at = now
-        job.last_activity_at = now
-        job.last_error_message = ""
-        job.last_error_at = None
-        job.save(
-            update_fields=[
-                "status",
-                "finished_at",
-                "last_activity_at",
-                "last_error_message",
-                "last_error_at",
-            ]
-        )
+def process_bulk_credentials_job(job: BulkCredentialsJob) -> BulkCredentialsJob:
+    send_type_config = get_bulk_credentials_send_type_config(job.send_type)
+    login_url = _build_login_url()
+    rows = _load_job_rows(job=job, send_type_config=send_type_config)
+    if rows is None:
         return job
 
-    for row_index in range(job.next_row_index, len(rows)):
-        row = rows[row_index]
-        now = timezone.now()
-        job.status = BulkCredentialsJob.Status.PROCESSING
-        job.next_row_index = row_index
-        job.last_attempted_row = row.fila
-        job.last_attempted_username = row.usuario
-        job.last_activity_at = now
-        job.save(
-            update_fields=[
-                "status",
-                "next_row_index",
-                "last_attempted_row",
-                "last_attempted_username",
-                "last_activity_at",
-            ]
-        )
+    total_rows = len(rows)
+    _sync_job_total_rows(job=job, total_rows=total_rows)
+    if job.next_row_index >= total_rows:
+        return _mark_job_completed(job=job)
 
-        row_log, created = BulkCredentialsJobRow.objects.get_or_create(
-            job=job,
-            fila=row.fila,
-            defaults=_build_row_log_defaults(row),
+    for row_index in range(job.next_row_index, total_rows):
+        row = rows[row_index]
+        _start_job_row_attempt(job=job, row_index=row_index, row=row)
+        row_log, old_status, old_password_updated = _get_job_row_log(job=job, row=row)
+        row_state = _build_row_processing_state(
+            row_log=row_log,
+            old_status=old_status,
+            old_password_updated=old_password_updated,
         )
-        old_status = None if created else row_log.status
-        old_password_updated = False if created else row_log.password_actualizada
 
         try:
             result = process_bulk_credentials_row(
@@ -329,44 +485,12 @@ def process_bulk_credentials_job(job: BulkCredentialsJob) -> BulkCredentialsJob:
                 max_total_seconds=None,
             )
         except ValidationError as exc:
-            message = build_bulk_credentials_error_message(exc)
-            row_log.usuario = row.usuario
-            row_log.mail_destino = row.mail
-            row_log.status = BulkCredentialsJobRow.Status.FAILED
-            row_log.password_actualizada = False
-            row_log.mensaje = message
-            row_log.attempts += 1
-            row_log.processed_at = timezone.now()
-            row_log.save()
-
-            _apply_row_outcome(
+            return _record_row_failure(
                 job=job,
-                old_status=old_status,
-                old_password_updated=old_password_updated,
-                new_status=row_log.status,
-                new_password_updated=row_log.password_actualizada,
+                row=row,
+                row_state=row_state,
+                message=build_bulk_credentials_error_message(exc),
             )
-
-            job.status = BulkCredentialsJob.Status.FAILED
-            job.last_error_message = message
-            job.last_error_at = timezone.now()
-            job.finished_at = timezone.now()
-            job.last_activity_at = timezone.now()
-            job.save(
-                update_fields=[
-                    "processed_rows",
-                    "sent_rows",
-                    "updated_password_rows",
-                    "unchanged_password_rows",
-                    "rejected_rows",
-                    "status",
-                    "last_error_message",
-                    "last_error_at",
-                    "finished_at",
-                    "last_activity_at",
-                ]
-            )
-            return job
         except Exception as exc:
             logger.exception(
                 (
@@ -377,105 +501,21 @@ def process_bulk_credentials_job(job: BulkCredentialsJob) -> BulkCredentialsJob:
                 row.fila,
                 row.usuario,
             )
-            message = build_bulk_credentials_error_message(exc)
-            row_log.usuario = row.usuario
-            row_log.mail_destino = row.mail
-            row_log.status = BulkCredentialsJobRow.Status.FAILED
-            row_log.password_actualizada = False
-            row_log.mensaje = message
-            row_log.attempts += 1
-            row_log.processed_at = timezone.now()
-            row_log.save()
-
-            _apply_row_outcome(
+            return _record_row_failure(
                 job=job,
-                old_status=old_status,
-                old_password_updated=old_password_updated,
-                new_status=row_log.status,
-                new_password_updated=row_log.password_actualizada,
+                row=row,
+                row_state=row_state,
+                message=build_bulk_credentials_error_message(exc),
             )
-
-            job.status = BulkCredentialsJob.Status.FAILED
-            job.last_error_message = message
-            job.last_error_at = timezone.now()
-            job.finished_at = timezone.now()
-            job.last_activity_at = timezone.now()
-            job.save(
-                update_fields=[
-                    "processed_rows",
-                    "sent_rows",
-                    "updated_password_rows",
-                    "unchanged_password_rows",
-                    "rejected_rows",
-                    "status",
-                    "last_error_message",
-                    "last_error_at",
-                    "finished_at",
-                    "last_activity_at",
-                ]
-            )
-            return job
-
-        row_log.usuario = row.usuario
-        row_log.mail_destino = row.mail
-        row_log.status = BulkCredentialsJobRow.Status.SENT
-        row_log.password_actualizada = bool(result["password_actualizada"])
-        row_log.mensaje = str(result["mensaje"])
-        row_log.attempts += 1
-        row_log.processed_at = timezone.now()
-        row_log.save()
-
-        _apply_row_outcome(
+        job = _record_row_success(
             job=job,
-            old_status=old_status,
-            old_password_updated=old_password_updated,
-            new_status=row_log.status,
-            new_password_updated=row_log.password_actualizada,
+            row=row,
+            row_state=row_state,
+            result=result,
+            progress=_build_row_progress(row_index=row_index, total_rows=total_rows),
         )
-
-        next_row_index = row_index + 1
-        now = timezone.now()
-        job.next_row_index = next_row_index
-        job.last_successful_row = row.fila
-        job.last_successful_username = row.usuario
-        job.last_activity_at = now
-        if next_row_index >= len(rows):
-            job.status = BulkCredentialsJob.Status.COMPLETED
-            job.finished_at = now
-            job.last_error_message = ""
-            job.last_error_at = None
-            job.save(
-                update_fields=[
-                    "processed_rows",
-                    "sent_rows",
-                    "updated_password_rows",
-                    "unchanged_password_rows",
-                    "rejected_rows",
-                    "next_row_index",
-                    "last_successful_row",
-                    "last_successful_username",
-                    "last_activity_at",
-                    "status",
-                    "finished_at",
-                    "last_error_message",
-                    "last_error_at",
-                ]
-            )
+        if job.status == BulkCredentialsJob.Status.COMPLETED:
             return job
-
-        job.save(
-            update_fields=[
-                "processed_rows",
-                "sent_rows",
-                "updated_password_rows",
-                "unchanged_password_rows",
-                "rejected_rows",
-                "next_row_index",
-                "last_successful_row",
-                "last_successful_username",
-                "last_activity_at",
-            ]
-        )
 
     return job
 
@@ -503,9 +543,7 @@ def run_bulk_credentials_jobs_worker(*, once: bool = False) -> None:
         try:
             processed_job = process_next_bulk_credentials_job()
         except Exception:
-            logger.exception(
-                "Fallo inesperado en el worker de credenciales masivas."
-            )
+            logger.exception("Fallo inesperado en el worker de credenciales masivas.")
             if once:
                 raise
             time.sleep(poll_seconds)

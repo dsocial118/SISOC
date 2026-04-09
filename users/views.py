@@ -248,8 +248,7 @@ class BulkCredentialsTemplateView(AdminRequiredMixin, View):
         response = HttpResponse(
             content,
             content_type=(
-                "application/vnd.openxmlformats-officedocument."
-                "spreadsheetml.sheet"
+                "application/vnd.openxmlformats-officedocument." "spreadsheetml.sheet"
             ),
         )
         response["Content-Disposition"] = (
