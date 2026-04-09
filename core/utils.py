@@ -1,11 +1,38 @@
 """Utilidades generales usadas en diferentes módulos del proyecto."""
 
-import logging
 import json
+import logging
+import os
+import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
 from django.utils import timezone
+
+
+def _get_current_log_date_folder() -> str:
+    return timezone.localtime().strftime("%Y-%m-%d")
+
+
+def _build_daily_log_filename(filename) -> Path:
+    base_path = Path(filename)
+    return base_path.parent / _get_current_log_date_folder() / base_path.name
+
+
+def _get_log_fallback_dir() -> Path:
+    return Path(
+        os.getenv(
+            "LOG_FALLBACK_DIR",
+            str(Path(tempfile.gettempdir()) / "sisoc-logs"),
+        )
+    )
+
+
+def _ensure_log_file_is_writable(path: Path, mode="a", encoding=None) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open(mode, encoding=encoding):
+        pass
 
 
 class DailyFileHandler(logging.FileHandler):
@@ -25,11 +52,33 @@ class DailyFileHandler(logging.FileHandler):
             delay: Retrasar la creación del archivo hasta el primer registro.
         """
 
-        current_date = timezone.localtime().strftime("%Y-%m-%d")
-        daily_folder = Path(filename).parent / current_date
-        daily_folder.mkdir(parents=True, exist_ok=True)
-        daily_filename = daily_folder / Path(filename).name
-        super().__init__(daily_filename, mode, encoding, delay)
+        daily_filename = _build_daily_log_filename(filename)
+        resolved_filename = daily_filename
+
+        try:
+            _ensure_log_file_is_writable(
+                daily_filename,
+                mode=mode,
+                encoding=encoding,
+            )
+        except OSError as exc:
+            fallback_filename = _build_daily_log_filename(
+                _get_log_fallback_dir() / Path(filename).name
+            )
+            _ensure_log_file_is_writable(
+                fallback_filename,
+                mode=mode,
+                encoding=encoding,
+            )
+            print(
+                "[logging] No se pudo abrir el archivo de log "
+                f"'{daily_filename}' ({exc}). "
+                f"Usando fallback '{fallback_filename}'.",
+                file=sys.stderr,
+            )
+            resolved_filename = fallback_filename
+
+        super().__init__(resolved_filename, mode, encoding, delay)
 
 
 class JSONDataFormatter(logging.Formatter):
