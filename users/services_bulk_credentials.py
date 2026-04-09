@@ -299,40 +299,82 @@ def _load_workbook_rows(
         workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
     except Exception as exc:
         raise ValidationError("No se pudo leer el archivo Excel cargado.") from exc
+    try:
+        if SHEET_NAME in workbook.sheetnames:
+            worksheet = workbook[SHEET_NAME]
+        else:
+            worksheet = workbook.active
+        rows = list(worksheet.iter_rows(values_only=True))
+        if not rows:
+            raise ValidationError("El archivo Excel esta vacio.")
 
-    if SHEET_NAME in workbook.sheetnames:
-        worksheet = workbook[SHEET_NAME]
-    else:
-        worksheet = workbook.active
-    rows = list(worksheet.iter_rows(values_only=True))
-    if not rows:
-        raise ValidationError("El archivo Excel esta vacio.")
+        headers = [_clean_cell(value) for value in rows[0]]
+        header_map = _build_header_map(headers, send_type_config=send_type_config)
 
-    headers = [_clean_cell(value) for value in rows[0]]
-    header_map = _build_header_map(headers, send_type_config=send_type_config)
+        parsed_rows: list[ParsedCredentialRow] = []
+        for row_number, row in enumerate(rows[1:], start=2):
+            values = {
+                column: _clean_cell(row[index] if index < len(row) else "")
+                for column, index in header_map.items()
+            }
+            if not any(values.values()):
+                continue
 
-    parsed_rows: list[ParsedCredentialRow] = []
-    for row_number, row in enumerate(rows[1:], start=2):
-        values = {
-            column: _clean_cell(row[index] if index < len(row) else "")
-            for column, index in header_map.items()
-        }
-        if not any(values.values()):
-            continue
-
-        parsed_rows.append(
-            ParsedCredentialRow(
-                fila=row_number,
-                data=values,
+            parsed_rows.append(
+                ParsedCredentialRow(
+                    fila=row_number,
+                    data=values,
+                )
             )
-        )
 
-    if not parsed_rows:
+        if not parsed_rows:
+            raise ValidationError(
+                "El archivo Excel no contiene filas con datos para procesar."
+            )
+
+        return parsed_rows
+    finally:
+        workbook.close()
+
+
+def validate_bulk_credentials_workbook(
+    uploaded_file,
+    *,
+    send_type: str | None = None,
+) -> BulkCredentialsSendTypeConfig:
+    send_type_config = get_bulk_credentials_send_type_config(send_type)
+    try:
+        uploaded_file.seek(0)
+        workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
+    except Exception as exc:
+        raise ValidationError("No se pudo leer el archivo Excel cargado.") from exc
+
+    try:
+        worksheet = (
+            workbook[SHEET_NAME]
+            if SHEET_NAME in workbook.sheetnames
+            else workbook.active
+        )
+        rows = worksheet.iter_rows(values_only=True)
+        try:
+            header_row = next(rows)
+        except StopIteration as exc:
+            raise ValidationError("El archivo Excel esta vacio.") from exc
+
+        headers = [_clean_cell(value) for value in header_row]
+        _build_header_map(headers, send_type_config=send_type_config)
+
+        for row in rows:
+            values = [_clean_cell(value) for value in row]
+            if any(values):
+                uploaded_file.seek(0)
+                return send_type_config
+
         raise ValidationError(
             "El archivo Excel no contiene filas con datos para procesar."
         )
-
-    return parsed_rows
+    finally:
+        workbook.close()
 
 
 def generate_bulk_credentials_template(send_type: str | None = None) -> bytes:
@@ -376,6 +418,37 @@ def _send_bulk_credentials_email_once(
         recipient_list=[recipient_email],
         fail_silently=False,
     )
+
+
+def build_bulk_credentials_error_message(exc: Exception) -> str:
+    if isinstance(exc, ValidationError):
+        return " ".join(exc.messages)
+    if isinstance(exc, BulkCredentialsEmailTimeoutError) or isinstance(
+        exc, TimeoutError
+    ):
+        return "Timeout al comunicarse con el servidor de correo."
+    if isinstance(exc, smtplib.SMTPAuthenticationError):
+        return "El servidor de correo rechazo la autenticacion."
+    if isinstance(exc, smtplib.SMTPConnectError):
+        return "No se pudo conectar al servidor de correo."
+    if isinstance(exc, smtplib.SMTPServerDisconnected):
+        return "El servidor de correo cerro la conexion."
+    if isinstance(exc, smtplib.SMTPRecipientsRefused):
+        return "El servidor de correo rechazo el destinatario indicado."
+    if isinstance(exc, smtplib.SMTPDataError):
+        return "El servidor de correo rechazo el mensaje enviado."
+    if isinstance(exc, smtplib.SMTPException):
+        return "Ocurrio un error del servidor de correo."
+    if isinstance(exc, OSError):
+        return "Ocurrio un error de red al enviar el correo."
+    return "Ocurrio un error inesperado al procesar la fila."
+
+
+def _build_email_retry_failure_message(last_error: Exception | None) -> str:
+    base_message = build_bulk_credentials_error_message(
+        last_error or ValidationError("No se pudo enviar el correo.")
+    )
+    return f"{base_message} El envio se reintento sin exito."
 
 
 def send_bulk_credentials_email(
@@ -450,7 +523,7 @@ def send_bulk_credentials_email(
                 time.sleep(BULK_CREDENTIALS_EMAIL_RETRY_BACKOFF_SECONDS)
 
     raise ValidationError(
-        "No se pudo enviar el correo para esta fila luego de reintentar."
+        _build_email_retry_failure_message(last_error)
     ) from last_error
 
 
@@ -501,6 +574,51 @@ def _password_matches_current_state(*, user, plain_password: str) -> bool:
     if temporary_password is not None:
         return temporary_password == plain_password
     return user.check_password(plain_password)
+
+
+def process_bulk_credentials_row(
+    *,
+    row: ParsedCredentialRow,
+    send_type_config: BulkCredentialsSendTypeConfig,
+    login_url: str,
+    max_total_seconds: float | None = None,
+) -> dict[str, object]:
+    _validate_row_data(row, send_type_config=send_type_config)
+    with transaction.atomic():
+        user = (
+            User.objects.select_related("profile")
+            .filter(username__iexact=row.usuario)
+            .first()
+        )
+        if not user:
+            raise ValidationError("No existe un usuario con ese nombre.")
+
+        password_updated = False
+        if not _password_matches_current_state(
+            user=user,
+            plain_password=row.password,
+        ):
+            _update_password_state(user=user, plain_password=row.password)
+            password_updated = True
+
+        send_bulk_credentials_email(
+            user=user,
+            recipient_email=row.mail,
+            plain_password=row.password,
+            login_url=login_url,
+            send_type=send_type_config.key,
+            nombre_del_centro=row.nombre_del_centro,
+            max_total_seconds=max_total_seconds,
+        )
+
+    return {
+        "fila": row.fila,
+        "usuario": row.usuario,
+        "mail_destino": row.mail,
+        "estado": "enviada",
+        "mensaje": "Credenciales enviadas correctamente.",
+        "password_actualizada": password_updated,
+    }
 
 
 def process_bulk_credentials_file(
@@ -554,55 +672,32 @@ def process_bulk_credentials_file(
         }
 
         try:
-            _validate_row_data(row, send_type_config=send_type_config)
-            with transaction.atomic():
-                user = (
-                    User.objects.select_related("profile")
-                    .filter(username__iexact=row.usuario)
-                    .first()
-                )
-                if not user:
-                    raise ValidationError("No existe un usuario con ese nombre.")
-
-                password_updated = False
-
-                if not _password_matches_current_state(
-                    user=user,
-                    plain_password=row.password,
-                ):
-                    _update_password_state(user=user, plain_password=row.password)
-                    password_updated = True
-
-                send_bulk_credentials_email(
-                    user=user,
-                    recipient_email=row.mail,
-                    plain_password=row.password,
-                    login_url=login_url,
-                    send_type=send_type_config.key,
-                    nombre_del_centro=row.nombre_del_centro,
-                    max_total_seconds=_get_remaining_processing_seconds(
-                        processing_deadline
-                    ),
-                )
-
-                row_result["password_actualizada"] = password_updated
-                row_result["estado"] = "enviada"
-                row_result["mensaje"] = "Credenciales enviadas correctamente."
-
-                if password_updated:
-                    summary["actualizadas"] += 1
-                else:
-                    summary["sin_cambios"] += 1
-
-                summary["enviadas"] += 1
+            row_result = process_bulk_credentials_row(
+                row=row,
+                send_type_config=send_type_config,
+                login_url=login_url,
+                max_total_seconds=_get_remaining_processing_seconds(
+                    processing_deadline
+                ),
+            )
+            if row_result["password_actualizada"]:
+                summary["actualizadas"] += 1
+            else:
+                summary["sin_cambios"] += 1
+            summary["enviadas"] += 1
         except ValidationError as exc:
             summary["rechazadas"] += 1
-            row_result["mensaje"] = " ".join(exc.messages)
-        except Exception:
+            row_result["mensaje"] = build_bulk_credentials_error_message(
+                exc
+            )
+        except Exception as exc:
             summary["rechazadas"] += 1
-            row_result["mensaje"] = "No se pudo enviar el correo para esta fila."
+            row_result["mensaje"] = build_bulk_credentials_error_message(exc)
             logger.exception(
-                "Fallo procesando envio masivo de credenciales. tipo=%s fila=%s usuario=%s",
+                (
+                    "Fallo procesando envio masivo de credenciales. "
+                    "tipo=%s fila=%s usuario=%s"
+                ),
                 send_type_config.key,
                 row.fila,
                 row.usuario,

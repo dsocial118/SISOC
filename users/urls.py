@@ -3,6 +3,8 @@ from django.contrib.auth.views import LogoutView
 from core.decorators import permissions_all_required, permissions_any_required
 from users.services import BULK_CREDENTIALS_PERMISSION_CODE
 from users.views import (
+    BulkCredentialsJobDetailView,
+    BulkCredentialsJobResumeView,
     BulkCredentialsTemplateView,
     BulkCredentialsUploadView,
     FirstLoginPasswordChangeView,
@@ -76,6 +78,20 @@ urlpatterns = [
             ["auth.change_user", BULK_CREDENTIALS_PERMISSION_CODE]
         )(BulkCredentialsTemplateView.as_view()),
         name="usuarios_credenciales_plantilla",
+    ),
+    path(
+        "usuarios/credenciales-masivas/lotes/<int:pk>/",
+        permissions_all_required(
+            ["auth.change_user", BULK_CREDENTIALS_PERMISSION_CODE]
+        )(BulkCredentialsJobDetailView.as_view()),
+        name="usuarios_credenciales_masivas_detalle",
+    ),
+    path(
+        "usuarios/credenciales-masivas/lotes/<int:pk>/reanudar/",
+        permissions_all_required(
+            ["auth.change_user", BULK_CREDENTIALS_PERMISSION_CODE]
+        )(BulkCredentialsJobResumeView.as_view()),
+        name="usuarios_credenciales_masivas_reanudar",
     ),
     path(
         "usuarios/borrar/<int:pk>/",
