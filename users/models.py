@@ -4,6 +4,10 @@ from django.db import models
 from core.models import Provincia
 
 
+def bulk_credentials_job_upload_to(instance, filename):
+    return f"users/bulk_credentials_jobs/{instance.requested_by_id}/{filename}"
+
+
 class Profile(models.Model):
     """Perfil extendido de usuario del sistema SISOC.
 
@@ -279,3 +283,94 @@ class AuditAccesoComedorPWA(models.Model):
         return (
             f"{self.user_id or '-'} {self.accion} {self.fecha_evento:%Y-%m-%d %H:%M:%S}"
         )
+
+
+class BulkCredentialsJob(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pendiente"
+        PROCESSING = "processing", "Procesando"
+        COMPLETED = "completed", "Completado"
+        FAILED = "failed", "Fallido"
+
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        related_name="bulk_credentials_jobs",
+    )
+    archivo = models.FileField(upload_to=bulk_credentials_job_upload_to)
+    original_filename = models.CharField(max_length=255)
+    send_type = models.CharField(max_length=32, db_index=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    total_rows = models.PositiveIntegerField(default=0)
+    processed_rows = models.PositiveIntegerField(default=0)
+    sent_rows = models.PositiveIntegerField(default=0)
+    updated_password_rows = models.PositiveIntegerField(default=0)
+    unchanged_password_rows = models.PositiveIntegerField(default=0)
+    rejected_rows = models.PositiveIntegerField(default=0)
+    next_row_index = models.PositiveIntegerField(default=0)
+    last_successful_row = models.PositiveIntegerField(null=True, blank=True)
+    last_successful_username = models.CharField(max_length=150, blank=True)
+    last_attempted_row = models.PositiveIntegerField(null=True, blank=True)
+    last_attempted_username = models.CharField(max_length=150, blank=True)
+    last_error_message = models.TextField(blank=True)
+    last_error_at = models.DateTimeField(null=True, blank=True)
+    resume_count = models.PositiveIntegerField(default=0)
+    requested_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    last_activity_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["-requested_at", "-id"]
+        indexes = [
+            models.Index(fields=["status", "requested_at"]),
+            models.Index(fields=["requested_by", "requested_at"]),
+        ]
+        verbose_name = "Lote de credenciales masivas"
+        verbose_name_plural = "Lotes de credenciales masivas"
+
+    def __str__(self):
+        return f"Lote {self.id} ({self.get_status_display()})"
+
+
+class BulkCredentialsJobRow(models.Model):
+    class Status(models.TextChoices):
+        SENT = "sent", "Enviada"
+        FAILED = "failed", "Fallida"
+
+    job = models.ForeignKey(
+        BulkCredentialsJob,
+        on_delete=models.CASCADE,
+        related_name="rows",
+    )
+    fila = models.PositiveIntegerField()
+    usuario = models.CharField(max_length=150, blank=True)
+    mail_destino = models.EmailField(max_length=254, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, db_index=True)
+    mensaje = models.TextField(blank=True)
+    password_actualizada = models.BooleanField(default=False)
+    attempts = models.PositiveIntegerField(default=0)
+    processed_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["fila", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job", "fila"],
+                name="users_bulk_credentials_job_row_unique",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["job", "status"]),
+            models.Index(fields=["job", "processed_at"]),
+        ]
+        verbose_name = "Resultado de fila de credenciales masivas"
+        verbose_name_plural = "Resultados de filas de credenciales masivas"
+
+    def __str__(self):
+        return f"Lote {self.job_id} fila {self.fila} ({self.get_status_display()})"

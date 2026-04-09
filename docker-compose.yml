@@ -35,5 +35,19 @@ services:
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
     restart: "no"
 
+  bulk_credentials_worker:
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+      DJANGO_SERVICE_ROLE: bulk_credentials_worker
+    env_file:
+      - .env
+    volumes:
+      - .:/sisoc/
+    user: "${RUN_UID:-0}:${RUN_GID:-0}"
+    restart: "no"
+
 volumes:
   mysql_data:
