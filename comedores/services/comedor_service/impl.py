@@ -161,7 +161,9 @@ def _apply_nomina_dni_filter(qs_nomina, dni_query):
         return qs_nomina
     if not dni_clean.isdigit():
         return qs_nomina.none()
-    return qs_nomina.filter(ciudadano__documento__startswith=dni_clean)
+    return qs_nomina.filter(
+        Ciudadano.documento_prefix_filter(dni_clean, field_name="ciudadano__documento")
+    )
 
 
 def _build_nomina_page(qs_nomina, page, per_page):
