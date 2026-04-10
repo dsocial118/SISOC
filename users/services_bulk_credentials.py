@@ -9,7 +9,6 @@ import time
 import unicodedata
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import timedelta
 from io import BytesIO
 
 from django.conf import settings
@@ -20,11 +19,7 @@ from django.core.validators import validate_email
 from django.db import transaction
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.utils import timezone
 from openpyxl import Workbook, load_workbook
-from rest_framework.authtoken.models import Token
-
-from users.models import Profile
 
 User = get_user_model()
 logger = logging.getLogger("django")
@@ -169,30 +164,29 @@ BULK_CREDENTIALS_SEND_TYPES = {
     "standard": BulkCredentialsSendTypeConfig(
         key="standard",
         label="Estandar",
-        required_columns=("usuario", "mail", "password"),
-        template_headers=("usuario", "mail", "password"),
+        required_columns=("usuario",),
+        template_headers=("usuario",),
         template_filename="plantilla_credenciales_usuarios.xlsx",
         email_subject="SISOC - Credenciales de acceso",
         email_template_name="user/bulk_credentials_email.txt",
         description=(
-            "Carga un archivo .xlsx con encabezados usuario, mail y password. "
-            "Se valida el usuario existente, se actualiza la password vigente "
-            "si corresponde y luego se envia el correo al mail informado en "
-            "la planilla."
+            "Carga un archivo .xlsx con encabezado usuario. Se valida el "
+            "usuario existente y se envia la credencial temporal vigente al "
+            "mail cargado en el usuario."
         ),
     ),
     "inet": BulkCredentialsSendTypeConfig(
         key="inet",
         label="INET",
-        required_columns=("usuario", "mail", "password", "nombre_del_centro"),
-        template_headers=("usuario", "mail", "password", "Nombre del Centro"),
+        required_columns=("usuario", "nombre_del_centro"),
+        template_headers=("usuario", "Nombre del Centro"),
         template_filename="plantilla_credenciales_usuarios_inet.xlsx",
         email_subject="Acceso a la plataforma y capacitación virtual – INET",
         email_template_name="user/bulk_credentials_email_inet.txt",
         description=(
-            "Carga un archivo .xlsx con encabezados usuario, mail, password y "
-            "Nombre del Centro. Ademas del acceso, el correo incluye la "
-            "capacitacion virtual y el video de referencia para INET."
+            "Carga un archivo .xlsx con encabezados usuario y Nombre del "
+            "Centro. Ademas del acceso, el correo incluye la capacitacion "
+            "virtual y el video de referencia para INET."
         ),
     ),
 }
@@ -554,43 +548,32 @@ def _validate_row_data(
             continue
         raise ValidationError(f"La columna {column} es obligatoria.")
 
+
+def _get_user_recipient_email(user) -> str:
+    recipient_email = (user.email or "").strip()
+    if not recipient_email:
+        raise ValidationError("El usuario no tiene un mail cargado.")
+
     try:
-        validate_email(row.mail)
+        validate_email(recipient_email)
     except ValidationError as exc:
-        raise ValidationError("El formato del mail es invalido.") from exc
+        raise ValidationError("El usuario tiene un mail invalido cargado.") from exc
+    return recipient_email
 
 
-def _update_password_state(*, user, plain_password: str) -> None:
-    user.set_password(plain_password)
-    user.save(update_fields=["password"])
-
-    profile, _ = Profile.objects.get_or_create(user=user)
-    profile.must_change_password = True
-    profile.password_changed_at = None
-    profile.initial_password_expires_at = timezone.now() + timedelta(
-        hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
-    )
-    profile.password_reset_requested_at = None
-    profile.temporary_password_plaintext = plain_password
-    profile.save(
-        update_fields=[
-            "must_change_password",
-            "password_changed_at",
-            "initial_password_expires_at",
-            "password_reset_requested_at",
-            "temporary_password_plaintext",
-        ]
-    )
-
-    Token.objects.filter(user=user).delete()
-
-
-def _password_matches_current_state(*, user, plain_password: str) -> bool:
+def _get_user_plain_password(user) -> str:
     profile = getattr(user, "profile", None)
-    temporary_password = getattr(profile, "temporary_password_plaintext", None)
-    if temporary_password is not None:
-        return temporary_password == plain_password
-    return user.check_password(plain_password)
+    plain_password = (
+        getattr(profile, "temporary_password_plaintext", "") or ""
+    ).strip()
+    if not plain_password:
+        raise ValidationError(
+            (
+                "El usuario no tiene una contraseña temporal visible para enviar. "
+                "Genere o cargue una nueva contraseña temporal antes de reintentar."
+            )
+        )
+    return plain_password
 
 
 def process_bulk_credentials_row(
@@ -610,18 +593,13 @@ def process_bulk_credentials_row(
         if not user:
             raise ValidationError("No existe un usuario con ese nombre.")
 
-        password_updated = False
-        if not _password_matches_current_state(
-            user=user,
-            plain_password=row.password,
-        ):
-            _update_password_state(user=user, plain_password=row.password)
-            password_updated = True
+        recipient_email = _get_user_recipient_email(user)
+        plain_password = _get_user_plain_password(user)
 
         send_bulk_credentials_email(
             user=user,
-            recipient_email=row.mail,
-            plain_password=row.password,
+            recipient_email=recipient_email,
+            plain_password=plain_password,
             login_url=login_url,
             send_type=send_type_config.key,
             nombre_del_centro=row.nombre_del_centro,
@@ -631,10 +609,10 @@ def process_bulk_credentials_row(
     return {
         "fila": row.fila,
         "usuario": row.usuario,
-        "mail_destino": row.mail,
+        "mail_destino": recipient_email,
         "estado": "enviada",
         "mensaje": "Credenciales enviadas correctamente.",
-        "password_actualizada": password_updated,
+        "password_actualizada": False,
     }
 
 
