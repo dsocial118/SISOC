@@ -354,7 +354,7 @@ def _record_row_success(
 ) -> BulkCredentialsJob:
     row_log = row_state["row_log"]
     row_log.usuario = row.usuario
-    row_log.mail_destino = row.mail
+    row_log.mail_destino = str(result["mail_destino"])
     row_log.status = BulkCredentialsJobRow.Status.SENT
     row_log.password_actualizada = bool(result["password_actualizada"])
     row_log.mensaje = str(result["mensaje"])
