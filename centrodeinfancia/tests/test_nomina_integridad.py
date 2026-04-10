@@ -1,4 +1,5 @@
 from datetime import date
+from pathlib import Path
 
 import pytest
 from django.contrib.auth.models import User
@@ -161,3 +162,17 @@ def test_create_view_crea_ficha_cdi_para_ciudadano_existente(client):
     assert nomina.sala == "Sala Roja"
     assert nomina.posee_cud is False
     assert nomina.posee_obra_social is True
+
+
+def test_nomina_crear_template_conserva_ajax_nativo_ubicacion():
+    template_path = Path(
+        "centrodeinfancia/templates/centrodeinfancia/nomina_form.html"
+    )
+    content = template_path.read_text(encoding="utf-8")
+
+    assert "ajaxLoadMunicipiosUrl" in content
+    assert "ajaxLoadLocalidadesUrl" in content
+    assert 'id_provincia_domicilio' in content
+    assert 'id_municipio_domicilio' in content
+    assert 'id_localidad_domicilio' in content
+    assert "fetch(url" in content
