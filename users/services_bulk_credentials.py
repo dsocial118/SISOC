@@ -164,28 +164,28 @@ BULK_CREDENTIALS_SEND_TYPES = {
     "standard": BulkCredentialsSendTypeConfig(
         key="standard",
         label="Estandar",
-        required_columns=("usuario",),
-        template_headers=("usuario",),
+        required_columns=("usuario", "mail"),
+        template_headers=("usuario", "mail"),
         template_filename="plantilla_credenciales_usuarios.xlsx",
         email_subject="SISOC - Credenciales de acceso",
         email_template_name="user/bulk_credentials_email.txt",
         description=(
-            "Carga un archivo .xlsx con encabezado usuario. Se valida el "
-            "usuario existente y se envia la credencial temporal vigente al "
-            "mail cargado en el usuario."
+            "Carga un archivo .xlsx con encabezados usuario y mail. Se valida "
+            "el usuario existente y se envia la credencial temporal vigente al "
+            "mail informado en la planilla."
         ),
     ),
     "inet": BulkCredentialsSendTypeConfig(
         key="inet",
         label="INET",
-        required_columns=("usuario", "nombre_del_centro"),
-        template_headers=("usuario", "Nombre del Centro"),
+        required_columns=("usuario", "mail", "nombre_del_centro"),
+        template_headers=("usuario", "mail", "Nombre del Centro"),
         template_filename="plantilla_credenciales_usuarios_inet.xlsx",
         email_subject="Acceso a la plataforma y capacitación virtual – INET",
         email_template_name="user/bulk_credentials_email_inet.txt",
         description=(
-            "Carga un archivo .xlsx con encabezados usuario y Nombre del "
-            "Centro. Ademas del acceso, el correo incluye la capacitacion "
+            "Carga un archivo .xlsx con encabezados usuario, mail y Nombre "
+            "del Centro. Ademas del acceso, el correo incluye la capacitacion "
             "virtual y el video de referencia para INET."
         ),
     ),
@@ -549,15 +549,12 @@ def _validate_row_data(
         raise ValidationError(f"La columna {column} es obligatoria.")
 
 
-def _get_user_recipient_email(user) -> str:
-    recipient_email = (user.email or "").strip()
-    if not recipient_email:
-        raise ValidationError("El usuario no tiene un mail cargado.")
-
+def _get_row_recipient_email(row: ParsedCredentialRow) -> str:
+    recipient_email = row.mail.strip()
     try:
         validate_email(recipient_email)
     except ValidationError as exc:
-        raise ValidationError("El usuario tiene un mail invalido cargado.") from exc
+        raise ValidationError("El formato del mail es invalido.") from exc
     return recipient_email
 
 
@@ -593,7 +590,7 @@ def process_bulk_credentials_row(
         if not user:
             raise ValidationError("No existe un usuario con ese nombre.")
 
-        recipient_email = _get_user_recipient_email(user)
+        recipient_email = _get_row_recipient_email(row)
         plain_password = _get_user_plain_password(user)
 
         send_bulk_credentials_email(
