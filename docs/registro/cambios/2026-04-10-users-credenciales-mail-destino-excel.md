@@ -18,13 +18,15 @@ Riesgos cubiertos:
 
 - La planilla estandar ahora requiere las columnas `usuario` y `mail`.
 - La planilla `INET` requiere `usuario`, `mail` y `Nombre del Centro`.
-- El mail destino se resuelve desde la columna `mail` del Excel.
+- El mail destino se resuelve desde la columna `mail` del Excel cuando viene
+  informada.
+- Si la celda `mail` esta vacia, se usa `user.email` como fallback.
 - El proceso ya no actualiza `user.email`.
 - El proceso ya no actualiza ni valida passwords recibidas por Excel.
 - La password enviada se toma de `Profile.temporary_password_plaintext`.
-- Si la fila no tiene mail, tiene mail invalido o el usuario no tiene
-  contrasena temporal visible, la fila queda rechazada con causa explicita y
-  sin side effects.
+- Si la fila no tiene mail y el usuario tampoco tiene un mail cargado, si el
+  mail resultante es invalido, o si el usuario no tiene contrasena temporal
+  visible, la fila queda rechazada con causa explicita y sin side effects.
 - Los resultados persistidos de lote mantienen el mail destino usado para los
   envios exitosos.
 

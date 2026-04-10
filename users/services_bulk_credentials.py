@@ -172,7 +172,8 @@ BULK_CREDENTIALS_SEND_TYPES = {
         description=(
             "Carga un archivo .xlsx con encabezados usuario y mail. Se valida "
             "el usuario existente y se envia la credencial temporal vigente al "
-            "mail informado en la planilla."
+            "mail informado en la planilla, o al mail del usuario si la celda "
+            "mail esta vacia."
         ),
     ),
     "inet": BulkCredentialsSendTypeConfig(
@@ -186,7 +187,8 @@ BULK_CREDENTIALS_SEND_TYPES = {
         description=(
             "Carga un archivo .xlsx con encabezados usuario, mail y Nombre "
             "del Centro. Ademas del acceso, el correo incluye la capacitacion "
-            "virtual y el video de referencia para INET."
+            "virtual y el video de referencia para INET. Si mail esta vacio, "
+            "se usa el mail del usuario."
         ),
     ),
 }
@@ -544,17 +546,32 @@ def _validate_row_data(
     send_type_config: BulkCredentialsSendTypeConfig,
 ) -> None:
     for column in send_type_config.required_columns:
+        if column == "mail":
+            continue
         if row.data.get(column):
             continue
         raise ValidationError(f"La columna {column} es obligatoria.")
 
 
-def _get_row_recipient_email(row: ParsedCredentialRow) -> str:
+def _get_recipient_email(*, row: ParsedCredentialRow, user) -> str:
     recipient_email = row.mail.strip()
+    if not recipient_email:
+        recipient_email = (user.email or "").strip()
+        if not recipient_email:
+            raise ValidationError(
+                "La fila no informa mail y el usuario no tiene un mail cargado."
+            )
+
     try:
         validate_email(recipient_email)
     except ValidationError as exc:
-        raise ValidationError("El formato del mail es invalido.") from exc
+        if row.mail.strip():
+            raise ValidationError(
+                "El formato del mail informado en la planilla es invalido."
+            ) from exc
+        raise ValidationError(
+            "La fila no informa mail y el usuario tiene un mail invalido cargado."
+        ) from exc
     return recipient_email
 
 
@@ -590,7 +607,7 @@ def process_bulk_credentials_row(
         if not user:
             raise ValidationError("No existe un usuario con ese nombre.")
 
-        recipient_email = _get_row_recipient_email(row)
+        recipient_email = _get_recipient_email(row=row, user=user)
         plain_password = _get_user_plain_password(user)
 
         send_bulk_credentials_email(

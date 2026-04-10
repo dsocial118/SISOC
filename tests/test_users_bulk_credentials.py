@@ -353,10 +353,10 @@ def test_process_bulk_credentials_rejects_missing_inet_center_column():
 
 @pytest.mark.django_db
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-def test_process_bulk_credentials_reports_missing_excel_mail_and_continues():
+def test_process_bulk_credentials_falls_back_to_user_mail_when_excel_mail_is_empty():
     invalid_user = User.objects.create_user(
         username="bulk_invalid",
-        email="bulk_invalid@example.com",
+        email="",
         password="Temporal123!",
     )
     valid_user = User.objects.create_user(
@@ -385,11 +385,41 @@ def test_process_bulk_credentials_reports_missing_excel_mail_and_continues():
         "sin_cambios": 1,
         "rechazadas": 1,
     }
-    assert "mail es obligatoria" in result["rows"][0]["mensaje"]
+    assert "usuario no tiene un mail cargado" in result["rows"][0]["mensaje"]
     assert result["rows"][0]["mail_destino"] == ""
     assert result["rows"][1]["estado"] == "enviada"
-    assert result["rows"][1]["mail_destino"] == "destino@example.com"
+    assert result["rows"][1]["mail_destino"] == "bulk_valid@example.com"
     assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["bulk_valid@example.com"]
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_process_bulk_credentials_rejects_invalid_excel_mail():
+    user = User.objects.create_user(
+        username="bulk_invalid_excel_mail",
+        email="valid-user@example.com",
+        password="Temporal123!",
+    )
+    _set_visible_temporary_password(user, "Temporal123!")
+    upload = _build_excel_file(
+        [("bulk_invalid_excel_mail", "mail-invalido")],
+    )
+
+    result = process_bulk_credentials_file(
+        uploaded_file=upload,
+        send_type="standard",
+    )
+
+    assert result["summary"] == {
+        "procesadas": 1,
+        "enviadas": 0,
+        "actualizadas": 0,
+        "sin_cambios": 0,
+        "rechazadas": 1,
+    }
+    assert "mail informado en la planilla es invalido" in result["rows"][0]["mensaje"]
+    assert len(mail.outbox) == 0
 
 
 @pytest.mark.django_db
