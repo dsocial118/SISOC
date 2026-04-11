@@ -23,6 +23,7 @@
   - `docker compose -f docker-compose.deploy.yml -f docker-compose.qa.yml up -d --build`
   - `docker compose -f docker-compose.deploy.yml -f docker-compose.homologacion.yml up -d --build`
   - `docker compose -f docker-compose.deploy.yml -f docker-compose.produccion.yml up -d --build`
+- En produccion, `docker-compose.produccion.yml` agrega `bulk_credentials_worker` con `DJANGO_SERVICE_ROLE=bulk_credentials_worker` para que el worker quede levantado junto con la aplicacion web.
 - En los deploys versionados no se levanta `mysql` dentro de Compose; la base se resuelve por variables `DATABASE_*` definidas en el `.env` del host.
 
 ## Flujo de arranque en el contenedor Django
