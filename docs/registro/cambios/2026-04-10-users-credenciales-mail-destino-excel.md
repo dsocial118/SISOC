@@ -44,3 +44,9 @@ administrativa explicita.
 - `python -m pytest tests/test_users_bulk_credentials.py -q`
 - `python -m black --check users/services_bulk_credentials.py users/services_bulk_credentials_jobs.py users/services.py tests/test_users_bulk_credentials.py`
 - `djlint users/templates/user/bulk_credentials_form.html users/templates/user/bulk_credentials_job_detail.html --check --configuration=.djlintrc`
+
+## Nota de mantenimiento
+
+- El caso de regresion `test_process_bulk_credentials_falls_back_to_user_mail_when_excel_mail_is_empty`
+  debe dejar la celda `mail` vacia en la fila exitosa. Si la planilla informa un
+  mail explicito, el envio usa ese destino y no corresponde esperar fallback.

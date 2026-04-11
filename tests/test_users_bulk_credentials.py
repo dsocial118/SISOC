@@ -369,7 +369,7 @@ def test_process_bulk_credentials_falls_back_to_user_mail_when_excel_mail_is_emp
     upload = _build_excel_file(
         [
             ("bulk_invalid", ""),
-            ("bulk_valid", "destino@example.com"),
+            ("bulk_valid", ""),
         ],
     )
 
