@@ -216,7 +216,7 @@ class UsuariosService:
                         "label": "ENVIO DE CREDENCIALES",
                         "url": reverse("usuarios_credenciales_masivas"),
                         "class": "btn btn-lg btn-export-csv",
-                        "title": "Actualizar password y enviar credenciales desde Excel",
+                        "title": "Enviar credenciales vigentes desde Excel",
                     }
                 ]
                 if UsuariosService.can_manage_bulk_credentials(request.user)

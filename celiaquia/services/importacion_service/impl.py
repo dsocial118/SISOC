@@ -1705,8 +1705,24 @@ def _tiene_datos_responsable_importacion(payload):
     )
 
 
+def _beneficiario_requiere_responsable_importacion(payload):
+    edad = ValidacionEdadService.calcular_edad(payload.get("fecha_nacimiento"))
+    return edad is not None and edad < 18
+
+
+def _responsable_completo_importacion(payload):
+    return all(
+        _valor_tiene_contenido_importacion(payload.get(field))
+        for field in IMPORTACION_RESPONSABLE_REQUIRED_FIELDS
+    )
+
+
 def _debe_validarse_responsable_importacion(payload):
-    return _tiene_datos_responsable_importacion(payload)
+    if not _tiene_datos_responsable_importacion(payload):
+        return False
+    if _beneficiario_requiere_responsable_importacion(payload):
+        return True
+    return _responsable_completo_importacion(payload)
 
 
 IMPORTACION_NUMERIC_FIELDS = {

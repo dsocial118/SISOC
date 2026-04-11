@@ -1,6 +1,6 @@
 import logging
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     ListView,
     CreateView,
@@ -239,7 +239,14 @@ class InstitucionUbicacionUpdateView(LoginRequiredMixin, UpdateView):
     model = InstitucionUbicacion
     form_class = InstitucionUbicacionForm
     template_name = "vat/institucion/ubicacion_form.html"
-    success_url = reverse_lazy("vat_institucion_ubicacion_list")
+
+    def get_success_url(self):
+        return reverse("vat_centro_detail", kwargs={"pk": self.object.centro_id})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["return_url"] = self.get_success_url()
+        return context
 
     def form_valid(self, form):
         messages.success(self.request, "Ubicación actualizada exitosamente.")
