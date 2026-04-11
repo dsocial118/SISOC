@@ -8,3 +8,56 @@ body .app-main {
     min-height: calc(100vh - 182px);
     margin-left: 300px;
 }
+
+.inicio-presentacion {
+    min-height: 70vh;
+}
+
+.inicio-presentacion--default {
+    background-image: url('../img/loginPresentacion.svg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+.inicio-presentacion--inet {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inicio-presentacion__inet-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: min(100%, 980px);
+    min-height: 360px;
+    padding: 2.5rem;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #0d2b45 0%, #123f64 100%);
+    box-shadow: 0 24px 60px rgba(13, 43, 69, 0.18);
+}
+
+.inicio-presentacion__inet-logo {
+    display: block;
+    max-width: min(100%, 760px);
+    max-height: 220px;
+    width: auto;
+    height: auto;
+}
+
+@media (max-width: 768px) {
+    body .app-main {
+        margin-left: 0;
+    }
+
+    .inicio-presentacion__inet-card {
+        min-height: 260px;
+        padding: 1.5rem;
+        border-radius: 18px;
+    }
+
+    .inicio-presentacion__inet-logo {
+        max-height: 140px;
+    }
+}

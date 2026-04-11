@@ -1,3 +1,4 @@
+import hashlib
 import uuid
 
 from django.contrib.auth.models import User
@@ -124,6 +125,15 @@ class AuditoriaOperacionPWA(models.Model):
         return f"{self.entidad}#{self.entidad_id} {self.accion} {self.fecha_evento:%Y-%m-%d %H:%M:%S}"
 
 
+def normalize_push_endpoint(endpoint: str) -> str:
+    return (endpoint or "").strip()
+
+
+def build_push_endpoint_hash(endpoint: str) -> str:
+    normalized_endpoint = normalize_push_endpoint(endpoint)
+    return hashlib.sha256(normalized_endpoint.encode("utf-8")).hexdigest()
+
+
 class LecturaMensajePWA(models.Model):
     """Estado de lectura de mensajes PWA originados en comunicados."""
 
@@ -184,7 +194,8 @@ class PushSubscriptionPWA(models.Model):
         on_delete=models.CASCADE,
         related_name="push_subscriptions_pwa",
     )
-    endpoint = models.URLField(max_length=500, unique=True)
+    endpoint = models.URLField(max_length=500)
+    endpoint_hash = models.CharField(max_length=64, unique=True, editable=False)
     p256dh = models.CharField(max_length=255)
     auth = models.CharField(max_length=255)
     content_encoding = models.CharField(max_length=30, default="aes128gcm")
@@ -208,6 +219,19 @@ class PushSubscriptionPWA(models.Model):
 
     def __str__(self):
         return f"Push user {self.user_id} activo={self.activo}"
+
+    def save(self, *args, **kwargs):
+        self.endpoint = normalize_push_endpoint(self.endpoint)
+        self.endpoint_hash = build_push_endpoint_hash(self.endpoint)
+
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            kwargs["update_fields"] = set(update_fields) | {
+                "endpoint",
+                "endpoint_hash",
+            }
+
+        super().save(*args, **kwargs)
 
 
 class ColaboradorEspacioPWA(models.Model):

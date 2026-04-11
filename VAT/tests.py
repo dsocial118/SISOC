@@ -1,11 +1,10 @@
 import importlib
-from datetime import date
+from datetime import date, time
 
 import pytest
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
-from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
@@ -72,6 +71,15 @@ def vat_admin_client(client, db):
     )
     client.force_login(user)
     return client
+
+
+def _grant_vat_referente_access(user, *permissions):
+    legacy_permission, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_centroreferentevat",
+        defaults={"name": "ReferenteCentroVAT legacy"},
+    )
+    user.user_permissions.add(legacy_permission, *permissions)
 
 
 @pytest.fixture
@@ -239,7 +247,7 @@ def test_centro_create_rechaza_referente_sin_grupo_cfp(vat_admin_client, vat_geo
 
 
 @pytest.mark.django_db
-def test_centro_alta_form_configura_referente_como_select_estandar(vat_referente_user):
+def test_centro_alta_form_configura_referente_como_buscador_simple(vat_referente_user):
     vat_referente_user.first_name = "Ana"
     vat_referente_user.last_name = "Pérez"
     vat_referente_user.save(update_fields=["first_name", "last_name"])
@@ -247,12 +255,20 @@ def test_centro_alta_form_configura_referente_como_select_estandar(vat_referente
     form = CentroAltaForm()
     referente_field = form.fields["referente"]
 
-    assert referente_field.widget.attrs["class"] == "form-control"
+    assert referente_field.widget.attrs["class"] == "referente-hidden-select"
+    assert referente_field.widget.attrs["tabindex"] == "-1"
     assert referente_field.empty_label == "Seleccionar referente..."
     assert (
         referente_field.label_from_instance(vat_referente_user)
         == "referente-vat - Ana Pérez"
     )
+    assert form.referente_search_options == [
+        {
+            "id": str(vat_referente_user.pk),
+            "username": "referente-vat",
+            "label": "referente-vat - Ana Pérez",
+        }
+    ]
 
 
 @pytest.mark.django_db
@@ -1306,6 +1322,8 @@ def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_d
     assert response.status_code == 200
     assert reverse("vat_centro_update", kwargs={"pk": centro.pk}) in content
     assert "Editar" in content
+    assert "Datos del Establecimiento" in content
+    assert "CUE" in content
     assert "Estructura Institucional" not in content
     assert "Ubicacion Principal" in content
     assert "Identificadores" in content
@@ -2311,6 +2329,45 @@ def test_comision_curso_create_view_renderiza_formulario(client, vat_curso_base)
 
 
 @pytest.mark.django_db
+def test_comision_curso_create_view_rechaza_fecha_fin_anterior_a_inicio(
+    client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-fechas",
+        email="admin-comision-curso-fechas@vat.test",
+        password="test1234",
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso con validacion de fechas",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_comision_curso_create"),
+        data={
+            "curso": str(curso.id),
+            "ubicacion": str(ubicacion.id),
+            "cupo_total": 20,
+            "fecha_inicio": "2026-04-30",
+            "fecha_fin": "2026-04-01",
+            "estado": "planificada",
+            "observaciones": "",
+        },
+    )
+
+    assert response.status_code == 200
+    assert (
+        "La fecha de fin debe ser mayor o igual a la fecha de inicio."
+        in response.content.decode("utf-8")
+    )
+    assert not ComisionCurso.objects.filter(curso=curso).exists()
+
+
+@pytest.mark.django_db
 def test_comision_curso_update_view_renderiza_formulario(client, vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     user = User.objects.create_superuser(
@@ -2760,12 +2817,20 @@ def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(client, vat_geo_d
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
+@override_settings(ROOT_URLCONF="config.urls")
 def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_curso(
     client, vat_geo_data
 ):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
+    sector = Sector.objects.create(nombre="Industria")
+    plan = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan Industrial Inicial",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
     group, _ = Group.objects.get_or_create(name="CFP")
     user = User.objects.create_superuser(
         username="admin-vat-centro-detail-panel",
@@ -2804,6 +2869,7 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     )
     _curso = Curso.objects.create(
         centro=centro,
+        plan_estudio=plan,
         nombre="Curso Filtrable",
         modalidad=modalidad,
         estado="planificado",
@@ -2826,17 +2892,37 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
     assert 'id="tablaCursosCentro"' in content
+    assert "<th>Plan Curricular</th>" in content
+    assert "<th>Curso FP</th>" in content
+    assert 'id="cursosFilterSearch"' in content
+    assert 'id="cursosFilterEstado"' in content
+    assert 'id="cursosFilterPageSize"' in content
+    assert 'id="cursosFilterClear"' in content
     assert 'class="curso-row"' in content
     assert f'data-curso-id="{_curso.id}"' in content
+    assert 'data-curso-plan="Plan Industrial Inicial"' in content
+    assert "<td>Plan Industrial Inicial</td>" in content
     assert 'id="tablaComisionesCursoCentro"' in content
+    assert "<th>Código</th>" in content
+    assert "<th>Ubicación</th>" in content
+    assert "<th>Fecha Inicio</th>" in content
+    assert "<th>Fecha Fin</th>" in content
+    assert "<th>Observaciones</th>" in content
+    assert "FIL-01" in content
+    assert "Comisión Filtrable" in content
+    assert 'id="comisionesFilterSearch"' in content
+    assert 'id="comisionesFilterCurso"' in content
+    assert 'id="comisionesFilterEstado"' in content
+    assert 'id="comisionesFilterPageSize"' in content
+    assert 'id="comisionesFilterClear"' in content
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
     assert 'title="Gestionar Comisión"' in content
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
-def test_centro_cursos_panel_renderiza_accion_para_crear_curso_desde_plan_curricular(
+@override_settings(ROOT_URLCONF="config.urls")
+def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     client, vat_geo_data
 ):
     provincia, municipio, localidad = vat_geo_data
@@ -2880,6 +2966,20 @@ def test_centro_cursos_panel_renderiza_accion_para_crear_curso_desde_plan_curric
         activo=True,
     )
     plan.titulos.add(titulo)
+    plan_inactivo = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan Inactivo",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=False,
+    )
+    plan_otra_provincia = PlanVersionCurricular.objects.create(
+        provincia=Provincia.objects.create(nombre="Otra Provincia"),
+        nombre="Plan Otra Provincia",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
 
     client.force_login(user)
     response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
@@ -2887,224 +2987,28 @@ def test_centro_cursos_panel_renderiza_accion_para_crear_curso_desde_plan_curric
 
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
-    assert 'title="Nuevo curso con este plan"' in content
-    assert f'data-plan-estudio-id="{plan.id}"' in content
-    assert 'data-lock-plan-estudio="1"' in content
+    assert "Planes Curriculares" not in content
+    assert 'title="Nuevo Curso"' in content
     assert 'id="planEstudioSeleccionadoInfo"' in content
+    assert 'id="modalPlanCurricularSelector"' in content
+    assert 'id="openPlanCurricularSelector"' in content
+    assert 'id="planCurricularSelectorSearch"' in content
+    assert 'id="planCurricularSelectorSector"' in content
+    assert 'id="planCurricularSelectorModalidad"' in content
+    assert 'id="tablaPlanCurricularSelector"' in content
+    assert "Plan Curricular" in content
+    assert (
+        "Se listan todos los planes curriculares activos de la provincia del centro."
+        in content
+    )
+    assert "Seleccionar plan curricular" in content
+    assert f'value="{plan.id}"' in content
+    assert f'value="{plan_inactivo.id}"' not in content
+    assert f'value="{plan_otra_provincia.id}"' not in content
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
-def test_centro_cursos_panel_filtra_y_pagina_planes_curriculares(client, vat_geo_data):
-    provincia, municipio, localidad = vat_geo_data
-    modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
-    modalidad_hibrida = ModalidadCursada.objects.create(nombre="Hibrida", activo=True)
-    sector = Sector.objects.create(nombre="Servicios")
-    otro_sector = Sector.objects.create(nombre="Gastronomia")
-    subsector = Subsector.objects.create(sector=sector, nombre="Administracion")
-    group, _ = Group.objects.get_or_create(name="CFP")
-    user = User.objects.create_superuser(
-        username="admin-vat-centro-planes",
-        email="admin-centro-planes@vat.test",
-        password="test1234",
-    )
-    user.groups.add(group)
-    centro = Centro.objects.create(
-        nombre="CFP 780",
-        codigo="CFP-780",
-        provincia=provincia,
-        municipio=municipio,
-        localidad=localidad,
-        calle="15",
-        numero=100,
-        domicilio_actividad="Calle 15 N° 100",
-        telefono="221-7200001",
-        celular="221-7200002",
-        correo="cfp780@vat.test",
-        nombre_referente="Marta",
-        apellido_referente="Suarez",
-        telefono_referente="221-7200003",
-        correo_referente="marta780@vat.test",
-        referente=user,
-        tipo_gestion="Estatal",
-        clase_institucion="Formación Profesional",
-        situacion="Institución de ETP",
-        activo=True,
-    )
-
-    for index in range(21):
-        PlanVersionCurricular.objects.create(
-            provincia=provincia,
-            nombre=f"Plan {index}",
-            sector=sector,
-            modalidad_cursada=modalidad,
-            normativa=f"Resolución {index}",
-            activo=True,
-        )
-
-    plan_filtrado = PlanVersionCurricular.objects.create(
-        provincia=provincia,
-        nombre="Plan Especial Administrativo",
-        sector=sector,
-        subsector=subsector,
-        modalidad_cursada=modalidad,
-        normativa="Resolución especial 2026",
-        activo=True,
-    )
-    plan_otro_sector = PlanVersionCurricular.objects.create(
-        provincia=provincia,
-        nombre="Plan Cocina Profesional",
-        sector=otro_sector,
-        modalidad_cursada=modalidad_hibrida,
-        normativa="Resolución gastronomica 2026",
-        activo=True,
-    )
-
-    client.force_login(user)
-    detail_url = reverse("vat_centro_detail", kwargs={"pk": centro.pk})
-    panel_url = reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk})
-
-    response = client.get(panel_url)
-    content = response.content.decode("utf-8")
-
-    assert response.status_code == 200
-    assert 'data-panel-rendered="1"' in content
-    assert response.context["planes_centro_page_obj"].paginator.per_page == 5
-    assert len(response.context["planes_centro"]) == 5
-    assert response.context["planes_centro_is_paginated"] is True
-    assert f'action="{detail_url}#cursos"' in content
-    assert "planes_page=2#cursos" in content
-    assert 'name="subsector_id"' in content
-    assert 'name="modalidad_id"' in content
-    assert 'name="planes_per_page"' in content
-    assert '<option value="5" selected>5</option>' in content
-
-    filtered_response = client.get(
-        panel_url,
-        {"busqueda": "Especial Administrativo"},
-    )
-
-    assert filtered_response.status_code == 200
-    assert filtered_response.context["planes_centro_total_filtrados"] == 1
-    assert len(filtered_response.context["planes_centro"]) == 1
-    assert filtered_response.context["planes_centro"][0].id == plan_filtrado.id
-
-    filtered_combined_response = client.get(
-        panel_url,
-        {
-            "sector_id": str(sector.id),
-            "subsector_id": str(subsector.id),
-            "modalidad_id": str(modalidad.id),
-            "planes_per_page": "50",
-        },
-    )
-
-    assert filtered_combined_response.status_code == 200
-    assert filtered_combined_response.context["planes_centro_total_filtrados"] == 1
-    assert (
-        filtered_combined_response.context["planes_centro_page_obj"].paginator.per_page
-        == 50
-    )
-    assert filtered_combined_response.context["planes_centro_page_size"] == 50
-    assert (
-        filtered_combined_response.context["planes_centro_subsector_id"] == subsector.id
-    )
-    assert (
-        filtered_combined_response.context["planes_centro_modalidad_id"] == modalidad.id
-    )
-    assert filtered_combined_response.context["planes_centro"][0].id == plan_filtrado.id
-    filtered_combined_content = filtered_combined_response.content.decode("utf-8")
-    assert f'value="{subsector.id}" selected' in filtered_combined_content
-    assert f'value="{modalidad.id}" selected' in filtered_combined_content
-    assert "Servicios: 1" in filtered_combined_content
-
-    filtered_by_sector_response = client.get(
-        panel_url,
-        {"sector_id": str(otro_sector.id)},
-    )
-
-    assert filtered_by_sector_response.status_code == 200
-    assert filtered_by_sector_response.context["planes_centro_total_filtrados"] == 1
-    assert len(filtered_by_sector_response.context["planes_centro"]) == 1
-    assert (
-        filtered_by_sector_response.context["planes_centro"][0].id
-        == plan_otro_sector.id
-    )
-    assert (
-        filtered_by_sector_response.context["planes_centro_sector_id"] == otro_sector.id
-    )
-    assert filtered_by_sector_response.context["planes_centro_modalidad_id"] is None
-    filtered_by_sector_content = filtered_by_sector_response.content.decode("utf-8")
-    assert 'name="sector_id"' in filtered_by_sector_content
-    assert f'value="{otro_sector.id}" selected' in filtered_by_sector_content
-    assert "Gastronomia: 1" in filtered_by_sector_content
-
-    second_page_response = client.get(panel_url, {"planes_page": 2})
-
-    assert second_page_response.status_code == 200
-    assert len(second_page_response.context["planes_centro"]) == 5
-
-
-@pytest.mark.django_db
-@override_settings(ROOT_URLCONF="tests.test_urls_vat_centro_panel")
-def test_centro_cursos_panel_invalida_cache_al_crear_planes(client, vat_geo_data):
-    cache.clear()
-    provincia, municipio, localidad = vat_geo_data
-    modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
-    sector = Sector.objects.create(nombre="Servicios")
-    group, _ = Group.objects.get_or_create(name="CFP")
-    user = User.objects.create_superuser(
-        username="admin-vat-centro-cache-planes",
-        email="admin-centro-cache-planes@vat.test",
-        password="test1234",
-    )
-    user.groups.add(group)
-    centro = Centro.objects.create(
-        nombre="CFP Cache",
-        codigo="CFP-CACHE",
-        provincia=provincia,
-        municipio=municipio,
-        localidad=localidad,
-        calle="16",
-        numero=100,
-        domicilio_actividad="Calle 16 N° 100",
-        telefono="221-7300001",
-        celular="221-7300002",
-        correo="cfpcache@vat.test",
-        nombre_referente="Marta",
-        apellido_referente="Cache",
-        telefono_referente="221-7300003",
-        correo_referente="marta-cache@vat.test",
-        referente=user,
-        tipo_gestion="Estatal",
-        clase_institucion="Formación Profesional",
-        situacion="Institución de ETP",
-        activo=True,
-    )
-    panel_url = reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk})
-
-    client.force_login(user)
-
-    empty_response = client.get(panel_url)
-    assert empty_response.status_code == 200
-    assert empty_response.context["planes_centro_total_filtrados"] == 0
-
-    plan = PlanVersionCurricular.objects.create(
-        provincia=provincia,
-        nombre="Plan Cache",
-        sector=sector,
-        modalidad_cursada=modalidad,
-        normativa="Resolución cache 2026",
-        activo=True,
-    )
-
-    refreshed_response = client.get(panel_url)
-    assert refreshed_response.status_code == 200
-    assert refreshed_response.context["planes_centro_total_filtrados"] == 1
-    assert len(refreshed_response.context["planes_centro"]) == 1
-    assert refreshed_response.context["planes_centro"][0].id == plan.id
-
-
+@override_settings(ROOT_URLCONF="config.urls")
 @pytest.mark.django_db
 def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
@@ -3171,6 +3075,15 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
         fecha_fin=date(2026, 5, 1),
         estado="activa",
     )
+    dia = Dia.objects.create(nombre="Martes")
+    horario = ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde=time(9, 0),
+        hora_hasta=time(11, 0),
+        aula_espacio="Aula 3",
+        vigente=True,
+    )
 
     client.force_login(user)
     response = client.get(
@@ -3184,12 +3097,83 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
     assert curso.nombre in content
     assert reverse("vat_comision_curso_update", kwargs={"pk": comision.pk}) in content
     assert reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk}) in content
+    assert 'data-bs-target="#modalEditarComisionCurso"' in content
+    assert 'id="modalEditarComisionCurso"' in content
+    assert 'id="formEditarComisionCurso"' in content
+    assert 'data-bs-target="#modalEliminarComisionCurso"' in content
+    assert 'id="modalEliminarComisionCurso"' in content
+    assert 'id="formEliminarComisionCurso"' in content
     assert reverse("vat_inscripcion_rapida_comision_curso") in content
     assert reverse("vat_comision_curso_horario_create") in content
+    assert 'data-bs-target="#modalComisionHorario"' in content
+    assert 'data-horario-mode="edit"' in content
+    assert (
+        reverse("vat_comision_curso_horario_update", kwargs={"pk": horario.pk})
+        in content
+    )
+    assert 'data-bs-target="#modalEliminarComisionHorario"' in content
+    assert (
+        reverse("vat_comision_curso_horario_delete", kwargs={"pk": horario.pk})
+        in content
+    )
     assert "Información" in content
     assert "Inscriptos" in content
     assert "Sesiones" in content
     assert "Horarios" in content
+
+
+def _build_comision_curso_horario_context(vat_geo_data, user, suffix):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(
+        nombre=f"Presencial Horario {suffix}", activo=True
+    )
+    centro = Centro.objects.create(
+        nombre=f"CFP Horarios {suffix}",
+        codigo=f"CFP-HOR-{suffix}",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="14",
+        numero=100,
+        domicilio_actividad=f"Calle 14 N° 100 {suffix}",
+        telefono="221-1111111",
+        celular="221-2222222",
+        correo=f"cfphor-{suffix}@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Gomez",
+        telefono_referente="221-3333333",
+        correo_referente=f"ana-hor-{suffix}@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio=f"Calle 14 N° 100 {suffix}",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre=f"Curso con horarios {suffix}",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision=f"HOR-{suffix}",
+        nombre=f"Comisión Horario {suffix}",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 6),
+        fecha_fin=date(2026, 4, 20),
+        estado="activa",
+    )
+    dia = Dia.objects.create(nombre=f"Lunes {suffix}")
+    return comision, dia
 
 
 @pytest.mark.django_db
@@ -3272,6 +3256,274 @@ def test_comision_curso_horario_create_genera_sesiones(client, vat_geo_data):
     assert (
         SesionComision.objects.filter(comision_curso=comision, horario=horario).count()
         == 3
+    )
+
+
+@pytest.mark.django_db
+def test_comision_curso_horario_create_rechaza_hora_hasta_menor_a_hora_desde(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial Horario Invalido", activo=True
+    )
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-horario-invalido",
+        email="admin-comision-curso-horario-invalido@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Horarios Invalidos",
+        codigo="CFP-HOR-INV",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="14",
+        numero=101,
+        domicilio_actividad="Calle 14 N° 101",
+        telefono="221-1111113",
+        celular="221-2222224",
+        correo="cfphorinv@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Gomez",
+        telefono_referente="221-3333335",
+        correo_referente="ana-hor-inv@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 14 N° 101",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso con horario invalido",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="HOR-INV-01",
+        nombre="Comisión Horario Inválido",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 6),
+        fecha_fin=date(2026, 4, 20),
+        estado="activa",
+    )
+    dia = Dia.objects.create(nombre="Martes")
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_comision_curso_horario_create"),
+        data={
+            "comision_curso": comision.pk,
+            "dia_semana": dia.pk,
+            "hora_desde": "11:00",
+            "hora_hasta": "09:00",
+            "aula_espacio": "Aula 2",
+            "vigente": "on",
+        },
+    )
+
+    assert response.status_code == 200
+    assert (
+        "La hora hasta no puede ser menor a la hora desde."
+        in response.content.decode("utf-8")
+    )
+    assert not ComisionHorario.objects.filter(comision_curso=comision).exists()
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
+def test_comision_curso_horario_create_ajax_devuelve_json_con_errores(
+    client, vat_geo_data
+):
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-horario-ajax-create",
+        email="admin-comision-curso-horario-ajax-create@vat.test",
+        password="test1234",
+    )
+    comision, dia = _build_comision_curso_horario_context(
+        vat_geo_data, user, "AJAX-CREATE"
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_comision_curso_horario_create"),
+        data={
+            "comision_curso": comision.pk,
+            "dia_semana": dia.pk,
+            "hora_desde": "11:00",
+            "hora_hasta": "09:00",
+            "aula_espacio": "Aula 2",
+            "vigente": "on",
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    payload = response.json()
+
+    assert response.status_code == 400
+    assert payload["ok"] is False
+    assert (
+        payload["errors"]["hora_hasta"][0]
+        == "La hora hasta no puede ser menor a la hora desde."
+    )
+    assert not ComisionHorario.objects.filter(comision_curso=comision).exists()
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
+def test_comision_curso_horario_update_ajax_devuelve_json_con_errores(
+    client, vat_geo_data
+):
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-horario-ajax-update",
+        email="admin-comision-curso-horario-ajax-update@vat.test",
+        password="test1234",
+    )
+    comision, dia = _build_comision_curso_horario_context(
+        vat_geo_data, user, "AJAX-UPDATE"
+    )
+    horario = ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde=time(9, 0),
+        hora_hasta=time(11, 0),
+        aula_espacio="Aula 5",
+        vigente=True,
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_comision_curso_horario_update", kwargs={"pk": horario.pk}),
+        data={
+            "comision_curso": comision.pk,
+            "dia_semana": dia.pk,
+            "hora_desde": "13:00",
+            "hora_hasta": "12:00",
+            "aula_espacio": "Aula 6",
+            "vigente": "on",
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    payload = response.json()
+    horario.refresh_from_db()
+
+    assert response.status_code == 400
+    assert payload["ok"] is False
+    assert (
+        payload["errors"]["hora_hasta"][0]
+        == "La hora hasta no puede ser menor a la hora desde."
+    )
+    assert horario.hora_desde == time(9, 0)
+    assert horario.hora_hasta == time(11, 0)
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
+def test_comision_curso_horario_delete_ajax_devuelve_json_ok(client, vat_geo_data):
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-horario-ajax-delete",
+        email="admin-comision-curso-horario-ajax-delete@vat.test",
+        password="test1234",
+    )
+    comision, dia = _build_comision_curso_horario_context(
+        vat_geo_data, user, "AJAX-DELETE"
+    )
+    horario = ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde=time(9, 0),
+        hora_hasta=time(11, 0),
+        aula_espacio="Aula 7",
+        vigente=True,
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_comision_curso_horario_delete", kwargs={"pk": horario.pk}),
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    payload = response.json()
+
+    assert response.status_code == 200
+    assert payload["ok"] is True
+    assert payload["redirect_url"] == reverse(
+        "vat_comision_curso_detail", kwargs={"pk": comision.pk}
+    )
+    assert not ComisionHorario.objects.filter(pk=horario.pk).exists()
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
+def test_comision_curso_detail_renderiza_modales_horario_sin_permiso_de_alta(
+    client, vat_geo_data
+):
+    user = User.objects.create_user(
+        username="referente-horario-sin-alta",
+        email="referente-horario-sin-alta@vat.test",
+        password="test1234",
+    )
+    change_permission = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="change_comisionhorario",
+    )
+    delete_permission = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="delete_comisionhorario",
+    )
+    detail_permission = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="view_comisioncurso",
+    )
+    _grant_vat_referente_access(
+        user,
+        detail_permission,
+        change_permission,
+        delete_permission,
+    )
+    comision, dia = _build_comision_curso_horario_context(
+        vat_geo_data, user, "SIN-ALTA"
+    )
+    horario = ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde=time(9, 0),
+        hora_hasta=time(11, 0),
+        aula_espacio="Aula 8",
+        vigente=True,
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+    )
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert reverse("vat_comision_curso_horario_create") not in content
+    assert 'id="modalComisionHorario"' in content
+    assert 'id="modalEliminarComisionHorario"' in content
+    assert 'data-horario-mode="edit"' in content
+    assert (
+        reverse("vat_comision_curso_horario_update", kwargs={"pk": horario.pk})
+        in content
+    )
+    assert (
+        reverse("vat_comision_curso_horario_delete", kwargs={"pk": horario.pk})
+        in content
     )
 
 

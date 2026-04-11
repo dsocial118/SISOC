@@ -20,6 +20,7 @@ from users.services_pwa import (
     is_pwa_user,
     sync_representante_accesses,
 )
+from users.services_bulk_credentials import get_bulk_credentials_send_type_choices
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 
@@ -798,9 +799,20 @@ class GroupForm(forms.ModelForm):
 
 
 class BulkCredentialsUploadForm(forms.Form):
+    tipo_envio = forms.ChoiceField(
+        label="Tipo de envio",
+        choices=(),
+        initial="standard",
+        widget=forms.Select(attrs={"class": "form-control"}),
+        help_text="Seleccione el tipo de envio para descargar la plantilla correcta.",
+    )
     archivo = forms.FileField(
         label="Archivo Excel",
         validators=[FileExtensionValidator(["xlsx"])],
         widget=forms.ClearableFileInput(attrs={"accept": ".xlsx"}),
-        help_text=("Cargue un archivo .xlsx con encabezados usuario, mail y password."),
+        help_text="Cargue un archivo .xlsx con el formato esperado para el tipo de envio seleccionado.",
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["tipo_envio"].choices = get_bulk_credentials_send_type_choices()

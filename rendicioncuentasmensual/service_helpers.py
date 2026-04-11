@@ -41,9 +41,7 @@ def _ordenar_documentos_sin_historial(documentos_categoria):
     return archivos
 
 
-def _ordenar_documentos_con_historial(
-    documentos_categoria, documentos_activos_por_id
-):
+def _ordenar_documentos_con_historial(documentos_categoria, documentos_activos_por_id):
     hijos_por_documento = {}
     for documento in documentos_categoria:
         parent_id = documento.documento_subsanado_id

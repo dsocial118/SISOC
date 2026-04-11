@@ -9,6 +9,8 @@ Se agrego una coleccion de Postman orientada a consumo operativo de VAT para rec
 - cursos por centro,
 - comisiones de curso por curso.
 
+Luego se amplió con ejemplos concretos de paginacion sobre `GET /api/vat/centros/` para mostrar como leer el total y navegar entre paginas.
+
 ## Archivo agregado
 
 - `postman/VAT - Planes Centros Cursos Comisiones.postman_collection.json`
@@ -21,6 +23,12 @@ La coleccion usa endpoints de `api/vat/` protegidos con API key y deja variables
 - `plan_id`
 - `centro_id`
 - `curso_id`
+
+Tambien incluye ejemplos de consultas paginadas sobre centros para validar:
+
+- `count` como total de registros,
+- `results` como pagina actual,
+- `next` y `previous` como navegacion.
 
 ## Notas
 
