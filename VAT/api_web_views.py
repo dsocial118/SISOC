@@ -1,4 +1,4 @@
-from django.db.models import Count, Q
+from django.db.models import Count, Prefetch, Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import mixins, status, viewsets
@@ -6,7 +6,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from core.api_auth import HasAPIKeyOrToken
-from VAT.models import Centro, Comision, Inscripcion, TituloReferencia
+from VAT.models import Centro, ComisionCurso, Inscripcion, TituloReferencia, VoucherParametria
 from VAT.serializers import (
     VatWebCentroSerializer,
     VatWebCursoSerializer,
@@ -266,7 +266,8 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
                         "codigo_comision": "CUR-2026-03",
                         "nombre": "Soldadura Inicial - Comisión A",
                         "estado": "activa",
-                        "estado_oferta": "publicada",
+                        "estado_oferta": "activo",
+                        "estado_curso": "activo",
                         "fecha_inicio": "2026-04-10",
                         "fecha_fin": "2026-08-30",
                         "cupo": 30,
@@ -281,8 +282,8 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
                         "programa_id": 6,
                         "programa_nombre": "Formación Laboral",
                         "ciclo_lectivo": 2026,
-                        "costo": "0.00",
-                        "usa_voucher": False,
+                        "costo": 1,
+                        "usa_voucher": True,
                         "observaciones": "Comisión presencial turno tarde",
                         "horarios": [
                             {
@@ -305,15 +306,24 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = (
-            Comision.objects.select_related(
-                "oferta__centro",
-                "oferta__plan_curricular",
-                "oferta__programa",
+            ComisionCurso.objects.select_related(
+                "curso",
+                "curso__centro",
+                "curso__plan_estudio",
             )
-            .prefetch_related("horarios__dia_semana")
+            .prefetch_related(
+                "horarios__dia_semana",
+                "curso__plan_estudio__titulos",
+                Prefetch(
+                    "curso__voucher_parametrias",
+                    queryset=VoucherParametria.objects.select_related("programa").order_by(
+                        "programa_id", "id"
+                    ),
+                ),
+            )
             .annotate(total_inscriptos=Count("inscripciones", distinct=True))
             .exclude(estado__in=["cerrada", "suspendida"])
-            .exclude(oferta__estado="cancelada")
+            .exclude(curso__estado__in=["finalizado", "cancelado"])
             .order_by("fecha_inicio", "codigo_comision")
         )
 
@@ -322,8 +332,9 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(
                 Q(nombre__icontains=q)
                 | Q(codigo_comision__icontains=q)
-                | Q(oferta__centro__nombre__icontains=q)
-                | Q(oferta__plan_curricular__titulos__nombre__icontains=q)
+                | Q(curso__nombre__icontains=q)
+                | Q(curso__centro__nombre__icontains=q)
+                | Q(curso__plan_estudio__titulos__nombre__icontains=q)
             )
 
         centro_id = self.request.query_params.get("centro_id")
@@ -334,21 +345,31 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
         usa_voucher = self.request.query_params.get("usa_voucher")
 
         if centro_id:
-            queryset = queryset.filter(oferta__centro_id=centro_id)
+            queryset = queryset.filter(curso__centro_id=centro_id)
         if titulo_id:
-            queryset = queryset.filter(oferta__plan_curricular__titulos__id=titulo_id)
+            queryset = queryset.filter(curso__plan_estudio__titulos__id=titulo_id)
         if programa_id:
-            queryset = queryset.filter(oferta__programa_id=programa_id)
+            queryset = (
+                queryset.annotate(
+                    programas_distintos=Count(
+                        "curso__voucher_parametrias__programa_id",
+                        distinct=True,
+                    )
+                )
+                .filter(
+                    curso__voucher_parametrias__programa_id=programa_id,
+                    programas_distintos=1,
+                )
+                .distinct()
+            )
         if ciclo_lectivo:
-            queryset = queryset.filter(oferta__ciclo_lectivo=ciclo_lectivo)
+            queryset = queryset.filter(fecha_inicio__year=ciclo_lectivo)
         if estado:
             queryset = queryset.filter(estado=estado)
         if usa_voucher is not None:
-            queryset = queryset.filter(
-                oferta__usa_voucher=usa_voucher.lower() == "true"
-            )
+            queryset = queryset.filter(curso__usa_voucher=usa_voucher.lower() == "true")
 
-        return queryset
+        return queryset.distinct()
 
 
 @extend_schema(
@@ -365,11 +386,22 @@ class VatWebInscripcionViewSet(
             Inscripcion.objects.select_related(
                 "ciudadano",
                 "programa",
-                "comision__oferta__centro",
-                "comision__oferta__plan_curricular",
+                "comision_curso",
+                "comision_curso__curso",
+                "comision_curso__curso__centro",
+                "comision_curso__curso__plan_estudio",
             )
-            .prefetch_related("comision__horarios__dia_semana")
-            .annotate(total_inscriptos=Count("comision__inscripciones", distinct=True))
+            .prefetch_related(
+                "comision_curso__horarios__dia_semana",
+                "comision_curso__curso__plan_estudio__titulos",
+                Prefetch(
+                    "comision_curso__curso__voucher_parametrias",
+                    queryset=VoucherParametria.objects.select_related("programa").order_by(
+                        "programa_id", "id"
+                    ),
+                ),
+            )
+            .filter(comision_curso__isnull=False)
             .order_by("-fecha_inscripcion")
         )
 
@@ -427,7 +459,7 @@ class VatWebInscripcionViewSet(
                 "Alta por ciudadano_id",
                 value={
                     "ciudadano_id": 1,
-                    "comision_id": 3,
+                    "comision_curso_id": 3,
                     "estado": "inscripta",
                     "observaciones": "Alta desde la web",
                 },
@@ -437,7 +469,7 @@ class VatWebInscripcionViewSet(
                 "Alta por documento",
                 value={
                     "documento": "30111222",
-                    "comision_id": 3,
+                    "comision_curso_id": 3,
                     "estado": "pre_inscripta",
                 },
                 request_only=True,

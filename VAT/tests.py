@@ -2224,6 +2224,196 @@ def test_api_vat_comisiones_curso_lista_por_provincia_y_municipio(
 
 
 @pytest.mark.django_db
+def test_api_vat_inscripciones_curso_crea_inscripcion_en_comision_curso(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa API Inscripción Curso")
+    usuario = User.objects.create_user(
+        username="api-inscripcion-curso",
+        password="test1234",
+    )
+    sexo = Sexo.objects.create(sexo="No Binario")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso API Inscripción",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher API Inscripción Curso",
+        programa=programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="API-INS-CURSO-01",
+        nombre="Comisión API Inscripción",
+        cupo_total=20,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        estado="activa",
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="API",
+        nombre="Curso",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111222,
+        sexo=sexo,
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/inscripciones-curso/",
+        {
+            "ciudadano": ciudadano.id,
+            "comision_curso": comision.id,
+            "estado": "inscripta",
+            "origen_canal": "api",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["comision_curso"] == comision.id
+    assert payload["entidad_comision_tipo"] == "comision_curso"
+    assert Inscripcion.objects.filter(
+        ciudadano=ciudadano,
+        comision_curso=comision,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_api_vat_web_cursos_lista_comisiones_curso(vat_api_client, vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Web Cursos")
+    usuario = User.objects.create_user(username="api-web-cursos", password="test1234")
+    sector = Sector.objects.create(nombre="Servicios API Web")
+    plan = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        nombre="Plan API Web",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    TituloReferencia.objects.create(
+        plan_estudio=plan,
+        nombre="Título API Web",
+        activo=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        plan_estudio=plan,
+        nombre="Curso Web",
+        modalidad=modalidad,
+        estado="activo",
+        usa_voucher=True,
+        costo_creditos=2,
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Web Curso",
+        programa=programa,
+        cantidad_inicial=8,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="WEB-CURSO-01",
+        nombre="Comisión Web Curso",
+        cupo_total=30,
+        fecha_inicio=date(2026, 7, 1),
+        fecha_fin=date(2026, 8, 1),
+        estado="activa",
+    )
+
+    response = vat_api_client.get(f"/api/vat/web/cursos/?centro_id={centro.id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] >= 1
+    resultado = payload["results"][0]
+    assert resultado["id"] == comision.id
+    assert resultado["centro_id"] == centro.id
+    assert resultado["programa_id"] == programa.id
+    assert resultado["usa_voucher"] is True
+
+
+@pytest.mark.django_db
+def test_api_vat_web_inscripciones_crea_sobre_comision_curso(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Web Insc")
+    usuario = User.objects.create_user(username="api-web-insc", password="test1234")
+    sexo = Sexo.objects.create(sexo="Masculino")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Web Insc",
+        modalidad=modalidad,
+        estado="activo",
+        usa_voucher=True,
+        costo_creditos=1,
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Web Insc",
+        programa=programa,
+        cantidad_inicial=4,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="WEB-INSC-01",
+        nombre="Comisión Web Inscripción",
+        cupo_total=10,
+        fecha_inicio=date(2026, 5, 10),
+        fecha_fin=date(2026, 6, 10),
+        estado="activa",
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Pérez",
+        nombre="Fabricio",
+        fecha_nacimiento=date(1999, 4, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=2855739,
+        sexo=sexo,
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/web/inscripciones/",
+        {
+            "ciudadano_id": ciudadano.id,
+            "comision_curso_id": comision.id,
+            "estado": "inscripta",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["comision"] == comision.id
+    assert payload["comision_curso"] == comision.id
+    assert payload["curso"]["id"] == comision.id
+    assert Inscripcion.objects.filter(
+        ciudadano=ciudadano,
+        comision_curso=comision,
+    ).exists()
+
+
+@pytest.mark.django_db
 def test_comision_curso_permita_cupo_independiente_del_curso(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     curso = Curso.objects.create(
