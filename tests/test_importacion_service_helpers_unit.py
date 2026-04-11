@@ -933,6 +933,39 @@ def test_importacion_helpers_orquesta_beneficiario_y_detecta_responsable(mocker)
         )
         is True
     )
+    assert (
+        module._debe_validarse_responsable_importacion(
+            {
+                "fecha_nacimiento": date.today() - timedelta(days=30 * 365),
+                "apellido_responsable": "Gomez",
+            }
+        )
+        is False
+    )
+    assert (
+        module._debe_validarse_responsable_importacion(
+            {
+                "fecha_nacimiento": date.today() - timedelta(days=10 * 365),
+                "apellido_responsable": "Gomez",
+            }
+        )
+        is True
+    )
+    assert (
+        module._debe_validarse_responsable_importacion(
+            {
+                "fecha_nacimiento": date.today() - timedelta(days=30 * 365),
+                "apellido_responsable": "Gomez",
+                "nombre_responsable": "Laura",
+                "documento_responsable": "20123456789",
+                "fecha_nacimiento_responsable": date.today() - timedelta(days=50 * 365),
+                "sexo_responsable": "F",
+                "domicilio_responsable": "Calle Resp 123",
+                "localidad_responsable": "Centro",
+            }
+        )
+        is True
+    )
 
 
 def test_importacion_helpers_procesar_responsable_same_document():
@@ -1451,6 +1484,10 @@ def test_importar_legajos_orquesta_loop_principal_y_postprocesos(mocker):
     )
     mocker.patch(
         "celiaquia.services.importacion_service._tiene_datos_responsable_importacion",
+        side_effect=lambda payload: bool(payload.get("tiene_resp")),
+    )
+    mocker.patch(
+        "celiaquia.services.importacion_service._debe_validarse_responsable_importacion",
         side_effect=lambda payload: bool(payload.get("tiene_resp")),
     )
     mocker.patch(
