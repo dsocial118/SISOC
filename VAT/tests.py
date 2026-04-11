@@ -2584,6 +2584,17 @@ def test_api_vat_web_inscripciones_crea_sobre_comision_curso(
         documento=2855739,
         sexo=sexo,
     )
+    Voucher.objects.create(
+        parametria=voucher,
+        ciudadano=ciudadano,
+        programa=programa,
+        cantidad_inicial=4,
+        cantidad_usada=0,
+        cantidad_disponible=4,
+        fecha_vencimiento=date(2026, 12, 31),
+        estado="activo",
+        asignado_por=usuario,
+    )
 
     response = vat_api_client.post(
         "/api/vat/web/inscripciones/",

@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 from rest_framework import serializers
 from VAT.models import (
     Centro,
@@ -570,6 +572,12 @@ class InscripcionSerializer(serializers.ModelSerializer):
             "fecha_creacion",
             "fecha_modificacion",
         ]
+        validators = []
+        extra_kwargs = {
+            "comision": {"required": False},
+            "comision_curso": {"required": False},
+            "programa": {"required": False},
+        }
 
 
 # ============================================================================
@@ -717,7 +725,7 @@ class VatWebCursoSerializer(serializers.ModelSerializer):
         source="curso.programa.nombre", read_only=True
     )
     ciclo_lectivo = serializers.SerializerMethodField()
-    costo = serializers.IntegerField(source="costo", read_only=True)
+    costo = serializers.IntegerField(read_only=True)
     usa_voucher = serializers.BooleanField(source="curso.usa_voucher", read_only=True)
     estado_oferta = serializers.CharField(source="curso.estado", read_only=True)
     estado_curso = serializers.CharField(source="curso.estado", read_only=True)
@@ -853,28 +861,56 @@ def _resolver_referencias_vat_web_inscripcion(attrs):
     if not ciudadano:
         raise serializers.ValidationError("No se encontró el ciudadano indicado.")
 
-    comision_curso = (
-        ComisionCurso.objects.select_related("curso", "curso__centro")
-        .filter(pk=comision_curso_id or comision_id)
-        .first()
-    )
-    if not comision_curso:
-        raise serializers.ValidationError("No se encontró la comisión de curso indicada.")
+    entidad_comision = None
+    if comision_curso_id:
+        entidad_comision = (
+            ComisionCurso.objects.select_related("curso", "curso__centro")
+            .filter(pk=comision_curso_id)
+            .first()
+        )
+    elif comision_id:
+        entidad_comision = (
+            Comision.objects.select_related("oferta", "oferta__centro")
+            .filter(pk=comision_id)
+            .first()
+        )
 
-    return ciudadano, comision_curso
+    if not entidad_comision:
+        raise serializers.ValidationError(
+            "No se encontró la comisión o comisión de curso indicada."
+        )
+
+    return ciudadano, entidad_comision
 
 
-class VatWebInscripcionBaseSerializer(serializers.Serializer):
+def _resolver_programa_vat_web(comision):
+    programa = getattr(comision, "programa", None)
+    if programa is not None:
+        return programa
+
+    oferta = getattr(comision, "oferta", None)
+    return getattr(oferta, "programa", None)
+
+
+class VatPlainSerializer(serializers.Serializer):
+    def create(self, validated_data):
+        return validated_data
+
+    def update(self, instance, validated_data):
+        return instance
+
+
+class VatWebInscripcionBaseSerializer(VatPlainSerializer):
     ciudadano_id = serializers.IntegerField(required=False)
     documento = serializers.CharField(required=False)
     comision_id = serializers.IntegerField(required=False)
     comision_curso_id = serializers.IntegerField(required=False)
 
     def validate(self, attrs):
-        ciudadano, comision_curso = _resolver_referencias_vat_web_inscripcion(attrs)
+        ciudadano, comision = _resolver_referencias_vat_web_inscripcion(attrs)
         attrs["ciudadano"] = ciudadano
-        attrs["comision_curso"] = comision_curso
-        attrs["programa"] = comision_curso.programa
+        attrs["comision_curso"] = comision
+        attrs["programa"] = _resolver_programa_vat_web(comision)
         return attrs
 
 
@@ -882,13 +918,13 @@ class VatWebInscripcionPrevalidacionSerializer(VatWebInscripcionBaseSerializer):
     cuil = serializers.CharField(required=False, allow_blank=True)
 
 
-class VatWebInscripcionPrevalidacionCiudadanoSerializer(serializers.Serializer):
+class VatWebInscripcionPrevalidacionCiudadanoSerializer(VatPlainSerializer):
     id = serializers.IntegerField()
     documento = serializers.IntegerField()
     nombre = serializers.CharField()
 
 
-class VatWebInscripcionPrevalidacionComisionSerializer(serializers.Serializer):
+class VatWebInscripcionPrevalidacionComisionSerializer(VatPlainSerializer):
     id = serializers.IntegerField()
     codigo_comision = serializers.CharField()
     nombre = serializers.CharField()
@@ -905,7 +941,7 @@ class VatWebInscripcionPrevalidacionComisionSerializer(serializers.Serializer):
     costo = serializers.IntegerField()
 
 
-class VatWebInscripcionPrevalidacionVoucherSerializer(serializers.Serializer):
+class VatWebInscripcionPrevalidacionVoucherSerializer(VatPlainSerializer):
     requerido = serializers.BooleanField()
     programa_id = serializers.IntegerField(allow_null=True)
     programa_nombre = serializers.CharField(allow_null=True)
@@ -919,7 +955,7 @@ class VatWebInscripcionPrevalidacionVoucherSerializer(serializers.Serializer):
     saldo_post_inscripcion = serializers.IntegerField(allow_null=True)
 
 
-class VatWebInscripcionPrevalidacionResponseSerializer(serializers.Serializer):
+class VatWebInscripcionPrevalidacionResponseSerializer(VatPlainSerializer):
     puede_inscribirse = serializers.BooleanField()
     motivos = serializers.ListField(child=serializers.CharField())
     ciudadano = VatWebInscripcionPrevalidacionCiudadanoSerializer()
@@ -938,19 +974,23 @@ class VatWebInscripcionCreateSerializer(VatWebInscripcionBaseSerializer):
     def validate(self, attrs):
         attrs = super().validate(attrs)
         ciudadano = attrs["ciudadano"]
-        comision_curso = attrs["comision_curso"]
+        comision = attrs["comision_curso"]
 
         if Inscripcion.objects.filter(
             ciudadano=ciudadano,
-            comision_curso=comision_curso,
+            **(
+                {"comision": comision}
+                if getattr(comision, "oferta_id", None)
+                else {"comision_curso": comision}
+            ),
         ).exists():
             raise serializers.ValidationError(
                 "El ciudadano ya tiene una inscripción en esta comisión."
             )
 
         attrs["ciudadano"] = ciudadano
-        attrs["comision_curso"] = comision_curso
-        attrs["programa"] = comision_curso.programa
+        attrs["comision_curso"] = comision
+        attrs["programa"] = _resolver_programa_vat_web(comision)
         return attrs
 
     def create(self, validated_data):

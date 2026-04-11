@@ -7,7 +7,13 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from core.api_auth import HasAPIKeyOrToken
-from VAT.models import Centro, ComisionCurso, Inscripcion, TituloReferencia, VoucherParametria
+from VAT.models import (
+    Centro,
+    ComisionCurso,
+    Inscripcion,
+    TituloReferencia,
+    VoucherParametria,
+)
 from VAT.serializers import (
     VatWebCentroSerializer,
     VatWebCursoSerializer,
@@ -320,9 +326,9 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
                 "curso__plan_estudio__titulos",
                 Prefetch(
                     "curso__voucher_parametrias",
-                    queryset=VoucherParametria.objects.select_related("programa").order_by(
-                        "programa_id", "id"
-                    ),
+                    queryset=VoucherParametria.objects.select_related(
+                        "programa"
+                    ).order_by("programa_id", "id"),
                 ),
             )
             .annotate(total_inscriptos=Count("inscripciones", distinct=True))
@@ -400,9 +406,9 @@ class VatWebInscripcionViewSet(
                 "comision_curso__curso__plan_estudio__titulos",
                 Prefetch(
                     "comision_curso__curso__voucher_parametrias",
-                    queryset=VoucherParametria.objects.select_related("programa").order_by(
-                        "programa_id", "id"
-                    ),
+                    queryset=VoucherParametria.objects.select_related(
+                        "programa"
+                    ).order_by("programa_id", "id"),
                 ),
             )
             .filter(comision_curso__isnull=False)

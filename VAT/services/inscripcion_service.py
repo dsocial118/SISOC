@@ -50,6 +50,7 @@ class InscripcionService:
         return (
             User.objects.filter(is_staff=True).first()
             or User.objects.filter(is_superuser=True).first()
+            or User.objects.order_by("id").first()
         )
 
     @staticmethod
@@ -232,7 +233,9 @@ class InscripcionService:
             "programa_id": programa.id if programa else None,
             "programa_nombre": programa.nombre if programa else None,
             "parametrias_habilitadas": (
-                InscripcionService._obtener_ids_parametrias_habilitadas(unidad_formativa)
+                InscripcionService._obtener_ids_parametrias_habilitadas(
+                    unidad_formativa
+                )
                 if unidad_formativa.usa_voucher
                 else []
             ),
@@ -281,7 +284,9 @@ class InscripcionService:
                 ciudadano,
                 programa,
             )
-            motivos.extend(InscripcionService._normalizar_motivos(motivo if not puede else ""))
+            motivos.extend(
+                InscripcionService._normalizar_motivos(motivo if not puede else "")
+            )
 
         return {
             "puede_inscribirse": not motivos,
