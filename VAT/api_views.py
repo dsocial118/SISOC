@@ -399,6 +399,13 @@ class InstitucionUbicacionViewSet(viewsets.ModelViewSet):
 
 @extend_schema(
     tags=["VAT - Cursos"],
+    summary="Cursos operativos de VAT",
+    description=(
+        "Expone el catálogo operativo de cursos asociado a centros. "
+        "Este endpoint representa el nivel curso dentro del flujo real de VAT "
+        "y se usa como paso previo para consultar sus comisiones en "
+        "`/api/vat/comisiones-curso/`."
+    ),
     parameters=[
         OpenApiParameter(
             "centro_id",
@@ -491,6 +498,13 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 @extend_schema(
     tags=["VAT - Cursos"],
+    summary="Comisiones operativas de curso",
+    description=(
+        "Expone las aperturas concretas de `ComisionCurso` para los cursos operativos "
+        "de VAT. Este es el endpoint que debe usarse para consultar comisiones reales de cursos; "
+        "la ruta legacy `/api/vat/comisiones/` corresponde a oferta institucional y no al flujo "
+        "operativo actual de cursos."
+    ),
     parameters=[
         OpenApiParameter(
             "curso_id",
@@ -525,9 +539,14 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     ],
 )
 class ComisionCursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = ComisionCurso.objects.select_related(
-        "curso", "curso__centro", "ubicacion"
-    ).order_by("codigo_comision")
+    queryset = (
+        ComisionCurso.objects.select_related("curso", "curso__centro", "ubicacion")
+        .prefetch_related(
+            "horarios__dia_semana",
+            "sesiones__horario__dia_semana",
+        )
+        .order_by("codigo_comision")
+    )
     serializer_class = ComisionCursoSerializer
     permission_classes = [HasAPIKey]
 
@@ -615,9 +634,13 @@ class ComisionHorarioViewSet(viewsets.ModelViewSet):
 
 @extend_schema(tags=["VAT - Inscripciones"])
 class InscripcionViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = Inscripcion.objects.select_related("ciudadano", "comision").order_by(
-        "-fecha_inscripcion"
-    )
+    queryset = Inscripcion.objects.select_related(
+        "ciudadano",
+        "programa",
+        "comision",
+        "comision_curso",
+        "comision_curso__curso",
+    ).order_by("-fecha_inscripcion")
     serializer_class = InscripcionSerializer
     permission_classes = [HasAPIKey]
 
@@ -625,21 +648,29 @@ class InscripcionViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         queryset = super().get_queryset()
         ciudadano_id = self.request.query_params.get("ciudadano_id")
         comision_id = self.request.query_params.get("comision_id")
+        comision_curso_id = self.request.query_params.get("comision_curso_id")
         estado = self.request.query_params.get("estado")
         if ciudadano_id:
             queryset = queryset.filter(ciudadano_id=ciudadano_id)
         if comision_id:
             queryset = queryset.filter(comision_id=comision_id)
+        if comision_curso_id:
+            queryset = queryset.filter(comision_curso_id=comision_curso_id)
         if estado:
             queryset = queryset.filter(estado=estado)
         return queryset
 
     def perform_create(self, serializer):
         data = serializer.validated_data
+        comision = data.get("comision") or data.get("comision_curso")
+        if comision is None:
+            raise ValidationError(
+                {"comision": ["Debe enviar una comisión o una comisión de curso."]}
+            )
         try:
             inscripcion = InscripcionService.crear_inscripcion(
                 ciudadano=data["ciudadano"],
-                comision=data["comision"],
+                comision=comision,
                 programa=data.get("programa"),
                 estado=data.get("estado", "inscripta"),
                 origen_canal=data.get("origen_canal", "api"),
@@ -650,6 +681,31 @@ class InscripcionViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
             raise ValidationError({"error": [str(exc)]}) from exc
 
         serializer.instance = inscripcion
+
+
+@extend_schema(
+    tags=["VAT - Cursos"],
+    summary="Inscripciones sobre comisiones de curso",
+    description=(
+        "Endpoint explícito para crear y listar inscripciones vinculadas a `ComisionCurso`. "
+        "Se documenta por separado para que Swagger muestre con claridad el flujo operativo de cursos "
+        "sin mezclarlo con la ruta general `/api/vat/inscripciones/`."
+    ),
+)
+class InscripcionCursoViewSet(InscripcionViewSet):
+    def get_queryset(self):
+        return super().get_queryset().filter(comision_curso__isnull=False)
+
+    def perform_create(self, serializer):
+        if serializer.validated_data.get("comision") is not None:
+            raise ValidationError(
+                {
+                    "comision_curso": [
+                        "Este endpoint solo admite inscripciones sobre comisiones de curso."
+                    ]
+                }
+            )
+        return super().perform_create(serializer)
 
 
 # Phase 7 - Evaluaciones
