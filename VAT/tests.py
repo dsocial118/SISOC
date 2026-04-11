@@ -3528,7 +3528,7 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert 'id="openPlanCurricularSelector"' in content
     assert 'id="planCurricularSelectorSearch"' in content
     assert 'id="planCurricularSelectorSector"' in content
-    assert 'id="planCurricularSelectorModalidad"' in content
+    assert 'id="planCurricularSelectorModalidad"' not in content
     assert 'id="tablaPlanCurricularSelector"' in content
     assert "Plan Curricular" in content
     assert (
@@ -3536,6 +3536,7 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
         in content
     )
     assert "Seleccionar plan curricular" in content
+    assert "Buscar por plan, sector o normativa" in content
     assert f'value="{plan.id}"' in content
     assert f'value="{plan_inactivo.id}"' not in content
     assert f'value="{plan_otra_provincia.id}"' not in content
