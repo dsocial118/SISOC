@@ -1,6 +1,7 @@
 """Tests for test pwa comedores api."""
 
 from datetime import date
+from io import BytesIO
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -9,6 +10,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import models
 from django.test import override_settings
 from django.utils import timezone
+from PIL import Image
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
@@ -134,6 +136,17 @@ def _create_informe_tecnico(admision, **overrides):
     )
     payload.update(overrides)
     return InformeTecnico.objects.create(**payload)
+
+
+def _build_test_image(name):
+    image_buffer = BytesIO()
+    image = Image.new("RGB", (2, 2), color="red")
+    image.save(image_buffer, format="PNG")
+    return SimpleUploadedFile(
+        name,
+        image_buffer.getvalue(),
+        content_type="image/png",
+    )
 
 
 @pytest.mark.django_db
@@ -340,6 +353,51 @@ def test_comedor_detail_includes_mobile_relevamiento_summary():
     assert items["¿Cómo se abastece de agua?"] == "Red"
     assert items["¿En qué lugar realiza sus compras?"] == "Supermercado, Mayoristas"
     assert "Murga" in items["¿Qué tipo de actividades se realizan?"]
+
+
+@pytest.mark.django_db
+def test_representante_can_upload_up_to_three_space_images(comedores):
+    comedor, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_upload_img",
+    )
+    client = _token_client(representante)
+
+    primera = _build_test_image("foto1.png")
+    segunda = _build_test_image("foto2.png")
+    tercera = _build_test_image("foto3.png")
+    cuarta = _build_test_image("foto4.png")
+
+    response_1 = client.post(
+        f"/api/comedores/{comedor.id}/imagenes/",
+        {"imagen": primera},
+        format="multipart",
+    )
+    response_2 = client.post(
+        f"/api/comedores/{comedor.id}/imagenes/",
+        {"imagen": segunda},
+        format="multipart",
+    )
+    response_3 = client.post(
+        f"/api/comedores/{comedor.id}/imagenes/",
+        {"imagen": tercera},
+        format="multipart",
+    )
+    response_4 = client.post(
+        f"/api/comedores/{comedor.id}/imagenes/",
+        {"imagen": cuarta},
+        format="multipart",
+    )
+
+    assert response_1.status_code == 201
+    assert response_2.status_code == 201
+    assert response_3.status_code == 201
+    assert len(response_3.data["imagenes"]) == 3
+    assert response_4.status_code == 400
+    assert response_4.data["detail"] == "El espacio ya tiene el máximo de 3 fotos."
+    assert ImagenComedor.objects.filter(comedor=comedor).count() == 3
 
 
 @pytest.mark.django_db
