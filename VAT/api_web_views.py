@@ -2,6 +2,7 @@ from django.db.models import Count, Prefetch, Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
@@ -11,9 +12,12 @@ from VAT.serializers import (
     VatWebCentroSerializer,
     VatWebCursoSerializer,
     VatWebInscripcionCreateSerializer,
+    VatWebInscripcionPrevalidacionResponseSerializer,
+    VatWebInscripcionPrevalidacionSerializer,
     VatWebInscripcionSerializer,
     VatWebTituloSerializer,
 )
+from VAT.services.inscripcion_service import InscripcionService
 
 
 @extend_schema(
@@ -421,6 +425,8 @@ class VatWebInscripcionViewSet(
     def get_serializer_class(self):
         if self.action == "create":
             return VatWebInscripcionCreateSerializer
+        if self.action == "prevalidar":
+            return VatWebInscripcionPrevalidacionSerializer
         return VatWebInscripcionSerializer
 
     @extend_schema(
@@ -487,3 +493,35 @@ class VatWebInscripcionViewSet(
             inscripcion, context={"request": request}
         )
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        summary="Prevalidar inscripción VAT",
+        description=(
+            "Valida si un ciudadano puede inscribirse a una comisión de curso antes "
+            "de confirmar el alta. Está pensado para frontends externos, como Mi Argentina, "
+            "que necesitan consultar elegibilidad, voucher y cupos antes de ejecutar la inscripción final."
+        ),
+        request=VatWebInscripcionPrevalidacionSerializer,
+        responses={200: VatWebInscripcionPrevalidacionResponseSerializer},
+        examples=[
+            OpenApiExample(
+                "Prevalidación por documento",
+                value={
+                    "documento": "30111222",
+                    "cuil": "20-30111222-3",
+                    "comision_curso_id": 3,
+                },
+                request_only=True,
+            )
+        ],
+    )
+    @action(detail=False, methods=["post"], url_path="prevalidar")
+    def prevalidar(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        resultado = InscripcionService.prevalidar_inscripcion(
+            ciudadano=serializer.validated_data["ciudadano"],
+            comision=serializer.validated_data["comision_curso"],
+            programa=serializer.validated_data.get("programa"),
+        )
+        return Response(resultado, status=status.HTTP_200_OK)

@@ -817,11 +817,117 @@ class VatWebInscripcionSerializer(serializers.ModelSerializer):
         ]
 
 
-class VatWebInscripcionCreateSerializer(serializers.Serializer):
+def _resolver_referencias_vat_web_inscripcion(attrs):
+    ciudadano_id = attrs.get("ciudadano_id")
+    documento = (attrs.get("documento") or "").strip()
+    comision_curso_id = attrs.get("comision_curso_id")
+    comision_id = attrs.get("comision_id")
+
+    if not ciudadano_id and not documento:
+        raise serializers.ValidationError("Debe enviar ciudadano_id o documento.")
+
+    if ciudadano_id and documento:
+        raise serializers.ValidationError(
+            "Envíe ciudadano_id o documento, pero no ambos."
+        )
+
+    if not comision_curso_id and not comision_id:
+        raise serializers.ValidationError(
+            "Debe enviar comision_curso_id o comision_id."
+        )
+
+    if comision_curso_id and comision_id and comision_curso_id != comision_id:
+        raise serializers.ValidationError(
+            "Si envía comision_id y comision_curso_id deben referir a la misma comisión de curso."
+        )
+
+    if ciudadano_id:
+        ciudadano = Ciudadano.objects.filter(pk=ciudadano_id).first()
+    else:
+        if not documento.isdigit():
+            raise serializers.ValidationError(
+                {"documento": "El documento debe ser numérico."}
+            )
+        ciudadano = Ciudadano.objects.filter(documento=int(documento)).first()
+
+    if not ciudadano:
+        raise serializers.ValidationError("No se encontró el ciudadano indicado.")
+
+    comision_curso = (
+        ComisionCurso.objects.select_related("curso", "curso__centro")
+        .filter(pk=comision_curso_id or comision_id)
+        .first()
+    )
+    if not comision_curso:
+        raise serializers.ValidationError("No se encontró la comisión de curso indicada.")
+
+    return ciudadano, comision_curso
+
+
+class VatWebInscripcionBaseSerializer(serializers.Serializer):
     ciudadano_id = serializers.IntegerField(required=False)
     documento = serializers.CharField(required=False)
     comision_id = serializers.IntegerField(required=False)
     comision_curso_id = serializers.IntegerField(required=False)
+
+    def validate(self, attrs):
+        ciudadano, comision_curso = _resolver_referencias_vat_web_inscripcion(attrs)
+        attrs["ciudadano"] = ciudadano
+        attrs["comision_curso"] = comision_curso
+        attrs["programa"] = comision_curso.programa
+        return attrs
+
+
+class VatWebInscripcionPrevalidacionSerializer(VatWebInscripcionBaseSerializer):
+    cuil = serializers.CharField(required=False, allow_blank=True)
+
+
+class VatWebInscripcionPrevalidacionCiudadanoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    documento = serializers.IntegerField()
+    nombre = serializers.CharField()
+
+
+class VatWebInscripcionPrevalidacionComisionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    codigo_comision = serializers.CharField()
+    nombre = serializers.CharField()
+    estado = serializers.CharField()
+    curso_id = serializers.IntegerField()
+    curso_nombre = serializers.CharField()
+    centro_id = serializers.IntegerField()
+    centro_nombre = serializers.CharField()
+    programa_id = serializers.IntegerField(allow_null=True)
+    programa_nombre = serializers.CharField(allow_null=True)
+    usa_voucher = serializers.BooleanField()
+    cupo_total = serializers.IntegerField()
+    cupos_disponibles = serializers.IntegerField()
+    costo = serializers.IntegerField()
+
+
+class VatWebInscripcionPrevalidacionVoucherSerializer(serializers.Serializer):
+    requerido = serializers.BooleanField()
+    programa_id = serializers.IntegerField(allow_null=True)
+    programa_nombre = serializers.CharField(allow_null=True)
+    parametrias_habilitadas = serializers.ListField(
+        child=serializers.IntegerField(),
+    )
+    voucher_id = serializers.IntegerField(allow_null=True)
+    parametria_id = serializers.IntegerField(allow_null=True)
+    saldo_actual = serializers.IntegerField(allow_null=True)
+    credito_requerido = serializers.IntegerField(allow_null=True)
+    saldo_post_inscripcion = serializers.IntegerField(allow_null=True)
+
+
+class VatWebInscripcionPrevalidacionResponseSerializer(serializers.Serializer):
+    puede_inscribirse = serializers.BooleanField()
+    motivos = serializers.ListField(child=serializers.CharField())
+    ciudadano = VatWebInscripcionPrevalidacionCiudadanoSerializer()
+    comision = VatWebInscripcionPrevalidacionComisionSerializer()
+    voucher = VatWebInscripcionPrevalidacionVoucherSerializer()
+
+
+class VatWebInscripcionCreateSerializer(VatWebInscripcionBaseSerializer):
     estado = serializers.ChoiceField(
         choices=Inscripcion.ESTADO_INSCRIPCION_CHOICES,
         default="inscripta",
@@ -830,50 +936,9 @@ class VatWebInscripcionCreateSerializer(serializers.Serializer):
     observaciones = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, attrs):
-        ciudadano_id = attrs.get("ciudadano_id")
-        documento = (attrs.get("documento") or "").strip()
-        comision_curso_id = attrs.get("comision_curso_id")
-        comision_id = attrs.get("comision_id")
-
-        if not ciudadano_id and not documento:
-            raise serializers.ValidationError("Debe enviar ciudadano_id o documento.")
-
-        if ciudadano_id and documento:
-            raise serializers.ValidationError(
-                "Envíe ciudadano_id o documento, pero no ambos."
-            )
-
-        if not comision_curso_id and not comision_id:
-            raise serializers.ValidationError(
-                "Debe enviar comision_curso_id o comision_id."
-            )
-
-        if comision_curso_id and comision_id and comision_curso_id != comision_id:
-            raise serializers.ValidationError(
-                "Si envía comision_id y comision_curso_id deben referir a la misma comisión de curso."
-            )
-
-        if ciudadano_id:
-            ciudadano = Ciudadano.objects.filter(pk=ciudadano_id).first()
-        else:
-            if not documento.isdigit():
-                raise serializers.ValidationError(
-                    {"documento": "El documento debe ser numérico."}
-                )
-            ciudadano = Ciudadano.objects.filter(documento=int(documento)).first()
-
-        if not ciudadano:
-            raise serializers.ValidationError("No se encontró el ciudadano indicado.")
-
-        comision_curso = (
-            ComisionCurso.objects.select_related("curso")
-            .filter(pk=comision_curso_id or comision_id)
-            .first()
-        )
-        if not comision_curso:
-            raise serializers.ValidationError(
-                "No se encontró la comisión de curso indicada."
-            )
+        attrs = super().validate(attrs)
+        ciudadano = attrs["ciudadano"]
+        comision_curso = attrs["comision_curso"]
 
         if Inscripcion.objects.filter(
             ciudadano=ciudadano,
