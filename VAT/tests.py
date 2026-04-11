@@ -28,6 +28,8 @@ from VAT.models import (
     Subsector,
     TituloReferencia,
     Curso,
+    OfertaInstitucional,
+    Comision,
     ComisionCurso,
     ComisionHorario,
     Inscripcion,
@@ -2357,6 +2359,71 @@ def test_api_vat_inscripciones_curso_crea_inscripcion_en_comision_curso(
     assert Inscripcion.objects.filter(
         ciudadano=ciudadano,
         comision_curso=comision,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_api_vat_inscripciones_curso_rechaza_comision_legacy(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa API Legacy")
+    sexo = Sexo.objects.create(sexo="Femenino")
+    sector = Sector.objects.create(nombre="Sector API Legacy")
+    plan = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        nombre="Plan API Legacy",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta API Legacy",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    comision_legacy = Comision.objects.create(
+        oferta=oferta,
+        ubicacion=ubicacion,
+        codigo_comision="API-INS-LEGACY-01",
+        nombre="Comisión Legacy API",
+        cupo=20,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        estado="activa",
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="API",
+        nombre="Legacy",
+        fecha_nacimiento=date(1998, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111223,
+        sexo=sexo,
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/inscripciones-curso/",
+        {
+            "ciudadano": ciudadano.id,
+            "comision": comision_legacy.id,
+            "estado": "inscripta",
+            "origen_canal": "api",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "comision_curso": [
+            "Este endpoint solo admite inscripciones sobre comisiones de curso."
+        ]
+    }
+    assert not Inscripcion.objects.filter(
+        ciudadano=ciudadano,
+        comision=comision_legacy,
     ).exists()
 
 

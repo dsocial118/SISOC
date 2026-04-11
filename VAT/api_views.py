@@ -696,6 +696,17 @@ class InscripcionCursoViewSet(InscripcionViewSet):
     def get_queryset(self):
         return super().get_queryset().filter(comision_curso__isnull=False)
 
+    def perform_create(self, serializer):
+        if serializer.validated_data.get("comision") is not None:
+            raise ValidationError(
+                {
+                    "comision_curso": [
+                        "Este endpoint solo admite inscripciones sobre comisiones de curso."
+                    ]
+                }
+            )
+        return super().perform_create(serializer)
+
 
 # Phase 7 - Evaluaciones
 
