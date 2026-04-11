@@ -2138,6 +2138,77 @@ def test_api_vat_comisiones_curso_lista_por_curso(vat_api_client, vat_curso_base
 
 
 @pytest.mark.django_db
+def test_api_vat_comisiones_curso_lista_incluye_horarios_y_sesiones(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso API Horarios VAT",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="API-COM-HOR-01",
+        nombre="Comision API Horarios VAT",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    dia = Dia.objects.create(nombre="Lunes")
+    horario = ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde=time(18, 0),
+        hora_hasta=time(20, 0),
+        aula_espacio="Taller 1",
+        vigente=True,
+    )
+    sesion = SesionComision.objects.create(
+        comision_curso=comision,
+        horario=horario,
+        numero_sesion=1,
+        fecha=date(2026, 4, 14),
+        estado="programada",
+    )
+
+    response = vat_api_client.get(f"/api/vat/comisiones-curso/?curso_id={curso.id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    result = payload["results"][0]
+    assert result["horarios"] == [
+        {
+            "id": horario.id,
+            "dia_semana": dia.id,
+            "dia_nombre": "Lunes",
+            "hora_desde": "18:00:00",
+            "hora_hasta": "20:00:00",
+            "aula_espacio": "Taller 1",
+            "vigente": True,
+        }
+    ]
+    assert result["sesiones"] == [
+        {
+            "id": sesion.id,
+            "horario": horario.id,
+            "numero_sesion": 1,
+            "fecha": "2026-04-14",
+            "estado": "programada",
+            "observaciones": None,
+            "dia_semana": dia.id,
+            "dia_nombre": "Lunes",
+            "hora_desde": "18:00:00",
+            "hora_hasta": "20:00:00",
+            "aula_espacio": "Taller 1",
+        }
+    ]
+
+
+@pytest.mark.django_db
 def test_api_vat_comisiones_curso_lista_por_provincia_y_municipio(
     vat_api_client, vat_curso_base
 ):

@@ -23,6 +23,7 @@ from VAT.models import (
     OfertaInstitucional,
     Comision,
     ComisionHorario,
+    SesionComision,
     # Fase 5
     Inscripcion,
     # Fase 7
@@ -398,11 +399,57 @@ class CursoSerializer(serializers.ModelSerializer):
 
 
 class ComisionCursoSerializer(serializers.ModelSerializer):
+    class ComisionCursoHorarioReadSerializer(serializers.ModelSerializer):
+        dia_nombre = serializers.CharField(source="dia_semana.nombre", read_only=True)
+
+        class Meta:
+            model = ComisionHorario
+            fields = [
+                "id",
+                "dia_semana",
+                "dia_nombre",
+                "hora_desde",
+                "hora_hasta",
+                "aula_espacio",
+                "vigente",
+            ]
+
+    class ComisionCursoSesionReadSerializer(serializers.ModelSerializer):
+        dia_semana = serializers.IntegerField(
+            source="horario.dia_semana_id", read_only=True
+        )
+        dia_nombre = serializers.CharField(
+            source="horario.dia_semana.nombre", read_only=True
+        )
+        hora_desde = serializers.TimeField(source="horario.hora_desde", read_only=True)
+        hora_hasta = serializers.TimeField(source="horario.hora_hasta", read_only=True)
+        aula_espacio = serializers.CharField(
+            source="horario.aula_espacio", read_only=True
+        )
+
+        class Meta:
+            model = SesionComision
+            fields = [
+                "id",
+                "horario",
+                "numero_sesion",
+                "fecha",
+                "estado",
+                "observaciones",
+                "dia_semana",
+                "dia_nombre",
+                "hora_desde",
+                "hora_hasta",
+                "aula_espacio",
+            ]
+
     curso_nombre = serializers.CharField(source="curso.nombre", read_only=True)
     curso_centro_id = serializers.IntegerField(source="curso.centro_id", read_only=True)
     ubicacion_nombre = serializers.CharField(
         source="ubicacion.nombre_ubicacion", read_only=True
     )
+    horarios = ComisionCursoHorarioReadSerializer(many=True, read_only=True)
+    sesiones = ComisionCursoSesionReadSerializer(many=True, read_only=True)
 
     class Meta:
         model = ComisionCurso
@@ -419,6 +466,8 @@ class ComisionCursoSerializer(serializers.ModelSerializer):
             "fecha_inicio",
             "fecha_fin",
             "estado",
+            "horarios",
+            "sesiones",
             "observaciones",
             "fecha_creacion",
             "fecha_modificacion",

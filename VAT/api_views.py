@@ -539,9 +539,14 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     ],
 )
 class ComisionCursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
-    queryset = ComisionCurso.objects.select_related(
-        "curso", "curso__centro", "ubicacion"
-    ).order_by("codigo_comision")
+    queryset = (
+        ComisionCurso.objects.select_related("curso", "curso__centro", "ubicacion")
+        .prefetch_related(
+            "horarios__dia_semana",
+            "sesiones__horario__dia_semana",
+        )
+        .order_by("codigo_comision")
+    )
     serializer_class = ComisionCursoSerializer
     permission_classes = [HasAPIKey]
 
