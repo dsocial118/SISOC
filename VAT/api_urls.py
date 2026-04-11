@@ -22,6 +22,7 @@ from VAT.api_views import (
     ComisionViewSet,
     ComisionHorarioViewSet,
     InscripcionViewSet,
+    InscripcionCursoViewSet,
     EvaluacionViewSet,
     ResultadoEvaluacionViewSet,
 )
@@ -115,6 +116,11 @@ router.register(
     r"inscripciones",
     InscripcionViewSet,
     basename="vat-api-inscripcion",
+)
+router.register(
+    r"inscripciones-curso",
+    InscripcionCursoViewSet,
+    basename="vat-api-inscripcion-curso",
 )
 # Phase 7 - Evaluaciones
 router.register(
