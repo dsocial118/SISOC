@@ -512,7 +512,12 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
     def _get_busqueda_queryset(self):
         return (
-            self._apply_curso_filters(Curso.objects.all())
+            self._apply_curso_filters(
+                Curso.objects.filter(
+                    estado="activo",
+                    comisiones__estado="activa",
+                )
+            )
             .select_related(
                 "centro",
                 "centro__referente",
@@ -538,6 +543,7 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
                             "ubicacion__localidad__municipio",
                             "ubicacion__localidad__municipio__provincia",
                         )
+                        .filter(estado="activa")
                         .annotate(
                             total_inscriptos=Count("inscripciones", distinct=True)
                         )
@@ -559,11 +565,15 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         tags=["VAT - Cursos"],
         summary="Buscar cursos operativos por texto",
         description=(
-            "Busca cursos operativos por texto libre en nombre de curso, plan de estudio o "
-            "título de referencia y devuelve la información enriquecida del curso, su centro, "
-            "geografía y las comisiones con horarios y cupos. "
-            "Ejemplo base: `/api/vat/cursos/buscar/?q=Her`. "
+            "Lista cursos operativos paginados y, cuando se envía `q`, busca por texto libre "
+            "en nombre de curso, plan de estudio o título de referencia. Devuelve la información "
+            "enriquecida del curso, su centro, geografía y las comisiones con horarios y cupos. "
+            "Solo expone cursos activos que tengan al menos una comisión activa, para mostrar "
+            "únicamente opciones vigentes de inscripción. "
+            "Ejemplo base de primera carga: `/api/vat/cursos/buscar/`. "
+            "Ejemplo con búsqueda: `/api/vat/cursos/buscar/?q=Her`. "
             "También admite los filtros opcionales de cursos, por ejemplo "
+            "`/api/vat/cursos/buscar/?centro_id=12&estado=activo` o "
             "`/api/vat/cursos/buscar/?q=Her&centro_id=12&estado=activo`."
         ),
         parameters=[
@@ -572,10 +582,11 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
                 OpenApiTypes.STR,
                 OpenApiParameter.QUERY,
                 description=(
-                    "Texto a buscar en nombre de curso, plan o título. "
-                    "Debe tener al menos 3 caracteres."
+                    "Texto opcional para buscar en nombre de curso, plan o título. "
+                    "Si se envía, debe tener al menos 3 caracteres. Si no se envía o queda vacío, "
+                    "el endpoint devuelve el listado paginado sin filtro por texto."
                 ),
-                required=True,
+                required=False,
             ),
             OpenApiParameter(
                 "centro_id",
@@ -620,22 +631,20 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="buscar")
     def buscar(self, request, *args, **kwargs):
         texto = (request.query_params.get("q") or "").strip()
-        if not texto:
-            raise ValidationError({"q": ["Debe enviar un texto de búsqueda."]})
-        if len(texto) < 3:
+        queryset = self._get_busqueda_queryset()
+
+        if texto and len(texto) < 3:
             raise ValidationError(
                 {"q": ["Debe enviar al menos 3 caracteres para buscar."]}
             )
 
-        queryset = (
-            self._get_busqueda_queryset()
-            .filter(
+        if texto:
+            queryset = queryset.filter(
                 Q(nombre__icontains=texto)
                 | Q(plan_estudio__nombre__icontains=texto)
                 | Q(plan_estudio__titulos__nombre__icontains=texto)
             )
-            .distinct()
-        )
+        queryset = queryset.distinct()
 
         page = self.paginate_queryset(queryset)
         items = page if page is not None else queryset
@@ -650,6 +659,8 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         description=(
             "Devuelve los cursos operativos marcados como prioritarios con la misma "
             "información enriquecida del buscador de cursos. "
+            "Solo expone cursos activos que tengan al menos una comisión activa, para mostrar "
+            "únicamente opciones vigentes de inscripción. "
             "Ejemplo base: `/api/vat/cursos/prioritarios/`. "
             "También admite filtros opcionales como `centro_id`, `provincia_id`, `municipio_id`, "
             "`modalidad_id`, `programa_id` y `estado`."
