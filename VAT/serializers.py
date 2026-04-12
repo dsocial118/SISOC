@@ -499,6 +499,12 @@ class CursoBusquedaCiudadSerializer(serializers.Serializer):
     localidad = LocalidadSerializer(read_only=True)
     direccion = serializers.CharField(source="domicilio_actividad", read_only=True)
 
+    def create(self, validated_data):
+        return validated_data
+
+    def update(self, instance, validated_data):
+        return instance
+
 
 class CursoBusquedaCentroSerializer(serializers.ModelSerializer):
     referente_nombre = serializers.CharField(
@@ -531,7 +537,9 @@ class CursoBusquedaCentroSerializer(serializers.ModelSerializer):
 
 class CursoBusquedaUbicacionSerializer(serializers.ModelSerializer):
     localidad_nombre = serializers.CharField(source="localidad.nombre", read_only=True)
-    municipio_id = serializers.IntegerField(source="localidad.municipio_id", read_only=True)
+    municipio_id = serializers.IntegerField(
+        source="localidad.municipio_id", read_only=True
+    )
     municipio_nombre = serializers.CharField(
         source="localidad.municipio.nombre", read_only=True
     )
@@ -605,7 +613,9 @@ class CursoBusquedaSerializer(serializers.ModelSerializer):
     plan_estudio_nombre = serializers.CharField(source="plan_estudio", read_only=True)
     modalidad_nombre = serializers.CharField(source="modalidad.nombre", read_only=True)
     programa = serializers.SerializerMethodField()
-    voucher_parametrias = CursoBusquedaVoucherParametriaSerializer(many=True, read_only=True)
+    voucher_parametrias = CursoBusquedaVoucherParametriaSerializer(
+        many=True, read_only=True
+    )
     comisiones = CursoBusquedaComisionSerializer(many=True, read_only=True)
 
     def get_programa(self, obj):

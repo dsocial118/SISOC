@@ -2,7 +2,7 @@ import logging
 
 from django.db.models import Count, Prefetch, Q
 from drf_spectacular.utils import extend_schema
-from drf_spectacular.utils import OpenApiExample, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -31,6 +31,10 @@ from VAT.models import (
     Inscripcion,
     Evaluacion,
     ResultadoEvaluacion,
+)
+from VAT.api_schema_examples import (
+    CURSO_BUSCAR_EXAMPLES,
+    CURSO_PRIORITARIOS_EXAMPLES,
 )
 from VAT.serializers import (
     CentroSerializer,
@@ -509,9 +513,9 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
             .prefetch_related(
                 Prefetch(
                     "voucher_parametrias",
-                    queryset=VoucherParametria.objects.select_related("programa").order_by(
-                        "programa_id", "id"
-                    ),
+                    queryset=VoucherParametria.objects.select_related(
+                        "programa"
+                    ).order_by("programa_id", "id"),
                 ),
                 Prefetch(
                     "comisiones",
@@ -532,7 +536,7 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
                             ),
                         )
                         .order_by("fecha_inicio", "codigo_comision")
-                    )
+                    ),
                 ),
             )
             .order_by("-fecha_creacion", "nombre")
@@ -601,86 +605,7 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
             ),
         ],
         responses=CursoBusquedaSerializer(many=True),
-        examples=[
-            OpenApiExample(
-                "Búsqueda exitosa paginada",
-                value={
-                    "count": 1,
-                    "next": None,
-                    "previous": None,
-                    "results": [
-                        {
-                            "id": 120,
-                            "nombre": "Herramientas Digitales",
-                            "prioritario": True,
-                            "estado": "activo",
-                            "observaciones": None,
-                            "fecha_creacion": "2026-04-12T10:00:00Z",
-                            "fecha_modificacion": "2026-04-12T10:00:00Z",
-                            "usa_voucher": True,
-                            "costo_creditos": 2,
-                            "centro": {
-                                "id": 12,
-                                "nombre": "CFP 401",
-                                "referente": None,
-                                "referente_nombre": "",
-                                "codigo": "CFP-401",
-                                "activo": True,
-                                "provincia": {
-                                    "id": 2,
-                                    "nombre": "Buenos Aires"
-                                },
-                                "ciudad": {
-                                    "provincia": {
-                                        "id": 2,
-                                        "nombre": "Buenos Aires"
-                                    },
-                                    "municipio": {
-                                        "id": 15,
-                                        "nombre": "La Plata",
-                                        "provincia": 2,
-                                        "provincia_nombre": "Buenos Aires"
-                                    },
-                                    "localidad": {
-                                        "id": 120,
-                                        "nombre": "Tolosa",
-                                        "municipio": 15,
-                                        "municipio_nombre": "La Plata",
-                                        "provincia_nombre": "Buenos Aires"
-                                    },
-                                    "direccion": "Calle 1 Nro 123"
-                                },
-                                "telefono": "221-4000000",
-                                "celular": "221-4000001",
-                                "correo": "cfp401@example.org",
-                                "nombre_referente": "Ana",
-                                "apellido_referente": "Perez",
-                                "tipo_gestion": "Estatal",
-                                "clase_institucion": "Formación Profesional",
-                                "situacion": "Institución de ETP"
-                            },
-                            "plan_estudio": 30,
-                            "plan_estudio_nombre": "Herramientas Digitales I",
-                            "modalidad": 1,
-                            "modalidad_nombre": "Presencial",
-                            "programa": {
-                                "id": 7,
-                                "nombre": "Programa Prioridad Formación"
-                            },
-                            "voucher_parametrias": [],
-                            "comisiones": []
-                        }
-                    ]
-                },
-                response_only=True,
-            ),
-            OpenApiExample(
-                "Error por texto corto",
-                value={"q": ["Debe enviar al menos 3 caracteres para buscar."]},
-                response_only=True,
-                status_codes=["400"],
-            ),
-        ],
+        examples=CURSO_BUSCAR_EXAMPLES,
     )
     @action(detail=False, methods=["get"], url_path="buscar")
     def buscar(self, request, *args, **kwargs):
@@ -757,80 +682,7 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
                 description="Filtra cursos por estado.",
             ),
         ],
-        examples=[
-            OpenApiExample(
-                "Listado de prioritarios paginado",
-                value={
-                    "count": 1,
-                    "next": None,
-                    "previous": None,
-                    "results": [
-                        {
-                            "id": 140,
-                            "nombre": "Herramientas de Gestión Prioritaria",
-                            "prioritario": True,
-                            "estado": "activo",
-                            "observaciones": None,
-                            "fecha_creacion": "2026-04-12T10:00:00Z",
-                            "fecha_modificacion": "2026-04-12T10:00:00Z",
-                            "usa_voucher": True,
-                            "costo_creditos": 3,
-                            "centro": {
-                                "id": 12,
-                                "nombre": "CFP 401",
-                                "referente": None,
-                                "referente_nombre": "",
-                                "codigo": "CFP-401",
-                                "activo": True,
-                                "provincia": {
-                                    "id": 2,
-                                    "nombre": "Buenos Aires"
-                                },
-                                "ciudad": {
-                                    "provincia": {
-                                        "id": 2,
-                                        "nombre": "Buenos Aires"
-                                    },
-                                    "municipio": {
-                                        "id": 15,
-                                        "nombre": "La Plata",
-                                        "provincia": 2,
-                                        "provincia_nombre": "Buenos Aires"
-                                    },
-                                    "localidad": {
-                                        "id": 120,
-                                        "nombre": "Tolosa",
-                                        "municipio": 15,
-                                        "municipio_nombre": "La Plata",
-                                        "provincia_nombre": "Buenos Aires"
-                                    },
-                                    "direccion": "Calle 1 Nro 123"
-                                },
-                                "telefono": "221-4000000",
-                                "celular": "221-4000001",
-                                "correo": "cfp401@example.org",
-                                "nombre_referente": "Ana",
-                                "apellido_referente": "Perez",
-                                "tipo_gestion": "Estatal",
-                                "clase_institucion": "Formación Profesional",
-                                "situacion": "Institución de ETP"
-                            },
-                            "plan_estudio": 30,
-                            "plan_estudio_nombre": "Gestión Administrativa",
-                            "modalidad": 1,
-                            "modalidad_nombre": "Presencial",
-                            "programa": {
-                                "id": 7,
-                                "nombre": "Programa Prioridad Formación"
-                            },
-                            "voucher_parametrias": [],
-                            "comisiones": []
-                        }
-                    ]
-                },
-                response_only=True,
-            )
-        ],
+        examples=CURSO_PRIORITARIOS_EXAMPLES,
     )
     @action(detail=False, methods=["get"], url_path="prioritarios")
     def prioritarios(self, request, *args, **kwargs):

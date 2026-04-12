@@ -2266,9 +2266,7 @@ def test_api_vat_cursos_buscar_requiere_minimo_tres_caracteres(vat_api_client):
     response = vat_api_client.get("/api/vat/cursos/buscar/?q=he")
 
     assert response.status_code == 400
-    assert response.json() == {
-        "q": ["Debe enviar al menos 3 caracteres para buscar."]
-    }
+    assert response.json() == {"q": ["Debe enviar al menos 3 caracteres para buscar."]}
 
 
 @pytest.mark.django_db
