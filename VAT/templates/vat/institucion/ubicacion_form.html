@@ -1,6 +1,5 @@
 {% extends "includes/main.html" %}
 {% load static %}
-{% url 'vat_institucion_ubicacion_list' as ubicacion_list_url %}
 
 {% block title %}
     {% if form.instance.id %}
@@ -16,7 +15,7 @@
         <div class="row mb-4">
             <div class="col-12">
                 <div class="d-flex align-items-center gap-2 mb-4">
-                    <a href="{% if return_url %}{{ return_url }}{% else %}{{ ubicacion_list_url }}{% endif %}"
+                    <a href="{% if return_url %}{{ return_url }}{% else %}{% url 'vat_institucion_ubicacion_list' %}{% endif %}"
                        class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
                     <div>
                         <h1 class="h2 mb-0" style="color: #1f3a93;">
@@ -109,7 +108,7 @@
 
                             <hr class="my-4" />
                             <div class="d-flex gap-2 justify-content-end">
-                                <a href="{% if return_url %}{{ return_url }}{% else %}{{ ubicacion_list_url }}{% endif %}"
+                                <a href="{% if return_url %}{{ return_url }}{% else %}{% url 'vat_institucion_ubicacion_list' %}{% endif %}"
                                    class="btn btn-outline-secondary"><i class="bi bi-x-lg me-2"></i>Cancelar</a>
                                 <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-check-lg me-2"></i>
