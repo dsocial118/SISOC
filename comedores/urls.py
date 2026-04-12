@@ -23,6 +23,7 @@ from comedores.views import (
     NominaImportarView,
     AsignarDuplaListView,
     relevamiento_crear_editar_ajax,
+    capacitacion_certificado_estado_ajax,
     nomina_editar_ajax,
     nomina_cambiar_estado,
     validar_comedor,
@@ -315,5 +316,12 @@ urlpatterns = [
         "comedores/<int:pk>/validar/",
         login_required(validar_comedor),
         name="validar_comedor",
+    ),
+    path(
+        "comedores/<int:pk>/capacitaciones/<int:certificado_id>/estado/",
+        permissions_any_required(["comedores.change_comedor"])(
+            capacitacion_certificado_estado_ajax
+        ),
+        name="capacitacion_certificado_estado_ajax",
     ),
 ]

@@ -1333,6 +1333,63 @@ def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_d
 
 @pytest.mark.django_db
 @override_settings(ROOT_URLCONF="config.urls")
+def test_institucion_ubicacion_update_renderiza_con_volver_al_detalle_del_centro(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-ubicacion-update-get",
+        email="admin-ubicacion-update-get@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="Centro Ubicaciones GET",
+        codigo="CFP-UBI-GET",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8 N° 456",
+        telefono="221-4100000",
+        celular="221-5100000",
+        correo="centro-ubicaciones-get@vat.test",
+        nombre_referente="Luisa",
+        apellido_referente="Martinez",
+        telefono_referente="221-6100000",
+        correo_referente="luisa-get@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="anexo",
+        nombre_ubicacion="Anexo Norte",
+        domicilio="Calle 8 N° 460",
+        es_principal=False,
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_institucion_ubicacion_update", kwargs={"pk": ubicacion.pk})
+    )
+
+    return_url = reverse("vat_centro_detail", kwargs={"pk": centro.pk})
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert response.context["return_url"] == return_url
+    assert f'href="{return_url}"' in content
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
 def test_institucion_ubicacion_update_redirige_al_detalle_del_centro(
     client, vat_geo_data
 ):

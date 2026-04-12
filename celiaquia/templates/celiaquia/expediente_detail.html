@@ -1034,10 +1034,7 @@
                                             </h6>
                                             <div class="row g-2">
                                                 <div class="col-md-4">
-                                                    <label class="form-label">
-                                                        Apellido Responsable
-                                                        {% if registro.responsable_requerido %}*{% endif %}
-                                                    </label>
+                                                    <label class="form-label">Apellido Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="apellido_responsable"
@@ -1045,10 +1042,7 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">
-                                                        Nombre Responsable
-                                                        {% if registro.responsable_requerido %}*{% endif %}
-                                                    </label>
+                                                    <label class="form-label">Nombre Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="nombre_responsable"
@@ -1056,10 +1050,7 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">
-                                                        CUIT/Documento Responsable
-                                                        {% if registro.responsable_requerido %}*{% endif %}
-                                                    </label>
+                                                    <label class="form-label">CUIT/Documento Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="documento_responsable"
@@ -1067,10 +1058,7 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">
-                                                        Fecha Nac. Responsable
-                                                        {% if registro.responsable_requerido %}*{% endif %}
-                                                    </label>
+                                                    <label class="form-label">Fecha Nac. Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="fecha_nacimiento_responsable"
@@ -1079,10 +1067,7 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">
-                                                        Sexo Responsable
-                                                        {% if registro.responsable_requerido %}*{% endif %}
-                                                    </label>
+                                                    <label class="form-label">Sexo Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <select class="form-select"
                                                             name="sexo_responsable"
                                                             {% if registro.responsable_requerido %}required{% endif %}>
@@ -1110,10 +1095,7 @@
                                                            value="{{ registro.datos_raw.email_responsable|default:'' }}" />
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label class="form-label">
-                                                        Domicilio Responsable
-                                                        {% if registro.responsable_requerido %}*{% endif %}
-                                                    </label>
+                                                    <label class="form-label">Domicilio Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="domicilio_responsable"
@@ -1121,10 +1103,7 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label class="form-label">
-                                                        Localidad Responsable
-                                                        {% if registro.responsable_requerido %}*{% endif %}
-                                                    </label>
+                                                    <label class="form-label">Localidad Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <select class="form-select"
                                                             name="localidad_responsable"
                                                             {% if registro.responsable_requerido %}required{% endif %}>

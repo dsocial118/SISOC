@@ -457,3 +457,148 @@ def test_nomina_register_attendance_current_month_is_idempotent(
         accion="create",
         entidad_id=first_response.data["registro"]["id"],
     ).exists()
+
+
+@pytest.mark.django_db
+def test_nomina_bulk_attendance_alimentaria_syncs_current_period(
+    comedor, admision, sexo_f, sexo_m
+):
+    representante = _create_representante(
+        comedor=comedor, username="rep_nomina_bulk_alimentaria"
+    )
+    client = _auth_client_for_user(representante)
+
+    ciudadano_1 = Ciudadano.objects.create(
+        nombre="Alicia",
+        apellido="Rojas",
+        documento=25111222,
+        fecha_nacimiento="1988-03-01",
+        sexo=sexo_f,
+    )
+    ciudadano_2 = Ciudadano.objects.create(
+        nombre="Bruno",
+        apellido="Silva",
+        documento=27111222,
+        fecha_nacimiento="1986-04-01",
+        sexo=sexo_m,
+    )
+    ciudadano_3 = Ciudadano.objects.create(
+        nombre="Carla",
+        apellido="Molina",
+        documento=29111222,
+        fecha_nacimiento="1992-05-01",
+        sexo=sexo_f,
+    )
+    nomina_1 = Nomina.objects.create(
+        admision=admision,
+        ciudadano=ciudadano_1,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+    nomina_2 = Nomina.objects.create(
+        admision=admision,
+        ciudadano=ciudadano_2,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+    nomina_3 = Nomina.objects.create(
+        admision=admision,
+        ciudadano=ciudadano_3,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+    NominaEspacioPWA.objects.create(
+        nomina=nomina_1,
+        asistencia_alimentaria=True,
+        asistencia_actividades=False,
+        activo=True,
+    )
+    NominaEspacioPWA.objects.create(
+        nomina=nomina_2,
+        asistencia_alimentaria=True,
+        asistencia_actividades=False,
+        activo=True,
+    )
+    NominaEspacioPWA.objects.create(
+        nomina=nomina_3,
+        asistencia_alimentaria=False,
+        asistencia_actividades=True,
+        activo=True,
+    )
+
+    periodo_actual = timezone.localdate().replace(day=1)
+    registro_existente = RegistroAsistenciaNominaPWA.objects.create(
+        nomina=nomina_2,
+        periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
+        periodo_referencia=periodo_actual,
+        tomado_por=representante,
+    )
+
+    response = client.post(
+        f"/api/pwa/espacios/{comedor.id}/nomina/asistencia-alimentaria/",
+        {"nomina_ids": [nomina_1.id]},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["periodo_label"] == periodo_actual.strftime("%m/%Y")
+    assert response.data["selected_nomina_ids"] == [nomina_1.id]
+    assert response.data["created_count"] == 1
+    assert response.data["deleted_count"] == 1
+    assert (
+        RegistroAsistenciaNominaPWA.objects.filter(
+            nomina=nomina_1,
+            periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
+            periodo_referencia=periodo_actual,
+        ).count()
+        == 1
+    )
+    assert not RegistroAsistenciaNominaPWA.objects.filter(
+        pk=registro_existente.id
+    ).exists()
+    assert AuditoriaOperacionPWA.objects.filter(
+        entidad="nomina_asistencia",
+        accion="create",
+        metadata__origen="bulk_alimentaria",
+    ).exists()
+    assert AuditoriaOperacionPWA.objects.filter(
+        entidad="nomina_asistencia",
+        accion="delete",
+        entidad_id=registro_existente.id,
+        metadata__origen="bulk_alimentaria",
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_nomina_bulk_attendance_alimentaria_rejects_non_alimentaria_rows(
+    comedor, admision, sexo_f
+):
+    representante = _create_representante(
+        comedor=comedor, username="rep_nomina_bulk_invalid"
+    )
+    client = _auth_client_for_user(representante)
+
+    ciudadano = Ciudadano.objects.create(
+        nombre="Paula",
+        apellido="Acosta",
+        documento=30123456,
+        fecha_nacimiento="1990-06-15",
+        sexo=sexo_f,
+    )
+    nomina = Nomina.objects.create(
+        admision=admision,
+        ciudadano=ciudadano,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+    NominaEspacioPWA.objects.create(
+        nomina=nomina,
+        asistencia_alimentaria=False,
+        asistencia_actividades=True,
+        activo=True,
+    )
+
+    response = client.post(
+        f"/api/pwa/espacios/{comedor.id}/nomina/asistencia-alimentaria/",
+        {"nomina_ids": [nomina.id]},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "nomina_ids" in response.data["detail"]
