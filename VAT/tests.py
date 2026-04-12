@@ -2314,12 +2314,22 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
 def test_api_vat_cursos_buscar_sin_texto_devuelve_listado_paginado(
     vat_api_client, vat_curso_base
 ):
-    centro, _, modalidad = vat_curso_base
+    centro, ubicacion, modalidad = vat_curso_base
     curso = Curso.objects.create(
         centro=centro,
         nombre="Operador de Primera Carga",
         modalidad=modalidad,
         estado="activo",
+    )
+    ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="PC-001",
+        nombre="Comisión Primera Carga",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 10),
+        fecha_fin=date(2026, 5, 10),
+        estado="activa",
     )
 
     response = vat_api_client.get("/api/vat/cursos/buscar/")
@@ -2327,7 +2337,7 @@ def test_api_vat_cursos_buscar_sin_texto_devuelve_listado_paginado(
     assert response.status_code == 200
     payload = response.json()
     result_ids = {item["id"] for item in payload["results"]}
-    assert payload["count"] >= 1
+    assert payload["count"] == 1
     assert curso.id in result_ids
 
 
@@ -2335,12 +2345,22 @@ def test_api_vat_cursos_buscar_sin_texto_devuelve_listado_paginado(
 def test_api_vat_cursos_buscar_con_texto_vacio_devuelve_listado_paginado(
     vat_api_client, vat_curso_base
 ):
-    centro, _, modalidad = vat_curso_base
+    centro, ubicacion, modalidad = vat_curso_base
     curso = Curso.objects.create(
         centro=centro,
         nombre="Operador de Campo Limpio",
         modalidad=modalidad,
         estado="activo",
+    )
+    ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="CL-001",
+        nombre="Comisión Campo Limpio",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 10),
+        fecha_fin=date(2026, 5, 10),
+        estado="activa",
     )
 
     response = vat_api_client.get("/api/vat/cursos/buscar/?q=   ")
@@ -2348,7 +2368,7 @@ def test_api_vat_cursos_buscar_con_texto_vacio_devuelve_listado_paginado(
     assert response.status_code == 200
     payload = response.json()
     result_ids = {item["id"] for item in payload["results"]}
-    assert payload["count"] >= 1
+    assert payload["count"] == 1
     assert curso.id in result_ids
 
 
@@ -2511,7 +2531,7 @@ def test_api_vat_cursos_prioritarios_devuelve_solo_cursos_activos_con_comisiones
         estado="activo",
         prioritario=True,
     )
-    ComisionCurso.objects.create(
+    primera_comision_visible = ComisionCurso.objects.create(
         curso=curso_visible,
         ubicacion=ubicacion,
         codigo_comision="PRIOVIS-001",
@@ -2519,6 +2539,16 @@ def test_api_vat_cursos_prioritarios_devuelve_solo_cursos_activos_con_comisiones
         cupo_total=10,
         fecha_inicio=date(2026, 4, 12),
         fecha_fin=date(2026, 5, 12),
+        estado="activa",
+    )
+    segunda_comision_visible = ComisionCurso.objects.create(
+        curso=curso_visible,
+        ubicacion=ubicacion,
+        codigo_comision="PRIOVIS-002",
+        nombre="Comisión Prioritaria Visible 2",
+        cupo_total=10,
+        fecha_inicio=date(2026, 4, 13),
+        fecha_fin=date(2026, 5, 13),
         estado="activa",
     )
     ComisionCurso.objects.create(
@@ -2546,20 +2576,28 @@ def test_api_vat_cursos_prioritarios_devuelve_solo_cursos_activos_con_comisiones
 
     assert response.status_code == 200
     payload = response.json()
+    assert payload["count"] == 1
     result_ids = {item["id"] for item in payload["results"]}
+    result = payload["results"][0]
     assert curso_visible.id in result_ids
     assert curso_inactivo.id not in result_ids
     assert curso_sin_comision_activa.id not in result_ids
+    assert result["id"] == curso_visible.id
+    assert {comision["id"] for comision in result["comisiones"]} == {
+        primera_comision_visible.id,
+        segunda_comision_visible.id,
+    }
     assert result["centro"]["id"] == centro.id
     assert result["centro"]["provincia"]["id"] == centro.provincia_id
     assert result["centro"]["ciudad"]["municipio"]["id"] == centro.municipio_id
     assert result["centro"]["ciudad"]["localidad"]["id"] == centro.localidad_id
     assert result["centro"]["ciudad"]["direccion"] == centro.domicilio_actividad
-    assert result["programa"] == {"id": programa.id, "nombre": programa.nombre}
-    assert result["voucher_parametrias"][0]["id"] == voucher_parametria.id
-    assert result["comisiones"][0]["id"] == comision.id
-    assert result["comisiones"][0]["horarios"][0]["id"] == horario.id
-    assert result["comisiones"][0]["ubicacion"]["id"] == ubicacion.id
+    assert result["programa"] is None
+    assert result["voucher_parametrias"] == []
+    assert all(
+        comision["ubicacion"]["id"] == ubicacion.id
+        for comision in result["comisiones"]
+    )
 
 
 @pytest.mark.django_db

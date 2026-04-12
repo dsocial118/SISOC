@@ -708,7 +708,7 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     )
     @action(detail=False, methods=["get"], url_path="prioritarios")
     def prioritarios(self, request, *args, **kwargs):
-        queryset = self._get_busqueda_queryset().filter(prioritario=True)
+        queryset = self._get_busqueda_queryset().filter(prioritario=True).distinct()
 
         page = self.paginate_queryset(queryset)
         items = page if page is not None else queryset

@@ -16,6 +16,7 @@ Fecha: 2026-04-11
 - El endpoint de prioritarios reutiliza la misma estructura enriquecida del buscador: centro con provincia anidada, bloque `ciudad` con provincia/municipio/localidad/dirección, programa derivado, parametrías de voucher, comisiones, horarios, sesiones y cupos.
 - El endpoint admite los filtros ya soportados por `CursoViewSet` porque reutiliza el mismo queryset base filtrado.
 - El resultado queda restringido a opciones vigentes de inscripción: curso activo y al menos una comisión activa.
+- Si un curso prioritario tiene múltiples comisiones activas, la paginación devuelve el curso una sola vez y mantiene la lista de comisiones activas en el payload enriquecido.
 
 ## Validación
 
