@@ -833,6 +833,7 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["post"],
         url_path="capacitaciones/eliminar",
+        permission_classes=[IsPWARepresentativeForComedor],
     )
     def eliminar_capacitacion(self, request, pk=None):
         comedor = self.get_object()

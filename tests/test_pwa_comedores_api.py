@@ -15,7 +15,13 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from admisiones.models.admisiones import Admision, InformeTecnico
-from comedores.models import Comedor, ImagenComedor, Nomina, Programas
+from comedores.models import (
+    CapacitacionComedorCertificado,
+    Comedor,
+    ImagenComedor,
+    Nomina,
+    Programas,
+)
 from core.models import Localidad, Municipio, Provincia
 from organizaciones.models import Organizacion
 from relevamientos.models import (
@@ -398,6 +404,32 @@ def test_representante_can_upload_up_to_three_space_images(comedores):
     assert response_4.status_code == 400
     assert response_4.data["detail"] == "El espacio ya tiene el máximo de 3 fotos."
     assert ImagenComedor.objects.filter(comedor=comedor).count() == 3
+
+
+@pytest.mark.django_db
+def test_operador_cannot_delete_capacitacion_certificate(comedores):
+    comedor, _ = comedores
+    comedor.programa = Programas.objects.create(nombre="Alimentar Comunidad")
+    comedor.save(update_fields=["programa"])
+    certificado = CapacitacionComedorCertificado.objects.create(
+        comedor=comedor,
+        capacitacion=CapacitacionComedorCertificado.CAPACITACION_PAUTAS_HIGIENE,
+        estado=CapacitacionComedorCertificado.ESTADO_PRESENTADO,
+    )
+    operador = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_OPERADOR,
+        username="op_delete_capacitacion",
+    )
+    client = _token_client(operador)
+
+    response = client.post(
+        f"/api/comedores/{comedor.id}/capacitaciones/eliminar/",
+        {"capacitacion": certificado.capacitacion},
+        format="json",
+    )
+
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
