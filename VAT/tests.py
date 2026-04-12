@@ -2595,8 +2595,7 @@ def test_api_vat_cursos_prioritarios_devuelve_solo_cursos_activos_con_comisiones
     assert result["programa"] is None
     assert result["voucher_parametrias"] == []
     assert all(
-        comision["ubicacion"]["id"] == ubicacion.id
-        for comision in result["comisiones"]
+        comision["ubicacion"]["id"] == ubicacion.id for comision in result["comisiones"]
     )
 
 
