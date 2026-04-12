@@ -30,6 +30,7 @@ from .observacion import (
 )
 from .relevamientos import relevamiento_crear_editar_ajax
 from .validacion import validar_comedor
+from .capacitaciones import capacitacion_certificado_estado_ajax
 
 __all__ = [
     "AsignarDuplaListView",
@@ -55,5 +56,6 @@ __all__ = [
     "nomina_cambiar_estado",
     "nomina_editar_ajax",
     "relevamiento_crear_editar_ajax",
+    "capacitacion_certificado_estado_ajax",
     "validar_comedor",
 ]
