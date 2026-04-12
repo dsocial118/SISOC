@@ -183,6 +183,15 @@ urlpatterns = [
         name="pwa-nomina-preview-dni",
     ),
     path(
+        "espacios/<int:comedor_id>/nomina/asistencia-alimentaria/",
+        NominaEspacioPWAViewSet.as_view(
+            {
+                "post": "registrar_asistencia_alimentaria",
+            }
+        ),
+        name="pwa-nomina-asistencia-alimentaria",
+    ),
+    path(
         "espacios/<int:comedor_id>/nomina/<int:pk>/",
         NominaEspacioPWAViewSet.as_view(
             {
