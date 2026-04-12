@@ -122,6 +122,50 @@
       "description": "Ejemplos del endpoint GET /api/vat/cursos/buscar/ con casos exitosos y errores esperados.",
       "item": [
         {
+          "name": "Listar primera carga sin texto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/buscar/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "buscar",
+                ""
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('La respuesta mantiene paginacion', function () {",
+                  "  pm.expect(body).to.have.property('results');",
+                  "  pm.expect(Array.isArray(body.results)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
           "name": "Buscar por 3 letras minimo",
           "request": {
             "method": "GET",
