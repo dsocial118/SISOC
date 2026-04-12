@@ -1,9 +1,10 @@
 import logging
 
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch, Q
 from drf_spectacular.utils import extend_schema
-from drf_spectacular.utils import OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, inline_serializer
 from drf_spectacular.types import OpenApiTypes
+from rest_framework import serializers as drf_serializers
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -32,6 +33,10 @@ from VAT.models import (
     Evaluacion,
     ResultadoEvaluacion,
 )
+from VAT.api_schema_examples import (
+    CURSO_BUSCAR_EXAMPLES,
+    CURSO_PRIORITARIOS_EXAMPLES,
+)
 from VAT.serializers import (
     CentroSerializer,
     ProvinciaSerializer,
@@ -49,6 +54,7 @@ from VAT.serializers import (
     InstitucionIdentificadorHistSerializer,
     InstitucionUbicacionSerializer,
     CursoSerializer,
+    CursoBusquedaSerializer,
     ComisionCursoSerializer,
     OfertaInstitucionalSerializer,
     ComisionSerializer,
@@ -63,6 +69,16 @@ from core.models import Localidad, Municipio, Provincia
 from core.soft_delete.view_helpers import is_soft_deletable_instance
 
 logger = logging.getLogger("django")
+
+CURSO_BUSQUEDA_PAGINATED_RESPONSE = inline_serializer(
+    name="CursoBusquedaPaginatedResponse",
+    fields={
+        "count": drf_serializers.IntegerField(),
+        "next": drf_serializers.URLField(allow_null=True),
+        "previous": drf_serializers.URLField(allow_null=True),
+        "results": CursoBusquedaSerializer(many=True),
+    },
+)
 
 
 class SoftDeleteDestroyMixin:
@@ -461,8 +477,7 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     serializer_class = CursoSerializer
     permission_classes = [HasAPIKey]
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
+    def _apply_curso_filters(self, queryset):
         centro_id = self.request.query_params.get("centro_id")
         provincia_id = self.request.query_params.get("provincia_id")
         municipio_id = self.request.query_params.get("municipio_id")
@@ -494,6 +509,202 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         if estado:
             queryset = queryset.filter(estado=estado)
         return queryset
+
+    def _get_busqueda_queryset(self):
+        return (
+            self._apply_curso_filters(Curso.objects.all())
+            .select_related(
+                "centro",
+                "centro__referente",
+                "centro__provincia",
+                "centro__municipio",
+                "centro__localidad",
+                "plan_estudio",
+                "modalidad",
+            )
+            .prefetch_related(
+                Prefetch(
+                    "voucher_parametrias",
+                    queryset=VoucherParametria.objects.select_related(
+                        "programa"
+                    ).order_by("programa_id", "id"),
+                ),
+                Prefetch(
+                    "comisiones",
+                    queryset=(
+                        ComisionCurso.objects.select_related(
+                            "ubicacion",
+                            "ubicacion__localidad",
+                            "ubicacion__localidad__municipio",
+                            "ubicacion__localidad__municipio__provincia",
+                        )
+                        .annotate(
+                            total_inscriptos=Count("inscripciones", distinct=True)
+                        )
+                        .prefetch_related(
+                            "horarios__dia_semana",
+                            "sesiones__horario__dia_semana",
+                        )
+                        .order_by("fecha_inicio", "codigo_comision")
+                    ),
+                ),
+            )
+            .order_by("-fecha_creacion", "nombre")
+        )
+
+    def get_queryset(self):
+        return self._apply_curso_filters(super().get_queryset())
+
+    @extend_schema(
+        tags=["VAT - Cursos"],
+        summary="Buscar cursos operativos por texto",
+        description=(
+            "Busca cursos operativos por texto libre en nombre de curso, plan de estudio o "
+            "título de referencia y devuelve la información enriquecida del curso, su centro, "
+            "geografía y las comisiones con horarios y cupos. "
+            "Ejemplo base: `/api/vat/cursos/buscar/?q=Her`. "
+            "También admite los filtros opcionales de cursos, por ejemplo "
+            "`/api/vat/cursos/buscar/?q=Her&centro_id=12&estado=activo`."
+        ),
+        parameters=[
+            OpenApiParameter(
+                "q",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description=(
+                    "Texto a buscar en nombre de curso, plan o título. "
+                    "Debe tener al menos 3 caracteres."
+                ),
+                required=True,
+            ),
+            OpenApiParameter(
+                "centro_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por centro.",
+            ),
+            OpenApiParameter(
+                "provincia_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por provincia del centro.",
+            ),
+            OpenApiParameter(
+                "municipio_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por municipio del centro.",
+            ),
+            OpenApiParameter(
+                "modalidad_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por modalidad.",
+            ),
+            OpenApiParameter(
+                "programa_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por programa.",
+            ),
+            OpenApiParameter(
+                "estado",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por estado.",
+            ),
+        ],
+        responses={200: CURSO_BUSQUEDA_PAGINATED_RESPONSE},
+        examples=CURSO_BUSCAR_EXAMPLES,
+    )
+    @action(detail=False, methods=["get"], url_path="buscar")
+    def buscar(self, request, *args, **kwargs):
+        texto = (request.query_params.get("q") or "").strip()
+        if not texto:
+            raise ValidationError({"q": ["Debe enviar un texto de búsqueda."]})
+        if len(texto) < 3:
+            raise ValidationError(
+                {"q": ["Debe enviar al menos 3 caracteres para buscar."]}
+            )
+
+        queryset = (
+            self._get_busqueda_queryset()
+            .filter(
+                Q(nombre__icontains=texto)
+                | Q(plan_estudio__nombre__icontains=texto)
+                | Q(plan_estudio__titulos__nombre__icontains=texto)
+            )
+            .distinct()
+        )
+
+        page = self.paginate_queryset(queryset)
+        items = page if page is not None else queryset
+        serializer = CursoBusquedaSerializer(items, many=True)
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=["VAT - Cursos"],
+        summary="Listar cursos prioritarios",
+        description=(
+            "Devuelve los cursos operativos marcados como prioritarios con la misma "
+            "información enriquecida del buscador de cursos. "
+            "Ejemplo base: `/api/vat/cursos/prioritarios/`. "
+            "También admite filtros opcionales como `centro_id`, `provincia_id`, `municipio_id`, "
+            "`modalidad_id`, `programa_id` y `estado`."
+        ),
+        responses={200: CURSO_BUSQUEDA_PAGINATED_RESPONSE},
+        parameters=[
+            OpenApiParameter(
+                "centro_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por centro.",
+            ),
+            OpenApiParameter(
+                "provincia_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por provincia del centro.",
+            ),
+            OpenApiParameter(
+                "municipio_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por municipio del centro.",
+            ),
+            OpenApiParameter(
+                "modalidad_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por modalidad.",
+            ),
+            OpenApiParameter(
+                "programa_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por programa.",
+            ),
+            OpenApiParameter(
+                "estado",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por estado.",
+            ),
+        ],
+        examples=CURSO_PRIORITARIOS_EXAMPLES,
+    )
+    @action(detail=False, methods=["get"], url_path="prioritarios")
+    def prioritarios(self, request, *args, **kwargs):
+        queryset = self._get_busqueda_queryset().filter(prioritario=True)
+
+        page = self.paginate_queryset(queryset)
+        items = page if page is not None else queryset
+        serializer = CursoBusquedaSerializer(items, many=True)
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
 
 
 @extend_schema(

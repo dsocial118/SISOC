@@ -911,6 +911,12 @@ class Curso(SoftDeleteModelMixin, models.Model):
         verbose_name="Plan de Estudio",
     )
     nombre = models.CharField(max_length=255, verbose_name="Nombre")
+    prioritario = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name="Prioritario",
+        help_text="Marca si el curso debe destacarse como prioritario en las consultas operativas.",
+    )
     modalidad = models.ForeignKey(
         ModalidadCursada,
         on_delete=models.PROTECT,
