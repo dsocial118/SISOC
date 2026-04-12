@@ -1,8 +1,8 @@
 import logging
 
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch, Q
 from drf_spectacular.utils import extend_schema
-from drf_spectacular.utils import OpenApiParameter
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -49,6 +49,7 @@ from VAT.serializers import (
     InstitucionIdentificadorHistSerializer,
     InstitucionUbicacionSerializer,
     CursoSerializer,
+    CursoBusquedaSerializer,
     ComisionCursoSerializer,
     OfertaInstitucionalSerializer,
     ComisionSerializer,
@@ -461,8 +462,7 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     serializer_class = CursoSerializer
     permission_classes = [HasAPIKey]
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
+    def _apply_curso_filters(self, queryset):
         centro_id = self.request.query_params.get("centro_id")
         provincia_id = self.request.query_params.get("provincia_id")
         municipio_id = self.request.query_params.get("municipio_id")
@@ -494,6 +494,353 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         if estado:
             queryset = queryset.filter(estado=estado)
         return queryset
+
+    def _get_busqueda_queryset(self):
+        return (
+            self._apply_curso_filters(Curso.objects.all())
+            .select_related(
+                "centro",
+                "centro__provincia",
+                "centro__municipio",
+                "centro__localidad",
+                "plan_estudio",
+                "modalidad",
+            )
+            .prefetch_related(
+                Prefetch(
+                    "voucher_parametrias",
+                    queryset=VoucherParametria.objects.select_related("programa").order_by(
+                        "programa_id", "id"
+                    ),
+                ),
+                Prefetch(
+                    "comisiones",
+                    queryset=(
+                        ComisionCurso.objects.select_related(
+                            "ubicacion",
+                            "ubicacion__localidad",
+                            "ubicacion__localidad__municipio",
+                            "ubicacion__localidad__municipio__provincia",
+                        )
+                        .prefetch_related(
+                            "horarios__dia_semana",
+                            "sesiones__horario__dia_semana",
+                            Prefetch(
+                                "inscripciones",
+                                queryset=Inscripcion.objects.only("id"),
+                                to_attr="inscripciones_prefetch",
+                            ),
+                        )
+                        .order_by("fecha_inicio", "codigo_comision")
+                    )
+                ),
+            )
+            .order_by("-fecha_creacion", "nombre")
+        )
+
+    def get_queryset(self):
+        return self._apply_curso_filters(super().get_queryset())
+
+    @extend_schema(
+        tags=["VAT - Cursos"],
+        summary="Buscar cursos operativos por texto",
+        description=(
+            "Busca cursos operativos por texto libre en nombre de curso, plan de estudio o "
+            "título de referencia y devuelve la información enriquecida del curso, su centro, "
+            "geografía y las comisiones con horarios y cupos. "
+            "Ejemplo base: `/api/vat/cursos/buscar/?q=Her`. "
+            "También admite los filtros opcionales de cursos, por ejemplo "
+            "`/api/vat/cursos/buscar/?q=Her&centro_id=12&estado=activo`."
+        ),
+        parameters=[
+            OpenApiParameter(
+                "q",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description=(
+                    "Texto a buscar en nombre de curso, plan o título. "
+                    "Debe tener al menos 3 caracteres."
+                ),
+                required=True,
+            ),
+            OpenApiParameter(
+                "centro_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por centro.",
+            ),
+            OpenApiParameter(
+                "provincia_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por provincia del centro.",
+            ),
+            OpenApiParameter(
+                "municipio_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por municipio del centro.",
+            ),
+            OpenApiParameter(
+                "modalidad_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por modalidad.",
+            ),
+            OpenApiParameter(
+                "programa_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por programa.",
+            ),
+            OpenApiParameter(
+                "estado",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por estado.",
+            ),
+        ],
+        responses=CursoBusquedaSerializer(many=True),
+        examples=[
+            OpenApiExample(
+                "Búsqueda exitosa paginada",
+                value={
+                    "count": 1,
+                    "next": None,
+                    "previous": None,
+                    "results": [
+                        {
+                            "id": 120,
+                            "nombre": "Herramientas Digitales",
+                            "prioritario": True,
+                            "estado": "activo",
+                            "observaciones": None,
+                            "fecha_creacion": "2026-04-12T10:00:00Z",
+                            "fecha_modificacion": "2026-04-12T10:00:00Z",
+                            "usa_voucher": True,
+                            "costo_creditos": 2,
+                            "centro": {
+                                "id": 12,
+                                "nombre": "CFP 401",
+                                "referente": None,
+                                "referente_nombre": "",
+                                "codigo": "CFP-401",
+                                "activo": True,
+                                "provincia": {
+                                    "id": 2,
+                                    "nombre": "Buenos Aires"
+                                },
+                                "ciudad": {
+                                    "provincia": {
+                                        "id": 2,
+                                        "nombre": "Buenos Aires"
+                                    },
+                                    "municipio": {
+                                        "id": 15,
+                                        "nombre": "La Plata",
+                                        "provincia": 2,
+                                        "provincia_nombre": "Buenos Aires"
+                                    },
+                                    "localidad": {
+                                        "id": 120,
+                                        "nombre": "Tolosa",
+                                        "municipio": 15,
+                                        "municipio_nombre": "La Plata",
+                                        "provincia_nombre": "Buenos Aires"
+                                    },
+                                    "direccion": "Calle 1 Nro 123"
+                                },
+                                "telefono": "221-4000000",
+                                "celular": "221-4000001",
+                                "correo": "cfp401@example.org",
+                                "nombre_referente": "Ana",
+                                "apellido_referente": "Perez",
+                                "tipo_gestion": "Estatal",
+                                "clase_institucion": "Formación Profesional",
+                                "situacion": "Institución de ETP"
+                            },
+                            "plan_estudio": 30,
+                            "plan_estudio_nombre": "Herramientas Digitales I",
+                            "modalidad": 1,
+                            "modalidad_nombre": "Presencial",
+                            "programa": {
+                                "id": 7,
+                                "nombre": "Programa Prioridad Formación"
+                            },
+                            "voucher_parametrias": [],
+                            "comisiones": []
+                        }
+                    ]
+                },
+                response_only=True,
+            ),
+            OpenApiExample(
+                "Error por texto corto",
+                value={"q": ["Debe enviar al menos 3 caracteres para buscar."]},
+                response_only=True,
+                status_codes=["400"],
+            ),
+        ],
+    )
+    @action(detail=False, methods=["get"], url_path="buscar")
+    def buscar(self, request, *args, **kwargs):
+        texto = (request.query_params.get("q") or "").strip()
+        if not texto:
+            raise ValidationError({"q": ["Debe enviar un texto de búsqueda."]})
+        if len(texto) < 3:
+            raise ValidationError(
+                {"q": ["Debe enviar al menos 3 caracteres para buscar."]}
+            )
+
+        queryset = (
+            self._get_busqueda_queryset()
+            .filter(
+                Q(nombre__icontains=texto)
+                | Q(plan_estudio__nombre__icontains=texto)
+                | Q(plan_estudio__titulos__nombre__icontains=texto)
+            )
+            .distinct()
+        )
+
+        page = self.paginate_queryset(queryset)
+        serializer = CursoBusquedaSerializer(page or queryset, many=True)
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=["VAT - Cursos"],
+        summary="Listar cursos prioritarios",
+        description=(
+            "Devuelve los cursos operativos marcados como prioritarios con la misma "
+            "información enriquecida del buscador de cursos. "
+            "Ejemplo base: `/api/vat/cursos/prioritarios/`. "
+            "También admite filtros opcionales como `centro_id`, `provincia_id`, `municipio_id`, "
+            "`modalidad_id`, `programa_id` y `estado`."
+        ),
+        responses=CursoBusquedaSerializer(many=True),
+        parameters=[
+            OpenApiParameter(
+                "centro_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por centro.",
+            ),
+            OpenApiParameter(
+                "provincia_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por provincia del centro.",
+            ),
+            OpenApiParameter(
+                "municipio_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por municipio del centro.",
+            ),
+            OpenApiParameter(
+                "modalidad_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por modalidad.",
+            ),
+            OpenApiParameter(
+                "programa_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por programa.",
+            ),
+            OpenApiParameter(
+                "estado",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filtra cursos por estado.",
+            ),
+        ],
+        examples=[
+            OpenApiExample(
+                "Listado de prioritarios paginado",
+                value={
+                    "count": 1,
+                    "next": None,
+                    "previous": None,
+                    "results": [
+                        {
+                            "id": 140,
+                            "nombre": "Herramientas de Gestión Prioritaria",
+                            "prioritario": True,
+                            "estado": "activo",
+                            "observaciones": None,
+                            "fecha_creacion": "2026-04-12T10:00:00Z",
+                            "fecha_modificacion": "2026-04-12T10:00:00Z",
+                            "usa_voucher": True,
+                            "costo_creditos": 3,
+                            "centro": {
+                                "id": 12,
+                                "nombre": "CFP 401",
+                                "referente": None,
+                                "referente_nombre": "",
+                                "codigo": "CFP-401",
+                                "activo": True,
+                                "provincia": {
+                                    "id": 2,
+                                    "nombre": "Buenos Aires"
+                                },
+                                "ciudad": {
+                                    "provincia": {
+                                        "id": 2,
+                                        "nombre": "Buenos Aires"
+                                    },
+                                    "municipio": {
+                                        "id": 15,
+                                        "nombre": "La Plata",
+                                        "provincia": 2,
+                                        "provincia_nombre": "Buenos Aires"
+                                    },
+                                    "localidad": {
+                                        "id": 120,
+                                        "nombre": "Tolosa",
+                                        "municipio": 15,
+                                        "municipio_nombre": "La Plata",
+                                        "provincia_nombre": "Buenos Aires"
+                                    },
+                                    "direccion": "Calle 1 Nro 123"
+                                },
+                                "telefono": "221-4000000",
+                                "celular": "221-4000001",
+                                "correo": "cfp401@example.org",
+                                "nombre_referente": "Ana",
+                                "apellido_referente": "Perez",
+                                "tipo_gestion": "Estatal",
+                                "clase_institucion": "Formación Profesional",
+                                "situacion": "Institución de ETP"
+                            },
+                            "plan_estudio": 30,
+                            "plan_estudio_nombre": "Gestión Administrativa",
+                            "modalidad": 1,
+                            "modalidad_nombre": "Presencial",
+                            "programa": {
+                                "id": 7,
+                                "nombre": "Programa Prioridad Formación"
+                            },
+                            "voucher_parametrias": [],
+                            "comisiones": []
+                        }
+                    ]
+                },
+                response_only=True,
+            )
+        ],
+    )
+    @action(detail=False, methods=["get"], url_path="prioritarios")
+    def prioritarios(self, request, *args, **kwargs):
+        queryset = self._get_busqueda_queryset().filter(prioritario=True)
+
+        page = self.paginate_queryset(queryset)
+        serializer = CursoBusquedaSerializer(page or queryset, many=True)
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
 
 
 @extend_schema(
