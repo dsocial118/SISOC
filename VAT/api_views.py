@@ -2,8 +2,9 @@ import logging
 
 from django.db.models import Count, Prefetch, Q
 from drf_spectacular.utils import extend_schema
-from drf_spectacular.utils import OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, inline_serializer
 from drf_spectacular.types import OpenApiTypes
+from rest_framework import serializers as drf_serializers
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -68,6 +69,16 @@ from core.models import Localidad, Municipio, Provincia
 from core.soft_delete.view_helpers import is_soft_deletable_instance
 
 logger = logging.getLogger("django")
+
+CURSO_BUSQUEDA_PAGINATED_RESPONSE = inline_serializer(
+    name="CursoBusquedaPaginatedResponse",
+    fields={
+        "count": drf_serializers.IntegerField(),
+        "next": drf_serializers.URLField(allow_null=True),
+        "previous": drf_serializers.URLField(allow_null=True),
+        "results": CursoBusquedaSerializer(many=True),
+    },
+)
 
 
 class SoftDeleteDestroyMixin:
@@ -504,6 +515,7 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
             self._apply_curso_filters(Curso.objects.all())
             .select_related(
                 "centro",
+                "centro__referente",
                 "centro__provincia",
                 "centro__municipio",
                 "centro__localidad",
@@ -526,14 +538,12 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
                             "ubicacion__localidad__municipio",
                             "ubicacion__localidad__municipio__provincia",
                         )
+                        .annotate(
+                            total_inscriptos=Count("inscripciones", distinct=True)
+                        )
                         .prefetch_related(
                             "horarios__dia_semana",
                             "sesiones__horario__dia_semana",
-                            Prefetch(
-                                "inscripciones",
-                                queryset=Inscripcion.objects.only("id"),
-                                to_attr="inscripciones_prefetch",
-                            ),
                         )
                         .order_by("fecha_inicio", "codigo_comision")
                     ),
@@ -604,7 +614,7 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
                 description="Filtra cursos por estado.",
             ),
         ],
-        responses=CursoBusquedaSerializer(many=True),
+        responses={200: CURSO_BUSQUEDA_PAGINATED_RESPONSE},
         examples=CURSO_BUSCAR_EXAMPLES,
     )
     @action(detail=False, methods=["get"], url_path="buscar")
@@ -628,7 +638,8 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         )
 
         page = self.paginate_queryset(queryset)
-        serializer = CursoBusquedaSerializer(page or queryset, many=True)
+        items = page if page is not None else queryset
+        serializer = CursoBusquedaSerializer(items, many=True)
         if page is not None:
             return self.get_paginated_response(serializer.data)
         return Response(serializer.data)
@@ -643,7 +654,7 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
             "También admite filtros opcionales como `centro_id`, `provincia_id`, `municipio_id`, "
             "`modalidad_id`, `programa_id` y `estado`."
         ),
-        responses=CursoBusquedaSerializer(many=True),
+        responses={200: CURSO_BUSQUEDA_PAGINATED_RESPONSE},
         parameters=[
             OpenApiParameter(
                 "centro_id",
@@ -689,7 +700,8 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         queryset = self._get_busqueda_queryset().filter(prioritario=True)
 
         page = self.paginate_queryset(queryset)
-        serializer = CursoBusquedaSerializer(page or queryset, many=True)
+        items = page if page is not None else queryset
+        serializer = CursoBusquedaSerializer(items, many=True)
         if page is not None:
             return self.get_paginated_response(serializer.data)
         return Response(serializer.data)

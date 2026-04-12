@@ -579,12 +579,15 @@ class CursoBusquedaComisionSerializer(serializers.ModelSerializer):
     cupos_disponibles = serializers.SerializerMethodField()
 
     def get_total_inscriptos(self, obj):
+        total_inscriptos = getattr(obj, "total_inscriptos", None)
+        if total_inscriptos is not None:
+            return total_inscriptos
         if hasattr(obj, "inscripciones_prefetch"):
             return len(obj.inscripciones_prefetch)
         return obj.inscripciones.count()
 
     def get_cupos_disponibles(self, obj):
-        total_inscriptos = self.get_total_inscriptos(obj)
+        total_inscriptos = self.get_total_inscriptos(obj) or 0
         return max((obj.cupo_total or 0) - total_inscriptos, 0)
 
     class Meta:
