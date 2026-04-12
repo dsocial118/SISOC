@@ -39,6 +39,10 @@
       "value": ""
     },
     {
+      "key": "curso_busqueda",
+      "value": "admin"
+    },
+    {
       "key": "sector_id",
       "value": ""
     }
@@ -648,6 +652,106 @@
                   "});",
                   "const body = pm.response.json();",
                   "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('curso_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Buscar cursos por texto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/buscar/?q={{curso_busqueda}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "buscar",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{curso_busqueda}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('La respuesta contiene resultados paginados', function () {",
+                  "  pm.expect(Array.isArray(rows)).to.eql(true);",
+                  "});",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('curso_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar cursos prioritarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/prioritarios/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "prioritarios",
+                ""
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('La respuesta contiene resultados paginados', function () {",
+                  "  pm.expect(Array.isArray(rows)).to.eql(true);",
+                  "});",
                   "if (rows.length && rows[0].id) {",
                   "  pm.collectionVariables.set('curso_id', String(rows[0].id));",
                   "}"

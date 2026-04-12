@@ -10,6 +10,7 @@ from VAT.models import (
     ModalidadCursada,
     PlanVersionCurricular,
     InscripcionOferta,
+    VoucherParametria,
     Voucher,
     VoucherRecarga,
     VoucherUso,
@@ -384,6 +385,7 @@ class CursoSerializer(serializers.ModelSerializer):
             "plan_estudio",
             "plan_estudio_nombre",
             "nombre",
+            "prioritario",
             "modalidad",
             "modalidad_nombre",
             "programa",
@@ -471,6 +473,183 @@ class ComisionCursoSerializer(serializers.ModelSerializer):
             "observaciones",
             "fecha_creacion",
             "fecha_modificacion",
+        ]
+
+
+class CursoBusquedaVoucherParametriaSerializer(serializers.ModelSerializer):
+    programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
+
+    class Meta:
+        model = VoucherParametria
+        fields = [
+            "id",
+            "nombre",
+            "programa",
+            "programa_nombre",
+            "cantidad_inicial",
+            "fecha_vencimiento",
+            "inscripcion_unica_activa",
+            "activa",
+        ]
+
+
+class CursoBusquedaCiudadSerializer(serializers.Serializer):
+    provincia = ProvinciaSerializer(read_only=True)
+    municipio = MunicipioSerializer(read_only=True)
+    localidad = LocalidadSerializer(read_only=True)
+    direccion = serializers.CharField(source="domicilio_actividad", read_only=True)
+
+    def create(self, validated_data):
+        return validated_data
+
+    def update(self, instance, validated_data):
+        return instance
+
+
+class CursoBusquedaCentroSerializer(serializers.ModelSerializer):
+    referente_nombre = serializers.CharField(
+        source="referente.get_full_name", read_only=True
+    )
+    provincia = ProvinciaSerializer(read_only=True)
+    ciudad = CursoBusquedaCiudadSerializer(source="*", read_only=True)
+
+    class Meta:
+        model = Centro
+        fields = [
+            "id",
+            "nombre",
+            "referente",
+            "referente_nombre",
+            "codigo",
+            "activo",
+            "provincia",
+            "ciudad",
+            "telefono",
+            "celular",
+            "correo",
+            "nombre_referente",
+            "apellido_referente",
+            "tipo_gestion",
+            "clase_institucion",
+            "situacion",
+        ]
+
+
+class CursoBusquedaUbicacionSerializer(serializers.ModelSerializer):
+    localidad_nombre = serializers.CharField(source="localidad.nombre", read_only=True)
+    municipio_id = serializers.IntegerField(
+        source="localidad.municipio_id", read_only=True
+    )
+    municipio_nombre = serializers.CharField(
+        source="localidad.municipio.nombre", read_only=True
+    )
+    provincia_id = serializers.IntegerField(
+        source="localidad.municipio.provincia_id", read_only=True
+    )
+    provincia_nombre = serializers.CharField(
+        source="localidad.municipio.provincia.nombre", read_only=True
+    )
+
+    class Meta:
+        model = InstitucionUbicacion
+        fields = [
+            "id",
+            "rol_ubicacion",
+            "nombre_ubicacion",
+            "domicilio",
+            "es_principal",
+            "localidad",
+            "localidad_nombre",
+            "municipio_id",
+            "municipio_nombre",
+            "provincia_id",
+            "provincia_nombre",
+        ]
+
+
+class CursoBusquedaComisionSerializer(serializers.ModelSerializer):
+    horarios = ComisionCursoSerializer.ComisionCursoHorarioReadSerializer(
+        many=True, read_only=True
+    )
+    sesiones = ComisionCursoSerializer.ComisionCursoSesionReadSerializer(
+        many=True, read_only=True
+    )
+    ubicacion = CursoBusquedaUbicacionSerializer(read_only=True)
+    total_inscriptos = serializers.SerializerMethodField()
+    cupos_disponibles = serializers.SerializerMethodField()
+
+    def get_total_inscriptos(self, obj):
+        total_inscriptos = getattr(obj, "total_inscriptos", None)
+        if total_inscriptos is not None:
+            return total_inscriptos
+        if hasattr(obj, "inscripciones_prefetch"):
+            return len(obj.inscripciones_prefetch)
+        return obj.inscripciones.count()
+
+    def get_cupos_disponibles(self, obj):
+        total_inscriptos = self.get_total_inscriptos(obj) or 0
+        return max((obj.cupo_total or 0) - total_inscriptos, 0)
+
+    class Meta:
+        model = ComisionCurso
+        fields = [
+            "id",
+            "codigo_comision",
+            "nombre",
+            "estado",
+            "cupo_total",
+            "total_inscriptos",
+            "cupos_disponibles",
+            "fecha_inicio",
+            "fecha_fin",
+            "observaciones",
+            "ubicacion",
+            "horarios",
+            "sesiones",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class CursoBusquedaSerializer(serializers.ModelSerializer):
+    centro = CursoBusquedaCentroSerializer(read_only=True)
+    plan_estudio_nombre = serializers.CharField(source="plan_estudio", read_only=True)
+    modalidad_nombre = serializers.CharField(source="modalidad.nombre", read_only=True)
+    programa = serializers.SerializerMethodField()
+    voucher_parametrias = CursoBusquedaVoucherParametriaSerializer(
+        many=True, read_only=True
+    )
+    comisiones = CursoBusquedaComisionSerializer(many=True, read_only=True)
+
+    def get_programa(self, obj):
+        programa = obj.programa
+        if programa is None:
+            return None
+        return {
+            "id": programa.id,
+            "nombre": programa.nombre,
+        }
+
+    class Meta:
+        model = Curso
+        fields = [
+            "id",
+            "nombre",
+            "prioritario",
+            "estado",
+            "observaciones",
+            "fecha_creacion",
+            "fecha_modificacion",
+            "usa_voucher",
+            "costo_creditos",
+            "centro",
+            "plan_estudio",
+            "plan_estudio_nombre",
+            "modalidad",
+            "modalidad_nombre",
+            "programa",
+            "voucher_parametrias",
+            "comisiones",
         ]
 
 
