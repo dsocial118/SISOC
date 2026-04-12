@@ -185,6 +185,50 @@ def test_detalle_expediente_muestra_campos_responsable_para_registros_erroneos(c
 
 
 @pytest.mark.django_db
+def test_detalle_expediente_no_marca_responsable_como_obligatorio_para_mayor(client):
+    user, provincia = _crear_usuario_provincial("prov_detail_adulto")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    expediente = _crear_contexto_expediente(user)
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    Nacionalidad.objects.create(nacionalidad="Argentina")
+    Sexo.objects.create(sexo="Masculino")
+    RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=2,
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "12345678",
+            "fecha_nacimiento": "01/01/1990",
+            "sexo": "Masculino",
+            "nacionalidad": "Argentina",
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+            "apellido_responsable": "Gomez",
+        },
+        mensaje_error="Registro con datos pendientes",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Apellido Responsable *" not in content
+    assert re.search(r'name="apellido_responsable"[^>]*required', content) is None
+    assert re.search(r'name="localidad_responsable"[^>]*required', content) is None
+
+
+@pytest.mark.django_db
 def test_detalle_expediente_autocompleta_sexo_m_f_en_registros_erroneos(client):
     user, provincia = _crear_usuario_provincial("prov_detail_sexo_mf")
     permission = Permission.objects.get(
@@ -346,6 +390,52 @@ def test_actualizar_registro_erroneo_rechaza_campos_obligatorios_faltantes(clien
     registro.refresh_from_db()
     assert registro.datos_raw["sexo"] == "1"
     assert "sexo" in registro.mensaje_error.lower()
+
+
+@pytest.mark.django_db
+def test_actualizar_registro_erroneo_permite_mayor_con_responsable_incompleto(client):
+    user, provincia = _crear_usuario_provincial("prov_update_adulto")
+    user.is_superuser = True
+    user.save(update_fields=["is_superuser"])
+    expediente = _crear_contexto_expediente(user)
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    argentina = Nacionalidad.objects.create(nacionalidad="Argentina")
+    sexo = Sexo.objects.create(sexo="Masculino")
+    registro = RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=6,
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "12345678",
+            "fecha_nacimiento": "01/01/1990",
+            "sexo": str(sexo.pk),
+            "nacionalidad": str(argentina.pk),
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+            "apellido_responsable": "Gomez",
+        },
+        mensaje_error="Faltan campos obligatorios: nombre_responsable",
+    )
+
+    payload = dict(registro.datos_raw)
+
+    client.force_login(user)
+    response = client.post(
+        reverse("registro_erroneo_actualizar", args=[expediente.pk, registro.pk]),
+        data=json.dumps(payload),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+
+    registro.refresh_from_db()
+    assert registro.datos_raw["apellido_responsable"] == "Gomez"
 
 
 @pytest.mark.django_db
@@ -666,7 +756,7 @@ def test_importacion_menor_sin_responsable_genera_error():
 
 
 @pytest.mark.django_db
-def test_importacion_mayor_con_datos_parciales_de_responsable_exige_completar_obligatorios():
+def test_importacion_mayor_con_datos_parciales_de_responsable_no_bloquea_importacion():
     user, provincia = _crear_usuario_provincial("prov_mayor_resp_parcial")
     expediente = _crear_contexto_expediente(user)
     EstadoLegajo.objects.create(nombre="DOCUMENTO_PENDIENTE")
@@ -733,15 +823,10 @@ def test_importacion_mayor_con_datos_parciales_de_responsable_exige_completar_ob
         usuario=user,
     )
 
-    assert resultado["validos"] == 0
-    assert resultado["errores"] == 1
-    assert ExpedienteCiudadano.objects.count() == 0
-
-    registro = RegistroErroneo.objects.get(expediente=expediente)
-    mensaje = registro.mensaje_error.lower()
-    assert "faltan campos obligatorios" in mensaje
-    assert "apellido_responsable" in mensaje
-    assert "documento_responsable" in mensaje
+    assert resultado["validos"] == 1
+    assert resultado["errores"] == 0
+    assert ExpedienteCiudadano.objects.count() == 1
+    assert not RegistroErroneo.objects.filter(expediente=expediente).exists()
 
 
 @pytest.mark.django_db

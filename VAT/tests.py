@@ -1332,6 +1332,72 @@ def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_d
 
 
 @pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_institucion_ubicacion_update_redirige_al_detalle_del_centro(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-ubicacion-update",
+        email="admin-ubicacion-update@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="Centro Ubicaciones",
+        codigo="CFP-UBI-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8 N° 456",
+        telefono="221-4100000",
+        celular="221-5100000",
+        correo="centro-ubicaciones@vat.test",
+        nombre_referente="Luisa",
+        apellido_referente="Martinez",
+        telefono_referente="221-6100000",
+        correo_referente="luisa@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="anexo",
+        nombre_ubicacion="Anexo Norte",
+        domicilio="Calle 8 N° 460",
+        es_principal=False,
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_institucion_ubicacion_update", kwargs={"pk": ubicacion.pk}),
+        data={
+            "centro": str(centro.pk),
+            "localidad": str(localidad.pk),
+            "rol_ubicacion": "anexo",
+            "nombre_ubicacion": "Anexo Norte Actualizado",
+            "domicilio": "Calle 8 N° 999",
+            "observaciones": "Actualización desde el legajo del centro",
+        },
+    )
+
+    ubicacion.refresh_from_db()
+
+    assert response.status_code == 302
+    assert response.url == reverse("vat_centro_detail", kwargs={"pk": centro.pk})
+    assert ubicacion.nombre_ubicacion == "Anexo Norte Actualizado"
+    assert ubicacion.domicilio == "Calle 8 N° 999"
+    assert ubicacion.observaciones == "Actualización desde el legajo del centro"
+
+
+@pytest.mark.django_db
 def test_plan_curricular_list_usuario_no_provincial_recibe_403(client):
     user = User.objects.create_user(username="no-provincial-plan", password="test1234")
     permiso_view_plan = Permission.objects.get(
@@ -3523,6 +3589,7 @@ def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(client, vat_geo_d
     assert 'id="tablaCursosCentro"' not in content
     assert 'id="tablaComisionesCursoCentro"' not in content
     assert "loadCursosPanel" in content
+    assert "cursosPageSizeSelect.value = '25';" in content
 
 
 @pytest.mark.django_db
@@ -3606,6 +3673,7 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'id="cursosFilterSearch"' in content
     assert 'id="cursosFilterEstado"' in content
     assert 'id="cursosFilterPageSize"' in content
+    assert '<option value="25" selected>25</option>' in content
     assert 'id="cursosFilterClear"' in content
     assert 'class="curso-row"' in content
     assert f'data-curso-id="{_curso.id}"' in content
@@ -3703,7 +3771,7 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert 'id="openPlanCurricularSelector"' in content
     assert 'id="planCurricularSelectorSearch"' in content
     assert 'id="planCurricularSelectorSector"' in content
-    assert 'id="planCurricularSelectorModalidad"' in content
+    assert 'id="planCurricularSelectorModalidad"' not in content
     assert 'id="tablaPlanCurricularSelector"' in content
     assert "Plan Curricular" in content
     assert (
@@ -3711,6 +3779,7 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
         in content
     )
     assert "Seleccionar plan curricular" in content
+    assert "Buscar por plan, sector o normativa" in content
     assert f'value="{plan.id}"' in content
     assert f'value="{plan_inactivo.id}"' not in content
     assert f'value="{plan_otra_provincia.id}"' not in content

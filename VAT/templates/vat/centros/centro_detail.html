@@ -2901,7 +2901,7 @@
                         cursosEstadoSelect.value = '';
                     }
                     if (cursosPageSizeSelect) {
-                        cursosPageSizeSelect.value = '10';
+                        cursosPageSizeSelect.value = '25';
                     }
                     applyCourseFilters();
                 });
@@ -2972,7 +2972,6 @@
             var selectorModalEl = document.getElementById('modalPlanCurricularSelector');
             var selectorSearchInput = document.getElementById('planCurricularSelectorSearch');
             var selectorSectorInput = document.getElementById('planCurricularSelectorSector');
-            var selectorModalidadInput = document.getElementById('planCurricularSelectorModalidad');
             var selectorSummaryEl = document.getElementById('planCurricularSelectorSummary');
             var selectorButtonLabelEl = document.getElementById('planCurricularSelectorButtonLabel');
             var selectorEmptyStateEl = document.getElementById('planCurricularSelectorEmpty');
@@ -3067,31 +3066,22 @@
             }
 
             function populatePlanSelectorFilters() {
-                if (!selectorSectorInput || !selectorModalidadInput) return;
+                if (!selectorSectorInput) return;
 
                 var selectedSector = selectorSectorInput.value || '';
-                var selectedModalidad = selectorModalidadInput.value || '';
                 var sectors = [];
-                var modalidades = [];
 
                 selectorRows.forEach(function(row) {
                     var sector = row.dataset.planSector || '';
-                    var modalidad = row.dataset.planModalidad || '';
 
                     if (sector && !sectors.includes(sector)) {
                         sectors.push(sector);
                     }
-
-                    if (modalidad && !modalidades.includes(modalidad)) {
-                        modalidades.push(modalidad);
-                    }
                 });
 
                 sectors.sort();
-                modalidades.sort();
 
                 selectorSectorInput.innerHTML = '<option value="">Todos los sectores</option>';
-                selectorModalidadInput.innerHTML = '<option value="">Todas las modalidades</option>';
 
                 sectors.forEach(function(sector) {
                     var option = document.createElement('option');
@@ -3099,14 +3089,6 @@
                     option.textContent = sector;
                     option.selected = sector === selectedSector;
                     selectorSectorInput.appendChild(option);
-                });
-
-                modalidades.forEach(function(modalidad) {
-                    var option = document.createElement('option');
-                    option.value = modalidad;
-                    option.textContent = modalidad;
-                    option.selected = modalidad === selectedModalidad;
-                    selectorModalidadInput.appendChild(option);
                 });
             }
 
@@ -3149,23 +3131,18 @@
                     selectorSearchInput ? selectorSearchInput.value : ''
                 );
                 var sectorValue = selectorSectorInput ? selectorSectorInput.value : '';
-                var modalidadValue = selectorModalidadInput
-                    ? selectorModalidadInput.value
-                    : '';
                 var visibleRows = 0;
 
                 selectorRows.forEach(function(row) {
                     var matchesSearch = !searchValue || [
                         row.dataset.planLabel,
                         row.dataset.planSector,
-                        row.dataset.planModalidad,
                         row.dataset.planNormativa,
                     ].some(function(value) {
                         return normalizePlanSelectorValue(value).includes(searchValue);
                     });
                     var matchesSector = !sectorValue || row.dataset.planSector === sectorValue;
-                    var matchesModalidad = !modalidadValue || row.dataset.planModalidad === modalidadValue;
-                    var isVisible = matchesSearch && matchesSector && matchesModalidad;
+                    var isVisible = matchesSearch && matchesSector;
 
                     row.classList.toggle('d-none', !isVisible);
                     if (isVisible) {
@@ -3212,10 +3189,6 @@
 
             if (selectorSectorInput) {
                 selectorSectorInput.addEventListener('change', applyPlanSelectorFilters);
-            }
-
-            if (selectorModalidadInput) {
-                selectorModalidadInput.addEventListener('change', applyPlanSelectorFilters);
             }
 
             if (selectorOpenButton && selectorModalEl && window.bootstrap && window.bootstrap.Modal) {

@@ -50,8 +50,8 @@
                                    style="letter-spacing:.05em">Ver</label>
                             <select id="cursosFilterPageSize" class="form-select form-select-sm">
                                 <option value="5">5</option>
-                                <option value="10" selected>10</option>
-                                <option value="25">25</option>
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
                                 <option value="50">50</option>
                                 <option value="todos">Todos</option>
                             </select>
@@ -422,7 +422,7 @@
                             <input type="search"
                                    id="planCurricularSelectorSearch"
                                    class="form-control form-control-sm"
-                                   placeholder="Buscar por plan, sector, modalidad o normativa"
+                                   placeholder="Buscar por plan, sector o normativa"
                                    autocomplete="off" />
                         </div>
                         <div class="col-sm-6 col-lg-3">
@@ -431,15 +431,6 @@
                                    style="letter-spacing:.05em">Sector</label>
                             <select id="planCurricularSelectorSector" class="form-select form-select-sm">
                                 <option value="">Todos los sectores</option>
-                            </select>
-                        </div>
-                        <div class="col-sm-6 col-lg-3">
-                            <label for="planCurricularSelectorModalidad"
-                                   class="form-label small fw-semibold text-uppercase mb-1"
-                                   style="letter-spacing:.05em">Modalidad</label>
-                            <select id="planCurricularSelectorModalidad"
-                                    class="form-select form-select-sm">
-                                <option value="">Todas las modalidades</option>
                             </select>
                         </div>
                     </div>
@@ -461,7 +452,6 @@
                                         data-plan-id="{{ plan.id }}"
                                         data-plan-label="{% if plan.nombre %}{{ plan.nombre }}{% elif plan.titulo_referencia %}{{ plan.titulo_referencia.nombre }}{% else %}{{ plan.sector.nombre }}{% endif %}"
                                         data-plan-sector="{{ plan.sector.nombre|default:'' }}"
-                                        data-plan-modalidad="{{ plan.modalidad_cursada.nombre|default:'' }}"
                                         data-plan-normativa="{{ plan.normativa|default:'' }}">
                                         <td class="fw-semibold">
                                             {% if plan.nombre %}
