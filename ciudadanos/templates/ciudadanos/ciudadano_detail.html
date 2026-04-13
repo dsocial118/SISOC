@@ -402,6 +402,18 @@
                 <div>
                     <h1>{{ ciudadano.nombre }} {{ ciudadano.apellido }} |</h1>
                     <p class="subtitle mb-0">{{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento }}</p>
+                    <div class="mt-1">
+                        {% if ciudadano.tipo_registro_identidad == "SIN_DNI" %}
+                            <span class="badge bg-warning text-dark me-1">Sin DNI</span>
+                        {% elif ciudadano.tipo_registro_identidad == "DNI_NO_VALIDADO_RENAPER" %}
+                            <span class="badge bg-danger me-1">RENAPER no validado</span>
+                        {% endif %}
+                        {% if ciudadano.requiere_revision_manual %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-exclamation-triangle"></i> Requiere revisión
+                            </span>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="btn-group">
                     <a href="{% url 'ciudadanos' %}" class="btn btn-outline-light">Volver</a>
@@ -411,6 +423,17 @@
                     {% endif %}
                     <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
                        class="btn btn-outline-light">Editar</a>
+                    {% if ciudadano.requiere_revision_manual and perms.ciudadanos.revision_identidad %}
+                        <form method="post"
+                              action="{% url 'ciudadanos_marcar_revisado' ciudadano.pk %}"
+                              class="d-inline"
+                              onsubmit="return confirm('¿Marcar este ciudadano como revisado?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-success">
+                                <i class="fas fa-check"></i> Marcar revisado
+                            </button>
+                        </form>
+                    {% endif %}
                     <a href="{% url 'ciudadanos_eliminar' ciudadano.pk %}"
                        class="btn btn-danger">Dar de baja</a>
                 </div>
