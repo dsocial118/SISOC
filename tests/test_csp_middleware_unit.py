@@ -70,6 +70,11 @@ def test_csp_report_only_y_strict_script_src(settings):
         for part in csp.split(";")
         if part.strip().startswith("script-src ")
     )
+    frame_src = next(
+        part.strip() for part in csp.split(";") if part.strip().startswith("frame-src ")
+    )
     assert "'unsafe-inline'" not in script_src
     assert "'unsafe-eval'" not in script_src
     assert "script-src 'self' 'nonce-" in script_src
+    assert "https://lookerstudio.google.com" in frame_src
+    assert "https://datastudio.google.com" in frame_src
