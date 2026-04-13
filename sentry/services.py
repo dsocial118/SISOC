@@ -12,7 +12,7 @@ _SENTRY_INITIALIZED = False
 _SENTRY_ENVIRONMENT_IDENTIFIERS = {
     "prd": "sisoc-prd",
     "qa": "sisoc-qa",
-    "homologacion": "sisoc-homologacion",
+    "hml": "sisoc-hml",
 }
 _SENTRY_LOG_LEVELS = {
     "critical": logging.CRITICAL,

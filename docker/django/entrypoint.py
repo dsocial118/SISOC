@@ -11,7 +11,7 @@ import pymysql
 if not logging.getLogger().handlers:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("django")
-DEPLOY_GUNICORN_ENVIRONMENTS = {"qa", "homologacion", "prd"}
+DEPLOY_GUNICORN_ENVIRONMENTS = {"qa", "hml", "prd"}
 SERVICE_ROLE_WEB = "web"
 SERVICE_ROLE_BULK_CREDENTIALS_WORKER = "bulk_credentials_worker"
 

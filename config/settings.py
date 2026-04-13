@@ -13,15 +13,9 @@ from config.runtime import is_running_tests
 load_dotenv()
 
 # Entorno
-ENVIRONMENT_ALIASES = {
-    "hml": "homologacion",
-    "prod": "prd",
-    "production": "prd",
-}
-RAW_ENVIRONMENT = os.environ.get("ENVIRONMENT", "dev").strip().lower()
-ENVIRONMENT = ENVIRONMENT_ALIASES.get(RAW_ENVIRONMENT, RAW_ENVIRONMENT)
-# dev|qa|homologacion|prd
-PRODUCTION_LIKE_ENVIRONMENTS = {"homologacion", "prd"}
+ENVIRONMENT = os.environ.get("ENVIRONMENT", "dev").strip().lower()
+# dev|qa|hml|prd
+PRODUCTION_LIKE_ENVIRONMENTS = {"hml", "prd"}
 IS_PRODUCTION_LIKE_ENVIRONMENT = ENVIRONMENT in PRODUCTION_LIKE_ENVIRONMENTS
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 GESTIONAR_INTEGRATION_ENABLED = IS_PRODUCTION_LIKE_ENVIRONMENT

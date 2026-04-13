@@ -67,8 +67,8 @@ def test_settings_email_backend_falls_back_to_console_when_smtp_is_incomplete(
     assert module.EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend"
 
 
-def test_settings_homologacion_usa_perfil_similar_a_produccion(monkeypatch):
-    monkeypatch.setenv("ENVIRONMENT", "homologacion")
+def test_settings_hml_usa_perfil_similar_a_produccion(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "hml")
 
     module = _load_settings_module()
 
@@ -85,19 +85,6 @@ def test_settings_homologacion_usa_perfil_similar_a_produccion(monkeypatch):
         module.STORAGES["staticfiles"]["BACKEND"]
         == "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
     )
-
-
-def test_settings_hml_normaliza_a_homologacion(monkeypatch):
-    monkeypatch.setenv("ENVIRONMENT", "hml")
-
-    module = _load_settings_module()
-
-    assert module.ENVIRONMENT == "homologacion"
-    assert module.DEFAULT_SCHEME == "https"
-    assert module.SECURE_SSL_REDIRECT is True
-    assert module.CSRF_COOKIE_SECURE is True
-
-
 def test_settings_qa_mantiene_runtime_no_productivo(monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "qa")
 

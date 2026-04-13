@@ -99,12 +99,12 @@ def test_initialize_sentry_qa_inits_with_qa_identifier(monkeypatch):
     assert calls[0]["environment"] == "sisoc-qa"
 
 
-def test_initialize_sentry_homologacion_inits_with_own_identifier(monkeypatch):
+def test_initialize_sentry_hml_inits_with_own_identifier(monkeypatch):
     monkeypatch.setenv("SENTRY_ENABLED", "true")
     monkeypatch.setattr(
         services.settings, "SENTRY_DSN", "https://public@example.ingest.sentry.io/1"
     )
-    monkeypatch.setenv("ENVIRONMENT", "homologacion")
+    monkeypatch.setenv("ENVIRONMENT", "hml")
     monkeypatch.setattr(services, "_SENTRY_INITIALIZED", False)
 
     calls = []
@@ -117,7 +117,7 @@ def test_initialize_sentry_homologacion_inits_with_own_identifier(monkeypatch):
     services.initialize_sentry_sdk()
 
     assert len(calls) == 1
-    assert calls[0]["environment"] == "sisoc-homologacion"
+    assert calls[0]["environment"] == "sisoc-hml"
 
 
 def test_initialize_sentry_ignores_sentry_environment_env_var(monkeypatch):
@@ -292,9 +292,9 @@ def test_get_sentry_frontend_config_enabled_for_qa(monkeypatch):
     assert config["replays_on_error_sample_rate"] == 1.0
 
 
-def test_get_sentry_frontend_config_enabled_for_homologacion(monkeypatch):
+def test_get_sentry_frontend_config_enabled_for_hml(monkeypatch):
     monkeypatch.setenv("SENTRY_ENABLED", "true")
-    monkeypatch.setenv("ENVIRONMENT", "homologacion")
+    monkeypatch.setenv("ENVIRONMENT", "hml")
     monkeypatch.setattr(services.settings, "SENTRY_ERROR_SAMPLE_RATE", 1.0)
     monkeypatch.setattr(services.settings, "SENTRY_TRACES_SAMPLE_RATE", 1.0)
     monkeypatch.setattr(services.settings, "SENTRY_REPLAY_ENABLED", True)
@@ -307,7 +307,7 @@ def test_get_sentry_frontend_config_enabled_for_homologacion(monkeypatch):
     config = services.get_sentry_frontend_config()
 
     assert config["enabled"] is True
-    assert config["environment"] == "sisoc-homologacion"
+    assert config["environment"] == "sisoc-hml"
     assert config["sample_rate"] == 1.0
     assert config["replay_enabled"] is True
 

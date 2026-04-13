@@ -53,7 +53,7 @@ def test_run_django_commands_incluye_makemigrations_en_dev_por_defecto(
     mock_run_server.assert_called_once_with()
 
 
-@pytest.mark.parametrize("environment", ["prd", "homologacion"])
+@pytest.mark.parametrize("environment", ["prd", "hml"])
 def test_run_django_commands_omite_makemigrations_en_entorno_deploy_por_defecto(
     mocker, monkeypatch, environment
 ):
@@ -107,7 +107,7 @@ def test_run_django_commands_respeta_flag_explicito_para_makemigrations(
     assert stages[0] == "makemigrations"
 
 
-@pytest.mark.parametrize("environment", ["qa", "homologacion", "prd"])
+@pytest.mark.parametrize("environment", ["qa", "hml", "prd"])
 def test_run_server_usa_gunicorn_en_entornos_deploy(mocker, monkeypatch, environment):
     module = _load_entrypoint_module()
     mock_cache_busting = mocker.patch.object(module, "cache_busting")
