@@ -96,9 +96,13 @@ se puede asignar a revisores específicos. **Cierre de revisión → v2.**
 
 ## Backfill de datos existentes
 
-**Problema detectado:** hay 24.926 DNIs duplicados en producción a pesar del
-`unique_together`. Indica que el constraint no estaba activo a nivel DB (pendiente
-confirmación con `SHOW INDEX`).
+**Hallazgo confirmado (2026-04-10):** `SHOW INDEX FROM ciudadanos_ciudadano` confirma
+que **el índice único sobre `(tipo_documento, documento)` nunca existió en la DB**.
+El `unique_together` estaba declarado en el modelo Django pero nunca se reflejó en MySQL.
+Esto explica los 24.926 duplicados — la DB nunca los rechazó.
+
+La migración `0023` maneja esto de forma defensiva: intenta dropear el índice solo si
+existe (no falla si no está), y luego sincroniza el estado Django con `AlterUniqueTogether`.
 
 **Estrategia acordada:**
 - Ciudadanos con DNI único → `ESTANDAR` + `documento_unico_key` poblado
