@@ -65,6 +65,20 @@ def test_referente_clean_mail_paths(mocker):
     validator.assert_called_once_with("a@b.com")
 
 
+def test_imagen_comedor_form_rejects_files_over_3mb():
+    form = module.ImagenComedorForm.__new__(module.ImagenComedorForm)
+
+    form.cleaned_data = {
+        "imagen": SimpleNamespace(size=module.MAX_IMAGEN_COMEDOR_FILE_SIZE + 1)
+    }
+    with pytest.raises(ValidationError, match="3 MB"):
+        form.clean_imagen()
+
+    small_image = SimpleNamespace(size=module.MAX_IMAGEN_COMEDOR_FILE_SIZE)
+    form.cleaned_data = {"imagen": small_image}
+    assert form.clean_imagen() is small_image
+
+
 def test_build_estado_tree_and_selected_helpers(mocker):
     form = _build_form_stub()
 

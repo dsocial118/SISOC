@@ -1,3 +1,4 @@
+import hashlib
 import uuid
 
 from django.contrib.auth.models import User
@@ -124,6 +125,15 @@ class AuditoriaOperacionPWA(models.Model):
         return f"{self.entidad}#{self.entidad_id} {self.accion} {self.fecha_evento:%Y-%m-%d %H:%M:%S}"
 
 
+def normalize_push_endpoint(endpoint: str) -> str:
+    return (endpoint or "").strip()
+
+
+def build_push_endpoint_hash(endpoint: str) -> str:
+    normalized_endpoint = normalize_push_endpoint(endpoint)
+    return hashlib.sha256(normalized_endpoint.encode("utf-8")).hexdigest()
+
+
 class LecturaMensajePWA(models.Model):
     """Estado de lectura de mensajes PWA originados en comunicados."""
 
@@ -174,6 +184,54 @@ class LecturaMensajePWA(models.Model):
             f"Mensaje {self.comunicado_id} - user {self.user_id} - "
             f"comedor {self.comedor_id} - visto={self.visto}"
         )
+
+
+class PushSubscriptionPWA(models.Model):
+    """Suscripción web push asociada a un usuario/dispositivo PWA."""
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="push_subscriptions_pwa",
+    )
+    endpoint = models.URLField(max_length=500)
+    endpoint_hash = models.CharField(max_length=64, unique=True, editable=False)
+    p256dh = models.CharField(max_length=255)
+    auth = models.CharField(max_length=255)
+    content_encoding = models.CharField(max_length=30, default="aes128gcm")
+    user_agent = models.CharField(max_length=512, null=True, blank=True)
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    fecha_baja = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Suscripción push PWA"
+        verbose_name_plural = "Suscripciones push PWA"
+        ordering = ("-fecha_actualizacion", "-id")
+        indexes = [
+            models.Index(fields=["user", "activo"], name="pwa_push_user_activo_idx"),
+            models.Index(
+                fields=["fecha_actualizacion"],
+                name="pwa_push_updated_at_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Push user {self.user_id} activo={self.activo}"
+
+    def save(self, *args, **kwargs):
+        self.endpoint = normalize_push_endpoint(self.endpoint)
+        self.endpoint_hash = build_push_endpoint_hash(self.endpoint)
+
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            kwargs["update_fields"] = set(update_fields) | {
+                "endpoint",
+                "endpoint_hash",
+            }
+
+        super().save(*args, **kwargs)
 
 
 class ColaboradorEspacioPWA(models.Model):

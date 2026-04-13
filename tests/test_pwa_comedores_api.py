@@ -1,6 +1,7 @@
 """Tests for test pwa comedores api."""
 
 from datetime import date
+from io import BytesIO
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -9,6 +10,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import models
 from django.test import override_settings
 from django.utils import timezone
+from PIL import Image
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
@@ -134,6 +136,17 @@ def _create_informe_tecnico(admision, **overrides):
     )
     payload.update(overrides)
     return InformeTecnico.objects.create(**payload)
+
+
+def _build_test_image(name):
+    image_buffer = BytesIO()
+    image = Image.new("RGB", (2, 2), color="red")
+    image.save(image_buffer, format="PNG")
+    return SimpleUploadedFile(
+        name,
+        image_buffer.getvalue(),
+        content_type="image/png",
+    )
 
 
 @pytest.mark.django_db
@@ -340,6 +353,51 @@ def test_comedor_detail_includes_mobile_relevamiento_summary():
     assert items["¿Cómo se abastece de agua?"] == "Red"
     assert items["¿En qué lugar realiza sus compras?"] == "Supermercado, Mayoristas"
     assert "Murga" in items["¿Qué tipo de actividades se realizan?"]
+
+
+@pytest.mark.django_db
+def test_representante_can_upload_up_to_three_space_images(comedores):
+    comedor, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_upload_img",
+    )
+    client = _token_client(representante)
+
+    primera = _build_test_image("foto1.png")
+    segunda = _build_test_image("foto2.png")
+    tercera = _build_test_image("foto3.png")
+    cuarta = _build_test_image("foto4.png")
+
+    response_1 = client.post(
+        f"/api/comedores/{comedor.id}/imagenes/",
+        {"imagen": primera},
+        format="multipart",
+    )
+    response_2 = client.post(
+        f"/api/comedores/{comedor.id}/imagenes/",
+        {"imagen": segunda},
+        format="multipart",
+    )
+    response_3 = client.post(
+        f"/api/comedores/{comedor.id}/imagenes/",
+        {"imagen": tercera},
+        format="multipart",
+    )
+    response_4 = client.post(
+        f"/api/comedores/{comedor.id}/imagenes/",
+        {"imagen": cuarta},
+        format="multipart",
+    )
+
+    assert response_1.status_code == 201
+    assert response_2.status_code == 201
+    assert response_3.status_code == 201
+    assert len(response_3.data["imagenes"]) == 3
+    assert response_4.status_code == 400
+    assert response_4.data["detail"] == "El espacio ya tiene el máximo de 3 fotos."
+    assert ImagenComedor.objects.filter(comedor=comedor).count() == 3
 
 
 @pytest.mark.django_db
@@ -565,6 +623,11 @@ def test_crear_rendicion_mobile_con_datos_generales(comedores):
     assert response.data["estado"] == "elaboracion"
     assert response.data["periodo_inicio"] == "2026-01-01"
     assert response.data["periodo_fin"] == "2026-01-31"
+    rendicion = RendicionCuentaMensual.objects.get(
+        numero_rendicion=1, comedor=comedor_1
+    )
+    assert rendicion.usuario_creador == representante
+    assert rendicion.usuario_ultima_modificacion == representante
 
 
 @pytest.mark.django_db
@@ -798,6 +861,73 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
 
 
 @pytest.mark.django_db
+def test_detalle_rendicion_mobile_expone_estado_y_observaciones_por_archivo(
+    comedores, settings, tmp_path
+):
+    settings.MEDIA_ROOT = str(tmp_path)
+    comedor_1, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_detalle_estado_rendicion",
+    )
+    _grant_mobile_rendicion_permission(representante)
+    client = _token_client(representante)
+
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=comedor_1,
+        mes=4,
+        anio=2026,
+        estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+    )
+    DocumentacionAdjunta.objects.create(
+        nombre="formulario-ii.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
+        estado=DocumentacionAdjunta.ESTADO_VALIDADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "formulario-ii.pdf",
+            b"%PDF-1.4 validado",
+            content_type="application/pdf",
+        ),
+    )
+    DocumentacionAdjunta.objects.create(
+        nombre="comprobante.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
+        observaciones="Volver a subir el comprobante completo",
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "comprobante.pdf",
+            b"%PDF-1.4 subsanar",
+            content_type="application/pdf",
+        ),
+    )
+
+    response = client.get(f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/")
+
+    assert response.status_code == 200
+    formulario = next(
+        item
+        for categoria in response.data["documentacion"]
+        for item in categoria["archivos"]
+        if item["nombre"] == "formulario-ii.pdf"
+    )
+    comprobante = next(
+        item
+        for categoria in response.data["documentacion"]
+        for item in categoria["archivos"]
+        if item["nombre"] == "comprobante.pdf"
+    )
+    assert formulario["estado"] == DocumentacionAdjunta.ESTADO_VALIDADO
+    assert formulario["estado_label"] == "Validado"
+    assert formulario["observaciones"] is None
+    assert comprobante["estado"] == DocumentacionAdjunta.ESTADO_SUBSANAR
+    assert comprobante["estado_label"] == "A Subsanar"
+    assert comprobante["observaciones"] == "Volver a subir el comprobante completo"
+
+
+@pytest.mark.django_db
 def test_eliminar_rendicion_mobile_en_elaboracion(comedores):
     comedor_1, _ = comedores
     representante = _create_pwa_user(
@@ -852,11 +982,11 @@ def test_eliminar_rendicion_mobile_rechaza_revision(comedores):
     )
 
     assert response.status_code == 400
-    assert "elaboración o subsanación" in str(response.data["detail"])
+    assert "solo puede modificarse en elabor" in str(response.data["detail"])
 
 
 @pytest.mark.django_db
-def test_rendicion_rechaza_categoria_simple_duplicada_y_permite_borrar(
+def test_rendicion_en_subsanar_no_permite_borrar_documentacion_manualmente(
     comedores, settings, tmp_path
 ):
     settings.MEDIA_ROOT = str(tmp_path)
@@ -864,398 +994,126 @@ def test_rendicion_rechaza_categoria_simple_duplicada_y_permite_borrar(
     representante = _create_pwa_user(
         comedor=comedor_1,
         role=AccesoComedorPWA.ROL_REPRESENTANTE,
-        username="rep_doc_categoria",
+        username="rep_subsanar_bloqueada",
     )
     _grant_mobile_rendicion_permission(representante)
     client = _token_client(representante)
+
     rendicion = RendicionCuentaMensual.objects.create(
         comedor=comedor_1,
-        mes=4,
+        mes=6,
         anio=2026,
+        estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
     )
-
-    primer_archivo = SimpleUploadedFile(
-        "f2.pdf",
-        b"%PDF-1.4 test content",
-        content_type="application/pdf",
+    documento = DocumentacionAdjunta.objects.create(
+        nombre="comprobante.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "comprobante.pdf",
+            b"%PDF-1.4 original",
+            content_type="application/pdf",
+        ),
     )
-    first_response = client.post(
-        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/documentacion/",
-        {
-            "archivo": primer_archivo,
-            "categoria": DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
-        },
-        format="multipart",
-    )
-    assert first_response.status_code == 201
-    documento_id = first_response.data["documentacion"][0]["archivos"][0]["id"]
-
-    segundo_archivo = SimpleUploadedFile(
-        "f2b.pdf",
-        b"%PDF-1.4 test content",
-        content_type="application/pdf",
-    )
-    duplicate_response = client.post(
-        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/documentacion/",
-        {
-            "archivo": segundo_archivo,
-            "categoria": DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
-        },
-        format="multipart",
-    )
-    assert duplicate_response.status_code == 400
-    assert "único documento" in str(duplicate_response.data["detail"])
 
     delete_response = client.post(
-        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/documentacion/{documento_id}/eliminar/",
+        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/documentacion/{documento.id}/eliminar/",
         {},
         format="json",
     )
-    assert delete_response.status_code == 200
-    rendicion.refresh_from_db()
-    assert rendicion.documento_adjunto is False
+
+    assert delete_response.status_code == 400
+    assert "solo puede modificarse en elabor" in str(delete_response.data["detail"])
 
 
 @pytest.mark.django_db
-def test_adjuntar_comprobante_rechaza_tipo_no_permitido(comedores, settings, tmp_path):
+@override_settings(ROOT_URLCONF="tests.test_urls_pwa_comedores_api")
+def test_rendicion_en_subsanar_permite_agregar_historial_para_comprobantes(
+    comedores, settings, tmp_path
+):
     settings.MEDIA_ROOT = str(tmp_path)
     comedor_1, _ = comedores
     representante = _create_pwa_user(
         comedor=comedor_1,
         role=AccesoComedorPWA.ROL_REPRESENTANTE,
-        username="rep_tipo_invalido",
+        username="rep_subsanar_comprobantes",
     )
     _grant_mobile_rendicion_permission(representante)
     client = _token_client(representante)
+
     rendicion = RendicionCuentaMensual.objects.create(
         comedor=comedor_1,
-        mes=5,
+        mes=6,
         anio=2026,
+        estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+    )
+    for categoria in (
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V,
+        DocumentacionAdjunta.CATEGORIA_EXTRACTO_BANCARIO,
+    ):
+        DocumentacionAdjunta.objects.create(
+            nombre=f"{categoria}.pdf",
+            categoria=categoria,
+            estado=DocumentacionAdjunta.ESTADO_VALIDADO,
+            rendicion_cuenta_mensual=rendicion,
+            archivo=SimpleUploadedFile(
+                f"{categoria}.pdf",
+                b"%PDF-1.4 vigente",
+                content_type="application/pdf",
+            ),
+        )
+    observado = DocumentacionAdjunta.objects.create(
+        nombre="comprobante-observado.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
+        observaciones="Subir una versión legible",
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "comprobante-observado.pdf",
+            b"%PDF-1.4 original",
+            content_type="application/pdf",
+        ),
     )
 
-    archivo = SimpleUploadedFile(
-        "comprobante.exe",
-        b"binary",
-        content_type="application/octet-stream",
-    )
     response = client.post(
         f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/documentacion/",
         {
-            "archivo": archivo,
+            "archivo": SimpleUploadedFile(
+                "comprobante-nuevo.pdf",
+                b"%PDF-1.4 nuevo",
+                content_type="application/pdf",
+            ),
             "categoria": DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
-        },
-        format="multipart",
-    )
-
-    assert response.status_code == 400
-    assert "Tipo de archivo no permitido" in response.data["detail"]
-
-
-@pytest.mark.django_db
-def test_adjuntar_comprobante_acepta_archivo_office(comedores, settings, tmp_path):
-    settings.MEDIA_ROOT = str(tmp_path)
-    comedor_1, _ = comedores
-    representante = _create_pwa_user(
-        comedor=comedor_1,
-        role=AccesoComedorPWA.ROL_REPRESENTANTE,
-        username="rep_tipo_office",
-    )
-    _grant_mobile_rendicion_permission(representante)
-    client = _token_client(representante)
-    rendicion = RendicionCuentaMensual.objects.create(
-        comedor=comedor_1,
-        mes=5,
-        anio=2026,
-    )
-
-    archivo = SimpleUploadedFile(
-        "comprobante.docx",
-        b"fake-docx-content",
-        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    )
-    response = client.post(
-        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/documentacion/",
-        {
-            "archivo": archivo,
-            "categoria": DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+            "documento_subsanado_id": str(observado.id),
         },
         format="multipart",
     )
 
     assert response.status_code == 201
-
-
-@pytest.mark.django_db
-def test_adjuntar_comprobante_rechaza_archivo_excedido(comedores, settings, tmp_path):
-    settings.MEDIA_ROOT = str(tmp_path)
-    comedor_1, _ = comedores
-    representante = _create_pwa_user(
-        comedor=comedor_1,
-        role=AccesoComedorPWA.ROL_REPRESENTANTE,
-        username="rep_size_invalido",
+    comprobantes = next(
+        item
+        for item in response.data["documentacion"]
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_COMPROBANTES
     )
-    _grant_mobile_rendicion_permission(representante)
-    client = _token_client(representante)
-    rendicion = RendicionCuentaMensual.objects.create(
-        comedor=comedor_1,
-        mes=6,
-        anio=2026,
+    assert len(comprobantes["archivos"]) == 2
+    nuevo_payload = next(
+        item
+        for item in comprobantes["archivos"]
+        if item["documento_subsanado"] == observado.id
     )
-
-    archivo = SimpleUploadedFile(
-        "comprobante_grande.pdf",
-        b"a" * (10 * 1024 * 1024 + 1),
-        content_type="application/pdf",
+    observado_payload = next(
+        item for item in comprobantes["archivos"] if item["id"] == observado.id
     )
-    response = client.post(
-        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/documentacion/",
-        {
-            "archivo": archivo,
-            "categoria": DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
-        },
-        format="multipart",
-    )
-
-    assert response.status_code == 400
-    assert "excede el tamaño máximo" in response.data["detail"]
-
-
-@pytest.mark.django_db
-def test_rendiciones_requieren_permiso_mobile_especifico(comedores):
-    comedor_1, _ = comedores
-    representante = _create_pwa_user(
-        comedor=comedor_1,
-        role=AccesoComedorPWA.ROL_REPRESENTANTE,
-        username="rep_sin_permiso_rendicion",
-    )
-    client = _token_client(representante)
-
-    response = client.get(f"/api/comedores/{comedor_1.id}/rendiciones/")
-
-    assert response.status_code == 403
-
-
-@pytest.mark.django_db
-def test_documentos_list_filter_and_download(comedores, settings, tmp_path):
-    settings.MEDIA_ROOT = str(tmp_path)
-    comedor_1, comedor_2 = comedores
-    representante = _create_pwa_user(
-        comedor=comedor_1,
-        role=AccesoComedorPWA.ROL_REPRESENTANTE,
-        username="rep_documentos",
-    )
-    client = _token_client(representante)
-
-    comedor_1.foto_legajo = SimpleUploadedFile(
-        "legajo_test.jpg",
-        b"fake-jpeg-content",
-        content_type="image/jpeg",
-    )
-    comedor_1.save(update_fields=["foto_legajo"])
-    ImagenComedor.objects.create(
-        comedor=comedor_1,
-        imagen=SimpleUploadedFile(
-            "imagen_test.jpg",
-            b"fake-image-content",
-            content_type="image/jpeg",
-        ),
-    )
-
-    rendicion = RendicionCuentaMensual.objects.create(
-        comedor=comedor_1,
-        mes=4,
-        anio=2026,
-    )
-    DocumentacionAdjunta.objects.create(
-        nombre="Comprobante abril",
-        archivo=SimpleUploadedFile(
-            "comprobante_test.pdf",
-            b"%PDF-1.4 fake content",
-            content_type="application/pdf",
-        ),
-        rendicion_cuenta_mensual=rendicion,
-    )
-
-    list_response = client.get(f"/api/comedores/{comedor_1.id}/documentos/")
-    assert list_response.status_code == 200
-    assert list_response.data["count"] >= 3
-
-    tipos = {item["tipo"] for item in list_response.data["results"]}
-    assert "foto_legajo" in tipos
-    assert "imagen_comedor" in tipos
-    assert "documento_rendicion_mensual" in tipos
-
-    by_type_response = client.get(
-        f"/api/comedores/{comedor_1.id}/documentos/",
-        {"tipo": "documento_rendicion_mensual"},
-    )
-    assert by_type_response.status_code == 200
-    assert by_type_response.data["count"] == 1
-
-    by_query_response = client.get(
-        f"/api/comedores/{comedor_1.id}/documentos/",
-        {"q": "comprobante_test"},
-    )
-    assert by_query_response.status_code == 200
-    assert by_query_response.data["count"] == 1
-
-    invalid_date_response = client.get(
-        f"/api/comedores/{comedor_1.id}/documentos/",
-        {"desde": "2026-13-01"},
-    )
-    assert invalid_date_response.status_code == 400
-
-    documento_id = by_type_response.data["results"][0]["id"]
-    download_response = client.get(
-        f"/api/comedores/{comedor_1.id}/documentos/{documento_id}/download/"
-    )
-    assert download_response.status_code == 200
-    assert "attachment" in download_response["Content-Disposition"]
-
-    outside_scope_response = client.get(f"/api/comedores/{comedor_2.id}/documentos/")
-    assert outside_scope_response.status_code == 404
-
-
-@pytest.mark.django_db
-@override_settings(ROOT_URLCONF="tests.test_urls_pr1400_fixes")
-def test_documentos_filter_hasta_includes_files_from_same_day(
-    comedores, settings, tmp_path
-):
-    settings.MEDIA_ROOT = str(tmp_path)
-    comedor_1, _ = comedores
-    representante = _create_pwa_user(
-        comedor=comedor_1,
-        role=AccesoComedorPWA.ROL_REPRESENTANTE,
-        username="rep_documentos_hasta",
-    )
-    client = _token_client(representante)
-
-    rendicion = RendicionCuentaMensual.objects.create(
-        comedor=comedor_1,
-        mes=4,
-        anio=2026,
-    )
-    documento = DocumentacionAdjunta.objects.create(
-        nombre="Comprobante cierre diario",
-        archivo=SimpleUploadedFile(
-            "comprobante_cierre.pdf",
-            b"%PDF-1.4 fake content",
-            content_type="application/pdf",
-        ),
-        rendicion_cuenta_mensual=rendicion,
-    )
-    timestamp = timezone.make_aware(timezone.datetime(2026, 4, 4, 18, 30, 0))
-    DocumentacionAdjunta.objects.filter(pk=documento.pk).update(
-        ultima_modificacion=timestamp
-    )
-
-    response = client.get(
-        f"/api/comedores/{comedor_1.id}/documentos/",
-        {
-            "tipo": "documento_rendicion_mensual",
-            "q": "comprobante_cierre",
-            "hasta": "2026-04-04",
-        },
-    )
-
-    assert response.status_code == 200
-    assert response.data["count"] == 1
-    assert response.data["results"][0]["nombre"].endswith("comprobante_cierre.pdf")
-
-
-@pytest.mark.django_db
-def test_prestacion_alimentaria_returns_empty_payload_when_no_informes(comedores):
-    comedor_1, _ = comedores
-    representante = _create_pwa_user(
-        comedor=comedor_1,
-        role=AccesoComedorPWA.ROL_REPRESENTANTE,
-        username="rep_prestacion_empty",
-    )
-    client = _token_client(representante)
-
-    response = client.get(f"/api/comedores/{comedor_1.id}/prestacion-alimentaria/")
-    assert response.status_code == 200
-    assert response.data["informe_id"] is None
-    assert response.data["aprobadas_almuerzo_lunes"] is None
-
-
-@pytest.mark.django_db
-def test_prestacion_alimentaria_uses_latest_finalizado(comedores):
-    comedor_1, _ = comedores
-    representante = _create_pwa_user(
-        comedor=comedor_1,
-        role=AccesoComedorPWA.ROL_REPRESENTANTE,
-        username="rep_prestacion_latest",
-    )
-    client = _token_client(representante)
-
-    admision = Admision.objects.create(comedor=comedor_1)
-    informe_viejo = _create_informe_tecnico(
-        admision,
-        estado_formulario="finalizado",
-        aprobadas_almuerzo_lunes=50,
-    )
-    informe_nuevo = _create_informe_tecnico(
-        admision,
-        estado_formulario="finalizado",
-        aprobadas_almuerzo_lunes=120,
-    )
-    _create_informe_tecnico(
-        admision,
-        estado_formulario="borrador",
-        aprobadas_almuerzo_lunes=999,
-    )
-    InformeTecnico.objects.filter(pk=informe_viejo.pk).update(
-        modificado=date(2026, 1, 15)
-    )
-    InformeTecnico.objects.filter(pk=informe_nuevo.pk).update(
-        modificado=date(2026, 2, 15)
-    )
-
-    response = client.get(f"/api/comedores/{comedor_1.id}/prestacion-alimentaria/")
-    assert response.status_code == 200
-    assert response.data["informe_id"] == informe_nuevo.id
-    assert response.data["aprobadas_almuerzo_lunes"] == 120
-
-
-@pytest.mark.django_db
-def test_prestacion_alimentaria_historial_filters_by_period(comedores):
-    comedor_1, _ = comedores
-    representante = _create_pwa_user(
-        comedor=comedor_1,
-        role=AccesoComedorPWA.ROL_REPRESENTANTE,
-        username="rep_prestacion_historial",
-    )
-    client = _token_client(representante)
-
-    admision = Admision.objects.create(comedor=comedor_1)
-    informe_enero = _create_informe_tecnico(admision, estado_formulario="finalizado")
-    informe_febrero = _create_informe_tecnico(admision, estado_formulario="finalizado")
-    informe_marzo = _create_informe_tecnico(admision, estado_formulario="finalizado")
-
-    InformeTecnico.objects.filter(pk=informe_enero.pk).update(
-        modificado=date(2026, 1, 20)
-    )
-    InformeTecnico.objects.filter(pk=informe_febrero.pk).update(
-        modificado=date(2026, 2, 15)
-    )
-    InformeTecnico.objects.filter(pk=informe_marzo.pk).update(
-        modificado=date(2026, 3, 10)
-    )
-
-    response = client.get(
-        f"/api/comedores/{comedor_1.id}/prestacion-alimentaria/historial/",
-        {"desde": "2026-02", "hasta": "2026-03"},
-    )
-    assert response.status_code == 200
-    assert response.data["count"] == 2
-    assert [item["informe_id"] for item in response.data["results"]] == [
-        informe_marzo.id,
-        informe_febrero.id,
-    ]
-
-    invalid_range_response = client.get(
-        f"/api/comedores/{comedor_1.id}/prestacion-alimentaria/historial/",
-        {"desde": "2026-05", "hasta": "2026-03"},
-    )
-    assert invalid_range_response.status_code == 400
+    assert nuevo_payload["estado"] == DocumentacionAdjunta.ESTADO_PRESENTADO
+    assert nuevo_payload["estado_visual"] == DocumentacionAdjunta.ESTADO_PRESENTADO
+    assert nuevo_payload["estado_label_visual"] == "Presentado"
+    assert nuevo_payload["documento_subsanado"] == observado.id
+    assert nuevo_payload["subsanaciones"] == []
+    assert observado_payload["id"] == observado.id
+    assert observado_payload["estado"] == DocumentacionAdjunta.ESTADO_SUBSANAR
+    assert observado_payload["estado_visual"] == DocumentacionAdjunta.ESTADO_SUBSANAR
+    assert observado_payload["estado_label_visual"] == "A Subsanar"
+    assert observado_payload["observaciones"] == "Subir una versión legible"

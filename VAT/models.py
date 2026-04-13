@@ -287,6 +287,12 @@ class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
         verbose_name = "Plan de Estudio"
         verbose_name_plural = "Planes de Estudio"
         ordering = ["sector", "modalidad_cursada"]
+        indexes = [
+            models.Index(
+                fields=["provincia", "activo"],
+                name="vat_plan_prov_act_idx",
+            ),
+        ]
 
     @property
     def titulo_referencia(self):
@@ -905,6 +911,12 @@ class Curso(SoftDeleteModelMixin, models.Model):
         verbose_name="Plan de Estudio",
     )
     nombre = models.CharField(max_length=255, verbose_name="Nombre")
+    prioritario = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name="Prioritario",
+        help_text="Marca si el curso debe destacarse como prioritario en las consultas operativas.",
+    )
     modalidad = models.ForeignKey(
         ModalidadCursada,
         on_delete=models.PROTECT,
@@ -1383,6 +1395,13 @@ class ComisionHorario(models.Model):
             errors["comision"] = (
                 "Debés vincular el horario a una comisión o a una comisión de curso."
             )
+
+        if (
+            self.hora_desde is not None
+            and self.hora_hasta is not None
+            and self.hora_hasta < self.hora_desde
+        ):
+            errors["hora_hasta"] = "La hora hasta no puede ser menor a la hora desde."
 
         existing = ComisionHorario.objects.exclude(pk=self.pk).filter(
             dia_semana=self.dia_semana,

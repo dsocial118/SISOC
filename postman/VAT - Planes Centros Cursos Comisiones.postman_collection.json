@@ -1,0 +1,888 @@
+{
+  "info": {
+    "_postman_id": "1f8a0f52-0b78-4fb5-81bf-198e6b8d45a3",
+    "name": "VAT - Planes Centros Cursos Comisiones",
+    "description": "Coleccion para consultar la API operativa de VAT con el flujo: planes curriculares, centros, cursos por centro y comisiones de curso por curso. Usa endpoints protegidos con API key.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8001"
+    },
+    {
+      "key": "apiPrefix",
+      "value": "/api"
+    },
+    {
+      "key": "apiKey",
+      "value": ""
+    },
+    {
+      "key": "provincia_id",
+      "value": ""
+    },
+    {
+      "key": "municipio_id",
+      "value": ""
+    },
+    {
+      "key": "plan_id",
+      "value": ""
+    },
+    {
+      "key": "centro_id",
+      "value": ""
+    },
+    {
+      "key": "curso_id",
+      "value": ""
+    },
+    {
+      "key": "curso_busqueda",
+      "value": "admin"
+    },
+    {
+      "key": "sector_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0 - Ubicacion",
+      "description": "Requests auxiliares para obtener provincia y municipio antes de filtrar centros.",
+      "item": [
+        {
+          "name": "Listar provincias",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/provincias/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "provincias",
+                ""
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('provincia_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar municipios por provincia_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/municipios/?provincia_id={{provincia_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "municipios",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "provincia_id",
+                  "value": "{{provincia_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('municipio_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1 - Inicio Operativo",
+      "description": "Request inicial para validar API key y disponibilidad de un endpoint operativo antes de encadenar el resto del flujo.",
+      "item": [
+        {
+          "name": "Validar autenticacion con planes curriculares",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/planes-curriculares/?activo=true",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "planes-curriculares",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2 - Planes Curriculares",
+      "description": "Obtiene planes curriculares operativos. Guarda plan_id y sector_id con el primer registro devuelto.",
+      "item": [
+        {
+          "name": "Listar planes curriculares activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/planes-curriculares/?activo=true",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "planes-curriculares",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('La respuesta contiene una lista', function () {",
+                  "  pm.expect(Array.isArray(rows)).to.eql(true);",
+                  "});",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('plan_id', String(rows[0].id));",
+                  "}",
+                  "if (rows.length && rows[0].sector) {",
+                  "  pm.collectionVariables.set('sector_id', String(rows[0].sector));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar planes curriculares por sector_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/planes-curriculares/?activo=true&sector_id={{sector_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "planes-curriculares",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                },
+                {
+                  "key": "sector_id",
+                  "value": "{{sector_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3 - Centros",
+      "description": "Obtiene centros operativos. Guarda centro_id con el primer registro devuelto. La respuesta es paginada: `count` informa el total, `results` contiene la pagina actual y `next`/`previous` permiten navegar.",
+      "item": [
+        {
+          "name": "Listar centros activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/centros/?activo=true",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "centros",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('La respuesta contiene una lista', function () {",
+                  "  pm.expect(Array.isArray(rows)).to.eql(true);",
+                  "});",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('centro_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Ejemplo paginacion centros activos - page=2",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/centros/?activo=true&page=2",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "centros",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                },
+                {
+                  "key": "page",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "Ejemplo para inspeccionar la segunda pagina del padron de centros. Sirve para verificar que `count` refleja el total y que `results` devuelve solo la pagina actual."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('La respuesta paginada contiene count y results', function () {",
+                  "  pm.expect(body).to.have.property('count');",
+                  "  pm.expect(body).to.have.property('results');",
+                  "  pm.expect(Array.isArray(body.results)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Ejemplo paginacion centros activos - page=3",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/centros/?activo=true&page=3",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "centros",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                },
+                {
+                  "key": "page",
+                  "value": "3"
+                }
+              ]
+            },
+            "description": "Ejemplo para recorrer una pagina adicional del listado y validar navegacion paginada sobre el padron completo de centros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('La respuesta paginada contiene previous y results', function () {",
+                  "  pm.expect(body).to.have.property('results');",
+                  "  pm.expect(Array.isArray(body.results)).to.eql(true);",
+                  "  pm.expect(body).to.have.property('previous');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar centros por provincia_id y municipio_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/centros/?activo=true&provincia_id={{provincia_id}}&municipio_id={{municipio_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "centros",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                },
+                {
+                  "key": "provincia_id",
+                  "value": "{{provincia_id}}"
+                },
+                {
+                  "key": "municipio_id",
+                  "value": "{{municipio_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('centro_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4 - Cursos por Centro",
+      "description": "Consulta cursos operativos filtrados por centro_id o por ubicacion geografica. Guarda curso_id con el primer registro devuelto.",
+      "item": [
+        {
+          "name": "Listar cursos por centro_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/?centro_id={{centro_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "centro_id",
+                  "value": "{{centro_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('La respuesta contiene una lista', function () {",
+                  "  pm.expect(Array.isArray(rows)).to.eql(true);",
+                  "});",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('curso_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar cursos por centro_id y estado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/?centro_id={{centro_id}}&estado=activo",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "centro_id",
+                  "value": "{{centro_id}}"
+                },
+                {
+                  "key": "estado",
+                  "value": "activo"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar cursos por provincia_id y municipio_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/?provincia_id={{provincia_id}}&municipio_id={{municipio_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "provincia_id",
+                  "value": "{{provincia_id}}"
+                },
+                {
+                  "key": "municipio_id",
+                  "value": "{{municipio_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('curso_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Buscar cursos por texto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/buscar/?q={{curso_busqueda}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "buscar",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{curso_busqueda}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('La respuesta contiene resultados paginados', function () {",
+                  "  pm.expect(Array.isArray(rows)).to.eql(true);",
+                  "});",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('curso_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar cursos prioritarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/prioritarios/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "prioritarios",
+                ""
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('La respuesta contiene resultados paginados', function () {",
+                  "  pm.expect(Array.isArray(rows)).to.eql(true);",
+                  "});",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('curso_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5 - Comisiones de Curso por Curso",
+      "description": "Consulta comisiones operativas filtradas por curso_id, centro_id o ubicacion geografica.",
+      "item": [
+        {
+          "name": "Listar comisiones de curso por curso_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/comisiones-curso/?curso_id={{curso_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "comisiones-curso",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "curso_id",
+                  "value": "{{curso_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('La respuesta contiene una lista', function () {",
+                  "  pm.expect(Array.isArray(rows)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar comisiones de curso por centro_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/comisiones-curso/?centro_id={{centro_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "comisiones-curso",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "centro_id",
+                  "value": "{{centro_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar comisiones de curso por provincia_id y municipio_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/comisiones-curso/?provincia_id={{provincia_id}}&municipio_id={{municipio_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "comisiones-curso",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "provincia_id",
+                  "value": "{{provincia_id}}"
+                },
+                {
+                  "key": "municipio_id",
+                  "value": "{{municipio_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

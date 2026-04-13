@@ -10,7 +10,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -526,7 +526,7 @@ def build_release_changelog_block(
 ) -> str:
     """Construye el bloque auto-generado del changelog para una release."""
 
-    version_label = datetime.strptime(release_date, "%Y-%m-%d").strftime("%d.%m.%Y")
+    version_label = release_date_to_label(release_date)
     grouped: dict[str, list[str]] = {
         label: [] for label in CHANGELOG_CATEGORY_LABELS.values()
     }
@@ -551,6 +551,12 @@ def build_release_changelog_block(
     return (
         f"{start_marker}\n# Versión SISOC {version_label}\n\n{body}\n" f"{end_marker}\n"
     )
+
+
+def release_date_to_label(release_date: str) -> str:
+    """Convierte una fecha de release a la etiqueta visible del changelog."""
+
+    return date.fromisoformat(release_date).strftime("%d.%m.%Y")
 
 
 def replace_auto_release_block(

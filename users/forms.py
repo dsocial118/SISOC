@@ -5,6 +5,7 @@ from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import Group, Permission, User
+from django.core.validators import FileExtensionValidator
 from django.db import transaction
 from django.utils.crypto import get_random_string
 from django.utils import timezone
@@ -19,6 +20,7 @@ from users.services_pwa import (
     is_pwa_user,
     sync_representante_accesses,
 )
+from users.services_bulk_credentials import get_bulk_credentials_send_type_choices
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 
@@ -35,6 +37,45 @@ ROLE_PERMISSION_QUERYSET = (
 
 class BackofficeAuthenticationForm(AuthenticationForm):
     """Bloquea login web para usuarios de uso exclusivo PWA."""
+
+    error_messages = {
+        **AuthenticationForm.error_messages,
+        "invalid_login": "Usuario o contraseña inválidos.",
+    }
+
+    def __init__(self, *args, request=None, **kwargs):
+        super().__init__(request=request, *args, **kwargs)
+        self.fields[User.USERNAME_FIELD].error_messages[
+            "required"
+        ] = "Este campo es obligatorio."
+        self.fields["password"].error_messages[
+            "required"
+        ] = "Este campo es obligatorio."
+
+    def clean(self):
+        username_field_name = User.USERNAME_FIELD
+        username = self.data.get(username_field_name) or ""
+        password = self.data.get("password") or ""
+        mutable_data = self.data.copy()
+        required_message = "Este campo es obligatorio."
+        trimmed_username = username.strip()
+
+        mutable_data[username_field_name] = trimmed_username
+        self.data = mutable_data
+
+        if not trimmed_username and username_field_name not in self.errors:
+            self.add_error(username_field_name, required_message)
+        if not password.strip() and "password" not in self.errors:
+            self.add_error("password", required_message)
+        if self.errors:
+            self.data["password"] = ""
+            return self.cleaned_data
+
+        try:
+            return super().clean()
+        except forms.ValidationError:
+            self.data["password"] = ""
+            raise
 
     def confirm_login_allowed(self, user):
         super().confirm_login_allowed(user)
@@ -755,3 +796,23 @@ class GroupForm(forms.ModelForm):
         if qs.exists():
             raise forms.ValidationError("Ya existe un grupo con ese nombre.")
         return name
+
+
+class BulkCredentialsUploadForm(forms.Form):
+    tipo_envio = forms.ChoiceField(
+        label="Tipo de envio",
+        choices=(),
+        initial="standard",
+        widget=forms.Select(attrs={"class": "form-control"}),
+        help_text="Seleccione el tipo de envio para descargar la plantilla correcta.",
+    )
+    archivo = forms.FileField(
+        label="Archivo Excel",
+        validators=[FileExtensionValidator(["xlsx"])],
+        widget=forms.ClearableFileInput(attrs={"accept": ".xlsx"}),
+        help_text="Cargue un archivo .xlsx con el formato esperado para el tipo de envio seleccionado.",
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["tipo_envio"].choices = get_bulk_credentials_send_type_choices()

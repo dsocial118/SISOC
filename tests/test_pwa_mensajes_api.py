@@ -1,7 +1,8 @@
-from datetime import timedelta
+﻿from datetime import timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.utils import timezone
@@ -17,7 +18,10 @@ from comunicados.models import (
 )
 from comedores.models import Comedor
 from core.models import Provincia
+from organizaciones.models import Organizacion
 from pwa.models import AuditoriaOperacionPWA, LecturaMensajePWA
+from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
+from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from users.models import AccesoComedorPWA
 
 
@@ -54,6 +58,14 @@ def _auth_client_for_user(user):
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
     return client
+
+
+def _grant_mobile_rendicion_permission(user):
+    permission = Permission.objects.get(
+        content_type__app_label="rendicioncuentasmensual",
+        codename="manage_mobile_rendicion",
+    )
+    user.user_permissions.add(permission)
 
 
 def _create_comunicado(
@@ -158,6 +170,384 @@ def test_list_mensajes_por_espacio_incluye_notificaciones_generales(espacios):
     assert len(response.data["secciones"]["espacios"]) == 1
     assert response.data["secciones"]["espacios"][0]["titulo"] == "Para el espacio"
     assert response.data["secciones"]["espacios"][0]["seccion"] == "espacio"
+
+
+@pytest.mark.django_db
+def test_list_mensajes_por_espacio_incluye_contadores_agrupados_para_rendiciones(
+    espacios,
+):
+    espacio_1, _ = espacios
+    representante = _create_pwa_user(
+        comedor=espacio_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_mensajes_grouped_counts",
+    )
+    _grant_mobile_rendicion_permission(representante)
+    client = _auth_client_for_user(representante)
+
+    _create_comunicado(
+        creador=representante,
+        titulo="Comunicado del espacio",
+        comedor=espacio_1,
+        subtipo=SubtipoComunicado.COMEDORES,
+    )
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=espacio_1,
+        mes=4,
+        anio=2026,
+        convenio="Convenio grouped",
+        numero_rendicion=3,
+        periodo_inicio=timezone.now().date(),
+        periodo_fin=timezone.now().date(),
+        estado=RendicionCuentaMensual.ESTADO_REVISION,
+    )
+    documento_1 = DocumentacionAdjunta.objects.create(
+        nombre="comprobante-1.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "comprobante-1.pdf",
+            b"pdf-1",
+            content_type="application/pdf",
+        ),
+    )
+    documento_2 = DocumentacionAdjunta.objects.create(
+        nombre="comprobante-2.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "comprobante-2.pdf",
+            b"pdf-2",
+            content_type="application/pdf",
+        ),
+    )
+
+    RendicionCuentaMensualService.actualizar_estado_documento_revision(
+        documento=documento_1,
+        estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
+        observaciones="Observacion 1",
+        actor=representante,
+    )
+    RendicionCuentaMensualService.actualizar_estado_documento_revision(
+        documento=documento_2,
+        estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
+        observaciones="Observacion 2",
+        actor=representante,
+    )
+
+    response = client.get(f"/api/pwa/espacios/{espacio_1.id}/mensajes/")
+
+    assert response.status_code == 200
+    assert response.data["unread_count"] == 2
+    assert response.data["unread_espacio_count"] == 2
+    assert response.data["unread_grouped_count"] == 2
+    assert response.data["unread_espacio_non_rendicion_count"] == 1
+    assert response.data["unread_general_ids"] == []
+    assert response.data["unread_rendicion_ids"] == [rendicion.id]
+
+
+@pytest.mark.django_db
+def test_revision_de_rendicion_genera_mensaje_mobile_visible_en_el_espacio(espacios):
+    espacio_1, espacio_2 = espacios
+    organizacion = Organizacion.objects.create(nombre="Organizacion Rendicion")
+    espacio_1.organizacion = organizacion
+    espacio_1.codigo_de_proyecto = "PROY-55"
+    espacio_1.save(update_fields=["organizacion", "codigo_de_proyecto"])
+    espacio_2.organizacion = organizacion
+    espacio_2.codigo_de_proyecto = "PROY-55"
+    espacio_2.save(update_fields=["organizacion", "codigo_de_proyecto"])
+    representante = _create_pwa_user(
+        comedor=espacio_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_rendicion_notif",
+    )
+    AccesoComedorPWA.objects.create(
+        user=representante,
+        comedor=espacio_2,
+        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+        activo=True,
+    )
+    _grant_mobile_rendicion_permission(representante)
+    client = _auth_client_for_user(representante)
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=espacio_1,
+        mes=4,
+        anio=2026,
+        convenio="Convenio test",
+        numero_rendicion=55,
+        periodo_inicio=timezone.now().date(),
+        periodo_fin=timezone.now().date(),
+        estado=RendicionCuentaMensual.ESTADO_REVISION,
+    )
+    documento = DocumentacionAdjunta.objects.create(
+        nombre="comprobante.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "comprobante.pdf", b"pdf", content_type="application/pdf"
+        ),
+    )
+
+    RendicionCuentaMensualService.actualizar_estado_documento_revision(
+        documento=documento,
+        estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
+        observaciones="Volver a subir el documento completo",
+        actor=representante,
+    )
+
+    response = client.get(f"/api/pwa/espacios/{espacio_2.id}/mensajes/")
+
+    assert response.status_code == 200
+    titulos = [item["titulo"] for item in response.data["results"]]
+    expected_title_prefix = "Proyecto PROY-55 | Convenio Convenio test |"
+    assert any(
+        item.startswith(expected_title_prefix) and "documento a subsanar" in item
+        for item in titulos
+    )
+    mensaje = next(
+        item
+        for item in response.data["results"]
+        if item["titulo"].startswith(expected_title_prefix)
+        and "documento a subsanar" in item["titulo"]
+    )
+
+    detail_response = client.get(
+        f"/api/pwa/espacios/{espacio_2.id}/mensajes/{mensaje['id']}/"
+    )
+    assert detail_response.status_code == 200
+    assert "Proyecto: PROY-55." in detail_response.data["cuerpo"]
+    assert "Convenio: Convenio test." in detail_response.data["cuerpo"]
+    assert (
+        "Observaciones: Volver a subir el documento completo."
+        in detail_response.data["cuerpo"]
+    )
+    assert "[SISOC_ACCION]" not in detail_response.data["cuerpo"]
+    assert detail_response.data["accion"] == {
+        "tipo": "rendicion_detalle",
+        "rendicion_id": rendicion.id,
+    }
+
+
+@pytest.mark.django_db
+def test_mensaje_de_rendicion_se_oculta_si_el_usuario_no_tiene_permiso_mobile_rendicion(
+    espacios,
+):
+    espacio_1, espacio_2 = espacios
+    organizacion = Organizacion.objects.create(nombre="Organizacion Rendicion Permisos")
+    espacio_1.organizacion = organizacion
+    espacio_1.codigo_de_proyecto = "PROY-88"
+    espacio_1.save(update_fields=["organizacion", "codigo_de_proyecto"])
+    espacio_2.organizacion = organizacion
+    espacio_2.codigo_de_proyecto = "PROY-88"
+    espacio_2.save(update_fields=["organizacion", "codigo_de_proyecto"])
+
+    creador = _create_pwa_user(
+        comedor=espacio_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_rendicion_perm_ok",
+    )
+    _grant_mobile_rendicion_permission(creador)
+    usuario_sin_permiso = _create_pwa_user(
+        comedor=espacio_2,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_rendicion_perm_no",
+    )
+    client = _auth_client_for_user(usuario_sin_permiso)
+
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=espacio_1,
+        mes=4,
+        anio=2026,
+        numero_rendicion=88,
+        periodo_inicio=timezone.now().date(),
+        periodo_fin=timezone.now().date(),
+        estado=RendicionCuentaMensual.ESTADO_REVISION,
+    )
+    documento = DocumentacionAdjunta.objects.create(
+        nombre="comprobante.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "comprobante.pdf", b"pdf", content_type="application/pdf"
+        ),
+    )
+
+    RendicionCuentaMensualService.actualizar_estado_documento_revision(
+        documento=documento,
+        estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
+        observaciones="Corregir archivo",
+        actor=creador,
+    )
+
+    response = client.get(f"/api/pwa/espacios/{espacio_2.id}/mensajes/")
+
+    assert response.status_code == 200
+    titulos = [item["titulo"] for item in response.data["results"]]
+    assert "Rendición 88: documento a subsanar" not in titulos
+
+
+@pytest.mark.django_db
+def test_mensaje_de_rendicion_se_oculta_si_el_usuario_no_esta_en_el_scope_de_la_rendicion(
+    espacios,
+):
+    espacio_1, espacio_2 = espacios
+    organizacion = Organizacion.objects.create(nombre="Organizacion Scope Rendicion")
+    espacio_1.organizacion = organizacion
+    espacio_1.codigo_de_proyecto = "PROY-99"
+    espacio_1.save(update_fields=["organizacion", "codigo_de_proyecto"])
+    espacio_2.organizacion = organizacion
+    espacio_2.codigo_de_proyecto = "PROY-OTRO"
+    espacio_2.save(update_fields=["organizacion", "codigo_de_proyecto"])
+
+    creador = _create_pwa_user(
+        comedor=espacio_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_rendicion_scope_ok",
+    )
+    _grant_mobile_rendicion_permission(creador)
+
+    usuario_otro_scope = _create_pwa_user(
+        comedor=espacio_2,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_rendicion_scope_no",
+    )
+    _grant_mobile_rendicion_permission(usuario_otro_scope)
+    client = _auth_client_for_user(usuario_otro_scope)
+
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=espacio_1,
+        mes=4,
+        anio=2026,
+        numero_rendicion=99,
+        periodo_inicio=timezone.now().date(),
+        periodo_fin=timezone.now().date(),
+        estado=RendicionCuentaMensual.ESTADO_REVISION,
+    )
+    documento = DocumentacionAdjunta.objects.create(
+        nombre="comprobante.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "comprobante.pdf", b"pdf", content_type="application/pdf"
+        ),
+    )
+
+    RendicionCuentaMensualService.actualizar_estado_documento_revision(
+        documento=documento,
+        estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
+        observaciones="Corregir archivo",
+        actor=creador,
+    )
+
+    response = client.get(f"/api/pwa/espacios/{espacio_2.id}/mensajes/")
+
+    assert response.status_code == 200
+    titulos = [item["titulo"] for item in response.data["results"]]
+    assert "Rendición 99: documento a subsanar" not in titulos
+
+
+@pytest.mark.django_db
+def test_mensaje_de_rendicion_se_archiva_cuando_la_subsanacion_se_reenvia(
+    espacios, settings, tmp_path
+):
+    settings.MEDIA_ROOT = str(tmp_path)
+    espacio_1, espacio_2 = espacios
+    organizacion = Organizacion.objects.create(nombre="Organizacion Rendicion Archivo")
+    espacio_1.organizacion = organizacion
+    espacio_1.codigo_de_proyecto = "PROY-66"
+    espacio_1.save(update_fields=["organizacion", "codigo_de_proyecto"])
+    espacio_2.organizacion = organizacion
+    espacio_2.codigo_de_proyecto = "PROY-66"
+    espacio_2.save(update_fields=["organizacion", "codigo_de_proyecto"])
+
+    representante = _create_pwa_user(
+        comedor=espacio_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_rendicion_archiva",
+    )
+    _grant_mobile_rendicion_permission(representante)
+    client = _auth_client_for_user(representante)
+
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=espacio_1,
+        mes=4,
+        anio=2026,
+        convenio="Convenio test",
+        numero_rendicion=66,
+        periodo_inicio=timezone.now().date(),
+        periodo_fin=timezone.now().date(),
+        estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+    )
+    for categoria in (
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V,
+        DocumentacionAdjunta.CATEGORIA_EXTRACTO_BANCARIO,
+    ):
+        DocumentacionAdjunta.objects.create(
+            nombre=f"{categoria}.pdf",
+            categoria=categoria,
+            estado=DocumentacionAdjunta.ESTADO_VALIDADO,
+            rendicion_cuenta_mensual=rendicion,
+            archivo=SimpleUploadedFile(
+                f"{categoria}.pdf",
+                b"pdf",
+                content_type="application/pdf",
+            ),
+        )
+    observado = DocumentacionAdjunta.objects.create(
+        nombre="comprobante.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
+        observaciones="Volver a subir el documento completo",
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "comprobante.pdf", b"pdf", content_type="application/pdf"
+        ),
+    )
+
+    RendicionCuentaMensualService._crear_notificacion_mobile_revision_documento(
+        documento=observado,
+        actor=representante,
+    )
+
+    previo = client.get(f"/api/pwa/espacios/{espacio_1.id}/mensajes/")
+    assert previo.status_code == 200
+    assert any(
+        item["accion"] == {"tipo": "rendicion_detalle", "rendicion_id": rendicion.id}
+        for item in previo.data["results"]
+    )
+
+    RendicionCuentaMensualService.adjuntar_documentacion_mobile(
+        rendicion=rendicion,
+        categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        documento_data={
+            "archivo": SimpleUploadedFile(
+                "comprobante-nuevo.pdf",
+                b"pdf nuevo",
+                content_type="application/pdf",
+            ),
+            "nombre": "comprobante-nuevo.pdf",
+        },
+        actor=representante,
+        documento_subsanado_id=observado.id,
+    )
+    RendicionCuentaMensualService.presentar_rendicion_mobile(
+        rendicion,
+        actor=representante,
+    )
+
+    posterior = client.get(f"/api/pwa/espacios/{espacio_1.id}/mensajes/")
+    assert posterior.status_code == 200
+    assert not any(
+        item["accion"] == {"tipo": "rendicion_detalle", "rendicion_id": rendicion.id}
+        for item in posterior.data["results"]
+    )
 
 
 @pytest.mark.django_db

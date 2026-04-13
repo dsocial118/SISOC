@@ -1,0 +1,213 @@
+from drf_spectacular.utils import OpenApiExample
+
+
+CURSO_BUSCAR_EXAMPLES = [
+    OpenApiExample(
+        "Primera carga paginada sin texto",
+        value={
+            "count": 2,
+            "next": "http://localhost:8000/api/vat/cursos/buscar/?page=2",
+            "previous": None,
+            "results": [
+                {
+                    "id": 120,
+                    "nombre": "Herramientas Digitales",
+                    "prioritario": True,
+                    "estado": "activo",
+                    "observaciones": None,
+                    "fecha_creacion": "2026-04-12T10:00:00Z",
+                    "fecha_modificacion": "2026-04-12T10:00:00Z",
+                    "usa_voucher": True,
+                    "costo_creditos": 2,
+                    "centro": {
+                        "id": 12,
+                        "nombre": "CFP 401",
+                        "referente": None,
+                        "referente_nombre": "",
+                        "codigo": "CFP-401",
+                        "activo": True,
+                        "provincia": {"id": 2, "nombre": "Buenos Aires"},
+                        "ciudad": {
+                            "provincia": {"id": 2, "nombre": "Buenos Aires"},
+                            "municipio": {
+                                "id": 15,
+                                "nombre": "La Plata",
+                                "provincia": 2,
+                                "provincia_nombre": "Buenos Aires",
+                            },
+                            "localidad": {
+                                "id": 120,
+                                "nombre": "Tolosa",
+                                "municipio": 15,
+                                "municipio_nombre": "La Plata",
+                                "provincia_nombre": "Buenos Aires",
+                            },
+                            "direccion": "Calle 1 Nro 123",
+                        },
+                        "telefono": "221-4000000",
+                        "celular": "221-4000001",
+                        "correo": "cfp401@example.org",
+                        "nombre_referente": "Ana",
+                        "apellido_referente": "Perez",
+                        "tipo_gestion": "Estatal",
+                        "clase_institucion": "Formación Profesional",
+                        "situacion": "Institución de ETP",
+                    },
+                    "plan_estudio": 30,
+                    "plan_estudio_nombre": "Herramientas Digitales I",
+                    "modalidad": 1,
+                    "modalidad_nombre": "Presencial",
+                    "programa": {
+                        "id": 7,
+                        "nombre": "Programa Prioridad Formación",
+                    },
+                    "voucher_parametrias": [],
+                    "comisiones": [],
+                }
+            ],
+        },
+        response_only=True,
+    ),
+    OpenApiExample(
+        "Búsqueda exitosa paginada",
+        value={
+            "count": 1,
+            "next": None,
+            "previous": None,
+            "results": [
+                {
+                    "id": 120,
+                    "nombre": "Herramientas Digitales",
+                    "prioritario": True,
+                    "estado": "activo",
+                    "observaciones": None,
+                    "fecha_creacion": "2026-04-12T10:00:00Z",
+                    "fecha_modificacion": "2026-04-12T10:00:00Z",
+                    "usa_voucher": True,
+                    "costo_creditos": 2,
+                    "centro": {
+                        "id": 12,
+                        "nombre": "CFP 401",
+                        "referente": None,
+                        "referente_nombre": "",
+                        "codigo": "CFP-401",
+                        "activo": True,
+                        "provincia": {"id": 2, "nombre": "Buenos Aires"},
+                        "ciudad": {
+                            "provincia": {"id": 2, "nombre": "Buenos Aires"},
+                            "municipio": {
+                                "id": 15,
+                                "nombre": "La Plata",
+                                "provincia": 2,
+                                "provincia_nombre": "Buenos Aires",
+                            },
+                            "localidad": {
+                                "id": 120,
+                                "nombre": "Tolosa",
+                                "municipio": 15,
+                                "municipio_nombre": "La Plata",
+                                "provincia_nombre": "Buenos Aires",
+                            },
+                            "direccion": "Calle 1 Nro 123",
+                        },
+                        "telefono": "221-4000000",
+                        "celular": "221-4000001",
+                        "correo": "cfp401@example.org",
+                        "nombre_referente": "Ana",
+                        "apellido_referente": "Perez",
+                        "tipo_gestion": "Estatal",
+                        "clase_institucion": "Formación Profesional",
+                        "situacion": "Institución de ETP",
+                    },
+                    "plan_estudio": 30,
+                    "plan_estudio_nombre": "Herramientas Digitales I",
+                    "modalidad": 1,
+                    "modalidad_nombre": "Presencial",
+                    "programa": {
+                        "id": 7,
+                        "nombre": "Programa Prioridad Formación",
+                    },
+                    "voucher_parametrias": [],
+                    "comisiones": [],
+                }
+            ],
+        },
+        response_only=True,
+    ),
+    OpenApiExample(
+        "Error por texto corto",
+        value={"q": ["Debe enviar al menos 3 caracteres para buscar."]},
+        response_only=True,
+        status_codes=["400"],
+    ),
+]
+
+
+CURSO_PRIORITARIOS_EXAMPLES = [
+    OpenApiExample(
+        "Listado de prioritarios paginado",
+        value={
+            "count": 1,
+            "next": None,
+            "previous": None,
+            "results": [
+                {
+                    "id": 140,
+                    "nombre": "Herramientas de Gestión Prioritaria",
+                    "prioritario": True,
+                    "estado": "activo",
+                    "observaciones": None,
+                    "fecha_creacion": "2026-04-12T10:00:00Z",
+                    "fecha_modificacion": "2026-04-12T10:00:00Z",
+                    "usa_voucher": True,
+                    "costo_creditos": 3,
+                    "centro": {
+                        "id": 12,
+                        "nombre": "CFP 401",
+                        "referente": None,
+                        "referente_nombre": "",
+                        "codigo": "CFP-401",
+                        "activo": True,
+                        "provincia": {"id": 2, "nombre": "Buenos Aires"},
+                        "ciudad": {
+                            "provincia": {"id": 2, "nombre": "Buenos Aires"},
+                            "municipio": {
+                                "id": 15,
+                                "nombre": "La Plata",
+                                "provincia": 2,
+                                "provincia_nombre": "Buenos Aires",
+                            },
+                            "localidad": {
+                                "id": 120,
+                                "nombre": "Tolosa",
+                                "municipio": 15,
+                                "municipio_nombre": "La Plata",
+                                "provincia_nombre": "Buenos Aires",
+                            },
+                            "direccion": "Calle 1 Nro 123",
+                        },
+                        "telefono": "221-4000000",
+                        "celular": "221-4000001",
+                        "correo": "cfp401@example.org",
+                        "nombre_referente": "Ana",
+                        "apellido_referente": "Perez",
+                        "tipo_gestion": "Estatal",
+                        "clase_institucion": "Formación Profesional",
+                        "situacion": "Institución de ETP",
+                    },
+                    "plan_estudio": 30,
+                    "plan_estudio_nombre": "Gestión Administrativa",
+                    "modalidad": 1,
+                    "modalidad_nombre": "Presencial",
+                    "programa": {
+                        "id": 7,
+                        "nombre": "Programa Prioridad Formación",
+                    },
+                    "voucher_parametrias": [],
+                    "comisiones": [],
+                }
+            ],
+        },
+        response_only=True,
+    )
+]

@@ -3,6 +3,7 @@
 # pylint: disable=too-many-lines
 
 from rest_framework import serializers
+from django.core.exceptions import DisallowedHost
 
 from comedores.models import Comedor, Nomina
 from core.models import Localidad, Municipio, Provincia
@@ -10,8 +11,10 @@ from duplas.models import Dupla
 from organizaciones.models import Organizacion
 from admisiones.models.admisiones import InformeTecnico
 from relevamientos.models import ClasificacionComedor, Relevamiento
-from rendicioncuentasmensual.models import RendicionCuentaMensual
+from relevamientos.service import RelevamientoService
 from rendicioncuentasmensual.models import DocumentacionAdjunta
+from rendicioncuentasmensual.models import RendicionCuentaMensual
+from rendicioncuentasmensual.services import RendicionCuentaMensualService
 
 
 class SimpleUbicacionSerializer(serializers.ModelSerializer):
@@ -150,7 +153,12 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             return None
         request = self.context.get("request")
         url = file_field.url
-        return request.build_absolute_uri(url) if request else url
+        if not request:
+            return url
+        try:
+            return request.build_absolute_uri(url)
+        except DisallowedHost:
+            return url
 
     def get_programa(self, obj):
         if not obj.programa:
@@ -731,12 +739,182 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
         ]
         return items
 
+    def _normalize_mobile_value(self, value):
+        if value in (None, ""):
+            return "Sin dato"
+        if isinstance(value, bool):
+            return self._format_bool_answer(value)
+        if isinstance(value, (list, tuple, set)):
+            raw_values = [str(item) for item in value if item not in (None, "")]
+            return ", ".join(raw_values) if raw_values else "Sin dato"
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except TypeError:
+                return str(value)
+        return str(value)
+
+    def _collect_model_items(self, instance):
+        if not instance:
+            return []
+
+        items = []
+        for field in instance._meta.fields:
+            if field.name in ("id",):
+                continue
+            value = getattr(instance, field.name, None)
+            if field.is_relation:
+                related_obj = value
+                if related_obj is None:
+                    normalized_value = "Sin dato"
+                else:
+                    normalized_value = (
+                        getattr(related_obj, "nombre", None)
+                        or getattr(related_obj, "estado", None)
+                        or str(related_obj)
+                    )
+            else:
+                normalized_value = self._normalize_mobile_value(value)
+            items.append(
+                {
+                    "pregunta": str(
+                        getattr(field, "verbose_name", field.name)
+                    ).capitalize(),
+                    "respuesta": self._normalize_mobile_value(normalized_value),
+                }
+            )
+
+        for field in instance._meta.many_to_many:
+            manager = getattr(instance, field.name, None)
+            if manager is None:
+                values = []
+            else:
+                values = [str(item) for item in manager.all()]
+            items.append(
+                {
+                    "pregunta": str(
+                        getattr(field, "verbose_name", field.name)
+                    ).capitalize(),
+                    "respuesta": self._normalize_mobile_value(values),
+                }
+            )
+
+        return items
+
+    def _build_relevamiento_mobile_sections(self, relevamiento, summary_items):
+        responsable_relevamiento = getattr(
+            relevamiento, "responsable_relevamiento", None
+        )
+        if responsable_relevamiento is None:
+            responsable_relevamiento = getattr(relevamiento, "responsable", None)
+
+        sections = [
+            {
+                "titulo": "Relevamiento",
+                "items": self._collect_model_items(relevamiento),
+            },
+            {
+                "titulo": "Información",
+                "items": summary_items,
+            },
+            {
+                "titulo": "Datos del referente del Comedor/Merendero",
+                "items": self._collect_model_items(
+                    getattr(relevamiento.comedor, "referente", None)
+                ),
+            },
+            {
+                "titulo": "Domicilio del Comedor/Merendero",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "comedor", None)
+                ),
+            },
+            {
+                "titulo": "Datos del responsable del relevamiento",
+                "items": self._collect_model_items(responsable_relevamiento),
+            },
+            {
+                "titulo": "Datos sobre el espacio físico",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "espacio", None)
+                ),
+            },
+            {
+                "titulo": "Cocina",
+                "items": self._collect_model_items(
+                    getattr(getattr(relevamiento, "espacio", None), "cocina", None)
+                ),
+            },
+            {
+                "titulo": "Prestación del espacio",
+                "items": self._collect_model_items(
+                    getattr(getattr(relevamiento, "espacio", None), "prestacion", None)
+                ),
+            },
+            {
+                "titulo": "Colaboradores",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "colaboradores", None)
+                ),
+            },
+            {
+                "titulo": "Recursos",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "recursos", None)
+                ),
+            },
+            {
+                "titulo": "Compras",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "compras", None)
+                ),
+            },
+            {
+                "titulo": "Prestación alimentaria",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "prestacion", None)
+                ),
+            },
+            {
+                "titulo": "Anexo",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "anexo", None)
+                ),
+            },
+            {
+                "titulo": "Punto Entrega",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "punto_entregas", None)
+                ),
+            },
+            {
+                "titulo": "Observación",
+                "items": [
+                    {
+                        "pregunta": "Observación",
+                        "respuesta": self._normalize_mobile_value(
+                            getattr(relevamiento, "observacion", None)
+                        ),
+                    }
+                ],
+            },
+            {
+                "titulo": "Excepción",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "excepcion", None)
+                ),
+            },
+        ]
+        return [section for section in sections if section["items"]]
+
     def get_relevamiento_actual_mobile(self, obj):
         relevamientos = getattr(obj, "relevamientos_optimized", None)
         relevamiento = relevamientos[0] if relevamientos else None
         if relevamiento is None:
             relevamiento = (
                 Relevamiento.objects.select_related(
+                    "comedor",
+                    "comedor__referente",
                     "funcionamiento",
                     "funcionamiento__modalidad_prestacion",
                     "espacio",
@@ -750,9 +928,17 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                     "colaboradores__cantidad_colaboradores",
                     "recursos",
                     "compras",
+                    "prestacion",
                     "anexo",
                     "anexo__tecnologia",
                     "anexo__distancia_transporte",
+                    "punto_entregas",
+                    "punto_entregas__tipo_comedor",
+                    "punto_entregas__frecuencia_entrega_bolsones",
+                    "punto_entregas__tipo_modulo_bolsones",
+                    "excepcion",
+                    "excepcion__motivo",
+                    "responsable_relevamiento",
                 )
                 .prefetch_related(
                     "espacio__cocina__abastecimiento_combustible",
@@ -761,6 +947,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                     "recursos__recursos_estado_provincial",
                     "recursos__recursos_estado_municipal",
                     "recursos__recursos_otros",
+                    "punto_entregas__frecuencia_recepcion_mercaderias",
                 )
                 .filter(comedor=obj)
                 .order_by("-fecha_visita", "-id")
@@ -770,10 +957,14 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
         if not relevamiento:
             return None
 
+        _ = RelevamientoService.get_relevamiento_detail_object(relevamiento.id)
+        items = self._build_relevamiento_mobile_items(relevamiento)
         return {
+            "id": relevamiento.id,
             "fecha_visita": relevamiento.fecha_visita,
             "estado": relevamiento.estado,
-            "items": self._build_relevamiento_mobile_items(relevamiento),
+            "items": items,
+            "sections": self._build_relevamiento_mobile_sections(relevamiento, items),
         }
 
 
@@ -907,9 +1098,12 @@ class NominaUpdateSerializer(NoSaveSerializer):
 class ComprobanteRendicionSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     estado_label = serializers.CharField(source="get_estado_display", read_only=True)
+    estado_visual = serializers.SerializerMethodField()
+    estado_label_visual = serializers.SerializerMethodField()
     categoria_label = serializers.CharField(
         source="get_categoria_display", read_only=True
     )
+    subsanaciones = serializers.SerializerMethodField()
 
     class Meta:
         model = DocumentacionAdjunta
@@ -918,12 +1112,16 @@ class ComprobanteRendicionSerializer(serializers.ModelSerializer):
             "nombre",
             "categoria",
             "categoria_label",
+            "documento_subsanado",
             "url",
             "estado",
             "estado_label",
+            "estado_visual",
+            "estado_label_visual",
             "observaciones",
             "fecha_creacion",
             "ultima_modificacion",
+            "subsanaciones",
         )
 
     def get_url(self, obj):
@@ -932,6 +1130,19 @@ class ComprobanteRendicionSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         url = obj.archivo.url
         return request.build_absolute_uri(url) if request else url
+
+    def get_estado_visual(self, obj):
+        return obj.get_estado_visual()
+
+    def get_estado_label_visual(self, obj):
+        return obj.get_estado_visual_display()
+
+    def get_subsanaciones(self, obj):
+        return ComprobanteRendicionSerializer(
+            getattr(obj, "subsanaciones_historial", []),
+            many=True,
+            context=self.context,
+        ).data
 
 
 class RendicionMensualListSerializer(serializers.ModelSerializer):
@@ -981,15 +1192,7 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
         )
 
     def get_documentacion(self, obj):
-        documentos = list(
-            getattr(obj, "archivos_adjuntos")
-            .filter(deleted_at__isnull=True)
-            .order_by("categoria", "fecha_creacion", "id")
-        )
-        grouped = {}
-        for documento in documentos:
-            grouped.setdefault(documento.categoria, []).append(documento)
-
+        grouped = RendicionCuentaMensualService.obtener_resumen_documentacion(obj)
         serializer_context = {"request": self.context.get("request")}
         payload = []
         for categoria in DocumentacionAdjunta.categorias_mobile():

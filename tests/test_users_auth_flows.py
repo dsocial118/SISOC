@@ -22,6 +22,7 @@ from organizaciones.models import Organizacion
 from users.forms import CustomUserChangeForm, GroupForm, UserCreationForm
 from users.models import AccesoComedorPWA
 from users.services import UsuariosService
+from users.services_auth import build_password_reset_link, send_password_reset_link
 from users.services_group_permissions import sync_permissions_for_group
 from users.temporary_passwords import store_temporary_password
 
@@ -280,6 +281,44 @@ def test_password_reset_request_hides_non_existing_user():
 
     assert response.status_code == 200
     assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+@override_settings(
+    DEFAULT_SCHEME="https",
+    DOMINIO="https://homologacion.sisoc.example.gov.ar/",
+)
+def test_build_password_reset_link_usa_default_scheme_sin_request():
+    user = User.objects.create_user(
+        username="reset_homologacion",
+        email="reset_homologacion@example.com",
+        password="Secreta123!",
+    )
+
+    link = build_password_reset_link(user=user)
+
+    assert link.startswith("https://homologacion.sisoc.example.gov.ar/")
+
+
+@pytest.mark.django_db
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="no-reply@example.com",
+)
+def test_send_password_reset_link_uses_ascii_safe_subject():
+    user = User.objects.create_user(
+        username="reset_subject_ascii",
+        email="reset_subject_ascii@example.com",
+        password="Secreta123!",
+    )
+
+    send_password_reset_link(
+        user=user,
+        reset_link="https://homologacion.sisoc.example.gov.ar/reset/demo/",
+    )
+
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].subject == "SISOC - Restablecer contrasena"
 
 
 @pytest.mark.django_db

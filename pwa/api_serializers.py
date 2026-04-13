@@ -14,6 +14,7 @@ from pwa.models import (
     CatalogoActividadPWA,
     ColaboradorEspacioPWA,
     InscriptoActividadEspacioPWA,
+    PushSubscriptionPWA,
     RegistroAsistenciaNominaPWA,
 )
 
@@ -557,6 +558,7 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
     identificador_interno = serializers.SerializerMethodField()
     asistencia_mes_actual = serializers.SerializerMethodField()
     historial_asistencias = serializers.SerializerMethodField()
+    observaciones = serializers.CharField(read_only=True, allow_null=True)
 
     class Meta:
         model = Nomina
@@ -575,6 +577,7 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
             "identificador_interno",
             "asistencia_mes_actual",
             "historial_asistencias",
+            "observaciones",
         )
 
     def _get_ciudadano(self, obj):
@@ -800,6 +803,27 @@ class NominaRenaperPreviewSerializer(serializers.Serializer):
         )
 
 
+class NominaAsistenciaAlimentariaBulkSerializer(serializers.Serializer):
+    nomina_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        required=True,
+        allow_empty=True,
+    )
+
+    def validate_nomina_ids(self, value):
+        return list(dict.fromkeys(value or []))
+
+    def create(self, validated_data):
+        raise NotImplementedError(
+            "NominaAsistenciaAlimentariaBulkSerializer no implementa create()."
+        )
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError(
+            "NominaAsistenciaAlimentariaBulkSerializer no implementa update()."
+        )
+
+
 class MensajeAdjuntoPWASerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
 
@@ -817,9 +841,16 @@ class MensajeAdjuntoPWASerializer(serializers.ModelSerializer):
 
 class MensajeEspacioPWASerializer(serializers.ModelSerializer):
     adjuntos = MensajeAdjuntoPWASerializer(many=True, read_only=True)
+    cuerpo = serializers.SerializerMethodField()
     visto = serializers.SerializerMethodField()
     fecha_visto = serializers.SerializerMethodField()
     seccion = serializers.SerializerMethodField()
+    accion = serializers.SerializerMethodField()
+
+    ACTION_MARKER_RE = re.compile(
+        r"\[SISOC_ACCION\](?P<action>[^\[]+)\[/SISOC_ACCION\]",
+        re.MULTILINE,
+    )
 
     class Meta:
         model = Comunicado
@@ -827,6 +858,7 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
             "id",
             "titulo",
             "cuerpo",
+            "accion",
             "destacado",
             "subtipo",
             "seccion",
@@ -837,6 +869,34 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
             "fecha_visto",
             "adjuntos",
         )
+
+    def _extract_action_payload(self, obj):
+        cuerpo = str(getattr(obj, "cuerpo", "") or "")
+        match = self.ACTION_MARKER_RE.search(cuerpo)
+        if not match:
+            return None
+        return match.group("action").strip()
+
+    def get_cuerpo(self, obj):
+        cuerpo = str(getattr(obj, "cuerpo", "") or "")
+        cleaned = self.ACTION_MARKER_RE.sub("", cuerpo).strip()
+        return cleaned
+
+    def get_accion(self, obj):
+        payload = self._extract_action_payload(obj)
+        if not payload:
+            return None
+        action_type, separator, value = payload.partition(":")
+        if action_type != "rendicion_detalle" or not separator:
+            return None
+        try:
+            rendicion_id = int(value)
+        except (TypeError, ValueError):
+            return None
+        return {
+            "tipo": "rendicion_detalle",
+            "rendicion_id": rendicion_id,
+        }
 
     def _get_lectura(self, obj):
         lecturas = getattr(obj, "lecturas_pwa_usuario_espacio", None)
@@ -874,3 +934,29 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
         if obj.subtipo == SubtipoComunicado.INSTITUCIONAL:
             return "general"
         return "espacio"
+
+
+class PushSubscriptionPWAConfigSerializer(serializers.Serializer):
+    enabled = serializers.BooleanField()
+    public_key = serializers.CharField(allow_blank=True)
+
+    def create(self, validated_data):
+        return validated_data
+
+    def update(self, instance, validated_data):
+        return instance
+
+
+class PushSubscriptionPWASerializer(serializers.ModelSerializer):
+    endpoint = serializers.URLField(max_length=500)
+    p256dh = serializers.CharField(max_length=255)
+    auth = serializers.CharField(max_length=255)
+    content_encoding = serializers.CharField(
+        max_length=30,
+        required=False,
+        allow_blank=True,
+    )
+
+    class Meta:
+        model = PushSubscriptionPWA
+        fields = ("endpoint", "p256dh", "auth", "content_encoding")

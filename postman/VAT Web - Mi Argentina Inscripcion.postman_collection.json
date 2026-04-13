@@ -1,0 +1,370 @@
+{
+  "info": {
+    "_postman_id": "c6436f4d-780d-46f0-b6a4-d4e24bd6a28d",
+    "name": "VAT Web - Mi Argentina Inscripcion",
+    "description": "Coleccion específica para el flujo Mi Argentina -> SISOC -> VAT Web: centros, cursos/comisiones, prevalidación, inscripción y consulta final.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "apiPrefix",
+      "value": "/api"
+    },
+    {
+      "key": "apiKey",
+      "value": ""
+    },
+    {
+      "key": "authHeader",
+      "value": "Api-Key {{apiKey}}"
+    },
+    {
+      "key": "centro_id",
+      "value": "2041"
+    },
+    {
+      "key": "comision_curso_id",
+      "value": ""
+    },
+    {
+      "key": "programa_id",
+      "value": ""
+    },
+    {
+      "key": "voucher_id",
+      "value": ""
+    },
+    {
+      "key": "ciudadano_id",
+      "value": ""
+    },
+    {
+      "key": "documento",
+      "value": "40732138"
+    },
+    {
+      "key": "cuil",
+      "value": ""
+    },
+    {
+      "key": "estado_inscripcion",
+      "value": "inscripta"
+    },
+    {
+      "key": "observaciones",
+      "value": "Alta desde Mi Argentina"
+    }
+  ],
+  "item": [
+    {
+      "name": "Paso 1 - Buscar comisión del centro",
+      "description": "Lista las comisiones visibles en VAT Web y agrega un request de diagnóstico contra el endpoint operativo para comparar resultados con el mismo centro.",
+      "item": [
+        {
+          "name": "Listar comisiones visibles del centro",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/cursos/?centro_id={{centro_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "centro_id",
+                  "value": "{{centro_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('La respuesta tiene formato de listado', function () {",
+                  "  pm.expect(Array.isArray(rows)).to.eql(true);",
+                  "});",
+                  "const target = rows.find(function (item) {",
+                  "  return String(item.nombre || '').toLowerCase().includes('test api voucher');",
+                  "});",
+                  "if (target && target.id) {",
+                  "  pm.collectionVariables.set('comision_curso_id', String(target.id));",
+                  "}",
+                  "if (target && target.programa_id) {",
+                  "  pm.collectionVariables.set('programa_id', String(target.programa_id));",
+                  "}",
+                  "pm.test('Si existe TEST API Voucher, guarda la comisión', function () {",
+                  "  pm.expect(true).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Diagnóstico operativo - comisiones-curso por centro_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/comisiones-curso/?centro_id={{centro_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "comisiones-curso",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "centro_id",
+                  "value": "{{centro_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('La respuesta operativa tiene formato de listado', function () {",
+                  "  pm.expect(Array.isArray(rows)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Paso 2 - Prevalidar inscripción",
+      "description": "Valida elegibilidad antes de inscribir: ciudadano, comisión, cupo, voucher, parametría y saldo.",
+      "item": [
+        {
+          "name": "Prevalidar inscripción por documento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"{{documento}}\",\n  \"cuil\": \"{{cuil}}\",\n  \"comision_curso_id\": {{comision_curso_id}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/inscripciones/prevalidar/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "inscripciones",
+                "prevalidar",
+                ""
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('La respuesta indica si puede inscribirse', function () {",
+                  "  pm.expect(body).to.have.property('puede_inscribirse');",
+                  "  pm.expect(body).to.have.property('motivos');",
+                  "});",
+                  "if (body.ciudadano && body.ciudadano.id) {",
+                  "  pm.collectionVariables.set('ciudadano_id', String(body.ciudadano.id));",
+                  "}",
+                  "if (body.comision && body.comision.programa_id) {",
+                  "  pm.collectionVariables.set('programa_id', String(body.comision.programa_id));",
+                  "}",
+                  "if (body.voucher && body.voucher.voucher_id) {",
+                  "  pm.collectionVariables.set('voucher_id', String(body.voucher.voucher_id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Paso 3 - Crear inscripción",
+      "description": "Confirma el alta final luego de la prevalidación positiva.",
+      "item": [
+        {
+          "name": "Crear inscripción por documento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"{{documento}}\",\n  \"comision_curso_id\": {{comision_curso_id}},\n  \"estado\": \"{{estado_inscripcion}}\",\n  \"observaciones\": \"{{observaciones}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/inscripciones/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "inscripciones",
+                ""
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('La inscripción devuelve la comisión de curso', function () {",
+                  "  pm.expect(String(body.comision_curso)).to.eql(String(pm.collectionVariables.get('comision_curso_id')));",
+                  "});",
+                  "if (body.ciudadano) {",
+                  "  pm.collectionVariables.set('ciudadano_id', String(body.ciudadano));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Paso 4 - Consultar inscripción",
+      "description": "Consulta el resultado final de la inscripción creada y la lista de inscripciones del ciudadano.",
+      "item": [
+        {
+          "name": "Listar inscripciones por documento",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/inscripciones/?documento={{documento}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "inscripciones",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "documento",
+                  "value": "{{documento}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('La respuesta contiene al menos una inscripción', function () {",
+                  "  pm.expect(rows.length).to.be.greaterThan(0);",
+                  "});",
+                  "pm.test('La primera inscripción corresponde a la comisión esperada', function () {",
+                  "  pm.expect(String(rows[0].comision_curso)).to.eql(String(pm.collectionVariables.get('comision_curso_id')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ]
+}

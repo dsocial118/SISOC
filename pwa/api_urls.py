@@ -8,6 +8,8 @@ from pwa.api_views import (
     MensajeEspacioPWAViewSet,
     NominaEspacioPWAViewSet,
     PwaHealthViewSet,
+    PushConfigPWAViewSet,
+    PushSubscriptionPWAViewSet,
 )
 
 router = DefaultRouter()
@@ -15,6 +17,21 @@ router.register(r"health", PwaHealthViewSet, basename="pwa-health")
 
 urlpatterns = [
     *router.urls,
+    path(
+        "push/config/",
+        PushConfigPWAViewSet.as_view({"get": "list"}),
+        name="pwa-push-config",
+    ),
+    path(
+        "push/subscriptions/",
+        PushSubscriptionPWAViewSet.as_view(
+            {
+                "post": "create",
+                "delete": "destroy",
+            }
+        ),
+        name="pwa-push-subscriptions",
+    ),
     path(
         "espacios/<int:comedor_id>/colaboradores/",
         ColaboradorEspacioPWAViewSet.as_view(
@@ -164,6 +181,15 @@ urlpatterns = [
             }
         ),
         name="pwa-nomina-preview-dni",
+    ),
+    path(
+        "espacios/<int:comedor_id>/nomina/asistencia-alimentaria/",
+        NominaEspacioPWAViewSet.as_view(
+            {
+                "post": "registrar_asistencia_alimentaria",
+            }
+        ),
+        name="pwa-nomina-asistencia-alimentaria",
     ),
     path(
         "espacios/<int:comedor_id>/nomina/<int:pk>/",
