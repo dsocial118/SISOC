@@ -4,9 +4,9 @@
 #   1. Agrega los campos de identidad (tipo_registro_identidad, estado_validacion_renaper,
 #      motivo_sin_dni, motivo_no_validacion_renaper, requiere_revision_manual,
 #      identificador_interno, documento_unico_key, fecha_validacion_renaper, datos_renaper).
-#   2. Quita unique_together("tipo_documento", "documento") — reemplazado por
-#      documento_unico_key (nullable + unique), que permite NULL para SIN_DNI y
-#      DNI_NO_VALIDADO_RENAPER sin romper integridad global.
+#   2. Sincroniza el estado Django de unique_together (nunca existió en la DB real —
+#      confirmado con SHOW INDEX en 2026-04-10: no hay índice único sobre
+#      (tipo_documento, documento), lo que explica los 24.926 duplicados en producción).
 #
 # Qué NO hace:
 #   - No backfill de datos. El backfill se hace con el comando de management
@@ -29,11 +29,20 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # 1. Quitar unique_together antes de agregar documento_unico_key
-        #    para evitar conflictos de nombre de índice en MySQL.
-        migrations.AlterUniqueTogether(
-            name="ciudadano",
-            unique_together=set(),
+        # 1. Sincronizar unique_together en el estado Django sin tocar la DB.
+        #    SHOW INDEX (2026-04-10) confirmó que el índice único sobre
+        #    (tipo_documento, documento) NUNCA existió en MySQL — solo estaba
+        #    declarado en el modelo. AlterUniqueTogether fallaría buscando un
+        #    constraint que no existe, por eso usamos SeparateDatabaseAndState:
+        #    actualiza el estado Django sin emitir DDL.
+        migrations.SeparateDatabaseAndState(
+            database_operations=[],
+            state_operations=[
+                migrations.AlterUniqueTogether(
+                    name="ciudadano",
+                    unique_together=set(),
+                ),
+            ],
         ),
         # 2. Campos de clasificación de identidad
         migrations.AddField(
