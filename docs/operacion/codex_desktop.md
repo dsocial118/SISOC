@@ -11,7 +11,16 @@ Dejar un flujo repetible para que Codex Desktop pueda trabajar en este repo sin 
 
 ## Flujo recomendado
 
-Desde la raiz del repo o del worktree:
+Crear cada tarea en un worktree externo al checkout principal.
+
+Esquema recomendado:
+
+```text
+repo principal: C:/Users/Juanito/Desktop/Repos-Codex/SISOC
+worktree tarea: C:/Users/Juanito/Desktop/Repos-Codex/worktrees/<slug>
+```
+
+Desde la raiz del worktree:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_bootstrap.ps1
@@ -72,3 +81,4 @@ El repo expone `.codex/environments/environment.toml` para que Codex Desktop ten
 - El camino principal es Docker-first porque el repo ya usa Docker Compose como entorno real.
 - El fallback local con `.venv` es degradado: sirve para salir del paso cuando Docker no esta disponible, pero no reemplaza el entorno oficial del proyecto.
 - Si un worktree nuevo no tiene `.env`, el bootstrap lo resuelve sin depender del checkout principal.
+- No crear worktrees nuevos dentro de `SISOC/.worktrees`; ese layout queda obsoleto.
