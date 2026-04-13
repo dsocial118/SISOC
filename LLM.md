@@ -1,64 +1,16 @@
 # LLM.md
 
-Entrada rápida para cualquier IA que trabaje en SISOC.
+Entrada rapida para cualquier IA que trabaje en SISOC.
 
-## Fuente de verdad
+Leer primero:
+1. `AGENTS.md`
+2. `docs/indice.md`
+3. archivo objetivo + tests
+4. una guia relevante de `docs/ia/`
 
-Leer primero `AGENTS.md`.
-
-## Reglas críticas (resumen)
-
-- Buscar referencias reales en el repo antes de escribir código.
-- Leer `docs/indice.md`, `docs/ia/*` y docs del dominio afectado antes de implementar.
-- No inventar APIs, modelos, campos ni endpoints.
-- Hacer cambios mínimos (`small diffs`) y revisables.
-- Mantener compatibilidad hacia atrás salvo pedido.
-- No tocar configs de lint/format/test/CI sin pedido.
-- Agregar tests mínimos en features nuevas.
-- Agregar test de regresión en bugfixes cuando sea viable.
-- Explicitar supuestos si falta información.
-- Respetar seguridad/permisos y no loggear secretos/PII.
-- Documentar cada cambio o decisión importante en `docs/` dentro de una subcarpeta temática (crearla si no existe).
-- Podés proponer mejoras cercanas, pero no implementarlas fuera de alcance sin aprobación.
-
-## Comandos principales
-
-```bash
-docker compose up
-docker compose exec django pytest -n auto
-docker compose exec django pytest -m smoke
-black .
-djlint . --configuration=.djlintrc --reformat
-pylint **/*.py --rcfile=.pylintrc
-```
-
-## Guías detalladas
-
-- `docs/ia/CONTEXT_HYGIENE.md`
-- `docs/ia/CONTRIBUTING_AI.md`
-- `docs/ia/STYLE_GUIDE.md`
-- `docs/ia/ARCHITECTURE.md`
-- `docs/ia/TESTING.md`
-- `docs/ia/SECURITY_AI.md`
-- `docs/ia/ERRORS_LOGGING.md`
-- `docs/registro/README.md`
-
-## Mini-template de prompt correcto
-
-```md
-Necesito [bugfix/feature/refactor] en `[path]`.
-Alcance: [qué tocar] / [qué no tocar].
-Criterio de aceptación: [resultado esperado].
-Checks: [tests/lint].
-Podés proponer mejoras cercanas: sí/no.
-```
-
-## Mejores prácticas de entrega
-
-Incluir siempre:
-- qué cambió,
-- archivos tocados,
-- validación ejecutada,
-- supuestos,
-- documento de `docs/<subcarpeta>/...` creado/actualizado (si aplica),
-- mejoras cercanas detectadas (opcional).
+Principios:
+- minimo contexto suficiente,
+- diff chico,
+- sin inventar contratos,
+- tests minimos cuando aplique,
+- documentacion en `docs/` para cambios importantes.

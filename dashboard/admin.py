@@ -32,6 +32,11 @@ class TableroAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["url"].help_text = (
+            "Usa la URL embebida del tablero. Para Looker Studio copia el link "
+            "desde File > Embed report; la URL compartible normal se bloquea en "
+            "iframes."
+        )
         if self.instance and self.instance.permisos:
             self.fields["grupos"].initial = Group.objects.filter(
                 name__in=self.instance.permisos

@@ -30,79 +30,75 @@ else
   git status --short
 fi
 
-print_header "Fuentes de verdad para IA"
-echo "- AGENTS.md (principal)"
-echo "- CODEX.md / CLAUDE.md (hard gate + fallback por herramienta)"
-echo "- docs/ia/CONTEXT_HYGIENE.md (qué leer primero / qué evitar cargar)"
-echo "- docs/ia/STYLE_GUIDE.md"
-echo "- docs/ia/ARCHITECTURE.md"
+print_header "Lectura inicial recomendada"
+echo "- AGENTS.md"
+echo "- docs/indice.md"
+echo "- archivo objetivo + tests del modulo"
+echo "- docs/ia/CONTEXT_HYGIENE.md"
+echo "- una sola guia de docs/ia segun la tarea"
 
 echo
-print_header "Recordatorios críticos del repo"
-echo "- Lógica de negocio preferentemente en services/"
-echo "- Coexisten Django views y DRF (verificar patrón real por app)"
+print_header "Recordatorios criticos del repo"
+echo "- Logica de negocio preferentemente en services/"
+echo "- Coexisten Django views y DRF"
 echo "- Logging custom en config/settings.py + core/utils.py"
 echo "- No se usa Celery actualmente"
-echo "- Tests: pytest (pueden usar SQLite en memoria en tests según settings)"
+echo "- Crear worktrees de tarea fuera del repo principal"
 
-print_header "Comandos útiles"
+print_header "Comandos utiles"
 cat <<'CMDS'
 docker compose up
 docker compose exec django pytest -n auto
 docker compose exec django pytest -m smoke
-black .
+black . --config pyproject.toml
 djlint . --configuration=.djlintrc --reformat
 pylint **/*.py --rcfile=.pylintrc
 CMDS
 
-print_header "Contexto mínimo sugerido (por tipo)"
+print_header "Contexto minimo sugerido (por tipo)"
 case "$TASK_KIND" in
   bugfix-view)
     echo "- AGENTS.md"
-    echo "- docs/ia/CONTEXT_HYGIENE.md"
+    echo "- docs/indice.md"
     echo "- view afectada"
-    echo "- tests del módulo"
+    echo "- tests del modulo"
     echo "- docs/ia/TESTING.md"
     ;;
   bugfix-api|feature-api)
     echo "- AGENTS.md"
-    echo "- docs/ia/CONTEXT_HYGIENE.md"
-    echo "- api_views.py / serializers*.py del módulo"
-    echo "- tests API del módulo"
-    echo "- docs/ia/ARCHITECTURE.md"
+    echo "- docs/indice.md"
+    echo "- api_views.py / serializers*.py del modulo"
+    echo "- tests API del modulo"
     echo "- docs/ia/TESTING.md"
-    echo "- docs/ia/SECURITY_AI.md (si toca permisos/auth)"
+    echo "- docs/ia/ARCHITECTURE.md si el boundary no esta claro"
     ;;
   feature-service|refactor-service)
     echo "- AGENTS.md"
-    echo "- docs/ia/CONTEXT_HYGIENE.md"
+    echo "- docs/indice.md"
     echo "- service afectado"
     echo "- tests del flujo"
     echo "- docs/ia/STYLE_GUIDE.md"
-    echo "- docs/ia/TESTING.md"
     ;;
   logging|errores)
     echo "- AGENTS.md"
-    echo "- docs/ia/CONTEXT_HYGIENE.md"
+    echo "- docs/indice.md"
     echo "- archivo afectado"
     echo "- docs/ia/ERRORS_LOGGING.md"
-    echo "- config/settings.py (logging custom)"
-    echo "- core/utils.py"
+    echo "- config/settings.py / core/utils.py si aplica"
     ;;
   migration|modelo)
     echo "- AGENTS.md"
-    echo "- docs/ia/CONTEXT_HYGIENE.md"
+    echo "- docs/indice.md"
     echo "- modelo(s)"
-    echo "- migraciones recientes de la app"
+    echo "- migraciones cercanas"
     echo "- tests relacionados"
     echo "- docs/ia/ARCHITECTURE.md"
-    echo "- docs/ia/TESTING.md"
     ;;
   *)
     echo "- AGENTS.md"
-    echo "- docs/ia/CONTEXT_HYGIENE.md"
+    echo "- docs/indice.md"
     echo "- archivo(s) objetivo"
-    echo "- tests del módulo"
+    echo "- tests del modulo"
     echo "- docs/ia/STYLE_GUIDE.md"
     ;;
 esac
