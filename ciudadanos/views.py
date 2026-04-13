@@ -3,11 +3,13 @@ from collections import defaultdict
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required, permission_required
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -624,3 +626,43 @@ class GrupoFamiliarDeleteView(
             target=next_url,
         )
         return response.url
+
+
+class ColaRevisionView(PermissionRequiredMixin, LoginRequiredMixin, ListView):
+    """Lista de ciudadanos que requieren revisión manual de identidad."""
+
+    model = Ciudadano
+    template_name = "ciudadanos/cola_revision.html"
+    context_object_name = "ciudadanos"
+    paginate_by = 25
+    permission_required = "ciudadanos.revision_identidad"
+
+    def get_queryset(self):
+        return (
+            Ciudadano.objects.filter(requiere_revision_manual=True)
+            .select_related("sexo", "provincia")
+            .order_by("apellido", "nombre")
+        )
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["total_pendientes"] = Ciudadano.objects.filter(
+            requiere_revision_manual=True
+        ).count()
+        return ctx
+
+
+@require_POST
+@login_required
+@permission_required("ciudadanos.revision_identidad", raise_exception=True)
+def marcar_revisado(request, pk):
+    """Marca un ciudadano como revisado (requiere_revision_manual=False)."""
+    ciudadano = get_object_or_404(Ciudadano, pk=pk)
+    ciudadano.requiere_revision_manual = False
+    ciudadano.save(update_fields=["requiere_revision_manual"])
+    messages.success(
+        request,
+        f"Ciudadano {ciudadano} marcado como revisado.",
+    )
+    next_url = request.POST.get("next") or ciudadano.get_absolute_url()
+    return redirect(next_url)
