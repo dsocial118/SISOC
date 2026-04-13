@@ -226,6 +226,12 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
             models.Index(fields=["apellido", "nombre"]),
             models.Index(fields=["documento"]),
         ]
+        permissions = [
+            (
+                "revision_identidad",
+                "Puede revisar y cerrar casos de identidad pendientes",
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"{self.apellido}, {self.nombre}".strip(", ")
