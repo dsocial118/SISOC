@@ -87,6 +87,17 @@ def test_settings_homologacion_usa_perfil_similar_a_produccion(monkeypatch):
     )
 
 
+def test_settings_hml_normaliza_a_homologacion(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "hml")
+
+    module = _load_settings_module()
+
+    assert module.ENVIRONMENT == "homologacion"
+    assert module.DEFAULT_SCHEME == "https"
+    assert module.SECURE_SSL_REDIRECT is True
+    assert module.CSRF_COOKIE_SECURE is True
+
+
 def test_settings_qa_mantiene_runtime_no_productivo(monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "qa")
 
