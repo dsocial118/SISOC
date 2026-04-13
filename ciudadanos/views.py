@@ -45,9 +45,14 @@ class CiudadanosListView(LoginRequiredMixin, ListView):
                     Q(apellido__icontains=term)
                     | Q(nombre__icontains=term)
                     | Q(documento__icontains=term)
+                    | Q(identificador_interno__icontains=term)
                 )
             if data.get("provincia"):
                 queryset = queryset.filter(provincia=data["provincia"])
+            if data.get("tipo_registro"):
+                queryset = queryset.filter(
+                    tipo_registro_identidad=data["tipo_registro"]
+                )
         return queryset.order_by("apellido", "nombre")
 
     def get_context_data(self, **kwargs):
@@ -522,7 +527,31 @@ class CiudadanosCreateView(LoginRequiredMixin, CreateView):
         ciudadano = form.save(commit=False)
         ciudadano.creado_por = self.request.user
         ciudadano.modificado_por = self.request.user
+
+        tipo = ciudadano.tipo_registro_identidad
+        if tipo in (
+            Ciudadano.TIPO_REGISTRO_SIN_DNI,
+            Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+        ):
+            ciudadano.requiere_revision_manual = True
+            ciudadano.documento_unico_key = None
+        else:
+            ciudadano.requiere_revision_manual = False
+
         ciudadano.save()
+
+        # identificador_interno requiere el PK — se asigna post-save
+        if not ciudadano.identificador_interno:
+            ciudadano.identificador_interno = f"CIU-{ciudadano.pk}"
+            ciudadano.save(update_fields=["identificador_interno"])
+
+        # Para ESTANDAR, completar documento_unico_key si tiene documento
+        if tipo == Ciudadano.TIPO_REGISTRO_ESTANDAR and ciudadano.documento:
+            ciudadano.documento_unico_key = (
+                f"{ciudadano.tipo_documento}_{ciudadano.documento}"
+            )
+            ciudadano.save(update_fields=["documento_unico_key"])
+
         form.save_m2m()
         messages.success(self.request, "Ciudadano creado correctamente.")
         return redirect(ciudadano.get_absolute_url())
