@@ -558,6 +558,7 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
     identificador_interno = serializers.SerializerMethodField()
     asistencia_mes_actual = serializers.SerializerMethodField()
     historial_asistencias = serializers.SerializerMethodField()
+    observaciones = serializers.CharField(read_only=True, allow_null=True)
 
     class Meta:
         model = Nomina
@@ -576,6 +577,7 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
             "identificador_interno",
             "asistencia_mes_actual",
             "historial_asistencias",
+            "observaciones",
         )
 
     def _get_ciudadano(self, obj):
@@ -798,6 +800,27 @@ class NominaRenaperPreviewSerializer(serializers.Serializer):
     def update(self, instance, validated_data):
         raise NotImplementedError(
             "NominaRenaperPreviewSerializer no implementa update()."
+        )
+
+
+class NominaAsistenciaAlimentariaBulkSerializer(serializers.Serializer):
+    nomina_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        required=True,
+        allow_empty=True,
+    )
+
+    def validate_nomina_ids(self, value):
+        return list(dict.fromkeys(value or []))
+
+    def create(self, validated_data):
+        raise NotImplementedError(
+            "NominaAsistenciaAlimentariaBulkSerializer no implementa create()."
+        )
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError(
+            "NominaAsistenciaAlimentariaBulkSerializer no implementa update()."
         )
 
 

@@ -42,6 +42,7 @@ from celiaquia.services.importacion_service import (
     ImportacionService,
     IMPORTACION_EDITABLE_FIELDS,
     IMPORTACION_RESPONSABLE_FIELDS,
+    _beneficiario_requiere_responsable_importacion,
     validar_y_normalizar_payloads_importacion,
 )
 from celiaquia.services.cruce_service import CruceService
@@ -215,6 +216,20 @@ def _validar_datos_registro_erroneo(payload, provincia_id, fila_excel=0):
         provincia_usuario_id=provincia_id,
         offset=fila_excel,
     )
+
+
+def _registro_erroneo_responsable_requerido(payload):
+    fecha_nacimiento = payload.get("fecha_nacimiento")
+    if fecha_nacimiento in (None, ""):
+        return False
+    try:
+        payload_normalizado = dict(payload)
+        payload_normalizado["fecha_nacimiento"] = CiudadanoService._to_date(
+            fecha_nacimiento
+        )
+    except ValidationError:
+        return False
+    return _beneficiario_requiere_responsable_importacion(payload_normalizado)
 
 
 def _user_provincia(user):
@@ -872,6 +887,9 @@ class ExpedienteDetailView(DetailView):
         for registro in registros_erroneos:
             datos_render = _aplicar_defaults_registro_erroneo(
                 _normalizar_datos_registro_erroneo(registro.datos_raw or {})
+            )
+            registro.responsable_requerido = _registro_erroneo_responsable_requerido(
+                datos_render
             )
             registro.nacionalidad_default_id = datos_render.get(
                 "nacionalidad", nacionalidad_argentina_id

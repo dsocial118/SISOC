@@ -294,45 +294,46 @@ def test_ciudadanos_detail_vat_context_resume_por_programa(mocker):
         SimpleNamespace(inscripcion_id=22, presente=True),
     ]
 
+    class _QueryChain:
+        def __init__(self, result):
+            self.result = result
+
+        def select_related(self, *args, **kwargs):
+            return self
+
+        def prefetch_related(self, *args, **kwargs):
+            return self
+
+        def order_by(self, *args, **kwargs):
+            return self.result
+
     mocker.patch(
         "VAT.models.Inscripcion.objects.filter",
-        return_value=SimpleNamespace(
-            select_related=lambda *a, **k: SimpleNamespace(
-                order_by=lambda *x, **y: [
-                    inscripcion_a1,
-                    inscripcion_a2,
-                    inscripcion_b1,
-                ]
-            )
+        return_value=_QueryChain(
+            [
+                inscripcion_a1,
+                inscripcion_a2,
+                inscripcion_b1,
+            ]
         ),
     )
     mocker.patch(
         "VAT.models.Voucher.objects.filter",
-        return_value=SimpleNamespace(
-            select_related=lambda *a, **k: SimpleNamespace(
-                order_by=lambda *x, **y: [
-                    voucher_activo,
-                    voucher_agotado,
-                    voucher_programa_b,
-                ]
-            )
+        return_value=_QueryChain(
+            [
+                voucher_activo,
+                voucher_agotado,
+                voucher_programa_b,
+            ]
         ),
     )
     mocker.patch(
         "VAT.models.InscripcionOferta.objects.filter",
-        return_value=SimpleNamespace(
-            select_related=lambda *a, **k: SimpleNamespace(
-                order_by=lambda *x, **y: [inscripcion_oferta_a]
-            )
-        ),
+        return_value=_QueryChain([inscripcion_oferta_a]),
     )
     mocker.patch(
         "VAT.models.AsistenciaSesion.objects.filter",
-        return_value=SimpleNamespace(
-            select_related=lambda *a, **k: SimpleNamespace(
-                order_by=lambda *x, **y: asistencias
-            )
-        ),
+        return_value=_QueryChain(asistencias),
     )
 
     context = module.CiudadanosDetailView().get_vat_context(ciudadano)

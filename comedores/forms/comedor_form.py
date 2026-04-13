@@ -20,6 +20,8 @@ from core.models import Localidad
 from organizaciones.models import Organizacion
 from core.validators import validate_unicode_email
 
+MAX_IMAGEN_COMEDOR_FILE_SIZE = 3 * 1024 * 1024
+
 
 class ReferenteForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -443,6 +445,16 @@ class ComedorForm(forms.ModelForm):
 
 
 class ImagenComedorForm(forms.ModelForm):
+    def clean_imagen(self):
+        imagen = self.cleaned_data.get("imagen")
+        if not imagen:
+            return imagen
+
+        if imagen.size > MAX_IMAGEN_COMEDOR_FILE_SIZE:
+            raise ValidationError("La imagen no puede superar los 3 MB.")
+
+        return imagen
+
     class Meta:
         model = ImagenComedor
         fields = "__all__"

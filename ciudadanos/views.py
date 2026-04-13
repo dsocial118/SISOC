@@ -262,9 +262,9 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
                 Inscripcion.objects.filter(ciudadano=ciudadano)
                 .select_related(
                     "comision__oferta__centro",
-                    "comision__oferta__plan_curricular__titulo_referencia",
                     "programa",
                 )
+                .prefetch_related("comision__oferta__plan_curricular__titulos")
                 .order_by("-fecha_inscripcion")
             )
             vouchers = list(
@@ -276,8 +276,8 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
                 InscripcionOferta.objects.filter(ciudadano=ciudadano)
                 .select_related(
                     "oferta__oferta__centro",
-                    "oferta__oferta__plan_curricular__titulo_referencia",
                 )
+                .prefetch_related("oferta__oferta__plan_curricular__titulos")
                 .order_by("-fecha_inscripcion")
             )
             asistencias = list(

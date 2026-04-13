@@ -72,6 +72,27 @@ def test_resolver_provincia_registro_erroneo_fallback_a_usuario_expediente():
     assert provincia_id == 33
 
 
+def test_registro_erroneo_responsable_requerido_depende_de_edad():
+    assert (
+        module._registro_erroneo_responsable_requerido(
+            {"fecha_nacimiento": "01/01/2010"}
+        )
+        is True
+    )
+    assert (
+        module._registro_erroneo_responsable_requerido(
+            {"fecha_nacimiento": "01/01/1990"}
+        )
+        is False
+    )
+    assert (
+        module._registro_erroneo_responsable_requerido(
+            {"fecha_nacimiento": "fecha-invalida"}
+        )
+        is False
+    )
+
+
 def test_aplicar_defaults_registro_erroneo_fuerza_argentina_y_municipio_por_localidad(
     mocker,
 ):
