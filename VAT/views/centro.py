@@ -42,6 +42,10 @@ from VAT.forms import (
     InstitucionUbicacionForm,
     CursoForm,
     ComisionCursoForm,
+    build_curso_queryset_for_centros,
+    build_plan_estudio_queryset_for_centro,
+    build_ubicacion_queryset_for_centros,
+    build_voucher_parametria_queryset,
 )
 from VAT.services.access_scope import (
     can_user_access_centro,
@@ -323,13 +327,31 @@ def _build_cursos_panel_context(request, centro):
         CursoForm(initial={"centro": centro}),
         centro,
     )
+    curso_form.fields["plan_estudio"].queryset = build_plan_estudio_queryset_for_centro(
+        centro.provincia_id,
+        include_plan_ids=[curso.plan_estudio_id for curso in cursos],
+    )
+    curso_form.fields["voucher_parametrias"].queryset = (
+        build_voucher_parametria_queryset(
+            [
+                voucher.id
+                for curso in cursos
+                for voucher in curso.voucher_parametrias.all()
+            ]
+        )
+    )
     comision_curso_form = ComisionCursoForm()
-    comision_curso_form.fields["curso"].queryset = centro.cursos.order_by("nombre")
-    comision_curso_form.fields[
-        "ubicacion"
-    ].queryset = centro.ubicaciones.select_related("localidad").order_by(
-        "es_principal",
-        "rol_ubicacion",
+    comision_curso_form.fields["curso"].queryset = build_curso_queryset_for_centros(
+        [centro.pk],
+        include_curso_ids=[comision.curso_id for comision in comisiones_curso],
+    )
+    comision_curso_form.fields["ubicacion"].queryset = (
+        build_ubicacion_queryset_for_centros(
+            [centro.pk],
+            include_ubicacion_ids=[
+                comision.ubicacion_id for comision in comisiones_curso
+            ],
+        )
     )
 
     return {
