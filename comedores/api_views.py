@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from django.db.models import Prefetch, Q
 from django.db.models.fields.files import FieldFile
 from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.utils.timezone import make_aware
@@ -36,12 +37,20 @@ from comedores.api_serializers import (
 from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraForm
 from comedores.models import (
     AuditComedorPrograma,
+    CapacitacionComedorCertificado,
     Comedor,
     ImagenComedor,
     Nomina,
     Observacion,
 )
 from comedores.services.comedor_service import ComedorService
+from comedores.services.capacitaciones_certificados_service import (
+    delete_certificate,
+    is_alimentar_comunidad_program,
+    list_capacitaciones_certificados,
+    serialize_certificate,
+    submit_certificate,
+)
 from intervenciones.models.intervenciones import Intervencion
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
@@ -80,7 +89,9 @@ ALLOWED_COMPROBANTE_CONTENT_TYPES = {
 
 
 @extend_schema(tags=["Comedores"])
-class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class ComedorDetailViewSet(
+    mixins.RetrieveModelMixin, viewsets.GenericViewSet
+):  # pylint: disable=too-many-public-methods
     serializer_class = ComedorDetailSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -206,6 +217,8 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 Prefetch(
                     "relevamiento_set",
                     queryset=Relevamiento.objects.select_related(
+                        "comedor",
+                        "comedor__referente",
                         "prestacion",
                         "funcionamiento",
                         "funcionamiento__modalidad_prestacion",
@@ -220,6 +233,13 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                         "colaboradores__cantidad_colaboradores",
                         "recursos",
                         "compras",
+                        "punto_entregas",
+                        "punto_entregas__tipo_comedor",
+                        "punto_entregas__frecuencia_entrega_bolsones",
+                        "punto_entregas__tipo_modulo_bolsones",
+                        "excepcion",
+                        "excepcion__motivo",
+                        "responsable_relevamiento",
                         "anexo",
                         "anexo__tecnologia",
                         "anexo__distancia_transporte",
@@ -231,6 +251,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                         "recursos__recursos_estado_provincial",
                         "recursos__recursos_estado_municipal",
                         "recursos__recursos_otros",
+                        "punto_entregas__frecuencia_recepcion_mercaderias",
                     )
                     .order_by("-fecha_visita", "-id"),
                     to_attr="relevamientos_optimized",
@@ -432,6 +453,56 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 )
 
         return documentos
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="imagenes",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def upload_imagen(self, request, pk=None):
+        comedor = self.get_object()
+        imagen = request.FILES.get("imagen")
+
+        if not imagen:
+            return Response(
+                {"detail": "Debe adjuntar una imagen."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if comedor.imagenes.count() >= 3:
+            return Response(
+                {"detail": "El espacio ya tiene el máximo de 3 fotos."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        creado = ComedorService.create_imagenes(imagen, comedor.pk)
+        if isinstance(creado, dict):
+            return Response(creado, status=status.HTTP_400_BAD_REQUEST)
+
+        comedor_actualizado = self.get_queryset().get(pk=comedor.pk)
+        serializer = self.get_serializer(comedor_actualizado)
+        return Response(
+            {"imagenes": serializer.data.get("imagenes", [])},
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path=r"imagenes/(?P<imagen_id>[^/.]+)/eliminar",
+    )
+    def eliminar_imagen(self, request, pk=None, imagen_id=None):
+        comedor = self.get_object()
+        imagen = get_object_or_404(ImagenComedor, pk=imagen_id, comedor=comedor)
+        imagen.delete()
+
+        comedor_actualizado = self.get_queryset().get(pk=comedor.pk)
+        serializer = self.get_serializer(comedor_actualizado)
+        return Response(
+            {"imagenes": serializer.data.get("imagenes", [])},
+            status=status.HTTP_200_OK,
+        )
 
     @extend_schema(
         parameters=[
@@ -687,6 +758,120 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         if archivo.size > MAX_COMPROBANTE_FILE_SIZE:
             return "El archivo excede el tamaño máximo permitido de 10 MB."
         return None
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="capacitaciones",
+        permission_classes=[IsPWARepresentativeForComedor],
+    )
+    def capacitaciones(self, request, pk=None):
+        comedor = self.get_object()
+        if not is_alimentar_comunidad_program(comedor):
+            return Response(
+                {
+                    "detail": "Capacitaciones disponibles solo para programa Alimentar Comunidad."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        records = list_capacitaciones_certificados(comedor)
+        return Response(
+            [serialize_certificate(record, request=request) for record in records],
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="capacitaciones/subir",
+        parser_classes=[MultiPartParser, FormParser],
+        permission_classes=[IsPWARepresentativeForComedor],
+    )
+    def subir_capacitacion(self, request, pk=None):
+        comedor = self.get_object()
+        if not is_alimentar_comunidad_program(comedor):
+            return Response(
+                {
+                    "detail": "Capacitaciones disponibles solo para programa Alimentar Comunidad."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        capacitacion = (request.data.get("capacitacion") or "").strip()
+        archivo = request.FILES.get("archivo")
+
+        if capacitacion not in dict(
+            CapacitacionComedorCertificado.CAPACITACION_CHOICES
+        ):
+            return Response(
+                {"detail": "Capacitación inválida."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        record = CapacitacionComedorCertificado.objects.filter(
+            comedor=comedor,
+            capacitacion=capacitacion,
+        ).first()
+        if not record:
+            records = list_capacitaciones_certificados(comedor)
+            record = next(
+                (row for row in records if row.capacitacion == capacitacion), None
+            )
+
+        try:
+            submit_certificate(record, archivo, request.user)
+        except ValidationError as exc:
+            return Response(
+                {"detail": self._format_validation_error(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            serialize_certificate(record, request=request),
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="capacitaciones/eliminar",
+    )
+    def eliminar_capacitacion(self, request, pk=None):
+        comedor = self.get_object()
+        if not is_alimentar_comunidad_program(comedor):
+            return Response(
+                {
+                    "detail": "La sección de capacitaciones aplica solo a Alimentar Comunidad."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        capacitacion = (request.data.get("capacitacion") or "").strip()
+        if capacitacion not in dict(
+            CapacitacionComedorCertificado.CAPACITACION_CHOICES
+        ):
+            return Response(
+                {"detail": "Capacitación inválida."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            records = list_capacitaciones_certificados(comedor)
+            record = next(
+                (row for row in records if row.capacitacion == capacitacion), None
+            )
+            if not record:
+                return Response(
+                    {"detail": "No se encontró la capacitación."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            delete_certificate(record)
+        except ValidationError as exc:
+            message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+            return Response({"detail": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            serialize_certificate(record, request=request),
+            status=status.HTTP_200_OK,
+        )
 
     @extend_schema(
         request=OperadorCreateSerializer,

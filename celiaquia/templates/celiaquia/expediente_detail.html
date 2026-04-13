@@ -518,7 +518,7 @@
                                                 <!-- Col 3: Archivos y Comentarios -->
                                                 <div class="col-lg-5">
                                                     {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
- 
+
                                                     <!-- Comentarios Técnicos -->
                                                     {% if is_tec or is_coord or is_prov and leg.revision_tecnico == 'SUBSANAR' %}
                                                         {% include 'components/legajo_comentarios.html' with legajo=leg is_tec=is_tec is_coord=is_coord %}
@@ -1034,41 +1034,43 @@
                                             </h6>
                                             <div class="row g-2">
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Apellido Responsable *</label>
+                                                    <label class="form-label">Apellido Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="apellido_responsable"
                                                            value="{{ registro.datos_raw.apellido_responsable|default:'' }}"
-                                                           required />
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Nombre Responsable *</label>
+                                                    <label class="form-label">Nombre Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="nombre_responsable"
                                                            value="{{ registro.datos_raw.nombre_responsable|default:'' }}"
-                                                           required />
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">CUIT/Documento Responsable *</label>
+                                                    <label class="form-label">CUIT/Documento Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="documento_responsable"
                                                            value="{{ registro.datos_raw.documento_responsable|default:'' }}"
-                                                           required />
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Fecha Nac. Responsable *</label>
+                                                    <label class="form-label">Fecha Nac. Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="fecha_nacimiento_responsable"
                                                            value="{{ registro.datos_raw.fecha_nacimiento_responsable|default:'' }}"
                                                            placeholder="DD/MM/YYYY"
-                                                           required />
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Sexo Responsable *</label>
-                                                    <select class="form-select" name="sexo_responsable" required>
+                                                    <label class="form-label">Sexo Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <select class="form-select"
+                                                            name="sexo_responsable"
+                                                            {% if registro.responsable_requerido %}required{% endif %}>
                                                         <option value="">Seleccionar...</option>
                                                         {% for sexo in sexos %}
                                                             <option value="{{ sexo.id }}"
@@ -1093,16 +1095,18 @@
                                                            value="{{ registro.datos_raw.email_responsable|default:'' }}" />
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label class="form-label">Domicilio Responsable *</label>
+                                                    <label class="form-label">Domicilio Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="domicilio_responsable"
                                                            value="{{ registro.datos_raw.domicilio_responsable|default:'' }}"
-                                                           required />
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label class="form-label">Localidad Responsable *</label>
-                                                    <select class="form-select" name="localidad_responsable" required>
+                                                    <label class="form-label">Localidad Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <select class="form-select"
+                                                            name="localidad_responsable"
+                                                            {% if registro.responsable_requerido %}required{% endif %}>
                                                         <option value="">Seleccionar...</option>
                                                         {% for loc in localidades %}
                                                             <option value="{{ loc.id }}"

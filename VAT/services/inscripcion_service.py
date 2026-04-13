@@ -18,6 +18,10 @@ class InscripcionService:
     """Orquesta altas de inscripción con validaciones de voucher."""
 
     @staticmethod
+    def _normalizar_motivos(*motivos) -> list[str]:
+        return [motivo for motivo in motivos if motivo]
+
+    @staticmethod
     def _resolve_lookup_id(instance_or_id):
         if hasattr(instance_or_id, "pk") and getattr(instance_or_id, "pk") is not None:
             return instance_or_id.pk
@@ -46,6 +50,7 @@ class InscripcionService:
         return (
             User.objects.filter(is_staff=True).first()
             or User.objects.filter(is_superuser=True).first()
+            or User.objects.order_by("id").first()
         )
 
     @staticmethod
@@ -192,6 +197,124 @@ class InscripcionService:
             )
 
         return True, ""
+
+    @staticmethod
+    def prevalidar_inscripcion(*, ciudadano, comision, programa=None) -> dict:
+        unidad_formativa, _ = InscripcionService._resolver_unidad_formativa(comision)
+        programa = programa or unidad_formativa.programa
+        total_inscriptos = comision.inscripciones.count()
+        cupos_disponibles = max((comision.cupo_total or 0) - total_inscriptos, 0)
+        motivos: list[str] = []
+
+        if unidad_formativa.estado != "activo":
+            motivos.append("El curso no se encuentra activo para nuevas inscripciones.")
+
+        if comision.estado != "activa":
+            motivos.append(
+                "La comisión no se encuentra activa para nuevas inscripciones."
+            )
+
+        if cupos_disponibles <= 0:
+            motivos.append("La comisión no tiene cupos disponibles.")
+
+        if programa is None:
+            motivos.append(
+                "La comisión debe tener un programa configurado para poder inscribir ciudadanos."
+            )
+
+        if Inscripcion.objects.filter(
+            ciudadano=ciudadano,
+            **InscripcionService._resolver_lookup_comision(comision),
+        ).exists():
+            motivos.append("El ciudadano ya está inscripto en esta comisión.")
+
+        voucher_info = {
+            "requerido": bool(unidad_formativa.usa_voucher),
+            "programa_id": programa.id if programa else None,
+            "programa_nombre": programa.nombre if programa else None,
+            "parametrias_habilitadas": (
+                InscripcionService._obtener_ids_parametrias_habilitadas(
+                    unidad_formativa
+                )
+                if unidad_formativa.usa_voucher
+                else []
+            ),
+            "voucher_id": None,
+            "parametria_id": None,
+            "saldo_actual": None,
+            "credito_requerido": None,
+            "saldo_post_inscripcion": None,
+        }
+
+        if unidad_formativa.usa_voucher and programa is not None:
+            credito_requerido = InscripcionService._resolver_cantidad_debito(
+                getattr(unidad_formativa, "costo", None)
+                or getattr(unidad_formativa, "costo_creditos", 0)
+            )
+            voucher_info["credito_requerido"] = credito_requerido
+
+            vouchers_qs = InscripcionService._obtener_vouchers_candidatos(
+                ciudadano=ciudadano,
+                programa=programa,
+                ids_parametrias_habilitadas=voucher_info["parametrias_habilitadas"],
+            )
+            voucher = vouchers_qs.first()
+
+            if voucher is None:
+                motivos.append(
+                    f"{ciudadano} no tiene voucher activo para el programa {programa}."
+                )
+            else:
+                voucher_info.update(
+                    {
+                        "voucher_id": voucher.id,
+                        "parametria_id": voucher.parametria_id,
+                        "saldo_actual": voucher.cantidad_disponible,
+                        "saldo_post_inscripcion": (
+                            voucher.cantidad_disponible - credito_requerido
+                        ),
+                    }
+                )
+                if voucher.cantidad_disponible < credito_requerido:
+                    motivos.append(
+                        f"Créditos insuficientes. Disponible: {voucher.cantidad_disponible}"
+                    )
+
+            puede, motivo = InscripcionService.validar_inscripcion_unica(
+                ciudadano,
+                programa,
+            )
+            motivos.extend(
+                InscripcionService._normalizar_motivos(motivo if not puede else "")
+            )
+
+        return {
+            "puede_inscribirse": not motivos,
+            "motivos": motivos,
+            "ciudadano": {
+                "id": ciudadano.id,
+                "documento": ciudadano.documento,
+                "nombre": ciudadano.nombre_completo,
+            },
+            "comision": {
+                "id": comision.id,
+                "codigo_comision": comision.codigo_comision,
+                "nombre": comision.nombre,
+                "estado": comision.estado,
+                "curso_id": comision.curso_id,
+                "curso_nombre": comision.curso.nombre,
+                "centro_id": comision.curso.centro_id,
+                "centro_nombre": comision.curso.centro.nombre,
+                "programa_id": programa.id if programa else None,
+                "programa_nombre": programa.nombre if programa else None,
+                "usa_voucher": unidad_formativa.usa_voucher,
+                "cupo_total": comision.cupo_total,
+                "cupos_disponibles": cupos_disponibles,
+                "costo": getattr(unidad_formativa, "costo", None)
+                or getattr(unidad_formativa, "costo_creditos", 0),
+            },
+            "voucher": voucher_info,
+        }
 
     @staticmethod
     def crear_inscripcion(  # pylint: disable=too-many-arguments

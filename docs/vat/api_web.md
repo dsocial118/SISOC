@@ -83,6 +83,28 @@ Filtros:
 
 Crea una inscripción VAT y, si la oferta usa voucher, descuenta el costo configurado.
 
+### `POST /inscripciones/prevalidar/`
+
+Prevalida si una persona puede inscribirse antes de confirmar el alta.
+
+Valida:
+
+- existencia del ciudadano,
+- existencia de la comisión de curso,
+- estado del curso y de la comisión,
+- cupos disponibles,
+- inscripción duplicada,
+- voucher activo, saldo y parametría habilitada cuando el curso usa voucher,
+- regla de inscripción única activa si aplica.
+
+Respuesta funcional:
+
+- `puede_inscribirse`,
+- `motivos`,
+- resumen del ciudadano,
+- resumen de la comisión,
+- estado del voucher y saldo post inscripción estimado.
+
 Payloads admitidos:
 
 ```json

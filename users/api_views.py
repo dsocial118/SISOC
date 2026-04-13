@@ -1,3 +1,5 @@
+import logging
+
 from drf_spectacular.utils import extend_schema
 from django.contrib.auth import authenticate
 from django.core.exceptions import PermissionDenied
@@ -18,13 +20,16 @@ from users.api_serializers import (
     UserContextSerializer,
 )
 from users.rate_limits import hit_rate_limit
+from users.profile_utils import get_profile_or_none
 from users.services_auth import (
     change_password_for_authenticated_user,
     confirm_password_reset,
     request_password_reset_for_email,
     request_password_reset_for_username,
 )
-from users.services_pwa import is_pwa_user
+from users.services_pwa import get_access_rows, is_pwa_user
+
+logger = logging.getLogger("django")
 
 
 class LoginSerializer(serializers.Serializer):
@@ -148,8 +153,38 @@ class UserContextViewSet(viewsets.ViewSet):
 
     @extend_schema(responses=UserContextSerializer)
     def list(self, request):
-        serializer = UserContextSerializer(request.user)
-        response = Response(serializer.data, status=status.HTTP_200_OK)
+        try:
+            serializer = UserContextSerializer(request.user)
+            payload = serializer.data
+        except (
+            Exception
+        ):  # pragma: no cover - fallback defensivo para no cortar login PWA
+            logger.exception(
+                "Fallo serializando /api/users/me/ para user_id=%s",
+                getattr(request.user, "id", None),
+            )
+            profile = get_profile_or_none(request.user)
+            try:
+                roles = sorted(
+                    set(get_access_rows(request.user).values_list("rol", flat=True))
+                )
+            except Exception:  # pragma: no cover - fallback ultra defensivo
+                roles = []
+            payload = {
+                "id": getattr(request.user, "id", None),
+                "username": getattr(request.user, "username", ""),
+                "email": getattr(request.user, "email", ""),
+                "first_name": getattr(request.user, "first_name", ""),
+                "last_name": getattr(request.user, "last_name", ""),
+                "pwa": {
+                    "roles": roles,
+                    "must_change_password": bool(
+                        getattr(profile, "must_change_password", False)
+                    ),
+                },
+                "permissions": [],
+            }
+        response = Response(payload, status=status.HTTP_200_OK)
         registrar_evento_auth(
             request=request,
             evento=AuditoriaSesionPWA.EVENTO_ME_OK,

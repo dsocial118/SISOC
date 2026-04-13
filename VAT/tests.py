@@ -28,6 +28,8 @@ from VAT.models import (
     Subsector,
     TituloReferencia,
     Curso,
+    OfertaInstitucional,
+    Comision,
     ComisionCurso,
     ComisionHorario,
     Inscripcion,
@@ -1330,6 +1332,129 @@ def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_d
 
 
 @pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_institucion_ubicacion_update_renderiza_con_volver_al_detalle_del_centro(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-ubicacion-update-get",
+        email="admin-ubicacion-update-get@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="Centro Ubicaciones GET",
+        codigo="CFP-UBI-GET",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8 N° 456",
+        telefono="221-4100000",
+        celular="221-5100000",
+        correo="centro-ubicaciones-get@vat.test",
+        nombre_referente="Luisa",
+        apellido_referente="Martinez",
+        telefono_referente="221-6100000",
+        correo_referente="luisa-get@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="anexo",
+        nombre_ubicacion="Anexo Norte",
+        domicilio="Calle 8 N° 460",
+        es_principal=False,
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_institucion_ubicacion_update", kwargs={"pk": ubicacion.pk})
+    )
+
+    return_url = reverse("vat_centro_detail", kwargs={"pk": centro.pk})
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert response.context["return_url"] == return_url
+    assert f'href="{return_url}"' in content
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_institucion_ubicacion_update_redirige_al_detalle_del_centro(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-ubicacion-update",
+        email="admin-ubicacion-update@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="Centro Ubicaciones",
+        codigo="CFP-UBI-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8 N° 456",
+        telefono="221-4100000",
+        celular="221-5100000",
+        correo="centro-ubicaciones@vat.test",
+        nombre_referente="Luisa",
+        apellido_referente="Martinez",
+        telefono_referente="221-6100000",
+        correo_referente="luisa@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="anexo",
+        nombre_ubicacion="Anexo Norte",
+        domicilio="Calle 8 N° 460",
+        es_principal=False,
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_institucion_ubicacion_update", kwargs={"pk": ubicacion.pk}),
+        data={
+            "centro": str(centro.pk),
+            "localidad": str(localidad.pk),
+            "rol_ubicacion": "anexo",
+            "nombre_ubicacion": "Anexo Norte Actualizado",
+            "domicilio": "Calle 8 N° 999",
+            "observaciones": "Actualización desde el legajo del centro",
+        },
+    )
+
+    ubicacion.refresh_from_db()
+
+    assert response.status_code == 302
+    assert response.url == reverse("vat_centro_detail", kwargs={"pk": centro.pk})
+    assert ubicacion.nombre_ubicacion == "Anexo Norte Actualizado"
+    assert ubicacion.domicilio == "Calle 8 N° 999"
+    assert ubicacion.observaciones == "Actualización desde el legajo del centro"
+
+
+@pytest.mark.django_db
 def test_plan_curricular_list_usuario_no_provincial_recibe_403(client):
     user = User.objects.create_user(username="no-provincial-plan", password="test1234")
     permiso_view_plan = Permission.objects.get(
@@ -2020,6 +2145,22 @@ def vat_curso_base(db, vat_geo_data):
 
 
 @pytest.mark.django_db
+def test_api_vat_provincias_lista_sin_paginacion(vat_api_client):
+    Provincia.objects.bulk_create(
+        [Provincia(nombre=f"Provincia VAT {index:02d}") for index in range(12)]
+    )
+
+    response = vat_api_client.get("/api/vat/provincias/")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    assert len(payload) == 12
+    assert payload[0]["nombre"] == "Provincia VAT 00"
+    assert payload[-1]["nombre"] == "Provincia VAT 11"
+
+
+@pytest.mark.django_db
 def test_api_vat_centros_lista_con_api_key(vat_api_client, vat_curso_base):
     centro, _, _ = vat_curso_base
 
@@ -2109,6 +2250,372 @@ def test_api_vat_cursos_lista_por_provincia_y_municipio(vat_api_client, vat_curs
 
 
 @pytest.mark.django_db
+def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa API Búsqueda Curso")
+    usuario = User.objects.create_user(
+        username="api-busqueda-curso",
+        password="test1234",
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Administración Contable Avanzada",
+        modalidad=modalidad,
+        estado="activo",
+        usa_voucher=True,
+        costo_creditos=2,
+    )
+    voucher_parametria = VoucherParametria.objects.create(
+        nombre="Voucher Búsqueda Curso",
+        programa=programa,
+        cantidad_inicial=8,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher_parametria)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="BUSQ-CUR-01",
+        nombre="Comisión Búsqueda Curso",
+        cupo_total=12,
+        fecha_inicio=date(2026, 4, 15),
+        fecha_fin=date(2026, 5, 15),
+        estado="activa",
+    )
+    dia = Dia.objects.create(nombre="Martes")
+    horario = ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde=time(9, 0),
+        hora_hasta=time(11, 0),
+        aula_espacio="Aula 2",
+        vigente=True,
+    )
+    SesionComision.objects.create(
+        comision_curso=comision,
+        horario=horario,
+        numero_sesion=1,
+        fecha=date(2026, 4, 22),
+        estado="programada",
+    )
+
+    response = vat_api_client.get("/api/vat/cursos/buscar/?q=con")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    result = payload["results"][0]
+    assert result["id"] == curso.id
+    assert result["centro"]["id"] == centro.id
+    assert result["centro"]["provincia"]["id"] == centro.provincia_id
+    assert result["centro"]["provincia"]["nombre"] == centro.provincia.nombre
+    assert result["centro"]["ciudad"]["provincia"]["id"] == centro.provincia_id
+    assert result["centro"]["ciudad"]["municipio"]["id"] == centro.municipio_id
+    assert result["centro"]["ciudad"]["localidad"]["id"] == centro.localidad_id
+    assert result["centro"]["ciudad"]["direccion"] == centro.domicilio_actividad
+    assert result["programa"] == {"id": programa.id, "nombre": programa.nombre}
+    assert result["voucher_parametrias"][0]["id"] == voucher_parametria.id
+    assert result["comisiones"][0]["id"] == comision.id
+    assert result["comisiones"][0]["total_inscriptos"] == 0
+    assert result["comisiones"][0]["cupos_disponibles"] == 12
+    assert result["comisiones"][0]["horarios"][0]["id"] == horario.id
+    assert result["comisiones"][0]["ubicacion"]["id"] == ubicacion.id
+
+
+@pytest.mark.django_db
+def test_api_vat_cursos_buscar_sin_texto_devuelve_listado_paginado(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Operador de Primera Carga",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="PC-001",
+        nombre="Comisión Primera Carga",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 10),
+        fecha_fin=date(2026, 5, 10),
+        estado="activa",
+    )
+
+    response = vat_api_client.get("/api/vat/cursos/buscar/")
+
+    assert response.status_code == 200
+    payload = response.json()
+    result_ids = {item["id"] for item in payload["results"]}
+    assert payload["count"] == 1
+    assert curso.id in result_ids
+
+
+@pytest.mark.django_db
+def test_api_vat_cursos_buscar_con_texto_vacio_devuelve_listado_paginado(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Operador de Campo Limpio",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="CL-001",
+        nombre="Comisión Campo Limpio",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 10),
+        fecha_fin=date(2026, 5, 10),
+        estado="activa",
+    )
+
+    response = vat_api_client.get("/api/vat/cursos/buscar/?q=   ")
+
+    assert response.status_code == 200
+    payload = response.json()
+    result_ids = {item["id"] for item in payload["results"]}
+    assert payload["count"] == 1
+    assert curso.id in result_ids
+
+
+@pytest.mark.django_db
+def test_api_vat_cursos_buscar_devuelve_solo_cursos_activos_con_comisiones_activas(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso_visible = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Visible",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    Curso.objects.create(
+        centro=centro,
+        nombre="Curso Inactivo",
+        modalidad=modalidad,
+        estado="finalizado",
+    )
+    curso_sin_comision_activa = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Sin Comisión Activa",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    ComisionCurso.objects.create(
+        curso=curso_visible,
+        ubicacion=ubicacion,
+        codigo_comision="VIS-001",
+        nombre="Comisión Visible",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 10),
+        fecha_fin=date(2026, 5, 10),
+        estado="activa",
+    )
+    ComisionCurso.objects.create(
+        curso=curso_sin_comision_activa,
+        ubicacion=ubicacion,
+        codigo_comision="NOACT-001",
+        nombre="Comisión Cerrada",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 10),
+        fecha_fin=date(2026, 5, 10),
+        estado="cerrada",
+    )
+
+    response = vat_api_client.get("/api/vat/cursos/buscar/")
+
+    assert response.status_code == 200
+    payload = response.json()
+    result_ids = {item["id"] for item in payload["results"]}
+    assert curso_visible.id in result_ids
+    assert curso_sin_comision_activa.id not in result_ids
+
+
+@pytest.mark.django_db
+def test_api_vat_cursos_buscar_requiere_minimo_tres_caracteres(vat_api_client):
+    response = vat_api_client.get("/api/vat/cursos/buscar/?q=he")
+
+    assert response.status_code == 400
+    assert response.json() == {"q": ["Debe enviar al menos 3 caracteres para buscar."]}
+
+
+@pytest.mark.django_db
+def test_api_vat_cursos_prioritarios_devuelve_info_enriquecida(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa API Curso Prioritario")
+    usuario = User.objects.create_user(
+        username="api-prioritario-curso",
+        password="test1234",
+    )
+    curso_prioritario = Curso.objects.create(
+        centro=centro,
+        nombre="Herramientas de Gestión Prioritaria",
+        modalidad=modalidad,
+        estado="activo",
+        prioritario=True,
+        usa_voucher=True,
+        costo_creditos=3,
+    )
+    Curso.objects.create(
+        centro=centro,
+        nombre="Curso No Prioritario",
+        modalidad=modalidad,
+        estado="activo",
+        prioritario=False,
+    )
+    voucher_parametria = VoucherParametria.objects.create(
+        nombre="Voucher Curso Prioritario",
+        programa=programa,
+        cantidad_inicial=10,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso_prioritario.voucher_parametrias.add(voucher_parametria)
+    comision = ComisionCurso.objects.create(
+        curso=curso_prioritario,
+        ubicacion=ubicacion,
+        codigo_comision="PRIO-CUR-01",
+        nombre="Comisión Curso Prioritario",
+        cupo_total=15,
+        fecha_inicio=date(2026, 4, 20),
+        fecha_fin=date(2026, 5, 20),
+        estado="activa",
+    )
+    dia = Dia.objects.create(nombre="Jueves")
+    horario = ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde=time(14, 0),
+        hora_hasta=time(16, 0),
+        aula_espacio="Aula Prioritaria",
+        vigente=True,
+    )
+    SesionComision.objects.create(
+        comision_curso=comision,
+        horario=horario,
+        numero_sesion=1,
+        fecha=date(2026, 4, 24),
+        estado="programada",
+    )
+
+    response = vat_api_client.get("/api/vat/cursos/prioritarios/")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    result = payload["results"][0]
+    assert result["id"] == curso_prioritario.id
+    assert result["prioritario"] is True
+
+
+@pytest.mark.django_db
+def test_api_vat_cursos_prioritarios_devuelve_solo_cursos_activos_con_comisiones_activas(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso_visible = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Prioritario Visible",
+        modalidad=modalidad,
+        estado="activo",
+        prioritario=True,
+    )
+    curso_inactivo = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Prioritario Inactivo",
+        modalidad=modalidad,
+        estado="finalizado",
+        prioritario=True,
+    )
+    curso_sin_comision_activa = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Prioritario Sin Comisión Activa",
+        modalidad=modalidad,
+        estado="activo",
+        prioritario=True,
+    )
+    primera_comision_visible = ComisionCurso.objects.create(
+        curso=curso_visible,
+        ubicacion=ubicacion,
+        codigo_comision="PRIOVIS-001",
+        nombre="Comisión Prioritaria Visible",
+        cupo_total=10,
+        fecha_inicio=date(2026, 4, 12),
+        fecha_fin=date(2026, 5, 12),
+        estado="activa",
+    )
+    segunda_comision_visible = ComisionCurso.objects.create(
+        curso=curso_visible,
+        ubicacion=ubicacion,
+        codigo_comision="PRIOVIS-002",
+        nombre="Comisión Prioritaria Visible 2",
+        cupo_total=10,
+        fecha_inicio=date(2026, 4, 13),
+        fecha_fin=date(2026, 5, 13),
+        estado="activa",
+    )
+    ComisionCurso.objects.create(
+        curso=curso_inactivo,
+        ubicacion=ubicacion,
+        codigo_comision="PRIOINAC-001",
+        nombre="Comisión Prioritaria Inactiva",
+        cupo_total=10,
+        fecha_inicio=date(2026, 4, 12),
+        fecha_fin=date(2026, 5, 12),
+        estado="activa",
+    )
+    ComisionCurso.objects.create(
+        curso=curso_sin_comision_activa,
+        ubicacion=ubicacion,
+        codigo_comision="PRIONOACT-001",
+        nombre="Comisión Prioritaria Cerrada",
+        cupo_total=10,
+        fecha_inicio=date(2026, 4, 12),
+        fecha_fin=date(2026, 5, 12),
+        estado="cerrada",
+    )
+
+    response = vat_api_client.get("/api/vat/cursos/prioritarios/")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    result_ids = {item["id"] for item in payload["results"]}
+    result = payload["results"][0]
+    assert curso_visible.id in result_ids
+    assert curso_inactivo.id not in result_ids
+    assert curso_sin_comision_activa.id not in result_ids
+    assert result["id"] == curso_visible.id
+    assert {comision["id"] for comision in result["comisiones"]} == {
+        primera_comision_visible.id,
+        segunda_comision_visible.id,
+    }
+    assert result["centro"]["id"] == centro.id
+    assert result["centro"]["provincia"]["id"] == centro.provincia_id
+    assert result["centro"]["ciudad"]["municipio"]["id"] == centro.municipio_id
+    assert result["centro"]["ciudad"]["localidad"]["id"] == centro.localidad_id
+    assert result["centro"]["ciudad"]["direccion"] == centro.domicilio_actividad
+    assert result["programa"] is None
+    assert result["voucher_parametrias"] == []
+    assert all(
+        comision["ubicacion"]["id"] == ubicacion.id for comision in result["comisiones"]
+    )
+
+
+@pytest.mark.django_db
 def test_api_vat_comisiones_curso_lista_por_curso(vat_api_client, vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     curso = Curso.objects.create(
@@ -2135,6 +2642,77 @@ def test_api_vat_comisiones_curso_lista_por_curso(vat_api_client, vat_curso_base
     assert payload["count"] == 1
     assert payload["results"][0]["id"] == comision.id
     assert payload["results"][0]["curso"] == curso.id
+
+
+@pytest.mark.django_db
+def test_api_vat_comisiones_curso_lista_incluye_horarios_y_sesiones(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso API Horarios VAT",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="API-COM-HOR-01",
+        nombre="Comision API Horarios VAT",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    dia = Dia.objects.create(nombre="Lunes")
+    horario = ComisionHorario.objects.create(
+        comision_curso=comision,
+        dia_semana=dia,
+        hora_desde=time(18, 0),
+        hora_hasta=time(20, 0),
+        aula_espacio="Taller 1",
+        vigente=True,
+    )
+    sesion = SesionComision.objects.create(
+        comision_curso=comision,
+        horario=horario,
+        numero_sesion=1,
+        fecha=date(2026, 4, 14),
+        estado="programada",
+    )
+
+    response = vat_api_client.get(f"/api/vat/comisiones-curso/?curso_id={curso.id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    result = payload["results"][0]
+    assert result["horarios"] == [
+        {
+            "id": horario.id,
+            "dia_semana": dia.id,
+            "dia_nombre": "Lunes",
+            "hora_desde": "18:00:00",
+            "hora_hasta": "20:00:00",
+            "aula_espacio": "Taller 1",
+            "vigente": True,
+        }
+    ]
+    assert result["sesiones"] == [
+        {
+            "id": sesion.id,
+            "horario": horario.id,
+            "numero_sesion": 1,
+            "fecha": "2026-04-14",
+            "estado": "programada",
+            "observaciones": None,
+            "dia_semana": dia.id,
+            "dia_nombre": "Lunes",
+            "hora_desde": "18:00:00",
+            "hora_hasta": "20:00:00",
+            "aula_espacio": "Taller 1",
+        }
+    ]
 
 
 @pytest.mark.django_db
@@ -2221,6 +2799,465 @@ def test_api_vat_comisiones_curso_lista_por_provincia_y_municipio(
     result_ids = {item["id"] for item in payload["results"]}
     assert comision.id in result_ids
     assert all(item["curso_centro_id"] == centro.id for item in payload["results"])
+
+
+@pytest.mark.django_db
+def test_api_vat_inscripciones_curso_crea_inscripcion_en_comision_curso(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa API Inscripción Curso")
+    usuario = User.objects.create_user(
+        username="api-inscripcion-curso",
+        password="test1234",
+    )
+    sexo = Sexo.objects.create(sexo="No Binario")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso API Inscripción",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher API Inscripción Curso",
+        programa=programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="API-INS-CURSO-01",
+        nombre="Comisión API Inscripción",
+        cupo_total=20,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        estado="activa",
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="API",
+        nombre="Curso",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111222,
+        sexo=sexo,
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/inscripciones-curso/",
+        {
+            "ciudadano": ciudadano.id,
+            "comision_curso": comision.id,
+            "estado": "inscripta",
+            "origen_canal": "api",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["comision_curso"] == comision.id
+    assert payload["entidad_comision_tipo"] == "comision_curso"
+    assert Inscripcion.objects.filter(
+        ciudadano=ciudadano,
+        comision_curso=comision,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_api_vat_inscripciones_curso_rechaza_comision_legacy(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa API Legacy")
+    sexo = Sexo.objects.create(sexo="Femenino")
+    sector = Sector.objects.create(nombre="Sector API Legacy")
+    plan = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        nombre="Plan API Legacy",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta API Legacy",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    comision_legacy = Comision.objects.create(
+        oferta=oferta,
+        ubicacion=ubicacion,
+        codigo_comision="API-INS-LEGACY-01",
+        nombre="Comisión Legacy API",
+        cupo=20,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        estado="activa",
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="API",
+        nombre="Legacy",
+        fecha_nacimiento=date(1998, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111223,
+        sexo=sexo,
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/inscripciones-curso/",
+        {
+            "ciudadano": ciudadano.id,
+            "comision": comision_legacy.id,
+            "estado": "inscripta",
+            "origen_canal": "api",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "comision_curso": [
+            "Este endpoint solo admite inscripciones sobre comisiones de curso."
+        ]
+    }
+    assert not Inscripcion.objects.filter(
+        ciudadano=ciudadano,
+        comision=comision_legacy,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_api_vat_web_cursos_lista_comisiones_curso(vat_api_client, vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Web Cursos")
+    usuario = User.objects.create_user(username="api-web-cursos", password="test1234")
+    sector = Sector.objects.create(nombre="Servicios API Web")
+    plan = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        nombre="Plan API Web",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    TituloReferencia.objects.create(
+        plan_estudio=plan,
+        nombre="Título API Web",
+        activo=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        plan_estudio=plan,
+        nombre="Curso Web",
+        modalidad=modalidad,
+        estado="activo",
+        usa_voucher=True,
+        costo_creditos=2,
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Web Curso",
+        programa=programa,
+        cantidad_inicial=8,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="WEB-CURSO-01",
+        nombre="Comisión Web Curso",
+        cupo_total=30,
+        fecha_inicio=date(2026, 7, 1),
+        fecha_fin=date(2026, 8, 1),
+        estado="activa",
+    )
+
+    response = vat_api_client.get(f"/api/vat/web/cursos/?centro_id={centro.id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] >= 1
+    resultado = payload["results"][0]
+    assert resultado["id"] == comision.id
+    assert resultado["centro_id"] == centro.id
+    assert resultado["programa_id"] == programa.id
+    assert resultado["usa_voucher"] is True
+
+
+@pytest.mark.django_db
+def test_api_vat_web_prevalidar_inscripcion_informa_falta_voucher(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Web Prevalidación")
+    usuario = User.objects.create_user(
+        username="api-web-prevalidacion",
+        password="test1234",
+    )
+    sexo = Sexo.objects.create(sexo="Femenino")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Web Prevalidación",
+        modalidad=modalidad,
+        estado="activo",
+        usa_voucher=True,
+        costo_creditos=2,
+    )
+    voucher_parametria = VoucherParametria.objects.create(
+        nombre="Voucher Web Prevalidación",
+        programa=programa,
+        cantidad_inicial=4,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher_parametria)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="WEB-PRE-01",
+        nombre="Comisión Web Prevalidación",
+        cupo_total=10,
+        fecha_inicio=date(2026, 5, 10),
+        fecha_fin=date(2026, 6, 10),
+        estado="activa",
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="López",
+        nombre="Lucía",
+        fecha_nacimiento=date(1995, 2, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=30111222,
+        sexo=sexo,
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/web/inscripciones/prevalidar/",
+        {
+            "documento": str(ciudadano.documento),
+            "cuil": "27-30111222-8",
+            "comision_curso_id": comision.id,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["puede_inscribirse"] is False
+    assert any("voucher activo" in motivo for motivo in payload["motivos"])
+    assert payload["comision"]["id"] == comision.id
+    assert payload["voucher"]["requerido"] is True
+    assert payload["voucher"]["credito_requerido"] == 2
+
+
+@pytest.mark.django_db
+def test_api_vat_web_mi_argentina_flujo_completo_prevalidar_e_inscribir(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Mi Argentina")
+    usuario = User.objects.create_user(
+        username="api-web-mi-argentina",
+        password="test1234",
+    )
+    sexo = Sexo.objects.create(sexo="No Binario")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Mi Argentina",
+        modalidad=modalidad,
+        estado="activo",
+        usa_voucher=True,
+        costo_creditos=2,
+    )
+    voucher_parametria = VoucherParametria.objects.create(
+        nombre="Voucher Mi Argentina",
+        programa=programa,
+        cantidad_inicial=6,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher_parametria)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="MIARG-01",
+        nombre="Comisión Mi Argentina",
+        cupo_total=12,
+        fecha_inicio=date(2026, 6, 1),
+        fecha_fin=date(2026, 7, 1),
+        estado="activa",
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="García",
+        nombre="Andrea",
+        fecha_nacimiento=date(1997, 8, 15),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=32123456,
+        sexo=sexo,
+    )
+    voucher = Voucher.objects.create(
+        parametria=voucher_parametria,
+        ciudadano=ciudadano,
+        programa=programa,
+        cantidad_inicial=6,
+        cantidad_usada=0,
+        cantidad_disponible=6,
+        fecha_vencimiento=date(2026, 12, 31),
+        estado="activo",
+        asignado_por=usuario,
+    )
+
+    response_centros = vat_api_client.get("/api/vat/web/centros/?activo=true")
+
+    assert response_centros.status_code == 200
+    centros_payload = response_centros.json()
+    assert centros_payload["count"] >= 1
+    assert any(item["id"] == centro.id for item in centros_payload["results"])
+
+    response_cursos = vat_api_client.get(f"/api/vat/web/cursos/?centro_id={centro.id}")
+
+    assert response_cursos.status_code == 200
+    cursos_payload = response_cursos.json()
+    curso_resultado = next(
+        item for item in cursos_payload["results"] if item["id"] == comision.id
+    )
+    assert curso_resultado["centro_id"] == centro.id
+    assert curso_resultado["programa_id"] == programa.id
+    assert curso_resultado["usa_voucher"] is True
+
+    response_prevalidar = vat_api_client.post(
+        "/api/vat/web/inscripciones/prevalidar/",
+        {
+            "documento": str(ciudadano.documento),
+            "cuil": "27-32123456-4",
+            "comision_curso_id": comision.id,
+        },
+        format="json",
+    )
+
+    assert response_prevalidar.status_code == 200
+    prevalidacion_payload = response_prevalidar.json()
+    assert prevalidacion_payload["puede_inscribirse"] is True
+    assert prevalidacion_payload["motivos"] == []
+    assert prevalidacion_payload["ciudadano"]["id"] == ciudadano.id
+    assert prevalidacion_payload["comision"]["id"] == comision.id
+    assert prevalidacion_payload["voucher"]["voucher_id"] == voucher.id
+    assert prevalidacion_payload["voucher"]["saldo_actual"] == 6
+    assert prevalidacion_payload["voucher"]["credito_requerido"] == 2
+    assert prevalidacion_payload["voucher"]["saldo_post_inscripcion"] == 4
+
+    response_inscribir = vat_api_client.post(
+        "/api/vat/web/inscripciones/",
+        {
+            "documento": str(ciudadano.documento),
+            "comision_curso_id": comision.id,
+            "estado": "inscripta",
+            "observaciones": "Alta desde Mi Argentina",
+        },
+        format="json",
+    )
+
+    assert response_inscribir.status_code == 201
+    inscripcion_payload = response_inscribir.json()
+    assert inscripcion_payload["comision_curso"] == comision.id
+    assert inscripcion_payload["curso"]["id"] == comision.id
+    assert inscripcion_payload["ciudadano"] == ciudadano.id
+
+    response_inscripciones = vat_api_client.get(
+        f"/api/vat/web/inscripciones/?documento={ciudadano.documento}"
+    )
+
+    assert response_inscripciones.status_code == 200
+    inscripciones_payload = response_inscripciones.json()
+    assert inscripciones_payload["count"] == 1
+    assert inscripciones_payload["results"][0]["comision_curso"] == comision.id
+
+    voucher.refresh_from_db()
+    assert voucher.cantidad_disponible == 4
+
+
+@pytest.mark.django_db
+def test_api_vat_web_inscripciones_crea_sobre_comision_curso(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Web Insc")
+    usuario = User.objects.create_user(username="api-web-insc", password="test1234")
+    sexo = Sexo.objects.create(sexo="Masculino")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Web Insc",
+        modalidad=modalidad,
+        estado="activo",
+        usa_voucher=True,
+        costo_creditos=1,
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Web Insc",
+        programa=programa,
+        cantidad_inicial=4,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="WEB-INSC-01",
+        nombre="Comisión Web Inscripción",
+        cupo_total=10,
+        fecha_inicio=date(2026, 5, 10),
+        fecha_fin=date(2026, 6, 10),
+        estado="activa",
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Pérez",
+        nombre="Fabricio",
+        fecha_nacimiento=date(1999, 4, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=2855739,
+        sexo=sexo,
+    )
+    Voucher.objects.create(
+        parametria=voucher,
+        ciudadano=ciudadano,
+        programa=programa,
+        cantidad_inicial=4,
+        cantidad_usada=0,
+        cantidad_disponible=4,
+        fecha_vencimiento=date(2026, 12, 31),
+        estado="activo",
+        asignado_por=usuario,
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/web/inscripciones/",
+        {
+            "ciudadano_id": ciudadano.id,
+            "comision_curso_id": comision.id,
+            "estado": "inscripta",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["comision"] == comision.id
+    assert payload["comision_curso"] == comision.id
+    assert payload["curso"]["id"] == comision.id
+    assert Inscripcion.objects.filter(
+        ciudadano=ciudadano,
+        comision_curso=comision,
+    ).exists()
 
 
 @pytest.mark.django_db
@@ -2814,6 +3851,7 @@ def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(client, vat_geo_d
     assert 'id="tablaCursosCentro"' not in content
     assert 'id="tablaComisionesCursoCentro"' not in content
     assert "loadCursosPanel" in content
+    assert "cursosPageSizeSelect.value = '25';" in content
 
 
 @pytest.mark.django_db
@@ -2897,6 +3935,7 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'id="cursosFilterSearch"' in content
     assert 'id="cursosFilterEstado"' in content
     assert 'id="cursosFilterPageSize"' in content
+    assert '<option value="25" selected>25</option>' in content
     assert 'id="cursosFilterClear"' in content
     assert 'class="curso-row"' in content
     assert f'data-curso-id="{_curso.id}"' in content
@@ -2994,7 +4033,7 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert 'id="openPlanCurricularSelector"' in content
     assert 'id="planCurricularSelectorSearch"' in content
     assert 'id="planCurricularSelectorSector"' in content
-    assert 'id="planCurricularSelectorModalidad"' in content
+    assert 'id="planCurricularSelectorModalidad"' not in content
     assert 'id="tablaPlanCurricularSelector"' in content
     assert "Plan Curricular" in content
     assert (
@@ -3002,6 +4041,7 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
         in content
     )
     assert "Seleccionar plan curricular" in content
+    assert "Buscar por plan, sector o normativa" in content
     assert f'value="{plan.id}"' in content
     assert f'value="{plan_inactivo.id}"' not in content
     assert f'value="{plan_otra_provincia.id}"' not in content

@@ -31,6 +31,11 @@ from comedores.forms.comedor_form import ComedorForm, ReferenteForm
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.models import Comedor, HistorialValidacion, ImagenComedor, Observacion
 from comedores.services.comedor_service import ComedorService
+from comedores.services.capacitaciones_certificados_service import (
+    is_alimentar_comunidad_program,
+    list_capacitaciones_certificados,
+    serialize_certificate,
+)
 from comedores.services.filter_config import get_filters_ui_config
 from comedores.utils import comedor_usa_admision_para_nomina
 from core.services.column_preferences import build_columns_context_from_fields
@@ -1234,6 +1239,17 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "monto_prestacion_mensual": selected_admision_context[
                     "monto_prestacion_mensual_aprobadas"
                 ],
+                "show_capacitaciones_certificados": is_alimentar_comunidad_program(
+                    self.object
+                ),
+                "capacitaciones_certificados": (
+                    [
+                        serialize_certificate(item, request=self.request)
+                        for item in list_capacitaciones_certificados(self.object)
+                    ]
+                    if is_alimentar_comunidad_program(self.object)
+                    else []
+                ),
                 **responsables_context,
             }
         )
