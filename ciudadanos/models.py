@@ -271,9 +271,10 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         qs = cls.objects.filter(cls.documento_prefix_filter(cleaned))
         if exclude_id:
             qs = qs.exclude(pk=exclude_id)
-        return qs.only("id", "nombre", "apellido", "documento").order_by("documento")[
-            :max_results
-        ]
+        return qs.only(
+            "id", "nombre", "apellido", "documento",
+            "tipo_registro_identidad", "requiere_revision_manual",
+        ).order_by("documento")[:max_results]
 
     @property
     def edad(self) -> int:
