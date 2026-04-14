@@ -79,6 +79,25 @@
         </div>
     {% endif %}
 
+    {% if object and object.requiere_revision_manual %}
+        <div class="alert alert-warning d-flex align-items-start gap-3 mb-3">
+            <i class="fas fa-exclamation-triangle fa-lg mt-1"></i>
+            <div>
+                <strong>Este ciudadano requiere revisión de identidad.</strong>
+                {% if object.tipo_registro_identidad == "SIN_DNI" %}
+                    <br>Tipo: <strong>Sin DNI</strong>
+                    {% if object.motivo_sin_dni %}— Motivo: {{ object.get_motivo_sin_dni_display }}{% endif %}
+                    {% if object.motivo_sin_dni_descripcion %}<br><em>{{ object.motivo_sin_dni_descripcion }}</em>{% endif %}
+                {% elif object.tipo_registro_identidad == "DNI_NO_VALIDADO_RENAPER" %}
+                    <br>Tipo: <strong>DNI no validado por RENAPER</strong>
+                    {% if object.motivo_no_validacion_renaper %}— Motivo: {{ object.get_motivo_no_validacion_renaper_display }}{% endif %}
+                    {% if object.motivo_no_validacion_descripcion %}<br><em>{{ object.motivo_no_validacion_descripcion }}</em>{% endif %}
+                {% endif %}
+                <br><small class="text-muted">Corregí los datos y luego marcá como revisado desde el detalle del ciudadano.</small>
+            </div>
+        </div>
+    {% endif %}
+
     <div class="row comedor-form">
         <div class="col-12">
             <form method="post"
@@ -127,6 +146,78 @@
                         </div>
                     </div>
                     <div class="section-body collapse show" id="section-identidad">
+                        <!-- Tipo de registro de identidad -->
+                        <div class="form-group row mb-3">
+                            <div class="col-md-6">
+                                {% with field=form.tipo_registro_identidad %}
+                                    <div class="form-group">
+                                        <label class="form-label fw-bold" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                        </label>
+                                        {{ field }}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                        </div>
+
+                        <!-- Campos dinámicos: Sin DNI -->
+                        <div id="bloque-sin-dni" class="alert alert-warning mb-3" style="display:none;">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {% with field=form.motivo_sin_dni %}
+                                        <div class="form-group">
+                                            <label class="form-label" for="{{ field.id_for_label }}">
+                                                {{ field.label }} <span class="text-danger fw-bold">*</span>
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                        </div>
+                                    {% endwith %}
+                                </div>
+                                <div class="col-md-8">
+                                    {% with field=form.motivo_sin_dni_descripcion %}
+                                        <div class="form-group">
+                                            <label class="form-label" for="{{ field.id_for_label }}">
+                                                {{ field.label }}
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                        </div>
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos dinámicos: DNI no validado RENAPER -->
+                        <div id="bloque-no-validado" class="alert alert-danger mb-3" style="display:none;">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {% with field=form.motivo_no_validacion_renaper %}
+                                        <div class="form-group">
+                                            <label class="form-label" for="{{ field.id_for_label }}">
+                                                {{ field.label }} <span class="text-danger fw-bold">*</span>
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                        </div>
+                                    {% endwith %}
+                                </div>
+                                <div class="col-md-8">
+                                    {% with field=form.motivo_no_validacion_descripcion %}
+                                        <div class="form-group">
+                                            <label class="form-label" for="{{ field.id_for_label }}">
+                                                {{ field.label }}
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                        </div>
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="form-group row">
                             <div class="col-md-4">
                                 {% with field=form.apellido %}
@@ -747,6 +838,30 @@
         // Variables globales para emular la inicialización de comedores
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
+    <script nonce="{{ request.csp_nonce }}">
+        (function () {
+            const tipoSelect = document.getElementById("id_tipo_registro_identidad");
+            const bloqueSinDni = document.getElementById("bloque-sin-dni");
+            const bloqueNoValidado = document.getElementById("bloque-no-validado");
+            const campoDni = document.getElementById("id_documento");
+            const wrapperDni = campoDni ? campoDni.closest(".form-group") : null;
+
+            function actualizarBloques() {
+                const tipo = tipoSelect ? tipoSelect.value : "ESTANDAR";
+
+                if (bloqueSinDni) bloqueSinDni.style.display = (tipo === "SIN_DNI") ? "" : "none";
+                if (bloqueNoValidado) bloqueNoValidado.style.display = (tipo === "DNI_NO_VALIDADO_RENAPER") ? "" : "none";
+
+                // Ocultar campo DNI cuando es SIN_DNI
+                if (wrapperDni) wrapperDni.style.display = (tipo === "SIN_DNI") ? "none" : "";
+            }
+
+            if (tipoSelect) {
+                tipoSelect.addEventListener("change", actualizarBloques);
+                actualizarBloques(); // estado inicial al cargar
+            }
+        })();
     </script>
     <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
     <script src="{% static 'custom/js/ciudadanosform.js' %}"></script>
