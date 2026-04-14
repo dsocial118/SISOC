@@ -87,8 +87,8 @@ se puede asignar a revisores específicos. **Cierre de revisión → v2.**
 
 | Fase | Descripción | Estado |
 |---|---|---|
-| **Fase 1** | Migración de schema + backfill sin cambio funcional | En progreso |
-| **Fase 2** | Alta de ciudadanos SIN_DNI (form, búsqueda, nómina, badge) | Pendiente |
+| **Fase 1** | Migración de schema + backfill sin cambio funcional | ✓ Completa |
+| **Fase 2** | Alta SIN_DNI + badges + filtros + búsqueda extendida + cola de revisión | ✓ Completa |
 | **Fase 3** | Alta DNI_NO_VALIDADO_RENAPER + ajuste de `.first()` por DNI | Pendiente |
 | **Fase 4** | Tests de regresión (ciudadanos, nómina, celiaquía, admisiones) | Pendiente |
 
