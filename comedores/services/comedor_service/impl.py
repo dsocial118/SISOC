@@ -1146,9 +1146,22 @@ class ComedorService:
 
     @staticmethod
     def _buscar_ciudadano_existente_por_dni_renaper(dni_str):
-        return Ciudadano.objects.filter(
-            tipo_documento=Ciudadano.DOCUMENTO_DNI, documento=int(dni_str)
-        ).first()
+        # Buscar primero por documento_unico_key para encontrar solo registros
+        # ESTANDAR verificados. Esto evita retornar un duplicado ambiguo cuando
+        # hay múltiples ciudadanos con el mismo DNI (DNI_NO_VALIDADO_RENAPER).
+        doc_key = f"DNI_{dni_str}"
+        ciudadano = Ciudadano.objects.filter(documento_unico_key=doc_key).first()
+        if ciudadano:
+            return ciudadano
+        # Fallback: si el backfill aún no corrió o el registro es previo a Fase 1,
+        # buscar por documento directo prefiriendo ESTANDAR.
+        return (
+            Ciudadano.objects.filter(
+                tipo_documento=Ciudadano.DOCUMENTO_DNI, documento=int(dni_str)
+            )
+            .order_by("tipo_registro_identidad")
+            .first()
+        )
 
     @staticmethod
     def _agregar_usuario_a_ciudadano_data_renaper(ciudadano_data, user=None):
