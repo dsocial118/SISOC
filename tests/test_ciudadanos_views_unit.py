@@ -31,6 +31,31 @@ def test_ciudadanos_list_view_get_queryset_filtra(mocker):
     result = view.get_queryset()
     assert result == "ordered"
     assert qs.filter.call_count >= 2
+    qs.order_by.assert_called_once_with("pk")
+
+
+def test_no_count_paginator_navega_sin_count_exacto():
+    paginator = module.NoCountPaginator(list(range(7)), 3)
+
+    first_page = paginator.get_page("1")
+    assert first_page.object_list == [0, 1, 2]
+    assert first_page.has_previous() is False
+    assert first_page.has_next() is True
+    assert first_page.next_page_number() == 2
+    assert first_page.paginator.count is None
+
+    last_page = paginator.get_page(3)
+    assert last_page.object_list == [6]
+    assert last_page.has_previous() is True
+    assert last_page.has_next() is False
+    assert last_page.previous_page_number() == 2
+
+
+def test_ciudadanos_list_view_build_page_range_sin_total():
+    paginator = module.NoCountPaginator(list(range(80)), 25)
+    page_obj = paginator.get_page(3)
+
+    assert module.CiudadanosListView.build_page_range(page_obj) == [1, 2, 3, 4, "…"]
 
 
 def test_ciudadanos_detail_helpers_contexts(mocker):
