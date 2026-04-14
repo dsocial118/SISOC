@@ -44,6 +44,12 @@ class IntervencionCentroInfancia(SoftDeleteModelMixin, models.Model):
     observaciones = models.TextField(blank=True, null=True)
     tiene_documentacion = models.BooleanField(default=False)
     documentacion = models.FileField(upload_to="documentacion/", blank=True, null=True)
+    creado_por = models.ForeignKey(
+        "auth.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Creado por",
+    )
 
     class Meta:
         verbose_name = "Intervención Centro de Desarrollo Infantil"
