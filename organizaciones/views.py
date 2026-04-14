@@ -1,7 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.paginator import Paginator
 from django.db.models import Q, Count
 from django.forms import ValidationError
 from django.http import HttpResponseRedirect, JsonResponse
@@ -14,6 +13,7 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
+from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 from organizaciones.forms import OrganizacionForm, FirmanteForm, AvalForm
@@ -25,6 +25,57 @@ from organizaciones.models import (
     RolFirmante,
 )
 
+ORGANIZACION_LIST_ONLY_FIELDS = (
+    "id",
+    "nombre",
+    "cuit",
+    "telefono",
+    "email",
+    "tipo_entidad",
+    "tipo_entidad__nombre",
+    "subtipo_entidad",
+    "subtipo_entidad__nombre",
+)
+
+
+def _build_organizacion_list_base_queryset():
+    return Organizacion.objects.only(*ORGANIZACION_LIST_ONLY_FIELDS).order_by("-id")
+
+
+def _build_organizacion_row_queryset():
+    return (
+        Organizacion.objects.select_related("tipo_entidad", "subtipo_entidad")
+        .annotate(comedores_count=Count("comedor"))
+        .only(*ORGANIZACION_LIST_ONLY_FIELDS)
+        .order_by("-id")
+    )
+
+
+def _apply_organizacion_search(queryset, query):
+    busqueda = (query or "").strip()
+    if not busqueda:
+        return queryset
+
+    if busqueda.isdigit():
+        numeric_value = int(busqueda)
+        return queryset.filter(
+            Q(cuit=numeric_value) | Q(telefono=numeric_value) | Q(pk=numeric_value)
+        )
+
+    return queryset.filter(Q(nombre__icontains=busqueda) | Q(email__icontains=busqueda))
+
+
+def _build_organizacion_list_queryset(query):
+    return _apply_organizacion_search(_build_organizacion_list_base_queryset(), query)
+
+
+def _hydrate_organizaciones_page(page_ids):
+    organizaciones_by_id = {
+        organizacion.pk: organizacion
+        for organizacion in _build_organizacion_row_queryset().filter(pk__in=page_ids)
+    }
+    return [organizaciones_by_id[pk] for pk in page_ids if pk in organizaciones_by_id]
+
 
 class OrganizacionListView(LoginRequiredMixin, ListView):
     model = Organizacion
@@ -33,50 +84,21 @@ class OrganizacionListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        query = self.request.GET.get("busqueda")
+        return _build_organizacion_list_queryset(self.request.GET.get("busqueda"))
 
-        if query:
-            # Solo ejecutar queries cuando hay búsqueda específica
-            queryset = (
-                Organizacion.objects.filter(
-                    Q(nombre__icontains=query)
-                    | Q(cuit__icontains=query)
-                    | Q(telefono__icontains=query)
-                    | Q(email__icontains=query)
-                )
-                .select_related("tipo_entidad", "subtipo_entidad")
-                .annotate(comedores_count=Count("comedor"))
-                .only(
-                    "id",
-                    "nombre",
-                    "cuit",
-                    "telefono",
-                    "email",
-                    "tipo_entidad__nombre",
-                    "subtipo_entidad__nombre",
-                )
-            )
-        else:
-            # Para la vista inicial sin búsqueda, usar paginación eficiente
-            queryset = (
-                Organizacion.objects.select_related("tipo_entidad", "subtipo_entidad")
-                .annotate(comedores_count=Count("comedor"))
-                .only(
-                    "id",
-                    "nombre",
-                    "cuit",
-                    "telefono",
-                    "email",
-                    "tipo_entidad__nombre",
-                    "subtipo_entidad__nombre",
-                )
-                .order_by("-id")
-            )
-        return queryset
+    def paginate_queryset(self, queryset, page_size):
+        paginator = NoCountPaginator(queryset.values_list("pk", flat=True), page_size)
+        page_obj = paginator.get_page(self.request.GET.get(self.page_kwarg))
+        object_list = _hydrate_organizaciones_page(page_obj.object_list)
+        page_obj.object_list = object_list
+        return paginator, page_obj, object_list, page_obj.has_other_pages()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["query"] = self.request.GET.get("busqueda", "")
+        page_obj = context.get("page_obj")
+        if page_obj and getattr(page_obj.paginator, "count", None) is None:
+            context["page_range"] = build_no_count_page_range(page_obj)
         return context
 
 
@@ -566,51 +588,11 @@ def organizaciones_ajax(request):
     Retorna HTML renderizado de las filas de la tabla y paginación.
     """
     busqueda = request.GET.get("busqueda", "").strip()
-    page_number = request.GET.get("page", 1)
-
-    organizaciones = Organizacion.objects.all()
-
-    if busqueda:
-        organizaciones = (
-            organizaciones.filter(
-                Q(nombre__icontains=busqueda)
-                | Q(cuit__icontains=busqueda)
-                | Q(telefono__icontains=busqueda)
-                | Q(email__icontains=busqueda)
-            )
-            .select_related("tipo_entidad", "subtipo_entidad")
-            .annotate(comedores_count=Count("comedor"))
-            .only(
-                "id",
-                "nombre",
-                "cuit",
-                "telefono",
-                "email",
-                "tipo_entidad__nombre",
-                "subtipo_entidad__nombre",
-            )
-        )
-    else:
-        organizaciones = (
-            organizaciones.select_related("tipo_entidad", "subtipo_entidad")
-            .annotate(comedores_count=Count("comedor"))
-            .only(
-                "id",
-                "nombre",
-                "cuit",
-                "telefono",
-                "email",
-                "tipo_entidad__nombre",
-                "subtipo_entidad__nombre",
-            )
-            .order_by("-id")
-        )
-
-    paginator = Paginator(organizaciones, 10)  # 10 elementos por página
-    try:
-        page_obj = paginator.get_page(page_number)
-    except (ValueError, TypeError):
-        page_obj = paginator.get_page(1)
+    paginator = NoCountPaginator(
+        _build_organizacion_list_queryset(busqueda).values_list("pk", flat=True), 10
+    )
+    page_obj = paginator.get_page(request.GET.get("page", 1))
+    page_obj.object_list = _hydrate_organizaciones_page(page_obj.object_list)
 
     table_html = render_to_string(
         "organizaciones/partials/organizacion_rows.html",
@@ -623,6 +605,7 @@ def organizaciones_ajax(request):
         {
             "is_paginated": page_obj.has_other_pages(),
             "page_obj": page_obj,
+            "page_range": build_no_count_page_range(page_obj),
             "query": busqueda,
             "prev_text": "Volver",
             "next_text": "Continuar",

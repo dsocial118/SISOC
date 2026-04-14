@@ -52,6 +52,7 @@ from VAT.services.access_scope import (
     is_vat_referente,
 )
 from core.models import Localidad
+from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -71,6 +72,15 @@ BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
 PLANES_CENTRO_PAGE_SIZE = 5
 PLANES_CENTRO_PAGE_SIZE_OPTIONS = (5, 10, 15, 20, 50, 100)
 CURSOS_PANEL_CACHE_TTL_SECONDS = 60
+VAT_CENTRO_LIST_ONLY_FIELDS = (
+    "id",
+    "nombre",
+    "codigo",
+    "activo",
+    "calle",
+    "telefono",
+    "celular",
+)
 
 
 def _get_centro_detail_queryset():
@@ -99,6 +109,36 @@ def _scope_centro_field_to_current_centro(form, centro):
     centro_field.queryset = Centro.objects.filter(pk=centro.pk)
     centro_field.initial = centro.pk
     return form
+
+
+def _build_vat_centro_list_base_queryset():
+    return Centro.objects.only(*VAT_CENTRO_LIST_ONLY_FIELDS).order_by("-id")
+
+
+def _apply_vat_centro_search(queryset, query):
+    busq = (query or "").strip()
+    if not busq:
+        return queryset
+
+    if busq.isdigit():
+        return queryset.filter(Q(codigo__startswith=busq) | Q(pk=int(busq)))
+
+    return queryset.filter(Q(nombre__icontains=busq))
+
+
+def _build_vat_centro_list_queryset(request):
+    queryset = _build_vat_centro_list_base_queryset()
+    queryset = filter_centros_queryset_for_user(queryset, request.user)
+    queryset = _apply_vat_centro_search(queryset, request.GET.get("busqueda", ""))
+    return BOOL_ADVANCED_FILTER.filter_queryset(queryset, request.GET).order_by("-id")
+
+
+def _hydrate_vat_centro_page(page_ids):
+    centros_by_id = {
+        centro.pk: centro
+        for centro in _build_vat_centro_list_base_queryset().filter(pk__in=page_ids)
+    }
+    return [centros_by_id[pk] for pk in page_ids if pk in centros_by_id]
 
 
 def _build_contacto_form(centro):
@@ -433,16 +473,14 @@ class CentroListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        base_qs = Centro.objects.select_related("referente").order_by("nombre")
+        return _build_vat_centro_list_queryset(self.request)
 
-        user = self.request.user
-        busq = self.request.GET.get("busqueda", "").strip()
-        base_qs = filter_centros_queryset_for_user(base_qs, user)
-
-        if busq:
-            base_qs = base_qs.filter(Q(nombre__icontains=busq))
-
-        return BOOL_ADVANCED_FILTER.filter_queryset(base_qs, self.request.GET)
+    def paginate_queryset(self, queryset, page_size):
+        paginator = NoCountPaginator(queryset.values_list("pk", flat=True), page_size)
+        page_obj = paginator.get_page(self.request.GET.get(self.page_kwarg))
+        object_list = _hydrate_vat_centro_page(page_obj.object_list)
+        page_obj.object_list = object_list
+        return paginator, page_obj, object_list, page_obj.has_other_pages()
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -468,6 +506,10 @@ class CentroListView(LoginRequiredMixin, ListView):
             {"title": "Estado", "sortable": True, "sort_key": "activo"},
             {"title": "Acciones"},
         ]
+
+        page_obj = ctx.get("page_obj")
+        if page_obj and getattr(page_obj.paginator, "count", None) is None:
+            ctx["page_range"] = build_no_count_page_range(page_obj)
 
         return ctx
 
@@ -853,20 +895,12 @@ def centros_ajax(request):
 
     def _centros_ajax(request):
         query = request.GET.get("busqueda", "")
-        page = request.GET.get("page", 1)
         user = request.user
 
-        qs = Centro.objects.select_related("referente")
-        qs = filter_centros_queryset_for_user(qs, user)
-
-        busq = query.strip()
-        if busq:
-            qs = qs.filter(Q(nombre__icontains=busq))
-
-        qs = qs.order_by("nombre")
-
-        paginator = Paginator(qs, 10)
-        page_obj = paginator.get_page(page)
+        qs = _build_vat_centro_list_queryset(request)
+        paginator = NoCountPaginator(qs.values_list("pk", flat=True), 10)
+        page_obj = paginator.get_page(request.GET.get("page", 1))
+        page_obj.object_list = _hydrate_vat_centro_page(page_obj.object_list)
 
         can_add = can_user_create_centro(user)
 
@@ -894,6 +928,7 @@ def centros_ajax(request):
             {
                 "page_obj": page_obj,
                 "is_paginated": page_obj.has_other_pages(),
+                "page_range": build_no_count_page_range(page_obj),
                 "query": query,
                 "prev_text": "Volver",
                 "next_text": "Continuar",

@@ -18,9 +18,9 @@
                 <!-- Páginas -->
                 {% if page_range %}
                     {% for i in page_range %}
-                        {% if i == '…' %}
+                        {% if i == '...' %}
                             <li class="page-item disabled">
-                                <a href="#" class="page-link">…</a>
+                                <a href="#" class="page-link">...</a>
                             </li>
                         {% else %}
                             <li class="page-item {% if page_obj.number == i %}active{% endif %}">
@@ -66,7 +66,7 @@
                 {% endif %}
             </ul>
         {% endif %}
-        {% if page_obj %}
+        {% if page_obj and page_obj.paginator.count != None %}
             <p class="text-center text-muted mb-0 mt-1">Se encontraron {{ page_obj.paginator.count }} resultados</p>
         {% elif results_count %}
             <p class="text-center text-muted mb-0 mt-1">Se encontraron {{ results_count }} resultados</p>

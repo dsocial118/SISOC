@@ -269,7 +269,11 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
 
           // Actualizar contador
           if (resultsCount) {
-            if (query.trim()) {
+            if (
+              query.trim() &&
+              data.count !== null &&
+              data.count !== undefined
+            ) {
               resultsCount.textContent = `${data.count} resultado(s) encontrado(s)`;
             } else {
               resultsCount.textContent = "";
