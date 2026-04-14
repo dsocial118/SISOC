@@ -79,7 +79,7 @@ def _horario_json_error_response(form):
     return JsonResponse(
         {
             "ok": False,
-            "message": "No se pudo guardar el horario. RevisÃ¡ los datos e intentÃ¡ nuevamente.",
+            "message": "No se pudo guardar el horario. Revisá los datos e intentá nuevamente.",
             "errors": _serialize_form_errors(form),
         },
         status=400,
@@ -365,7 +365,7 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                     .order_by("estado", "fecha_inscripcion")
                 ),
                 "estado_choices": Inscripcion.ESTADO_INSCRIPCION_CHOICES,
-                "comision_tipo_titulo": "ComisiÃ³n de Curso",
+                "comision_tipo_titulo": "Comisión de Curso",
                 "comision_back_url": cancel_url,
                 "comision_subtitle": comision.curso.nombre,
                 "comision_edit_url": reverse(
@@ -407,7 +407,7 @@ class InscripcionCursoCambiarEstadoView(LoginRequiredMixin, View):
         nuevo_estado = request.POST.get("estado")
         estados_validos = dict(Inscripcion.ESTADO_INSCRIPCION_CHOICES)
         if nuevo_estado not in estados_validos:
-            messages.error(request, "Estado no vÃ¡lido.")
+            messages.error(request, "Estado no válido.")
         else:
             inscripcion.estado = nuevo_estado
             update_fields = ["estado"]
@@ -417,7 +417,7 @@ class InscripcionCursoCambiarEstadoView(LoginRequiredMixin, View):
             inscripcion.save(update_fields=update_fields)
             messages.success(
                 request,
-                f"InscripciÃ³n de {inscripcion.ciudadano.nombre_completo} "
+                f"Inscripción de {inscripcion.ciudadano.nombre_completo} "
                 f"actualizada a '{estados_validos[nuevo_estado]}'.",
             )
         return redirect("vat_comision_curso_detail", pk=inscripcion.comision_curso_id)
@@ -481,7 +481,7 @@ class InscripcionRapidaComisionCursoView(LoginRequiredMixin, View):
         return JsonResponse(
             {
                 "ok": True,
-                "message": f"InscripciÃ³n creada para {inscripcion.ciudadano.nombre_completo}.",
+                "message": f"Inscripción creada para {inscripcion.ciudadano.nombre_completo}.",
                 "inscripcion_id": inscripcion.pk,
             }
         )
