@@ -339,7 +339,9 @@ def _cargar_sexos_cache():
 
 @lru_cache(maxsize=1)
 def _cargar_paises_a_nacionalidad_importacion():
-    data_path = Path(__file__).resolve().parents[2] / "fixtures" / "pais_a_nacionalidad.json"
+    data_path = (
+        Path(__file__).resolve().parents[2] / "fixtures" / "pais_a_nacionalidad.json"
+    )
     with data_path.open(encoding="utf-8") as fh:
         raw_map = json.load(fh)
 
