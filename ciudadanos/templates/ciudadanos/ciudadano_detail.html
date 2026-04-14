@@ -400,20 +400,13 @@
         <div class="legajo-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1>{{ ciudadano.nombre }} {{ ciudadano.apellido }} |</h1>
-                    <p class="subtitle mb-0">{{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento }}</p>
-                    <div class="mt-1">
-                        {% if ciudadano.tipo_registro_identidad == "SIN_DNI" %}
-                            <span class="badge bg-warning text-dark me-1">Sin DNI</span>
-                        {% elif ciudadano.tipo_registro_identidad == "DNI_NO_VALIDADO_RENAPER" %}
-                            <span class="badge bg-danger me-1">RENAPER no validado</span>
-                        {% endif %}
-                        {% if ciudadano.requiere_revision_manual %}
-                            <span class="badge bg-secondary">
-                                <i class="fas fa-exclamation-triangle"></i> Requiere revisión
-                            </span>
-                        {% endif %}
-                    </div>
+                    <h1>{{ ciudadano.nombre }} {{ ciudadano.apellido }}</h1>
+                    <p class="subtitle mb-0">{{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento|default:"Sin documento" }}</p>
+                    {% if ciudadano.identificador_interno %}
+                        <p class="mb-0" style="color: rgba(255,255,255,0.6); font-size: 0.8rem; margin-top: 0.25rem;">
+                            <code style="color: rgba(255,255,255,0.75);">{{ ciudadano.identificador_interno }}</code>
+                        </p>
+                    {% endif %}
                 </div>
                 <div class="btn-group">
                     <a href="{% url 'ciudadanos' %}" class="btn btn-outline-light">Volver</a>
@@ -439,6 +432,31 @@
                 </div>
             </div>
         </div>
+
+        {% if ciudadano.tipo_registro_identidad != "ESTANDAR" or ciudadano.requiere_revision_manual %}
+            <div class="mx-3 mb-2 px-3 py-2 rounded d-flex align-items-start gap-3"
+                 style="background: rgba(255,193,7,0.12); border: 1px solid rgba(255,193,7,0.35); font-size: 0.875rem; color: white;">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    {% if ciudadano.tipo_registro_identidad == "SIN_DNI" %}
+                        <span class="badge bg-warning text-dark">Sin DNI</span>
+                    {% elif ciudadano.tipo_registro_identidad == "DNI_NO_VALIDADO_RENAPER" %}
+                        <span class="badge bg-danger">RENAPER no validado</span>
+                    {% endif %}
+                    {% if ciudadano.requiere_revision_manual %}
+                        <span class="badge bg-secondary"><i class="fas fa-exclamation-triangle me-1"></i>Requiere revisión</span>
+                    {% endif %}
+                    <span style="color: rgba(255,255,255,0.8);">
+                        {% if ciudadano.tipo_registro_identidad == "SIN_DNI" %}
+                            {% if ciudadano.motivo_sin_dni %}{{ ciudadano.get_motivo_sin_dni_display }}{% endif %}
+                            {% if ciudadano.motivo_sin_dni_descripcion %} — <em>{{ ciudadano.motivo_sin_dni_descripcion }}</em>{% endif %}
+                        {% elif ciudadano.tipo_registro_identidad == "DNI_NO_VALIDADO_RENAPER" %}
+                            {% if ciudadano.motivo_no_validacion_renaper %}{{ ciudadano.get_motivo_no_validacion_renaper_display }}{% endif %}
+                            {% if ciudadano.motivo_no_validacion_descripcion %} — <em>{{ ciudadano.motivo_no_validacion_descripcion }}</em>{% endif %}
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        {% endif %}
 
         <ul class="nav nav-tabs nav-tabs-legajo" role="tablist">
             <li class="nav-item">
