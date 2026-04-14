@@ -1,7 +1,10 @@
+import json
 import re
 import logging
+import unicodedata
 from functools import lru_cache
 from io import BytesIO
+from pathlib import Path
 
 import pandas as pd
 from django.core.exceptions import ValidationError
@@ -15,6 +18,14 @@ from celiaquia.models import EstadoCupo, EstadoLegajo, ExpedienteCiudadano
 from celiaquia.services.validacion_edad_service import ValidacionEdadService
 
 logger = logging.getLogger("django")
+
+
+def _normalizar_texto_comparable(value):
+    text = str(value or "").strip().lower()
+    if not text:
+        return ""
+    normalized = unicodedata.normalize("NFKD", text)
+    return "".join(ch for ch in normalized if not unicodedata.combining(ch))
 
 
 def _norm_col(col: str) -> str:
@@ -326,6 +337,28 @@ def _cargar_sexos_cache():
     return sexos_cache
 
 
+@lru_cache(maxsize=1)
+def _cargar_paises_a_nacionalidad_importacion():
+    data_path = Path(__file__).resolve().parents[2] / "fixtures" / "pais_a_nacionalidad.json"
+    with data_path.open(encoding="utf-8") as fh:
+        raw_map = json.load(fh)
+
+    return {
+        _normalizar_texto_comparable(country): nationality
+        for country, nationality in raw_map.items()
+    }
+
+
+def _cargar_nacionalidades_cache():
+    from core.models import Nacionalidad
+
+    return {
+        _normalizar_texto_comparable(item.nacionalidad): item
+        for item in Nacionalidad.objects.all()
+        if _normalizar_texto_comparable(item.nacionalidad)
+    }
+
+
 def _precargar_datos_importacion(df: pd.DataFrame, provincia_usuario_id):
     lookup_values = _colectar_ids_y_nombres_importacion(df)
     return {
@@ -334,6 +367,8 @@ def _precargar_datos_importacion(df: pd.DataFrame, provincia_usuario_id):
         ),
         "localidades_cache": _cargar_localidades_cache(lookup_values["localidad_ids"]),
         "sexos_cache": _cargar_sexos_cache(),
+        "nacionalidades_cache": _cargar_nacionalidades_cache(),
+        "paises_a_nacionalidad": _cargar_paises_a_nacionalidad_importacion(),
         "nacionalidades_nombres": lookup_values["nacionalidades_nombres"],
         "sexos_nombres": lookup_values["sexos_nombres"],
     }
@@ -789,7 +824,11 @@ def _resolver_sexo_payload_importacion(payload, normalizar_sexo):
     payload["sexo"] = sexo_id
 
 
-def _resolver_nacionalidad_payload_importacion(payload):
+def _resolver_nacionalidad_payload_importacion(
+    payload,
+    nacionalidades_cache=None,
+    paises_a_nacionalidad=None,
+):
     nacionalidad_val = payload.get("nacionalidad")
     if not nacionalidad_val:
         payload.pop("nacionalidad", None)
@@ -801,9 +840,20 @@ def _resolver_nacionalidad_payload_importacion(payload):
     if nacionalidad_str.isdigit():
         nacionalidad_obj = Nacionalidad.objects.filter(pk=int(nacionalidad_str)).first()
     else:
-        nacionalidad_obj = Nacionalidad.objects.filter(
-            nacionalidad__iexact=nacionalidad_str
-        ).first()
+        nacionalidades_cache = nacionalidades_cache or _cargar_nacionalidades_cache()
+        paises_a_nacionalidad = (
+            paises_a_nacionalidad or _cargar_paises_a_nacionalidad_importacion()
+        )
+        nacionalidad_normalizada = _normalizar_texto_comparable(nacionalidad_str)
+        nacionalidad_obj = nacionalidades_cache.get(nacionalidad_normalizada)
+        if not nacionalidad_obj:
+            nacionalidad_relacionada = paises_a_nacionalidad.get(
+                nacionalidad_normalizada
+            )
+            if nacionalidad_relacionada:
+                nacionalidad_obj = nacionalidades_cache.get(
+                    _normalizar_texto_comparable(nacionalidad_relacionada)
+                )
 
     if not nacionalidad_obj:
         raise ValidationError(f"Nacionalidad inválida: {nacionalidad_val}")
@@ -852,6 +902,8 @@ def _normalizar_enriquecer_payload_importacion(
     municipios_cache,
     localidades_cache,
     normalizar_sexo,
+    nacionalidades_cache=None,
+    paises_a_nacionalidad=None,
 ):
     _convertir_fecha_nacimiento_payload_importacion(
         payload=payload,
@@ -867,7 +919,11 @@ def _normalizar_enriquecer_payload_importacion(
         add_warning=add_warning,
     )
     _resolver_sexo_payload_importacion(payload=payload, normalizar_sexo=normalizar_sexo)
-    _resolver_nacionalidad_payload_importacion(payload)
+    _resolver_nacionalidad_payload_importacion(
+        payload,
+        nacionalidades_cache=nacionalidades_cache,
+        paises_a_nacionalidad=paises_a_nacionalidad,
+    )
     _validar_contacto_payload_importacion(
         payload=payload,
         offset=offset,
@@ -977,6 +1033,8 @@ def validar_y_normalizar_payloads_importacion(
     offset=0,
     municipios_cache=None,
     localidades_cache=None,
+    nacionalidades_cache=None,
+    paises_a_nacionalidad=None,
     normalizar_sexo=None,
     to_date=None,
     add_warning=None,
@@ -996,6 +1054,10 @@ def validar_y_normalizar_payloads_importacion(
         municipios_cache, localidades_cache = _build_lookup_caches_payload_importacion(
             payload_normalizado, provincia_usuario_id
         )
+    if nacionalidades_cache is None:
+        nacionalidades_cache = _cargar_nacionalidades_cache()
+    if paises_a_nacionalidad is None:
+        paises_a_nacionalidad = _cargar_paises_a_nacionalidad_importacion()
 
     _aplicar_defaults_y_validar_payload_importacion(
         payload_normalizado, provincia_usuario_id
@@ -1008,6 +1070,8 @@ def validar_y_normalizar_payloads_importacion(
         municipios_cache=municipios_cache,
         localidades_cache=localidades_cache,
         normalizar_sexo=normalizar_sexo,
+        nacionalidades_cache=nacionalidades_cache,
+        paises_a_nacionalidad=paises_a_nacionalidad,
     )
     _validar_beneficiario_menor_con_responsable_importacion(payload_normalizado)
 
@@ -1614,6 +1678,8 @@ def _construir_payload_fila_importacion(
     municipios_cache,
     localidades_cache,
     normalizar_sexo,
+    nacionalidades_cache,
+    paises_a_nacionalidad,
 ):
     payload = _build_payload_importacion_from_row(
         row=row,
@@ -1634,6 +1700,8 @@ def _construir_payload_fila_importacion(
         municipios_cache=municipios_cache,
         localidades_cache=localidades_cache,
         normalizar_sexo=normalizar_sexo,
+        nacionalidades_cache=nacionalidades_cache,
+        paises_a_nacionalidad=paises_a_nacionalidad,
     )
     _validar_beneficiario_menor_con_responsable_importacion(payload)
     return payload
@@ -1861,6 +1929,8 @@ def _procesar_beneficiario_desde_row_importacion(
     provincia_usuario_id,
     municipios_cache,
     localidades_cache,
+    nacionalidades_cache,
+    paises_a_nacionalidad,
     validar_documento,
     add_warning,
     add_error,
@@ -1886,6 +1956,8 @@ def _procesar_beneficiario_desde_row_importacion(
         municipios_cache=municipios_cache,
         localidades_cache=localidades_cache,
         normalizar_sexo=normalizar_sexo,
+        nacionalidades_cache=nacionalidades_cache,
+        paises_a_nacionalidad=paises_a_nacionalidad,
     )
 
     responsable_payload = None
@@ -1996,6 +2068,8 @@ def _procesar_fila_legajo_importacion(
     provincia_usuario_id,
     municipios_cache,
     localidades_cache,
+    nacionalidades_cache,
+    paises_a_nacionalidad,
     validar_documento,
     add_warning,
     add_error,
@@ -2038,6 +2112,8 @@ def _procesar_fila_legajo_importacion(
                 provincia_usuario_id=provincia_usuario_id,
                 municipios_cache=municipios_cache,
                 localidades_cache=localidades_cache,
+                nacionalidades_cache=nacionalidades_cache,
+                paises_a_nacionalidad=paises_a_nacionalidad,
                 validar_documento=validar_documento,
                 add_warning=add_warning,
                 add_error=add_error,
@@ -2141,6 +2217,12 @@ def _build_contexto_filas_importacion_legajos(
     precargas = _precargar_datos_importacion(df, provincia_usuario_id)
     sexos_cache = precargas["sexos_cache"]
     normalizar_sexo = _build_normalizar_sexo_importacion(sexos_cache)
+    nacionalidades_cache = precargas.get("nacionalidades_cache")
+    if nacionalidades_cache is None:
+        nacionalidades_cache = _cargar_nacionalidades_cache()
+    paises_a_nacionalidad = precargas.get("paises_a_nacionalidad")
+    if paises_a_nacionalidad is None:
+        paises_a_nacionalidad = _cargar_paises_a_nacionalidad_importacion()
 
     # Identificar documentos con doble rol
     doble_rol_docs = _identificar_documentos_con_doble_rol(df)
@@ -2154,6 +2236,8 @@ def _build_contexto_filas_importacion_legajos(
         "provincia_usuario_id": provincia_usuario_id,
         "municipios_cache": precargas["municipios_cache"],
         "localidades_cache": precargas["localidades_cache"],
+        "nacionalidades_cache": nacionalidades_cache,
+        "paises_a_nacionalidad": paises_a_nacionalidad,
         "validar_documento": _validar_documento_importacion,
         "add_warning": add_warning,
         "add_error": add_error,
