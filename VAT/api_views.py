@@ -130,6 +130,7 @@ class ProvinciaViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Provincia.objects.all().order_by("nombre")
     serializer_class = ProvinciaSerializer
     permission_classes = [HasAPIKey]
+    pagination_class = None
 
 
 @extend_schema(tags=["VAT - Ubicación"])
@@ -153,6 +154,7 @@ class LocalidadViewSet(viewsets.ReadOnlyModelViewSet):
     )
     serializer_class = LocalidadSerializer
     permission_classes = [HasAPIKey]
+    pagination_class = None
 
     def get_queryset(self):
         queryset = super().get_queryset()

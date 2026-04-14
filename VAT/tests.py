@@ -2145,6 +2145,43 @@ def vat_curso_base(db, vat_geo_data):
 
 
 @pytest.mark.django_db
+def test_api_vat_provincias_lista_sin_paginacion(vat_api_client):
+    Provincia.objects.bulk_create(
+        [Provincia(nombre=f"Provincia VAT {index:02d}") for index in range(12)]
+    )
+
+    response = vat_api_client.get("/api/vat/provincias/")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    assert len(payload) == 12
+    assert payload[0]["nombre"] == "Provincia VAT 00"
+    assert payload[-1]["nombre"] == "Provincia VAT 11"
+
+
+@pytest.mark.django_db
+def test_api_vat_localidades_lista_sin_paginacion(vat_api_client):
+    provincia = Provincia.objects.create(nombre="Provincia VAT")
+    municipio = Municipio.objects.create(nombre="Municipio VAT", provincia=provincia)
+    Localidad.objects.bulk_create(
+        [
+            Localidad(nombre=f"Localidad VAT {index:02d}", municipio=municipio)
+            for index in range(12)
+        ]
+    )
+
+    response = vat_api_client.get("/api/vat/localidades/")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    assert len(payload) == 12
+    assert payload[0]["nombre"] == "Localidad VAT 00"
+    assert payload[-1]["nombre"] == "Localidad VAT 11"
+
+
+@pytest.mark.django_db
 def test_api_vat_centros_lista_con_api_key(vat_api_client, vat_curso_base):
     centro, _, _ = vat_curso_base
 
