@@ -417,12 +417,34 @@ class CiudadanosCreateView(LoginRequiredMixin, CreateView):
             messages.warning(request, "Ingrese un DNI numérico válido para buscar.")
             return super().get(request, *args, **kwargs)
 
-        ciudadano = Ciudadano.objects.filter(
-            tipo_documento=Ciudadano.DOCUMENTO_DNI, documento=int(dni_clean)
-        ).first()
-        if ciudadano:
-            messages.info(request, "El ciudadano ya existe. Puede editar su legajo.")
-            return redirect("ciudadanos_editar", pk=ciudadano.pk)
+        coincidencias = list(
+            Ciudadano.objects.filter(
+                tipo_documento=Ciudadano.DOCUMENTO_DNI, documento=int(dni_clean)
+            ).order_by("tipo_registro_identidad")
+        )
+
+        if coincidencias:
+            # Preferir el registro ESTANDAR (único con documento_unico_key)
+            estandar = next(
+                (
+                    c
+                    for c in coincidencias
+                    if c.tipo_registro_identidad == Ciudadano.TIPO_REGISTRO_ESTANDAR
+                ),
+                None,
+            )
+            if estandar:
+                messages.info(request, "El ciudadano ya existe. Puede editar su legajo.")
+                return redirect("ciudadanos_editar", pk=estandar.pk)
+
+            # Hay duplicados no-estándar: avisar y mostrar el formulario sin redirigir
+            messages.warning(
+                request,
+                f"Se encontraron {len(coincidencias)} registro(s) con ese DNI "
+                "pero ninguno está validado como estándar. "
+                "Revisá la cola de revisión o creá un nuevo registro.",
+            )
+            return super().get(request, *args, **kwargs)
 
         sexo = (request.GET.get("sexo") or "M").upper()
         if sexo not in {"M", "F", "X"}:
@@ -640,7 +662,20 @@ class ColaRevisionView(PermissionRequiredMixin, LoginRequiredMixin, ListView):
     def get_queryset(self):
         return (
             Ciudadano.objects.filter(requiere_revision_manual=True)
-            .select_related("sexo", "provincia")
+            .select_related("provincia")
+            .only(
+                "id",
+                "apellido",
+                "nombre",
+                "documento",
+                "identificador_interno",
+                "tipo_registro_identidad",
+                "motivo_sin_dni",
+                "motivo_sin_dni_descripcion",
+                "motivo_no_validacion_renaper",
+                "motivo_no_validacion_descripcion",
+                "provincia",
+            )
             .order_by("apellido", "nombre")
         )
 
