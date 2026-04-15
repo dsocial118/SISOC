@@ -144,7 +144,6 @@ class Command(BaseCommand):
                                 tipo="incorporacion",
                             )
 
-
             stats["applied"] += 1
             self.stdout.write(self.style.SUCCESS(f"[APLICADO] {change_message}"))
 
