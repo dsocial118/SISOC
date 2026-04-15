@@ -68,7 +68,18 @@ correspondiente. Esto replica el patrón ya existente en `admisiones` (FK→Come
   - Selector de convenios/admisiones (botones) con badge "Múltiples convenios activos".
   - Campo "Número de Convenio" en la sección Información Relevante.
 
-## Fases siguientes
+## Fase 4 — Limpieza de Hitos.comedor
 
-- **Fase 4:** limpiar `Hitos.comedor` y actualizar `crear_hitos` /
-  `_ensure_hito_para_comedor` en `comedores/services/comedor_service/impl.py`.
+- `acompanamientos/models/hitos.py` — eliminado campo `comedor`; `__str__` actualizado.
+- `acompanamientos/acompanamiento_service.py` — `crear_hitos` ahora busca el
+  `Acompanamiento` activo más reciente del comedor. Si no existe, retorna sin hacer nada.
+- `comedores/services/comedor_service/impl.py` — eliminados `_ensure_hito_para_comedor`,
+  su llamada y los `messages` asociados. El `Hitos` se crea en `importar_datos_desde_admision`.
+- `comedores/management/commands/update_comedores_dupla.py` — eliminada creación de
+  `Hitos` por comedor e import huérfano.
+- `acompanamientos/migrations/0007_hitos_cleanup_comedor.py` — borra hitos huérfanos
+  (confirmado por el equipo que se puede perder esa data), elimina campo `comedor`.
+- Tests actualizados: `test_crear_hitos_crea_subintervencion_y_nuevo_hito` y nuevo
+  `test_crear_hitos_sin_acompanamiento_no_hace_nada`.
+  `test_comedor_service_characterization_db.py` actualizado (sin assert de Hitos,
+  `success_msg.call_count == 1`).
