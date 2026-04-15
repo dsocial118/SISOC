@@ -3240,6 +3240,8 @@ def test_api_vat_web_inscripciones_informa_lista_espera_si_no_hay_cupo(
         ciudadano=aspirante,
         parametria=voucher_parametria,
         programa=programa,
+        cantidad_inicial=3,
+        cantidad_usada=0,
         cantidad_disponible=3,
         fecha_vencimiento=date(2026, 12, 31),
         estado="activo",
