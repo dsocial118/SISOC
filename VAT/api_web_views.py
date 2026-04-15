@@ -337,9 +337,7 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
             .annotate(
                 total_inscriptos=Count(
                     "inscripciones",
-                    filter=Q(
-                        inscripciones__estado__in=ESTADOS_INSCRIPCION_OCUPAN_CUPO
-                    ),
+                    filter=Q(inscripciones__estado__in=ESTADOS_INSCRIPCION_OCUPAN_CUPO),
                     distinct=True,
                 )
             )
