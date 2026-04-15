@@ -1066,6 +1066,14 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
     codigo_comision = models.CharField(max_length=50, verbose_name="Código de Comisión")
     nombre = models.CharField(max_length=255, verbose_name="Nombre")
     cupo_total = models.PositiveIntegerField(verbose_name="Cupo Total")
+    acepta_lista_espera = models.BooleanField(
+        default=False,
+        verbose_name="Acepta Lista de Espera",
+        help_text=(
+            "Si está activo, cuando la comisión se quede sin cupos "
+            "las nuevas inscripciones pasan a espera."
+        ),
+    )
     fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
     fecha_fin = models.DateField(verbose_name="Fecha de Fin")
     estado = models.CharField(
@@ -1303,6 +1311,14 @@ class Comision(SoftDeleteModelMixin, models.Model):
     fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
     fecha_fin = models.DateField(verbose_name="Fecha de Fin")
     cupo = models.PositiveIntegerField(verbose_name="Cupo Total")
+    acepta_lista_espera = models.BooleanField(
+        default=False,
+        verbose_name="Acepta Lista de Espera",
+        help_text=(
+            "Si está activo, cuando la comisión se quede sin cupos "
+            "las nuevas inscripciones pasan a espera."
+        ),
+    )
     estado = models.CharField(
         max_length=20,
         choices=ESTADO_COMISION_CHOICES,
@@ -1552,6 +1568,7 @@ class Inscripcion(SoftDeleteModelMixin, models.Model):
 
     ESTADO_INSCRIPCION_CHOICES = [
         ("pre_inscripta", "Pre-inscripta"),
+        ("en_espera", "En Espera"),
         ("inscripta", "Inscripta"),
         ("validada_presencial", "Validada Presencial"),
         ("completada", "Completada"),

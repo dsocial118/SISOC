@@ -23,7 +23,10 @@ from VAT.serializers import (
     VatWebInscripcionSerializer,
     VatWebTituloSerializer,
 )
-from VAT.services.inscripcion_service import InscripcionService
+from VAT.services.inscripcion_service import (
+    ESTADOS_INSCRIPCION_OCUPAN_CUPO,
+    InscripcionService,
+)
 
 
 @extend_schema(
@@ -331,7 +334,15 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
                     ).order_by("programa_id", "id"),
                 ),
             )
-            .annotate(total_inscriptos=Count("inscripciones", distinct=True))
+            .annotate(
+                total_inscriptos=Count(
+                    "inscripciones",
+                    filter=Q(
+                        inscripciones__estado__in=ESTADOS_INSCRIPCION_OCUPAN_CUPO
+                    ),
+                    distinct=True,
+                )
+            )
             .exclude(estado__in=["cerrada", "suspendida"])
             .exclude(curso__estado__in=["finalizado", "cancelado"])
             .order_by("fecha_inicio", "codigo_comision")

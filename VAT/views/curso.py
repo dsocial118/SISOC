@@ -296,9 +296,22 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                 ),
                 "inscripciones": list(
                     Inscripcion.objects.filter(comision_curso=comision)
+                    .exclude(estado="en_espera")
                     .select_related("ciudadano", "programa")
                     .order_by("estado", "fecha_inscripcion")
                 ),
+                "lista_espera": list(
+                    Inscripcion.objects.filter(
+                        comision_curso=comision,
+                        estado="en_espera",
+                    )
+                    .select_related("ciudadano", "programa")
+                    .order_by("fecha_inscripcion")
+                ),
+                "cupo_ocupado": Inscripcion.objects.filter(
+                    comision_curso=comision,
+                    estado__in=ESTADOS_INSCRIPCION_OCUPAN_CUPO,
+                ).count(),
                 "estado_choices": Inscripcion.ESTADO_INSCRIPCION_CHOICES,
                 "comision_tipo_titulo": "Comisión de Curso",
                 "comision_back_url": cancel_url,
@@ -344,17 +357,20 @@ class InscripcionCursoCambiarEstadoView(LoginRequiredMixin, View):
         if nuevo_estado not in estados_validos:
             messages.error(request, "Estado no válido.")
         else:
-            inscripcion.estado = nuevo_estado
-            update_fields = ["estado"]
-            if nuevo_estado == "validada_presencial":
-                inscripcion.fecha_validacion_presencial = timezone.now()
-                update_fields.append("fecha_validacion_presencial")
-            inscripcion.save(update_fields=update_fields)
-            messages.success(
-                request,
-                f"Inscripción de {inscripcion.ciudadano.nombre_completo} "
-                f"actualizada a '{estados_validos[nuevo_estado]}'.",
-            )
+            try:
+                InscripcionService.actualizar_estado_inscripcion(
+                    inscripcion=inscripcion,
+                    nuevo_estado=nuevo_estado,
+                    usuario=request.user,
+                )
+            except ValueError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(
+                    request,
+                    f"Inscripción de {inscripcion.ciudadano.nombre_completo} "
+                    f"actualizada a '{estados_validos[nuevo_estado]}'.",
+                )
         return redirect("vat_comision_curso_detail", pk=inscripcion.comision_curso_id)
 
 
@@ -416,8 +432,13 @@ class InscripcionRapidaComisionCursoView(LoginRequiredMixin, View):
         return JsonResponse(
             {
                 "ok": True,
-                "message": f"Inscripción creada para {inscripcion.ciudadano.nombre_completo}.",
+                "message": (
+                    f"{inscripcion.ciudadano.nombre_completo} quedó en lista de espera."
+                    if inscripcion.estado == "en_espera"
+                    else f"Inscripción creada para {inscripcion.ciudadano.nombre_completo}."
+                ),
                 "inscripcion_id": inscripcion.pk,
+                "estado": inscripcion.estado,
             }
         )
 

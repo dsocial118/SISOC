@@ -292,7 +292,8 @@
                             data-edit-url="{{ comision_edit_url }}"
                             data-curso-id="{{ comision.curso_id }}"
                             data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
-                            data-cupo-total="{{ comision.cupo_total }}"
+                            data-cupo-total="{{ comision.cupo_total|default:comision.cupo }}"
+                            data-acepta-lista-espera="{{ comision.acepta_lista_espera|yesno:'1,0' }}"
                             data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
                             data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
                             data-estado="{{ comision.estado }}"
@@ -319,7 +320,7 @@
                         padding:.25rem .5rem;
                         border-left:1px solid rgba(255,255,255,.12)">
                 <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Inscriptos</span>
-                <span class="ci-stat-val" style="font-size:1.15rem;">{{ inscripciones|length }}</span>
+                <span class="ci-stat-val" style="font-size:1.15rem;">{{ cupo_ocupado }}</span>
             </div>
             <div style="flex:1;
                         min-width:80px;
@@ -381,6 +382,17 @@
                     <i class="bi bi-people"></i>Inscriptos
                     {% if inscripciones %}<span class="ci-cnt">{{ inscripciones|length }}</span>{% endif %}
                 </button>
+                {% if comision.acepta_lista_espera or lista_espera %}
+                    <button class="ci-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#ci-espera"
+                            type="button"
+                            role="tab"
+                            aria-selected="false">
+                        <i class="bi bi-hourglass-split"></i>Lista de espera
+                        {% if lista_espera %}<span class="ci-cnt">{{ lista_espera|length }}</span>{% endif %}
+                    </button>
+                {% endif %}
                 <button class="ci-tab"
                         data-bs-toggle="tab"
                         data-bs-target="#ci-sesiones"
@@ -427,6 +439,16 @@
                             </div>
                             <div class="ci-info-item">
                                 <span class="ci-lbl">Cupo</span><span class="ci-val">{{ comision.cupo }}</span>
+                            </div>
+                            <div class="ci-info-item">
+                                <span class="ci-lbl">Lista de espera</span>
+                                <span class="ci-val">
+                                    {% if comision.acepta_lista_espera %}
+                                        <span class="ci-pill ci-pill-green">Habilitada</span>
+                                    {% else %}
+                                        <span class="ci-pill ci-pill-gray">Deshabilitada</span>
+                                    {% endif %}
+                                </span>
                             </div>
                             <div class="ci-info-item">
                                 <span class="ci-lbl">Estado</span><span class="ci-val"><span class="ci-pill ci-pill-blue">{{ comision.get_estado_display }}</span></span>
@@ -555,6 +577,78 @@
                         {% endif %}
                     </div>
                 </div>
+
+                {% if comision.acepta_lista_espera or lista_espera %}
+                    <div class="tab-pane fade" id="ci-espera" role="tabpanel">
+                        <div class="ci-panel ci-panel-inscriptos">
+                            <div class="ci-sec-head">
+                                <span class="ci-sec-title"><i class="bi bi-hourglass-split me-2"></i>Lista de espera</span>
+                            </div>
+                            {% if lista_espera %}
+                                {% for insc in lista_espera %}
+                                    <div class="ci-row">
+                                        <div class="ci-av ci-av-{{ forloop.counter|divisibleby:5|yesno:'5,' }}{{ forloop.counter|divisibleby:4|yesno:'4,' }}{{ forloop.counter|divisibleby:3|yesno:'3,' }}{{ forloop.counter|divisibleby:2|yesno:'2,1' }}">
+                                            {{ insc.ciudadano.nombre_completo|slice:":2"|upper }}
+                                        </div>
+                                        <div style="flex:1;min-width:0;">
+                                            <a href="{% url 'vat_inscripcion_detail' insc.pk %}"
+                                               class="d-block fw-semibold text-decoration-none"
+                                               style="font-size:.87rem;
+                                                      color:var(--bs-body-color);
+                                                      white-space:nowrap;
+                                                      overflow:hidden;
+                                                      text-overflow:ellipsis">{{ insc.ciudadano.nombre_completo }}</a>
+                                            <span class="d-block"
+                                                  style="font-size:.74rem;
+                                                         color:var(--bs-secondary-color);
+                                                         white-space:nowrap;
+                                                         overflow:hidden;
+                                                         text-overflow:ellipsis">{{ insc.programa }}</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                            <span style="font-size:.7rem;
+                                                         color:var(--bs-secondary-color);
+                                                         white-space:nowrap">{{ insc.fecha_inscripcion|date:"d/m/Y" }}</span>
+                                            <span class="ci-pill ci-pill-yellow">{{ insc.get_estado_display }}</span>
+                                            {% if perms.VAT.change_inscripcion %}
+                                                <form method="post"
+                                                      action="{% url inscripcion_estado_url_name insc.pk %}"
+                                                      class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="estado" value="inscripta" />
+                                                    <button type="submit"
+                                                            class="ci-pill ci-pill-green border-0"
+                                                            style="cursor:pointer;font-size:.69rem"
+                                                            title="Admitir desde la lista de espera">
+                                                        <i class="bi bi-check-lg me-1"></i>Admitir
+                                                    </button>
+                                                </form>
+                                                <form method="post"
+                                                      action="{% url inscripcion_estado_url_name insc.pk %}"
+                                                      class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="estado" value="rechazada" />
+                                                    <button type="submit"
+                                                            class="ci-pill ci-pill-red border-0"
+                                                            style="cursor:pointer;font-size:.69rem"
+                                                            title="Rechazar inscripción en espera">
+                                                        <i class="bi bi-x-lg me-1"></i>Rechazar
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="ci-empty">
+                                    <i class="bi bi-hourglass"></i>
+                                    <p class="ci-empty-t">Sin personas en espera</p>
+                                    <p class="ci-empty-s">Cuando la comisión esté llena, las nuevas altas quedarán listadas aquí.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
 
                 {# SESIONES #}
                 <div class="tab-pane fade" id="ci-sesiones" role="tabpanel">
@@ -694,7 +788,8 @@
                                     data-edit-url="{{ comision_edit_url }}"
                                     data-curso-id="{{ comision.curso_id }}"
                                     data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
-                                    data-cupo-total="{{ comision.cupo_total }}"
+                                    data-cupo-total="{{ comision.cupo_total|default:comision.cupo }}"
+                                    data-acepta-lista-espera="{{ comision.acepta_lista_espera|yesno:'1,0' }}"
                                     data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
                                     data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
                                     data-estado="{{ comision.estado }}"
@@ -734,18 +829,23 @@
                 <div class="ci-scard">
                     <p class="ci-sc-title">Ocupación de cupo</p>
                     <div class="d-flex align-items-baseline gap-1 mb-2">
-                        <span class="ci-cupo-num">{{ inscripciones|length }}</span>
+                        <span class="ci-cupo-num">{{ cupo_ocupado }}</span>
                         <span class="ci-cupo-sep">/</span>
                         <span class="ci-cupo-tot">{{ comision.cupo }}</span>
                         <span class="ci-cupo-lbl">inscriptos</span>
                     </div>
                     {% if comision.cupo %}
-                        {% widthratio inscripciones|length comision.cupo 100 as pct %}
+                        {% widthratio cupo_ocupado comision.cupo 100 as pct %}
                         <div class="ci-prog">
                             <div class="ci-prog-bar"
-                                 style="width:{% widthratio inscripciones|length comision.cupo 100 %}%;
+                                 style="width:{% widthratio cupo_ocupado comision.cupo 100 %}%;
                                         background:{% if pct >= 90 %}#f87171{% elif pct >= 60 %}#facc15{% else %}#4a7fe8{% endif %}">
                             </div>
+                        </div>
+                    {% endif %}
+                    {% if comision.acepta_lista_espera %}
+                        <div class="mt-3 small" style="color:var(--bs-secondary-color);">
+                            <i class="bi bi-hourglass-split me-1"></i>{{ lista_espera|length }} en espera
                         </div>
                     {% endif %}
                 </div>
@@ -1262,6 +1362,8 @@
             setFormValue('curso', trigger.getAttribute('data-curso-id'));
             setFormValue('ubicacion', trigger.getAttribute('data-ubicacion-id'));
             setFormValue('cupo_total', trigger.getAttribute('data-cupo-total'));
+            setFormValue('cupo', trigger.getAttribute('data-cupo-total'));
+            setFormValue('acepta_lista_espera', trigger.getAttribute('data-acepta-lista-espera'));
             setFormValue('fecha_inicio', trigger.getAttribute('data-fecha-inicio'));
             setFormValue('fecha_fin', trigger.getAttribute('data-fecha-fin'));
             setFormValue('estado', trigger.getAttribute('data-estado'));

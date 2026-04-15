@@ -1428,6 +1428,11 @@ class ComisionCursoForm(forms.ModelForm):
         min_value=1,
         widget=forms.NumberInput(attrs={"class": "form-control"}),
     )
+    acepta_lista_espera = forms.BooleanField(
+        label="Acepta Lista de Espera",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
     fecha_inicio = forms.DateField(
         label="Fecha de Inicio",
         widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
@@ -1453,6 +1458,7 @@ class ComisionCursoForm(forms.ModelForm):
             "curso",
             "ubicacion",
             "cupo_total",
+            "acepta_lista_espera",
             "fecha_inicio",
             "fecha_fin",
             "estado",
@@ -1692,6 +1698,11 @@ class ComisionForm(forms.ModelForm):
         label="Cupo Total",
         widget=forms.NumberInput(attrs={"class": "form-control"}),
     )
+    acepta_lista_espera = forms.BooleanField(
+        label="Acepta Lista de Espera",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
     estado = forms.ChoiceField(
         label="Estado",
         choices=Comision.ESTADO_COMISION_CHOICES,
@@ -1713,6 +1724,7 @@ class ComisionForm(forms.ModelForm):
             "fecha_inicio",
             "fecha_fin",
             "cupo",
+            "acepta_lista_espera",
             "estado",
             "observaciones",
         ]

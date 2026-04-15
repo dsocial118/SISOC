@@ -1,6 +1,7 @@
 # pylint: disable=too-many-lines
 
 from rest_framework import serializers
+from VAT.services.inscripcion_service import ESTADOS_INSCRIPCION_OCUPAN_CUPO
 from VAT.models import (
     Centro,
     ModalidadInstitucional,
@@ -465,6 +466,7 @@ class ComisionCursoSerializer(serializers.ModelSerializer):
             "codigo_comision",
             "nombre",
             "cupo_total",
+            "acepta_lista_espera",
             "fecha_inicio",
             "fecha_fin",
             "estado",
@@ -583,8 +585,16 @@ class CursoBusquedaComisionSerializer(serializers.ModelSerializer):
         if total_inscriptos is not None:
             return total_inscriptos
         if hasattr(obj, "inscripciones_prefetch"):
-            return len(obj.inscripciones_prefetch)
-        return obj.inscripciones.count()
+            return len(
+                [
+                    inscripcion
+                    for inscripcion in obj.inscripciones_prefetch
+                    if inscripcion.estado in ESTADOS_INSCRIPCION_OCUPAN_CUPO
+                ]
+            )
+        return obj.inscripciones.filter(
+            estado__in=ESTADOS_INSCRIPCION_OCUPAN_CUPO
+        ).count()
 
     def get_cupos_disponibles(self, obj):
         total_inscriptos = self.get_total_inscriptos(obj) or 0
@@ -696,6 +706,7 @@ class ComisionSerializer(serializers.ModelSerializer):
             "fecha_inicio",
             "fecha_fin",
             "cupo",
+            "acepta_lista_espera",
             "estado",
             "horarios",
             "observaciones",
@@ -983,7 +994,9 @@ class VatWebCursoSerializer(serializers.ModelSerializer):
         total_inscriptos = getattr(obj, "total_inscriptos", None)
         if total_inscriptos is not None:
             return total_inscriptos
-        return obj.inscripciones.count()
+        return obj.inscripciones.filter(
+            estado__in=ESTADOS_INSCRIPCION_OCUPAN_CUPO
+        ).count()
 
     def get_cupos_disponibles(self, obj):
         total_inscriptos = self.get_total_inscriptos(obj) or 0

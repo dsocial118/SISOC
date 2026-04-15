@@ -1,6 +1,7 @@
 from decimal import Decimal
 from contextlib import nullcontext
 
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.db import transaction
 
@@ -11,7 +12,17 @@ User = get_user_model()
 
 # Estados de inscripción que se consideran "activos" y bloquean una nueva inscripción
 # cuando inscripcion_unica_activa está habilitado en la parametría del voucher.
-ESTADOS_INSCRIPCION_ACTIVA = ("pre_inscripta", "inscripta", "validada_presencial")
+ESTADOS_INSCRIPCION_ACTIVA = (
+    "pre_inscripta",
+    "en_espera",
+    "inscripta",
+    "validada_presencial",
+)
+ESTADOS_INSCRIPCION_OCUPAN_CUPO = (
+    "pre_inscripta",
+    "inscripta",
+    "validada_presencial",
+)
 
 
 class InscripcionService:
@@ -104,6 +115,45 @@ class InscripcionService:
             else inscripcion.comision_curso
         )
         return entidad.nombre if entidad else "sin comisión"
+
+    @staticmethod
+    def _estado_ocupa_cupo(estado: str) -> bool:
+        return estado in ESTADOS_INSCRIPCION_OCUPAN_CUPO
+
+    @staticmethod
+    def _resolver_cupo_total(comision) -> int:
+        return int(
+            getattr(comision, "cupo_total", None) or getattr(comision, "cupo", 0)
+        )
+
+    @staticmethod
+    def _acepta_lista_espera(comision) -> bool:
+        return bool(getattr(comision, "acepta_lista_espera", False))
+
+    @staticmethod
+    def _inscripciones_queryset_para_comision(comision):
+        return Inscripcion.objects.filter(
+            **InscripcionService._resolver_lookup_comision(comision)
+        )
+
+    @staticmethod
+    def contar_inscripciones_con_cupo(comision, *, exclude_inscripcion=None) -> int:
+        queryset = InscripcionService._inscripciones_queryset_para_comision(comision).filter(
+            estado__in=ESTADOS_INSCRIPCION_OCUPAN_CUPO
+        )
+        exclude_id = InscripcionService._resolve_lookup_id(exclude_inscripcion)
+        if exclude_id:
+            queryset = queryset.exclude(pk=exclude_id)
+        return queryset.count()
+
+    @staticmethod
+    def calcular_cupos_disponibles(comision, *, exclude_inscripcion=None) -> int:
+        cupo_total = InscripcionService._resolver_cupo_total(comision)
+        total_inscriptos = InscripcionService.contar_inscripciones_con_cupo(
+            comision,
+            exclude_inscripcion=exclude_inscripcion,
+        )
+        return max(cupo_total - total_inscriptos, 0)
 
     @staticmethod
     def _debitar_voucher_para_oferta(  # pylint: disable=too-many-arguments
@@ -202,8 +252,7 @@ class InscripcionService:
     def prevalidar_inscripcion(*, ciudadano, comision, programa=None) -> dict:
         unidad_formativa, _ = InscripcionService._resolver_unidad_formativa(comision)
         programa = programa or unidad_formativa.programa
-        total_inscriptos = comision.inscripciones.count()
-        cupos_disponibles = max((comision.cupo_total or 0) - total_inscriptos, 0)
+        cupos_disponibles = InscripcionService.calcular_cupos_disponibles(comision)
         motivos: list[str] = []
 
         if unidad_formativa.estado != "activo":
@@ -214,7 +263,10 @@ class InscripcionService:
                 "La comisión no se encuentra activa para nuevas inscripciones."
             )
 
-        if cupos_disponibles <= 0:
+        if (
+            cupos_disponibles <= 0
+            and not InscripcionService._acepta_lista_espera(comision)
+        ):
             motivos.append("La comisión no tiene cupos disponibles.")
 
         if programa is None:
@@ -308,7 +360,7 @@ class InscripcionService:
                 "programa_id": programa.id if programa else None,
                 "programa_nombre": programa.nombre if programa else None,
                 "usa_voucher": unidad_formativa.usa_voucher,
-                "cupo_total": comision.cupo_total,
+                "cupo_total": InscripcionService._resolver_cupo_total(comision),
                 "cupos_disponibles": cupos_disponibles,
                 "costo": getattr(unidad_formativa, "costo", None)
                 or getattr(unidad_formativa, "costo_creditos", 0),
@@ -348,6 +400,19 @@ class InscripcionService:
         ).exists():
             raise ValueError("El ciudadano ya está inscripto en esta comisión.")
 
+        cupos_disponibles = InscripcionService.calcular_cupos_disponibles(comision)
+        estado_final = estado
+        if InscripcionService._estado_ocupa_cupo(estado):
+            if cupos_disponibles <= 0:
+                if InscripcionService._acepta_lista_espera(comision):
+                    estado_final = "en_espera"
+                else:
+                    raise ValueError("La comisión no tiene cupos disponibles.")
+        elif estado == "en_espera" and not InscripcionService._acepta_lista_espera(
+            comision
+        ):
+            raise ValueError("La comisión no acepta lista de espera.")
+
         # Validar inscripción única activa (solo si usa voucher)
         if unidad_formativa.usa_voucher:
             puede, motivo = InscripcionService.validar_inscripcion_unica(
@@ -360,14 +425,17 @@ class InscripcionService:
             inscripcion_kwargs = {
                 "ciudadano": ciudadano,
                 "programa": programa,
-                "estado": estado,
+                "estado": estado_final,
                 "origen_canal": origen_canal,
                 "observaciones": observaciones or "",
                 relation: comision,
             }
             inscripcion = Inscripcion.objects.create(**inscripcion_kwargs)
 
-            if unidad_formativa.usa_voucher:
+            if (
+                unidad_formativa.usa_voucher
+                and InscripcionService._estado_ocupa_cupo(estado_final)
+            ):
                 cantidad_debito = InscripcionService._resolver_cantidad_debito(
                     getattr(unidad_formativa, "costo", None)
                     or getattr(unidad_formativa, "costo_creditos", 0)
@@ -388,6 +456,65 @@ class InscripcionService:
 
                 inscripcion.voucher_debito = cantidad_debito
                 inscripcion.voucher_saldo = voucher.cantidad_disponible
+
+        return inscripcion
+
+    @staticmethod
+    def actualizar_estado_inscripcion(*, inscripcion, nuevo_estado, usuario=None):
+        estados_validos = dict(Inscripcion.ESTADO_INSCRIPCION_CHOICES)
+        if nuevo_estado not in estados_validos:
+            raise ValueError("Estado no válido.")
+
+        estado_anterior = inscripcion.estado
+        if estado_anterior == nuevo_estado:
+            return inscripcion
+
+        comision = inscripcion.entidad_comision
+        if comision is None:
+            raise ValueError("La inscripción no tiene una comisión asociada.")
+
+        if nuevo_estado == "en_espera" and not InscripcionService._acepta_lista_espera(
+            comision
+        ):
+            raise ValueError("La comisión no acepta lista de espera.")
+
+        unidad_formativa, _ = InscripcionService._resolver_unidad_formativa(comision)
+        pasa_a_ocupar_cupo = InscripcionService._estado_ocupa_cupo(nuevo_estado)
+        ocupaba_cupo = InscripcionService._estado_ocupa_cupo(estado_anterior)
+
+        if pasa_a_ocupar_cupo and not ocupaba_cupo:
+            cupos_disponibles = InscripcionService.calcular_cupos_disponibles(comision)
+            if cupos_disponibles <= 0:
+                raise ValueError("La comisión no tiene cupos disponibles.")
+
+        with InscripcionService._atomic_if_persistent(inscripcion, comision):
+            if unidad_formativa.usa_voucher and pasa_a_ocupar_cupo and not ocupaba_cupo:
+                cantidad_debito = InscripcionService._resolver_cantidad_debito(
+                    getattr(unidad_formativa, "costo", None)
+                    or getattr(unidad_formativa, "costo_creditos", 0)
+                )
+                voucher = InscripcionService._debitar_voucher_para_oferta(
+                    oferta=unidad_formativa,
+                    ciudadano=inscripcion.ciudadano,
+                    cantidad_debito=cantidad_debito,
+                    usuario=usuario,
+                    detalles={
+                        "inscripcion_id": inscripcion.id,
+                        "comision_id": inscripcion.comision_id,
+                        "comision_curso_id": inscripcion.comision_curso_id,
+                        "comision": str(inscripcion.entidad_comision),
+                        "origen": "cambio_estado_inscripcion",
+                    },
+                )
+                inscripcion.voucher_debito = cantidad_debito
+                inscripcion.voucher_saldo = voucher.cantidad_disponible
+
+            inscripcion.estado = nuevo_estado
+            update_fields = ["estado", "fecha_modificacion"]
+            if nuevo_estado == "validada_presencial":
+                inscripcion.fecha_validacion_presencial = timezone.now()
+                update_fields.append("fecha_validacion_presencial")
+            inscripcion.save(update_fields=update_fields)
 
         return inscripcion
 
