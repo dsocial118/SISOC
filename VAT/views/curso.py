@@ -278,6 +278,11 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         horario_form.fields["comision_curso"].queryset = ComisionCurso.objects.filter(
             pk=comision.pk
         )
+        inscripciones = list(
+            Inscripcion.objects.filter(comision_curso=comision)
+            .select_related("ciudadano", "programa")
+            .order_by("estado", "fecha_inscripcion")
+        )
         context.update(
             {
                 "comision_curso": comision,
@@ -297,24 +302,21 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                     .select_related("horario__dia_semana")
                     .order_by("fecha", "horario__hora_desde")
                 ),
-                "inscripciones": list(
-                    Inscripcion.objects.filter(comision_curso=comision)
-                    .exclude(estado="en_espera")
-                    .select_related("ciudadano", "programa")
-                    .order_by("estado", "fecha_inscripcion")
+                "inscripciones": [
+                    inscripcion
+                    for inscripcion in inscripciones
+                    if inscripcion.estado != "en_espera"
+                ],
+                "lista_espera": [
+                    inscripcion
+                    for inscripcion in inscripciones
+                    if inscripcion.estado == "en_espera"
+                ],
+                "cupo_ocupado": sum(
+                    1
+                    for inscripcion in inscripciones
+                    if inscripcion.estado in ESTADOS_INSCRIPCION_OCUPAN_CUPO
                 ),
-                "lista_espera": list(
-                    Inscripcion.objects.filter(
-                        comision_curso=comision,
-                        estado="en_espera",
-                    )
-                    .select_related("ciudadano", "programa")
-                    .order_by("fecha_inscripcion")
-                ),
-                "cupo_ocupado": Inscripcion.objects.filter(
-                    comision_curso=comision,
-                    estado__in=ESTADOS_INSCRIPCION_OCUPAN_CUPO,
-                ).count(),
                 "estado_choices": Inscripcion.ESTADO_INSCRIPCION_CHOICES,
                 "comision_tipo_titulo": "Comisión de Curso",
                 "comision_back_url": cancel_url,

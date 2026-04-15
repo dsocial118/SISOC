@@ -327,11 +327,22 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
             .select_related("ciudadano", "programa")
             .order_by("estado", "fecha_inscripcion")
         )
-        context["inscripciones"] = list(inscripciones_qs.exclude(estado="en_espera"))
-        context["lista_espera"] = list(inscripciones_qs.filter(estado="en_espera"))
-        context["cupo_ocupado"] = inscripciones_qs.filter(
-            estado__in=ESTADOS_INSCRIPCION_OCUPAN_CUPO
-        ).count()
+        inscripciones = list(inscripciones_qs)
+        context["inscripciones"] = [
+            inscripcion
+            for inscripcion in inscripciones
+            if inscripcion.estado != "en_espera"
+        ]
+        context["lista_espera"] = [
+            inscripcion
+            for inscripcion in inscripciones
+            if inscripcion.estado == "en_espera"
+        ]
+        context["cupo_ocupado"] = sum(
+            1
+            for inscripcion in inscripciones
+            if inscripcion.estado in ESTADOS_INSCRIPCION_OCUPAN_CUPO
+        )
         context["estado_choices"] = Inscripcion.ESTADO_INSCRIPCION_CHOICES
         return context
 

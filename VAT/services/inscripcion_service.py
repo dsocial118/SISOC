@@ -494,12 +494,20 @@ class InscripcionService:
                 "No se puede mover una inscripción con cupo ocupado a lista de espera."
             )
 
-        if pasa_a_ocupar_cupo and not ocupaba_cupo:
-            cupos_disponibles = InscripcionService.calcular_cupos_disponibles(comision)
-            if cupos_disponibles <= 0:
-                raise ValueError("La comisión no tiene cupos disponibles.")
-
         with InscripcionService._atomic_if_persistent(inscripcion, comision):
+            comision_locked = comision
+            if getattr(comision, "pk", None) is not None:
+                comision_locked = (
+                    type(comision).objects.select_for_update().get(pk=comision.pk)
+                )
+
+            if pasa_a_ocupar_cupo and not ocupaba_cupo:
+                cupos_disponibles = InscripcionService.calcular_cupos_disponibles(
+                    comision_locked
+                )
+                if cupos_disponibles <= 0:
+                    raise ValueError("La comisión no tiene cupos disponibles.")
+
             if unidad_formativa.usa_voucher and pasa_a_ocupar_cupo and not ocupaba_cupo:
                 cantidad_debito = InscripcionService._resolver_cantidad_debito(
                     getattr(unidad_formativa, "costo", None)
