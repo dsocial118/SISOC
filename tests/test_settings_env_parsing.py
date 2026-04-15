@@ -87,6 +87,21 @@ def test_settings_homologacion_usa_perfil_similar_a_produccion(monkeypatch):
     )
 
 
+def test_settings_homologacion_agrega_origen_local_para_csrf(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "homologacion")
+    monkeypatch.setenv(
+        "DJANGO_ALLOWED_HOSTS",
+        "homologacion.sisoc.example.gov.ar,localhost,127.0.0.1",
+    )
+    monkeypatch.setenv("DOCKER_DJANGO_PORT_FORWARD", "8001")
+
+    module = _load_settings_module()
+
+    assert "https://homologacion.sisoc.example.gov.ar" in module.CSRF_TRUSTED_ORIGINS
+    assert "http://localhost:8001" in module.CSRF_TRUSTED_ORIGINS
+    assert "http://127.0.0.1:8001" in module.CSRF_TRUSTED_ORIGINS
+
+
 def test_settings_qa_mantiene_runtime_no_productivo(monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "qa")
 

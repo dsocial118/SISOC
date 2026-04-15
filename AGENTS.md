@@ -1,419 +1,162 @@
 # AGENTS.md
 
-Guía principal para IAs (Codex/Claude/GPT) que trabajen en este repositorio.
-
-Objetivo: reducir variabilidad entre IAs y PRs, producir cambios chicos y revisables, y mantener consistencia técnica con el stack real de SISOC.
-
-## Alcance
-
-Aplica a:
-- Bugfixes puntuales.
-- Features chicas y medianas.
-- Refactors seguros (sin cambio funcional).
-- Features grandes (por fases).
-
-No reemplaza documentación funcional o técnica profunda. Para detalle, usar `docs/` y las guías en `docs/ia/`.
-
-## Política Spec-as-Source (obligatoria)
-
-Para trabajar en SISOC con asistentes, la documentación en `docs/` es fuente de verdad operacional:
-
-- Antes de proponer o implementar cambios, es obligatorio leer `docs/indice.md`, `docs/ia/` y la documentación del dominio afectado.
-- Cada cambio y cada decisión importante debe quedar documentada en `docs/` dentro de la subcarpeta que corresponda al dominio/tema.
-- No se busca depender de herramientas específicas de spec-driven development: la fuente de verdad son archivos Markdown versionados en el repo.
-- Convención recomendada (no exclusiva):
-  - `docs/registro/cambios/YYYY-MM-DD-<tema>.md`
-  - `docs/registro/decisiones/YYYY-MM-DD-<tema>.md`
-- Si la subcarpeta necesaria no existe, debe crearse dentro de `docs/`.
-
-## Stack real del repo (resumen)
-
-- Backend: `Python 3.11`, `Django 4.2`, `Django REST Framework`.
-- Base de datos: `MySQL` (tests pueden usar `SQLite` en memoria según settings).
-- Frontend: templates Django + HTML/CSS/JS + Bootstrap.
-- API schema/docs: `drf-spectacular`.
-- Infra local/CI: `Docker Compose`, GitHub Actions.
-- Asincronía actual: **no se usa Celery**. Hay jobs/tareas vía comandos, hilos y procesos del propio stack Django cuando aplica.
-
-## Tooling real detectado (obligatorio respetar)
-
-- Formato Python: `black` (config en `pyproject.toml`).
-- Lint Python: `pylint` (config en `.pylintrc`, con `pylint_django`). Tomar `.pylintrc` como contrato real: primero ajustar el código para cumplir la regla y dejar `ignore`/`disable` como último recurso, local y justificado.
-- Templates: `djlint` (config en `.djlintrc`).
-- Tests: `pytest`, `pytest-django`, `pytest-xdist`.
-- CI: `.github/workflows/lint.yml` y `.github/workflows/tests.yml`.
-
-No imponer como obligatorio si no fue pedido: `ruff`, `mypy`, `eslint`, `prettier` (no hay configuración formal activa para estos checks en el repo).
-
-## Disciplina de formato y lint para IAs (obligatoria)
-
-- Escribir Python compatible con `black` desde el inicio. La referencia operativa es `line-length = 88`; no usar el `max-line-length = 150` de `pylint` como excusa para dejar líneas largas evitables.
-- Preferir construcciones que `black` resuelve bien: paréntesis implícitos, literales multilínea y llamadas partidas por argumentos. Evitar alinear manualmente, columnas “bonitas” o wraps ad hoc que después `black` desarma.
-- Mantener imports en bloques consistentes: standard library, terceros y código local. No reordenar imports no relacionados fuera del archivo tocado.
-- Escribir nombres, firmas y variables alineados con `.pylintrc`: `snake_case` para funciones/variables, `PascalCase` para clases y helpers privados con prefijo `_` cuando aplique.
-- Cuando `pylint` marque una violación, intentar resolverla con mejores prácticas antes que con una supresión: simplificar funciones, extraer helpers, ajustar nombres, mover lógica al boundary correcto o hacer más explícito el código.
-- Evitar `# pylint: disable=...`, `# pylint: skip-file`, `ignore-paths` nuevos o ampliaciones de `ignore` como atajo. Si una supresión es inevitable por una falsa positiva o por dinámica del framework, limitarla al menor scope posible y documentar la razón.
-- En templates, escribir HTML/Django template tags pensando en `djlint`: indentación de 4 espacios, tags anidados legibles y sin compactar bloques en una sola línea si el formatter los va a expandir.
-- Validar primero sobre archivos modificados para reducir fricción y ruido. Escalar a checks más amplios solo si el impacto del cambio lo justifica o el pedido lo exige.
-
-## Patrones críticos del repo (leer antes de proponer cambios)
-
-- La lógica de negocio va preferentemente en `services/` (no en views/templates).
-- Coexisten vistas Django (web) y DRF (`api_views.py` / viewsets). Verificar el patrón real de cada app antes de implementar.
-- El proyecto ya tiene logging custom configurado en `config/settings.py` y utilidades en `core/utils.py` (no inventar un esquema paralelo).
-- No asumir Celery/colas/workers: actualmente no se usa Celery.
-
-## Comandos principales (copy-paste)
-
-```bash
-# Levantar entorno local
-
-docker compose up
-# alternativa usada en docs históricas
-
-docker-compose up
-
-# Tests
-
-docker compose exec django pytest -n auto
-docker compose exec django pytest -m smoke
-
-# Formato / lint
-
-black .
-black --check . --config pyproject.toml
-black path/al/archivo.py --config pyproject.toml
-djlint . --configuration=.djlintrc --reformat
-djlint . --check --configuration=.djlintrc
-djlint templates/ruta.html --reformat --configuration=.djlintrc
-pylint **/*.py --rcfile=.pylintrc
-pylint app/archivo.py --rcfile=.pylintrc
-```
-
-## Reglas de comportamiento para IAs (obligatorias)
-
-## 1) Buscar antes de escribir
-
-- No inventar APIs, funciones, clases, modelos, campos, serializers, endpoints ni permisos.
-- Buscar referencias reales en el repo antes de proponer o escribir código.
-- Reutilizar patrones existentes del módulo/app que se toca.
-- No asumir Celery/colas workers si no está explícitamente pedido (actualmente no se usa Celery en el repo).
-
-## 2) Cambios mínimos y revisables
-
-- Hacer `small diffs`: modificar solo lo necesario para cumplir el pedido.
-- No mezclar en un mismo cambio: feature + refactor + formateo masivo.
-- No hacer refactors amplios no solicitados.
-- No tocar archivos no relacionados “porque estaban cerca” salvo justificación clara.
-
-## 3) Compatibilidad hacia atrás por defecto
-
-- Mantener compatibilidad hacia atrás salvo pedido explícito.
-- Si hay una ruptura necesaria, explicitarla antes y documentar impacto.
-
-## 4) Supuestos explícitos
-
-- Si falta información, avanzar con supuestos razonables y declararlos explícitamente.
-- Los supuestos deben quedar en el mensaje de entrega y/o PR/commit message sugerido.
-
-## 5) Respetar tooling y configuración
-
-- No modificar configuraciones de `black`, `pylint`, `djlint`, `pytest`, CI o settings de entorno sin pedido explícito.
-- No reordenar/importar/formatear todo el repo para “dejarlo prolijo”.
-
-## 6) Calidad de código esperada
-
-- Escribir código profesional, simple, eficiente y mantenible.
-- Priorizar claridad sobre cleverness.
-- Mantener nombres y estructura coherentes con el módulo existente.
-
-## 7) Idioma y naming (regla del equipo)
-
-- Documentación, comentarios y mensajes al usuario: en español.
-- Variables y nombres técnicos generales: preferentemente en inglés (`request_data`, `cache_key`).
-- Nombres de dominio del sistema: conservar en español cuando ya forman parte del modelo/flujo (`comedor`, `admisión`, `relevamiento`, `monto_prestacion`).
-- No traducir nombres de modelos/campos/URLs existentes.
-
-## 8) Testing mínimo obligatorio
-
-- Toda funcionalidad nueva debe incluir testing mínimo.
-- Todo bugfix debe incluir test de regresión cuando sea viable.
-- Si no se agrega test, explicar por qué.
-
-## 9) Documentación y ejemplos
-
-- Si cambia comportamiento observable, actualizar docs relevantes.
-- Incluir ejemplo mínimo de uso cuando el cambio agrega interfaz nueva (endpoint, helper, comando, flujo).
-
-## 10) Seguridad y datos
-
-- No hardcodear secretos.
-- No loggear credenciales, tokens ni PII.
-- Respetar permisos/autenticación existentes.
-
-## 11) Disciplina de documentación (spec-as-source)
-
-- Es obligatorio leer documentación vigente en `docs/` antes de implementar.
-- Es obligatorio registrar en `docs/` (subcarpeta temática) cada cambio o decisión importante del trabajo realizado.
-- Si una tarea no requiere registro, se debe explicitar por qué en la entrega.
-
-## Flujo de trabajo por tamaño de cambio
-
-## Tamaño S (bugfix / feature chica)
-
-- Cambiar solo archivos directamente implicados.
-- Agregar test puntual (service/view/api).
-- Validar con checks enfocados.
-- Entregar diff corto y explicación concreta.
-
-## Tamaño M (refactor seguro / feature mediana)
-
-- Dividir en pasos internos (sin PRs gigantes).
-- Mantener comportamiento actual y cubrir regresiones.
-- Separar refactor de comportamiento si es posible.
-- Documentar riesgos y supuestos.
-
-## Tamaño L (feature grande)
-
-- Trabajar por fases incrementales.
-- Definir interfaces/boundaries antes de expandir implementación.
-- Incluir pruebas por fase y actualización de docs.
-- Evitar “big bang changes”.
-
-## Regla de mejoras cercanas (nueva)
-
-La IA puede detectar mejoras cercanas al área tocada (por ejemplo: test faltante, validación débil, logging insuficiente, naming inconsistente, bug probable).
-
-Reglas:
-- Puede proponerlas.
-- No debe implementarlas fuera de alcance sin aprobación explícita.
-- Si son indispensables para que el cambio solicitado funcione correctamente, puede incluirlas, pero debe explicarlo.
-
-Formato sugerido en la entrega:
-
-```md
-## Mejoras cercanas detectadas (opcional)
-- [Impacto alto | costo bajo] Falta test de regresión en `app/tests/...` para X.
-- [Impacto medio | costo bajo] Validar `request.GET['...']` para evitar 500 en Y.
-```
-
-## Definition of Done (cambios hechos por IA)
-
-Antes de cerrar una tarea, la IA debe verificar (o declarar por qué no pudo):
-
-- Código implementado con diffs pequeños y coherentes con el alcance.
-- Formato/lint/test ejecutados (o justificación si no se ejecutaron).
-- Tests mínimos agregados cuando aplica.
-- Test de regresión agregado en bugfix cuando aplica.
-- Documentación actualizada si cambió comportamiento.
-- Registro de cambios/decisiones importantes en `docs/<subcarpeta>/...` (o justificación explícita si no aplica).
-- Supuestos y límites explicitados.
-- Riesgos o follow-ups listados (si existen).
-
-## Estructura de entrega recomendada (respuesta de la IA)
-
-- Qué cambió.
-- Archivos tocados.
-- Validación ejecutada (tests/lint/format).
-- Supuestos.
-- Documento spec-as-source creado/actualizado en `docs/<subcarpeta>/...` (si aplica).
-- Mejoras cercanas detectadas (opcional).
-
-## Índice de guías especializadas (`docs/ia/`)
-
-- `docs/ia/CONTRIBUTING_AI.md` - proceso de pedidos, PRs, commits, checks.
-- `docs/ia/STYLE_GUIDE.md` - estilo de código y convenciones.
-- `docs/ia/ARCHITECTURE.md` - organización del sistema y boundaries.
-- `docs/ia/CONTEXT_HYGIENE.md` - higiene de contexto para asistentes locales (qué leer primero y qué evitar cargar).
-- `docs/ia/TESTING.md` - estrategia de tests.
-- `docs/ia/SECURITY_AI.md` - seguridad para cambios asistidos por IA.
-- `docs/ia/ERRORS_LOGGING.md` - manejo de errores, excepciones y logs.
-
-## How to ask the AI (plantillas cortas)
-
-Usar estas plantillas para pedidos más consistentes. Adaptar paths y nombres reales del módulo.
-
-## 1) Feature pequeña
-
-```md
-Quiero una feature chica en `[app]/[archivo]`.
-
-Contexto:
-- [qué flujo resuelve]
-- [restricción de negocio]
-
-Alcance:
-- Cambiar solo [archivos o módulo]
-- No refactorizar otras áreas
-
-Criterio de aceptación:
-- [comportamiento esperado]
-- [caso borde importante]
-
-Checks a correr:
-- `docker compose exec django pytest -n auto [opcional: ruta específica]`
-
-Podés proponer mejoras cercanas: sí/no
-```
-
-## 2) Bugfix
-
-```md
-Necesito un bugfix en `[path]`.
-
-Bug actual:
-- [qué pasa]
-- [qué debería pasar]
-- [pasos para reproducir si aplica]
-
-Alcance:
-- Fix mínimo, sin refactor masivo
-- Mantener compatibilidad hacia atrás
-
-Criterio de aceptación:
-- [resultado esperado]
-- Agregar test de regresión
-
-Checks a correr:
-- `docker compose exec django pytest -n auto [ruta de tests]`
-
-Podés proponer mejoras cercanas: sí/no
-```
-
-## 3) Refactor seguro
-
-```md
-Quiero un refactor seguro (sin cambiar comportamiento) en `[path]`.
+Guia principal para IAs (Codex, Claude, Copilot, GPT) que trabajen en SISOC.
 
 Objetivo:
-- [legibilidad / duplicación / extraer helper / ordenar responsabilidades]
+- bajar variabilidad entre asistentes,
+- mantener diffs chicos y revisables,
+- reducir costo de contexto sin perder calidad,
+- respetar el stack y los patrones reales del repo.
 
-Restricciones:
-- No cambiar contratos públicos
-- No mezclar feature nueva
-- Diff revisable
+## Reglas duras
 
-Criterio de aceptación:
-- Tests existentes siguen pasando
-- Si agregás tests, que sean puntuales
+### 1. Aislamiento estricto de tareas
 
-Checks a correr:
-- `pylint **/*.py --rcfile=.pylintrc` (si impacta varias rutas)
-- `docker compose exec django pytest -n auto [ruta]`
-```
+Toda tarea no trivial debe correr en:
+- una branch dedicada,
+- un worktree dedicado,
+- un path fuera del checkout principal.
 
-## 4) Agregar endpoint (Django/DRF)
+Reglas:
+- Nunca trabajar directo sobre `development`, `main` ni el checkout compartido.
+- Nunca reutilizar un worktree viejo para una tarea nueva.
+- Nunca reutilizar la branch de una tarea para otra distinta.
+- Nunca editar archivos fuera del worktree asignado.
+- El path recomendado es `../worktrees/<slug>` respecto del repo principal.
 
-```md
-Quiero agregar un endpoint en `[app]`.
+Ejemplo:
+- branch: `task/fix-login-redirect`
+- worktree: `C:/Users/Juanito/Desktop/Repos-Codex/worktrees/fix-login-redirect`
 
-Tipo:
-- Django view / DRF endpoint
+### 2. Setup obligatorio antes de implementar
 
-Entrada/salida esperada:
-- Request: [params/body]
-- Response: [status + payload]
+Antes de editar:
+1. `git fetch origin --prune`
+2. Crear la branch desde `origin/development` actualizado o desde `development` ya sincronizado con remoto.
+3. Crear el worktree dedicado fuera del repo principal.
+4. Verificar branch actual, path actual y `git status`.
 
-Restricciones:
-- Respetar permisos/auth existentes
-- Reutilizar services/serializers si ya hay patrón
-- Agregar tests de permisos y caso feliz
+Si el entorno no esta aislado, no implementar hasta corregirlo.
 
-Criterio de aceptación:
-- [caso feliz]
-- [caso inválido]
-- [caso sin permiso]
+### 3. Politica de lectura: minimo contexto suficiente
 
-Podés proponer mejoras cercanas: sí/no
-```
+No cargar contexto amplio por defecto.
 
-## 5) Agregar componente/página (templates/JS)
+Lectura inicial obligatoria:
+1. `AGENTS.md`
+2. `docs/indice.md`
+3. archivo(s) objetivo
+4. tests del modulo o flujo afectado, si existen
+5. una sola guia de `docs/ia/` elegida segun la tarea
 
-```md
-Quiero agregar una página/componente en templates Django.
+Expandir solo si la evidencia lo requiere:
+- otra guia de `docs/ia/`,
+- documentacion del dominio afectado,
+- callers, servicios, serializers, templates o settings relacionados.
 
-Contexto:
-- App/módulo: [app]
-- Pantalla actual relacionada: [path]
+Casos en los que la documentacion del dominio pasa a ser obligatoria:
+- cambia comportamiento observable,
+- hay reglas funcionales o permisos del negocio,
+- el modulo tiene contratos implicitos que no quedan claros en el codigo.
 
-Alcance:
-- Reutilizar includes/parciales existentes si aplica
-- Evitar lógica de negocio en template
-- Mantener estilo visual actual
+Usar `docs/ia/CONTEXT_HYGIENE.md` como matriz de carga minima.
 
-Criterio de aceptación:
-- Render correcto
-- Permisos correctos
-- Tests mínimos si hay lógica en view/API asociada
+### 4. Spec-as-source
 
-Checks a correr:
-- `djlint . --check --configuration=.djlintrc`
-```
+`docs/` es la fuente de verdad operativa del repo.
 
-## 6) Agregar migración
+Reglas:
+- Toda decision o cambio importante debe quedar documentado en `docs/`.
+- Si el cambio es trivial y no hace falta registro, explicitarlo en la entrega.
+- Convencion recomendada:
+  - `docs/registro/cambios/YYYY-MM-DD-<tema>.md`
+  - `docs/registro/decisiones/YYYY-MM-DD-<tema>.md`
 
-```md
-Necesito agregar una migración para `[app]`.
+## THINK antes de tocar codigo
 
-Cambio de modelo:
-- [campo/índice/restricción]
+Antes de implementar, dejar claro en pocas lineas:
+- problema real,
+- solucion recomendada mas simple,
+- archivos o capas a tocar,
+- como se va a validar,
+- ambiguedades o supuestos relevantes.
 
-Restricciones:
-- Mantener compatibilidad de datos si aplica
-- Evitar migraciones peligrosas sin explicar impacto
-- Si hay data migration, que sea clara y reversible cuando sea viable
+Reglas por tipo de tarea:
+- feature o cambio de comportamiento: hacer un THINK corto antes de editar,
+- bug o fallo de tests: investigar causa raiz antes del fix,
+- review: priorizar hallazgos, evidencia y severidad.
 
-Criterio de aceptación:
-- Migración consistente con el cambio
-- Tests o validación mínima del comportamiento nuevo
+## Implementacion
 
-Podés proponer mejoras cercanas: sí/no
-```
+- Hacer cambios pequenos y enfocados.
+- No mezclar feature, refactor amplio y formateo masivo.
+- Reutilizar patrones existentes del modulo.
+- No inventar APIs, modelos, campos, serializers, endpoints ni permisos.
+- Mantener compatibilidad hacia atras salvo pedido explicito.
+- Si hace falta un supuesto, declararlo.
 
-## 7) Agregar test
+Patrones criticos del repo:
+- la logica de negocio vive preferentemente en `services/`,
+- coexisten Django views y DRF,
+- hay logging custom en `config/settings.py` y `core/utils.py`,
+- no se usa Celery actualmente.
 
-```md
-Quiero agregar tests para `[path o feature]`.
+## Tooling real del repo
 
-Objetivo del test:
-- [regresión / permisos / validación / status code / rollback]
+- Python: `black`
+- Lint Python: `pylint` + `pylint_django`
+- Templates: `djlint`
+- Tests: `pytest`, `pytest-django`, `pytest-xdist`
 
-Alcance:
-- Usar pytest + fixtures existentes
-- Mockear integraciones externas si aplica
-- No reescribir tests no relacionados
+No imponer como obligatorios si no fueron pedidos:
+- `ruff`
+- `mypy`
+- `eslint`
+- `prettier`
 
-Criterio de aceptación:
-- Cubre [casos]
-- Falla sin el fix (si es regresión)
+## Validacion minima
 
-Comando sugerido:
-- `docker compose exec django pytest -n auto [ruta de test]`
-```
+- Toda feature nueva debe incluir testing minimo.
+- Todo bugfix debe incluir test de regresion cuando sea viable.
+- Correr primero checks puntuales sobre archivos o tests tocados.
+- Escalar a checks amplios solo si el cambio lo requiere o fue pedido.
 
-## Ejemplos rápidos (buen pedido)
+## Review antes de cerrar
 
-## Ejemplo A - bugfix
+Verificar:
+- la branch contiene solo cambios de la tarea,
+- no se toco nada fuera del worktree asignado,
+- no se metieron refactors o formateos no pedidos,
+- los cambios relevantes quedaron documentados si aplica,
+- el commit y el push se hicieron sobre la misma branch aislada.
 
-```md
-Corregí un 500 en `core/views.py` cuando `page` no es numérica en `load_organizaciones`.
-Fix mínimo, sin refactor.
-Agregá test de regresión en `core/tests/`.
-Podés proponer mejoras cercanas, pero no implementarlas sin avisar.
-```
+Si no hay cambios de archivo, no hacer commits vacios.
 
-## Ejemplo B - feature chica
+## Entrega / handoff
 
-```md
-Agregá un filtro opcional por estado en el endpoint de comunicados de `comunicados/api_views.py`.
-Reutilizá serializer actual si alcanza.
-Incluí tests de caso feliz y parámetro inválido.
-Mantener compatibilidad hacia atrás.
-```
+La entrega debe incluir:
+- que cambio,
+- decision principal,
+- supuestos,
+- validacion ejecutada,
+- como probarlo manualmente,
+- que deberia entender el usuario de este cambio,
+- resumen de aislamiento:
+  - branch usada,
+  - worktree usado,
+  - confirmacion de que solo hubo cambios relevantes,
+  - confirmacion de commit y push en esa branch.
 
-## Ver también
+Si la tarea es no trivial, cerrar con 3 preguntas cortas de control.
 
-- `README.md`
-- `docs/indice.md`
-- `docs/contexto/arquitectura.md`
-- `docs/contexto/dominio.md`
+## Guias de referencia
+
+Leer solo las que apliquen:
+- `docs/ia/CONTEXT_HYGIENE.md`
+- `docs/ia/CONTRIBUTING_AI.md`
+- `docs/ia/STYLE_GUIDE.md`
+- `docs/ia/ARCHITECTURE.md`
+- `docs/ia/TESTING.md`
+- `docs/ia/SECURITY_AI.md`
+- `docs/ia/ERRORS_LOGGING.md`
+- `docs/registro/README.md`
