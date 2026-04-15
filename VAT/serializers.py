@@ -1,5 +1,7 @@
 # pylint: disable=too-many-lines
 
+import json
+
 from rest_framework import serializers
 from VAT.services.inscripcion_service import ESTADOS_INSCRIPCION_OCUPAN_CUPO
 from VAT.models import (
@@ -28,6 +30,7 @@ from VAT.models import (
     SesionComision,
     # Fase 5
     Inscripcion,
+    SolicitudInscripcionPublica,
     # Fase 7
     Evaluacion,
     ResultadoEvaluacion,
@@ -393,6 +396,7 @@ class CursoSerializer(serializers.ModelSerializer):
             "programa_nombre",
             "estado",
             "usa_voucher",
+            "inscripcion_libre",
             "voucher_parametrias",
             "costo_creditos",
             "observaciones",
@@ -651,6 +655,7 @@ class CursoBusquedaSerializer(serializers.ModelSerializer):
             "fecha_creacion",
             "fecha_modificacion",
             "usa_voucher",
+            "inscripcion_libre",
             "costo_creditos",
             "centro",
             "plan_estudio",
@@ -966,6 +971,9 @@ class VatWebCursoSerializer(serializers.ModelSerializer):
     ciclo_lectivo = serializers.SerializerMethodField()
     costo = serializers.IntegerField(read_only=True)
     usa_voucher = serializers.BooleanField(source="curso.usa_voucher", read_only=True)
+    inscripcion_libre = serializers.BooleanField(
+        source="curso.inscripcion_libre", read_only=True
+    )
     estado_oferta = serializers.CharField(source="curso.estado", read_only=True)
     estado_curso = serializers.CharField(source="curso.estado", read_only=True)
     cupo = serializers.IntegerField(source="cupo_total", read_only=True)
@@ -1027,6 +1035,7 @@ class VatWebCursoSerializer(serializers.ModelSerializer):
             "ciclo_lectivo",
             "costo",
             "usa_voucher",
+            "inscripcion_libre",
             "observaciones",
             "horarios",
         ]
@@ -1066,19 +1075,9 @@ class VatWebInscripcionSerializer(serializers.ModelSerializer):
         ]
 
 
-def _resolver_referencias_vat_web_inscripcion(attrs):
-    ciudadano_id = attrs.get("ciudadano_id")
-    documento = (attrs.get("documento") or "").strip()
+def _resolver_entidad_comision_vat_web_inscripcion(attrs):
     comision_curso_id = attrs.get("comision_curso_id")
     comision_id = attrs.get("comision_id")
-
-    if not ciudadano_id and not documento:
-        raise serializers.ValidationError("Debe enviar ciudadano_id o documento.")
-
-    if ciudadano_id and documento:
-        raise serializers.ValidationError(
-            "Envíe ciudadano_id o documento, pero no ambos."
-        )
 
     if not comision_curso_id and not comision_id:
         raise serializers.ValidationError(
@@ -1089,18 +1088,6 @@ def _resolver_referencias_vat_web_inscripcion(attrs):
         raise serializers.ValidationError(
             "Si envía comision_id y comision_curso_id deben referir a la misma comisión de curso."
         )
-
-    if ciudadano_id:
-        ciudadano = Ciudadano.objects.filter(pk=ciudadano_id).first()
-    else:
-        if not documento.isdigit():
-            raise serializers.ValidationError(
-                {"documento": "El documento debe ser numérico."}
-            )
-        ciudadano = Ciudadano.objects.filter(documento=int(documento)).first()
-
-    if not ciudadano:
-        raise serializers.ValidationError("No se encontró el ciudadano indicado.")
 
     entidad_comision = None
     if comision_curso_id:
@@ -1121,7 +1108,64 @@ def _resolver_referencias_vat_web_inscripcion(attrs):
             "No se encontró la comisión o comisión de curso indicada."
         )
 
-    return ciudadano, entidad_comision
+    return entidad_comision
+
+
+def _extraer_datos_postulante(attrs):
+    datos_postulante = attrs.get("datos_postulante")
+    if isinstance(datos_postulante, dict):
+        return datos_postulante
+
+    observaciones = attrs.get("observaciones")
+    if not isinstance(observaciones, str):
+        return None
+
+    observaciones = observaciones.strip()
+    if not observaciones:
+        return None
+
+    try:
+        parsed = json.loads(observaciones)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return None
+
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _resolver_referencias_vat_web_inscripcion(attrs):
+    ciudadano_id = attrs.get("ciudadano_id")
+    documento = (attrs.get("documento") or "").strip()
+    datos_postulante = _extraer_datos_postulante(attrs)
+    entidad_comision = _resolver_entidad_comision_vat_web_inscripcion(attrs)
+    permite_solicitud_publica = bool(
+        getattr(getattr(entidad_comision, "curso", None), "inscripcion_libre", False)
+    )
+
+    if not ciudadano_id and not documento and not datos_postulante:
+        raise serializers.ValidationError(
+            "Debe enviar ciudadano_id, documento o datos_postulante."
+        )
+
+    if ciudadano_id and documento:
+        raise serializers.ValidationError(
+            "Envíe ciudadano_id o documento, pero no ambos."
+        )
+
+    if ciudadano_id:
+        ciudadano = Ciudadano.objects.filter(pk=ciudadano_id).first()
+    elif documento:
+        if not documento.isdigit():
+            raise serializers.ValidationError(
+                {"documento": "El documento debe ser numérico."}
+            )
+        ciudadano = Ciudadano.objects.filter(documento=int(documento)).first()
+    else:
+        ciudadano = None
+
+    if not ciudadano and not (permite_solicitud_publica and datos_postulante):
+        raise serializers.ValidationError("No se encontró el ciudadano indicado.")
+
+    return ciudadano, entidad_comision, datos_postulante
 
 
 def _resolver_programa_vat_web(comision):
@@ -1148,10 +1192,14 @@ class VatWebInscripcionBaseSerializer(VatPlainSerializer):
     comision_curso_id = serializers.IntegerField(required=False)
 
     def validate(self, attrs):
-        ciudadano, comision = _resolver_referencias_vat_web_inscripcion(attrs)
+        ciudadano, comision, datos_postulante = (
+            _resolver_referencias_vat_web_inscripcion(attrs)
+        )
         attrs["ciudadano"] = ciudadano
         attrs["comision_curso"] = comision
         attrs["programa"] = _resolver_programa_vat_web(comision)
+        if datos_postulante:
+            attrs["datos_postulante"] = datos_postulante
         return attrs
 
 
@@ -1204,6 +1252,24 @@ class VatWebInscripcionPrevalidacionResponseSerializer(VatPlainSerializer):
     voucher = VatWebInscripcionPrevalidacionVoucherSerializer()
 
 
+class VatWebSolicitudInscripcionPublicaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudInscripcionPublica
+        fields = [
+            "id",
+            "ciudadano",
+            "comision_curso",
+            "programa",
+            "inscripcion",
+            "estado",
+            "origen_canal",
+            "datos_postulante",
+            "observaciones",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
 class VatWebInscripcionCreateSerializer(VatWebInscripcionBaseSerializer):
     estado = serializers.ChoiceField(
         choices=Inscripcion.ESTADO_INSCRIPCION_CHOICES,
@@ -1211,11 +1277,19 @@ class VatWebInscripcionCreateSerializer(VatWebInscripcionBaseSerializer):
         required=False,
     )
     observaciones = serializers.CharField(required=False, allow_blank=True)
+    datos_postulante = serializers.JSONField(required=False)
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
         ciudadano = attrs["ciudadano"]
         comision = attrs["comision_curso"]
+
+        if ciudadano is None:
+            if not getattr(comision.curso, "inscripcion_libre", False):
+                raise serializers.ValidationError(
+                    "La comisión indicada no admite solicitudes públicas sin ciudadano."
+                )
+            return attrs
 
         if Inscripcion.objects.filter(
             ciudadano=ciudadano,
@@ -1236,8 +1310,20 @@ class VatWebInscripcionCreateSerializer(VatWebInscripcionBaseSerializer):
 
     def create(self, validated_data):
         from VAT.services.inscripcion_service import InscripcionService
+        from VAT.services.solicitud_inscripcion_publica_service import (
+            SolicitudInscripcionPublicaService,
+        )
 
         request = self.context.get("request")
+
+        if validated_data.get("ciudadano") is None:
+            return SolicitudInscripcionPublicaService.crear_desde_vat_web(
+                comision=validated_data["comision_curso"],
+                programa=validated_data.get("programa"),
+                datos_postulante=validated_data.get("datos_postulante") or {},
+                observaciones=validated_data.get("observaciones", ""),
+            )
+
         return InscripcionService.crear_inscripcion(
             ciudadano=validated_data["ciudadano"],
             comision=validated_data["comision_curso"],

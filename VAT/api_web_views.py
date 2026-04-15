@@ -11,6 +11,7 @@ from VAT.models import (
     Centro,
     ComisionCurso,
     Inscripcion,
+    SolicitudInscripcionPublica,
     TituloReferencia,
     VoucherParametria,
 )
@@ -21,6 +22,7 @@ from VAT.serializers import (
     VatWebInscripcionPrevalidacionResponseSerializer,
     VatWebInscripcionPrevalidacionSerializer,
     VatWebInscripcionSerializer,
+    VatWebSolicitudInscripcionPublicaSerializer,
     VatWebTituloSerializer,
 )
 from VAT.services.inscripcion_service import (
@@ -297,6 +299,7 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
                         "ciclo_lectivo": 2026,
                         "costo": 1,
                         "usa_voucher": True,
+                        "inscripcion_libre": False,
                         "observaciones": "Comisión presencial turno tarde",
                         "horarios": [
                             {
@@ -501,12 +504,20 @@ class VatWebInscripcionViewSet(
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            inscripcion = serializer.save()
+            resultado = serializer.save()
         except ValueError as exc:
             raise ValidationError({"error": [str(exc)]}) from exc
-        response_serializer = VatWebInscripcionSerializer(
-            inscripcion, context={"request": request}
-        )
+
+        if isinstance(resultado, SolicitudInscripcionPublica):
+            response_serializer = VatWebSolicitudInscripcionPublicaSerializer(
+                resultado,
+                context={"request": request},
+            )
+        else:
+            response_serializer = VatWebInscripcionSerializer(
+                resultado,
+                context={"request": request},
+            )
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(

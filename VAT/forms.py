@@ -1278,6 +1278,15 @@ class CursoForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
         help_text="Al inscribirse, se valida y descuenta crédito del voucher del ciudadano.",
     )
+    inscripcion_libre = forms.BooleanField(
+        label="Inscripción libre",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        help_text=(
+            "Permite recibir solicitudes públicas sin ciudadano previo. "
+            "SISOC deberá vincularlas antes de convertirlas en inscripción."
+        ),
+    )
     voucher_parametrias = forms.ModelMultipleChoiceField(
         queryset=VoucherParametria.objects.filter(activa=True).select_related(
             "programa"
@@ -1314,6 +1323,7 @@ class CursoForm(forms.ModelForm):
             "nombre",
             "estado",
             "usa_voucher",
+            "inscripcion_libre",
             "voucher_parametrias",
             "costo_creditos",
             "observaciones",
@@ -1364,6 +1374,7 @@ class CursoForm(forms.ModelForm):
         cleaned_data = super().clean()
         plan_estudio = cleaned_data.get("plan_estudio")
         usa_voucher = cleaned_data.get("usa_voucher")
+        inscripcion_libre = cleaned_data.get("inscripcion_libre")
         voucher_parametrias = cleaned_data.get("voucher_parametrias")
         costo_creditos = cleaned_data.get("costo_creditos")
 
@@ -1374,6 +1385,12 @@ class CursoForm(forms.ModelForm):
             )
         else:
             cleaned_data["modalidad"] = plan_estudio.modalidad_cursada
+
+        if usa_voucher and inscripcion_libre:
+            self.add_error(
+                "inscripcion_libre",
+                "No podés activar inscripción libre y voucher al mismo tiempo.",
+            )
 
         if usa_voucher and not voucher_parametrias:
             self.add_error(
