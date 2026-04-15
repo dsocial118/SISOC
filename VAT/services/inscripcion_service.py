@@ -137,6 +137,12 @@ class InscripcionService:
         )
 
     @staticmethod
+    def _lock_comision_if_persistent(comision):
+        if getattr(comision, "pk", None) is None:
+            return comision
+        return type(comision).objects.select_for_update().get(pk=comision.pk)
+
+    @staticmethod
     def contar_inscripciones_con_cupo(comision, *, exclude_inscripcion=None) -> int:
         queryset = InscripcionService._inscripciones_queryset_para_comision(
             comision
@@ -408,19 +414,6 @@ class InscripcionService:
         ).exists():
             raise ValueError("El ciudadano ya está inscripto en esta comisión.")
 
-        cupos_disponibles = InscripcionService.calcular_cupos_disponibles(comision)
-        estado_final = estado
-        if InscripcionService._estado_ocupa_cupo(estado):
-            if cupos_disponibles <= 0:
-                if InscripcionService._acepta_lista_espera(comision):
-                    estado_final = "en_espera"
-                else:
-                    raise ValueError("La comisión no tiene cupos disponibles.")
-        elif estado == "en_espera" and not InscripcionService._acepta_lista_espera(
-            comision
-        ):
-            raise ValueError("La comisión no acepta lista de espera.")
-
         # Validar inscripción única activa (solo si usa voucher)
         if unidad_formativa.usa_voucher:
             puede, motivo = InscripcionService.validar_inscripcion_unica(
@@ -430,13 +423,30 @@ class InscripcionService:
                 raise ValueError(motivo)
 
         with InscripcionService._atomic_if_persistent(ciudadano, comision, programa):
+            comision_locked = InscripcionService._lock_comision_if_persistent(comision)
+
+            estado_final = estado
+            if InscripcionService._estado_ocupa_cupo(estado):
+                cupos_disponibles = InscripcionService.calcular_cupos_disponibles(
+                    comision_locked
+                )
+                if cupos_disponibles <= 0:
+                    if InscripcionService._acepta_lista_espera(comision_locked):
+                        estado_final = "en_espera"
+                    else:
+                        raise ValueError("La comisión no tiene cupos disponibles.")
+            elif estado == "en_espera" and not InscripcionService._acepta_lista_espera(
+                comision_locked
+            ):
+                raise ValueError("La comisión no acepta lista de espera.")
+
             inscripcion_kwargs = {
                 "ciudadano": ciudadano,
                 "programa": programa,
                 "estado": estado_final,
                 "origen_canal": origen_canal,
                 "observaciones": observaciones or "",
-                relation: comision,
+                relation: comision_locked,
             }
             inscripcion = Inscripcion.objects.create(**inscripcion_kwargs)
 
@@ -495,11 +505,7 @@ class InscripcionService:
             )
 
         with InscripcionService._atomic_if_persistent(inscripcion, comision):
-            comision_locked = comision
-            if getattr(comision, "pk", None) is not None:
-                comision_locked = (
-                    type(comision).objects.select_for_update().get(pk=comision.pk)
-                )
+            comision_locked = InscripcionService._lock_comision_if_persistent(comision)
 
             if pasa_a_ocupar_cupo and not ocupaba_cupo:
                 cupos_disponibles = InscripcionService.calcular_cupos_disponibles(
