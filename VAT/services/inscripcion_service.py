@@ -253,6 +253,10 @@ class InscripcionService:
         unidad_formativa, _ = InscripcionService._resolver_unidad_formativa(comision)
         programa = programa or unidad_formativa.programa
         cupos_disponibles = InscripcionService.calcular_cupos_disponibles(comision)
+        pasa_a_lista_espera = (
+            cupos_disponibles <= 0
+            and InscripcionService._acepta_lista_espera(comision)
+        )
         motivos: list[str] = []
 
         if unidad_formativa.estado != "activo":
@@ -313,9 +317,10 @@ class InscripcionService:
             voucher = vouchers_qs.first()
 
             if voucher is None:
-                motivos.append(
-                    f"{ciudadano} no tiene voucher activo para el programa {programa}."
-                )
+                if not pasa_a_lista_espera:
+                    motivos.append(
+                        f"{ciudadano} no tiene voucher activo para el programa {programa}."
+                    )
             else:
                 voucher_info.update(
                     {
@@ -323,11 +328,16 @@ class InscripcionService:
                         "parametria_id": voucher.parametria_id,
                         "saldo_actual": voucher.cantidad_disponible,
                         "saldo_post_inscripcion": (
-                            voucher.cantidad_disponible - credito_requerido
+                            voucher.cantidad_disponible
+                            if pasa_a_lista_espera
+                            else voucher.cantidad_disponible - credito_requerido
                         ),
                     }
                 )
-                if voucher.cantidad_disponible < credito_requerido:
+                if (
+                    voucher.cantidad_disponible < credito_requerido
+                    and not pasa_a_lista_espera
+                ):
                     motivos.append(
                         f"Créditos insuficientes. Disponible: {voucher.cantidad_disponible}"
                     )
@@ -481,6 +491,11 @@ class InscripcionService:
         unidad_formativa, _ = InscripcionService._resolver_unidad_formativa(comision)
         pasa_a_ocupar_cupo = InscripcionService._estado_ocupa_cupo(nuevo_estado)
         ocupaba_cupo = InscripcionService._estado_ocupa_cupo(estado_anterior)
+
+        if nuevo_estado == "en_espera" and ocupaba_cupo:
+            raise ValueError(
+                "No se puede mover una inscripción con cupo ocupado a lista de espera."
+            )
 
         if pasa_a_ocupar_cupo and not ocupaba_cupo:
             cupos_disponibles = InscripcionService.calcular_cupos_disponibles(comision)

@@ -553,13 +553,25 @@
                                                     style="font-size:.84rem">
                                                     {% for val, lbl in estado_choices %}
                                                         {% if val != insc.estado %}
-                                                            <li>
-                                                                <form method="post" action="{% url inscripcion_estado_url_name insc.pk %}">
-                                                                    {% csrf_token %}
-                                                                    <input type="hidden" name="estado" value="{{ val }}" />
-                                                                    <button type="submit" class="dropdown-item rounded-2">{{ lbl }}</button>
-                                                                </form>
-                                                            </li>
+                                                            {% if val == 'en_espera' %}
+                                                                {% if insc.estado == 'en_espera' or insc.estado == 'abandonada' or insc.estado == 'rechazada' or insc.estado == 'completada' %}
+                                                                    <li>
+                                                                        <form method="post" action="{% url inscripcion_estado_url_name insc.pk %}">
+                                                                            {% csrf_token %}
+                                                                            <input type="hidden" name="estado" value="{{ val }}" />
+                                                                            <button type="submit" class="dropdown-item rounded-2">{{ lbl }}</button>
+                                                                        </form>
+                                                                    </li>
+                                                                {% endif %}
+                                                            {% else %}
+                                                                <li>
+                                                                    <form method="post" action="{% url inscripcion_estado_url_name insc.pk %}">
+                                                                        {% csrf_token %}
+                                                                        <input type="hidden" name="estado" value="{{ val }}" />
+                                                                        <button type="submit" class="dropdown-item rounded-2">{{ lbl }}</button>
+                                                                    </form>
+                                                                </li>
+                                                            {% endif %}
                                                         {% endif %}
                                                     {% endfor %}
                                                 </ul>

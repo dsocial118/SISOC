@@ -36,7 +36,10 @@ from VAT.services.access_scope import (
     can_user_access_centro,
     filter_centros_queryset_for_user,
 )
-from VAT.services.inscripcion_service import InscripcionService
+from VAT.services.inscripcion_service import (
+    ESTADOS_INSCRIPCION_OCUPAN_CUPO,
+    InscripcionService,
+)
 from VAT.services.sesion_comision_service.impl import SesionComisionService
 
 
