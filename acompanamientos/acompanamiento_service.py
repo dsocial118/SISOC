@@ -184,7 +184,11 @@ class AcompanamientoService:
                 if hitos:
                     return hitos
             return (
-                Hitos.objects.select_related("comedor").filter(comedor=comedor).first()
+                Hitos.objects.filter(
+                    acompanamiento__admision__comedor=comedor
+                )
+                .order_by("-acompanamiento__admision__id")
+                .first()
             )
         except Exception:
             logger.exception(
