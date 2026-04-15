@@ -374,6 +374,13 @@ class InscripcionService:
                 "programa_id": programa.id if programa else None,
                 "programa_nombre": programa.nombre if programa else None,
                 "usa_voucher": unidad_formativa.usa_voucher,
+                "inscripcion_libre": bool(
+                    getattr(unidad_formativa, "inscripcion_libre", False)
+                ),
+                "acepta_lista_espera": InscripcionService._acepta_lista_espera(
+                    comision
+                ),
+                "ingresa_a_lista_espera": pasa_a_lista_espera,
                 "cupo_total": InscripcionService._resolver_cupo_total(comision),
                 "cupos_disponibles": cupos_disponibles,
                 "costo": getattr(unidad_formativa, "costo", None)

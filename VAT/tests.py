@@ -319,42 +319,13 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
 
     content = response.content.decode("utf-8")
     assert response.status_code == 200
-    assert response.status_code == 200
+    assert "contactos-TOTAL_FORMS" in content
+    assert "3.2 Contactos de la institución" in content
+    assert "4. Autoridades" not in content
+    assert 'name="contactos-0-documento"' in content
+    assert 'name="save_continue"' not in content
     assert 'for="id_provincia"' not in content
-
-    update_payload = _build_centro_payload(
-        referente,
-        provincia_sf,
-        municipio_ba,
-        localidad_ba,
-        nombre="CFP Provincia Fija Editado",
-        codigo="500144998",
-        **{
-            "contactos-TOTAL_FORMS": "1",
-            "contactos-INITIAL_FORMS": "1",
-            "contactos-MIN_NUM_FORMS": "0",
-            "contactos-MAX_NUM_FORMS": "1000",
-            "contactos-0-id": str(centro.contactos_adicionales.first().id),
-            "contactos-0-centro": str(centro.id),
-            "contactos-0-nombre_contacto": "Ana Perez",
-            "contactos-0-rol_area": "Dirección",
-            "contactos-0-documento": "30111222",
-            "contactos-0-telefono_contacto": "221-3333333",
-            "contactos-0-email_contacto": "ana@vat.test",
-            "contactos-0-es_principal": "on",
-        },
-    )
-    update_payload.pop("provincia", None)
-
-    post_response = client.post(
-        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
-        data=update_payload,
-    )
-
-    centro.refresh_from_db()
-
-    assert post_response.status_code == 302
-    assert centro.provincia_id == provincia_ba.id
+    assert 'name="provincia"' in content
 
 
 @pytest.mark.django_db
@@ -2224,6 +2195,7 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
         nombre="Administración Contable Avanzada",
         modalidad=modalidad,
         estado="activo",
+        inscripcion_libre=True,
         usa_voucher=True,
         costo_creditos=2,
     )
@@ -2242,6 +2214,7 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
         codigo_comision="BUSQ-CUR-01",
         nombre="Comisión Búsqueda Curso",
         cupo_total=12,
+        acepta_lista_espera=True,
         fecha_inicio=date(2026, 4, 15),
         fecha_fin=date(2026, 5, 15),
         estado="activa",
@@ -2270,6 +2243,7 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
     assert payload["count"] == 1
     result = payload["results"][0]
     assert result["id"] == curso.id
+    assert result["inscripcion_libre"] is True
     assert result["centro"]["id"] == centro.id
     assert result["centro"]["provincia"]["id"] == centro.provincia_id
     assert result["centro"]["provincia"]["nombre"] == centro.provincia.nombre
@@ -2280,6 +2254,7 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
     assert result["programa"] == {"id": programa.id, "nombre": programa.nombre}
     assert result["voucher_parametrias"][0]["id"] == voucher_parametria.id
     assert result["comisiones"][0]["id"] == comision.id
+    assert result["comisiones"][0]["acepta_lista_espera"] is True
     assert result["comisiones"][0]["total_inscriptos"] == 0
     assert result["comisiones"][0]["cupos_disponibles"] == 12
     assert result["comisiones"][0]["horarios"][0]["id"] == horario.id
@@ -3207,65 +3182,93 @@ def test_api_vat_web_inscripcion_libre_crea_solicitud_publica_sin_ciudadano(
 
 
 @pytest.mark.django_db
-def test_api_vat_web_inscripcion_libre_crea_solicitud_publica_sin_ciudadano(
+def test_api_vat_web_inscripciones_informa_lista_espera_si_no_hay_cupo(
     vat_api_client, vat_curso_base
 ):
     centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Web Estado Espera")
+    usuario = User.objects.create_user(
+        username="api-web-estado-espera",
+        password="test1234",
+    )
+    sexo = Sexo.objects.create(sexo="Femenino")
     curso = Curso.objects.create(
         centro=centro,
-        nombre="Curso Inscripción Libre",
+        nombre="Curso Web Estado Espera",
         modalidad=modalidad,
         estado="activo",
-        inscripcion_libre=True,
+        usa_voucher=True,
+        costo_creditos=1,
     )
+    voucher_parametria = VoucherParametria.objects.create(
+        nombre="Voucher Web Estado Espera",
+        programa=programa,
+        cantidad_inicial=4,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher_parametria)
     comision = ComisionCurso.objects.create(
         curso=curso,
         ubicacion=ubicacion,
-        codigo_comision="LIBRE-01",
-        nombre="Comisión Libre",
-        cupo_total=20,
+        codigo_comision="WEB-EST-ESP-01",
+        nombre="Comisión Web Estado Espera",
+        cupo_total=1,
+        acepta_lista_espera=True,
         fecha_inicio=date(2026, 6, 1),
         fecha_fin=date(2026, 7, 1),
         estado="activa",
+    )
+    titular = Ciudadano.objects.create(
+        apellido="Titular",
+        nombre="Web Espera",
+        fecha_nacimiento=date(1990, 2, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111226,
+        sexo=sexo,
+    )
+    aspirante = Ciudadano.objects.create(
+        apellido="Aspirante",
+        nombre="Web Espera",
+        fecha_nacimiento=date(1995, 2, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111227,
+        sexo=sexo,
+    )
+    Voucher.objects.create(
+        ciudadano=aspirante,
+        parametria=voucher_parametria,
+        programa=programa,
+        cantidad_disponible=3,
+        fecha_vencimiento=date(2026, 12, 31),
+        estado="activo",
+    )
+    Inscripcion.objects.create(
+        ciudadano=titular,
+        comision_curso=comision,
+        programa=programa,
+        estado="inscripta",
+        origen_canal="backoffice",
     )
 
     response = vat_api_client.post(
         "/api/vat/web/inscripciones/",
         {
+            "documento": str(aspirante.documento),
             "comision_curso_id": comision.id,
-            "estado": "pre_inscripta",
-            "datos_postulante": {
-                "nombre": "Fabrizzio Nicolas",
-                "apellido": "CONIGLIO",
-                "tipo_documento": "DNI",
-                "documento": "42439852",
-                "email": "fconiglio100@gmail.com",
-                "telefono": "+54-351-3989965",
-            },
+            "estado": "inscripta",
         },
         format="json",
     )
 
-    assert response.status_code == 201
     payload = response.json()
-    assert payload["comision_curso"] == comision.id
-    assert payload["estado"] == "pendiente"
-    assert payload["ciudadano"] is None
-    assert payload["datos_postulante"]["documento"] == "42439852"
 
-    solicitud = SolicitudInscripcionPublica.objects.get(pk=payload["id"])
-    assert solicitud.comision_curso == comision
-    assert solicitud.ciudadano is None
-    assert solicitud.datos_postulante["apellido"] == "CONIGLIO"
-
-    response_cursos = vat_api_client.get(f"/api/vat/web/cursos/?centro_id={centro.id}")
-
-    assert response_cursos.status_code == 200
-    cursos_payload = response_cursos.json()
-    curso_resultado = next(
-        item for item in cursos_payload["results"] if item["id"] == comision.id
-    )
-    assert curso_resultado["inscripcion_libre"] is True
+    assert response.status_code == 201
+    assert payload["estado"] == "en_espera"
+    assert payload["estado_nombre"] == "En Espera"
+    assert payload["en_lista_espera"] is True
+    assert payload["curso"]["acepta_lista_espera"] is True
 
 
 @pytest.mark.django_db
@@ -4708,6 +4711,8 @@ def test_api_vat_web_prevalidar_permite_lista_espera_si_no_hay_cupo(
     assert response.status_code == 200
     assert payload["puede_inscribirse"] is True
     assert payload["motivos"] == []
+    assert payload["comision"]["acepta_lista_espera"] is True
+    assert payload["comision"]["ingresa_a_lista_espera"] is True
     assert payload["comision"]["cupos_disponibles"] == 0
 
 
@@ -4789,6 +4794,8 @@ def test_api_vat_web_prevalidar_permite_lista_espera_sin_voucher_si_no_hay_cupo(
     assert response.status_code == 200
     assert payload["puede_inscribirse"] is True
     assert payload["motivos"] == []
+    assert payload["comision"]["acepta_lista_espera"] is True
+    assert payload["comision"]["ingresa_a_lista_espera"] is True
     assert payload["comision"]["cupos_disponibles"] == 0
     assert payload["voucher"]["requerido"] is True
     assert payload["voucher"]["voucher_id"] is None

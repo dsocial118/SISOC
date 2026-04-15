@@ -611,6 +611,7 @@ class CursoBusquedaComisionSerializer(serializers.ModelSerializer):
             "codigo_comision",
             "nombre",
             "estado",
+            "acepta_lista_espera",
             "cupo_total",
             "total_inscriptos",
             "cupos_disponibles",
@@ -974,6 +975,7 @@ class VatWebCursoSerializer(serializers.ModelSerializer):
     inscripcion_libre = serializers.BooleanField(
         source="curso.inscripcion_libre", read_only=True
     )
+    acepta_lista_espera = serializers.BooleanField(read_only=True)
     estado_oferta = serializers.CharField(source="curso.estado", read_only=True)
     estado_curso = serializers.CharField(source="curso.estado", read_only=True)
     cupo = serializers.IntegerField(source="cupo_total", read_only=True)
@@ -1036,6 +1038,7 @@ class VatWebCursoSerializer(serializers.ModelSerializer):
             "costo",
             "usa_voucher",
             "inscripcion_libre",
+            "acepta_lista_espera",
             "observaciones",
             "horarios",
         ]
@@ -1054,6 +1057,11 @@ class VatWebInscripcionSerializer(serializers.ModelSerializer):
     )
     curso = VatWebCursoSerializer(source="comision_curso", read_only=True)
     programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
+    estado_nombre = serializers.CharField(source="get_estado_display", read_only=True)
+    en_lista_espera = serializers.SerializerMethodField()
+
+    def get_en_lista_espera(self, obj):
+        return obj.estado == "en_espera"
 
     class Meta:
         model = Inscripcion
@@ -1068,6 +1076,8 @@ class VatWebInscripcionSerializer(serializers.ModelSerializer):
             "programa",
             "programa_nombre",
             "estado",
+            "estado_nombre",
+            "en_lista_espera",
             "origen_canal",
             "fecha_inscripcion",
             "fecha_validacion_presencial",
@@ -1225,6 +1235,9 @@ class VatWebInscripcionPrevalidacionComisionSerializer(VatPlainSerializer):
     programa_id = serializers.IntegerField(allow_null=True)
     programa_nombre = serializers.CharField(allow_null=True)
     usa_voucher = serializers.BooleanField()
+    inscripcion_libre = serializers.BooleanField()
+    acepta_lista_espera = serializers.BooleanField()
+    ingresa_a_lista_espera = serializers.BooleanField()
     cupo_total = serializers.IntegerField()
     cupos_disponibles = serializers.IntegerField()
     costo = serializers.IntegerField()
