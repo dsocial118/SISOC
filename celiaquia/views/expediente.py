@@ -1692,6 +1692,30 @@ class ReprocesarRegistrosErroneosView(View):
                             f"Fila {registro.fila_excel}: No se pudo crear el ciudadano"
                         )
 
+            except ValidationError as e:
+                errores += 1
+                if getattr(e, "messages", None):
+                    error_msg = "; ".join(str(m) for m in e.messages if m)
+                elif getattr(e, "message", None):
+                    error_msg = str(e.message)
+                else:
+                    error_msg = str(e)
+
+                errores_detalle.append(f"Fila {registro.fila_excel}: {error_msg}")
+                logger.warning(
+                    "celiaquia.expediente.reprocess.handled_validation_error",
+                    extra={
+                        "data": {
+                            "registro_id": registro.pk,
+                            "fila_excel": registro.fila_excel,
+                            "expediente_id": getattr(expediente, "pk", None),
+                            "error": error_msg,
+                        }
+                    },
+                    exc_info=True,
+                )
+                registro.mensaje_error = f"Error al reprocesar: {error_msg}"
+                registro.save(update_fields=["mensaje_error"])
             except Exception as e:
                 errores += 1
                 if "Field" in str(e) and "expected" in str(e):

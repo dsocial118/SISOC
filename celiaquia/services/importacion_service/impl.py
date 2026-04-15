@@ -1848,7 +1848,7 @@ def _registrar_error_fila_importacion(detalles_errores, row, offset, exc):
         error=error_msg,
         datos=datos_originales,
     )
-    logger.error("Error fila %s: %s", offset, exc)
+    logger.warning("Error fila %s: %s", offset, exc)
 
 
 def _procesar_beneficiario_desde_row_importacion(

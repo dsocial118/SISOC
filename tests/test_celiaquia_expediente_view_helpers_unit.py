@@ -917,6 +917,70 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
     assert no_prov.status_code == 400
 
 
+def test_reprocesar_registros_erroneos_trata_validation_error_como_handled(mocker):
+    from django.core.exceptions import ValidationError
+
+    view = module.ReprocesarRegistrosErroneosView()
+    user = SimpleNamespace(profile=SimpleNamespace(provincia_id=1))
+    request = SimpleNamespace(user=user)
+    expediente = SimpleNamespace(pk=99)
+    registro = SimpleNamespace(
+        pk=201,
+        fila_excel=2,
+        datos_raw={"altura": ""},
+        mensaje_error="",
+        save=mocker.Mock(),
+    )
+    registros = [registro]
+
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", return_value=expediente)
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch("celiaquia.views.expediente._is_provincial", return_value=True)
+    mocker.patch(
+        "celiaquia.views.expediente.EstadoLegajo.objects.get",
+        return_value=SimpleNamespace(),
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        return_value=1,
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._aplicar_defaults_registro_erroneo",
+        side_effect=lambda datos: datos,
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._normalizar_datos_registro_erroneo",
+        side_effect=lambda datos: datos,
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._validar_datos_registro_erroneo",
+        side_effect=ValidationError("Faltan campos obligatorios: altura"),
+    )
+    warning_mock = mocker.patch("celiaquia.views.expediente.logger.warning")
+    error_mock = mocker.patch("celiaquia.views.expediente.logger.error")
+
+    class _RegistrosStub:
+        def exists(self):
+            return True
+
+        def __iter__(self):
+            return iter(registros)
+
+    expediente.registros_erroneos = SimpleNamespace(
+        filter=lambda procesado=False: _RegistrosStub()
+    )
+
+    response = module.ReprocesarRegistrosErroneosView.post.__wrapped__(view, request, pk=99)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["errores"] == 1
+    assert "altura" in body["errores_detalle"][0].lower()
+    warning_mock.assert_called_once()
+    error_mock.assert_not_called()
+    assert "altura" in registro.mensaje_error.lower()
+
+
 def test_eliminar_registro_erroneo_view_paths(mocker):
     view = module.EliminarRegistroErroneoView()
     expediente = SimpleNamespace()
