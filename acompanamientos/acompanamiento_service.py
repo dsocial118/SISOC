@@ -184,9 +184,7 @@ class AcompanamientoService:
                 if hitos:
                     return hitos
             return (
-                Hitos.objects.filter(
-                    acompanamiento__admision__comedor=comedor
-                )
+                Hitos.objects.filter(acompanamiento__admision__comedor=comedor)
                 .order_by("-acompanamiento__admision__id")
                 .first()
             )
