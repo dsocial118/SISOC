@@ -932,8 +932,8 @@ class Curso(SoftDeleteModelMixin, models.Model):
         default=False,
         verbose_name="Inscripción libre",
         help_text=(
-            "Si está activo, el curso admite solicitudes públicas sin ciudadano "
-            "previo y SISOC debe vincularlas antes de convertirlas en inscripción."
+            "Si está activo, el curso admite altas públicas aunque el ciudadano "
+            "no exista todavía en SISOC."
         ),
     )
     voucher_parametrias = models.ManyToManyField(
@@ -1627,6 +1627,8 @@ class Inscripcion(SoftDeleteModelMixin, models.Model):
         on_delete=models.PROTECT,
         related_name="inscripciones_vat",
         verbose_name="Programa",
+        null=True,
+        blank=True,
     )
 
     estado = models.CharField(

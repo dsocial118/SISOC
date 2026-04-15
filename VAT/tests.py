@@ -3120,7 +3120,7 @@ def test_api_vat_web_mi_argentina_flujo_completo_prevalidar_e_inscribir(
 
 
 @pytest.mark.django_db
-def test_api_vat_web_inscripcion_libre_crea_solicitud_publica_sin_ciudadano(
+def test_api_vat_web_inscripcion_libre_crea_inscripcion_operativa_sin_ciudadano(
     vat_api_client, vat_curso_base
 ):
     centro, ubicacion, modalidad = vat_curso_base
@@ -3162,14 +3162,33 @@ def test_api_vat_web_inscripcion_libre_crea_solicitud_publica_sin_ciudadano(
     assert response.status_code == 201
     payload = response.json()
     assert payload["comision_curso"] == comision.id
-    assert payload["estado"] == "pendiente"
-    assert payload["ciudadano"] is None
-    assert payload["datos_postulante"]["documento"] == "42439852"
+    assert payload["estado"] == "pre_inscripta"
+    assert payload["ciudadano"] is not None
 
-    solicitud = SolicitudInscripcionPublica.objects.get(pk=payload["id"])
+    ciudadano = Ciudadano.objects.get(pk=payload["ciudadano"])
+    assert ciudadano.documento == 42439852
+    assert ciudadano.apellido == "CONIGLIO"
+    assert ciudadano.fecha_nacimiento == date(1900, 1, 1)
+
+    inscripcion = Inscripcion.objects.get(pk=payload["id"])
+    assert inscripcion.comision_curso == comision
+    assert inscripcion.ciudadano == ciudadano
+    assert inscripcion.programa is None
+
+    solicitud = SolicitudInscripcionPublica.objects.get(inscripcion=inscripcion)
     assert solicitud.comision_curso == comision
-    assert solicitud.ciudadano is None
+    assert solicitud.ciudadano == ciudadano
+    assert solicitud.estado == "convertida"
     assert solicitud.datos_postulante["apellido"] == "CONIGLIO"
+
+    response_inscripciones = vat_api_client.get(
+        f"/api/vat/web/inscripciones/?documento={ciudadano.documento}"
+    )
+
+    assert response_inscripciones.status_code == 200
+    inscripciones_payload = response_inscripciones.json()
+    assert inscripciones_payload["count"] == 1
+    assert inscripciones_payload["results"][0]["id"] == inscripcion.id
 
     response_cursos = vat_api_client.get(f"/api/vat/web/cursos/?centro_id={centro.id}")
 
@@ -3179,6 +3198,8 @@ def test_api_vat_web_inscripcion_libre_crea_solicitud_publica_sin_ciudadano(
         item for item in cursos_payload["results"] if item["id"] == comision.id
     )
     assert curso_resultado["inscripcion_libre"] is True
+
+
 
 
 @pytest.mark.django_db

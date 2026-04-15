@@ -1283,8 +1283,7 @@ class CursoForm(forms.ModelForm):
         required=False,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
         help_text=(
-            "Permite recibir solicitudes públicas sin ciudadano previo. "
-            "SISOC deberá vincularlas antes de convertirlas en inscripción."
+            "Permite altas públicas aunque el ciudadano todavía no exista en SISOC."
         ),
     )
     voucher_parametrias = forms.ModelMultipleChoiceField(

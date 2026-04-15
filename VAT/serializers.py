@@ -1,7 +1,9 @@
 # pylint: disable=too-many-lines
 
+from datetime import date
 import json
 
+from django.db import transaction
 from rest_framework import serializers
 from VAT.services.inscripcion_service import ESTADOS_INSCRIPCION_OCUPAN_CUPO
 from VAT.models import (
@@ -1056,7 +1058,9 @@ class VatWebInscripcionSerializer(serializers.ModelSerializer):
         source="comision_curso_id", read_only=True
     )
     curso = VatWebCursoSerializer(source="comision_curso", read_only=True)
-    programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
+    programa_nombre = serializers.CharField(
+        source="programa.nombre", read_only=True, allow_null=True
+    )
     estado_nombre = serializers.CharField(source="get_estado_display", read_only=True)
     en_lista_espera = serializers.SerializerMethodField()
 
@@ -1140,6 +1144,82 @@ def _extraer_datos_postulante(attrs):
         return None
 
     return parsed if isinstance(parsed, dict) else None
+
+
+def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario=None):
+    if not isinstance(datos_postulante, dict):
+        raise serializers.ValidationError(
+            {"datos_postulante": "Debe enviar un objeto con los datos del postulante."}
+        )
+
+    nombre = (datos_postulante.get("nombre") or "").strip()
+    apellido = (datos_postulante.get("apellido") or "").strip()
+    documento = str(datos_postulante.get("documento") or "").strip()
+    tipo_documento = (datos_postulante.get("tipo_documento") or Ciudadano.DOCUMENTO_DNI).strip()
+
+    errores = {}
+    if not nombre:
+        errores["nombre"] = "Debe informar el nombre del postulante."
+    if not apellido:
+        errores["apellido"] = "Debe informar el apellido del postulante."
+    if not documento:
+        errores["documento"] = "Debe informar el documento del postulante."
+    elif not documento.isdigit():
+        errores["documento"] = "El documento del postulante debe ser numérico."
+
+    tipos_validos = {valor for valor, _ in Ciudadano.DOCUMENTO_CHOICES}
+    if tipo_documento not in tipos_validos:
+        tipo_documento = Ciudadano.DOCUMENTO_DNI
+
+    if errores:
+        raise serializers.ValidationError({"datos_postulante": errores})
+
+    documento_int = int(documento)
+    ciudadano_existente = Ciudadano.objects.filter(
+        tipo_documento=tipo_documento,
+        documento=documento_int,
+    ).first()
+    if ciudadano_existente:
+        return ciudadano_existente
+
+    fecha_nacimiento_raw = datos_postulante.get("fecha_nacimiento")
+    fecha_nacimiento = date(1900, 1, 1)
+    observaciones = [
+        "Ciudadano creado automáticamente desde inscripción libre web."
+    ]
+    if fecha_nacimiento_raw:
+        try:
+            fecha_nacimiento = serializers.DateField().run_validation(
+                fecha_nacimiento_raw
+            )
+        except serializers.ValidationError as exc:
+            raise serializers.ValidationError(
+                {"datos_postulante": {"fecha_nacimiento": exc.detail}}
+            ) from exc
+    else:
+        observaciones.append(
+            "Fecha de nacimiento no informada; se asignó 1900-01-01 para habilitar la inscripción operativa."
+        )
+
+    usuario_auditoria = (
+        usuario
+        if getattr(usuario, "is_authenticated", False)
+        else None
+    )
+
+    return Ciudadano.objects.create(
+        apellido=apellido,
+        nombre=nombre,
+        fecha_nacimiento=fecha_nacimiento,
+        tipo_documento=tipo_documento,
+        documento=documento_int,
+        telefono=(datos_postulante.get("telefono") or "").strip() or None,
+        email=(datos_postulante.get("email") or "").strip() or None,
+        origen_dato="manual",
+        observaciones=" ".join(observaciones),
+        creado_por=usuario_auditoria,
+        modificado_por=usuario_auditoria,
+    )
 
 
 def _resolver_referencias_vat_web_inscripcion(attrs):
@@ -1330,12 +1410,29 @@ class VatWebInscripcionCreateSerializer(VatWebInscripcionBaseSerializer):
         request = self.context.get("request")
 
         if validated_data.get("ciudadano") is None:
-            return SolicitudInscripcionPublicaService.crear_desde_vat_web(
-                comision=validated_data["comision_curso"],
-                programa=validated_data.get("programa"),
-                datos_postulante=validated_data.get("datos_postulante") or {},
-                observaciones=validated_data.get("observaciones", ""),
-            )
+            with transaction.atomic():
+                ciudadano = _resolver_o_crear_ciudadano_desde_datos_postulante(
+                    validated_data.get("datos_postulante") or {},
+                    usuario=getattr(request, "user", None),
+                )
+                inscripcion = InscripcionService.crear_inscripcion(
+                    ciudadano=ciudadano,
+                    comision=validated_data["comision_curso"],
+                    programa=validated_data.get("programa"),
+                    estado=validated_data.get("estado", "inscripta"),
+                    origen_canal="front_publico",
+                    observaciones=validated_data.get("observaciones", ""),
+                    usuario=getattr(request, "user", None),
+                )
+                SolicitudInscripcionPublicaService.registrar_conversion_desde_vat_web(
+                    comision=validated_data["comision_curso"],
+                    ciudadano=ciudadano,
+                    inscripcion=inscripcion,
+                    programa=validated_data.get("programa"),
+                    datos_postulante=validated_data.get("datos_postulante") or {},
+                    observaciones=validated_data.get("observaciones", ""),
+                )
+            return inscripcion
 
         return InscripcionService.crear_inscripcion(
             ciudadano=validated_data["ciudadano"],
