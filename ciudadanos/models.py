@@ -58,7 +58,10 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         (MOTIVO_SIN_DNI_MENOR_SIN_DOCUMENTO, "Menor de edad sin documento tramitado"),
         (MOTIVO_SIN_DNI_EXTRANJERO, "Extranjero sin DNI argentino"),
         (MOTIVO_SIN_DNI_EXTRAVIADO, "Documento extraviado o en trámite"),
-        (MOTIVO_SIN_DNI_VULNERABILIDAD, "Víctima de violencia / vulnerabilidad extrema"),
+        (
+            MOTIVO_SIN_DNI_VULNERABILIDAD,
+            "Víctima de violencia / vulnerabilidad extrema",
+        ),
         (MOTIVO_SIN_DNI_OTRO, "Otro"),
     ]
 
@@ -73,14 +76,35 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     MOTIVO_NO_VALIDADO_DISCREPANCIA_FECHA = "DISCREPANCIA_FECHA_NACIMIENTO"
     MOTIVO_NO_VALIDADO_OTRO = "OTRO"
     MOTIVO_NO_VALIDADO_CHOICES = [
-        (MOTIVO_NO_VALIDADO_TRANSCRIPCION, "Errores en la transcripción de datos manuales"),
-        (MOTIVO_NO_VALIDADO_RENAPER_DESACTUALIZADO, "Cambios recientes en RENAPER aún no reflejados"),
-        (MOTIVO_NO_VALIDADO_DOC_NO_ACTUALIZADA, "Documentación del usuario no actualizada"),
+        (
+            MOTIVO_NO_VALIDADO_TRANSCRIPCION,
+            "Errores en la transcripción de datos manuales",
+        ),
+        (
+            MOTIVO_NO_VALIDADO_RENAPER_DESACTUALIZADO,
+            "Cambios recientes en RENAPER aún no reflejados",
+        ),
+        (
+            MOTIVO_NO_VALIDADO_DOC_NO_ACTUALIZADA,
+            "Documentación del usuario no actualizada",
+        ),
         (MOTIVO_NO_VALIDADO_TIPOGRAFICO, "Errores tipográficos en el ingreso de datos"),
-        (MOTIVO_NO_VALIDADO_MULTIPLES_IDENTIDADES, "Personas con múltiples identidades o nombres"),
-        (MOTIVO_NO_VALIDADO_CAMBIO_NOMBRE, "Cambios de nombre legal no registrados en RENAPER"),
-        (MOTIVO_NO_VALIDADO_FORMATO_NOMBRE, "Diferencias en el formato o tipo de nombre"),
-        (MOTIVO_NO_VALIDADO_DISCREPANCIA_FECHA, "Discrepancias en fechas de nacimiento o partidas"),
+        (
+            MOTIVO_NO_VALIDADO_MULTIPLES_IDENTIDADES,
+            "Personas con múltiples identidades o nombres",
+        ),
+        (
+            MOTIVO_NO_VALIDADO_CAMBIO_NOMBRE,
+            "Cambios de nombre legal no registrados en RENAPER",
+        ),
+        (
+            MOTIVO_NO_VALIDADO_FORMATO_NOMBRE,
+            "Diferencias en el formato o tipo de nombre",
+        ),
+        (
+            MOTIVO_NO_VALIDADO_DISCREPANCIA_FECHA,
+            "Discrepancias en fechas de nacimiento o partidas",
+        ),
         (MOTIVO_NO_VALIDADO_OTRO, "Otro"),
     ]
 
@@ -272,8 +296,12 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         if exclude_id:
             qs = qs.exclude(pk=exclude_id)
         return qs.only(
-            "id", "nombre", "apellido", "documento",
-            "tipo_registro_identidad", "requiere_revision_manual",
+            "id",
+            "nombre",
+            "apellido",
+            "documento",
+            "tipo_registro_identidad",
+            "requiere_revision_manual",
         ).order_by("documento")[:max_results]
 
     @property

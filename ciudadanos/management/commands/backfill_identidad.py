@@ -70,7 +70,9 @@ class Command(BaseCommand):
         solo_estadisticas = options["solo_estadisticas"]
 
         if dry_run:
-            self.stdout.write(self.style.WARNING("--- MODO DRY-RUN: no se escribirá nada ---"))
+            self.stdout.write(
+                self.style.WARNING("--- MODO DRY-RUN: no se escribirá nada ---")
+            )
 
         self._mostrar_estadisticas()
 
@@ -97,16 +99,22 @@ class Command(BaseCommand):
         total_ciudadanos_duplicados = sum(r["cant"] for r in dnis_duplicados)
         total_unicos = total - sin_doc - total_ciudadanos_duplicados
 
-        ya_procesados = Ciudadano.all_objects.exclude(
-            tipo_registro_identidad="ESTANDAR",
-            identificador_interno__isnull=False,
-        ).filter(identificador_interno__isnull=False).count()
+        ya_procesados = (
+            Ciudadano.all_objects.exclude(
+                tipo_registro_identidad="ESTANDAR",
+                identificador_interno__isnull=False,
+            )
+            .filter(identificador_interno__isnull=False)
+            .count()
+        )
 
         self.stdout.write("=== Estadísticas previas al backfill ===")
         self.stdout.write(f"  Total ciudadanos:            {total}")
         self.stdout.write(f"  Sin documento (NULL):        {sin_doc}")
         self.stdout.write(f"  DNIs duplicados (grupos):    {total_dnis_duplicados}")
-        self.stdout.write(f"  Ciudadanos en grupos dup.:   {total_ciudadanos_duplicados}")
+        self.stdout.write(
+            f"  Ciudadanos en grupos dup.:   {total_ciudadanos_duplicados}"
+        )
         self.stdout.write(f"  Con DNI único (→ ESTANDAR):  {total_unicos}")
         self.stdout.write(f"  Ya tienen identificador:     {ya_procesados}")
         self.stdout.write("")

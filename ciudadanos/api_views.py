@@ -14,7 +14,9 @@ def buscar_ciudadanos(request):
 
     # Búsqueda por documento (comportamiento original para dígitos largos)
     if len(query) >= 7 and query.isdigit():
-        qs = Ciudadano.buscar_por_documento(query, max_results=10, exclude_id=exclude_id)
+        qs = Ciudadano.buscar_por_documento(
+            query, max_results=10, exclude_id=exclude_id
+        )
     else:
         # Búsqueda por nombre/apellido o identificador_interno (para SIN_DNI)
         qs = Ciudadano.objects.filter(

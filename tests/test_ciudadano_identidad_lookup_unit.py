@@ -5,6 +5,7 @@ Fase 4 — identidad ciudadano.
 
 Tests unitarios con mocker (sin DB).
 """
+
 from contextlib import nullcontext
 from types import SimpleNamespace
 
@@ -18,6 +19,7 @@ from celiaquia.services import ciudadano_service as celiaquia_module
 # comedor_service — _buscar_ciudadano_existente_por_dni_renaper
 # ---------------------------------------------------------------------------
 
+
 class TestComedorBuscarPorDni:
 
     def test_retorna_registro_estandar_via_documento_unico_key(self, mocker):
@@ -28,8 +30,10 @@ class TestComedorBuscarPorDni:
             return_value=SimpleNamespace(first=lambda: estandar),
         )
 
-        result = comedor_module.ComedorService._buscar_ciudadano_existente_por_dni_renaper(
-            "12345678"
+        result = (
+            comedor_module.ComedorService._buscar_ciudadano_existente_por_dni_renaper(
+                "12345678"
+            )
         )
 
         assert result is estandar
@@ -53,8 +57,10 @@ class TestComedorBuscarPorDni:
             side_effect=_filter,
         )
 
-        result = comedor_module.ComedorService._buscar_ciudadano_existente_por_dni_renaper(
-            "12345678"
+        result = (
+            comedor_module.ComedorService._buscar_ciudadano_existente_por_dni_renaper(
+                "12345678"
+            )
         )
 
         assert result is fallback
@@ -72,8 +78,10 @@ class TestComedorBuscarPorDni:
             side_effect=_filter,
         )
 
-        result = comedor_module.ComedorService._buscar_ciudadano_existente_por_dni_renaper(
-            "99999999"
+        result = (
+            comedor_module.ComedorService._buscar_ciudadano_existente_por_dni_renaper(
+                "99999999"
+            )
         )
 
         assert result is None
@@ -83,12 +91,14 @@ class TestComedorBuscarPorDni:
 # celiaquia ciudadano_service — get_or_create_ciudadano lookup primario
 # ---------------------------------------------------------------------------
 
+
 class TestCeliaquiaCiudadanoLookup:
 
     def _patch_resolvers(self, mocker):
         mocker.patch.object(
-            celiaquia_module.CiudadanoService, "_normalizar_tipo_documento",
-            return_value="DNI"
+            celiaquia_module.CiudadanoService,
+            "_normalizar_tipo_documento",
+            return_value="DNI",
         )
         mocker.patch.object(
             celiaquia_module.CiudadanoService, "_resolver_sexo", return_value=None
@@ -106,23 +116,35 @@ class TestCeliaquiaCiudadanoLookup:
             celiaquia_module.CiudadanoService, "_to_date", return_value=None
         )
         mocker.patch.object(
-            celiaquia_module.CiudadanoService, "_resolver_nacionalidad", return_value=None
+            celiaquia_module.CiudadanoService,
+            "_resolver_nacionalidad",
+            return_value=None,
         )
 
     def test_lookup_primario_usa_documento_unico_key(self, mocker):
         """get_or_create_ciudadano intenta primero por documento_unico_key."""
         existing = SimpleNamespace(
             pk=9,
-            sexo_id=None, sexo=None,
-            nombre="", apellido="",
+            sexo_id=None,
+            sexo=None,
+            nombre="",
+            apellido="",
             fecha_nacimiento=None,
-            nacionalidad_id=None, nacionalidad=None,
-            provincia_id=None, provincia=None,
-            municipio_id=None, municipio=None,
-            localidad_id=None, localidad=None,
-            calle="", altura=None, barrio="",
-            piso_departamento="", codigo_postal="",
-            telefono="", email="",
+            nacionalidad_id=None,
+            nacionalidad=None,
+            provincia_id=None,
+            provincia=None,
+            municipio_id=None,
+            municipio=None,
+            localidad_id=None,
+            localidad=None,
+            calle="",
+            altura=None,
+            barrio="",
+            piso_departamento="",
+            codigo_postal="",
+            telefono="",
+            email="",
             save=mocker.Mock(),
         )
 

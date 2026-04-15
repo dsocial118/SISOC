@@ -5,6 +5,7 @@ Fase 4 — identidad ciudadano.
 Usan DB real (pytest.mark.django_db) porque el comando opera sobre
 registros reales y usa update() por batch.
 """
+
 from datetime import date
 from io import StringIO
 
@@ -88,7 +89,9 @@ def test_idempotente_no_reprocesa_registro_ya_procesado():
 def test_dry_run_no_escribe_en_db():
     c = _ciudadano(documento=None)
 
-    call_command("backfill_identidad", "--dry-run", stdout=StringIO(), stderr=StringIO())
+    call_command(
+        "backfill_identidad", "--dry-run", stdout=StringIO(), stderr=StringIO()
+    )
 
     c.refresh_from_db()
     assert c.identificador_interno is None

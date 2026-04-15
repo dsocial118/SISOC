@@ -142,7 +142,9 @@ class CiudadanoForm(forms.ModelForm):
 
         elif tipo == Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO:
             if not cleaned.get("documento"):
-                self.add_error("documento", "El DNI es obligatorio para este tipo de registro.")
+                self.add_error(
+                    "documento", "El DNI es obligatorio para este tipo de registro."
+                )
             if not cleaned.get("motivo_no_validacion_renaper"):
                 self.add_error(
                     "motivo_no_validacion_renaper",

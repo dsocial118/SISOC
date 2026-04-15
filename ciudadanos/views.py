@@ -434,7 +434,9 @@ class CiudadanosCreateView(LoginRequiredMixin, CreateView):
                 None,
             )
             if estandar:
-                messages.info(request, "El ciudadano ya existe. Puede editar su legajo.")
+                messages.info(
+                    request, "El ciudadano ya existe. Puede editar su legajo."
+                )
                 return redirect("ciudadanos_editar", pk=estandar.pk)
 
             # Hay duplicados no-estándar: avisar y mostrar el formulario sin redirigir
