@@ -189,12 +189,16 @@ def test_crear_hitos_crea_subintervencion_y_nuevo_hito(mocker):
         [SimpleNamespace(verbose_name="Hito Uno", name="hito_uno")],
     )
 
-    chain = SimpleNamespace(
-        filter=lambda **_k: SimpleNamespace(first=lambda: None),
+    acompanamiento = SimpleNamespace(pk=1)
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Acompanamiento.objects.filter",
+        return_value=SimpleNamespace(
+            order_by=lambda *_: SimpleNamespace(first=lambda: acompanamiento)
+        ),
     )
     mocker.patch(
-        "acompanamientos.acompanamiento_service.Hitos.objects.select_related",
-        return_value=chain,
+        "acompanamientos.acompanamiento_service.Hitos.objects.filter",
+        return_value=SimpleNamespace(first=lambda: None),
     )
 
     sub = SimpleNamespace(nombre="Sub 1")
@@ -222,10 +226,32 @@ def test_crear_hitos_crea_subintervencion_y_nuevo_hito(mocker):
 
     AcompanamientoService.crear_hitos(intervencion)
 
-    crear_hito.assert_called_once()
+    crear_hito.assert_called_once_with(acompanamiento=acompanamiento)
     assert intervencion.subintervencion is sub
     assert nuevo.hito_uno is True
     nuevo.save.assert_called_once()
+
+
+def test_crear_hitos_sin_acompanamiento_no_hace_nada(mocker):
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Acompanamiento.objects.filter",
+        return_value=SimpleNamespace(
+            order_by=lambda *_: SimpleNamespace(first=lambda: None)
+        ),
+    )
+    crear_hito = mocker.patch(
+        "acompanamientos.acompanamiento_service.Hitos.objects.create"
+    )
+
+    intervencion = SimpleNamespace(
+        comedor=SimpleNamespace(id=1),
+        subintervencion_id=1,
+        tipo_intervencion=SimpleNamespace(nombre="Intervencion 1"),
+    )
+
+    AcompanamientoService.crear_hitos(intervencion)
+
+    crear_hito.assert_not_called()
 
 
 def test_obtener_fechas_hitos_mapea_hito_y_omite_sin_tipo(mocker):
