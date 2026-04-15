@@ -4692,7 +4692,9 @@ def test_inscripcion_curso_no_permite_mover_de_inscripta_a_lista_espera(
     client, vat_geo_data
 ):
     provincia, municipio, localidad = vat_geo_data
-    modalidad = ModalidadCursada.objects.create(nombre="Presencial Bloqueo Espera", activo=True)
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial Bloqueo Espera", activo=True
+    )
     programa = Programa.objects.create(nombre="Programa Bloqueo Espera")
     sexo = Sexo.objects.create(sexo="No Binario")
     group, _ = Group.objects.get_or_create(name="CFP")
@@ -4779,10 +4781,7 @@ def test_inscripcion_curso_no_permite_mover_de_inscripta_a_lista_espera(
     assert response.status_code == 200
     assert inscripcion.estado == "inscripta"
     messages = list(response.context["messages"])
-    assert any(
-        "cupo ocupado a lista de espera" in str(message)
-        for message in messages
-    )
+    assert any("cupo ocupado a lista de espera" in str(message) for message in messages)
 
 
 @pytest.mark.django_db

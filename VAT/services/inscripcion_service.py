@@ -138,9 +138,9 @@ class InscripcionService:
 
     @staticmethod
     def contar_inscripciones_con_cupo(comision, *, exclude_inscripcion=None) -> int:
-        queryset = InscripcionService._inscripciones_queryset_para_comision(comision).filter(
-            estado__in=ESTADOS_INSCRIPCION_OCUPAN_CUPO
-        )
+        queryset = InscripcionService._inscripciones_queryset_para_comision(
+            comision
+        ).filter(estado__in=ESTADOS_INSCRIPCION_OCUPAN_CUPO)
         exclude_id = InscripcionService._resolve_lookup_id(exclude_inscripcion)
         if exclude_id:
             queryset = queryset.exclude(pk=exclude_id)
@@ -254,8 +254,7 @@ class InscripcionService:
         programa = programa or unidad_formativa.programa
         cupos_disponibles = InscripcionService.calcular_cupos_disponibles(comision)
         pasa_a_lista_espera = (
-            cupos_disponibles <= 0
-            and InscripcionService._acepta_lista_espera(comision)
+            cupos_disponibles <= 0 and InscripcionService._acepta_lista_espera(comision)
         )
         motivos: list[str] = []
 
@@ -267,9 +266,8 @@ class InscripcionService:
                 "La comisión no se encuentra activa para nuevas inscripciones."
             )
 
-        if (
-            cupos_disponibles <= 0
-            and not InscripcionService._acepta_lista_espera(comision)
+        if cupos_disponibles <= 0 and not InscripcionService._acepta_lista_espera(
+            comision
         ):
             motivos.append("La comisión no tiene cupos disponibles.")
 
@@ -442,9 +440,8 @@ class InscripcionService:
             }
             inscripcion = Inscripcion.objects.create(**inscripcion_kwargs)
 
-            if (
-                unidad_formativa.usa_voucher
-                and InscripcionService._estado_ocupa_cupo(estado_final)
+            if unidad_formativa.usa_voucher and InscripcionService._estado_ocupa_cupo(
+                estado_final
             ):
                 cantidad_debito = InscripcionService._resolver_cantidad_debito(
                     getattr(unidad_formativa, "costo", None)
