@@ -27,19 +27,32 @@ class AcompanamientoService:
     def crear_hitos(intervenciones: Intervencion):
         """Crear o actualizar los hitos para una intervención.
 
+        Busca el Acompanamiento activo más reciente del comedor para vincular
+        los hitos. Si no existe ninguno (comedor aún sin acompañamiento iniciado),
+        no hace nada.
+
         Args:
             intervenciones (Intervencion): Intervención a procesar.
 
         Returns:
             None
         """
-        # Optimización: select_related para evitar query adicional al comedor
         try:
-            hitos_existente = (
-                Hitos.objects.select_related("comedor")
-                .filter(comedor=intervenciones.comedor)
+            acompanamiento = (
+                Acompanamiento.objects.filter(
+                    admision__comedor=intervenciones.comedor,
+                    admision__activa=True,
+                )
+                .order_by("-admision__id")
                 .first()
             )
+
+            if not acompanamiento:
+                return
+
+            hitos_existente = Hitos.objects.filter(
+                acompanamiento=acompanamiento
+            ).first()
 
             if not intervenciones.subintervencion_id:
                 intervenciones.subintervencion = SubIntervencion.objects.create(
@@ -57,7 +70,7 @@ class AcompanamientoService:
                 )
                 hito_objeto = hitos_existente
             else:
-                nuevo_hito = Hitos.objects.create(comedor=intervenciones.comedor)
+                nuevo_hito = Hitos.objects.create(acompanamiento=acompanamiento)
                 AcompanamientoService._actualizar_hitos(nuevo_hito, hitos_a_actualizar)
                 hito_objeto = nuevo_hito
 
