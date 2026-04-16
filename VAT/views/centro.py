@@ -701,6 +701,7 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
                     "vat_centro_detail", kwargs={"pk": self.object.pk}
                 ),
                 "submit_text": "Guardar",
+                "show_activo_toggle": True,
                 "show_provincia_field": False,
                 "show_save_continue": False,
             }
@@ -763,15 +764,7 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         with transaction.atomic():
-            was_active = (
-                type(self.object)
-                .objects.filter(pk=self.object.pk)
-                .values_list("activo", flat=True)
-                .first()
-            )
             centro = form.save(commit=False)
-            if not was_active:
-                centro.activo = False
             centro.save()
             form.save_m2m()
             self.object = centro
