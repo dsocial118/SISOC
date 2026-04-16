@@ -155,7 +155,7 @@ def test_obtener_datos_admision_with_and_without_admision(mocker):
     )
     admision_qs = _QS(first_value=admision)
 
-    mocker.patch(
+    admision_filter = mocker.patch(
         "acompanamientos.acompanamiento_service.Admision.objects.filter",
         return_value=admision_qs,
     )
@@ -173,6 +173,11 @@ def test_obtener_datos_admision_with_and_without_admision(mocker):
     assert out["comedor"] == "comedor-db"
     assert out["info_relevante"] == "info"
     assert out["numero_if"] == "IF-1"
+    admision_filter.assert_called_once_with(
+        comedor=comedor,
+        enviado_acompaniamiento=True,
+        activa=True,
+    )
 
     mocker.patch(
         "acompanamientos.acompanamiento_service.Admision.objects.filter",
@@ -181,6 +186,54 @@ def test_obtener_datos_admision_with_and_without_admision(mocker):
     out_none = AcompanamientoService.obtener_datos_admision(comedor)
     assert out_none["admision"] is None
     assert out_none["numero_if"] is None
+
+
+def test_obtener_datos_admision_con_admision_id_permite_cerradas(mocker):
+    comedor = SimpleNamespace(pk=2)
+    admision = SimpleNamespace(
+        id=14,
+        comedor_id=8,
+        legales_num_if="IF-14",
+        numero_disposicion="DISP-14",
+    )
+    admision_filter = mocker.patch(
+        "acompanamientos.acompanamiento_service.Admision.objects.filter",
+        return_value=_QS(first_value=admision),
+    )
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.InformeTecnico.objects.filter",
+        return_value=_QS(first_value="info-cerrada"),
+    )
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Comedor.objects.filter",
+        return_value=_QS(first_value="comedor-cerrado"),
+    )
+
+    out = AcompanamientoService.obtener_datos_admision(comedor, admision_id=14)
+
+    assert out["admision"] is admision
+    assert out["info_relevante"] == "info-cerrada"
+    admision_filter.assert_called_once_with(
+        comedor=comedor,
+        enviado_acompaniamiento=True,
+        id=14,
+    )
+
+
+def test_obtener_hitos_con_admision_id_restringe_por_comedor(mocker):
+    comedor = SimpleNamespace(pk=3)
+    hitos_filter = mocker.patch(
+        "acompanamientos.acompanamiento_service.Hitos.objects.filter",
+        return_value=SimpleNamespace(first=lambda: "hitos-filtrados"),
+    )
+
+    out = AcompanamientoService.obtener_hitos(comedor, admision_id=22)
+
+    assert out == "hitos-filtrados"
+    hitos_filter.assert_called_once_with(
+        acompanamiento__admision__comedor=comedor,
+        acompanamiento__admision_id=22,
+    )
 
 
 def test_crear_hitos_crea_subintervencion_y_nuevo_hito(mocker):
@@ -319,20 +372,15 @@ def test_importar_datos_desde_admision_ok(mocker):
         "acompanamientos.acompanamiento_service.transaction.atomic",
         return_value=nullcontext(),
     )
-    comedor = SimpleNamespace(pk=10)
-    mocker.patch(
-        "acompanamientos.acompanamiento_service.Hitos.objects.filter",
-        return_value=SimpleNamespace(first=lambda: None),
-    )
-    mocker.patch(
-        "acompanamientos.acompanamiento_service.Hitos.objects.create",
+    hitos_get_or_create = mocker.patch(
+        "acompanamientos.acompanamiento_service.Hitos.objects.get_or_create",
     )
 
     admision = SimpleNamespace(
         pk=5,
         numero_convenio="CONV-1",
         convenio_numero=None,
-        comedor=comedor,
+        comedor=SimpleNamespace(pk=10),
         numero_expediente="EX-1",
         numero_resolucion="RES-1",
         vencimiento_mandato=date(2026, 1, 1),
@@ -355,3 +403,4 @@ def test_importar_datos_desde_admision_ok(mocker):
     update_or_create.assert_called_once()
     delete_qs.delete.assert_called_once()
     assert crear_prestacion.call_count == 2
+    hitos_get_or_create.assert_called_once_with(acompanamiento=acompanamiento)

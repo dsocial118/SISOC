@@ -1060,6 +1060,22 @@
     if (completadosEl) completadosEl.textContent = completados;
     if (pendientesEl) pendientesEl.textContent = pendientes;
     if (totalEl) totalEl.textContent = total;
+
+    const admisionIdActiva = "{{ admision_id_activa|default:'' }}";
+    if (admisionIdActiva) {
+      document
+        .querySelectorAll('form[action*="restaurar-hito"]')
+        .forEach(function (form) {
+          if (form.querySelector('input[name="admision_id"]')) {
+            return;
+          }
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = "admision_id";
+          input.value = admisionIdActiva;
+          form.appendChild(input);
+        });
+    }
   });
     </script>
 {% endblock %}

@@ -165,9 +165,9 @@ class AcompanamientoService:
     def obtener_hitos(comedor, admision_id=None):
         """Obtener los hitos correspondientes a un comedor.
 
-        Si se provee admision_id, prioriza buscar los Hitos vinculados al
-        Acompanamiento de esa admisión. Si no los encuentra, hace fallback
-        por comedor (compatibilidad con registros pre-migración).
+        Si se provee admision_id, busca únicamente los Hitos vinculados al
+        Acompanamiento de esa admisión dentro del mismo comedor. Si no se
+        provee, devuelve los hitos del acompañamiento más reciente.
 
         Args:
             comedor: Comedor para el cual se solicitan los hitos.
@@ -178,11 +178,10 @@ class AcompanamientoService:
         """
         try:
             if admision_id:
-                hitos = Hitos.objects.filter(
-                    acompanamiento__admision_id=admision_id
+                return Hitos.objects.filter(
+                    acompanamiento__admision__comedor=comedor,
+                    acompanamiento__admision_id=admision_id,
                 ).first()
-                if hitos:
-                    return hitos
             return (
                 Hitos.objects.filter(acompanamiento__admision__comedor=comedor)
                 .order_by("-acompanamiento__admision__id")
@@ -346,20 +345,7 @@ class AcompanamientoService:
                         cena=prestacion.cena,
                     )
 
-            # Vincular Hitos al Acompanamiento.
-            # Si ya existe un Hitos para el comedor sin acompanamiento asignado, se lo vincula.
-            # Si ya está vinculado a otro acompanamiento (segunda admisión del mismo comedor),
-            # se crea un Hitos nuevo solo con la FK de acompanamiento.
-            hitos = Hitos.objects.filter(comedor=admision.comedor).first()
-            if hitos:
-                if not hitos.acompanamiento_id:
-                    hitos.acompanamiento = acompanamiento
-                    hitos.save(update_fields=["acompanamiento"])
-            else:
-                Hitos.objects.create(
-                    comedor=admision.comedor,
-                    acompanamiento=acompanamiento,
-                )
+            Hitos.objects.get_or_create(acompanamiento=acompanamiento)
 
             return acompanamiento
         except Exception:
@@ -375,18 +361,25 @@ class AcompanamientoService:
 
         Args:
             comedor: Comedor del cual obtener los datos de admisión.
+            admision_id: ID opcional para recuperar una admisión histórica del
+                mismo comedor aunque ya no esté activa.
 
         Returns:
             dict: Diccionario con datos de admisión, info relevante, anexo, etc.
         """
         try:
-            admision_qs = Admision.objects.filter(
-                comedor=comedor,
-                enviado_acompaniamiento=True,
-                activa=True,
-            ).order_by("-id")
             if admision_id:
-                admision_qs = admision_qs.filter(id=admision_id)
+                admision_qs = Admision.objects.filter(
+                    comedor=comedor,
+                    enviado_acompaniamiento=True,
+                    id=admision_id,
+                ).order_by("-id")
+            else:
+                admision_qs = Admision.objects.filter(
+                    comedor=comedor,
+                    enviado_acompaniamiento=True,
+                    activa=True,
+                ).order_by("-id")
             admision = admision_qs.first()
 
             info_relevante = None
