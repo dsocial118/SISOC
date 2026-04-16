@@ -10,19 +10,18 @@
 
 ## Despliegue local con Docker Compose
 - `docker-compose.yml` queda reservado para desarrollo/local.
-- Colocar opcionalmente un dump en `docker/mysql/local-dump.sql`, luego levantar servicios con `docker compose up` y acceder en `http://localhost:8000`. Evidencia: README.md:45-64.
+- Colocar opcionalmente un dump en `docker/mysql/local-dump.sql`, luego levantar servicios con `docker compose up` y acceder en `http://localhost:8001` (default de `DOCKER_DJANGO_PORT_FORWARD`). Evidencia: docker-compose.yml:1-34 y .env.example:1-51.
 - Servicios definidos: contenedor `mysql` y `django`, con volumenes y puertos parametrizados. Evidencia: docker-compose.yml:1-34.
 
 ## Despliegue por entorno
-- Compose base compartido: `docker-compose.deploy.yml` con solo el servicio `django` y `env_file: .env`.
-- Overrides versionados:
-  - `docker-compose.qa.yml`
-  - `docker-compose.homologacion.yml`
+- Compose base versionado: `docker-compose.deploy.yml` con el servicio `django` y `env_file: .env`.
+- Override versionado adicional hoy presente en el repo:
   - `docker-compose.produccion.yml`
+- Los archivos `.env.qa`, `.env.homologacion` y `.env.prod` quedan trackeados en git como bases saneadas de referencia; no deben llevar credenciales ni datos reales.
+- En deploys versionados se usa el `.env` normal del servidor/checkout; `ENVIRONMENT` define si el runtime queda en `qa`, `homologacion` o `prd`.
 - Comandos de referencia:
-  - `docker compose -f docker-compose.deploy.yml -f docker-compose.qa.yml up -d --build`
-  - `docker compose -f docker-compose.deploy.yml -f docker-compose.homologacion.yml up -d --build`
-  - `docker compose -f docker-compose.deploy.yml -f docker-compose.produccion.yml up -d --build`
+  - Base comun: `docker compose -f docker-compose.deploy.yml up -d --build`
+  - Produccion con worker extra: `docker compose -f docker-compose.deploy.yml -f docker-compose.produccion.yml up -d --build`
 - En produccion, `docker-compose.produccion.yml` agrega `bulk_credentials_worker` con `DJANGO_SERVICE_ROLE=bulk_credentials_worker` para que el worker quede levantado junto con la aplicacion web.
 - En los deploys versionados no se levanta `mysql` dentro de Compose; la base se resuelve por variables `DATABASE_*` definidas en el `.env` del host.
 
