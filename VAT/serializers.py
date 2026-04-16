@@ -269,8 +269,6 @@ class VoucherSerializer(serializers.ModelSerializer):
     dias_para_vencimiento = serializers.SerializerMethodField()
 
     def get_dias_para_vencimiento(self, obj):
-        from datetime import date
-
         delta = obj.fecha_vencimiento - date.today()
         return delta.days
 
@@ -1172,24 +1170,27 @@ def _extraer_datos_postulante(attrs):
     return parsed if isinstance(parsed, dict) else None
 
 
-def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario=None):
-    if not isinstance(datos_postulante, dict):
-        raise serializers.ValidationError(
-            {"datos_postulante": "Debe enviar un objeto con los datos del postulante."}
-        )
-
-    nombre = (datos_postulante.get("nombre") or "").strip()
-    apellido = (datos_postulante.get("apellido") or "").strip()
+def _extraer_documento_postulante(datos_postulante):
     documento_explicitado = str(datos_postulante.get("documento") or "").strip()
     cuil = str(datos_postulante.get("cuil") or "").strip()
     usa_cuil_como_documento = not documento_explicitado and bool(cuil)
     documento = documento_explicitado or cuil
     if usa_cuil_como_documento:
         documento = "".join(caracter for caracter in documento if caracter.isdigit())
+    return documento, usa_cuil_como_documento
+
+
+def _resolver_tipo_documento_postulante(datos_postulante):
     tipo_documento = (
         datos_postulante.get("tipo_documento") or Ciudadano.DOCUMENTO_DNI
     ).strip()
+    tipos_validos = {valor for valor, _ in Ciudadano.DOCUMENTO_CHOICES}
+    return (
+        tipo_documento if tipo_documento in tipos_validos else Ciudadano.DOCUMENTO_DNI
+    )
 
+
+def _validar_datos_postulante(nombre, apellido, documento):
     errores = {}
     if not nombre:
         errores["nombre"] = "Debe informar el nombre del postulante."
@@ -1198,26 +1199,22 @@ def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario
     if not documento:
         errores["documento"] = "Debe informar el documento o cuil del postulante."
     elif not documento.isdigit():
-        errores["documento"] = "El documento del postulante debe ser numérico."
-
-    tipos_validos = {valor for valor, _ in Ciudadano.DOCUMENTO_CHOICES}
-    if tipo_documento not in tipos_validos:
-        tipo_documento = Ciudadano.DOCUMENTO_DNI
+        errores["documento"] = "El documento del postulante debe ser num\u00e9rico."
 
     if errores:
         raise serializers.ValidationError({"datos_postulante": errores})
 
-    documento_int = int(documento)
-    ciudadano_existente = Ciudadano.objects.filter(
-        tipo_documento=tipo_documento,
-        documento=documento_int,
-    ).first()
-    if ciudadano_existente:
-        return ciudadano_existente
 
-    fecha_nacimiento_raw = datos_postulante.get("fecha_nacimiento")
+def _resolver_fecha_y_observaciones_postulante(
+    datos_postulante,
+    usa_cuil_como_documento,
+):
     fecha_nacimiento = date(1900, 1, 1)
-    observaciones = ["Ciudadano creado automáticamente desde inscripción libre web."]
+    observaciones = [
+        "Ciudadano creado autom\u00e1ticamente desde inscripci\u00f3n libre web."
+    ]
+    fecha_nacimiento_raw = datos_postulante.get("fecha_nacimiento")
+
     if fecha_nacimiento_raw:
         try:
             fecha_nacimiento = serializers.DateField().run_validation(
@@ -1229,13 +1226,41 @@ def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario
             ) from exc
     else:
         observaciones.append(
-            "Fecha de nacimiento no informada; se asignó 1900-01-01 para habilitar la inscripción operativa."
-        )
-    if usa_cuil_como_documento:
-        observaciones.append(
-            "Se tomó el CUIL informado como documento para el alta automática."
+            "Fecha de nacimiento no informada; se asign\u00f3 1900-01-01 para habilitar la inscripci\u00f3n operativa."
         )
 
+    if usa_cuil_como_documento:
+        observaciones.append(
+            "Se tom\u00f3 el CUIL informado como documento para el alta autom\u00e1tica."
+        )
+
+    return fecha_nacimiento, observaciones
+
+
+def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario=None):
+    if not isinstance(datos_postulante, dict):
+        raise serializers.ValidationError(
+            {"datos_postulante": "Debe enviar un objeto con los datos del postulante."}
+        )
+
+    nombre = (datos_postulante.get("nombre") or "").strip()
+    apellido = (datos_postulante.get("apellido") or "").strip()
+    documento, usa_cuil_como_documento = _extraer_documento_postulante(datos_postulante)
+    tipo_documento = _resolver_tipo_documento_postulante(datos_postulante)
+    _validar_datos_postulante(nombre, apellido, documento)
+
+    documento_int = int(documento)
+    ciudadano_existente = Ciudadano.objects.filter(
+        tipo_documento=tipo_documento,
+        documento=documento_int,
+    ).first()
+    if ciudadano_existente:
+        return ciudadano_existente
+
+    fecha_nacimiento, observaciones = _resolver_fecha_y_observaciones_postulante(
+        datos_postulante,
+        usa_cuil_como_documento,
+    )
     usuario_auditoria = usuario if getattr(usuario, "is_authenticated", False) else None
 
     return Ciudadano.objects.create(
