@@ -9,7 +9,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.db import transaction
-from django.db.models import Count, Prefetch, Q
+from django.db.models import CharField, Count, F, OuterRef, Prefetch, Q, Subquery
+from django.db.models.functions import Coalesce
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
@@ -71,6 +72,40 @@ BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
 PLANES_CENTRO_PAGE_SIZE = 5
 PLANES_CENTRO_PAGE_SIZE_OPTIONS = (5, 10, 15, 20, 50, 100)
 CURSOS_PANEL_CACHE_TTL_SECONDS = 60
+
+
+def _get_centro_cue_subquery():
+    return (
+        InstitucionIdentificadorHist.objects.filter(
+            centro_id=OuterRef("pk"),
+            tipo_identificador="cue",
+            es_actual=True,
+        )
+        .order_by("-vigencia_desde", "-id")
+        .values("valor_identificador")[:1]
+    )
+
+
+def _get_centro_list_queryset():
+    return (
+        Centro.objects.select_related(
+            "referente",
+            "provincia",
+            "municipio",
+            "localidad",
+        )
+        .annotate(
+            codigo_cue=Coalesce(
+                Subquery(
+                    _get_centro_cue_subquery(),
+                    output_field=CharField(),
+                ),
+                F("codigo"),
+                output_field=CharField(),
+            )
+        )
+        .order_by("nombre")
+    )
 
 
 def _get_centro_detail_queryset():
@@ -433,7 +468,7 @@ class CentroListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        base_qs = Centro.objects.select_related("referente").order_by("nombre")
+        base_qs = _get_centro_list_queryset()
 
         user = self.request.user
         busq = self.request.GET.get("busqueda", "").strip()

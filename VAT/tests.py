@@ -1,5 +1,6 @@
 import importlib
 from datetime import date, time
+import json
 
 import pytest
 from django.contrib.auth.models import Group, User
@@ -1013,6 +1014,121 @@ def test_filter_centros_queryset_usuario_con_role_provincia_vat_aplica_scope():
     centros = list(filter_centros_queryset_for_user(Centro.objects.all(), user))
 
     assert centros == [centro_corrientes]
+
+
+@pytest.mark.django_db
+def test_vat_centro_list_filters_config_expone_solo_nombre_y_codigo(mocker):
+    user = User.objects.create_superuser(
+        username="admin-vat-filtros",
+        email="admin-filtros@vat.test",
+        password="test1234",
+    )
+    request = RequestFactory().get("/vat/centros/")
+    request.user = user
+
+    mocker.patch.object(centro_views, "reverse", side_effect=lambda name: f"/{name}/")
+
+    view = centro_views.CentroListView()
+    view.request = request
+    view.kwargs = {}
+    view.object_list = Centro.objects.none()
+    context = view.get_context_data()
+
+    assert [field["name"] for field in context["filters_config"]["fields"]] == [
+        "nombre",
+        "codigo",
+    ]
+
+
+@pytest.mark.django_db
+def test_vat_centro_list_filtra_por_cue_actual_en_codigo(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_superuser(
+        username="centro-filtro-cue",
+        email="centro-filtro-cue@vat.test",
+        password="test1234",
+    )
+
+    centro_match = Centro.objects.create(
+        nombre="Centro CUE vigente",
+        codigo="LEG-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="7",
+        numero=123,
+        domicilio_actividad="Calle 7",
+        telefono="221-111111",
+        celular="221-111112",
+        correo="cue@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Perez",
+        telefono_referente="221-111113",
+        correo_referente="refcue@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    InstitucionIdentificadorHist.objects.create(
+        centro=centro_match,
+        tipo_identificador="cue",
+        valor_identificador="500144900",
+        rol_institucional="sede",
+        es_actual=True,
+    )
+    centro_other = Centro.objects.create(
+        nombre="Centro sin match",
+        codigo="LEG-002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8",
+        telefono="221-222221",
+        celular="221-222222",
+        correo="other@vat.test",
+        nombre_referente="Juan",
+        apellido_referente="Gomez",
+        telefono_referente="221-222223",
+        correo_referente="refother@vat.test",
+        tipo_gestion="Privada",
+        clase_institucion="Capacitación Laboral",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    InstitucionIdentificadorHist.objects.create(
+        centro=centro_other,
+        tipo_identificador="cue",
+        valor_identificador="500144901",
+        rol_institucional="sede",
+        es_actual=True,
+    )
+
+    request = RequestFactory().get(
+        "/vat/centros/",
+        data={
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {
+                            "field": "codigo",
+                            "op": "contains",
+                            "value": "500144900",
+                        }
+                    ],
+                }
+            )
+        },
+    )
+    request.user = user
+
+    view = centro_views.CentroListView()
+    view.request = request
+
+    assert list(view.get_queryset()) == [centro_match]
 
 
 @pytest.mark.django_db
