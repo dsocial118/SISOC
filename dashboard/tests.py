@@ -20,11 +20,7 @@ def test_tablero_convierte_url_compartible_de_lookerstudio_a_embed():
     )
 
 
-<<<<<<< nomina_1329
-def test_dashboard_tablero_renderiza_iframe_con_url_embed_de_lookerstudio():
-    template_path = Path(__file__).resolve().parent / "templates/dashboard_tablero.html"
-    content = template_path.read_text(encoding="utf-8")
-=======
+
 def test_dashboard_tablero_renderiza_iframe_con_url_embed_de_lookerstudio(
     admin_client,
 ):
@@ -40,7 +36,6 @@ def test_dashboard_tablero_renderiza_iframe_con_url_embed_de_lookerstudio(
     )
 
     response = admin_client.get(tablero.get_absolute_url())
->>>>>>> development
 
     assert 'src="{{ tablero.get_embed_url }}"' in content
     assert 'target="_blank"' in content
