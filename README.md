@@ -56,7 +56,7 @@ Cada aplicación del repositorio representa un módulo funcional (ej. `comedores
    ```bash
    docker compose up
    ```
-4. Acceder a la app en [http://localhost:8001](http://localhost:8001) por defecto (`DOCKER_DJANGO_PORT_FORWARD` en `.env.example`).
+4. Acceder a la app en [http://localhost:8001](http://localhost:8001) (valor por defecto de `DOCKER_DJANGO_PORT_FORWARD` en `.env.example`).
 
 `docker-compose.yml` queda reservado para desarrollo/local y es el único compose versionado que levanta `mysql`.
 
@@ -158,6 +158,11 @@ Documentación Postman:
 No es la mejor documentacion. En caso de dudas, consultar con Juani (Tech lead de SISOC) o Andy (Dueño de GESCOM)
 
 Además, el repo expone schema OpenAPI en `/api/schema/`, Swagger en `/api/docs/` y Redoc en `/api/redoc/`.
+Ejemplo de request:
+```bash
+curl -X GET http://localhost:8001/api/comedores/ \
+  -H "Authorization: Api-Key <API_KEY>"
+```
 
 ---
 

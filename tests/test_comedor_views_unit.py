@@ -14,9 +14,12 @@ class _Req:
         self.FILES = files or SimpleNamespace(getlist=lambda _k: [])
 
 
-class _ValuesQS:
-    def values_list(self, *_args, **_kwargs):
-        return [1, 2]
+class _PageQS:
+    def __init__(self, items):
+        self.items = list(items)
+
+    def __getitem__(self, index):
+        return self.items[index]
 
 
 class _AdmisionesQS:
@@ -73,14 +76,15 @@ def test_comedor_list_paginates_without_count():
     view.request = _Req(post={"page": "1"})
     view.request.GET = {"page": "1"}
     view.page_kwarg = "page"
+    items = [SimpleNamespace(pk=1), SimpleNamespace(pk=2)]
 
     paginator, page_obj, object_list, is_paginated = view.paginate_queryset(
-        _ValuesQS(), 10
+        _PageQS(items), 10
     )
 
     assert paginator.count is None
-    assert object_list == [1, 2]
-    assert page_obj.object_list == [1, 2]
+    assert object_list == items
+    assert page_obj.object_list == items
     assert is_paginated is False
 
 

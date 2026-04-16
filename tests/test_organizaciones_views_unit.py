@@ -91,7 +91,7 @@ def test_organizacion_list_view_paginates_without_count(mocker):
     assert object_list == ["row1", "row2"]
     assert page_obj.object_list == ["row1", "row2"]
     assert hydrate.called
-    assert is_paginated is True
+    assert is_paginated is False
 
 
 def test_organizacion_list_context_adds_page_range_for_no_count(mocker):
