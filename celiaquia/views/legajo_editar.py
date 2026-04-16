@@ -175,21 +175,16 @@ class EditarLegajoView(View):
                     ciudadano.sexo = Sexo.objects.get(pk=sexo_id)
                 except Sexo.DoesNotExist:
                     raise ValidationError("Sexo inválido.")
-
-                # Nacionalidad (fija en Argentina para este flujo)
-                nacionalidad_argentina = _get_nacionalidad_argentina()
-                if nacionalidad_argentina:
-                    ciudadano.nacionalidad = nacionalidad_argentina
-                else:
-                    nacionalidad_id = request.POST.get("nacionalidad", "").strip()
-                    if not nacionalidad_id:
-                        raise ValidationError("Nacionalidad es obligatoria.")
-                    try:
-                        ciudadano.nacionalidad = Nacionalidad.objects.get(
-                            pk=nacionalidad_id
-                        )
-                    except Nacionalidad.DoesNotExist:
-                        raise ValidationError("Nacionalidad inválida.")
+                # Nacionalidad (obligatoria y editable)
+                nacionalidad_id = request.POST.get("nacionalidad", "").strip()
+                if not nacionalidad_id:
+                    raise ValidationError("Nacionalidad es obligatoria.")
+                try:
+                    ciudadano.nacionalidad = Nacionalidad.objects.get(
+                        pk=nacionalidad_id
+                    )
+                except Nacionalidad.DoesNotExist:
+                    raise ValidationError("Nacionalidad inválida.")
 
                 # Teléfono (opcional)
                 telefono = request.POST.get("telefono", "").strip()
@@ -245,12 +240,6 @@ class EditarLegajoView(View):
                 )
 
         except ValidationError as e:
-            logger.warning(
-                "Validación fallida al editar legajo %s: %s",
-                legajo.pk,
-                e,
-                exc_info=True,
-            )
             return JsonResponse(
                 {"success": False, "error": "Los datos ingresados no son válidos."},
                 status=400,

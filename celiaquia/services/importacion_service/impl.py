@@ -1526,7 +1526,8 @@ def _crear_ciudadano_beneficiario_importacion(
         )
         return None
     except Exception as exc:  # pylint: disable=broad-exception-caught
-        logger.error("Error creando ciudadano en fila %s: %s", offset, exc)
+        if not isinstance(exc, ValidationError):
+            logger.error("Error creando ciudadano en fila %s: %s", offset, exc)
         _registrar_error_creacion_ciudadano_importacion(
             payload=payload,
             offset=offset,
@@ -1865,7 +1866,6 @@ def _precargar_conflictos_y_existentes_importacion(expediente):
 def _build_callbacks_importacion(warnings):
     def add_warning(fila, campo, detalle):
         warnings.append({"fila": fila, "campo": campo, "detalle": detalle})
-        logger.warning("Fila %s: %s (%s)", fila, detalle, campo)
 
     def add_error(fila, campo, detalle):
         raise ValidationError(f"Fila {fila}: {detalle} ({campo})")
@@ -1916,7 +1916,6 @@ def _registrar_error_fila_importacion(detalles_errores, row, offset, exc):
         error=error_msg,
         datos=datos_originales,
     )
-    logger.error("Error fila %s: %s", offset, exc)
 
 
 def _procesar_beneficiario_desde_row_importacion(
@@ -2577,3 +2576,4 @@ class ImportacionService:
                 extra={"expediente_id": expediente.id, "archivo": archivo_excel.name},
             )
             raise
+
