@@ -2632,9 +2632,6 @@
             var defaultHint = hint ? hint.textContent : '';
             var lockedCursoId = '';
             var lockedCursoNombre = '';
-            var hoverFilterEnabled = false;
-            var previewCursoId = '';
-            var previewCursoNombre = '';
 
             function normalizeText(value) {
                 return (value || '')
@@ -2703,12 +2700,6 @@
                     return {
                         cursoId: lockedCursoId,
                         cursoNombre: lockedCursoNombre || getSelectedCursoName(lockedCursoId),
-                    };
-                }
-                if (previewCursoId) {
-                    return {
-                        cursoId: previewCursoId,
-                        cursoNombre: previewCursoNombre || getSelectedCursoName(previewCursoId),
                     };
                 }
                 return { cursoId: '', cursoNombre: '' };
@@ -2807,12 +2798,6 @@
                 }
             }
 
-            function resetPreviewFilter() {
-                previewCursoId = '';
-                previewCursoNombre = '';
-                applyCursoFilter();
-            }
-
             function syncCursoSelect(cursoId) {
                 if (comisionesCursoSelect) {
                     comisionesCursoSelect.value = cursoId || '';
@@ -2822,24 +2807,7 @@
             applyCourseFilters();
             applyCursoFilter();
 
-            cursosTable.addEventListener('mousemove', function() {
-                hoverFilterEnabled = true;
-            }, { once: true });
-
-            cursosTable.addEventListener('mouseleave', function() {
-                if (lockedCursoId || (comisionesCursoSelect && comisionesCursoSelect.value)) {
-                    return;
-                }
-                resetPreviewFilter();
-            });
-
             cursoRows.forEach(function(row) {
-                function filterRow() {
-                    previewCursoId = row.getAttribute('data-curso-id') || '';
-                    previewCursoNombre = row.getAttribute('data-curso-nombre') || 'Curso';
-                    applyCursoFilter();
-                }
-
                 function lockRowFilter(event) {
                     if (event && event.target && event.target.closest('.btn-group')) {
                         return;
@@ -2850,30 +2818,17 @@
                         lockedCursoId = '';
                         lockedCursoNombre = '';
                         syncCursoSelect('');
-                        resetPreviewFilter();
+                        applyCursoFilter();
                         return;
                     }
 
                     lockedCursoId = rowCursoId;
                     lockedCursoNombre = row.getAttribute('data-curso-nombre') || 'Curso';
                     syncCursoSelect(lockedCursoId);
-                    previewCursoId = '';
-                    previewCursoNombre = '';
                     applyCursoFilter();
                 }
 
-                row.addEventListener('mouseenter', function() {
-                    if (lockedCursoId || (comisionesCursoSelect && comisionesCursoSelect.value) || !hoverFilterEnabled) return;
-                    filterRow();
-                });
                 row.addEventListener('click', lockRowFilter);
-                row.addEventListener('focus', function() {
-                    if (lockedCursoId || (comisionesCursoSelect && comisionesCursoSelect.value)) {
-                        applyCursoFilter();
-                        return;
-                    }
-                    filterRow();
-                });
                 row.addEventListener('keydown', function(event) {
                     if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
@@ -2883,7 +2838,7 @@
                         lockedCursoId = '';
                         lockedCursoNombre = '';
                         syncCursoSelect('');
-                        resetPreviewFilter();
+                        applyCursoFilter();
                     }
                 });
             });
@@ -2912,34 +2867,20 @@
                 });
             }
             if (comisionesSearchInput) {
-                comisionesSearchInput.addEventListener('input', function() {
-                    previewCursoId = '';
-                    previewCursoNombre = '';
-                    applyCursoFilter();
-                });
+                comisionesSearchInput.addEventListener('input', applyCursoFilter);
             }
             if (comisionesCursoSelect) {
                 comisionesCursoSelect.addEventListener('change', function() {
                     lockedCursoId = comisionesCursoSelect.value || '';
                     lockedCursoNombre = getSelectedCursoName(lockedCursoId);
-                    previewCursoId = '';
-                    previewCursoNombre = '';
                     applyCursoFilter();
                 });
             }
             if (comisionesEstadoSelect) {
-                comisionesEstadoSelect.addEventListener('change', function() {
-                    previewCursoId = '';
-                    previewCursoNombre = '';
-                    applyCursoFilter();
-                });
+                comisionesEstadoSelect.addEventListener('change', applyCursoFilter);
             }
             if (comisionesPageSizeSelect) {
-                comisionesPageSizeSelect.addEventListener('change', function() {
-                    previewCursoId = '';
-                    previewCursoNombre = '';
-                    applyCursoFilter();
-                });
+                comisionesPageSizeSelect.addEventListener('change', applyCursoFilter);
             }
             if (comisionesClearBtn) {
                 comisionesClearBtn.addEventListener('click', function() {
@@ -2957,7 +2898,7 @@
                     }
                     lockedCursoId = '';
                     lockedCursoNombre = '';
-                    resetPreviewFilter();
+                    applyCursoFilter();
                 });
             }
         }
