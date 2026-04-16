@@ -69,6 +69,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+.codex/cache/context-memory/
 cover/
 
 # Translations
