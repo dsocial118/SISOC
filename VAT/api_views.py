@@ -37,6 +37,7 @@ from VAT.api_schema_examples import (
     CURSO_BUSCAR_EXAMPLES,
     CURSO_PRIORITARIOS_EXAMPLES,
 )
+from VAT.services.inscripcion_service import ESTADOS_INSCRIPCION_OCUPAN_CUPO
 from VAT.serializers import (
     CentroSerializer,
     ProvinciaSerializer,
@@ -154,6 +155,7 @@ class LocalidadViewSet(viewsets.ReadOnlyModelViewSet):
     )
     serializer_class = LocalidadSerializer
     permission_classes = [HasAPIKey]
+    pagination_class = None
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -546,7 +548,13 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
                         )
                         .filter(estado="activa")
                         .annotate(
-                            total_inscriptos=Count("inscripciones", distinct=True)
+                            total_inscriptos=Count(
+                                "inscripciones",
+                                filter=Q(
+                                    inscripciones__estado__in=ESTADOS_INSCRIPCION_OCUPAN_CUPO
+                                ),
+                                distinct=True,
+                            )
                         )
                         .prefetch_related(
                             "horarios__dia_semana",

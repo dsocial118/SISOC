@@ -1348,6 +1348,14 @@ class CursoForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
         help_text="Al inscribirse, se valida y descuenta crédito del voucher del ciudadano.",
     )
+    inscripcion_libre = forms.BooleanField(
+        label="Inscripción libre",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        help_text=(
+            "Permite altas públicas aunque el ciudadano todavía no exista en SISOC."
+        ),
+    )
     voucher_parametrias = forms.ModelMultipleChoiceField(
         queryset=build_voucher_parametria_queryset(),
         label="Vouchers",
@@ -1382,6 +1390,7 @@ class CursoForm(forms.ModelForm):
             "nombre",
             "estado",
             "usa_voucher",
+            "inscripcion_libre",
             "voucher_parametrias",
             "costo_creditos",
             "observaciones",
@@ -1429,6 +1438,7 @@ class CursoForm(forms.ModelForm):
         cleaned_data = super().clean()
         plan_estudio = cleaned_data.get("plan_estudio")
         usa_voucher = cleaned_data.get("usa_voucher")
+        inscripcion_libre = cleaned_data.get("inscripcion_libre")
         voucher_parametrias = cleaned_data.get("voucher_parametrias")
         costo_creditos = cleaned_data.get("costo_creditos")
 
@@ -1439,6 +1449,12 @@ class CursoForm(forms.ModelForm):
             )
         else:
             cleaned_data["modalidad"] = plan_estudio.modalidad_cursada
+
+        if usa_voucher and inscripcion_libre:
+            self.add_error(
+                "inscripcion_libre",
+                "No podés activar inscripción libre y voucher al mismo tiempo.",
+            )
 
         if usa_voucher and not voucher_parametrias:
             self.add_error(
@@ -1493,6 +1509,11 @@ class ComisionCursoForm(forms.ModelForm):
         min_value=1,
         widget=forms.NumberInput(attrs={"class": "form-control"}),
     )
+    acepta_lista_espera = forms.BooleanField(
+        label="Acepta Lista de Espera",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
     fecha_inicio = forms.DateField(
         label="Fecha de Inicio",
         widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
@@ -1518,6 +1539,7 @@ class ComisionCursoForm(forms.ModelForm):
             "curso",
             "ubicacion",
             "cupo_total",
+            "acepta_lista_espera",
             "fecha_inicio",
             "fecha_fin",
             "estado",
@@ -1762,6 +1784,11 @@ class ComisionForm(forms.ModelForm):
         label="Cupo Total",
         widget=forms.NumberInput(attrs={"class": "form-control"}),
     )
+    acepta_lista_espera = forms.BooleanField(
+        label="Acepta Lista de Espera",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
     estado = forms.ChoiceField(
         label="Estado",
         choices=Comision.ESTADO_COMISION_CHOICES,
@@ -1783,6 +1810,7 @@ class ComisionForm(forms.ModelForm):
             "fecha_inicio",
             "fecha_fin",
             "cupo",
+            "acepta_lista_espera",
             "estado",
             "observaciones",
         ]

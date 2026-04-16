@@ -32,6 +32,10 @@ from VAT.forms import (
     ComisionHorarioForm,
     CiudadanoInscripcionRapidaForm,
 )
+from VAT.services.inscripcion_service import (
+    ESTADOS_INSCRIPCION_OCUPAN_CUPO,
+    InscripcionService,
+)
 from VAT.services.access_scope import (
     filter_centros_queryset_for_user,
     filter_comisiones_queryset_for_user,
@@ -318,10 +322,26 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
             .select_related("horario__dia_semana")
             .order_by("fecha", "horario__hora_desde")
         )
-        context["inscripciones"] = list(
+        inscripciones_qs = (
             Inscripcion.objects.filter(comision=comision)
             .select_related("ciudadano", "programa")
             .order_by("estado", "fecha_inscripcion")
+        )
+        inscripciones = list(inscripciones_qs)
+        context["inscripciones"] = [
+            inscripcion
+            for inscripcion in inscripciones
+            if inscripcion.estado != "en_espera"
+        ]
+        context["lista_espera"] = [
+            inscripcion
+            for inscripcion in inscripciones
+            if inscripcion.estado == "en_espera"
+        ]
+        context["cupo_ocupado"] = sum(
+            1
+            for inscripcion in inscripciones
+            if inscripcion.estado in ESTADOS_INSCRIPCION_OCUPAN_CUPO
         )
         context["estado_choices"] = Inscripcion.ESTADO_INSCRIPCION_CHOICES
         return context
@@ -344,17 +364,20 @@ class InscripcionCambiarEstadoView(LoginRequiredMixin, View):
         if nuevo_estado not in estados_validos:
             messages.error(request, "Estado no válido.")
         else:
-            inscripcion.estado = nuevo_estado
-            update_fields = ["estado"]
-            if nuevo_estado == "validada_presencial":
-                inscripcion.fecha_validacion_presencial = timezone.now()
-                update_fields.append("fecha_validacion_presencial")
-            inscripcion.save(update_fields=update_fields)
-            messages.success(
-                request,
-                f"Inscripción de {inscripcion.ciudadano.nombre_completo} "
-                f"actualizada a '{estados_validos[nuevo_estado]}'.",
-            )
+            try:
+                InscripcionService.actualizar_estado_inscripcion(
+                    inscripcion=inscripcion,
+                    nuevo_estado=nuevo_estado,
+                    usuario=request.user,
+                )
+            except ValueError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(
+                    request,
+                    f"Inscripción de {inscripcion.ciudadano.nombre_completo} "
+                    f"actualizada a '{estados_validos[nuevo_estado]}'.",
+                )
         return redirect("vat_comision_detail", pk=inscripcion.comision_id)
 
 

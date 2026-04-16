@@ -18,6 +18,7 @@ CURSO_BUSCAR_EXAMPLES = [
                     "fecha_creacion": "2026-04-12T10:00:00Z",
                     "fecha_modificacion": "2026-04-12T10:00:00Z",
                     "usa_voucher": True,
+                    "inscripcion_libre": False,
                     "costo_creditos": 2,
                     "centro": {
                         "id": 12,
@@ -62,7 +63,26 @@ CURSO_BUSCAR_EXAMPLES = [
                         "nombre": "Programa Prioridad Formación",
                     },
                     "voucher_parametrias": [],
-                    "comisiones": [],
+                    "comisiones": [
+                        {
+                            "id": 200,
+                            "codigo_comision": "HD-01",
+                            "nombre": "Comisión Mañana",
+                            "estado": "activa",
+                            "acepta_lista_espera": True,
+                            "cupo_total": 20,
+                            "total_inscriptos": 18,
+                            "cupos_disponibles": 2,
+                            "fecha_inicio": "2026-04-20",
+                            "fecha_fin": "2026-06-20",
+                            "observaciones": None,
+                            "ubicacion": None,
+                            "horarios": [],
+                            "sesiones": [],
+                            "fecha_creacion": "2026-04-12T10:00:00Z",
+                            "fecha_modificacion": "2026-04-12T10:00:00Z",
+                        }
+                    ],
                 }
             ],
         },
@@ -160,6 +180,7 @@ CURSO_PRIORITARIOS_EXAMPLES = [
                     "fecha_creacion": "2026-04-12T10:00:00Z",
                     "fecha_modificacion": "2026-04-12T10:00:00Z",
                     "usa_voucher": True,
+                    "inscripcion_libre": False,
                     "costo_creditos": 3,
                     "centro": {
                         "id": 12,
