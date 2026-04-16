@@ -7,7 +7,7 @@ por cada ocurrencia de ese día dentro del rango fecha_inicio/fecha_fin de la Co
 Ejemplo:
   Comision: 22/03/2026 → 22/04/2026
   Horario: Lunes 10:00-12:00
-  Resultado: 4 sesiones (23/03, 30/03, 06/04, 13/04, 20/04... según el rango)
+  Resultado: 5 sesiones (23/03, 30/03, 06/04, 13/04, 20/04... según el rango)
 """
 
 from datetime import timedelta
@@ -29,6 +29,12 @@ DIA_A_WEEKDAY = {
 class SesionComisionService:
 
     @staticmethod
+    def _comision_filter(comision):
+        if getattr(comision, "curso_id", None):
+            return {"comision_curso": comision}
+        return {"comision": comision}
+
+    @staticmethod
     def generar_para_horario(horario):
         """
         Genera todas las sesiones para un ComisionHorario nuevo.
@@ -36,7 +42,7 @@ class SesionComisionService:
         """
         from VAT.models import SesionComision
 
-        comision = horario.comision
+        comision = horario.entidad_comision
         if not comision.fecha_inicio or not comision.fecha_fin:
             return 0
 
@@ -60,7 +66,7 @@ class SesionComisionService:
         """
         from VAT.models import SesionComision
 
-        comision = horario.comision
+        comision = horario.entidad_comision
         if not comision.fecha_inicio or not comision.fecha_fin:
             return 0
 
@@ -107,7 +113,7 @@ class SesionComisionService:
         deleted, _ = SesionComision.objects.filter(
             horario=horario, estado="programada"
         ).delete()
-        SesionComisionService._renumerar(horario.comision)
+        SesionComisionService._renumerar(horario.entidad_comision)
         return deleted
 
     # ── helpers privados ─────────────────────────────────────────────────────
@@ -122,7 +128,12 @@ class SesionComisionService:
         from VAT.models import SesionComision
 
         # Número base para continuar la secuencia
-        base = SesionComision.objects.filter(comision=comision).count() + 1
+        base = (
+            SesionComision.objects.filter(
+                **SesionComisionService._comision_filter(comision)
+            ).count()
+            + 1
+        )
 
         sesiones = []
         fecha = comision.fecha_inicio
@@ -132,11 +143,11 @@ class SesionComisionService:
             if fecha.weekday() == weekday and fecha not in fechas_excluidas:
                 sesiones.append(
                     SesionComision(
-                        comision=comision,
                         horario=horario,
                         numero_sesion=numero,
                         fecha=fecha,
                         estado="programada",
+                        **SesionComisionService._comision_filter(comision),
                     )
                 )
                 numero += 1
@@ -150,9 +161,9 @@ class SesionComisionService:
         from VAT.models import SesionComision
 
         sesiones = list(
-            SesionComision.objects.filter(comision=comision).order_by(
-                "fecha", "horario__hora_desde"
-            )
+            SesionComision.objects.filter(
+                **SesionComisionService._comision_filter(comision)
+            ).order_by("fecha", "horario__hora_desde")
         )
         for i, s in enumerate(sesiones, start=1):
             s.numero_sesion = i

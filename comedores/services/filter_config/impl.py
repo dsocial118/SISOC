@@ -1,10 +1,13 @@
-"""Configuración de filtros combinables para ComedorService.
+"""Configuracion de filtros combinables para ComedorService.
 
 Centraliza mapeos de campos, tipos y operadores permitidos para evitar
-duplicación y facilitar mantenimiento.
+duplicacion y facilitar mantenimiento.
 """
 
+from copy import deepcopy
 from typing import Any, Dict
+
+from django.core.cache import cache
 
 # Mapea el nombre de campo expuesto en filtros -> lookup real en Django ORM
 FIELD_MAP: Dict[str, str] = {
@@ -37,7 +40,7 @@ FIELD_MAP: Dict[str, str] = {
     "localidad": "localidad__nombre",
     "referente": "referente__nombre",
     "referente_apellido": "referente__apellido",
-    # Numéricos
+    # Numericos
     "id": "id",
     "id_externo": "id_externo",
     "comienzo": "comienzo",
@@ -47,7 +50,7 @@ FIELD_MAP: Dict[str, str] = {
     "longitud": "longitud",
 }
 
-# Tipos: text | number (utilizados para validación y casteo)
+# Tipos: text | number (utilizados para validacion y casteo)
 FIELD_TYPES: Dict[str, str] = {
     # Texto
     **{
@@ -89,7 +92,7 @@ FIELD_TYPES: Dict[str, str] = {
     },
     # Booleanos
     "es_judicializado": "boolean",
-    # Numéricos
+    # Numericos
     **{
         k: "number"
         for k in [
@@ -110,7 +113,7 @@ NUM_OPS = ["eq", "ne", "gt", "lt", "empty"]
 CHOICE_OPS = ["eq", "ne"]
 BOOL_OPS = ["eq", "ne"]
 
-# Configuración para la UI de filtros avanzados
+# Configuracion para la UI de filtros avanzados
 FILTER_FIELDS = [
     {"name": "nombre", "label": "Nombre", "type": "text"},
     {"name": "estado", "label": "Estado", "type": "text"},
@@ -118,7 +121,7 @@ FILTER_FIELDS = [
     {"name": "estado_actividad", "label": "Estado de actividad", "type": "choice"},
     {"name": "estado_proceso", "label": "Estado de proceso", "type": "choice"},
     {"name": "estado_detalle", "label": "Estado de detalle", "type": "choice"},
-    {"name": "estado_validacion", "label": "Estado de validación", "type": "choice"},
+    {"name": "estado_validacion", "label": "Estado de validacion", "type": "choice"},
     {"name": "calle", "label": "Calle", "type": "text"},
     {"name": "piso", "label": "Piso", "type": "text"},
     {"name": "departamento", "label": "Departamento", "type": "text"},
@@ -128,7 +131,7 @@ FILTER_FIELDS = [
     {"name": "entre_calle_2", "label": "Entre calle 2", "type": "text"},
     {"name": "partido", "label": "Partido", "type": "text"},
     {"name": "barrio", "label": "Barrio", "type": "text"},
-    {"name": "organizacion", "label": "Organización (nombre)", "type": "text"},
+    {"name": "organizacion", "label": "Organizacion (nombre)", "type": "text"},
     {"name": "programa", "label": "Programa (nombre)", "type": "text"},
     {"name": "tipocomedor", "label": "Tipo de comedor (nombre)", "type": "text"},
     {"name": "dupla", "label": "Dupla (nombre)", "type": "text"},
@@ -139,15 +142,15 @@ FILTER_FIELDS = [
     {"name": "referente_apellido", "label": "Referente (apellido)", "type": "text"},
     {
         "name": "codigo_de_proyecto",
-        "label": "Código de proyecto",
+        "label": "Codigo de proyecto",
         "type": "text",
     },
-    {"name": "es_judicializado", "label": "¿Es judicializado?", "type": "boolean"},
+    {"name": "es_judicializado", "label": "Es judicializado?", "type": "boolean"},
     {"name": "id", "label": "ID", "type": "number"},
     {"name": "id_externo", "label": "ID Externo", "type": "number"},
-    {"name": "comienzo", "label": "Comienzo (año)", "type": "number"},
-    {"name": "numero", "label": "Número", "type": "number"},
-    {"name": "codigo_postal", "label": "Código Postal", "type": "number"},
+    {"name": "comienzo", "label": "Comienzo (anio)", "type": "number"},
+    {"name": "numero", "label": "Numero", "type": "number"},
+    {"name": "codigo_postal", "label": "Codigo Postal", "type": "number"},
     {
         "name": "latitud",
         "label": "Latitud",
@@ -163,10 +166,16 @@ FILTER_FIELDS = [
 ]
 
 DEFAULT_FIELD = "nombre"
+FILTERS_UI_CONFIG_CACHE_KEY = "comedores:filters_ui_config:v2"
+FILTERS_UI_CONFIG_CACHE_TTL = 60 * 15
 
 
 def get_filters_ui_config() -> Dict[str, Any]:
-    """Configuración serializable para la UI de filtros avanzados."""
+    """Configuracion serializable para la UI de filtros avanzados."""
+
+    cached_config = cache.get(FILTERS_UI_CONFIG_CACHE_KEY)
+    if cached_config is not None:
+        return deepcopy(cached_config)
 
     fields = [dict(field) for field in FILTER_FIELDS]
 
@@ -174,8 +183,8 @@ def get_filters_ui_config() -> Dict[str, Any]:
         from comedores.models import (
             Comedor,
             EstadoActividad,
-            EstadoProceso,
             EstadoDetalle,
+            EstadoProceso,
         )
 
         def build_state_choices(model_cls):
@@ -202,10 +211,10 @@ def get_filters_ui_config() -> Dict[str, Any]:
             if name in choices_by_field and choices_by_field[name]:
                 field["choices"] = choices_by_field[name]
     except Exception:
-        # Si no hay tablas (migraciones pendientes) se devuelven los campos base sin choices
+        # Si no hay tablas (migraciones pendientes) se devuelven los campos base.
         pass
 
-    return {
+    config = {
         "fields": fields,
         "operators": {
             "text": list(TEXT_OPS),
@@ -214,6 +223,8 @@ def get_filters_ui_config() -> Dict[str, Any]:
             "boolean": list(BOOL_OPS),
         },
     }
+    cache.set(FILTERS_UI_CONFIG_CACHE_KEY, config, FILTERS_UI_CONFIG_CACHE_TTL)
+    return deepcopy(config)
 
 
 __all__ = [

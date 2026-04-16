@@ -9,6 +9,32 @@ from VAT.serializers import VatWebInscripcionCreateSerializer
 from VAT.services.inscripcion_service import InscripcionService
 
 
+class _QuerySetStub:
+    def __init__(self, items):
+        self._items = list(items)
+
+    def filter(self, **_kwargs):
+        return self
+
+    def exclude(self, **_kwargs):
+        return self
+
+    def order_by(self, *_args, **_kwargs):
+        return self
+
+    def first(self):
+        return self._items[0] if self._items else None
+
+    def exists(self):
+        return bool(self._items)
+
+    def count(self):
+        return len(self._items)
+
+    def __iter__(self):
+        return iter(self._items)
+
+
 def test_vat_web_inscripcion_create_serializer_resuelve_por_documento(mocker):
     ciudadano = SimpleNamespace(id=4, documento=30111222)
     programa = SimpleNamespace(id=2)
@@ -70,20 +96,34 @@ def test_inscripcion_service_crear_inscripcion_debita_voucher(mocker):
         usa_voucher=True,
         costo=Decimal("12500"),
     )
-    comision = SimpleNamespace(id=8, oferta=oferta, __str__=lambda self: "COM-8")
-    inscripcion = SimpleNamespace(id=21, comision_id=8, comision=comision)
+    comision = SimpleNamespace(
+        id=8,
+        oferta=oferta,
+        oferta_id=11,
+        cupo_total=1,
+        __str__=lambda self: "COM-8",
+    )
+    inscripcion = SimpleNamespace(
+        id=21,
+        comision_id=8,
+        comision_curso_id=None,
+        comision=comision,
+        entidad_comision=comision,
+    )
     usuario = SimpleNamespace(is_authenticated=True)
-    voucher = SimpleNamespace(cantidad_disponible=12500)
+    voucher = SimpleNamespace(cantidad_disponible=12500, parametria=None)
 
     create_mock = mocker.patch(
         "VAT.services.inscripcion_service.Inscripcion.objects.create",
         return_value=inscripcion,
     )
     mocker.patch(
-        "VAT.services.inscripcion_service.Voucher.objects.filter",
-        return_value=SimpleNamespace(
-            order_by=lambda *_a, **_k: SimpleNamespace(first=lambda: voucher)
-        ),
+        "VAT.services.inscripcion_service.Inscripcion.objects.filter",
+        return_value=_QuerySetStub([]),
+    )
+    mocker.patch(
+        "VAT.services.inscripcion_service.Voucher.objects.select_related",
+        return_value=_QuerySetStub([voucher]),
     )
     debitar_mock = mocker.patch(
         "VAT.services.inscripcion_service.VoucherService.debitar_voucher",
@@ -102,6 +142,60 @@ def test_inscripcion_service_crear_inscripcion_debita_voucher(mocker):
     assert debitar_mock.call_args.kwargs["cantidad"] == 12500
 
 
+def test_inscripcion_service_rechaza_costo_con_decimales_en_voucher(mocker):
+    ciudadano = SimpleNamespace(id=3, __str__=lambda self: "Ciudadano Demo")
+    programa = SimpleNamespace(id=7)
+    oferta = SimpleNamespace(
+        programa=programa,
+        programa_id=7,
+        usa_voucher=True,
+        costo=Decimal("10.50"),
+    )
+    comision = SimpleNamespace(
+        id=8,
+        oferta=oferta,
+        oferta_id=11,
+        cupo_total=1,
+        __str__=lambda self: "COM-8",
+    )
+    inscripcion = SimpleNamespace(
+        id=21,
+        comision_id=8,
+        comision_curso_id=None,
+        comision=comision,
+        entidad_comision=comision,
+    )
+    usuario = SimpleNamespace(is_authenticated=True)
+    voucher = SimpleNamespace(cantidad_disponible=20, parametria=None)
+
+    mocker.patch(
+        "VAT.services.inscripcion_service.Inscripcion.objects.create",
+        return_value=inscripcion,
+    )
+    mocker.patch(
+        "VAT.services.inscripcion_service.Inscripcion.objects.filter",
+        return_value=_QuerySetStub([]),
+    )
+    mocker.patch(
+        "VAT.services.inscripcion_service.Voucher.objects.select_related",
+        return_value=_QuerySetStub([voucher]),
+    )
+    debitar_mock = mocker.patch(
+        "VAT.services.inscripcion_service.VoucherService.debitar_voucher",
+        return_value=(True, "ok"),
+    )
+
+    with pytest.raises(ValueError, match="numero entero de creditos"):
+        InscripcionService.crear_inscripcion(
+            ciudadano=ciudadano,
+            comision=comision,
+            programa=programa,
+            usuario=usuario,
+        )
+
+    debitar_mock.assert_not_called()
+
+
 # ============================================================================
 # Tests: Inscripción única activa
 # ============================================================================
@@ -115,7 +209,9 @@ def test_inscripcion_unica_activa_bloquea_segunda_inscripcion(mocker):
     voucher = SimpleNamespace(parametria=parametria, cantidad_disponible=100)
 
     inscripcion_existente = SimpleNamespace(
+        comision_id=3,
         comision=SimpleNamespace(nombre="Electricidad I"),
+        comision_curso=None,
         get_estado_display=lambda: "Inscripta",
     )
 
@@ -125,22 +221,26 @@ def test_inscripcion_unica_activa_bloquea_segunda_inscripcion(mocker):
         usa_voucher=True,
         costo=Decimal("100"),
     )
-    comision_nueva = SimpleNamespace(id=9, oferta=oferta, __str__=lambda self: "COM-9")
+    comision_nueva = SimpleNamespace(
+        id=9,
+        oferta=oferta,
+        oferta_id=12,
+        cupo_total=1,
+        __str__=lambda self: "COM-9",
+    )
 
     # Mock de validar_inscripcion_unica: voucher con parametria.inscripcion_unica_activa=True
     mocker.patch(
         "VAT.services.inscripcion_service.Voucher.objects.select_related",
-        return_value=SimpleNamespace(
-            filter=lambda **_k: SimpleNamespace(
-                order_by=lambda *_a: SimpleNamespace(first=lambda: voucher)
-            )
-        ),
+        return_value=_QuerySetStub([voucher]),
     )
     mocker.patch(
         "VAT.services.inscripcion_service.Inscripcion.objects.select_related",
-        return_value=SimpleNamespace(
-            filter=lambda **_k: SimpleNamespace(first=lambda: inscripcion_existente)
-        ),
+        return_value=_QuerySetStub([inscripcion_existente]),
+    )
+    mocker.patch(
+        "VAT.services.inscripcion_service.Inscripcion.objects.filter",
+        return_value=_QuerySetStub([]),
     )
 
     with pytest.raises(ValueError, match="Ya tenés una inscripción activa"):
@@ -165,37 +265,41 @@ def test_inscripcion_unica_activa_permite_si_no_hay_activa(mocker):
         usa_voucher=True,
         costo=Decimal("100"),
     )
-    comision = SimpleNamespace(id=9, oferta=oferta, __str__=lambda self: "COM-9")
-    inscripcion = SimpleNamespace(id=30, comision_id=9, comision=comision)
+    comision = SimpleNamespace(
+        id=9,
+        oferta=oferta,
+        oferta_id=13,
+        cupo_total=1,
+        __str__=lambda self: "COM-9",
+    )
+    inscripcion = SimpleNamespace(
+        id=30,
+        comision_id=9,
+        comision_curso_id=None,
+        comision=comision,
+        entidad_comision=comision,
+    )
     usuario = SimpleNamespace(is_authenticated=True)
-    voucher_debito = SimpleNamespace(cantidad_disponible=100)
+    voucher_debito = SimpleNamespace(cantidad_disponible=100, parametria=parametria)
 
     # validar_inscripcion_unica: voucher con parametria pero sin inscripción activa
     mocker.patch(
         "VAT.services.inscripcion_service.Voucher.objects.select_related",
-        return_value=SimpleNamespace(
-            filter=lambda **_k: SimpleNamespace(
-                order_by=lambda *_a: SimpleNamespace(first=lambda: voucher_param)
-            )
-        ),
+        return_value=_QuerySetStub([voucher_param, voucher_debito]),
     )
     mocker.patch(
         "VAT.services.inscripcion_service.Inscripcion.objects.select_related",
-        return_value=SimpleNamespace(
-            filter=lambda **_k: SimpleNamespace(first=lambda: None)
-        ),
+        return_value=_QuerySetStub([]),
+    )
+    mocker.patch(
+        "VAT.services.inscripcion_service.Inscripcion.objects.filter",
+        return_value=_QuerySetStub([]),
     )
 
     # crear_inscripcion flow
     mocker.patch(
         "VAT.services.inscripcion_service.Inscripcion.objects.create",
         return_value=inscripcion,
-    )
-    mocker.patch(
-        "VAT.services.inscripcion_service.Voucher.objects.filter",
-        return_value=SimpleNamespace(
-            order_by=lambda *_a: SimpleNamespace(first=lambda: voucher_debito)
-        ),
     )
     mocker.patch(
         "VAT.services.inscripcion_service.VoucherService.debitar_voucher",
@@ -225,29 +329,35 @@ def test_inscripcion_unica_activa_desactivado_permite_multiples(mocker):
         usa_voucher=True,
         costo=Decimal("100"),
     )
-    comision = SimpleNamespace(id=9, oferta=oferta, __str__=lambda self: "COM-9")
-    inscripcion = SimpleNamespace(id=31, comision_id=9, comision=comision)
+    comision = SimpleNamespace(
+        id=9,
+        oferta=oferta,
+        oferta_id=14,
+        cupo_total=1,
+        __str__=lambda self: "COM-9",
+    )
+    inscripcion = SimpleNamespace(
+        id=31,
+        comision_id=9,
+        comision_curso_id=None,
+        comision=comision,
+        entidad_comision=comision,
+    )
     usuario = SimpleNamespace(is_authenticated=True)
-    voucher_debito = SimpleNamespace(cantidad_disponible=100)
+    voucher_debito = SimpleNamespace(cantidad_disponible=100, parametria=parametria)
 
     mocker.patch(
         "VAT.services.inscripcion_service.Voucher.objects.select_related",
-        return_value=SimpleNamespace(
-            filter=lambda **_k: SimpleNamespace(
-                order_by=lambda *_a: SimpleNamespace(first=lambda: voucher_param)
-            )
-        ),
+        return_value=_QuerySetStub([voucher_param, voucher_debito]),
+    )
+    mocker.patch(
+        "VAT.services.inscripcion_service.Inscripcion.objects.filter",
+        return_value=_QuerySetStub([]),
     )
 
     mocker.patch(
         "VAT.services.inscripcion_service.Inscripcion.objects.create",
         return_value=inscripcion,
-    )
-    mocker.patch(
-        "VAT.services.inscripcion_service.Voucher.objects.filter",
-        return_value=SimpleNamespace(
-            order_by=lambda *_a: SimpleNamespace(first=lambda: voucher_debito)
-        ),
     )
     mocker.patch(
         "VAT.services.inscripcion_service.VoucherService.debitar_voucher",

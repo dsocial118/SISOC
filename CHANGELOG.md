@@ -1,15 +1,151 @@
-<!-- AUTO-GENERATED RELEASE START: 2026-03-31 -->
+<!-- AUTO-GENERATED RELEASE START: 2026-04-09 -->
+# Versión SISOC 09.04.2026
+
+## Nuevas Funcionalidades
+
+- El envío masivo de credenciales pasó a procesamiento en segundo plano con jobs reanudables y un worker dedicado en producción, evitando depender del tiempo total de una request web.
+- VAT centralizó el alta de cursos en un modal con selector asistido de planes curriculares y sumó acciones rápidas en popup para editar o eliminar comisiones desde la misma pantalla.
+
+## Actualizaciones
+
+- El despliegue productivo incorpora compose específico para el worker de credenciales, mientras el entorno local mantiene un stack mínimo y la documentación deja registrado el nuevo flujo operativo.
+- La experiencia VAT/INET se ajustó con branding específico en inicio, mejoras en el panel y modal de cursos y documentación funcional actualizada de la API operativa.
+
+## Corrección de Errores
+
+- La búsqueda de ciudadanos por documento pasó a filtros numéricos indexables, reduciendo latencia en alta rápida y nóminas que consultan por DNI.
+- Se corrigieron el alta de horarios y el detalle de comisiones de curso, además de warnings MySQL en web push, checks del flujo de credenciales y literales con encoding incorrecto en `custom_filters`.
+
+<!-- AUTO-GENERATED RELEASE END: 2026-04-09 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-04-08 -->
+# Versión SISOC 08.04.2026
+
+## Nuevas Funcionalidades
+
+- Nuevo flujo de credenciales masivas con variante INET, selector de tipo de envío, plantillas diferenciadas y soporte de lotes grandes desde Usuarios.
+- VAT incorporó filtros más ricos en el panel de cursos del centro, popups para acciones rápidas de comisiones y nuevos filtros geográficos en su API operativa.
+- El despliegue suma compose versionado por entorno y documentación de homologación para separar configuración de desarrollo, homologación y producción.
+
+## Actualizaciones
+
+- Se reorganizó el menú principal y se ajustó el flujo de rendiciones entre PWA y web, junto con mejoras de paginación, columnas y búsqueda de referentes en centros VAT.
+- Se amplió la documentación funcional de la API operativa VAT y se reforzaron regresiones en VAT, PWA, CSP, sidebar y legajos para sostener los cambios recientes.
+
+## Corrección de Errores
+
+- El envío masivo de credenciales ahora corta lotes antes del timeout web, reintenta timeouts SMTP y mejora la validación de correo sin derribar toda la corrida.
+- Se corrigieron regresiones en paneles VAT, push subscriptions/PWA, post-importación de Celiaquía y textos mojibake en archivos de homologación.
+
+<!-- AUTO-GENERATED RELEASE END: 2026-04-08 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-04-06 -->
+# Versión SISOC 06.04.2026
+
+## Nuevas Funcionalidades
+
+- El detalle de centros VAT ahora carga en diferido la solapa de cursos y permite filtrar y paginar planes curriculares y vouchers desde vistas parciales más livianas.
+
+## Actualizaciones
+
+- Se optimizó el rendimiento del detalle de centros VAT con queries más acotadas, cache paginada e índice compuesto para planes curriculares.
+- Se ajustó la automatización de CI para ejecutar `djlint` sobre templates modificados y dejar de sobrescribir `CHANGELOG.md`, manteniendo los artefactos spec-as-source y la documentación operativa del corte.
+
+## Corrección de Errores
+
+- Se corrigieron validaciones y nonce CSP del login web, el orden de doble rol en importaciones de Celiaquía y mensajes/links de búsqueda y paginación en VAT.
+- Se restauró el estilo del badge judicializado en el detalle de comedores y se estabilizaron checks asociados al release.
+
+<!-- AUTO-GENERATED RELEASE END: 2026-04-06 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-04-05 -->
+# Versión SISOC 05.04.2026
+
+## Nuevas Funcionalidades
+
+- VAT sumó comandos de importación masiva para centros y usuarios CFP, con `dry-run`, normalización de códigos y geografías, y generación controlada de usernames y correos.
+
+## Actualizaciones
+
+- La importación de centros pasó a aplicar updates parciales seguros y el bootstrap VAT incorporó referentes y centros alineados al flujo institucional vigente.
+
+## Corrección de Errores
+
+- Se endurecieron migraciones e importadores VAT para convivir con datos legacy, preservando fechas históricas y evitando colisiones de usernames no CFP.
+- Se destrabó la migración de ubicación de comisiones en MySQL cuando existen nulos legacy, manteniendo la exigencia funcional para nuevas altas.
+
+<!-- AUTO-GENERATED RELEASE END: 2026-04-05 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-04-04 -->
+# Versión SISOC 04.04.2026
+
+## Nuevas Funcionalidades
+
+- VAT unificó contactos institucionales en alta y edición de centros, eliminando el modelo separado de autoridades y concentrando toda la carga institucional en una sola grilla.
+- Los planes curriculares ahora exigen nombre persistido y las comisiones de curso generan automáticamente su código y nombre, con normativa y clasificación académica más consistentes.
+
+## Actualizaciones
+
+- Los cursos VAT ahora derivan programa desde vouchers y manejan ubicación por comisión, permitiendo una configuración más precisa por sede sin romper compatibilidad con el resto del flujo.
+- También entraron ajustes de usuarios, mobile/PWA y rendiciones asociados a revisiones del corte, junto con migraciones complementarias en `users` y `comedores`.
+
+## Corrección de Errores
+
+- Se corrigieron hallazgos de review en la edición segura de centros VAT y se estabilizaron migraciones conflictivas de `users` y el rename de índices de auditoría en `comedores`.
+- Se cerraron fixes puntuales en mobile y formularios VAT para conservar estado activo, normalizar contactos y evitar inconsistencias durante altas y ediciones.
+
+<!-- AUTO-GENERATED RELEASE END: 2026-04-04 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-04-03 -->
+# Versión SISOC 03.04.2026
+
+## Nuevas Funcionalidades
+
+- La edición de centros VAT pasó a reutilizar el formulario completo de alta y el detalle del centro permite crear cursos directamente desde cada plan curricular.
+
+## Actualizaciones
+
+- Se reforzó VAT con validaciones compuestas de normativa, modalidades de cursada más claras y asignación automática de provincia y alcance según el usuario.
+- Se preparó la configuración SMTP global para Resend y se ajustaron permisos y grupos VAT para nuevos flujos institucionales.
+
+## Corrección de Errores
+
+- Se corrigieron hallazgos de review en centros y planes curriculares, simplificando renderizados y evitando inconsistencias al editar centros sin provincia explícita.
+
+<!-- AUTO-GENERATED RELEASE END: 2026-04-03 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-04-02 -->
+# Versión SISOC 02.04.2026
+
+## Nuevas Funcionalidades
+
+- VAT incorporó ABM web para cursos y comisiones, soporte de vouchers en cursos, borrado de títulos, planes y ofertas, y validaciones provinciales más ricas para planes curriculares.
+- Swagger y Postman de VAT Web se ampliaron con endpoints y ejemplos alineados al contrato vigente para centros, cursos, inscripciones y filtros relacionados.
+
+## Actualizaciones
+
+- Se alineó el scope de acceso de VAT con roles provinciales, referentes legacy y permisos SSE/CFPINET realmente usados en base.
+- Se agregaron fixtures iniciales de modalidades de cursada y se ajustaron formularios, templates y serializers para el nuevo flujo de cursos y comisiones.
+
+## Corrección de Errores
+
+- Se corrigieron migraciones MySQL y checks de CI/lint asociados al corte VAT, evitando fallos de deploy y validación automática en el release.
+
+<!-- AUTO-GENERATED RELEASE END: 2026-04-02 -->
+
 # Versión SISOC 31.03.2026
 
 ## Nuevas Funcionalidades
 
-- Evolución funcional de VAT con APIs web documentadas en Swagger para centros, títulos, cursos e inscripciones, además de mejoras en el legajo ciudadano y en la gestión de vouchers.
+- Evolución funcional de VAT con APIs web documentadas en Swagger para centros, títulos, cursos e inscripciones, rediseño del detalle de centros y comisiones, navegación contextual corregida y mejoras en la gestión de vouchers.
+- Nuevo alcance de delegación en Usuarios para definir qué grupos y roles puede asignar cada operador, manteniendo filtros y validaciones por scope en alta y edición.
 - Reorganización del módulo Comedores con legajo canonizado, solapa de responsables, soporte de nómina independiente por programa y visualización configurable del estado judicializado.
-- Ampliación del módulo Centro de Desarrollo Infantil con nueva nomenclatura, formularios y validaciones renovadas, departamentos IPI, teléfonos más flexibles y una nueva columna de nómina en listados.
+- Ampliación del módulo Centro de Desarrollo Infantil con nueva nomenclatura, formularios y validaciones renovadas, departamentos IPI, teléfonos más flexibles, nuevos campos de funcionamiento/ubicación y una ficha de nómina mucho más completa.
 
 ## Actualizaciones
 
 - Unificación de flujos entre web y mobile/PWA para login y colaboradores, con acciones por usuario alineadas al estado activo y mejor consistencia en altas, bajas lógicas y permisos.
+- Refinamiento continuo de CDI con resaltado correcto de errores en edición, colores y jerarquías visuales más claros en formularios, y nuevas métricas visibles para género X en detalle y nómina.
 - Fortalecimiento del trabajo asistido y la operación técnica con bootstrap para worktrees, checks de mojibake, ajustes de GitHub Actions y guías IA/lint más estrictas en la documentación.
 - Mejoras transversales en layout y experiencia de uso en detalle de comedores, sidebar, relevamientos, usuarios y formularios CDI para sostener compatibilidad con los cambios recientes.
 
@@ -17,7 +153,8 @@
 
 - Correcciones acumuladas en Celiaquía para importación y reproceso de legajos: validación integral de Excel, obligatoriedad de responsables según edad, guardado parcial estable, limpieza del responsable al borrar el último dato y ajustes RENAPER.
 - Ajustes en Comedores y Ciudadanos para evitar timeouts por búsqueda de documento, cortar reintentos RENAPER ante errores de integración, restaurar el layout del detalle y corregir regresiones de alcance, tests y migraciones.
-- Estabilización de CI, encoding y suites automáticas con fixes de GitHub Actions, normalización UTF-8/mojibake, compatibilidad de migraciones y cobertura de regresión en users, VAT, CDI, Comedores y PWA.
+- Estabilización de CI, encoding y suites automáticas con fixes de GitHub Actions, normalización UTF-8/mojibake, compatibilidad de migraciones y cobertura de regresión en Users, VAT, CDI, Comedores y PWA.
+- Correcciones puntuales en Users y VAT para preservar contraseña temporal, respetar scope parcial de delegación, alinear seeds de grupos y resolver scripts inline bajo CSP y formularios del admin.
 <!-- AUTO-GENERATED RELEASE END: 2026-03-31 -->
 
 # Versión SISOC 18.03.2026

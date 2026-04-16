@@ -1,4 +1,9 @@
+"""Serializers de API para comedores y flujos mobile/PWA."""
+
+# pylint: disable=too-many-lines
+
 from rest_framework import serializers
+from django.core.exceptions import DisallowedHost
 
 from comedores.models import Comedor, Nomina
 from core.models import Localidad, Municipio, Provincia
@@ -6,8 +11,10 @@ from duplas.models import Dupla
 from organizaciones.models import Organizacion
 from admisiones.models.admisiones import InformeTecnico
 from relevamientos.models import ClasificacionComedor, Relevamiento
-from rendicioncuentasmensual.models import RendicionCuentaMensual
+from relevamientos.service import RelevamientoService
 from rendicioncuentasmensual.models import DocumentacionAdjunta
+from rendicioncuentasmensual.models import RendicionCuentaMensual
+from rendicioncuentasmensual.services import RendicionCuentaMensualService
 
 
 class SimpleUbicacionSerializer(serializers.ModelSerializer):
@@ -95,6 +102,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
     clasificaciones = serializers.SerializerMethodField()
     rendiciones_mensuales = serializers.SerializerMethodField()
     programa_changes = serializers.SerializerMethodField()
+    relevamiento_actual_mobile = serializers.SerializerMethodField()
 
     class Meta:
         model = Comedor
@@ -137,6 +145,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             "clasificaciones",
             "rendiciones_mensuales",
             "programa_changes",
+            "relevamiento_actual_mobile",
         )
 
     def _absolute_url(self, file_field):
@@ -144,7 +153,12 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             return None
         request = self.context.get("request")
         url = file_field.url
-        return request.build_absolute_uri(url) if request else url
+        if not request:
+            return url
+        try:
+            return request.build_absolute_uri(url)
+        except DisallowedHost:
+            return url
 
     def get_programa(self, obj):
         if not obj.programa:
@@ -324,6 +338,635 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             for cambio in cambios
         ]
 
+    def _format_bool_answer(self, value):
+        if value is None:
+            return "Sin dato"
+        return "Sí" if value else "No"
+
+    def _join_names(self, items):
+        values = [item.nombre for item in items if getattr(item, "nombre", None)]
+        return ", ".join(values) if values else "Sin dato"
+
+    def _join_truthy_labels(self, pairs):
+        values = [label for label, enabled in pairs if enabled]
+        return ", ".join(values) if values else "Sin dato"
+
+    def _build_relevamiento_mobile_items(  # pylint: disable=too-many-locals
+        self, relevamiento
+    ):
+        if not relevamiento:
+            return []
+
+        funcionamiento = getattr(relevamiento, "funcionamiento", None)
+        espacio = getattr(relevamiento, "espacio", None)
+        cocina = getattr(espacio, "cocina", None) if espacio else None
+        espacio_prestacion = getattr(espacio, "prestacion", None) if espacio else None
+        colaboradores = getattr(relevamiento, "colaboradores", None)
+        recursos = getattr(relevamiento, "recursos", None)
+        compras = getattr(relevamiento, "compras", None)
+        anexo = getattr(relevamiento, "anexo", None)
+
+        tipos_actividad = self._join_truthy_labels(
+            [
+                (
+                    "Jardín maternal",
+                    getattr(anexo, "actividades_jardin_maternal", None),
+                ),
+                (
+                    "Jardín de infantes",
+                    getattr(anexo, "actividades_jardin_infantes", None),
+                ),
+                ("Apoyo escolar", getattr(anexo, "apoyo_escolar", None)),
+                (
+                    "Actividades de alfabetización",
+                    getattr(anexo, "alfabetizacion_terminalidad", None),
+                ),
+                ("Talleres y oficios", getattr(anexo, "capacitaciones_talleres", None)),
+                ("Promoción de la salud", getattr(anexo, "promocion_salud", None)),
+                (
+                    "Actividades para discapacidad",
+                    getattr(anexo, "actividades_discapacidad", None),
+                ),
+                (
+                    "Necesidades alimentarias",
+                    getattr(anexo, "necesidades_alimentarias", None),
+                ),
+                (
+                    "Recreativas y deportivas",
+                    getattr(anexo, "actividades_recreativas", None),
+                ),
+                (
+                    "Actividades culturales",
+                    getattr(anexo, "actividades_culturales", None),
+                ),
+                (
+                    "Emprendimientos productivos",
+                    getattr(anexo, "emprendimientos_productivos", None),
+                ),
+                (
+                    "Actividades religiosas",
+                    getattr(anexo, "actividades_religiosas", None),
+                ),
+                ("Actividades de huerta", getattr(anexo, "actividades_huerta", None)),
+            ]
+        )
+        if anexo and anexo.otras_actividades and anexo.cuales_otras_actividades:
+            tipos_actividad = (
+                f"{tipos_actividad}, {anexo.cuales_otras_actividades}"
+                if tipos_actividad != "Sin dato"
+                else anexo.cuales_otras_actividades
+            )
+
+        fuentes_compra = self._join_truthy_labels(
+            [
+                ("Almacén cercano", getattr(compras, "almacen_cercano", None)),
+                ("Verdulería", getattr(compras, "verduleria", None)),
+                ("Granja", getattr(compras, "granja", None)),
+                ("Carnicería", getattr(compras, "carniceria", None)),
+                ("Pescadería", getattr(compras, "pescaderia", None)),
+                ("Supermercado", getattr(compras, "supermercado", None)),
+                ("Mercado central", getattr(compras, "mercado_central", None)),
+                ("Ferias comunales", getattr(compras, "ferias_comunales", None)),
+                ("Mayoristas", getattr(compras, "mayoristas", None)),
+                ("Otro", getattr(compras, "otro", None)),
+            ]
+        )
+
+        fuentes_insumos = self._join_truthy_labels(
+            [
+                (
+                    "Donaciones particulares",
+                    getattr(recursos, "recibe_donaciones_particulares", None),
+                ),
+                ("Estado nacional", getattr(recursos, "recibe_estado_nacional", None)),
+                (
+                    "Estado provincial",
+                    getattr(recursos, "recibe_estado_provincial", None),
+                ),
+                (
+                    "Estado municipal",
+                    getattr(recursos, "recibe_estado_municipal", None),
+                ),
+                ("Otras fuentes", getattr(recursos, "recibe_otros", None)),
+            ]
+        )
+
+        tipos_insumos = []
+        frecuencias_insumos = []
+        if recursos:
+            for label, freq_attr, recursos_attr in (
+                (
+                    "Donaciones particulares",
+                    "frecuencia_donaciones_particulares",
+                    "recursos_donaciones_particulares",
+                ),
+                (
+                    "Estado nacional",
+                    "frecuencia_estado_nacional",
+                    "recursos_estado_nacional",
+                ),
+                (
+                    "Estado provincial",
+                    "frecuencia_estado_provincial",
+                    "recursos_estado_provincial",
+                ),
+                (
+                    "Estado municipal",
+                    "frecuencia_estado_municipal",
+                    "recursos_estado_municipal",
+                ),
+                ("Otras fuentes", "frecuencia_otros", "recursos_otros"),
+            ):
+                recursos_qs = getattr(recursos, recursos_attr, None)
+                recursos_names = (
+                    self._join_names(recursos_qs.all())
+                    if recursos_qs is not None
+                    else "Sin dato"
+                )
+                if recursos_names != "Sin dato":
+                    tipos_insumos.append(f"{label}: {recursos_names}")
+                frecuencia = getattr(getattr(recursos, freq_attr, None), "nombre", None)
+                if frecuencia:
+                    frecuencias_insumos.append(f"{label}: {frecuencia}")
+
+        tipo_espacio = getattr(
+            getattr(espacio, "tipo_espacio_fisico", None), "nombre", None
+        )
+        if espacio and espacio.espacio_fisico_otro:
+            tipo_espacio = (
+                f"{tipo_espacio} / {espacio.espacio_fisico_otro}"
+                if tipo_espacio
+                else espacio.espacio_fisico_otro
+            )
+
+        frecuencia_limpieza = getattr(
+            getattr(espacio_prestacion, "frecuencia_limpieza", None), "nombre", None
+        )
+        if espacio_prestacion and espacio_prestacion.frecuencia_limpieza_otro:
+            frecuencia_limpieza = (
+                f"{frecuencia_limpieza} / {espacio_prestacion.frecuencia_limpieza_otro}"
+                if frecuencia_limpieza
+                else espacio_prestacion.frecuencia_limpieza_otro
+            )
+
+        abastecimiento_agua = getattr(
+            getattr(cocina, "abastecimiento_agua", None), "nombre", None
+        )
+        if cocina and cocina.abastecimiento_agua_otro:
+            abastecimiento_agua = (
+                f"{abastecimiento_agua} / {cocina.abastecimiento_agua_otro}"
+                if abastecimiento_agua
+                else cocina.abastecimiento_agua_otro
+            )
+
+        items = [
+            {
+                "pregunta": "¿Cuenta con espacio para almacenamiento de productos?",
+                "respuesta": self._format_bool_answer(
+                    getattr(cocina, "almacenamiento_alimentos_secos", None)
+                ),
+            },
+            {
+                "pregunta": "¿Cuenta con espacio para el almacenamiento de productos fríos?",
+                "respuesta": self._format_bool_answer(
+                    bool(
+                        getattr(cocina, "heladera", False)
+                        or getattr(cocina, "freezer", False)
+                    )
+                    if cocina
+                    else None
+                ),
+            },
+            {
+                "pregunta": "¿Cuenta con espacio para residuos reciclables?",
+                "respuesta": self._format_bool_answer(
+                    getattr(cocina, "recipiente_residuos_reciclables", None)
+                ),
+            },
+            {
+                "pregunta": "¿Cuenta con espacio para la elaboración de alimentos?",
+                "respuesta": self._format_bool_answer(
+                    getattr(cocina, "espacio_elaboracion_alimentos", None)
+                ),
+            },
+            {
+                "pregunta": "¿Qué tipo de servicio presta?",
+                "respuesta": (
+                    getattr(
+                        getattr(funcionamiento, "modalidad_prestacion", None),
+                        "nombre",
+                        None,
+                    )
+                    or "Sin dato"
+                ),
+            },
+            {
+                "pregunta": "¿Qué método utiliza para cocinar?",
+                "respuesta": (
+                    self._join_names(cocina.abastecimiento_combustible.all())
+                    if cocina
+                    else "Sin dato"
+                ),
+            },
+            {
+                "pregunta": "¿Cómo se abastece de agua?",
+                "respuesta": abastecimiento_agua or "Sin dato",
+            },
+            {
+                "pregunta": "¿Qué cantidad de personas prestan servicios en el Centro?",
+                "respuesta": (
+                    getattr(
+                        getattr(colaboradores, "cantidad_colaboradores", None),
+                        "nombre",
+                        None,
+                    )
+                    or "Sin dato"
+                ),
+            },
+            {
+                "pregunta": "¿El Centro cuenta con personas capacitadas en bromatología?",
+                "respuesta": self._format_bool_answer(
+                    getattr(colaboradores, "colaboradores_capacitados_alimentos", None)
+                ),
+            },
+            {
+                "pregunta": "¿El Centro cuenta con personas capacitadas en Seguridad e Higiene?",
+                "respuesta": self._format_bool_answer(
+                    getattr(
+                        colaboradores, "colaboradores_capacitados_salud_seguridad", None
+                    )
+                ),
+            },
+            {
+                "pregunta": "¿El Centro cuenta con personas capacitadas en Violencia de Género?",
+                "respuesta": self._format_bool_answer(
+                    getattr(
+                        colaboradores,
+                        "colaboradores_recibieron_capacitacion_violencia",
+                        None,
+                    )
+                ),
+            },
+            {
+                "pregunta": "¿El Centro cuenta con personas capacitadas en respuesta ante emergencias?",
+                "respuesta": self._format_bool_answer(
+                    getattr(
+                        colaboradores,
+                        "colaboradores_recibieron_capacitacion_emergencias",
+                        None,
+                    )
+                ),
+            },
+            {
+                "pregunta": "¿En qué tipo de espacio funciona el Centro?",
+                "respuesta": tipo_espacio or "Sin dato",
+            },
+            {
+                "pregunta": "¿El Centro cuenta con salida de emergencia?",
+                "respuesta": self._format_bool_answer(
+                    getattr(espacio_prestacion, "tiene_salida_emergencia", None)
+                ),
+            },
+            {
+                "pregunta": "¿El Centro cuenta con señalización de seguridad?",
+                "respuesta": self._format_bool_answer(
+                    getattr(espacio_prestacion, "salida_emergencia_senializada", None)
+                ),
+            },
+            {
+                "pregunta": "¿El Centro cuenta con protección contra incendios?",
+                "respuesta": self._format_bool_answer(
+                    getattr(espacio_prestacion, "tiene_equipacion_incendio", None)
+                ),
+            },
+            {
+                "pregunta": "¿El Centro cuenta con botiquín de primeros auxilios?",
+                "respuesta": self._format_bool_answer(
+                    getattr(espacio_prestacion, "tiene_botiquin", None)
+                ),
+            },
+            {
+                "pregunta": "¿El Centro cuenta con instalación eléctrica?",
+                "respuesta": self._format_bool_answer(
+                    getattr(cocina, "instalacion_electrica", None)
+                ),
+            },
+            {
+                "pregunta": "¿El Centro cuenta con ventilación?",
+                "respuesta": self._format_bool_answer(
+                    getattr(espacio_prestacion, "tiene_ventilacion", None)
+                ),
+            },
+            {
+                "pregunta": "¿El Centro cuenta con sanitarios?",
+                "respuesta": self._format_bool_answer(
+                    getattr(espacio_prestacion, "tiene_sanitarios", None)
+                ),
+            },
+            {
+                "pregunta": "¿Qué tipo de desagüe poseen los sanitarios?",
+                "respuesta": (
+                    getattr(
+                        getattr(espacio_prestacion, "desague_hinodoro", None),
+                        "nombre",
+                        None,
+                    )
+                    or "Sin dato"
+                ),
+            },
+            {
+                "pregunta": "¿Con qué frecuencia se realiza la limpieza del Centro?",
+                "respuesta": frecuencia_limpieza or "Sin dato",
+            },
+            {
+                "pregunta": "¿En qué lugar realiza sus compras?",
+                "respuesta": fuentes_compra,
+            },
+            {
+                "pregunta": "¿Recibe otro tipo de insumos?",
+                "respuesta": fuentes_insumos,
+            },
+            {
+                "pregunta": "¿Qué tipo de insumos recibe?",
+                "respuesta": ", ".join(tipos_insumos) if tipos_insumos else "Sin dato",
+            },
+            {
+                "pregunta": "¿Con qué frecuencia recibe estos insumos?",
+                "respuesta": (
+                    ", ".join(frecuencias_insumos)
+                    if frecuencias_insumos
+                    else "Sin dato"
+                ),
+            },
+            {
+                "pregunta": "¿El Centro cuenta con acceso a internet?",
+                "respuesta": self._format_bool_answer(
+                    getattr(anexo, "servicio_internet", None)
+                ),
+            },
+            {
+                "pregunta": "¿Con qué dispositivo se conecta?",
+                "respuesta": (
+                    getattr(getattr(anexo, "tecnologia", None), "nombre", None)
+                    or "Sin dato"
+                ),
+            },
+            {
+                "pregunta": "¿El Centro se encuentra en una zona inundable?",
+                "respuesta": self._format_bool_answer(
+                    getattr(anexo, "zona_inundable", None)
+                ),
+            },
+            {
+                "pregunta": "¿A qué distancia se encuentra el Centro del transporte público?",
+                "respuesta": (
+                    getattr(
+                        getattr(anexo, "distancia_transporte", None), "nombre", None
+                    )
+                    or "Sin dato"
+                ),
+            },
+            {
+                "pregunta": "¿El espacio brinda otro tipo de actividades?",
+                "respuesta": self._format_bool_answer(
+                    getattr(anexo, "otras_actividades", None)
+                ),
+            },
+            {
+                "pregunta": "¿Qué tipo de actividades se realizan?",
+                "respuesta": tipos_actividad,
+            },
+        ]
+        return items
+
+    def _normalize_mobile_value(self, value):
+        if value in (None, ""):
+            return "Sin dato"
+        if isinstance(value, bool):
+            return self._format_bool_answer(value)
+        if isinstance(value, (list, tuple, set)):
+            raw_values = [str(item) for item in value if item not in (None, "")]
+            return ", ".join(raw_values) if raw_values else "Sin dato"
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except TypeError:
+                return str(value)
+        return str(value)
+
+    def _collect_model_items(self, instance):
+        if not instance:
+            return []
+
+        items = []
+        for field in instance._meta.fields:
+            if field.name in ("id",):
+                continue
+            value = getattr(instance, field.name, None)
+            if field.is_relation:
+                related_obj = value
+                if related_obj is None:
+                    normalized_value = "Sin dato"
+                else:
+                    normalized_value = (
+                        getattr(related_obj, "nombre", None)
+                        or getattr(related_obj, "estado", None)
+                        or str(related_obj)
+                    )
+            else:
+                normalized_value = self._normalize_mobile_value(value)
+            items.append(
+                {
+                    "pregunta": str(
+                        getattr(field, "verbose_name", field.name)
+                    ).capitalize(),
+                    "respuesta": self._normalize_mobile_value(normalized_value),
+                }
+            )
+
+        for field in instance._meta.many_to_many:
+            manager = getattr(instance, field.name, None)
+            if manager is None:
+                values = []
+            else:
+                values = [str(item) for item in manager.all()]
+            items.append(
+                {
+                    "pregunta": str(
+                        getattr(field, "verbose_name", field.name)
+                    ).capitalize(),
+                    "respuesta": self._normalize_mobile_value(values),
+                }
+            )
+
+        return items
+
+    def _build_relevamiento_mobile_sections(self, relevamiento, summary_items):
+        responsable_relevamiento = getattr(
+            relevamiento, "responsable_relevamiento", None
+        )
+        if responsable_relevamiento is None:
+            responsable_relevamiento = getattr(relevamiento, "responsable", None)
+
+        sections = [
+            {
+                "titulo": "Relevamiento",
+                "items": self._collect_model_items(relevamiento),
+            },
+            {
+                "titulo": "Información",
+                "items": summary_items,
+            },
+            {
+                "titulo": "Datos del referente del Comedor/Merendero",
+                "items": self._collect_model_items(
+                    getattr(relevamiento.comedor, "referente", None)
+                ),
+            },
+            {
+                "titulo": "Domicilio del Comedor/Merendero",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "comedor", None)
+                ),
+            },
+            {
+                "titulo": "Datos del responsable del relevamiento",
+                "items": self._collect_model_items(responsable_relevamiento),
+            },
+            {
+                "titulo": "Datos sobre el espacio físico",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "espacio", None)
+                ),
+            },
+            {
+                "titulo": "Cocina",
+                "items": self._collect_model_items(
+                    getattr(getattr(relevamiento, "espacio", None), "cocina", None)
+                ),
+            },
+            {
+                "titulo": "Prestación del espacio",
+                "items": self._collect_model_items(
+                    getattr(getattr(relevamiento, "espacio", None), "prestacion", None)
+                ),
+            },
+            {
+                "titulo": "Colaboradores",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "colaboradores", None)
+                ),
+            },
+            {
+                "titulo": "Recursos",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "recursos", None)
+                ),
+            },
+            {
+                "titulo": "Compras",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "compras", None)
+                ),
+            },
+            {
+                "titulo": "Prestación alimentaria",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "prestacion", None)
+                ),
+            },
+            {
+                "titulo": "Anexo",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "anexo", None)
+                ),
+            },
+            {
+                "titulo": "Punto Entrega",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "punto_entregas", None)
+                ),
+            },
+            {
+                "titulo": "Observación",
+                "items": [
+                    {
+                        "pregunta": "Observación",
+                        "respuesta": self._normalize_mobile_value(
+                            getattr(relevamiento, "observacion", None)
+                        ),
+                    }
+                ],
+            },
+            {
+                "titulo": "Excepción",
+                "items": self._collect_model_items(
+                    getattr(relevamiento, "excepcion", None)
+                ),
+            },
+        ]
+        return [section for section in sections if section["items"]]
+
+    def get_relevamiento_actual_mobile(self, obj):
+        relevamientos = getattr(obj, "relevamientos_optimized", None)
+        relevamiento = relevamientos[0] if relevamientos else None
+        if relevamiento is None:
+            relevamiento = (
+                Relevamiento.objects.select_related(
+                    "comedor",
+                    "comedor__referente",
+                    "funcionamiento",
+                    "funcionamiento__modalidad_prestacion",
+                    "espacio",
+                    "espacio__tipo_espacio_fisico",
+                    "espacio__cocina",
+                    "espacio__cocina__abastecimiento_agua",
+                    "espacio__prestacion",
+                    "espacio__prestacion__desague_hinodoro",
+                    "espacio__prestacion__frecuencia_limpieza",
+                    "colaboradores",
+                    "colaboradores__cantidad_colaboradores",
+                    "recursos",
+                    "compras",
+                    "prestacion",
+                    "anexo",
+                    "anexo__tecnologia",
+                    "anexo__distancia_transporte",
+                    "punto_entregas",
+                    "punto_entregas__tipo_comedor",
+                    "punto_entregas__frecuencia_entrega_bolsones",
+                    "punto_entregas__tipo_modulo_bolsones",
+                    "excepcion",
+                    "excepcion__motivo",
+                    "responsable_relevamiento",
+                )
+                .prefetch_related(
+                    "espacio__cocina__abastecimiento_combustible",
+                    "recursos__recursos_donaciones_particulares",
+                    "recursos__recursos_estado_nacional",
+                    "recursos__recursos_estado_provincial",
+                    "recursos__recursos_estado_municipal",
+                    "recursos__recursos_otros",
+                    "punto_entregas__frecuencia_recepcion_mercaderias",
+                )
+                .filter(comedor=obj)
+                .order_by("-fecha_visita", "-id")
+                .first()
+            )
+
+        if not relevamiento:
+            return None
+
+        _ = RelevamientoService.get_relevamiento_detail_object(relevamiento.id)
+        items = self._build_relevamiento_mobile_items(relevamiento)
+        return {
+            "id": relevamiento.id,
+            "fecha_visita": relevamiento.fecha_visita,
+            "estado": relevamiento.estado,
+            "items": items,
+            "sections": self._build_relevamiento_mobile_sections(relevamiento, items),
+        }
+
 
 APROBADAS_FIELDS = tuple(
     f"aprobadas_{tipo}_{dia}"
@@ -454,15 +1097,31 @@ class NominaUpdateSerializer(NoSaveSerializer):
 
 class ComprobanteRendicionSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
+    estado_label = serializers.CharField(source="get_estado_display", read_only=True)
+    estado_visual = serializers.SerializerMethodField()
+    estado_label_visual = serializers.SerializerMethodField()
+    categoria_label = serializers.CharField(
+        source="get_categoria_display", read_only=True
+    )
+    subsanaciones = serializers.SerializerMethodField()
 
     class Meta:
         model = DocumentacionAdjunta
         fields = (
             "id",
             "nombre",
+            "categoria",
+            "categoria_label",
+            "documento_subsanado",
             "url",
+            "estado",
+            "estado_label",
+            "estado_visual",
+            "estado_label_visual",
+            "observaciones",
             "fecha_creacion",
             "ultima_modificacion",
+            "subsanaciones",
         )
 
     def get_url(self, obj):
@@ -472,25 +1131,111 @@ class ComprobanteRendicionSerializer(serializers.ModelSerializer):
         url = obj.archivo.url
         return request.build_absolute_uri(url) if request else url
 
+    def get_estado_visual(self, obj):
+        return obj.get_estado_visual()
+
+    def get_estado_label_visual(self, obj):
+        return obj.get_estado_visual_display()
+
+    def get_subsanaciones(self, obj):
+        return ComprobanteRendicionSerializer(
+            getattr(obj, "subsanaciones_historial", []),
+            many=True,
+            context=self.context,
+        ).data
+
 
 class RendicionMensualListSerializer(serializers.ModelSerializer):
+    estado_label = serializers.CharField(source="get_estado_display", read_only=True)
+    periodo_inicio = serializers.DateField(read_only=True)
+    periodo_fin = serializers.DateField(read_only=True)
+    periodo_label = serializers.SerializerMethodField()
+
     class Meta:
         model = RendicionCuentaMensual
         fields = (
             "id",
+            "convenio",
+            "numero_rendicion",
             "mes",
             "anio",
+            "periodo_inicio",
+            "periodo_fin",
+            "periodo_label",
+            "estado",
+            "estado_label",
             "documento_adjunto",
             "observaciones",
             "fecha_creacion",
             "ultima_modificacion",
         )
 
+    def get_periodo_label(self, obj):
+        if obj.periodo_inicio and obj.periodo_fin:
+            return (
+                f"{obj.periodo_inicio.strftime('%d/%m/%Y')} - "
+                f"{obj.periodo_fin.strftime('%d/%m/%Y')}"
+            )
+        return f"{obj.get_mes_display()} {obj.anio}"
+
 
 class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
     comprobantes = ComprobanteRendicionSerializer(
         source="archivos_adjuntos", many=True, read_only=True
     )
+    documentacion = serializers.SerializerMethodField()
 
     class Meta(RendicionMensualListSerializer.Meta):
-        fields = RendicionMensualListSerializer.Meta.fields + ("comprobantes",)
+        fields = RendicionMensualListSerializer.Meta.fields + (
+            "comprobantes",
+            "documentacion",
+        )
+
+    def get_documentacion(self, obj):
+        grouped = RendicionCuentaMensualService.obtener_resumen_documentacion(obj)
+        serializer_context = {"request": self.context.get("request")}
+        payload = []
+        for categoria in DocumentacionAdjunta.categorias_mobile():
+            payload.append(
+                {
+                    "codigo": categoria["codigo"],
+                    "label": categoria["label"],
+                    "required": categoria["required"],
+                    "multiple": categoria["multiple"],
+                    "order": categoria["order"],
+                    "archivos": ComprobanteRendicionSerializer(
+                        grouped.get(categoria["codigo"], []),
+                        many=True,
+                        context=serializer_context,
+                    ).data,
+                }
+            )
+        return payload
+
+
+class RendicionMensualCreateSerializer(NoSaveSerializer):
+    convenio = serializers.CharField(max_length=100)
+    numero_rendicion = serializers.IntegerField(min_value=1)
+    periodo_inicio = serializers.DateField()
+    periodo_fin = serializers.DateField()
+    observaciones = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+    )
+
+    def validate(self, attrs):
+        periodo_inicio = attrs.get("periodo_inicio")
+        periodo_fin = attrs.get("periodo_fin")
+        if periodo_inicio and periodo_fin and periodo_inicio > periodo_fin:
+            raise serializers.ValidationError(
+                {
+                    "periodo_fin": "La fecha de fin debe ser posterior o igual a la fecha de inicio."
+                }
+            )
+        attrs["convenio"] = (attrs.get("convenio") or "").strip()
+        if not attrs["convenio"]:
+            raise serializers.ValidationError(
+                {"convenio": "Este campo es obligatorio."}
+            )
+        return attrs

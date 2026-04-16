@@ -66,6 +66,16 @@ def _es_dni_valido_para_renaper(documento_consulta):
     return documento_consulta.isdigit() and len(documento_consulta) == 8
 
 
+def _resolver_ciudad_provincia(ciudadano):
+    localidad = getattr(ciudadano, "localidad", None)
+    if localidad:
+        localidad_nombre = getattr(localidad, "nombre", localidad)
+        if localidad_nombre:
+            return str(localidad_nombre).title()
+
+    return (getattr(ciudadano, "ciudad", "") or "").title()
+
+
 def _build_datos_provincia(ciudadano, documento_consulta):
     fecha_nacimiento = getattr(ciudadano, "fecha_nacimiento", None)
     altura = getattr(ciudadano, "altura", None)
@@ -84,7 +94,7 @@ def _build_datos_provincia(ciudadano, documento_consulta):
         "piso_departamento": (
             getattr(ciudadano, "piso_departamento", "") or ""
         ).title(),
-        "ciudad": (getattr(ciudadano, "ciudad", "") or "").title(),
+        "ciudad": _resolver_ciudad_provincia(ciudadano),
         "provincia": getattr(provincia, "nombre", None),
         "codigo_postal": str(codigo_postal) if codigo_postal else "",
     }

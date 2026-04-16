@@ -1,72 +1,433 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% load crispy_forms_tags %}
-{% block title %}Detalle de Rendición de Cuenta{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/rendicioncuentasmensual_detail.css' %}" />
+{% endblock %}
+{% block title %}Detalle de Rendicion de Cuenta{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
-            <a href="{% url 'rendicioncuentasmensual_list' rendicion.comedor.id %}"
-               title="Ver listado de rendiciones">Rendiciones de Cuenta</a>
+            <a href="{% url 'rendicioncuentasmensual_global_list' %}"
+               title="Ver listado de rendiciones">Rendiciones</a>
         </li>
         <li class="breadcrumb-item active">Detalle</li>
     </ol>
 {% endblock %}
 {% block content %}
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5>Datos asociados</h5>
+    <div class="comedor-list-container">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                    <div>
+                        <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                            <h2 class="mb-0 fw-bold">Rendicion {{ rendicion.numero_rendicion|default:rendicion.id }}</h2>
+                            <div class="d-flex flex-wrap gap-2" id="rendicion-estado-badge-container">
+                                {% if rendicion.estado == 'finalizada' %}
+                                    <span class="badge-validacion validado" id="rendicion-estado-badge">Finalizada</span>
+                                {% elif rendicion.estado == 'subsanar' %}
+                                    <span class="badge-validacion no-validado" id="rendicion-estado-badge">A subsanar</span>
+                                {% elif rendicion.estado == 'revision' %}
+                                    <span class="badge-validacion pendiente" id="rendicion-estado-badge">En revision</span>
+                                {% else %}
+                                    <span class="badge-validacion pendiente" id="rendicion-estado-badge">En elaboracion</span>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <p>
-                            <strong>Mes:</strong> {{ rendicion.mes }}
-                        </p>
-                        <p>
-                            <strong>Año:</strong> {{ rendicion.anio }}
-                        </p>
-                        <p>
-                            <strong>Observaciones:</strong> {{ rendicion.observaciones|default:"Sin observaciones" }}
-                        </p>
-                        <p>
-                            <strong>Fecha de Creación:</strong> {{ rendicion.fecha_creacion|date:"d/m/Y" }}
-                        </p>
-                        <p>
-                            <strong>Última Modificación:</strong> {{ rendicion.ultima_modificacion|date:"d/m/Y H:i" }}
-                        </p>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div id="rendicion-download-action">
+                            {% if puede_descargar_pdf %}
+                                <a href="./descargar-pdf/" class="btn btn-sm btn-success">
+                                    <i class="fas fa-file-pdf"></i>
+                                    Generar descarga
+                                </a>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'rendicioncuentasmensual_global_list' %}"
+                           class="btn btn-sm btn-primary">Volver al listado</a>
                     </div>
                 </div>
+                <div class="row mt-4 gy-3">
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <small class="text-muted d-block">Proyecto</small>
+                        <strong>{{ scope_proyecto.proyecto_codigo|default:"Sin proyecto" }}</strong>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <small class="text-muted d-block">Organizacion</small>
+                        <strong>{{ scope_proyecto.organizacion.nombre|default:"Sin organizacion" }}</strong>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <small class="text-muted d-block">Convenio</small>
+                        <strong>{{ rendicion.convenio|default:"Sin dato" }}</strong>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <small class="text-muted d-block">Mes / Ano</small>
+                        <strong>{{ rendicion.mes }} / {{ rendicion.anio }}</strong>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-6">
+                        <small class="text-muted d-block">Periodo</small>
+                        <strong>
+                            {% if rendicion.periodo_inicio and rendicion.periodo_fin %}
+                                {{ rendicion.periodo_inicio|date:"d/m/Y" }} - {{ rendicion.periodo_fin|date:"d/m/Y" }}
+                            {% else %}
+                                Sin dato
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <small class="text-muted d-block">Fecha de creacion</small>
+                        <strong>{{ rendicion.fecha_creacion|date:"d/m/Y H:i" }}</strong>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <small class="text-muted d-block">Ultima modificacion</small>
+                        <strong>{{ rendicion.ultima_modificacion|date:"d/m/Y H:i" }}</strong>
+                    </div>
+                    <div class="col-12 col-xl-6">
+                        <small class="text-muted d-block">Comedores relacionados con el proyecto</small>
+                        {% if scope_proyecto.comedores_relacionados %}
+                            <div class="d-flex flex-wrap gap-2 mt-1">
+                                {% for comedor_relacionado in scope_proyecto.comedores_relacionados %}
+                                    <span class="badge bg-light text-dark border">{{ comedor_relacionado.nombre }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <strong>Sin comedores relacionados</strong>
+                        {% endif %}
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <small class="text-muted d-block">Usuario creador</small>
+                        <strong>
+                            {% if rendicion.usuario_creador %}
+                                {{ rendicion.usuario_creador.get_full_name|default:rendicion.usuario_creador.username }}
+                            {% else %}
+                                Sin dato
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <small class="text-muted d-block">Usuario ultima modificacion</small>
+                        <strong>
+                            {% if rendicion.usuario_ultima_modificacion %}
+                                {{ rendicion.usuario_ultima_modificacion.get_full_name|default:rendicion.usuario_ultima_modificacion.username }}
+                            {% else %}
+                                Sin dato
+                            {% endif %}
+                        </strong>
+                    </div>
+                    {% if rendicion.observaciones %}
+                        <div class="col-12">
+                            <small class="text-muted d-block">Observaciones</small>
+                            <strong>{{ rendicion.observaciones }}</strong>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-            <div class="col-md-8">
-                <h5 class="mb-3">Archivos Asociados</h5>
-                <table class="table table-bordered table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>#</th>
-                            <th>Nombre del Archivo</th>
-                            <th>Descargar</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for archivo in rendicion.archivos_adjuntos.all %}
+        </div>
+
+        <div class="card comedor-table-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                    <div>
+                        <h5 class="mb-1">Documentacion asociada</h5>
+                        <small class="text-muted">
+                            Cada documento presentado puede validarse o enviarse a subsanacion de forma independiente.
+                        </small>
+                    </div>
+                </div>
+                <div id="revision-feedback" class="d-none alert mb-3" role="alert"></div>
+                <div class="table-responsive-lg">
+                    <table class="table table-comedor-moderno">
+                        <thead>
                             <tr>
-                                <td>{{ forloop.counter }}</td>
-                                <td>{{ archivo.nombre }}</td>
-                                <td>
-                                    <a href="{{ archivo.archivo.url }}"
-                                       class="btn btn-success btn-sm"
-                                       target="_blank">Descargar</a>
-                                </td>
+                                <th>Archivo</th>
+                                <th>Estado</th>
+                                <th>Revision</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
                             </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="3" class="text-center">No hay archivos asociados.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {% for categoria in documentacion_por_categoria %}
+                                <tr class="categoria-documentos-header">
+                                    <td colspan="5">
+                                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                                <span class="categoria-documentos-titulo">{{ categoria.label }}</span>
+                                                {% if categoria.required %}
+                                                    <span class="badge bg-warning text-dark">Obligatorio</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Opcional</span>
+                                                {% endif %}
+                                            </div>
+                                            <span class="categoria-documentos-meta">
+                                                {{ categoria.archivos|length }} archivo{{ categoria.archivos|length|pluralize }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% if categoria.archivos %}
+                                    {% for archivo in categoria.archivos %}
+                                        <tr class="{% if archivo.observaciones or archivo.estado == 'presentado' and puede_revisar_documentos %}documento-row-with-details{% endif %}">
+                                            <td>{{ archivo.nombre }}</td>
+                                            <td id="estado-cell-{{ archivo.id }}">
+                                                {% if archivo.get_estado_visual == 'subsanado' %}
+                                                    <span class="badge-validacion pendiente">{{ archivo.get_estado_visual_display }}</span>
+                                                {% elif archivo.estado == 'validado' %}
+                                                    <span class="badge-validacion validado">{{ archivo.get_estado_display }}</span>
+                                                {% elif archivo.estado == 'subsanar' %}
+                                                    <span class="badge-validacion no-validado">{{ archivo.get_estado_display }}</span>
+                                                {% else %}
+                                                    <span class="badge-validacion pendiente">{{ archivo.get_estado_display }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td id="revision-cell-{{ archivo.id }}">
+                                                {% if puede_revisar_documentos and archivo.estado == 'presentado' %}
+                                                    <form id="revision-documento-{{ archivo.id }}" method="post">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="documento_id" value="{{ archivo.id }}" />
+                                                    </form>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <select name="estado"
+                                                                form="revision-documento-{{ archivo.id }}"
+                                                                class="form-select form-select-sm js-documento-estado"
+                                                                data-documento-id="{{ archivo.id }}"
+                                                                required>
+                                                            <option value="">Seleccionar accion</option>
+                                                            <option value="validado">Validar</option>
+                                                            <option value="subsanar">A subsanar</option>
+                                                        </select>
+                                                        <button type="submit"
+                                                                form="revision-documento-{{ archivo.id }}"
+                                                                id="guardar-revision-inline-{{ archivo.id }}"
+                                                                class="btn btn-success btn-sm d-none js-guardar-revision-inline"
+                                                                data-documento-id="{{ archivo.id }}"
+                                                                title="Guardar revision"
+                                                                aria-label="Guardar revision">
+                                                            <span class="js-submit-idle">
+                                                                <i class="fas fa-check"></i>
+                                                            </span>
+                                                            <span class="spinner-border spinner-border-sm d-none js-submit-spinner"
+                                                                  role="status"
+                                                                  aria-hidden="true"></span>
+                                                        </button>
+                                                    </div>
+                                                {% elif archivo.estado == 'validado' %}
+                                                    <span class="text-muted">-</span>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ archivo.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                            <td>
+                                                <div class="comedor-actions">
+                                                    <a href="{{ archivo.archivo.url }}"
+                                                       class="btn btn-ver"
+                                                       target="_blank"
+                                                       title="Ver archivo">
+                                                        <i class="fas fa-eye"></i>
+                                                        Ver
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% if archivo.observaciones or archivo.estado == 'presentado' and puede_revisar_documentos %}
+                                            <tr id="observaciones-row-{{ archivo.id }}"
+                                                class="documento-detail-row {% if archivo.estado == 'presentado' and puede_revisar_documentos %}d-none{% endif %}">
+                                                <td colspan="5" class="text-start pt-0 pb-1">
+                                                    {% if puede_revisar_documentos and archivo.estado == 'presentado' %}
+                                                        <div class="d-flex align-items-start gap-2">
+                                                            <textarea id="observaciones-{{ archivo.id }}"
+                                                                      name="observaciones"
+                                                                      form="revision-documento-{{ archivo.id }}"
+                                                                      class="documento-observaciones-input form-control form-control-sm js-observaciones-input"
+                                                                      data-documento-id="{{ archivo.id }}"
+                                                                      rows="2"
+                                                                      placeholder="Observaciones para subsanacion"></textarea>
+                                                            <button type="submit"
+                                                                    form="revision-documento-{{ archivo.id }}"
+                                                                    id="guardar-revision-observaciones-{{ archivo.id }}"
+                                                                    class="btn btn-success btn-sm d-none js-guardar-revision-observaciones"
+                                                                    data-documento-id="{{ archivo.id }}"
+                                                                    title="Guardar revision"
+                                                                    aria-label="Guardar revision">
+                                                                <span class="js-submit-idle">
+                                                                    <i class="fas fa-check"></i>
+                                                                </span>
+                                                                <span class="spinner-border spinner-border-sm d-none js-submit-spinner"
+                                                                      role="status"
+                                                                      aria-hidden="true"></span>
+                                                            </button>
+                                                        </div>
+                                                    {% else %}
+                                                        <div class="ps-3" id="observaciones-display-{{ archivo.id }}">
+                                                            <strong>Observaciones:</strong> {{ archivo.observaciones }}
+                                                        </div>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if categoria.codigo == 'comprobantes' or categoria.codigo == 'otros' %}
+                                        {% for archivo in categoria.archivos %}
+                                            {% if archivo.subsanaciones_historial %}
+                                                {% for subsanacion in archivo.subsanaciones_historial %}
+                                                    <tr class="documento-detail-row historial-documento-row">
+                                                        <td>{{ subsanacion.nombre }}</td>
+                                                        <td id="estado-cell-{{ subsanacion.id }}">
+                                                            {% if subsanacion.get_estado_visual == 'subsanado' %}
+                                                                <span class="historial-documento-estado">{{ subsanacion.get_estado_visual_display }}</span>
+                                                            {% elif subsanacion.estado == 'validado' %}
+                                                                <span class="historial-documento-estado">{{ subsanacion.get_estado_display }}</span>
+                                                            {% elif subsanacion.estado == 'subsanar' %}
+                                                                <span class="historial-documento-estado">{{ subsanacion.get_estado_display }}</span>
+                                                            {% else %}
+                                                                <span class="historial-documento-estado">{{ subsanacion.get_estado_display }}</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td id="revision-cell-{{ subsanacion.id }}">
+                                                            {% if subsanacion.observaciones %}
+                                                                <span class="historial-documento-estado">
+                                                                    <strong>Obs:</strong> {{ subsanacion.observaciones }}
+                                                                </span>
+                                                            {% else %}
+                                                                <span class="text-muted">-</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>{{ subsanacion.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                                        <td>
+                                                            <div class="comedor-actions">
+                                                                <a href="{{ subsanacion.archivo.url }}"
+                                                                   class="btn btn-ver"
+                                                                   target="_blank"
+                                                                   title="Ver archivo">
+                                                                    <i class="fas fa-eye"></i>
+                                                                    Ver
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        {% for archivo in categoria.archivos %}
+                                            {% if archivo.subsanaciones_historial %}
+                                                {% for subsanacion in archivo.subsanaciones_historial %}
+                                                    <tr class="documento-detail-row">
+                                                        <td>{{ subsanacion.nombre }}</td>
+                                                        <td id="estado-cell-{{ subsanacion.id }}">
+                                                            {% if subsanacion.get_estado_visual == 'subsanado' %}
+                                                                <span class="badge-validacion pendiente">{{ subsanacion.get_estado_visual_display }}</span>
+                                                            {% elif subsanacion.estado == 'validado' %}
+                                                                <span class="badge-validacion validado">{{ subsanacion.get_estado_display }}</span>
+                                                            {% elif subsanacion.estado == 'subsanar' %}
+                                                                <span class="badge-validacion no-validado">{{ subsanacion.get_estado_display }}</span>
+                                                            {% else %}
+                                                                <span class="badge-validacion pendiente">{{ subsanacion.get_estado_display }}</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td id="revision-cell-{{ subsanacion.id }}">
+                                                            {% if puede_revisar_documentos and subsanacion.estado == 'presentado' %}
+                                                                <form id="revision-documento-{{ subsanacion.id }}" method="post">
+                                                                    {% csrf_token %}
+                                                                    <input type="hidden" name="documento_id" value="{{ subsanacion.id }}" />
+                                                                </form>
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    <select name="estado"
+                                                                            form="revision-documento-{{ subsanacion.id }}"
+                                                                            class="form-select form-select-sm js-documento-estado"
+                                                                            data-documento-id="{{ subsanacion.id }}"
+                                                                            required>
+                                                                        <option value="">Seleccionar accion</option>
+                                                                        <option value="validado">Validar</option>
+                                                                        <option value="subsanar">A subsanar</option>
+                                                                    </select>
+                                                                    <button type="submit"
+                                                                            form="revision-documento-{{ subsanacion.id }}"
+                                                                            id="guardar-revision-inline-{{ subsanacion.id }}"
+                                                                            class="btn btn-success btn-sm d-none js-guardar-revision-inline"
+                                                                            data-documento-id="{{ subsanacion.id }}"
+                                                                            title="Guardar revision"
+                                                                            aria-label="Guardar revision">
+                                                                        <span class="js-submit-idle">
+                                                                            <i class="fas fa-check"></i>
+                                                                        </span>
+                                                                        <span class="spinner-border spinner-border-sm d-none js-submit-spinner"
+                                                                              role="status"
+                                                                              aria-hidden="true"></span>
+                                                                    </button>
+                                                                </div>
+                                                            {% else %}
+                                                                <span class="text-muted">-</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>{{ subsanacion.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                                        <td>
+                                                            <div class="comedor-actions">
+                                                                <a href="{{ subsanacion.archivo.url }}"
+                                                                   class="btn btn-ver"
+                                                                   target="_blank"
+                                                                   title="Ver archivo">
+                                                                    <i class="fas fa-eye"></i>
+                                                                    Ver
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    {% if subsanacion.estado == 'presentado' or subsanacion.observaciones %}
+                                                        <tr id="observaciones-row-{{ subsanacion.id }}"
+                                                            class="documento-detail-row {% if subsanacion.estado == 'presentado' %}d-none{% endif %}">
+                                                            <td colspan="5" class="text-start pt-0 pb-1 ps-4">
+                                                                {% if subsanacion.estado == 'presentado' %}
+                                                                    <div class="d-flex align-items-start gap-2">
+                                                                        <textarea id="observaciones-{{ subsanacion.id }}"
+                                                                                  name="observaciones"
+                                                                                  form="revision-documento-{{ subsanacion.id }}"
+                                                                                  class="documento-observaciones-input form-control form-control-sm js-observaciones-input"
+                                                                                  data-documento-id="{{ subsanacion.id }}"
+                                                                                  rows="2"
+                                                                                  placeholder="Observaciones para subsanacion"></textarea>
+                                                                        <button type="submit"
+                                                                                form="revision-documento-{{ subsanacion.id }}"
+                                                                                id="guardar-revision-observaciones-{{ subsanacion.id }}"
+                                                                                class="btn btn-success btn-sm d-none js-guardar-revision-observaciones"
+                                                                                data-documento-id="{{ subsanacion.id }}"
+                                                                                title="Guardar revision"
+                                                                                aria-label="Guardar revision">
+                                                                            <span class="js-submit-idle">
+                                                                                <i class="fas fa-check"></i>
+                                                                            </span>
+                                                                            <span class="spinner-border spinner-border-sm d-none js-submit-spinner"
+                                                                                  role="status"
+                                                                                  aria-hidden="true"></span>
+                                                                        </button>
+                                                                    </div>
+                                                                {% else %}
+                                                                    <div class="ps-3" id="observaciones-display-{{ subsanacion.id }}">
+                                                                        <strong>Observaciones:</strong> {{ subsanacion.observaciones }}
+                                                                    </div>
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5">No hay archivos cargados en esta categoria.</td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
+    <script src="{% static 'custom/js/rendicioncuentasmensual_detail.js' %}"></script>
 {% endblock %}

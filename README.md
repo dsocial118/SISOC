@@ -4,7 +4,7 @@ Sistema de gestión basado en **Django** y **MySQL**, desplegable mediante **Doc
 Cada aplicación del repositorio representa un módulo funcional (ej. `comedores`, `relevamientos`, `users`).
 
 > Documentación organizada: ver `docs/indice.md` para el índice y referencias detalladas.
-> Infraestructura: resumen operativo en `docs/operacion/infraestructura.md`.
+> Setup y operación: `docs/operacion/instalacion.md`, `docs/operacion/infraestructura.md` y `docs/operacion/comandos_administracion.md`.
 
 ---
 
@@ -48,26 +48,28 @@ Cada aplicación del repositorio representa un módulo funcional (ej. `comedores
 
 1. Clonar el repositorio:
    ```bash
-   git clone https://github.com/dsocial118/BACKOFFICE.git
-   cd BACKOFFICE
+   git clone https://github.com/dsocial118/SISOC.git
+   cd SISOC
    ```
 2. (Opcional) Colocar un dump en `./docker/mysql/local-dump.sql`.  
 3. Levantar servicios:
    ```bash
-   docker-compose up
+   docker compose up
    ```
-4. Acceder a la app en [http://localhost:8000](http://localhost:8000).
+4. Acceder a la app en [http://localhost:8001](http://localhost:8001) (valor por defecto de `DOCKER_DJANGO_PORT_FORWARD` en `.env.example`).
+
+`docker-compose.yml` queda reservado para desarrollo/local y es el único compose versionado que levanta `mysql`.
 
 ## Reiniciar base de datos con nuevo dump
 ```bash
-docker-compose down
+docker compose down
 docker volume rm sisoc_mysql_data
 # colocar nuevo dump en ./docker/mysql/local-dump.sql
-docker-compose up
+docker compose up
 ```
 
 ## Debug con VSCode
-- Iniciar servicios con `docker-compose up`.  
+- Iniciar servicios con `docker compose up`.
 - Seleccionar la configuración `Django in Docker` en el panel de debugging.  
 
 ---
@@ -103,7 +105,8 @@ djlint . --configuration=.djlintrc --reformat
 
 ## Variables de Entorno
 
-Ejemplo en [.env.example](https://github.com/dsocial118/BACKOFFICE/blob/development/.env.example):
+Ejemplo y defaults en `.env.example`.
+Para más detalle operativo: `docs/operacion/instalacion.md`.
 
 ---
 
@@ -113,6 +116,10 @@ Ejecutar:
 ```bash
 docker compose exec django pytest -n auto
 ```
+
+Referencia CI actual:
+- `tests.yml` corre `smoke`, `migrations_check` y, en PRs, `pytest` con cobertura + `mysql_compat`.
+- `lint.yml` corre `encoding_check`, `black`, `djlint` y `pylint`.
 
 ---
 
@@ -135,10 +142,12 @@ docker compose exec django pytest -n auto
 4. **Commits**  
    Usar formato consistente:  
    ```
-   feat: nueva funcionalidad en comedores
-   fix: corregido bug en relevamientos
-   refactor: limpieza en servicios de users
+   feat(comedores): nueva funcionalidad
+   fix(relevamientos): corregir bug
+   refactor(users): limpiar servicios
    ```
+
+   Los cambios importantes deben registrar su contexto en `docs/registro/`.
 
 ---
 
@@ -148,9 +157,11 @@ Documentación Postman:
 [API SISOC](https://documenter.getpostman.com/view/14921866/2sAXxMfDXf#01ac9db5-a6b5-4b20-9e8c-973e38884f17)
 No es la mejor documentacion. En caso de dudas, consultar con Juani (Tech lead de SISOC) o Andy (Dueño de GESCOM)
 
+Además, el repo expone schema OpenAPI en `/api/schema/`, Swagger en `/api/docs/` y Redoc en `/api/redoc/`.
 Ejemplo de request:
 ```bash
-curl -X GET http://localhost:8000/api/comedores/      -H "Authorization: Bearer <API_KEY>"
+curl -X GET http://localhost:8001/api/comedores/ \
+  -H "Authorization: Api-Key <API_KEY>"
 ```
 
 ---
@@ -161,6 +172,8 @@ curl -X GET http://localhost:8000/api/comedores/      -H "Authorization: Bearer 
 - **Semana 0 (jueves)** → abrir branch `development`.  
 - **Semana 2 (lunes, freeze)** → congelar `development`, crear tag `YY.MM.DD-rc1`.  
 - **Semana 2 (miércoles noche)** → deploy a PRD si QA aprueba último `rcX`.  
+
+Para detalle operativo vigente de entornos, compose y release, usar `docs/operacion/infraestructura.md`.
 
 ##Checklist
 - [ ] Branch `development` congelada sin features nuevos  
@@ -180,7 +193,7 @@ curl -X GET http://localhost:8000/api/comedores/      -H "Authorization: Bearer 
 
 ## Changelog
 
-[CHANGELOG.md](https://github.com/dsocial118/BACKOFFICE/blob/development/CHANGELOG.md)
+`CHANGELOG.md`
 
 Los usuarios del sistema pueden consultar las novedades desde la opción **"Novedades del sistema"** en el menú lateral del backoffice.
 

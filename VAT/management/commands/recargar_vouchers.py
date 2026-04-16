@@ -11,13 +11,15 @@ Cron (día 1 de cada mes a las 00:30):
 
 import logging
 from datetime import date
+
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
-from django.contrib.auth.models import User
 
 from VAT.models import VoucherParametria, Voucher
-from VAT.services.voucher_service.impl import VoucherService
+from VAT.services.voucher_service import VoucherService
 
 logger = logging.getLogger("django")
+User = get_user_model()
 
 
 class Command(BaseCommand):

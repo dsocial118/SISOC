@@ -1,35 +1,88 @@
 // Manejo de registros erróneos
 document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    function obtenerCamposInvalidos(form) {
+        return (form.dataset.invalidFields || '')
+            .split(',')
+            .map(item => item.trim())
+            .filter(Boolean);
+    }
+
+    function limpiarResaltadoCampos(form) {
+        form.querySelectorAll('.field-error-soft').forEach(field => {
+            field.classList.remove('field-error-soft');
+            field.removeAttribute('aria-invalid');
+        });
+    }
+
+    function aplicarResaltadoCampos(form, invalidFields = []) {
+        limpiarResaltadoCampos(form);
+        invalidFields.forEach(fieldName => {
+            const field = form.querySelector(`[name="${fieldName}"]`);
+            if (!field) return;
+            field.classList.add('field-error-soft');
+            field.setAttribute('aria-invalid', 'true');
+        });
+    }
     
-    // Filtrar localidades por municipio
+    // Filtrar y sincronizar localidades/municipios
     document.querySelectorAll('.select-municipio').forEach(selectMunicipio => {
         const registroId = selectMunicipio.dataset.registroId;
         const selectLocalidad = document.querySelector(`.select-localidad[data-registro-id="${registroId}"]`);
-        
+
         if (!selectLocalidad) return;
-        
-        const todasLocalidades = Array.from(selectLocalidad.options).slice(1);
-        
-        selectMunicipio.addEventListener('change', function() {
-            const municipioId = this.value;
+
+        const todasLocalidades = Array.from(selectLocalidad.options)
+            .slice(1)
+            .map(option => option.cloneNode(true));
+
+        function repoblarLocalidades(municipioId, localidadSeleccionada = '') {
             selectLocalidad.innerHTML = '<option value="">Seleccionar...</option>';
-            
-            if (!municipioId) {
-                todasLocalidades.forEach(opt => {
-                    selectLocalidad.appendChild(opt.cloneNode(true));
-                });
-            } else {
-                todasLocalidades.forEach(opt => {
-                    if (opt.dataset.municipio === municipioId) {
-                        selectLocalidad.appendChild(opt.cloneNode(true));
+
+            todasLocalidades.forEach(option => {
+                if (!municipioId || option.dataset.municipio === municipioId) {
+                    const optionClonada = option.cloneNode(true);
+                    if (localidadSeleccionada && optionClonada.value === localidadSeleccionada) {
+                        optionClonada.selected = true;
                     }
-                });
+                    selectLocalidad.appendChild(optionClonada);
+                }
+            });
+
+            if (
+                localidadSeleccionada &&
+                !Array.from(selectLocalidad.options).some(option => option.value === localidadSeleccionada)
+            ) {
+                selectLocalidad.value = '';
             }
+        }
+
+        function sincronizarMunicipioDesdeLocalidad() {
+            const optionSeleccionada = selectLocalidad.selectedOptions[0];
+            const municipioId = optionSeleccionada?.dataset?.municipio || '';
+
+            if (!municipioId) {
+                return;
+            }
+
+            if (selectMunicipio.value !== municipioId) {
+                selectMunicipio.value = municipioId;
+            }
+
+            repoblarLocalidades(municipioId, selectLocalidad.value);
+        }
+
+        selectMunicipio.addEventListener('change', function() {
+            repoblarLocalidades(this.value, selectLocalidad.value);
         });
-        
-        if (selectMunicipio.value) {
-            selectMunicipio.dispatchEvent(new Event('change'));
+
+        selectLocalidad.addEventListener('change', sincronizarMunicipioDesdeLocalidad);
+
+        if (selectLocalidad.value) {
+            sincronizarMunicipioDesdeLocalidad();
+        } else {
+            repoblarLocalidades(selectMunicipio.value, '');
         }
     });
     
@@ -113,6 +166,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const registroId = form.dataset.registroId;
         const inputs = form.querySelectorAll('input, select, textarea');
 
+        aplicarResaltadoCampos(form, obtenerCamposInvalidos(form));
+
         function programarGuardado() {
             registrosConCambios.add(registroId);
             clearTimeout(saveTimers[registroId]);
@@ -122,8 +177,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         inputs.forEach(input => {
-            input.addEventListener('change', programarGuardado);
-            input.addEventListener('input', programarGuardado);
+            const limpiarCampo = () => {
+                input.classList.remove('field-error-soft');
+                input.removeAttribute('aria-invalid');
+            };
+
+            input.addEventListener('change', () => {
+                limpiarCampo();
+                programarGuardado();
+            });
+            input.addEventListener('input', () => {
+                limpiarCampo();
+                programarGuardado();
+            });
         });
     });
     
@@ -184,6 +250,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 limpiarErrorValidacion(form);
+                form.dataset.invalidFields = '';
+                limpiarResaltadoCampos(form);
                 registrosConCambios.delete(String(registroId));
                 const row = document.querySelector(`.registro-erroneo-row[data-registro-id="${registroId}"]`);
                 if (row) {
@@ -195,6 +263,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return true;
             }
             if (data.saved_partial) {
+                form.dataset.invalidFields = (data.invalid_fields || []).join(',');
+                aplicarResaltadoCampos(form, data.invalid_fields || []);
                 registrosConCambios.delete(String(registroId));
                 if (mostrarErrores) {
                     mostrarErrorValidacion(
@@ -204,6 +274,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 return true;
             } else {
+                form.dataset.invalidFields = (data.invalid_fields || []).join(',');
+                aplicarResaltadoCampos(form, data.invalid_fields || []);
                 if (mostrarErrores) {
                     showAlert('danger', 'Error: ' + (data.error || 'Error desconocido'));
                 }
@@ -359,3 +431,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+

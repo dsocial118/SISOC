@@ -7,7 +7,7 @@
                 <!-- Botón Anterior -->
                 {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{{ page_param_name }}={{ page_obj.previous_page_number }}"
+                        <a href="?{% if query %}busqueda={{ query|urlencode }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}{{ page_param_name }}={{ page_obj.previous_page_number }}"
                            class="page-link">{{ prev_text|default:"Volver" }}</a>
                     </li>
                 {% else %}
@@ -18,13 +18,13 @@
                 <!-- Páginas -->
                 {% if page_range %}
                     {% for i in page_range %}
-                        {% if i == '…' %}
+                        {% if i == '...' or i == '…' %}
                             <li class="page-item disabled">
-                                <a href="#" class="page-link">…</a>
+                                <a href="#" class="page-link">...</a>
                             </li>
                         {% else %}
                             <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-                                <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
+                                <a href="?{% if query %}busqueda={{ query|urlencode }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
                                    class="page-link">{{ i }}</a>
                             </li>
                         {% endif %}
@@ -33,17 +33,17 @@
                     {% for i in page_obj.paginator.page_range %}
                         {% if page_obj.number == i %}
                             <li class="page-item active">
-                                <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
+                                <a href="?{% if query %}busqueda={{ query|urlencode }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
                                    class="page-link">{{ i }}</a>
                             </li>
                         {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
                             <li class="page-item">
-                                <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
+                                <a href="?{% if query %}busqueda={{ query|urlencode }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
                                    class="page-link">{{ i }}</a>
                             </li>
                         {% elif i == 1 or i == page_obj.paginator.num_pages %}
                             <li class="page-item">
-                                <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
+                                <a href="?{% if query %}busqueda={{ query|urlencode }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
                                    class="page-link">{{ i }}</a>
                             </li>
                         {% elif i == page_obj.number|add:'-6' or i == page_obj.number|add:'6' %}
@@ -56,7 +56,7 @@
                 <!-- Botón Siguiente -->
                 {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{{ page_param_name }}={{ page_obj.next_page_number }}"
+                        <a href="?{% if query %}busqueda={{ query|urlencode }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}{{ page_param_name }}={{ page_obj.next_page_number }}"
                            class="page-link">{{ next_text|default:"Continuar" }}</a>
                     </li>
                 {% else %}
@@ -66,7 +66,7 @@
                 {% endif %}
             </ul>
         {% endif %}
-        {% if page_obj %}
+        {% if page_obj and page_obj.paginator.count != None %}
             <p class="text-center text-muted mb-0 mt-1">Se encontraron {{ page_obj.paginator.count }} resultados</p>
         {% elif results_count %}
             <p class="text-center text-muted mb-0 mt-1">Se encontraron {{ results_count }} resultados</p>

@@ -1,5 +1,6 @@
 """Tests for tests."""
 
+from importlib import import_module
 from unittest import mock
 from types import SimpleNamespace
 
@@ -28,6 +29,101 @@ from comedores.services.validacion_service import ValidacionService
 from comedores.views import ComedorDetailView, NominaImportarView
 from core.models import Sexo
 from organizaciones.models import Aval, Firmante, Organizacion, RolFirmante
+
+
+def _build_schema_editor(constraint_names):
+    cursor_context = mock.MagicMock()
+    cursor_context.__enter__.return_value = mock.sentinel.cursor
+    connection = mock.MagicMock()
+    connection.cursor.return_value = cursor_context
+    connection.introspection.get_constraints.return_value = {
+        name: {} for name in constraint_names
+    }
+    return mock.MagicMock(connection=connection)
+
+
+def _build_migration_apps():
+    fake_model = SimpleNamespace(_meta=SimpleNamespace(db_table="audit_table"))
+    return SimpleNamespace(get_model=lambda app_label, model_name: fake_model)
+
+
+def test_audit_colaborador_espacio_migration_renames_old_index_if_present():
+    migration_module = import_module(
+        "comedores.migrations."
+        "0033_rename_comedores_a_comedor_89ef7d_idx_"
+        "comedores_a_comedor_4b1714_idx_and_more"
+    )
+    schema_editor = _build_schema_editor({"comedores_a_comedor_89ef7d_idx"})
+
+    migration_module._sync_audit_index_names(
+        _build_migration_apps(),
+        schema_editor,
+        [
+            (
+                "comedores_a_comedor_89ef7d_idx",
+                "comedores_a_comedor_4b1714_idx",
+                ["comedor", "changed_at"],
+            )
+        ],
+    )
+
+    schema_editor.rename_index.assert_called_once()
+    schema_editor.add_index.assert_not_called()
+    _, old_index, new_index = schema_editor.rename_index.call_args.args
+    assert old_index.name == "comedores_a_comedor_89ef7d_idx"
+    assert new_index.name == "comedores_a_comedor_4b1714_idx"
+    assert new_index.fields == ["comedor", "changed_at"]
+
+
+def test_audit_colaborador_espacio_migration_skips_when_new_index_exists():
+    migration_module = import_module(
+        "comedores.migrations."
+        "0033_rename_comedores_a_comedor_89ef7d_idx_"
+        "comedores_a_comedor_4b1714_idx_and_more"
+    )
+    schema_editor = _build_schema_editor({"comedores_a_comedor_4b1714_idx"})
+
+    migration_module._sync_audit_index_names(
+        _build_migration_apps(),
+        schema_editor,
+        [
+            (
+                "comedores_a_comedor_89ef7d_idx",
+                "comedores_a_comedor_4b1714_idx",
+                ["comedor", "changed_at"],
+            )
+        ],
+    )
+
+    schema_editor.rename_index.assert_not_called()
+    schema_editor.add_index.assert_not_called()
+
+
+def test_audit_colaborador_espacio_migration_creates_index_if_missing():
+    migration_module = import_module(
+        "comedores.migrations."
+        "0033_rename_comedores_a_comedor_89ef7d_idx_"
+        "comedores_a_comedor_4b1714_idx_and_more"
+    )
+    schema_editor = _build_schema_editor(set())
+
+    migration_module._sync_audit_index_names(
+        _build_migration_apps(),
+        schema_editor,
+        [
+            (
+                "comedores_a_comedor_89ef7d_idx",
+                "comedores_a_comedor_4b1714_idx",
+                ["comedor", "changed_at"],
+            )
+        ],
+    )
+
+    schema_editor.rename_index.assert_not_called()
+    schema_editor.add_index.assert_called_once()
+    _, created_index = schema_editor.add_index.call_args.args
+    assert created_index.name == "comedores_a_comedor_4b1714_idx"
+    assert created_index.fields == ["comedor", "changed_at"]
 
 
 # Tests for ComedorDetailView (HTML)

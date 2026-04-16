@@ -1,7 +1,10 @@
+import json
+import re
 import logging
+import unicodedata
 from functools import lru_cache
 from io import BytesIO
-import re
+from pathlib import Path
 
 import pandas as pd
 from django.core.exceptions import ValidationError
@@ -15,6 +18,14 @@ from celiaquia.models import EstadoCupo, EstadoLegajo, ExpedienteCiudadano
 from celiaquia.services.validacion_edad_service import ValidacionEdadService
 
 logger = logging.getLogger("django")
+
+
+def _normalizar_texto_comparable(value):
+    text = str(value or "").strip().lower()
+    if not text:
+        return ""
+    normalized = unicodedata.normalize("NFKD", text)
+    return "".join(ch for ch in normalized if not unicodedata.combining(ch))
 
 
 def _norm_col(col: str) -> str:
@@ -326,6 +337,30 @@ def _cargar_sexos_cache():
     return sexos_cache
 
 
+@lru_cache(maxsize=1)
+def _cargar_paises_a_nacionalidad_importacion():
+    data_path = (
+        Path(__file__).resolve().parents[2] / "fixtures" / "pais_a_nacionalidad.json"
+    )
+    with data_path.open(encoding="utf-8") as fh:
+        raw_map = json.load(fh)
+
+    return {
+        _normalizar_texto_comparable(country): nationality
+        for country, nationality in raw_map.items()
+    }
+
+
+def _cargar_nacionalidades_cache():
+    from core.models import Nacionalidad
+
+    return {
+        _normalizar_texto_comparable(item.nacionalidad): item
+        for item in Nacionalidad.objects.all()
+        if _normalizar_texto_comparable(item.nacionalidad)
+    }
+
+
 def _precargar_datos_importacion(df: pd.DataFrame, provincia_usuario_id):
     lookup_values = _colectar_ids_y_nombres_importacion(df)
     return {
@@ -334,6 +369,8 @@ def _precargar_datos_importacion(df: pd.DataFrame, provincia_usuario_id):
         ),
         "localidades_cache": _cargar_localidades_cache(lookup_values["localidad_ids"]),
         "sexos_cache": _cargar_sexos_cache(),
+        "nacionalidades_cache": _cargar_nacionalidades_cache(),
+        "paises_a_nacionalidad": _cargar_paises_a_nacionalidad_importacion(),
         "nacionalidades_nombres": lookup_values["nacionalidades_nombres"],
         "sexos_nombres": lookup_values["sexos_nombres"],
     }
@@ -497,7 +534,7 @@ def _consolidar_roles_cruzados_importacion(expediente, warnings):
                 relaciones_cruzadas_creadas += 1
 
         # Consolidar beneficiarios que son responsables de otros
-        _consolidar_beneficiarios_que_son_responsables(expediente, warnings)
+        _consolidar_roles_familiares_doble_rol_importacion(expediente, warnings)
 
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.error("Error en post-procesamiento de relaciones cruzadas: %s", exc)
@@ -530,6 +567,55 @@ def _consolidar_beneficiarios_que_son_responsables(expediente, warnings):
 
     actualizados = 0
     for legajo in legajos_beneficiarios:
+        legajo.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+        legajo.save(update_fields=["rol"])
+        actualizados += 1
+        logger.info(
+            "Actualizado legajo %s a BENEFICIARIO_Y_RESPONSABLE (doc: %s)",
+            legajo.id,
+            legajo.ciudadano.documento,
+        )
+
+    if actualizados > 0:
+        _agregar_warning_general_importacion(
+            warnings,
+            "consolidacion_roles",
+            f"Se actualizaron {actualizados} beneficiarios a doble rol",
+        )
+
+
+def _consolidar_roles_familiares_doble_rol_importacion(expediente, warnings):
+    """Actualiza legajos a doble rol segun relaciones familiares efectivas."""
+    from ciudadanos.models import GrupoFamiliar
+
+    ciudadanos_expediente = list(
+        ExpedienteCiudadano.objects.filter(expediente=expediente).values_list(
+            "ciudadano_id", flat=True
+        )
+    )
+    if not ciudadanos_expediente:
+        return
+
+    relaciones_qs = GrupoFamiliar.objects.filter(
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+        ciudadano_1_id__in=ciudadanos_expediente,
+        ciudadano_2_id__in=ciudadanos_expediente,
+    )
+    responsables_ids = set(relaciones_qs.values_list("ciudadano_1_id", flat=True))
+    beneficiarios_con_responsable_ids = set(
+        relaciones_qs.values_list("ciudadano_2_id", flat=True)
+    )
+    ciudadanos_doble_rol = responsables_ids & beneficiarios_con_responsable_ids
+    if not ciudadanos_doble_rol:
+        return
+
+    legajos_a_promover = ExpedienteCiudadano.objects.filter(
+        expediente=expediente,
+        ciudadano_id__in=ciudadanos_doble_rol,
+    ).exclude(rol=ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE)
+
+    actualizados = 0
+    for legajo in legajos_a_promover:
         legajo.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
         legajo.save(update_fields=["rol"])
         actualizados += 1
@@ -740,7 +826,11 @@ def _resolver_sexo_payload_importacion(payload, normalizar_sexo):
     payload["sexo"] = sexo_id
 
 
-def _resolver_nacionalidad_payload_importacion(payload):
+def _resolver_nacionalidad_payload_importacion(
+    payload,
+    nacionalidades_cache=None,
+    paises_a_nacionalidad=None,
+):
     nacionalidad_val = payload.get("nacionalidad")
     if not nacionalidad_val:
         payload.pop("nacionalidad", None)
@@ -752,9 +842,20 @@ def _resolver_nacionalidad_payload_importacion(payload):
     if nacionalidad_str.isdigit():
         nacionalidad_obj = Nacionalidad.objects.filter(pk=int(nacionalidad_str)).first()
     else:
-        nacionalidad_obj = Nacionalidad.objects.filter(
-            nacionalidad__iexact=nacionalidad_str
-        ).first()
+        nacionalidades_cache = nacionalidades_cache or _cargar_nacionalidades_cache()
+        paises_a_nacionalidad = (
+            paises_a_nacionalidad or _cargar_paises_a_nacionalidad_importacion()
+        )
+        nacionalidad_normalizada = _normalizar_texto_comparable(nacionalidad_str)
+        nacionalidad_obj = nacionalidades_cache.get(nacionalidad_normalizada)
+        if not nacionalidad_obj:
+            nacionalidad_relacionada = paises_a_nacionalidad.get(
+                nacionalidad_normalizada
+            )
+            if nacionalidad_relacionada:
+                nacionalidad_obj = nacionalidades_cache.get(
+                    _normalizar_texto_comparable(nacionalidad_relacionada)
+                )
 
     if not nacionalidad_obj:
         raise ValidationError(f"Nacionalidad inválida: {nacionalidad_val}")
@@ -803,6 +904,8 @@ def _normalizar_enriquecer_payload_importacion(
     municipios_cache,
     localidades_cache,
     normalizar_sexo,
+    nacionalidades_cache=None,
+    paises_a_nacionalidad=None,
 ):
     _convertir_fecha_nacimiento_payload_importacion(
         payload=payload,
@@ -818,7 +921,11 @@ def _normalizar_enriquecer_payload_importacion(
         add_warning=add_warning,
     )
     _resolver_sexo_payload_importacion(payload=payload, normalizar_sexo=normalizar_sexo)
-    _resolver_nacionalidad_payload_importacion(payload)
+    _resolver_nacionalidad_payload_importacion(
+        payload,
+        nacionalidades_cache=nacionalidades_cache,
+        paises_a_nacionalidad=paises_a_nacionalidad,
+    )
     _validar_contacto_payload_importacion(
         payload=payload,
         offset=offset,
@@ -928,6 +1035,8 @@ def validar_y_normalizar_payloads_importacion(
     offset=0,
     municipios_cache=None,
     localidades_cache=None,
+    nacionalidades_cache=None,
+    paises_a_nacionalidad=None,
     normalizar_sexo=None,
     to_date=None,
     add_warning=None,
@@ -947,6 +1056,10 @@ def validar_y_normalizar_payloads_importacion(
         municipios_cache, localidades_cache = _build_lookup_caches_payload_importacion(
             payload_normalizado, provincia_usuario_id
         )
+    if nacionalidades_cache is None:
+        nacionalidades_cache = _cargar_nacionalidades_cache()
+    if paises_a_nacionalidad is None:
+        paises_a_nacionalidad = _cargar_paises_a_nacionalidad_importacion()
 
     _aplicar_defaults_y_validar_payload_importacion(
         payload_normalizado, provincia_usuario_id
@@ -959,6 +1072,8 @@ def validar_y_normalizar_payloads_importacion(
         municipios_cache=municipios_cache,
         localidades_cache=localidades_cache,
         normalizar_sexo=normalizar_sexo,
+        nacionalidades_cache=nacionalidades_cache,
+        paises_a_nacionalidad=paises_a_nacionalidad,
     )
     _validar_beneficiario_menor_con_responsable_importacion(payload_normalizado)
 
@@ -1308,6 +1423,51 @@ def _beneficiario_tiene_conflicto_importacion(
     return False
 
 
+def _marcar_legajo_existente_como_doble_rol_importacion(
+    *, ciudadano, expediente, legajos_crear, abiertos
+):
+    cid = ciudadano.pk
+
+    for legajo in legajos_crear:
+        legajo_ciudadano_id = getattr(legajo, "ciudadano_id", None) or getattr(
+            getattr(legajo, "ciudadano", None), "pk", None
+        )
+        if (
+            legajo_ciudadano_id == cid
+            and legajo.rol == ExpedienteCiudadano.ROLE_RESPONSABLE
+        ):
+            legajo.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+            abiertos[cid] = {
+                "ciudadano_id": cid,
+                "estado_cupo": EstadoCupo.NO_EVAL,
+                "es_titular_activo": False,
+                "expediente_id": expediente.id,
+                "expediente__estado__nombre": expediente.estado.nombre,
+            }
+            return True
+
+    legajo_existente = ExpedienteCiudadano.objects.filter(
+        expediente=expediente,
+        ciudadano=ciudadano,
+    ).first()
+    if not legajo_existente:
+        return False
+
+    if legajo_existente.rol != ExpedienteCiudadano.ROLE_RESPONSABLE:
+        return False
+
+    legajo_existente.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+    legajo_existente.save(update_fields=["rol"])
+    abiertos[cid] = {
+        "ciudadano_id": cid,
+        "estado_cupo": EstadoCupo.NO_EVAL,
+        "es_titular_activo": False,
+        "expediente_id": expediente.id,
+        "expediente__estado__nombre": expediente.estado.nombre,
+    }
+    return True
+
+
 def _registrar_legajo_beneficiario_importacion(
     ciudadano,
     expediente,
@@ -1368,7 +1528,8 @@ def _crear_ciudadano_beneficiario_importacion(
         )
         return None
     except Exception as exc:  # pylint: disable=broad-exception-caught
-        logger.error("Error creando ciudadano en fila %s: %s", offset, exc)
+        if not isinstance(exc, ValidationError):
+            logger.error("Error creando ciudadano en fila %s: %s", offset, exc)
         _registrar_error_creacion_ciudadano_importacion(
             payload=payload,
             offset=offset,
@@ -1520,6 +1681,8 @@ def _construir_payload_fila_importacion(
     municipios_cache,
     localidades_cache,
     normalizar_sexo,
+    nacionalidades_cache,
+    paises_a_nacionalidad,
 ):
     payload = _build_payload_importacion_from_row(
         row=row,
@@ -1540,6 +1703,8 @@ def _construir_payload_fila_importacion(
         municipios_cache=municipios_cache,
         localidades_cache=localidades_cache,
         normalizar_sexo=normalizar_sexo,
+        nacionalidades_cache=nacionalidades_cache,
+        paises_a_nacionalidad=paises_a_nacionalidad,
     )
     _validar_beneficiario_menor_con_responsable_importacion(payload)
     return payload
@@ -1571,6 +1736,17 @@ def _procesar_beneficiario_importacion(
     if not ciudadano:
         return "error", None
 
+    if (
+        ciudadano.pk in existentes_ids
+        and _marcar_legajo_existente_como_doble_rol_importacion(
+            ciudadano=ciudadano,
+            expediente=expediente,
+            legajos_crear=legajos_crear,
+            abiertos=abiertos,
+        )
+    ):
+        return "ok", ciudadano.pk
+
     if _beneficiario_tiene_conflicto_importacion(
         ciudadano=ciudadano,
         offset=offset,
@@ -1600,8 +1776,24 @@ def _tiene_datos_responsable_importacion(payload):
     )
 
 
+def _beneficiario_requiere_responsable_importacion(payload):
+    edad = ValidacionEdadService.calcular_edad(payload.get("fecha_nacimiento"))
+    return edad is not None and edad < 18
+
+
+def _responsable_completo_importacion(payload):
+    return all(
+        _valor_tiene_contenido_importacion(payload.get(field))
+        for field in IMPORTACION_RESPONSABLE_REQUIRED_FIELDS
+    )
+
+
 def _debe_validarse_responsable_importacion(payload):
-    return _tiene_datos_responsable_importacion(payload)
+    if not _tiene_datos_responsable_importacion(payload):
+        return False
+    if _beneficiario_requiere_responsable_importacion(payload):
+        return True
+    return _responsable_completo_importacion(payload)
 
 
 IMPORTACION_NUMERIC_FIELDS = {
@@ -1676,7 +1868,6 @@ def _precargar_conflictos_y_existentes_importacion(expediente):
 def _build_callbacks_importacion(warnings):
     def add_warning(fila, campo, detalle):
         warnings.append({"fila": fila, "campo": campo, "detalle": detalle})
-        logger.warning("Fila %s: %s (%s)", fila, detalle, campo)
 
     def add_error(fila, campo, detalle):
         raise ValidationError(f"Fila {fila}: {detalle} ({campo})")
@@ -1727,7 +1918,6 @@ def _registrar_error_fila_importacion(detalles_errores, row, offset, exc):
         error=error_msg,
         datos=datos_originales,
     )
-    logger.error("Error fila %s: %s", offset, exc)
 
 
 def _procesar_beneficiario_desde_row_importacion(
@@ -1740,6 +1930,8 @@ def _procesar_beneficiario_desde_row_importacion(
     provincia_usuario_id,
     municipios_cache,
     localidades_cache,
+    nacionalidades_cache,
+    paises_a_nacionalidad,
     validar_documento,
     add_warning,
     add_error,
@@ -1765,6 +1957,8 @@ def _procesar_beneficiario_desde_row_importacion(
         municipios_cache=municipios_cache,
         localidades_cache=localidades_cache,
         normalizar_sexo=normalizar_sexo,
+        nacionalidades_cache=nacionalidades_cache,
+        paises_a_nacionalidad=paises_a_nacionalidad,
     )
 
     responsable_payload = None
@@ -1875,6 +2069,8 @@ def _procesar_fila_legajo_importacion(
     provincia_usuario_id,
     municipios_cache,
     localidades_cache,
+    nacionalidades_cache,
+    paises_a_nacionalidad,
     validar_documento,
     add_warning,
     add_error,
@@ -1917,6 +2113,8 @@ def _procesar_fila_legajo_importacion(
                 provincia_usuario_id=provincia_usuario_id,
                 municipios_cache=municipios_cache,
                 localidades_cache=localidades_cache,
+                nacionalidades_cache=nacionalidades_cache,
+                paises_a_nacionalidad=paises_a_nacionalidad,
                 validar_documento=validar_documento,
                 add_warning=add_warning,
                 add_error=add_error,
@@ -2020,6 +2218,12 @@ def _build_contexto_filas_importacion_legajos(
     precargas = _precargar_datos_importacion(df, provincia_usuario_id)
     sexos_cache = precargas["sexos_cache"]
     normalizar_sexo = _build_normalizar_sexo_importacion(sexos_cache)
+    nacionalidades_cache = precargas.get("nacionalidades_cache")
+    if nacionalidades_cache is None:
+        nacionalidades_cache = _cargar_nacionalidades_cache()
+    paises_a_nacionalidad = precargas.get("paises_a_nacionalidad")
+    if paises_a_nacionalidad is None:
+        paises_a_nacionalidad = _cargar_paises_a_nacionalidad_importacion()
 
     # Identificar documentos con doble rol
     doble_rol_docs = _identificar_documentos_con_doble_rol(df)
@@ -2033,6 +2237,8 @@ def _build_contexto_filas_importacion_legajos(
         "provincia_usuario_id": provincia_usuario_id,
         "municipios_cache": precargas["municipios_cache"],
         "localidades_cache": precargas["localidades_cache"],
+        "nacionalidades_cache": nacionalidades_cache,
+        "paises_a_nacionalidad": paises_a_nacionalidad,
         "validar_documento": _validar_documento_importacion,
         "add_warning": add_warning,
         "add_error": add_error,
@@ -2372,3 +2578,4 @@ class ImportacionService:
                 extra={"expediente_id": expediente.id, "archivo": archivo_excel.name},
             )
             raise
+

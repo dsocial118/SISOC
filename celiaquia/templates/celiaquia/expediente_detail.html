@@ -11,6 +11,21 @@
 {% endblock %}
 {% block content %}
     {% with is_tec=is_tecnico_celiaquia is_coord=is_coord_celiaquia is_prov=is_provincial_celiaquia %}
+        <style>
+            .form-editar-error [aria-invalid="true"] {
+                border: 1px solid rgba(154, 42, 54, 0.92) !important;
+                outline: 2px solid rgba(154, 42, 54, 0.16) !important;
+                outline-offset: 0 !important;
+                box-shadow:
+                    0 0 0 0.16rem rgba(154, 42, 54, 0.10),
+                    inset 0 0 0 1px rgba(154, 42, 54, 0.08) !important;
+            }
+
+            .form-editar-error select[aria-invalid="true"] option {
+                color: inherit;
+                background-color: inherit;
+            }
+        </style>
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
                 <a href="{% url 'expediente_list' %}"
@@ -518,7 +533,7 @@
                                                 <!-- Col 3: Archivos y Comentarios -->
                                                 <div class="col-lg-5">
                                                     {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
- 
+
                                                     <!-- Comentarios Técnicos -->
                                                     {% if is_tec or is_coord or is_prov and leg.revision_tecnico == 'SUBSANAR' %}
                                                         {% include 'components/legajo_comentarios.html' with legajo=leg is_tec=is_tec is_coord=is_coord %}
@@ -902,7 +917,9 @@
                                 <div class="card mt-2" style="background: #2c3e50; border-color: #495057;">
                                     <div class="card-body">
                                         <h6 class="mb-3">Editar Datos - Fila {{ registro.fila_excel }}</h6>
-                                        <form class="form-editar-error" data-registro-id="{{ registro.pk }}">
+                                        <form class="form-editar-error"
+                                              data-registro-id="{{ registro.pk }}"
+                                              data-invalid-fields="{{ registro.invalid_fields|join:',' }}">
                                             <!-- DATOS DEL BENEFICIARIO -->
                                             <h6 class="text-primary mt-2 mb-2">
                                                 <i class="fas fa-child"></i> Beneficiario
@@ -911,39 +928,46 @@
                                                 <div class="col-md-4">
                                                     <label class="form-label">Apellido *</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'apellido' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="apellido"
                                                            value="{{ registro.datos_raw.apellido|default:'' }}"
+                                                           {% if 'apellido' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                            required />
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Nombre *</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'nombre' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="nombre"
                                                            value="{{ registro.datos_raw.nombre|default:'' }}"
+                                                           {% if 'nombre' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                            required />
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Documento *</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'documento' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="documento"
                                                            value="{{ registro.datos_raw.documento|default:'' }}"
+                                                           {% if 'documento' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                            required />
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Fecha Nacimiento *</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'fecha_nacimiento' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="fecha_nacimiento"
                                                            value="{{ registro.datos_raw.fecha_nacimiento|default:'' }}"
                                                            placeholder="DD/MM/YYYY"
+                                                           {% if 'fecha_nacimiento' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                            required />
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Sexo *</label>
-                                                    <select class="form-select" name="sexo" required>
+                                                    <select class="form-select{% if 'sexo' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                            name="sexo"
+                                                            {% if 'sexo' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                            required>
                                                         <option value="">Seleccionar...</option>
                                                         {% for sexo in sexos %}
                                                             <option value="{{ sexo.id }}"
@@ -955,26 +979,30 @@
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Nacionalidad *</label>
-                                                    <select class="form-select" name="nacionalidad" required>
+                                                    <select class="form-select{% if 'nacionalidad' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                            name="nacionalidad"
+                                                            {% if 'nacionalidad' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                            required>
                                                         <option value="">Seleccionar...</option>
-                                                        {% for nac in nacionalidades %}
-                                                            <option value="{{ nac.id }}"
-                                                                    {% if registro.datos_raw.nacionalidad|stringformat:"s" == nac.id|stringformat:"s" or registro.datos_raw.nacionalidad|lower == nac.nacionalidad|lower %}selected{% endif %}>
-                                                                {{ nac.nacionalidad }}
+                                                        {% for nacionalidad in nacionalidades %}
+                                                            <option value="{{ nacionalidad.id }}"
+                                                                    {% if registro.nacionalidad_autocomplete_id|stringformat:"s" == nacionalidad.id|stringformat:"s" %}selected{% endif %}>
+                                                                {{ nacionalidad.nacionalidad }}
                                                             </option>
                                                         {% endfor %}
                                                     </select>
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Municipio *</label>
-                                                    <select class="form-select select-municipio"
+                                                    <select class="form-select select-municipio{% if 'municipio' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                             name="municipio"
                                                             data-registro-id="{{ registro.pk }}"
+                                                            {% if 'municipio' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                             required>
                                                         <option value="">Seleccionar...</option>
                                                         {% for mun in municipios %}
                                                             <option value="{{ mun.id }}"
-                                                                    {% if registro.datos_raw.municipio|stringformat:"s" == mun.id|stringformat:"s" %}selected{% endif %}>
+                                                                    {% if registro.municipio_autocomplete_id|stringformat:"s" == mun.id|stringformat:"s" %}selected{% endif %}>
                                                                 {{ mun.nombre }}
                                                             </option>
                                                         {% endfor %}
@@ -982,9 +1010,10 @@
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Localidad *</label>
-                                                    <select class="form-select select-localidad"
+                                                    <select class="form-select select-localidad{% if 'localidad' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                             name="localidad"
                                                             data-registro-id="{{ registro.pk }}"
+                                                            {% if 'localidad' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                             required>
                                                         <option value="">Seleccionar...</option>
                                                         {% for loc in localidades %}
@@ -999,39 +1028,44 @@
                                                 <div class="col-md-4">
                                                     <label class="form-label">Teléfono</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'telefono' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="telefono"
-                                                           value="{{ registro.datos_raw.telefono|default:'' }}" />
+                                                           value="{{ registro.datos_raw.telefono|default:'' }}"
+                                                           {% if 'telefono' in registro.invalid_fields %}aria-invalid="true"{% endif %} />
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label class="form-label">Email</label>
                                                     <input type="email"
-                                                           class="form-control"
+                                                           class="form-control{% if 'email' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="email"
-                                                           value="{{ registro.datos_raw.email|default:'' }}" />
+                                                           value="{{ registro.datos_raw.email|default:'' }}"
+                                                           {% if 'email' in registro.invalid_fields %}aria-invalid="true"{% endif %} />
                                                 </div>
                                                 <div class="col-md-3">
                                                     <label class="form-label">Calle *</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'calle' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="calle"
                                                            value="{{ registro.datos_raw.calle|default:'' }}"
+                                                           {% if 'calle' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                            required />
                                                 </div>
                                                 <div class="col-md-3">
                                                     <label class="form-label">Altura *</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'altura' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="altura"
                                                            value="{{ registro.datos_raw.altura|default:'' }}"
+                                                           {% if 'altura' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                            required />
                                                 </div>
                                                 <div class="col-md-3">
                                                     <label class="form-label">Código Postal *</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'codigo_postal' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="codigo_postal"
                                                            value="{{ registro.datos_raw.codigo_postal|default:'' }}"
+                                                           {% if 'codigo_postal' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                            required />
                                                 </div>
                                             </div>
@@ -1043,41 +1077,48 @@
                                             </h6>
                                             <div class="row g-2">
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Apellido Responsable *</label>
+                                                    <label class="form-label">Apellido Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'apellido_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="apellido_responsable"
                                                            value="{{ registro.datos_raw.apellido_responsable|default:'' }}"
-                                                           required />
+                                                           {% if 'apellido_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Nombre Responsable *</label>
+                                                    <label class="form-label">Nombre Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'nombre_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="nombre_responsable"
                                                            value="{{ registro.datos_raw.nombre_responsable|default:'' }}"
-                                                           required />
+                                                           {% if 'nombre_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">CUIT/Documento Responsable *</label>
+                                                    <label class="form-label">CUIT/Documento Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'documento_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="documento_responsable"
                                                            value="{{ registro.datos_raw.documento_responsable|default:'' }}"
-                                                           required />
+                                                           {% if 'documento_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Fecha Nac. Responsable *</label>
+                                                    <label class="form-label">Fecha Nac. Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'fecha_nacimiento_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="fecha_nacimiento_responsable"
                                                            value="{{ registro.datos_raw.fecha_nacimiento_responsable|default:'' }}"
                                                            placeholder="DD/MM/YYYY"
-                                                           required />
+                                                           {% if 'fecha_nacimiento_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Sexo Responsable *</label>
-                                                    <select class="form-select" name="sexo_responsable" required>
+                                                    <label class="form-label">Sexo Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <select class="form-select{% if 'sexo_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                            name="sexo_responsable"
+                                                            {% if 'sexo_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                            {% if registro.responsable_requerido %}required{% endif %}>
                                                         <option value="">Seleccionar...</option>
                                                         {% for sexo in sexos %}
                                                             <option value="{{ sexo.id }}"
@@ -1090,28 +1131,34 @@
                                                 <div class="col-md-4">
                                                     <label class="form-label">Teléfono Responsable</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'telefono_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="telefono_responsable"
-                                                           value="{{ registro.datos_raw.telefono_responsable|default:'' }}" />
+                                                           value="{{ registro.datos_raw.telefono_responsable|default:'' }}"
+                                                           {% if 'telefono_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %} />
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label class="form-label">Email Responsable</label>
                                                     <input type="email"
-                                                           class="form-control"
+                                                           class="form-control{% if 'email_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="email_responsable"
-                                                           value="{{ registro.datos_raw.email_responsable|default:'' }}" />
+                                                           value="{{ registro.datos_raw.email_responsable|default:'' }}"
+                                                           {% if 'email_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %} />
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label class="form-label">Domicilio Responsable *</label>
+                                                    <label class="form-label">Domicilio Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'domicilio_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="domicilio_responsable"
                                                            value="{{ registro.datos_raw.domicilio_responsable|default:'' }}"
-                                                           required />
+                                                           {% if 'domicilio_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label class="form-label">Localidad Responsable *</label>
-                                                    <select class="form-select" name="localidad_responsable" required>
+                                                    <label class="form-label">Localidad Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <select class="form-select{% if 'localidad_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                            name="localidad_responsable"
+                                                            {% if 'localidad_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                            {% if registro.responsable_requerido %}required{% endif %}>
                                                         <option value="">Seleccionar...</option>
                                                         {% for loc in localidades %}
                                                             <option value="{{ loc.id }}"
@@ -1622,7 +1669,9 @@
                                     name="nacionalidad"
                                     required>
                                 <option value="">Seleccionar...</option>
-                                {% for nac in nacionalidades %}<option value="{{ nac.id }}">{{ nac.nacionalidad }}</option>{% endfor %}
+                                {% for nacionalidad in nacionalidades %}
+                                    <option value="{{ nacionalidad.id }}">{{ nacionalidad.nacionalidad }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -1822,3 +1871,5 @@
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
     <script src="{% static 'custom/js/legajo_comentarios.js' %}"></script>
 {% endblock %}
+
+

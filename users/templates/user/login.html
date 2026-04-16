@@ -21,11 +21,11 @@
         <link rel="stylesheet" href="{% static 'custom/css/utils.css' %}" />
         <title>Login</title>
     </head>
-    <body>
+    <body class="login-page">
         {% include 'includes/header.html' %}
         <div class="login-container">
             <div class="container">
-                <div class="row vh-100 align-items-center">
+                <div class="row login-row align-items-center">
                     <div class="col-lg-9 col-12 mx-auto">
                         <div class="row align-items-center">
                             <div class="col-md-5 col-12">
@@ -41,37 +41,65 @@
                                         <form method="post" id="form-login" class="mb-3">
                                             {% csrf_token %}
                                             {% if form and form.non_field_errors %}
-                                                <div class="alert alert-danger text-start" role="alert">
+                                                <div id="login-error" class="alert alert-danger text-start" role="alert">
                                                     {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
                                                 </div>
                                             {% endif %}
-                                            <div class="input-group mb-3">
-                                                <span class="input-group-text">
-                                                    <div class="icon-box">
-                                                        <i class="bi bi-person"></i>
+                                            <div class="mb-3">
+                                                <div class="input-group">
+                                                    <span class="input-group-text">
+                                                        <div class="icon-box">
+                                                            <i class="bi bi-person"></i>
+                                                        </div>
+                                                    </span>
+                                                    <input id="id_username"
+                                                           name="username"
+                                                           type="text"
+                                                           class="form-control{% if form.username.errors %} is-invalid{% endif %}"
+                                                           placeholder="Usuario"
+                                                           autofocus
+                                                           aria-label="Username"
+                                                           {% if form and form.non_field_errors %}aria-describedby="login-error"{% endif %}
+                                                           value="{{ form.username.value|default_if_none:'' }}"
+                                                           required />
+                                                </div>
+                                                {% if form.username.errors %}
+                                                    <div class="invalid-feedback d-block text-start">
+                                                        {% for error in form.username.errors %}<div>{{ error }}</div>{% endfor %}
                                                     </div>
-                                                </span>
-                                                <input id="id_username"
-                                                       name="username"
-                                                       type="text"
-                                                       class="form-control"
-                                                       placeholder="Usuario"
-                                                       aria-label="Username" />
+                                                {% endif %}
                                             </div>
-                                            <div class="input-group mb-3">
-                                                <span class="input-group-text">
-                                                    <div class="icon-box">
-                                                        <i class="bi bi-key"></i>
+                                            <div class="mb-3">
+                                                <div class="input-group">
+                                                    <span class="input-group-text">
+                                                        <div class="icon-box">
+                                                            <i class="bi bi-key"></i>
+                                                        </div>
+                                                    </span>
+                                                    <input id="id_password"
+                                                           name="password"
+                                                           type="password"
+                                                           class="form-control{% if form.password.errors %} is-invalid{% endif %}"
+                                                           placeholder="Contraseña"
+                                                           aria-label="Password"
+                                                           {% if form and form.non_field_errors %}aria-describedby="login-error"{% endif %}
+                                                           required />
+                                                </div>
+                                                {% if form.password.errors %}
+                                                    <div class="invalid-feedback d-block text-start">
+                                                        {% for error in form.password.errors %}<div>{{ error }}</div>{% endfor %}
                                                     </div>
-                                                </span>
-                                                <input id="id_password"
-                                                       name="password"
-                                                       type="password"
-                                                       class="form-control"
-                                                       placeholder="Contraseña"
-                                                       aria-label="Password" />
+                                                {% endif %}
                                             </div>
-                                            <button class="btn btn-primary btn-block fw-bold" type="submit">Ingresar</button>
+                                            <button id="login-submit-button"
+                                                    class="btn btn-primary btn-block fw-bold"
+                                                    type="submit">
+                                                <span id="login-submit-spinner"
+                                                      class="spinner-border spinner-border-sm me-2 d-none"
+                                                      role="status"
+                                                      aria-hidden="true"></span>
+                                                <span id="login-submit-text">Ingresar</span>
+                                            </button>
                                             <div class="mt-3">
                                                 <a href="{% url 'password_reset' %}">Olvide mi contraseña</a>
                                             </div>
@@ -127,5 +155,79 @@
         </div>
         {% include "includes/footer.html" %}
         <script src="{% static 'dist/js/adminlte.js' %}"></script>
+        <script nonce="{{ request.csp_nonce }}">
+            document.addEventListener("DOMContentLoaded", function () {
+                const loginForm = document.getElementById("form-login");
+                if (!loginForm) {
+                    return;
+                }
+
+                const usernameField = document.getElementById("id_username");
+                const passwordField = document.getElementById("id_password");
+                const submitButton = document.getElementById("login-submit-button");
+                const submitSpinner = document.getElementById("login-submit-spinner");
+                const submitText = document.getElementById("login-submit-text");
+
+                const normalizeUsername = function () {
+                    if (!usernameField) {
+                        return;
+                    }
+
+                    usernameField.value = usernameField.value.trim();
+                    usernameField.setCustomValidity(
+                        usernameField.value ? "" : "Este campo es obligatorio."
+                    );
+                };
+
+                const validatePassword = function () {
+                    if (!passwordField) {
+                        return;
+                    }
+
+                    passwordField.setCustomValidity(
+                        passwordField.value.trim() ? "" : "Este campo es obligatorio."
+                    );
+                };
+
+                const clearFieldValidity = function (field) {
+                    if (!field) {
+                        return;
+                    }
+
+                    field.setCustomValidity("");
+                };
+
+                if (usernameField) {
+                    usernameField.addEventListener("input", function () {
+                        clearFieldValidity(usernameField);
+                    });
+                }
+
+                if (passwordField) {
+                    passwordField.addEventListener("input", function () {
+                        clearFieldValidity(passwordField);
+                    });
+                }
+
+                loginForm.addEventListener("submit", function () {
+                    normalizeUsername();
+                    validatePassword();
+
+                    if (!loginForm.checkValidity()) {
+                        return;
+                    }
+
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                    }
+                    if (submitSpinner) {
+                        submitSpinner.classList.remove("d-none");
+                    }
+                    if (submitText) {
+                        submitText.textContent = "Ingresando";
+                    }
+                });
+            });
+        </script>
     </body>
 </html>

@@ -1,0 +1,84 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Rendiciones{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <div class="comedor-list-container">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="mb-1">{{ titulo_listado }}</h1>
+            </div>
+        </div>
+        <div class="row mt-5 max-width-100">
+            <div class="col-12">
+                <div class="card comedor-table-card">
+                    <div class="card-body">
+                        <div class="table-responsive-lg">
+                            <table class="table table-comedor-moderno">
+                                <thead>
+                                    <tr>
+                                        <th>Proyecto</th>
+                                        <th>Organización</th>
+                                        <th>Convenio</th>
+                                        <th>Rendición</th>
+                                        <th>Período</th>
+                                        <th>Estado</th>
+                                        <th>Última modificación</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for rendicion in rendiciones_cuentas_mensuales %}
+                                        <tr>
+                                            <td>{{ rendicion.comedor.codigo_de_proyecto|default:"Sin proyecto" }}</td>
+                                            <td>{{ rendicion.comedor.organizacion.nombre|default:"Sin organización" }}</td>
+                                            <td>{{ rendicion.convenio|default:"-" }}</td>
+                                            <td>{{ rendicion.numero_rendicion|default:rendicion.id }}</td>
+                                            <td>
+                                                {% if rendicion.periodo_inicio and rendicion.periodo_fin %}
+                                                    {{ rendicion.periodo_inicio|date:"d/m/Y" }} - {{ rendicion.periodo_fin|date:"d/m/Y" }}
+                                                {% else %}
+                                                    {{ rendicion.mes }}/{{ rendicion.anio }}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if rendicion.estado == 'finalizada' %}
+                                                    <span class="badge-validacion validado">Finalizada</span>
+                                                {% elif rendicion.estado == 'subsanar' %}
+                                                    <span class="badge-validacion no-validado">A subsanar</span>
+                                                {% elif rendicion.estado == 'revision' %}
+                                                    <span class="badge-validacion pendiente">En revisión</span>
+                                                {% else %}
+                                                    <span class="badge-validacion pendiente">En elaboración</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ rendicion.ultima_modificacion|date:"d/m/Y H:i" }}</td>
+                                            <td>
+                                                <div class="comedor-actions">
+                                                    <a href="{% url 'rendicioncuentasmensual_detail' rendicion.id %}"
+                                                       class="btn btn-ver"
+                                                       title="Ver detalle">
+                                                        <i class="fas fa-eye"></i>
+                                                        Ver
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="8">No hay rendiciones registradas.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    </div>
+{% endblock %}

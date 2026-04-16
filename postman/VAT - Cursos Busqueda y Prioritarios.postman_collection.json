@@ -1,0 +1,614 @@
+{
+  "info": {
+    "_postman_id": "5d850da2-a6e9-4b0c-b28c-6fa0d35cf600",
+    "name": "VAT - Cursos Busqueda y Prioritarios",
+    "description": "Coleccion dedicada a ejemplos de uso para los endpoints operativos de cursos VAT: busqueda por texto y listado de cursos prioritarios. Incluye casos felices, filtros combinados y errores esperados.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8001"
+    },
+    {
+      "key": "apiPrefix",
+      "value": "/api"
+    },
+    {
+      "key": "apiKey",
+      "value": ""
+    },
+    {
+      "key": "curso_busqueda_minima",
+      "value": "Her"
+    },
+    {
+      "key": "curso_busqueda_plan",
+      "value": "Admin"
+    },
+    {
+      "key": "curso_busqueda_corta",
+      "value": "He"
+    },
+    {
+      "key": "centro_id",
+      "value": ""
+    },
+    {
+      "key": "provincia_id",
+      "value": ""
+    },
+    {
+      "key": "municipio_id",
+      "value": ""
+    },
+    {
+      "key": "modalidad_id",
+      "value": ""
+    },
+    {
+      "key": "programa_id",
+      "value": ""
+    },
+    {
+      "key": "estado_curso",
+      "value": "activo"
+    },
+    {
+      "key": "curso_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0 - Auxiliares",
+      "description": "Requests opcionales para poblar variables de filtros antes de probar busqueda o prioritarios.",
+      "item": [
+        {
+          "name": "Listar centros activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/centros/?activo=true",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "centros",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('centro_id', String(rows[0].id));",
+                  "  pm.collectionVariables.set('provincia_id', String(rows[0].provincia || ''));",
+                  "  pm.collectionVariables.set('municipio_id', String(rows[0].municipio || ''));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1 - Buscar cursos",
+      "description": "Ejemplos del endpoint GET /api/vat/cursos/buscar/ con casos exitosos y errores esperados.",
+      "item": [
+        {
+          "name": "Listar primera carga sin texto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/buscar/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "buscar",
+                ""
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('La respuesta mantiene paginacion', function () {",
+                  "  pm.expect(body).to.have.property('results');",
+                  "  pm.expect(Array.isArray(body.results)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Buscar por 3 letras minimo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/buscar/?q={{curso_busqueda_minima}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "buscar",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{curso_busqueda_minima}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('La respuesta es paginada', function () {",
+                  "  pm.expect(Array.isArray(rows)).to.eql(true);",
+                  "});",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('curso_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Buscar por texto con centro y estado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/buscar/?q={{curso_busqueda_plan}}&centro_id={{centro_id}}&estado={{estado_curso}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "buscar",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{curso_busqueda_plan}}"
+                },
+                {
+                  "key": "centro_id",
+                  "value": "{{centro_id}}"
+                },
+                {
+                  "key": "estado",
+                  "value": "{{estado_curso}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Buscar por texto con provincia y municipio",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/buscar/?q={{curso_busqueda_minima}}&provincia_id={{provincia_id}}&municipio_id={{municipio_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "buscar",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{curso_busqueda_minima}}"
+                },
+                {
+                  "key": "provincia_id",
+                  "value": "{{provincia_id}}"
+                },
+                {
+                  "key": "municipio_id",
+                  "value": "{{municipio_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Error por faltar q",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/buscar/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "buscar",
+                ""
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Error por menos de 3 letras",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/buscar/?q={{curso_busqueda_corta}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "buscar",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{curso_busqueda_corta}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2 - Cursos prioritarios",
+      "description": "Ejemplos del endpoint GET /api/vat/cursos/prioritarios/ con y sin filtros opcionales.",
+      "item": [
+        {
+          "name": "Listar todos los prioritarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/prioritarios/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "prioritarios",
+                ""
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('La respuesta es paginada', function () {",
+                  "  pm.expect(Array.isArray(rows)).to.eql(true);",
+                  "});",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('curso_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Prioritarios por centro y estado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/prioritarios/?centro_id={{centro_id}}&estado={{estado_curso}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "prioritarios",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "centro_id",
+                  "value": "{{centro_id}}"
+                },
+                {
+                  "key": "estado",
+                  "value": "{{estado_curso}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Prioritarios por provincia y municipio",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/prioritarios/?provincia_id={{provincia_id}}&municipio_id={{municipio_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "prioritarios",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "provincia_id",
+                  "value": "{{provincia_id}}"
+                },
+                {
+                  "key": "municipio_id",
+                  "value": "{{municipio_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Prioritarios por modalidad y programa",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/cursos/prioritarios/?modalidad_id={{modalidad_id}}&programa_id={{programa_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "cursos",
+                "prioritarios",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "modalidad_id",
+                  "value": "{{modalidad_id}}"
+                },
+                {
+                  "key": "programa_id",
+                  "value": "{{programa_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ]
+}

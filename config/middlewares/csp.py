@@ -48,6 +48,7 @@ class ContentSecurityPolicyMiddleware:
             style_src_tokens.append("'unsafe-inline'")
         else:
             style_src_tokens.append(f"'nonce-{request.csp_nonce}'")
+            style_src_tokens.append("'unsafe-inline'")  # Necesario para Select2
 
         # CSP policy que permite recursos del mismo origen, Google Maps API, y Bootstrap CDN
         # `unsafe-inline` en script-src se controla por flag para compatibilidad temporal.
@@ -60,7 +61,9 @@ class ContentSecurityPolicyMiddleware:
             "img-src 'self' data: https: blob:; "
             "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             "connect-src 'self' https://maps.googleapis.com https://app.powerbi.com https://*.ingest.sentry.io; "
-            "frame-src 'self' https://maps.google.com https://www.google.com https://app.powerbi.com; "
+            "frame-src 'self' https://maps.google.com https://www.google.com "
+            "https://app.powerbi.com https://lookerstudio.google.com "
+            "https://datastudio.google.com; "
             "worker-src 'self' blob:; "
             "child-src 'self' blob:; "
             "object-src 'none'; "

@@ -1,0 +1,852 @@
+{
+  "info": {
+    "_postman_id": "be431f6f-36bb-4e98-96f0-cc7428537f7b",
+    "name": "VAT Web - Sectores Subsectores Cursos",
+    "description": "Coleccion para navegar el flujo Sector -> Subsector -> Cursos y validar centros, vouchers e inscripciones usando endpoints VAT Web y los endpoints operativos nuevos de ComisionCurso.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "apiPrefix",
+      "value": "/api"
+    },
+    {
+      "key": "apiKey",
+      "value": ""
+    },
+    {
+      "key": "authHeader",
+      "value": "Api-Key {{apiKey}}"
+    },
+    {
+      "key": "centro_id",
+      "value": ""
+    },
+    {
+      "key": "sector_id",
+      "value": ""
+    },
+    {
+      "key": "subsector_id",
+      "value": ""
+    },
+    {
+      "key": "titulo_id",
+      "value": ""
+    },
+    {
+      "key": "curso_id",
+      "value": ""
+    },
+    {
+      "key": "comision_curso_id",
+      "value": ""
+    },
+    {
+      "key": "programa_id",
+      "value": ""
+    },
+    {
+      "key": "ciudadano_id",
+      "value": ""
+    },
+    {
+      "key": "documento",
+      "value": ""
+    },
+    {
+      "key": "voucher_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0 - Centros",
+      "item": [
+        {
+          "name": "Listar centros activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/centros/?activo=true",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "centros",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('centro_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Buscar centros por q",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/centros/?q=CFP",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "centros",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "CFP"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1 - Sectores",
+      "item": [
+        {
+          "name": "Listar titulos (activo=true)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/titulos/?activo=true",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "titulos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].sector) {",
+                  "  pm.collectionVariables.set('sector_id', String(rows[0].sector));",
+                  "}",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('titulo_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar titulos por sector_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/titulos/?activo=true&sector_id={{sector_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "titulos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                },
+                {
+                  "key": "sector_id",
+                  "value": "{{sector_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].subsector) {",
+                  "  pm.collectionVariables.set('subsector_id', String(rows[0].subsector));",
+                  "}",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('titulo_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2 - Subsectores",
+      "item": [
+        {
+          "name": "Listar titulos por sector_id + subsector_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/titulos/?activo=true&sector_id={{sector_id}}&subsector_id={{subsector_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "titulos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                },
+                {
+                  "key": "sector_id",
+                  "value": "{{sector_id}}"
+                },
+                {
+                  "key": "subsector_id",
+                  "value": "{{subsector_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('titulo_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3 - Cursos y Comisiones de Curso",
+      "item": [
+        {
+          "name": "Listar cursos web por titulo_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/cursos/?titulo_id={{titulo_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "titulo_id",
+                  "value": "{{titulo_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('comision_curso_id', String(rows[0].id));",
+                  "}",
+                  "if (rows.length && rows[0].centro_id) {",
+                  "  pm.collectionVariables.set('centro_id', String(rows[0].centro_id));",
+                  "}",
+                  "if (rows.length && rows[0].titulo_id) {",
+                  "  pm.collectionVariables.set('titulo_id', String(rows[0].titulo_id));",
+                  "}",
+                  "if (rows.length && rows[0].programa_id) {",
+                  "  pm.collectionVariables.set('programa_id', String(rows[0].programa_id));",
+                  "}",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar cursos web por titulo_id + estado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/cursos/?titulo_id={{titulo_id}}&estado=activa",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "titulo_id",
+                  "value": "{{titulo_id}}"
+                },
+                {
+                  "key": "estado",
+                  "value": "activa"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar cursos web por titulo_id + usa_voucher=false",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/cursos/?titulo_id={{titulo_id}}&usa_voucher=false",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "titulo_id",
+                  "value": "{{titulo_id}}"
+                },
+                {
+                  "key": "usa_voucher",
+                  "value": "false"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar cursos web por centro_id + q",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/cursos/?centro_id={{centro_id}}&q=curso",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "centro_id",
+                  "value": "{{centro_id}}"
+                },
+                {
+                  "key": "q",
+                  "value": "curso"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar cursos web por programa_id + usa_voucher=true",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/cursos/?programa_id={{programa_id}}&usa_voucher=true",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "cursos",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "programa_id",
+                  "value": "{{programa_id}}"
+                },
+                {
+                  "key": "usa_voucher",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar comisiones de curso operativas por curso_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/comisiones-curso/?curso_id={{curso_id}}&estado=activa",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "comisiones-curso",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "curso_id",
+                  "value": "{{curso_id}}"
+                },
+                {
+                  "key": "estado",
+                  "value": "activa"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('comision_curso_id', String(rows[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4 - Inscripciones",
+      "item": [
+        {
+          "name": "Consultar vouchers por ciudadano_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/vouchers/por_ciudadano/?ciudadano_id={{ciudadano_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "vouchers",
+                "por_ciudadano",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "ciudadano_id",
+                  "value": "{{ciudadano_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const rows = Array.isArray(body) ? body : (body.results || []);",
+                  "if (rows.length && rows[0].id) {",
+                  "  pm.collectionVariables.set('voucher_id', String(rows[0].id));",
+                  "}",
+                  "if (rows.length && rows[0].programa) {",
+                  "  pm.collectionVariables.set('programa_id', String(rows[0].programa));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar inscripciones por documento",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/inscripciones/?documento={{documento}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "inscripciones",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "documento",
+                  "value": "{{documento}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar inscripciones por ciudadano_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/inscripciones/?ciudadano_id={{ciudadano_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "inscripciones",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "ciudadano_id",
+                  "value": "{{ciudadano_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear inscripcion web por documento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"{{documento}}\",\n  \"comision_curso_id\": {{comision_curso_id}},\n  \"estado\": \"pre_inscripta\",\n  \"observaciones\": \"Alta desde Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/inscripciones/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "inscripciones",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear inscripcion web por ciudadano_id",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ciudadano_id\": {{ciudadano_id}},\n  \"comision_curso_id\": {{comision_curso_id}},\n  \"estado\": \"inscripta\",\n  \"observaciones\": \"Alta desde Postman por ciudadano_id\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/inscripciones/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "inscripciones",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear inscripcion API explicita en /vat/inscripciones-curso/",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ciudadano\": {{ciudadano_id}},\n  \"comision_curso\": {{comision_curso_id}},\n  \"estado\": \"inscripta\",\n  \"origen_canal\": \"api\",\n  \"observaciones\": \"Alta API explicita sobre ComisionCurso\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/inscripciones-curso/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "inscripciones-curso",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar inscripciones API por comision_curso_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/inscripciones-curso/?comision_curso_id={{comision_curso_id}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "inscripciones-curso",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "comision_curso_id",
+                  "value": "{{comision_curso_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

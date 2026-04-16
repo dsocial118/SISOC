@@ -12,7 +12,7 @@ from django.views.generic import (
     TemplateView,
 )
 from django.contrib import messages
-from django.db.models import Q, Count
+from django.db.models import Q
 from django.utils import timezone
 
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -31,6 +31,10 @@ from VAT.forms import (
     ComisionForm,
     ComisionHorarioForm,
     CiudadanoInscripcionRapidaForm,
+)
+from VAT.services.inscripcion_service import (
+    ESTADOS_INSCRIPCION_OCUPAN_CUPO,
+    InscripcionService,
 )
 from VAT.services.access_scope import (
     filter_centros_queryset_for_user,
@@ -70,7 +74,7 @@ class OfertaInstitucionalListView(LoginRequiredMixin, ListView):
         if buscar:
             queryset = queryset.filter(
                 Q(centro__nombre__icontains=buscar)
-                | Q(plan_curricular__titulo_referencia__nombre__icontains=buscar)
+                | Q(plan_curricular__titulos__nombre__icontains=buscar)
                 | Q(nombre_local__icontains=buscar)
             )
 
@@ -119,7 +123,7 @@ class OfertaInstitucionalDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         queryset = OfertaInstitucional.objects.select_related(
-            "centro", "plan_curricular__titulo_referencia", "programa"
+            "centro", "plan_curricular", "programa"
         )
         return filter_ofertas_queryset_for_user(queryset, self.request.user)
 
@@ -162,7 +166,12 @@ class OfertaInstitucionalDeleteView(
     model = OfertaInstitucional
     template_name = "vat/oferta_institucional/oferta_confirm_delete.html"
     context_object_name = "oferta"
-    success_url = reverse_lazy("vat_oferta_institucional_list")
+
+    def get_success_url(self):
+        next_url = self.request.POST.get("next")
+        if next_url:
+            return next_url
+        return reverse_lazy("vat_oferta_institucional_list")
 
     def get_queryset(self):
         queryset = OfertaInstitucional.objects.select_related("centro")
@@ -257,13 +266,44 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         queryset = Comision.objects.select_related(
-            "oferta__centro", "oferta__plan_curricular__titulo_referencia"
+            "oferta__centro", "oferta__plan_curricular"
         )
         return filter_comisiones_queryset_for_user(queryset, self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comision = self.object
+        context["comision_tipo_titulo"] = "Comisión"
+        context["comision_back_url"] = reverse(
+            "vat_centro_detail", kwargs={"pk": comision.oferta.centro_id}
+        )
+        context["comision_edit_url"] = reverse(
+            "vat_comision_update", kwargs={"pk": comision.pk}
+        )
+        context["comision_delete_url"] = reverse(
+            "vat_comision_delete", kwargs={"pk": comision.pk}
+        )
+        context["puede_editar_comision"] = self.request.user.has_perm(
+            "VAT.change_comision"
+        )
+        context["puede_eliminar_comision"] = self.request.user.has_perm(
+            "VAT.delete_comision"
+        )
+        context["comision_subtitle"] = str(comision.oferta)
+        context["unidad_label"] = "Oferta"
+        context["unidad_valor"] = str(comision.oferta)
+        context["unidad_sidebar_title"] = "Oferta asociada"
+        context["unidad_detail_url"] = reverse(
+            "vat_oferta_institucional_detail", kwargs={"pk": comision.oferta_id}
+        )
+        context["unidad_detail_text"] = "Ver oferta"
+        context["inscripcion_estado_url_name"] = "vat_inscripcion_cambiar_estado"
+        context["asistencia_url_name"] = "vat_asistencia_sesion"
+        context["horario_create_url_name"] = "vat_comision_horario_create"
+        context["horario_create_query_param"] = "comision"
+        context["horario_update_url_name"] = "vat_comision_horario_update"
+        context["horario_delete_url_name"] = "vat_comision_horario_delete"
+        context["inscripcion_rapida_url_name"] = "vat_inscripcion_rapida_comision"
         horario_form = ComisionHorarioForm(initial={"comision": comision.id})
         horario_form.fields["comision"].queryset = Comision.objects.filter(
             pk=comision.pk
@@ -282,10 +322,26 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
             .select_related("horario__dia_semana")
             .order_by("fecha", "horario__hora_desde")
         )
-        context["inscripciones"] = list(
+        inscripciones_qs = (
             Inscripcion.objects.filter(comision=comision)
             .select_related("ciudadano", "programa")
             .order_by("estado", "fecha_inscripcion")
+        )
+        inscripciones = list(inscripciones_qs)
+        context["inscripciones"] = [
+            inscripcion
+            for inscripcion in inscripciones
+            if inscripcion.estado != "en_espera"
+        ]
+        context["lista_espera"] = [
+            inscripcion
+            for inscripcion in inscripciones
+            if inscripcion.estado == "en_espera"
+        ]
+        context["cupo_ocupado"] = sum(
+            1
+            for inscripcion in inscripciones
+            if inscripcion.estado in ESTADOS_INSCRIPCION_OCUPAN_CUPO
         )
         context["estado_choices"] = Inscripcion.ESTADO_INSCRIPCION_CHOICES
         return context
@@ -308,17 +364,20 @@ class InscripcionCambiarEstadoView(LoginRequiredMixin, View):
         if nuevo_estado not in estados_validos:
             messages.error(request, "Estado no válido.")
         else:
-            inscripcion.estado = nuevo_estado
-            update_fields = ["estado"]
-            if nuevo_estado == "validada_presencial":
-                inscripcion.fecha_validacion_presencial = timezone.now()
-                update_fields.append("fecha_validacion_presencial")
-            inscripcion.save(update_fields=update_fields)
-            messages.success(
-                request,
-                f"Inscripción de {inscripcion.ciudadano.nombre_completo} "
-                f"actualizada a '{estados_validos[nuevo_estado]}'.",
-            )
+            try:
+                InscripcionService.actualizar_estado_inscripcion(
+                    inscripcion=inscripcion,
+                    nuevo_estado=nuevo_estado,
+                    usuario=request.user,
+                )
+            except ValueError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(
+                    request,
+                    f"Inscripción de {inscripcion.ciudadano.nombre_completo} "
+                    f"actualizada a '{estados_validos[nuevo_estado]}'.",
+                )
         return redirect("vat_comision_detail", pk=inscripcion.comision_id)
 
 
@@ -372,6 +431,10 @@ class AsistenciaSesionView(LoginRequiredMixin, TemplateView):
         context["sesion"] = sesion
         context["filas"] = filas
         context["ya_tomada"] = bool(asistencias_existentes)
+        context["comision_detail_url"] = reverse(
+            "vat_comision_detail", kwargs={"pk": sesion.comision_id}
+        )
+        context["comision_label"] = str(sesion.comision)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -433,7 +496,12 @@ class ComisionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteVi
     model = Comision
     template_name = "vat/oferta_institucional/comision_confirm_delete.html"
     context_object_name = "comision"
-    success_url = reverse_lazy("vat_comision_list")
+
+    def get_success_url(self):
+        next_url = self.request.POST.get("next")
+        if next_url:
+            return next_url
+        return reverse_lazy("vat_comision_list")
 
     def get_queryset(self):
         queryset = Comision.objects.select_related("oferta__centro")

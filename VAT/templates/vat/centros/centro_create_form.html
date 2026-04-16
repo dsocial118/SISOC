@@ -2,8 +2,8 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}Alta de Centro VAT{% endblock %}
-{% block titulo-pagina %}Alta de Centro VAT{% endblock %}
+{% block title %}{{ page_title|default:"Alta de Centro de Formacion" }}{% endblock %}
+{% block titulo-pagina %}{% endblock %}
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
@@ -28,6 +28,14 @@
             font-weight: 700;
         }
 
+        .vp-hero h1 i,
+        .vp-panel-header .card-title i,
+        .vp-panel-header .btn i,
+        .vp-contact-item .btn i,
+        .vp-actions .btn i {
+            margin-right: .5rem;
+        }
+
         .vp-hero p {
             margin: 0;
             max-width: 760px;
@@ -37,7 +45,7 @@
         .vp-panel {
             border: 0;
             border-radius: 18px;
-            overflow: hidden;
+            overflow: visible;
             box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
             margin-bottom: 1rem;
         }
@@ -53,21 +61,33 @@
             gap: .75rem;
         }
 
+        .vp-panel-header > div {
+            display: flex;
+            flex-direction: column;
+            gap: .35rem;
+            min-width: 0;
+        }
+
         .vp-panel-header .card-title {
             color: #ffffff;
             font-weight: 700;
             margin: 0;
+            line-height: 1.2;
         }
 
         .vp-panel-header .text-muted,
         .vp-panel-header .small {
             color: rgba(240, 247, 255, 0.82) !important;
+            display: block;
+            margin: 0;
+            line-height: 1.35;
         }
 
         .vp-section {
             padding: 1.35rem;
             border-bottom: 1px solid rgba(126, 179, 255, 0.2);
             background: linear-gradient(180deg, rgba(14, 31, 53, 0.96) 0%, rgba(18, 38, 64, 0.95) 100%);
+            overflow: visible;
         }
 
         .vp-section:last-child {
@@ -113,6 +133,61 @@
             box-shadow: 0 0 0 .2rem rgba(59, 116, 184, 0.12);
         }
 
+        .vp-field .referente-hidden-select {
+            display: none;
+        }
+
+        .vp-field .referente-search-wrapper {
+            position: relative;
+        }
+
+        .vp-field .referente-search-results {
+            position: absolute;
+            top: calc(100% + .35rem);
+            left: 0;
+            right: 0;
+            z-index: 20;
+            border: 1px solid rgba(126, 179, 255, 0.28);
+            border-radius: 12px;
+            background: rgba(14, 31, 53, 0.98);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+            max-height: 220px;
+            overflow-y: auto;
+            padding: .35rem 0;
+        }
+
+        .vp-field .referente-search-results[hidden] {
+            display: none !important;
+        }
+
+        .vp-field .referente-search-option {
+            display: block;
+            width: 100%;
+            border: 0;
+            background: transparent;
+            color: #dceafe;
+            text-align: left;
+            padding: .55rem .85rem;
+        }
+
+        .vp-field .referente-search-option:hover,
+        .vp-field .referente-search-option:focus {
+            background: rgba(74, 141, 219, 0.18);
+            outline: none;
+        }
+
+        .vp-field .referente-search-empty {
+            color: #c9ddf6;
+            padding: .55rem .85rem;
+        }
+
+        .vp-field .referente-search-error {
+            display: block;
+            margin-top: .35rem;
+            color: #ffb4b4;
+            font-size: .875rem;
+        }
+
         .vp-contact-item {
             border: 1px solid rgba(126, 179, 255, 0.25);
             border-radius: 14px;
@@ -123,6 +198,53 @@
         .vp-contact-item .form-check-label {
             color: #dceafe;
             font-weight: 600;
+        }
+
+        .vp-status-card {
+            margin-top: 1rem;
+            border: 1px solid rgba(126, 179, 255, 0.25);
+            border-radius: 14px;
+            padding: 1rem 1.1rem;
+            background: linear-gradient(180deg, rgba(20, 44, 73, 0.82) 0%, rgba(18, 39, 65, 0.8) 100%);
+        }
+
+        .vp-status-card h4 {
+            margin: 0 0 .35rem;
+            color: #f8fbff;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .vp-status-card p {
+            margin: 0;
+            color: #c9ddf6;
+        }
+
+        .vp-switch {
+            min-height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 1rem 1.1rem;
+            border-radius: 14px;
+            border: 1px solid rgba(126, 179, 255, 0.22);
+            background: rgba(9, 22, 39, 0.28);
+            color: #f8fbff;
+        }
+
+        .vp-switch .form-check-label {
+            color: #f8fbff;
+            font-weight: 600;
+        }
+
+        .vp-switch .form-check-input {
+            margin-right: .65rem;
+        }
+
+        .vp-inline-errors {
+            color: #ffc9c9;
+            margin-top: .35rem;
+            font-size: .875rem;
         }
 
         .vp-actions {
@@ -178,9 +300,8 @@
     <div class="vp-shell">
         <div class="vp-hero">
             <h1>
-                <i class="fas fa-building mr-2"></i>Alta de Institución
+                <i class="fas fa-building mr-2"></i>{{ page_title|default:"Alta de Centro de Formacion" }}
             </h1>
-            <p>Registro inicial del centro VAT con datos institucionales, ubicación, contactos y autoridad responsable.</p>
         </div>
 
         <form method="post"
@@ -210,7 +331,23 @@
                         <div class="col-md-4 vp-field">{{ form.clase_institucion|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.tipo_gestion|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.situacion|as_crispy_field }}</div>
-                        <div class="col-md-6 vp-field">{{ form.referente|as_crispy_field }}</div>
+                        <div class="col-md-6 vp-field">
+                            <div id="div_id_referente" class="form-group">
+                                <label for="id_referente_search" class="requiredField">
+                                    {{ form.referente.label }}<span class="asteriskField">*</span>
+                                </label>
+                                <div class="referente-search-wrapper">
+                                    <input type="search"
+                                           id="id_referente_search"
+                                           class="form-control{% if form.referente.errors %} is-invalid{% endif %}"
+                                           placeholder="Buscar referente por usuario o nombre"
+                                           autocomplete="off" />
+                                    <div id="referente-search-results" class="referente-search-results" hidden></div>
+                                </div>
+                                {{ form.referente }}
+                                {% for error in form.referente.errors %}<span class="referente-search-error">{{ error }}</span>{% endfor %}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -233,9 +370,15 @@
                         <div class="col-md-4 vp-field">{{ form.lote|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.manzana|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.entre_calles|as_crispy_field }}</div>
-                        <div class="col-md-4 vp-field">{{ form.provincia|as_crispy_field }}</div>
-                        <div class="col-md-4 vp-field">{{ form.municipio|as_crispy_field }}</div>
-                        <div class="col-md-4 vp-field">{{ form.localidad|as_crispy_field }}</div>
+                        {% if show_provincia_field|default:True %}
+                            <div class="col-md-4 vp-field">{{ form.provincia|as_crispy_field }}</div>
+                            <div class="col-md-4 vp-field">{{ form.municipio|as_crispy_field }}</div>
+                            <div class="col-md-4 vp-field">{{ form.localidad|as_crispy_field }}</div>
+                        {% else %}
+                            {{ form.provincia }}
+                            <div class="col-md-6 vp-field">{{ form.municipio|as_crispy_field }}</div>
+                            <div class="col-md-6 vp-field">{{ form.localidad|as_crispy_field }}</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -265,7 +408,7 @@
                         <h3 class="card-title">
                             <i class="fas fa-address-book mr-2"></i>3.2 Contactos de la institución
                         </h3>
-                        <div class="small">Podés cargar varios contactos y marcar uno como principal.</div>
+                        <div class="small">Podés cargar responsables o contactos adicionales en la misma tabla institucional.</div>
                     </div>
                     <button type="button"
                             class="btn btn-sm btn-outline-light"
@@ -283,15 +426,10 @@
                                 <div class="row">
                                     <div class="col-md-4 vp-field">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
                                     <div class="col-md-3 vp-field">{{ contacto_form.rol_area|as_crispy_field }}</div>
+                                    <div class="col-md-2 vp-field">{{ contacto_form.documento|as_crispy_field }}</div>
                                     <div class="col-md-2 vp-field">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
                                     <div class="col-md-3 vp-field">{{ contacto_form.email_contacto|as_crispy_field }}</div>
-                                    <div class="col-md-3 d-flex align-items-center">
-                                        <div class="form-group mt-4 pt-2 mb-0">
-                                            {{ contacto_form.es_principal }}
-                                            <label for="{{ contacto_form.es_principal.id_for_label }}" class="ml-2 mb-0">Principal</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 d-flex align-items-center justify-content-end">
+                                    <div class="col-md-12 d-flex align-items-center justify-content-end">
                                         <button type="button"
                                                 class="btn btn-outline-danger btn-sm remove-contacto-btn">
                                             <i class="fas fa-trash mr-1"></i>Quitar
@@ -302,70 +440,73 @@
                             </div>
                         {% endfor %}
                     </div>
-                </div>
-            </div>
-
-            <div class="card vp-panel">
-                <div class="vp-panel-header">
-                    <div>
-                        <h3 class="card-title">
-                            <i class="fas fa-user-tie mr-2"></i>4. Autoridades
-                        </h3>
-                        <div class="small">Datos de la autoridad responsable para el alta inicial.</div>
+                    {% if show_activo_toggle %}
+                        <div class="vp-status-card">
+                            <div class="row align-items-center gy-3">
+                                <div class="col-md-8">
+                                    <h4>4. Estado de la sede</h4>
+                                    <p>Las ediciones conservan el estado actual salvo que cambies este switch de forma explícita.</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="hidden" name="activo_present" value="1" />
+                                    <div class="vp-switch form-check form-switch mb-0">
+                                        {{ form.activo }}
+                                        <label class="form-check-label" for="{{ form.activo.id_for_label }}">{{ form.activo.label }}</label>
+                                    </div>
+                                    {% if form.activo.errors %}<div class="vp-inline-errors">{{ form.activo.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="vp-actions">
+                        <a href="{{ cancel_url }}" class="btn btn-secondary">
+                            <i class="fas fa-times mr-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save mr-1"></i>{{ submit_text|default:"Guardar" }}
+                        </button>
+                        {% if show_save_continue or show_save_continue is None %}
+                            <button type="submit"
+                                    name="save_continue"
+                                    value="1"
+                                    class="btn btn-outline-primary">
+                                <i class="fas fa-arrow-right mr-1"></i>{{ submit_continue_text|default:"Guardar y continuar" }}
+                            </button>
+                        {% endif %}
                     </div>
                 </div>
-                <div class="vp-section">
-                    <div class="row">
-                        <div class="col-md-3 vp-field">{{ form.nombre_referente|as_crispy_field }}</div>
-                        <div class="col-md-3 vp-field">{{ form.apellido_referente|as_crispy_field }}</div>
-                        <div class="col-md-2 vp-field">{{ form.autoridad_dni|as_crispy_field }}</div>
-                        <div class="col-md-2 vp-field">{{ form.telefono_referente|as_crispy_field }}</div>
-                        <div class="col-md-2 vp-field">{{ form.correo_referente|as_crispy_field }}</div>
-                    </div>
-                </div>
-                <div class="vp-actions">
-                    <a href="{{ cancel_url }}" class="btn btn-secondary">
-                        <i class="fas fa-times mr-1"></i>Cancelar
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-1"></i>Guardar
-                    </button>
-                    <button type="submit"
-                            name="save_continue"
-                            value="1"
-                            class="btn btn-outline-primary">
-                        <i class="fas fa-arrow-right mr-1"></i>Guardar y continuar
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
+            </form>
+        </div>
 
-    <template id="contacto-empty-form-template">
-        <div class="vp-contact-item mb-3 contacto-form-item"
-             data-form-index="__prefix__">__FORM_FIELDS__</div>
-    </template>
-{% endblock %}
+        <template id="contacto-empty-form-template">
+            <div class="vp-contact-item mb-3 contacto-form-item"
+                 data-form-index="__prefix__">__FORM_FIELDS__</div>
+        </template>
+    {% endblock %}
 
-{% block customJS %}
-    <script nonce="{{ request.csp_nonce }}">
+    {% block customJS %}
+        <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+        var referenteSearchOptions = [
+            {% for option in form.referente_search_options %}
+                {
+                    id: "{{ option.id|escapejs }}",
+                    username: "{{ option.username|escapejs }}",
+                    label: "{{ option.label|escapejs }}"
+                }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
         var contactoEmptyFormHtml = `{% filter escapejs %}
             {% with contacto_form=contacto_formset.empty_form %}
                 {% for hidden in contacto_form.hidden_fields %}{{ hidden }}{% endfor %}
                 <div class="row">
                     <div class="col-md-4">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
                     <div class="col-md-3">{{ contacto_form.rol_area|as_crispy_field }}</div>
+                    <div class="col-md-2">{{ contacto_form.documento|as_crispy_field }}</div>
                     <div class="col-md-2">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
                     <div class="col-md-3">{{ contacto_form.email_contacto|as_crispy_field }}</div>
-                    <div class="col-md-3 d-flex align-items-center">
-                        <div class="form-group mt-4 pt-2">
-                            {{ contacto_form.es_principal }}
-                            <label for="{{ contacto_form.es_principal.id_for_label }}" class="ml-2">Principal</label>
-                        </div>
-                    </div>
-                    <div class="col-md-3 d-flex align-items-center justify-content-end">
+                    <div class="col-md-12 d-flex align-items-center justify-content-end">
                         <button type="button" class="btn btn-outline-danger btn-sm remove-contacto-btn">
                             <i class="fas fa-trash mr-1"></i>Quitar
                         </button>
@@ -373,6 +514,6 @@
                 </div>
             {% endwith %}
         {% endfilter %}`;
-    </script>
-    <script src="{% static 'custom/js/centro_create_form.js' %}"></script>
-{% endblock %}
+        </script>
+        <script src="{% static 'custom/js/centro_create_form.js' %}"></script>
+    {% endblock %}

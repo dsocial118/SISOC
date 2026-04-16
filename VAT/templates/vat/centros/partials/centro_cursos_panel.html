@@ -1,0 +1,546 @@
+<div data-panel-rendered="1">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0 text-primary">
+                    <i class="fas fa-chalkboard-teacher me-2"></i>
+                    Cursos
+                </h6>
+                <small class="text-muted">Cursos configurados para este centro.</small>
+            </div>
+            {% if perms.VAT.add_curso %}
+                <button type="button"
+                        class="btn btn-sm btn-primary"
+                        title="Nuevo Curso"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalCurso"
+                        data-curso-mode="create">
+                    <i class="fas fa-plus me-1"></i>Nuevo Curso
+                </button>
+            {% endif %}
+        </div>
+        <div class="card-body p-0">
+            {% if cursos %}
+                <div class="p-3 border-bottom bg-body-tertiary">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-sm-7 col-lg-6">
+                            <label for="cursosFilterSearch"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Buscar curso</label>
+                            <input type="search"
+                                   id="cursosFilterSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Ej: auxiliar, diseño o electricidad"
+                                   autocomplete="off" />
+                        </div>
+                        <div class="col-sm-3 col-lg-3">
+                            <label for="cursosFilterEstado"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Estado</label>
+                            <select id="cursosFilterEstado" class="form-select form-select-sm">
+                                <option value="">Todos los estados</option>
+                                <option value="activo">Activo</option>
+                                <option value="planificado">Planificado</option>
+                                <option value="finalizado">Finalizado</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3 col-lg-2">
+                            <label for="cursosFilterPageSize"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Ver</label>
+                            <select id="cursosFilterPageSize" class="form-select form-select-sm">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                                <option value="todos">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-auto">
+                            <button type="button"
+                                    id="cursosFilterClear"
+                                    class="btn btn-outline-secondary btn-sm w-100">Limpiar</button>
+                        </div>
+                    </div>
+                    <div class="text-muted small mt-2" id="cursosFilterSummary">
+                        Mostrando {{ cursos|length }} curso{{ cursos|length|pluralize:"s" }}.
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="tablaCursosCentro">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Plan Curricular</th>
+                                <th>Curso FP</th>
+                                <th>Comisiones</th>
+                                <th>Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for curso in cursos %}
+                                <tr class="curso-row"
+                                    data-curso-id="{{ curso.id }}"
+                                    data-curso-nombre="{{ curso.nombre }}"
+                                    data-curso-plan="{{ curso.plan_estudio_label|default:'' }}"
+                                    data-curso-estado="{{ curso.estado }}"
+                                    tabindex="0"
+                                    role="button"
+                                    aria-label="Seleccionar curso {{ curso.nombre }} para filtrar comisiones">
+                                    <td>{{ curso.plan_estudio_label }}</td>
+                                    <td class="fw-bold">
+                                        {{ curso.nombre }}
+                                        {% if curso.usa_voucher %}
+                                            <span class="badge bg-info ms-1">
+                                                <i class="fas fa-ticket-alt me-1"></i>Voucher
+                                            </span>
+                                        {% endif %}
+                                        {% if curso.inscripcion_libre %}
+                                            <span class="badge bg-success-subtle text-success ms-1">
+                                                <i class="fas fa-users me-1"></i>Inscripción libre
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ curso.comisiones_count }}</td>
+                                    <td>
+                                        <span class="badge {% if curso.estado == 'activo' %}bg-success{% elif curso.estado == 'planificado' %}bg-warning text-dark{% elif curso.estado == 'finalizado' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                            {{ curso.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            {% if perms.VAT.add_comisioncurso %}
+                                                <button type="button"
+                                                        class="btn btn-outline-primary"
+                                                        title="Nueva Comisión"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalComisionCurso"
+                                                        data-comision-curso-mode="create"
+                                                        data-lock-curso="1"
+                                                        data-curso-id="{{ curso.id }}"
+                                                        data-curso-nombre="{{ curso.nombre }}">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            {% endif %}
+                                            {% if perms.VAT.change_curso %}
+                                                <button type="button"
+                                                        class="btn btn-outline-warning btn-editar-curso"
+                                                        title="Editar Curso"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalCurso"
+                                                        data-curso-mode="edit"
+                                                        data-edit-url="{% url 'vat_curso_update' curso.id %}"
+                                                        data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}"
+                                                        data-nombre="{{ curso.nombre }}"
+                                                        data-estado="{{ curso.estado|default:'' }}"
+                                                        data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}"
+                                                        data-inscripcion-libre="{{ curso.inscripcion_libre|yesno:'1,0' }}"
+                                                        data-costo-creditos="{{ curso.costo_creditos|default:'' }}"
+                                                        data-observaciones="{{ curso.observaciones|default:'' }}"
+                                                        data-voucher-ids="{% for voucher in curso.voucher_parametrias.all %}{% if not forloop.first %},{% endif %}{{ voucher.id }}{% endfor %}">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            {% endif %}
+                                            {% if perms.VAT.delete_curso %}
+                                                <a href="{% url 'vat_curso_delete' curso.id %}"
+                                                   class="btn btn-outline-danger"
+                                                   title="Eliminar Curso">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div id="cursosTableEmptyState" class="text-center py-4 text-muted d-none">
+                    <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
+                    <p class="mb-0">No hay cursos que coincidan con los filtros seleccionados.</p>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-chalkboard-teacher fa-2x mb-2 opacity-50"></i>
+                    <p class="mb-0">Sin cursos registrados para este centro.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0 text-primary">
+                    <i class="fas fa-users me-2"></i>
+                    Comisiones de Curso
+                </h6>
+                <small class="text-muted" id="comisionesCursoHint">Comisiones vinculadas a cursos del centro.</small>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if comisiones_curso %}
+                <div class="p-3 border-bottom bg-body-tertiary">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-sm-6 col-lg-5">
+                            <label for="comisionesFilterSearch"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Buscar comisión</label>
+                            <input type="search"
+                                   id="comisionesFilterSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Ej: código, nombre, curso o ubicación"
+                                   autocomplete="off" />
+                        </div>
+                        <div class="col-sm-3 col-lg-3">
+                            <label for="comisionesFilterCurso"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Curso</label>
+                            <select id="comisionesFilterCurso" class="form-select form-select-sm">
+                                <option value="">Todos los cursos</option>
+                                {% for curso in cursos %}<option value="{{ curso.id }}">{{ curso.nombre }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-3 col-lg-2">
+                            <label for="comisionesFilterEstado"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Estado</label>
+                            <select id="comisionesFilterEstado" class="form-select form-select-sm">
+                                <option value="">Todos</option>
+                                <option value="activa">Activa</option>
+                                <option value="planificada">Planificada</option>
+                                <option value="cerrada">Cerrada</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3 col-lg-2">
+                            <label for="comisionesFilterPageSize"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Ver</label>
+                            <select id="comisionesFilterPageSize" class="form-select form-select-sm">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                                <option value="todos">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-auto">
+                            <button type="button"
+                                    id="comisionesFilterClear"
+                                    class="btn btn-outline-secondary btn-sm w-100">Limpiar</button>
+                        </div>
+                    </div>
+                    <div class="text-muted small mt-2" id="comisionesFilterSummary">
+                        Mostrando {{ comisiones_curso|length }} comisión{{ comisiones_curso|length|pluralize:"es" }}.
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="tablaComisionesCursoCentro">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Curso</th>
+                                <th>Ubicación</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
+                                <th>Cupo Total</th>
+                                <th>Estado</th>
+                                <th>Observaciones</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comision in comisiones_curso %}
+                                <tr class="comision-curso-row"
+                                    data-curso-id="{{ comision.curso_id }}"
+                                    data-curso-nombre="{{ comision.curso.nombre }}"
+                                    data-comision-codigo="{{ comision.codigo_comision }}"
+                                    data-comision-nombre="{{ comision.nombre }}"
+                                    data-comision-ubicacion="{{ comision.ubicacion|default:'' }}"
+                                    data-comision-estado="{{ comision.estado }}">
+                                    <td>{{ comision.codigo_comision }}</td>
+                                    <td>{{ comision.nombre }}</td>
+                                    <td>{{ comision.curso.nombre }}</td>
+                                    <td>{{ comision.ubicacion|default:"-" }}</td>
+                                    <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }}</td>
+                                    <td class="text-muted small">{{ comision.fecha_fin|date:"d/m/Y" }}</td>
+                                    <td>{{ comision.cupo_total }}</td>
+                                    <td>
+                                        <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                            {{ comision.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ comision.observaciones|default:"-" }}</td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            {% if perms.VAT.view_comisioncurso %}
+                                                <a href="{% url 'vat_comision_curso_detail' comision.id %}"
+                                                   class="btn btn-outline-info"
+                                                   title="Gestionar Comisión">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            {% endif %}
+                                            {% if perms.VAT.change_comisioncurso %}
+                                                <button type="button"
+                                                        class="btn btn-outline-warning btn-editar-comision-curso"
+                                                        title="Editar Comisión"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalComisionCurso"
+                                                        data-comision-curso-mode="edit"
+                                                        data-edit-url="{% url 'vat_comision_curso_update' comision.id %}"
+                                                        data-curso-id="{{ comision.curso_id }}"
+                                                        data-curso-nombre="{{ comision.curso.nombre }}"
+                                                        data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
+                                                        data-cupo-total="{{ comision.cupo_total }}"
+                                                        data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
+                                                        data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
+                                                        data-estado="{{ comision.estado }}"
+                                                        data-observaciones="{{ comision.observaciones|default:'' }}">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            {% endif %}
+                                            {% if perms.VAT.delete_comisioncurso %}
+                                                <a href="{% url 'vat_comision_curso_delete' comision.id %}"
+                                                   class="btn btn-outline-danger"
+                                                   title="Eliminar Comisión">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div id="comisionesCursoEmptyState"
+                     class="text-center py-4 text-muted d-none">
+                    <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
+                    <p class="mb-0">No hay comisiones que coincidan con los filtros seleccionados.</p>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-users fa-2x mb-2 opacity-50"></i>
+                    <p class="mb-0">No hay comisiones de curso para este centro.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="modal fade"
+         id="modalCurso"
+         tabindex="-1"
+         aria-labelledby="modalCursoLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalCursoLabel">Nuevo Curso</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formCurso"
+                      method="post"
+                      action="{% url 'vat_curso_create' %}?centro={{ centro.id }}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div id="planEstudioSeleccionadoInfo"
+                             class="alert alert-info d-none"
+                             role="status"
+                             aria-live="polite"></div>
+                        <div class="row">
+                            {% for field in curso_form %}
+                                {% if field.is_hidden %}
+                                    {{ field }}
+                                {% elif field.html_name == 'plan_estudio' %}
+                                    <div class="col-12 mb-3">
+                                        <label for="openPlanCurricularSelector" class="form-label fw-bold">
+                                            {{ field.label }}
+                                            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        <div class="d-none">{{ field }}</div>
+                                        <button type="button"
+                                                id="openPlanCurricularSelector"
+                                                class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center">
+                                            <span id="planCurricularSelectorButtonLabel">Seleccionar plan curricular</span>
+                                            <i class="fas fa-table-list"></i>
+                                        </button>
+                                        <div id="planCurricularSelectorSummary" class="small text-muted mt-2">No hay plan curricular seleccionado.</div>
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                    </div>
+                                {% elif field.html_name == 'voucher_parametrias' %}
+                                    <div class="col-12 mb-3">
+                                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                            {{ field.label }}
+                                            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                    </div>
+                                {% else %}
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                            {{ field.label }}
+                                            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade"
+         id="modalPlanCurricularSelector"
+         tabindex="-1"
+         aria-labelledby="modalPlanCurricularSelectorLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalPlanCurricularSelectorLabel">Seleccionar Plan Curricular</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 align-items-end mb-3">
+                        <div class="col-lg-6">
+                            <label for="planCurricularSelectorSearch"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Buscar</label>
+                            <input type="search"
+                                   id="planCurricularSelectorSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Buscar por plan, sector o normativa"
+                                   autocomplete="off" />
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <label for="planCurricularSelectorSector"
+                                   class="form-label small fw-semibold text-uppercase mb-1"
+                                   style="letter-spacing:.05em">Sector</label>
+                            <select id="planCurricularSelectorSector" class="form-select form-select-sm">
+                                <option value="">Todos los sectores</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-responsive border rounded">
+                        <table class="table table-hover align-middle mb-0"
+                               id="tablaPlanCurricularSelector">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Plan Curricular</th>
+                                    <th>Sector</th>
+                                    <th>Modalidad</th>
+                                    <th>Normativa</th>
+                                    <th class="text-end">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for plan in curso_form.plan_estudio.field.queryset %}
+                                    <tr data-plan-selector-row="1"
+                                        data-plan-id="{{ plan.id }}"
+                                        data-plan-label="{% if plan.nombre %}{{ plan.nombre }}{% elif plan.titulo_referencia %}{{ plan.titulo_referencia.nombre }}{% else %}{{ plan.sector.nombre }}{% endif %}"
+                                        data-plan-sector="{{ plan.sector.nombre|default:'' }}"
+                                        data-plan-normativa="{{ plan.normativa|default:'' }}">
+                                        <td class="fw-semibold">
+                                            {% if plan.nombre %}
+                                                {{ plan.nombre }}
+                                            {% elif plan.titulo_referencia %}
+                                                {{ plan.titulo_referencia.nombre }}
+                                            {% else %}
+                                                {{ plan.sector.nombre }}
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ plan.sector.nombre|default:"-" }}</td>
+                                        <td>{{ plan.modalidad_cursada.nombre|default:"-" }}</td>
+                                        <td>{{ plan.normativa|default:"-" }}</td>
+                                        <td class="text-end">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-primary"
+                                                    data-plan-selector-choose="1">Seleccionar</button>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">
+                                            No hay planes curriculares activos disponibles para este centro.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="planCurricularSelectorEmpty"
+                         class="text-center py-4 text-muted d-none">
+                        <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
+                        <p class="mb-0">No hay planes curriculares que coincidan con los filtros.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade"
+         id="modalComisionCurso"
+         tabindex="-1"
+         aria-labelledby="modalComisionCursoLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalComisionCursoLabel">Nueva Comisión de Curso</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formComisionCurso"
+                      method="post"
+                      action="{% url 'vat_comision_curso_create' %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="alert alert-light border small mb-3 d-none"
+                             id="cursoSeleccionadoInfo"></div>
+                        <div class="row">
+                            {% for field in comision_curso_form %}
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                        {{ field.label }}
+                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

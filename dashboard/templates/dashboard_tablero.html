@@ -21,7 +21,7 @@
                         <div class="position-relative">
                             <iframe class="embed-responsive-item"
                                     title="{{ tablero.nombre }}"
-                                    src="{{ tablero.url }}"
+                                    src="{{ tablero.get_embed_url }}"
                                     allowfullscreen
                                     style="position:absolute;
                                            top:0;
@@ -29,6 +29,18 @@
                                            width:100%;
                                            border:0;
                                            min-height:75vh"></iframe>
+                        </div>
+                        <div class="border-top p-3 bg-light">
+                            <a href="{{ tablero.url }}"
+                               class="btn btn-outline-secondary btn-sm"
+                               target="_blank"
+                               rel="noopener noreferrer">Abrir tablero en una pestana nueva</a>
+                            {% if tablero.usa_url_compartible_looker_studio %}
+                                <p class="text-muted small mb-0 mt-2">
+                                    Si Looker Studio sigue bloqueando el iframe, reemplaza esta URL por la generada en
+                                    <strong>File &gt; Embed report</strong>.
+                                </p>
+                            {% endif %}
                         </div>
                     {% else %}
                         <div class="d-flex align-items-center justify-content-center"

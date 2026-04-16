@@ -4,6 +4,7 @@ import sys
 import logging
 import tempfile
 from pathlib import Path
+from urllib.parse import urlsplit
 from django.contrib.messages import constants as messages
 from django.utils.module_loading import import_string
 from dotenv import load_dotenv
@@ -13,9 +14,13 @@ from config.runtime import is_running_tests
 load_dotenv()
 
 # Entorno
+ENVIRONMENT = (
+    os.environ.get("ENVIRONMENT", "dev").strip().lower()
+)  # dev|qa|homologacion|prd
+PRODUCTION_LIKE_ENVIRONMENTS = {"homologacion", "prd"}
+IS_PRODUCTION_LIKE_ENVIRONMENT = ENVIRONMENT in PRODUCTION_LIKE_ENVIRONMENTS
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
-ENVIRONMENT = os.environ.get("ENVIRONMENT", "dev")  # dev|qa|prd
-GESTIONAR_INTEGRATION_ENABLED = ENVIRONMENT == "prd"
+GESTIONAR_INTEGRATION_ENABLED = IS_PRODUCTION_LIKE_ENVIRONMENT
 ENABLE_API_DOCS = True
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -35,11 +40,66 @@ hosts = [
 ]
 ALLOWED_HOSTS = hosts
 
-DEFAULT_SCHEME = "https" if ENVIRONMENT == "prd" else "http"
+DEFAULT_SCHEME = "https" if IS_PRODUCTION_LIKE_ENVIRONMENT else "http"
 
 
 def _to_origin(h: str) -> str:
     return h if h.startswith(("http://", "https://")) else f"{DEFAULT_SCHEME}://{h}"
+
+
+def _normalize_origin(value: str) -> str | None:
+    raw_value = (value or "").strip().rstrip("/")
+    if not raw_value:
+        return None
+
+    candidate = raw_value if "://" in raw_value else _to_origin(raw_value)
+    parsed = urlsplit(candidate)
+    if not parsed.scheme or not parsed.netloc:
+        return None
+
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
+def _extract_hostname(value: str) -> str:
+    candidate = (value or "").strip()
+    if not candidate:
+        return ""
+
+    parsed = urlsplit(candidate if "://" in candidate else f"http://{candidate}")
+    return (parsed.hostname or "").strip().lower()
+
+
+def _is_local_origin_host(host_value: str) -> bool:
+    return _extract_hostname(host_value) in {"localhost", "127.0.0.1", "::1"}
+
+
+def _build_csrf_trusted_origins() -> list[str]:
+    trusted_origins = []
+
+    def _append_origin(candidate: str) -> None:
+        normalized = _normalize_origin(candidate)
+        if normalized and normalized not in trusted_origins:
+            trusted_origins.append(normalized)
+
+    for allowed_host in ALLOWED_HOSTS:
+        _append_origin(allowed_host)
+
+        if _is_local_origin_host(allowed_host):
+            local_host = _extract_hostname(allowed_host)
+            _append_origin(f"http://{local_host}")
+            _append_origin(f"https://{local_host}")
+
+            local_port = os.getenv("DOCKER_DJANGO_PORT_FORWARD", "").strip()
+            if local_port:
+                _append_origin(f"http://{local_host}:{local_port}")
+                _append_origin(f"https://{local_host}:{local_port}")
+
+    _append_origin(os.getenv("DOMINIO", ""))
+
+    for raw_origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(","):
+        _append_origin(raw_origin)
+
+    return trusted_origins
 
 
 def _safe_int_env(var_name: str, default: int) -> int:
@@ -75,7 +135,7 @@ def _safe_bool_env(var_name: str, default: bool) -> bool:
     return default
 
 
-CSRF_TRUSTED_ORIGINS = [_to_origin(h) for h in ALLOWED_HOSTS]
+CSRF_TRUSTED_ORIGINS = _build_csrf_trusted_origins()
 
 # Apps
 INSTALLED_APPS = [
@@ -162,6 +222,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "sentry.context_processors.sentry_frontend",
+                "core.context_processors.footer_version",
             ],
         },
     },
@@ -208,6 +269,15 @@ EMAIL_USE_TLS = _safe_bool_env("EMAIL_USE_TLS", True)
 EMAIL_USE_SSL = _safe_bool_env("EMAIL_USE_SSL", False)
 EMAIL_TIMEOUT = _safe_int_env("EMAIL_TIMEOUT", 10)
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@sisoc.local")
+PWA_WEB_PUSH_PUBLIC_KEY = os.getenv("PWA_WEB_PUSH_PUBLIC_KEY", "").strip()
+PWA_WEB_PUSH_PRIVATE_KEY = os.getenv("PWA_WEB_PUSH_PRIVATE_KEY", "").strip()
+PWA_WEB_PUSH_SUBJECT = os.getenv(
+    "PWA_WEB_PUSH_SUBJECT",
+    f"mailto:{DEFAULT_FROM_EMAIL}",
+).strip()
+PWA_WEB_PUSH_ENABLED = bool(
+    PWA_WEB_PUSH_PUBLIC_KEY and PWA_WEB_PUSH_PRIVATE_KEY and PWA_WEB_PUSH_SUBJECT
+)
 
 email_backend_errors = []
 if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
@@ -233,6 +303,10 @@ if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
 
     if not os.getenv("EMAIL_HOST", "").strip():
         email_backend_errors.append("EMAIL_HOST vacío")
+    if not EMAIL_HOST_USER.strip():
+        email_backend_errors.append("EMAIL_HOST_USER vacío")
+    if not EMAIL_HOST_PASSWORD.strip():
+        email_backend_errors.append("EMAIL_HOST_PASSWORD vacío")
 
 if email_backend_errors:
     settings_logger.warning(
@@ -254,10 +328,11 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # DB
 DB_CONN_MAX_AGE = int(
-    os.getenv("DB_CONN_MAX_AGE", "60" if ENVIRONMENT == "prd" else "0")
+    os.getenv("DB_CONN_MAX_AGE", "60" if IS_PRODUCTION_LIKE_ENVIRONMENT else "0")
 )
 DB_CONN_HEALTH_CHECKS = os.getenv(
-    "DB_CONN_HEALTH_CHECKS", "true" if ENVIRONMENT == "prd" else "false"
+    "DB_CONN_HEALTH_CHECKS",
+    "true" if IS_PRODUCTION_LIKE_ENVIRONMENT else "false",
 ).strip().lower() in ("1", "true", "yes", "on")
 
 DATABASES = {
@@ -367,7 +442,7 @@ if ENVIRONMENT == "qa":
     SENTRY_REPLAY_ENABLED = False
     SENTRY_REPLAYS_SESSION_SAMPLE_RATE = 0.0
     SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE = 0.0
-elif ENVIRONMENT == "prd":
+elif IS_PRODUCTION_LIKE_ENVIRONMENT:
     SENTRY_ERROR_SAMPLE_RATE = 1.0
     SENTRY_TRACES_SAMPLE_RATE = 1.0
     SENTRY_PROFILES_SAMPLE_RATE = 0.0
@@ -547,7 +622,7 @@ if DEBUG and not RUNNING_TESTS:
     SILKY_PYTHON_PROFILER = True
 
 # Seguridad por entorno
-if ENVIRONMENT == "prd":
+if IS_PRODUCTION_LIKE_ENVIRONMENT:
     STORAGES = {
         "default": {
             "BACKEND": "django.core.files.storage.FileSystemStorage",

@@ -558,8 +558,13 @@ body.sidebar-collapse .sidebar-user-name {
   margin-right: 0;
 }
 
-.accordion-header--ubicacion {
-  background-color: #f79d00;
+.accordion-header--informacion {
+  background-color: #0b756d;
+  color: #ffffff;
+}
+
+.accordion-header--informacion {
+  background-color: #66a900;
   color: #ffffff;
 }
 
@@ -761,4 +766,21 @@ body.sidebar-collapse .sidebar-user-name {
 #modalNoValidar .select2-container--focus .select2-selection--multiple {
   border-color: #86b7fe !important;
   box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+/* ============================================
+   BADGE JUDICIALIZADO
+   ============================================ */
+
+.btn-judicializado {
+  background: rgba(198, 40, 40, 0.6);
+  color: white;
+  border: 1px solid #c62828;
+}
+
+.btn-judicializado:hover,
+.btn-judicializado:focus {
+  background: rgba(198, 40, 40, 0.8);
+  color: white;
+  border-color: #b71c1c;
 }

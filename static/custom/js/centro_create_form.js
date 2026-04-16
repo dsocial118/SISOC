@@ -2,9 +2,141 @@ document.addEventListener("DOMContentLoaded", function () {
     var provinciaSelect = document.getElementById("id_provincia");
     var municipioSelect = document.getElementById("id_municipio");
     var localidadSelect = document.getElementById("id_localidad");
+    var referenteSelect = document.getElementById("id_referente");
+    var referenteSearchInput = document.getElementById("id_referente_search");
+    var referenteSearchResults = document.getElementById("referente-search-results");
     var addContactoBtn = document.getElementById("add-contacto-btn");
     var contactosContainer = document.getElementById("contactos-formset");
     var totalFormsInput = document.getElementById("id_contactos-TOTAL_FORMS");
+
+    function getReferenteOptionById(id) {
+        if (!window.referenteSearchOptions || !id) {
+            return null;
+        }
+
+        return window.referenteSearchOptions.find(function (option) {
+            return option.id === String(id);
+        }) || null;
+    }
+
+    function getMatchingReferenteOptions(term) {
+        var normalizedTerm = (term || "").trim().toLowerCase();
+        if (!normalizedTerm || !window.referenteSearchOptions) {
+            return [];
+        }
+
+        return window.referenteSearchOptions.filter(function (option) {
+            return option.username.toLowerCase().includes(normalizedTerm);
+        }).slice(0, 8);
+    }
+
+    function closeReferenteResults() {
+        if (referenteSearchResults) {
+            referenteSearchResults.hidden = true;
+            referenteSearchResults.innerHTML = "";
+        }
+    }
+
+    function selectReferenteOption(option) {
+        if (!referenteSelect || !referenteSearchInput || !option) {
+            return;
+        }
+
+        referenteSelect.value = option.id;
+        referenteSearchInput.value = option.label;
+        referenteSearchInput.setCustomValidity("");
+        closeReferenteResults();
+    }
+
+    function renderReferenteResults(matches) {
+        if (!referenteSearchResults) {
+            return;
+        }
+
+        if (!matches.length) {
+            referenteSearchResults.innerHTML =
+                '<div class="referente-search-empty">No hay usuarios CFP para ese username.</div>';
+            referenteSearchResults.hidden = false;
+            return;
+        }
+
+        referenteSearchResults.innerHTML = matches.map(function (option) {
+            return (
+                '<button type="button" class="referente-search-option" data-referente-id="' +
+                option.id +
+                '">' +
+                option.label +
+                "</button>"
+            );
+        }).join("");
+        referenteSearchResults.hidden = false;
+
+        referenteSearchResults.querySelectorAll(".referente-search-option").forEach(function (button) {
+            button.addEventListener("click", function () {
+                var option = getReferenteOptionById(button.dataset.referenteId);
+                selectReferenteOption(option);
+            });
+        });
+    }
+
+    function syncReferenteSelectFromSearch() {
+        if (!referenteSelect || !referenteSearchInput) {
+            return;
+        }
+
+        var searchTerm = referenteSearchInput.value;
+        if (!searchTerm.trim()) {
+            referenteSelect.value = "";
+            referenteSearchInput.setCustomValidity("");
+            closeReferenteResults();
+            return;
+        }
+
+        referenteSelect.value = "";
+        referenteSearchInput.setCustomValidity("");
+        renderReferenteResults(getMatchingReferenteOptions(searchTerm));
+    }
+
+    function syncReferenteSearchFromSelect() {
+        if (!referenteSelect || !referenteSearchInput) {
+            return;
+        }
+
+        var selectedOption = referenteSelect.options[referenteSelect.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            referenteSearchInput.value = selectedOption.textContent.trim();
+        } else {
+            referenteSearchInput.value = "";
+        }
+        referenteSearchInput.setCustomValidity("");
+        closeReferenteResults();
+    }
+
+    if (referenteSelect && referenteSearchInput) {
+        syncReferenteSearchFromSelect();
+        referenteSearchInput.addEventListener("input", syncReferenteSelectFromSearch);
+        referenteSearchInput.addEventListener("focus", function () {
+            if (referenteSearchInput.value.trim() && !referenteSelect.value) {
+                renderReferenteResults(
+                    getMatchingReferenteOptions(referenteSearchInput.value)
+                );
+            }
+        });
+        referenteSearchInput.addEventListener("blur", function () {
+            window.setTimeout(closeReferenteResults, 150);
+        });
+        referenteSelect.form.addEventListener("submit", function (event) {
+            if (!referenteSelect.value) {
+                referenteSearchInput.setCustomValidity(
+                    "Seleccioná un referente válido de la lista."
+                );
+                referenteSearchInput.reportValidity();
+                event.preventDefault();
+            } else {
+                referenteSearchInput.setCustomValidity("");
+            }
+        });
+    }
 
     function buildEmptyOption(label) {
         var option = document.createElement("option");

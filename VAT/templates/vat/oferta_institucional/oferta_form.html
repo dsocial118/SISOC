@@ -22,7 +22,7 @@
                             {% if form.instance.id %}
                                 <i class="bi bi-pencil-square me-2"></i>Editar Oferta Institucional
                             {% else %}
-                                <i class="bi bi-plus-circle me-2"></i>Nueva Oferta Institucional
+                                <i class="bi bi-plus-circle me-2"></i>Nueva Oferta Materia
                             {% endif %}
                         </h1>
                     </div>
@@ -41,6 +41,7 @@
                     <div class="card-body p-4">
                         <form method="post" novalidate>
                             {% csrf_token %}
+                            {{ form.plan_curricular }}
                             <div class="row mb-4">
                                 <div class="col-md-6">
                                     <label for="{{ form.centro.id_for_label }}" class="form-label fw-600">
@@ -53,16 +54,16 @@
                                     {% if form.centro.errors %}<div class="text-danger small mt-1">{{ form.centro.errors.0 }}</div>{% endif %}
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="{{ form.plan_curricular.id_for_label }}"
+                                    <label for="{{ form.titulo_referencia.id_for_label }}"
                                            class="form-label fw-600">
-                                        {{ form.plan_curricular.label }} <span class="text-danger">*</span>
+                                        {{ form.titulo_referencia.label }} <span class="text-danger">*</span>
                                     </label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-0"><i class="bi-journal-bookmark" style="color: #1f3a93;"></i></span>
-                                        {{ form.plan_curricular }}
+                                        {{ form.titulo_referencia }}
                                     </div>
-                                    {% if form.plan_curricular.errors %}
-                                        <div class="text-danger small mt-1">{{ form.plan_curricular.errors.0 }}</div>
+                                    {% if form.titulo_referencia.errors %}
+                                        <div class="text-danger small mt-1">{{ form.titulo_referencia.errors.0 }}</div>
                                     {% endif %}
                                 </div>
                             </div>
@@ -123,6 +124,17 @@
                                         {% if form.usa_voucher.help_text %}<div class="form-text text-muted">{{ form.usa_voucher.help_text }}</div>{% endif %}
                                     </div>
                                 </div>
+                                <div class="col-md-5" id="campo-vouchers" style="display:none">
+                                    <label for="{{ form.voucher_parametrias.id_for_label }}"
+                                           class="form-label fw-600">{{ form.voucher_parametrias.label }}</label>
+                                    {{ form.voucher_parametrias }}
+                                    {% if form.voucher_parametrias.help_text %}
+                                        <div class="form-text text-muted">{{ form.voucher_parametrias.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.voucher_parametrias.errors %}
+                                        <div class="text-danger small mt-1">{{ form.voucher_parametrias.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
                                 <div class="col-md-3" id="campo-costo" style="display:none">
                                     <label for="{{ form.costo.id_for_label }}" class="form-label fw-600">{{ form.costo.label }}</label>
                                     <div class="input-group">
@@ -178,7 +190,7 @@
                             <i class="bi bi-info-circle me-2"></i>Información
                         </h6>
                         <div class="small text-muted">
-                            <p>Oferta educativa basada en un plan curricular para un ciclo lectivo.</p>
+                            <p>Oferta educativa basada en un plan de estudio para un ciclo lectivo.</p>
                         </div>
                     </div>
                 </div>
@@ -194,16 +206,48 @@
     <script nonce="{{ request.csp_nonce }}">
 (function () {
     const toggle = document.getElementById('{{ form.usa_voucher.id_for_label }}');
+    const programaSelect = document.getElementById('{{ form.programa.id_for_label }}');
+    const vouchersSelect = document.getElementById('{{ form.voucher_parametrias.id_for_label }}');
     const campoCosto = document.getElementById('campo-costo');
+    const campoVouchers = document.getElementById('campo-vouchers');
+
+    function filtrarVouchersPorPrograma() {
+        if (!programaSelect || !vouchersSelect) return;
+        const programaId = programaSelect.value;
+        Array.from(vouchersSelect.options).forEach(function (option) {
+            const optionProgramaId = option.getAttribute('data-programa-id');
+            const visible = !programaId || optionProgramaId === programaId;
+            option.hidden = !visible;
+            option.disabled = !visible;
+            if (!visible) {
+                option.selected = false;
+            }
+        });
+    }
 
     function actualizarCosto() {
         campoCosto.style.display = toggle.checked ? 'block' : 'none';
+        campoVouchers.style.display = toggle.checked ? 'block' : 'none';
         if (!toggle.checked) {
             campoCosto.querySelector('input').value = '0';
+            if (vouchersSelect) {
+                Array.from(vouchersSelect.options).forEach(function (option) {
+                    option.selected = false;
+                });
+            }
+        } else {
+            filtrarVouchersPorPrograma();
         }
     }
 
     toggle.addEventListener('change', actualizarCosto);
+    if (programaSelect) {
+        programaSelect.addEventListener('change', function () {
+            if (toggle.checked) {
+                filtrarVouchersPorPrograma();
+            }
+        });
+    }
     actualizarCosto();  // estado inicial al cargar
 })();
     </script>
