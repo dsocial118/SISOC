@@ -94,7 +94,10 @@ class Migration(migrations.Migration):
                     ("MENOR_SIN_DOCUMENTO", "Menor de edad sin documento tramitado"),
                     ("EXTRANJERO_SIN_DNI", "Extranjero sin DNI argentino"),
                     ("DOCUMENTO_EXTRAVIADO", "Documento extraviado o en trámite"),
-                    ("VULNERABILIDAD_EXTREMA", "Víctima de violencia / vulnerabilidad extrema"),
+                    (
+                        "VULNERABILIDAD_EXTREMA",
+                        "Víctima de violencia / vulnerabilidad extrema",
+                    ),
                     ("OTRO", "Otro"),
                 ],
                 null=True,
@@ -112,14 +115,35 @@ class Migration(migrations.Migration):
             field=models.CharField(
                 max_length=30,
                 choices=[
-                    ("ERROR_TRANSCRIPCION", "Errores en la transcripción de datos manuales"),
-                    ("RENAPER_DESACTUALIZADO", "Cambios recientes en RENAPER aún no reflejados"),
+                    (
+                        "ERROR_TRANSCRIPCION",
+                        "Errores en la transcripción de datos manuales",
+                    ),
+                    (
+                        "RENAPER_DESACTUALIZADO",
+                        "Cambios recientes en RENAPER aún no reflejados",
+                    ),
                     ("DOC_NO_ACTUALIZADA", "Documentación del usuario no actualizada"),
-                    ("ERROR_TIPOGRAFICO", "Errores tipográficos en el ingreso de datos"),
-                    ("MULTIPLES_IDENTIDADES", "Personas con múltiples identidades o nombres"),
-                    ("CAMBIO_NOMBRE_LEGAL", "Cambios de nombre legal no registrados en RENAPER"),
-                    ("DIFERENCIA_FORMATO_NOMBRE", "Diferencias en el formato o tipo de nombre"),
-                    ("DISCREPANCIA_FECHA_NACIMIENTO", "Discrepancias en fechas de nacimiento o partidas"),
+                    (
+                        "ERROR_TIPOGRAFICO",
+                        "Errores tipográficos en el ingreso de datos",
+                    ),
+                    (
+                        "MULTIPLES_IDENTIDADES",
+                        "Personas con múltiples identidades o nombres",
+                    ),
+                    (
+                        "CAMBIO_NOMBRE_LEGAL",
+                        "Cambios de nombre legal no registrados en RENAPER",
+                    ),
+                    (
+                        "DIFERENCIA_FORMATO_NOMBRE",
+                        "Diferencias en el formato o tipo de nombre",
+                    ),
+                    (
+                        "DISCREPANCIA_FECHA_NACIMIENTO",
+                        "Discrepancias en fechas de nacimiento o partidas",
+                    ),
                     ("OTRO", "Otro"),
                 ],
                 null=True,
