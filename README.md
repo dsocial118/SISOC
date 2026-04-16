@@ -48,15 +48,15 @@ Cada aplicación del repositorio representa un módulo funcional (ej. `comedores
 
 1. Clonar el repositorio:
    ```bash
-   git clone https://github.com/dsocial118/BACKOFFICE.git
-   cd BACKOFFICE
+   git clone https://github.com/dsocial118/SISOC.git
+   cd SISOC
    ```
 2. (Opcional) Colocar un dump en `./docker/mysql/local-dump.sql`.  
 3. Levantar servicios:
    ```bash
    docker compose up
    ```
-4. Acceder a la app en [http://localhost:8000](http://localhost:8000).
+4. Acceder a la app en [http://localhost:8001](http://localhost:8001) (valor por defecto de `DOCKER_DJANGO_PORT_FORWARD` en `.env.example`).
 
 `docker-compose.yml` queda reservado para desarrollo/local y es el unico compose versionado que levanta `mysql`.
 
@@ -105,7 +105,7 @@ djlint . --configuration=.djlintrc --reformat
 
 ## Variables de Entorno
 
-Ejemplo en [.env.example](https://github.com/dsocial118/BACKOFFICE/blob/development/.env.example):
+Ejemplo en `.env.example` del repositorio.
 
 ---
 
@@ -152,7 +152,8 @@ No es la mejor documentacion. En caso de dudas, consultar con Juani (Tech lead d
 
 Ejemplo de request:
 ```bash
-curl -X GET http://localhost:8000/api/comedores/      -H "Authorization: Bearer <API_KEY>"
+curl -X GET http://localhost:8001/api/comedores/ \
+  -H "Authorization: Api-Key <API_KEY>"
 ```
 
 ---
@@ -194,7 +195,7 @@ docker compose -f docker-compose.deploy.yml up -d --build
 
 ## Changelog
 
-[CHANGELOG.md](https://github.com/dsocial118/BACKOFFICE/blob/development/CHANGELOG.md)
+`CHANGELOG.md`
 
 Los usuarios del sistema pueden consultar las novedades desde la opción **"Novedades del sistema"** en el menú lateral del backoffice.
 
