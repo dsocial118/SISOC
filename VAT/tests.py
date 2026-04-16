@@ -3634,6 +3634,102 @@ def test_comision_curso_update_view_renderiza_formulario(client, vat_curso_base)
 
 
 @pytest.mark.django_db
+@override_settings(ROOT_URLCONF="VAT.urls")
+def test_curso_update_ajax_invalido_devuelve_json_y_no_persiste(client, vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    sector = Sector.objects.create(nombre="Sector AJAX Curso")
+    plan = PlanVersionCurricular.objects.create(
+        nombre="Plan AJAX Curso",
+        provincia=centro.provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    user = User.objects.create_superuser(
+        username="admin-curso-ajax-update",
+        email="admin-curso-ajax-update@vat.test",
+        password="test1234",
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        plan_estudio=plan,
+        modalidad=modalidad,
+        nombre="Curso AJAX",
+        estado="planificado",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_curso_update", kwargs={"pk": curso.pk}),
+        data={
+            "nombre": "Curso AJAX editado",
+            "estado": "activo",
+            "costo_creditos": "0",
+            "observaciones": "No deberia persistir",
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+    curso.refresh_from_db()
+    payload = response.json()
+
+    assert response.status_code == 400
+    assert payload["ok"] is False
+    assert "plan_estudio" in payload["errors"]
+    assert curso.nombre == "Curso AJAX"
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="VAT.urls")
+def test_comision_curso_update_ajax_invalido_devuelve_json_y_no_persiste(
+    client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    user = User.objects.create_superuser(
+        username="admin-comision-ajax-update",
+        email="admin-comision-ajax-update@vat.test",
+        password="test1234",
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        modalidad=modalidad,
+        nombre="Curso AJAX Comision",
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="planificada",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk}),
+        data={
+            "curso": str(curso.pk),
+            "ubicacion": str(ubicacion.pk),
+            "cupo_total": 20,
+            "fecha_inicio": "2026-04-30",
+            "fecha_fin": "2026-04-01",
+            "estado": "planificada",
+            "observaciones": "No deberia persistir",
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+    comision.refresh_from_db()
+    payload = response.json()
+
+    assert response.status_code == 400
+    assert payload["ok"] is False
+    assert payload["errors"]["fecha_fin"][0] == (
+        "La fecha de fin debe ser mayor o igual a la fecha de inicio."
+    )
+    assert comision.fecha_inicio == date(2026, 4, 1)
+
+
+@pytest.mark.django_db
 def test_comision_curso_no_permite_ubicacion_de_otro_centro(vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Semipresencial", activo=True)
@@ -4020,6 +4116,39 @@ def test_curso_form_filtra_plan_estudio_por_provincia_del_centro(vat_curso_base)
             "provincia_id", flat=True
         )
     )
+
+
+@pytest.mark.django_db
+def test_centro_cursos_panel_context_incluye_plan_actual_inactivo_para_edicion(
+    vat_curso_base,
+):
+    centro, _, modalidad = vat_curso_base
+    sector = Sector.objects.create(nombre="Sector Legacy")
+    plan_inactivo = PlanVersionCurricular.objects.create(
+        nombre="Plan Inactivo Legacy",
+        provincia=centro.provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=False,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        plan_estudio=plan_inactivo,
+        modalidad=modalidad,
+        nombre="Curso Legacy",
+        estado="planificado",
+    )
+
+    context = centro_views._build_cursos_panel_context(
+        RequestFactory().get("/"), centro
+    )
+    plan_ids = set(
+        context["curso_form"]
+        .fields["plan_estudio"]
+        .queryset.values_list("id", flat=True)
+    )
+
+    assert curso.plan_estudio_id in plan_ids
 
 
 @pytest.mark.django_db

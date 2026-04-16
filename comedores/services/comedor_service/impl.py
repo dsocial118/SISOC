@@ -1155,12 +1155,16 @@ class ComedorService:
             return ciudadano
         # Fallback: si el backfill aún no corrió o el registro es previo a Fase 1,
         # buscar por documento directo prefiriendo ESTANDAR.
-        return (
-            Ciudadano.objects.filter(
-                tipo_documento=Ciudadano.DOCUMENTO_DNI, documento=int(dni_str)
-            )
-            .order_by("tipo_registro_identidad")
-            .first()
+        ciudadano = Ciudadano.objects.filter(
+            tipo_documento=Ciudadano.DOCUMENTO_DNI,
+            documento=int(dni_str),
+            tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR,
+        ).first()
+        if ciudadano:
+            return ciudadano
+        return Ciudadano.objects.filter(
+            tipo_documento=Ciudadano.DOCUMENTO_DNI,
+            documento=int(dni_str),
         )
 
     @staticmethod

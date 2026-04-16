@@ -162,13 +162,16 @@ class CiudadanoService:
         ciudadano = Ciudadano.objects.filter(documento_unico_key=doc_key).first()
         if ciudadano is None:
             # Fallback: backfill no corrió aún o registro previo a Fase 1.
-            ciudadano = (
-                Ciudadano.objects.filter(
-                    tipo_documento=tipo_documento, documento=documento
-                )
-                .order_by("tipo_registro_identidad")
-                .first()
-            )
+            ciudadano = Ciudadano.objects.filter(
+                tipo_documento=tipo_documento,
+                documento=documento,
+                tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR,
+            ).first()
+        if ciudadano is None:
+            ciudadano = Ciudadano.objects.filter(
+                tipo_documento=tipo_documento,
+                documento=documento,
+            ).first()
 
         created = False
         if ciudadano is None:

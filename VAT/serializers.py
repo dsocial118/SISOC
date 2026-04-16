@@ -1170,7 +1170,11 @@ def _extraer_datos_postulante(attrs):
     return parsed if isinstance(parsed, dict) else None
 
 
-def _extraer_documento_postulante(datos_postulante):
+def _raise_datos_postulante_error(detail):
+    raise serializers.ValidationError({"datos_postulante": detail})
+
+
+def _normalizar_documento_postulante(datos_postulante):
     documento_explicitado = str(datos_postulante.get("documento") or "").strip()
     cuil = str(datos_postulante.get("cuil") or "").strip()
     usa_cuil_como_documento = not documento_explicitado and bool(cuil)
@@ -1185,9 +1189,26 @@ def _resolver_tipo_documento_postulante(datos_postulante):
         datos_postulante.get("tipo_documento") or Ciudadano.DOCUMENTO_DNI
     ).strip()
     tipos_validos = {valor for valor, _ in Ciudadano.DOCUMENTO_CHOICES}
-    return (
-        tipo_documento if tipo_documento in tipos_validos else Ciudadano.DOCUMENTO_DNI
+    if tipo_documento in tipos_validos:
+        return tipo_documento
+    return Ciudadano.DOCUMENTO_DNI
+
+
+def _resolver_identidad_postulante(datos_postulante):
+    nombre = (datos_postulante.get("nombre") or "").strip()
+    apellido = (datos_postulante.get("apellido") or "").strip()
+    documento, usa_cuil_como_documento = _normalizar_documento_postulante(
+        datos_postulante
     )
+    _validar_datos_postulante(nombre, apellido, documento)
+
+    return {
+        "nombre": nombre,
+        "apellido": apellido,
+        "documento": documento,
+        "tipo_documento": _resolver_tipo_documento_postulante(datos_postulante),
+        "usa_cuil_como_documento": usa_cuil_como_documento,
+    }
 
 
 def _validar_datos_postulante(nombre, apellido, documento):
@@ -1199,75 +1220,63 @@ def _validar_datos_postulante(nombre, apellido, documento):
     if not documento:
         errores["documento"] = "Debe informar el documento o cuil del postulante."
     elif not documento.isdigit():
-        errores["documento"] = "El documento del postulante debe ser num\u00e9rico."
+        errores["documento"] = "El documento del postulante debe ser numérico."
 
     if errores:
-        raise serializers.ValidationError({"datos_postulante": errores})
+        _raise_datos_postulante_error(errores)
 
 
-def _resolver_fecha_y_observaciones_postulante(
-    datos_postulante,
-    usa_cuil_como_documento,
-):
-    fecha_nacimiento = date(1900, 1, 1)
-    observaciones = [
-        "Ciudadano creado autom\u00e1ticamente desde inscripci\u00f3n libre web."
-    ]
+def _resolver_fecha_nacimiento_postulante(datos_postulante):
     fecha_nacimiento_raw = datos_postulante.get("fecha_nacimiento")
-
-    if fecha_nacimiento_raw:
-        try:
-            fecha_nacimiento = serializers.DateField().run_validation(
-                fecha_nacimiento_raw
-            )
-        except serializers.ValidationError as exc:
-            raise serializers.ValidationError(
-                {"datos_postulante": {"fecha_nacimiento": exc.detail}}
-            ) from exc
-    else:
-        observaciones.append(
-            "Fecha de nacimiento no informada; se asign\u00f3 1900-01-01 para habilitar la inscripci\u00f3n operativa."
+    if not fecha_nacimiento_raw:
+        return (
+            date(1900, 1, 1),
+            [
+                "Fecha de nacimiento no informada; se asignó 1900-01-01 para "
+                "habilitar la inscripción operativa."
+            ],
         )
 
-    if usa_cuil_como_documento:
-        observaciones.append(
-            "Se tom\u00f3 el CUIL informado como documento para el alta autom\u00e1tica."
-        )
+    try:
+        fecha_nacimiento = serializers.DateField().run_validation(fecha_nacimiento_raw)
+    except serializers.ValidationError as exc:
+        _raise_datos_postulante_error({"fecha_nacimiento": exc.detail})
 
-    return fecha_nacimiento, observaciones
+    return fecha_nacimiento, []
 
 
 def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario=None):
     if not isinstance(datos_postulante, dict):
-        raise serializers.ValidationError(
-            {"datos_postulante": "Debe enviar un objeto con los datos del postulante."}
+        _raise_datos_postulante_error(
+            "Debe enviar un objeto con los datos del postulante."
         )
 
-    nombre = (datos_postulante.get("nombre") or "").strip()
-    apellido = (datos_postulante.get("apellido") or "").strip()
-    documento, usa_cuil_como_documento = _extraer_documento_postulante(datos_postulante)
-    tipo_documento = _resolver_tipo_documento_postulante(datos_postulante)
-    _validar_datos_postulante(nombre, apellido, documento)
-
-    documento_int = int(documento)
+    identidad = _resolver_identidad_postulante(datos_postulante)
+    documento_int = int(identidad["documento"])
     ciudadano_existente = Ciudadano.objects.filter(
-        tipo_documento=tipo_documento,
+        tipo_documento=identidad["tipo_documento"],
         documento=documento_int,
     ).first()
     if ciudadano_existente:
         return ciudadano_existente
 
-    fecha_nacimiento, observaciones = _resolver_fecha_y_observaciones_postulante(
-        datos_postulante,
-        usa_cuil_como_documento,
+    fecha_nacimiento, observaciones_adicionales = _resolver_fecha_nacimiento_postulante(
+        datos_postulante
     )
+    observaciones = ["Ciudadano creado automáticamente desde inscripción libre web."]
+    observaciones.extend(observaciones_adicionales)
+    if identidad["usa_cuil_como_documento"]:
+        observaciones.append(
+            "Se tomó el CUIL informado como documento para el alta automática."
+        )
+
     usuario_auditoria = usuario if getattr(usuario, "is_authenticated", False) else None
 
     return Ciudadano.objects.create(
-        apellido=apellido,
-        nombre=nombre,
+        apellido=identidad["apellido"],
+        nombre=identidad["nombre"],
         fecha_nacimiento=fecha_nacimiento,
-        tipo_documento=tipo_documento,
+        tipo_documento=identidad["tipo_documento"],
         documento=documento_int,
         telefono=(datos_postulante.get("telefono") or "").strip() or None,
         email=(datos_postulante.get("email") or "").strip() or None,

@@ -1,8 +1,31 @@
 from django import forms
+from django.core.cache import cache
 from django.db.models import Q
 
 from core.models import Localidad, Municipio, Provincia
 from ciudadanos.models import Ciudadano, GrupoFamiliar
+
+PROVINCIA_FILTER_CHOICES_CACHE_KEY = "ciudadanos:filtro:provincias:v1"
+PROVINCIA_FILTER_CHOICES_CACHE_TTL = 60 * 60
+
+
+def get_cached_provincia_filter_choices():
+    """Devuelve choices cacheados para evitar reconstruir la lista por request."""
+
+    cached_choices = cache.get(PROVINCIA_FILTER_CHOICES_CACHE_KEY)
+    if cached_choices is not None:
+        return cached_choices
+
+    cached_choices = [
+        (str(provincia.id), provincia.nombre)
+        for provincia in Provincia.objects.only("id", "nombre").order_by("nombre")
+    ]
+    cache.set(
+        PROVINCIA_FILTER_CHOICES_CACHE_KEY,
+        cached_choices,
+        PROVINCIA_FILTER_CHOICES_CACHE_TTL,
+    )
+    return cached_choices
 
 
 class CiudadanoForm(forms.ModelForm):
@@ -129,11 +152,18 @@ class CiudadanoForm(forms.ModelForm):
         tipo = cleaned.get("tipo_registro_identidad", Ciudadano.TIPO_REGISTRO_ESTANDAR)
 
         if tipo == Ciudadano.TIPO_REGISTRO_ESTANDAR:
+            cleaned["motivo_sin_dni"] = None
+            cleaned["motivo_sin_dni_descripcion"] = ""
+            cleaned["motivo_no_validacion_renaper"] = None
+            cleaned["motivo_no_validacion_descripcion"] = ""
             for field in ("apellido", "nombre", "fecha_nacimiento", "documento"):
                 if not cleaned.get(field):
                     self.add_error(field, "Este campo es obligatorio.")
 
         elif tipo == Ciudadano.TIPO_REGISTRO_SIN_DNI:
+            cleaned["documento"] = None
+            cleaned["motivo_no_validacion_renaper"] = None
+            cleaned["motivo_no_validacion_descripcion"] = ""
             if not cleaned.get("motivo_sin_dni"):
                 self.add_error(
                     "motivo_sin_dni",
@@ -141,6 +171,8 @@ class CiudadanoForm(forms.ModelForm):
                 )
 
         elif tipo == Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO:
+            cleaned["motivo_sin_dni"] = None
+            cleaned["motivo_sin_dni_descripcion"] = ""
             if not cleaned.get("documento"):
                 self.add_error(
                     "documento", "El DNI es obligatorio para este tipo de registro."
@@ -254,8 +286,11 @@ class CiudadanoFiltroForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={"placeholder": "Nombre o documento"}),
     )
-    provincia = forms.ModelChoiceField(
-        queryset=Provincia.objects.all(), required=False, empty_label="Todas"
+    provincia = forms.TypedChoiceField(
+        required=False,
+        coerce=int,
+        empty_value=None,
+        choices=(),
     )
     tipo_registro = forms.ChoiceField(
         label="Tipo de registro",
@@ -267,3 +302,22 @@ class CiudadanoFiltroForm(forms.Form):
             (Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO, "DNI no validado RENAPER"),
         ],
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["provincia"].choices = [
+            ("", "Todas"),
+            *get_cached_provincia_filter_choices(),
+        ]
+
+    def clean_provincia(self):
+        provincia_id = self.cleaned_data.get("provincia")
+        if not provincia_id:
+            return None
+
+        provincia = (
+            Provincia.objects.only("id", "nombre").filter(pk=provincia_id).first()
+        )
+        if provincia is None:
+            raise forms.ValidationError("Provincia inválida.")
+        return provincia
