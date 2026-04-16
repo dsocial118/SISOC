@@ -30,8 +30,7 @@ RUN echo "es_AR.UTF-8 UTF-8" >> /etc/locale.gen && \
 # Instalación de dependencias de la aplicación
 COPY ./requirements.txt .
 COPY ./requirements ./requirements
-RUN pip install --upgrade pip && pip install -r requirements.txt && \
-    pip install pymysql
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Agrega el script de entrypoint y hazlo ejecutable
 COPY ./docker/django/entrypoint.py ./docker/django/entrypoint.py
