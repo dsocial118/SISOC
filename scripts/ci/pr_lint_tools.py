@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -92,16 +93,83 @@ def get_diff_range() -> tuple[str, str]:
     raise RuntimeError(f"Evento no soportado: {event_name}")
 
 
+def run_git_command(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
+    """Ejecuta un comando git dentro del repo compartiendo defaults de texto."""
+
+    return subprocess.run(
+        ["git", *args],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        check=check,
+    )
+
+
+def parse_git_paths(output: str) -> list[Path]:
+    """Normaliza una salida de git con rutas separadas por linea."""
+
+    return [Path(item.strip()) for item in output.splitlines() if item.strip()]
+
+
+def git_revision_exists(revision: str) -> bool:
+    """Indica si una revision esta disponible en el checkout actual."""
+
+    return (
+        run_git_command(
+            "rev-parse",
+            "--verify",
+            f"{revision}^{{commit}}",
+            check=False,
+        ).returncode
+        == 0
+    )
+
+
+def get_fallback_changed_files() -> list[Path]:
+    """Obtiene archivos relevantes aun cuando el rango base/head no esta disponible."""
+
+    fallback_commands = (
+        ("show", "--pretty=", "--name-only", "HEAD"),
+        ("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD"),
+        ("ls-files",),
+    )
+    for command in fallback_commands:
+        result = run_git_command(*command, check=False)
+        files = parse_git_paths(result.stdout)
+        if result.returncode == 0 and files:
+            print(
+                (
+                    "Usando fallback para detectar archivos del PR "
+                    f"con `git {' '.join(command)}`."
+                ),
+                file=sys.stderr,
+            )
+            return files
+    return []
+
+
 def get_changed_files() -> list[Path]:
     """Lista archivos cambiados dentro del rango del evento."""
 
     base_sha, head_sha = get_diff_range()
-    output = subprocess.check_output(
-        ["git", "diff", "--name-only", base_sha, head_sha],
-        cwd=REPO_ROOT,
-        text=True,
+    if git_revision_exists(base_sha) and git_revision_exists(head_sha):
+        result = run_git_command("diff", "--name-only", base_sha, head_sha)
+        return parse_git_paths(result.stdout)
+
+    print(
+        (
+            "No se encontro el rango git completo del evento "
+            f"({base_sha}..{head_sha}); se usa una estrategia fallback."
+        ),
+        file=sys.stderr,
     )
-    return [Path(item.strip()) for item in output.splitlines() if item.strip()]
+    fallback_files = get_fallback_changed_files()
+    if fallback_files:
+        return fallback_files
+
+    raise RuntimeError(
+        "No fue posible detectar archivos modificados para el evento actual."
+    )
 
 
 def is_excluded(path: Path) -> bool:
