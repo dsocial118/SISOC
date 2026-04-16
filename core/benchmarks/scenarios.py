@@ -131,7 +131,9 @@ def all_scenarios() -> list[BenchmarkScenario]:
             "Listado de centros de familia",
             "centro_list",
         ),
-        BenchmarkScenario("VAT:list", "VAT", "Listado de centros VAT", "vat_centro_list"),
+        BenchmarkScenario(
+            "VAT:list", "VAT", "Listado de centros VAT", "vat_centro_list"
+        ),
         BenchmarkScenario(
             "centrodeinfancia:list",
             "centrodeinfancia",

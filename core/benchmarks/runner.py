@@ -73,7 +73,9 @@ class BenchmarkRunner:
         results: list[dict[str, Any]] = []
         for scenario in self.scenarios:
             result = self._run_scenario(client, benchmark_user, scenario)
-            baseline_entry = baseline_data.get("scenarios", {}).get(scenario.scenario_id)
+            baseline_entry = baseline_data.get("scenarios", {}).get(
+                scenario.scenario_id
+            )
             result["comparison"] = compare_with_baseline(
                 baseline_entry=baseline_entry,
                 result=result,
@@ -112,7 +114,9 @@ class BenchmarkRunner:
             for _ in range(self.warmups):
                 self._execute_once(client, scenario)
 
-            samples = [self._execute_once(client, scenario) for _ in range(self.samples)]
+            samples = [
+                self._execute_once(client, scenario) for _ in range(self.samples)
+            ]
             return serialize_measured_scenario(scenario, samples)
         except ScenarioSkip as exc:
             return {
@@ -252,9 +256,7 @@ def build_payload(
     skipped = [result for result in results if result["status"] == "skipped"]
     failed = [result for result in results if result["status"] == "failed"]
     regressions = [
-        result
-        for result in measured
-        if result["comparison"]["status"] == "regression"
+        result for result in measured if result["comparison"]["status"] == "regression"
     ]
 
     modules: dict[str, dict[str, Any]] = {}
