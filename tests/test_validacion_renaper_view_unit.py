@@ -297,6 +297,27 @@ def test_formatear_datos_renaper_usa_provincia_api_cuando_no_hay_pk():
     assert out["piso_departamento"] == "1A"
 
 
+def test_build_datos_provincia_usa_localidad_como_ciudad():
+    ciudadano = SimpleNamespace(
+        nombre="ana",
+        apellido="perez",
+        fecha_nacimiento=None,
+        sexo=SimpleNamespace(sexo="Femenino"),
+        calle="mitre",
+        altura=10,
+        piso_departamento="1a",
+        localidad=SimpleNamespace(nombre="saenz peña"),
+        ciudad="",
+        provincia=SimpleNamespace(nombre="Chaco"),
+        codigo_postal="3700",
+    )
+
+    out = module._build_datos_provincia(ciudadano, "12345678")
+
+    assert out["ciudad"] == "Saenz Peña"
+    assert out["provincia"] == "Chaco"
+
+
 def test_post_routes_to_save_or_consulta(mocker):
     view = module.ValidacionRenaperView()
     req_save = SimpleNamespace(POST={"validacion_estado": "1"})

@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import traceback
 
 from django.views import View
@@ -43,6 +44,9 @@ from celiaquia.services.importacion_service import (
     IMPORTACION_EDITABLE_FIELDS,
     IMPORTACION_RESPONSABLE_FIELDS,
     _beneficiario_requiere_responsable_importacion,
+    _cargar_nacionalidades_cache,
+    _cargar_paises_a_nacionalidad_importacion,
+    _resolver_nacionalidad_payload_importacion,
     validar_y_normalizar_payloads_importacion,
 )
 from celiaquia.services.cruce_service import CruceService
@@ -132,6 +136,33 @@ def _resolver_localidad_registro_erroneo(localidad_value):
     return localidades.filter(nombre__iexact=localidad_str).first()
 
 
+def _resolver_nacionalidad_registro_erroneo(nacionalidad_value):
+    if nacionalidad_value in (None, ""):
+        return None
+
+    payload = {"nacionalidad": nacionalidad_value}
+    try:
+        _resolver_nacionalidad_payload_importacion(
+            payload,
+            nacionalidades_cache=_cargar_nacionalidades_cache(),
+            paises_a_nacionalidad=_cargar_paises_a_nacionalidad_importacion(),
+        )
+    except ValidationError:
+        return None
+
+    nacionalidad_id = payload.get("nacionalidad")
+    if not nacionalidad_id:
+        return None
+    return Nacionalidad.objects.filter(pk=nacionalidad_id).first()
+
+
+def _resolver_nacionalidad_id_registro_erroneo(nacionalidad_value):
+    nacionalidad = _resolver_nacionalidad_registro_erroneo(nacionalidad_value)
+    if not nacionalidad:
+        return ""
+    return str(nacionalidad.pk)
+
+
 def _resolver_municipio_id_desde_localidad(localidad_value):
     localidad = _resolver_localidad_registro_erroneo(localidad_value)
     if not localidad or not localidad.municipio_id:
@@ -139,12 +170,97 @@ def _resolver_municipio_id_desde_localidad(localidad_value):
     return str(localidad.municipio_id)
 
 
+def _normalizar_mensaje_error_invalid_fields(message):
+    if isinstance(message, ValidationError):
+        mensajes = getattr(message, "messages", None) or [str(message)]
+        msg = " ".join(str(item) for item in mensajes if item)
+    else:
+        msg = str(message or "")
+
+    msg = msg.strip()
+    if msg.startswith("[") and msg.endswith("]"):
+        msg = msg[1:-1].strip()
+    msg = msg.strip("'\" ")
+
+    prefijo_reproceso = "error al reprocesar:"
+    if msg.lower().startswith(prefijo_reproceso):
+        msg = msg[len(prefijo_reproceso) :].strip()
+
+    return msg
+
+
+def _campos_invalidos_desde_mensaje_error(message):
+    if not message:
+        return []
+
+    msg = _normalizar_mensaje_error_invalid_fields(message)
+    msg_lower = msg.lower()
+    campos = []
+
+    faltantes_match = re.search(
+        r"faltan campos obligatorios:\s*(?P<faltantes>.+)$",
+        msg,
+        flags=re.IGNORECASE,
+    )
+    if faltantes_match:
+        faltantes = faltantes_match.group("faltantes")
+        return [
+            campo.strip()
+            for campo in faltantes.split(",")
+            if campo and campo.strip() in IMPORTACION_EDITABLE_FIELDS
+        ]
+
+    patrones = [
+        (
+            r"\bfecha_nacimiento_responsable\b|fecha de nacimiento responsable",
+            "fecha_nacimiento_responsable",
+        ),
+        (r"\bdocumento_responsable\b|documento responsable", "documento_responsable"),
+        (r"\bapellido_responsable\b|apellido responsable", "apellido_responsable"),
+        (r"\bnombre_responsable\b|nombre responsable", "nombre_responsable"),
+        (r"\bsexo_responsable\b|sexo responsable", "sexo_responsable"),
+        (r"\bdomicilio_responsable\b|domicilio responsable", "domicilio_responsable"),
+        (r"\blocalidad_responsable\b|localidad responsable", "localidad_responsable"),
+        (
+            r"\btelefono_responsable\b|telefono responsable",
+            "telefono_responsable",
+        ),
+        (r"\bemail_responsable\b|email responsable", "email_responsable"),
+        (r"\bcontacto_responsable\b|contacto responsable", "contacto_responsable"),
+        (r"\bfecha_nacimiento\b|fecha de nacimiento", "fecha_nacimiento"),
+        (r"\bdocumento\b", "documento"),
+        (r"\bsexo\b", "sexo"),
+        (r"\bnacionalidad\b", "nacionalidad"),
+        (r"\bmunicipio\b", "municipio"),
+        (r"\blocalidad\b", "localidad"),
+        (r"\bcodigo_postal\b|codigo postal", "codigo_postal"),
+        (r"\bcalle\b", "calle"),
+        (r"\baltura\b", "altura"),
+        (r"\btelefono\b", "telefono"),
+        (r"\bemail\b", "email"),
+    ]
+    for patron, campo in patrones:
+        if re.search(patron, msg_lower) and campo in IMPORTACION_EDITABLE_FIELDS:
+            campos.append(campo)
+
+    if "debe tener un responsable" in msg_lower:
+        campos.extend(
+            [
+                "apellido_responsable",
+                "nombre_responsable",
+                "documento_responsable",
+                "fecha_nacimiento_responsable",
+                "sexo_responsable",
+                "domicilio_responsable",
+                "localidad_responsable",
+            ]
+        )
+
+    return list(dict.fromkeys(campos))
+
+
 def _aplicar_defaults_registro_erroneo(datos):
     datos_con_defaults = dict(datos)
-
-    nacionalidad_argentina_id = _get_nacionalidad_argentina_id()
-    if nacionalidad_argentina_id:
-        datos_con_defaults["nacionalidad"] = str(nacionalidad_argentina_id)
 
     municipio_id = _resolver_municipio_id_desde_localidad(
         datos_con_defaults.get("localidad")
@@ -888,11 +1004,17 @@ class ExpedienteDetailView(DetailView):
             datos_render = _aplicar_defaults_registro_erroneo(
                 _normalizar_datos_registro_erroneo(registro.datos_raw or {})
             )
+            registro.datos_render = datos_render
+            registro.invalid_fields = _campos_invalidos_desde_mensaje_error(
+                registro.mensaje_error
+            )
             registro.responsable_requerido = _registro_erroneo_responsable_requerido(
                 datos_render
             )
-            registro.nacionalidad_default_id = datos_render.get(
-                "nacionalidad", nacionalidad_argentina_id
+            registro.nacionalidad_autocomplete_id = (
+                _resolver_nacionalidad_id_registro_erroneo(
+                    datos_render.get("nacionalidad")
+                )
             )
             registro.municipio_autocomplete_id = datos_render.get("municipio", "")
 
@@ -1548,6 +1670,7 @@ class ActualizarRegistroErroneoView(View):
                     "success": False,
                     "saved_partial": True,
                     "error": str(exc),
+                    "invalid_fields": _campos_invalidos_desde_mensaje_error(exc),
                 },
                 status=400,
             )
@@ -1710,13 +1833,14 @@ class ReprocesarRegistrosErroneosView(View):
                     )
 
                 errores_detalle.append(f"Fila {registro.fila_excel}: {error_msg}")
-                logger.error(
-                    "Error reprocesando registro %s: %s - Datos: %s",
-                    registro.pk,
-                    e,
-                    datos,
-                    exc_info=True,
-                )
+                if not isinstance(e, ValidationError):
+                    logger.error(
+                        "Error reprocesando registro %s: %s - Datos: %s",
+                        registro.pk,
+                        e,
+                        datos,
+                        exc_info=True,
+                    )
                 registro.mensaje_error = f"Error al reprocesar: {error_msg}"
                 registro.save(update_fields=["mensaje_error"])
 
@@ -1848,3 +1972,5 @@ class ExpedienteDeleteView(View):
                 {"success": False, "error": "Error al eliminar el expediente."},
                 status=500,
             )
+
+
