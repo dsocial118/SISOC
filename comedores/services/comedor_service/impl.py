@@ -1399,7 +1399,7 @@ class ComedorService:
                 if _nomina_ya_contiene_ciudadano(
                     ciudadano, admision_id=admision_id, comedor_id=comedor_id
                 ):
-                    return False, "Esta persona ya estÃ¡ en la nÃ³mina."
+                    return False, "Esta persona ya está en la nómina."
                 _crear_nomina_registro(
                     ciudadano=ciudadano,
                     admision_id=admision_id,
