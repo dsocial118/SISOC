@@ -34,3 +34,4 @@
 ## Resultado
 
 - Recomendación actual: **NO-GO** hasta completar validación en entorno Linux/Docker con WeasyPrint disponible, confirmar el tratamiento de datos borrados en `acompanamientos`, y ejecutar/planificar el backfill de identidad con backup y ventana operativa.
+- Saneamiento posterior al análisis: se corrigió `.env.example`, se alineó la release note preliminar con la fecha real del corte y se cerraron observaciones puntuales de review para el release train.

@@ -20,6 +20,7 @@
 - Correcciones en VAT para edición de cursos/comisiones y compatibilidad de vouchers/fixtures de CI, evitando regresiones recientes en centros, cursos e inscripciones.
 - Ajustes de merge y compatibilidad en Ciudadanos para priorizar registros `ESTANDAR` en lookups por DNI y evitar asociaciones erróneas en Celiaquía y Comedores.
 - Correcciones de infraestructura y CI para que la resolución de dependencias y los jobs de lint no fallen por pins incompatibles o entradas vacías.
+- Se corrigió `.env.example` para que el bootstrap/Compose mantengan defaults locales válidos y los ejemplos SMTP de Resend queden como comentarios, evitando `.env` inválidos en el pre-deploy.
 
 <!-- AUTO-GENERATED RELEASE END: 2026-04-16 -->
 

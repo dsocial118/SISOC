@@ -4,6 +4,7 @@ from uuid import uuid4
 
 
 SETTINGS_PATH = Path(__file__).resolve().parents[1] / "config" / "settings.py"
+ENV_EXAMPLE_PATH = Path(__file__).resolve().parents[1] / ".env.example"
 
 
 def _load_settings_module():
@@ -111,3 +112,27 @@ def test_settings_qa_mantiene_runtime_no_productivo(monkeypatch):
     assert module.GESTIONAR_INTEGRATION_ENABLED is False
     assert module.SECURE_SSL_REDIRECT is False
     assert module.SENTRY_REPLAY_ENABLED is False
+
+
+def test_env_example_declares_valid_email_assignments():
+    content = ENV_EXAMPLE_PATH.read_text(encoding="utf-8")
+    active_lines = {
+        line.strip()
+        for line in content.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+    required_lines = {
+        'EMAIL_BACKEND=""',
+        'EMAIL_HOST="localhost"',
+        "EMAIL_PORT=587",
+        'EMAIL_HOST_USER=""',
+        'EMAIL_HOST_PASSWORD=""',
+        "EMAIL_USE_TLS=true",
+        "EMAIL_USE_SSL=false",
+        'DEFAULT_FROM_EMAIL="no-reply@sisoc.local"',
+    }
+
+    for line in required_lines:
+        assert line in active_lines
+
+    assert all(not line.startswith("- ") for line in active_lines)

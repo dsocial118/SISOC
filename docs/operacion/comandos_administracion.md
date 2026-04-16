@@ -5,9 +5,6 @@
 - `generate_webp_images`: genera WebP para ImageFields con opciones de filtro, calidad y estadísticas. Evidencia: core/management/commands/generate_webp_images.py:1-111.
 - `debug_queries`: ejecuta depuración de queries para vistas (todas o Ciudadanos). Evidencia: core/management/commands/debug_queries.py:1-33.
 - `run_benchmarks`: ejecuta benchmarks reproducibles en una DB efímera, serializa resultados JSON y compara contra baseline versionado; soporta `--rebuild-baseline`. Evidencia: core/management/commands/run_benchmarks.py:1-176.
-- `load_fixtures`: carga fixtures en modo upsert (no borra) con opcion `--force` o `--overwrite` para reaplicar datos existentes. Evidencia: `core/management/commands/load_fixtures.py`.
-- `generate_webp_images`: genera WebP para ImageFields con opciones de filtro, calidad y estadisticas. Evidencia: `core/management/commands/generate_webp_images.py`.
-- `debug_queries`: ejecuta depuracion de queries para vistas (todas o Ciudadanos). Evidencia: `core/management/commands/debug_queries.py`.
 
 ## Users
 - `create_groups`: crea grupos predeterminados y sincroniza permisos bootstrap segun la semilla declarativa de IAM (`users/bootstrap/groups_seed.py`). Evidencia: `users/management/commands/create_groups.py`.
