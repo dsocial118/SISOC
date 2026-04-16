@@ -81,6 +81,10 @@ class Centro(SoftDeleteModelMixin, models.Model):
             GinIndex(
                 fields=["nombre"], name="centro_nombre_trgm", opclasses=["gin_trgm_ops"]
             ),
+            models.Index(
+                fields=["referente", "id"],
+                name="cdf_centro_ref_id_idx",
+            ),
         ]
 
 
