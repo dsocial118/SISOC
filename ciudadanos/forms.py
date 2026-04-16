@@ -1,8 +1,31 @@
 from django import forms
+from django.core.cache import cache
 from django.db.models import Q
 
 from core.models import Localidad, Municipio, Provincia
 from ciudadanos.models import Ciudadano, GrupoFamiliar
+
+PROVINCIA_FILTER_CHOICES_CACHE_KEY = "ciudadanos:filtro:provincias:v1"
+PROVINCIA_FILTER_CHOICES_CACHE_TTL = 60 * 60
+
+
+def get_cached_provincia_filter_choices():
+    """Devuelve choices cacheados para evitar reconstruir la lista por request."""
+
+    cached_choices = cache.get(PROVINCIA_FILTER_CHOICES_CACHE_KEY)
+    if cached_choices is not None:
+        return cached_choices
+
+    cached_choices = [
+        (str(provincia.id), provincia.nombre)
+        for provincia in Provincia.objects.only("id", "nombre").order_by("nombre")
+    ]
+    cache.set(
+        PROVINCIA_FILTER_CHOICES_CACHE_KEY,
+        cached_choices,
+        PROVINCIA_FILTER_CHOICES_CACHE_TTL,
+    )
+    return cached_choices
 
 
 class CiudadanoForm(forms.ModelForm):
@@ -200,6 +223,28 @@ class CiudadanoFiltroForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={"placeholder": "Nombre o documento"}),
     )
-    provincia = forms.ModelChoiceField(
-        queryset=Provincia.objects.all(), required=False, empty_label="Todas"
+    provincia = forms.TypedChoiceField(
+        required=False,
+        coerce=int,
+        empty_value=None,
+        choices=(),
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["provincia"].choices = [
+            ("", "Todas"),
+            *get_cached_provincia_filter_choices(),
+        ]
+
+    def clean_provincia(self):
+        provincia_id = self.cleaned_data.get("provincia")
+        if not provincia_id:
+            return None
+
+        provincia = (
+            Provincia.objects.only("id", "nombre").filter(pk=provincia_id).first()
+        )
+        if provincia is None:
+            raise forms.ValidationError("Provincia inválida.")
+        return provincia

@@ -32,6 +32,7 @@ from centrodefamilia.services.centro_filter_config import (
     get_filters_ui_config as get_centro_filters_ui_config,
 )
 from centrodefamilia.forms import CentroForm
+from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -51,10 +52,58 @@ BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
 
 ROLE_CDF_SSE_PERMISSION = "auth.role_cdf_sse"
 ROLE_REFERENTE_CENTRO_PERMISSION = "auth.role_referentecentro"
+CDF_CENTRO_LIST_ONLY_FIELDS = (
+    "id",
+    "nombre",
+    "tipo",
+    "codigo",
+    "activo",
+    "calle",
+    "telefono",
+    "celular",
+)
 
 
 def _has_permission(user, permission_code):
     return user_has_permission_code(user, permission_code)
+
+
+def _build_cdf_centro_list_base_queryset():
+    return Centro.objects.only(*CDF_CENTRO_LIST_ONLY_FIELDS).order_by("-id")
+
+
+def _apply_cdf_centro_search(queryset, query):
+    busq = (query or "").strip()
+    if not busq:
+        return queryset
+
+    if busq.isdigit():
+        return queryset.filter(Q(codigo__startswith=busq) | Q(pk=int(busq)))
+
+    return queryset.filter(Q(nombre__icontains=busq))
+
+
+def _build_cdf_centro_list_queryset(request):
+    queryset = _build_cdf_centro_list_base_queryset()
+    user = request.user
+
+    if user.is_superuser or _has_permission(user, ROLE_CDF_SSE_PERMISSION):
+        pass
+    elif _has_permission(user, ROLE_REFERENTE_CENTRO_PERMISSION):
+        queryset = queryset.filter(referente_id=user.id)
+    else:
+        return Centro.objects.none()
+
+    queryset = _apply_cdf_centro_search(queryset, request.GET.get("busqueda", ""))
+    return BOOL_ADVANCED_FILTER.filter_queryset(queryset, request.GET).order_by("-id")
+
+
+def _hydrate_cdf_centro_page(page_ids):
+    centros_by_id = {
+        centro.pk: centro
+        for centro in _build_cdf_centro_list_base_queryset().filter(pk__in=page_ids)
+    }
+    return [centros_by_id[pk] for pk in page_ids if pk in centros_by_id]
 
 
 class CentroListView(LoginRequiredMixin, ListView):
@@ -64,22 +113,14 @@ class CentroListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        base_qs = Centro.objects.select_related("referente").order_by("nombre")
+        return _build_cdf_centro_list_queryset(self.request)
 
-        user = self.request.user
-        busq = self.request.GET.get("busqueda", "").strip()
-
-        if user.is_superuser or _has_permission(user, ROLE_CDF_SSE_PERMISSION):
-            pass
-        elif _has_permission(user, ROLE_REFERENTE_CENTRO_PERMISSION):
-            base_qs = base_qs.filter(referente=user)
-        else:
-            return Centro.objects.none()
-
-        if busq:
-            base_qs = base_qs.filter(Q(nombre__icontains=busq))
-
-        return BOOL_ADVANCED_FILTER.filter_queryset(base_qs, self.request.GET)
+    def paginate_queryset(self, queryset, page_size):
+        paginator = NoCountPaginator(queryset.values_list("pk", flat=True), page_size)
+        page_obj = paginator.get_page(self.request.GET.get(self.page_kwarg))
+        object_list = _hydrate_cdf_centro_page(page_obj.object_list)
+        page_obj.object_list = object_list
+        return paginator, page_obj, object_list, page_obj.has_other_pages()
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -124,6 +165,10 @@ class CentroListView(LoginRequiredMixin, ListView):
                     "id": "btn-cabal",
                 },
             ]
+
+        page_obj = ctx.get("page_obj")
+        if page_obj and getattr(page_obj.paginator, "count", None) is None:
+            ctx["page_range"] = build_no_count_page_range(page_obj)
 
         return ctx
 
@@ -364,33 +409,16 @@ class InformeCabalArchivoPorCentroDetailView(LoginRequiredMixin, DetailView):
 def centros_ajax(request):
     """Endpoint AJAX para búsqueda filtrada de Centros de Familia"""
     from django.template.loader import render_to_string
-    from django.core.paginator import Paginator
     from django.http import JsonResponse
 
     def _centros_ajax(request):
         query = request.GET.get("busqueda", "")
-        page = request.GET.get("page", 1)
         user = request.user
 
-        qs = Centro.objects.select_related("referente")
-
-        if user.is_superuser:
-            pass
-        elif _has_permission(user, ROLE_CDF_SSE_PERMISSION):
-            pass
-        elif _has_permission(user, ROLE_REFERENTE_CENTRO_PERMISSION):
-            qs = qs.filter(referente=user)
-        else:
-            qs = Centro.objects.none()
-
-        busq = query.strip()
-        if busq:
-            qs = qs.filter(Q(nombre__icontains=busq))
-
-        qs = qs.order_by("nombre")
-
-        paginator = Paginator(qs, 10)
-        page_obj = paginator.get_page(page)
+        qs = _build_cdf_centro_list_queryset(request)
+        paginator = NoCountPaginator(qs.values_list("pk", flat=True), 10)
+        page_obj = paginator.get_page(request.GET.get("page", 1))
+        page_obj.object_list = _hydrate_cdf_centro_page(page_obj.object_list)
 
         can_add = user.is_superuser or _has_permission(user, ROLE_CDF_SSE_PERMISSION)
 
@@ -419,6 +447,7 @@ def centros_ajax(request):
             {
                 "page_obj": page_obj,
                 "is_paginated": page_obj.has_other_pages(),
+                "page_range": build_no_count_page_range(page_obj),
                 "query": query,
                 "prev_text": "Volver",
                 "next_text": "Continuar",

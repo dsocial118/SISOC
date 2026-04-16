@@ -17,8 +17,9 @@ class _Session(dict):
 def test_ciudadanos_list_view_get_queryset_filtra(mocker):
     qs = mocker.Mock()
     qs.filter.return_value = qs
-    qs.order_by.return_value = "ordered"
-    mocker.patch("ciudadanos.views.Ciudadano.objects.select_related", return_value=qs)
+    order_by_mock = mocker.patch(
+        "ciudadanos.views.Ciudadano.objects.order_by", return_value=qs
+    )
 
     form = mocker.Mock()
     form.is_valid.return_value = True
@@ -29,8 +30,76 @@ def test_ciudadanos_list_view_get_queryset_filtra(mocker):
     view.request = SimpleNamespace(GET={"q": "Juan"})
 
     result = view.get_queryset()
-    assert result == "ordered"
-    assert qs.filter.call_count >= 2
+    assert result == qs
+    order_by_mock.assert_called_once_with("pk")
+    assert qs.filter.called
+
+
+def test_apply_ciudadanos_filters_usa_documento_prefix_para_q_numerico(mocker):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+    prefix_filter = object()
+    prefix_mock = mocker.patch(
+        "ciudadanos.views.Ciudadano.documento_prefix_filter",
+        return_value=prefix_filter,
+    )
+
+    result = module.apply_ciudadanos_filters(qs, {"q": "12345678", "provincia": None})
+
+    assert result == qs
+    prefix_mock.assert_called_once_with("12345678")
+    qs.filter.assert_called_once_with(prefix_filter)
+
+
+def test_apply_ciudadanos_filters_textual_no_toca_documento(mocker):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+    prefix_mock = mocker.patch("ciudadanos.views.Ciudadano.documento_prefix_filter")
+
+    result = module.apply_ciudadanos_filters(qs, {"q": "Juan", "provincia": None})
+
+    assert result == qs
+    prefix_mock.assert_not_called()
+    assert qs.filter.call_count == 1
+
+
+def test_hydrate_ciudadanos_page_preserva_orden(mocker):
+    ciudadano_2 = SimpleNamespace(pk=2)
+    ciudadano_5 = SimpleNamespace(pk=5)
+    filtered_qs = [ciudadano_5, ciudadano_2]
+    base_qs = SimpleNamespace(filter=lambda **_kwargs: filtered_qs)
+    mocker.patch(
+        "ciudadanos.views.build_ciudadanos_list_row_queryset",
+        return_value=base_qs,
+    )
+
+    result = module.hydrate_ciudadanos_page([2, 5])
+
+    assert result == [ciudadano_2, ciudadano_5]
+
+
+def test_no_count_paginator_navega_sin_count_exacto():
+    paginator = module.NoCountPaginator(list(range(7)), 3)
+
+    first_page = paginator.get_page("1")
+    assert first_page.object_list == [0, 1, 2]
+    assert first_page.has_previous() is False
+    assert first_page.has_next() is True
+    assert first_page.next_page_number() == 2
+    assert first_page.paginator.count is None
+
+    last_page = paginator.get_page(3)
+    assert last_page.object_list == [6]
+    assert last_page.has_previous() is True
+    assert last_page.has_next() is False
+    assert last_page.previous_page_number() == 2
+
+
+def test_ciudadanos_list_view_build_page_range_sin_total():
+    paginator = module.NoCountPaginator(list(range(80)), 25)
+    page_obj = paginator.get_page(3)
+
+    assert module.build_no_count_page_range(page_obj) == [1, 2, 3, 4, "..."]
 
 
 def test_ciudadanos_detail_helpers_contexts(mocker):

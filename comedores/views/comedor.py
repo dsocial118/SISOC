@@ -40,6 +40,7 @@ from comedores.services.filter_config import get_filters_ui_config
 from comedores.utils import comedor_usa_admision_para_nomina
 from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from core.utils import convert_string_to_int
 from intervenciones.models.intervenciones import Intervencion
@@ -795,6 +796,12 @@ class ComedorListView(LoginRequiredMixin, ListView):
             self.request, user=self.request.user
         )
 
+    def paginate_queryset(self, queryset, page_size):
+        paginator = NoCountPaginator(queryset, page_size)
+        page_obj = paginator.get_page(self.request.GET.get(self.page_kwarg))
+        object_list = page_obj.object_list
+        return paginator, page_obj, object_list, page_obj.has_other_pages()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -890,6 +897,10 @@ class ComedorListView(LoginRequiredMixin, ListView):
             }
         )
         context.update(columns_context)
+
+        page_obj = context.get("page_obj")
+        if page_obj and getattr(page_obj.paginator, "count", None) is None:
+            context["page_range"] = build_no_count_page_range(page_obj)
 
         return context
 
