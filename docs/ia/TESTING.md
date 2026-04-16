@@ -59,7 +59,7 @@ Usar marker `smoke` para checks rápidos de integraciones o flujos críticos.
 
 CI ejecuta:
 - `smoke`: `docker compose run --build --rm --no-deps -T django pytest -m smoke`
-- `migrations_check`: `python manage.py makemigrations --check --dry-run` con MySQL
+- `migrations_check`: `docker compose exec -T django python manage.py makemigrations --check --dry-run` con MySQL
 - `pytest`: `docker compose run --build --rm --no-deps -T django pytest -n auto --cov=. --cov-report=term-missing --cov-fail-under=75` en PRs
 - `mysql_compat`: `docker compose exec -T django pytest -m mysql_compat -q` en PRs
 - `deploy_guard`: exige checks requeridos (`encoding_check`, `black`, `djlint`, `pylint`, `smoke`, `pytest`, `migrations_check`, `mysql_compat` y `release_sanity` cuando el PR apunta a `main`)
