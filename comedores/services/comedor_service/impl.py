@@ -1157,7 +1157,7 @@ class ComedorService:
         return Ciudadano.objects.filter(
             tipo_documento=Ciudadano.DOCUMENTO_DNI,
             documento=int(dni_str),
-        )
+        ).first()
 
     @staticmethod
     def _agregar_usuario_a_ciudadano_data_renaper(ciudadano_data, user=None):

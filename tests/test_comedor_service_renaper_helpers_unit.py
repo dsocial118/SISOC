@@ -283,7 +283,7 @@ def test_obtener_datos_ciudadano_desde_renaper_and_crear(mocker):
         if "documento_unico_key" in kwargs:
             return SimpleNamespace(first=lambda: existing)
         return SimpleNamespace(
-            order_by=lambda *args: SimpleNamespace(first=lambda: None)
+            first=lambda: None,
         )
 
     mocker.patch(
@@ -294,11 +294,7 @@ def test_obtener_datos_ciudadano_desde_renaper_and_crear(mocker):
     assert ex["created"] is False
 
     def _filter_sin_existente(**kwargs):
-        if "documento_unico_key" in kwargs:
-            return SimpleNamespace(first=lambda: None)
-        return SimpleNamespace(
-            order_by=lambda *args: SimpleNamespace(first=lambda: None)
-        )
+        return SimpleNamespace(first=lambda: None)
 
     mocker.patch(
         "comedores.services.comedor_service.impl.Ciudadano.objects.filter",

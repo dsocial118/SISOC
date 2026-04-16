@@ -36,7 +36,8 @@ def test_dashboard_tablero_renderiza_iframe_con_url_embed_de_lookerstudio(
     )
 
     response = admin_client.get(tablero.get_absolute_url())
+    content = response.content.decode()
 
-    assert 'src="{{ tablero.get_embed_url }}"' in content
+    assert f'src="{tablero.get_embed_url()}"' in content
     assert 'target="_blank"' in content
     assert "File &gt; Embed report" in content
