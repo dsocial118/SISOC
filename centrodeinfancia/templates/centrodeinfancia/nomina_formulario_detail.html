@@ -1,0 +1,227 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Detalle - Formulario de Nómina{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="page-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1>Detalle del Formulario de Nómina</h1>
+            </div>
+            <div class="col-auto">
+                <a href="{% url 'centrodeinfancia_detalle' nomina.centro_id %}" class="btn btn-secondary">
+                    Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="mb-3">Información General</h5>
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <td><strong>ID</strong></td>
+                        <td>{{ nomina.id }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Centro</strong></td>
+                        <td>{{ nomina.centro|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ciudadano</strong></td>
+                        <td>{{ nomina.ciudadano|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Fecha</strong></td>
+                        <td>{{ nomina.fecha|date:"d/m/Y H:i"|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Estado</strong></td>
+                        <td>{{ nomina.get_estado_display|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DNI</strong></td>
+                        <td>{{ nomina.dni|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Apellido</strong></td>
+                        <td>{{ nomina.apellido|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Nombre</strong></td>
+                        <td>{{ nomina.nombre|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Fecha de nacimiento</strong></td>
+                        <td>{{ nomina.fecha_nacimiento|date:"d/m/Y"|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Edad</strong></td>
+                        <td>{{ nomina.edad|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sexo</strong></td>
+                        <td>{{ nomina.get_sexo_display|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Nacionalidad</strong></td>
+                        <td>{{ nomina.nacionalidad|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sala</strong></td>
+                        <td>{{ nomina.sala|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pertenece a pueblo originario</strong></td>
+                        <td>{{ nomina.get_pertenece_pueblo_originario_display|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pueblo originario (cuál)</strong></td>
+                        <td>{{ nomina.pueblo_originario_cual|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Habla lengua originaria en el hogar</strong></td>
+                        <td>{{ nomina.get_habla_lengua_originaria_hogar_display|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Talla</strong></td>
+                        <td>{{ nomina.talla|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Peso</strong></td>
+                        <td>{{ nomina.peso|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Calendario de vacunación al día</strong></td>
+                        <td>{{ nomina.calendario_vacunacion_al_dia|yesno:"Si,No,-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tiene discapacidad</strong></td>
+                        <td>{{ nomina.get_tiene_discapacidad_display|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tipo de discapacidad</strong></td>
+                        <td>{{ nomina.get_discapacidad_tipo_display|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Recibe apoyo por discapacidad</strong></td>
+                        <td>{{ nomina.recibe_apoyo_discapacidad|yesno:"Si,No,-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Posee CUD</strong></td>
+                        <td>{{ nomina.posee_cud|yesno:"Si,No,-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Posee obra social</strong></td>
+                        <td>{{ nomina.posee_obra_social|yesno:"Si,No,-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Calle domicilio</strong></td>
+                        <td>{{ nomina.calle_domicilio|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Altura domicilio</strong></td>
+                        <td>{{ nomina.altura_domicilio|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Piso domicilio</strong></td>
+                        <td>{{ nomina.piso_domicilio|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Departamento domicilio</strong></td>
+                        <td>{{ nomina.departamento_domicilio|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Provincia domicilio</strong></td>
+                        <td>{{ nomina.provincia_domicilio|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Municipio domicilio</strong></td>
+                        <td>{{ nomina.municipio_domicilio|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Localidad domicilio</strong></td>
+                        <td>{{ nomina.localidad_domicilio|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Responsable legal 1 - Apellido</strong></td>
+                        <td>{{ nomina.responsable_legal_1_apellido|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Responsable legal 1 - Nombre</strong></td>
+                        <td>{{ nomina.responsable_legal_1_nombre|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Responsable legal 1 - DNI</strong></td>
+                        <td>{{ nomina.responsable_legal_1_dni|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Responsable legal 1 - Teléfono</strong></td>
+                        <td>{{ nomina.responsable_legal_1_telefono|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Responsable legal 1 - Percibe AUH</strong></td>
+                        <td>{{ nomina.get_responsable_legal_1_percibe_auh_display|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Responsable legal 1 - Percibe Alimenta</strong></td>
+                        <td>{{ nomina.get_responsable_legal_1_percibe_alimenta_display|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Responsable legal 2 - Apellido</strong></td>
+                        <td>{{ nomina.responsable_legal_2_apellido|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Responsable legal 2 - Nombre</strong></td>
+                        <td>{{ nomina.responsable_legal_2_nombre|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Responsable legal 2 - DNI</strong></td>
+                        <td>{{ nomina.responsable_legal_2_dni|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Responsable legal 2 - Teléfono</strong></td>
+                        <td>{{ nomina.responsable_legal_2_telefono|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Responsable legal 2 - Percibe AUH</strong></td>
+                        <td>{{ nomina.get_responsable_legal_2_percibe_auh_display|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Responsable legal 2 - Percibe Alimenta</strong></td>
+                        <td>{{ nomina.get_responsable_legal_2_percibe_alimenta_display|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Adulto responsable - Apellido</strong></td>
+                        <td>{{ nomina.adulto_responsable_apellido|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Adulto responsable - Nombre</strong></td>
+                        <td>{{ nomina.adulto_responsable_nombre|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Adulto responsable - DNI</strong></td>
+                        <td>{{ nomina.adulto_responsable_dni|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Adulto responsable - Teléfono</strong></td>
+                        <td>{{ nomina.adulto_responsable_telefono|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Adulto responsable - Parentesco</strong></td>
+                        <td>{{ nomina.adulto_responsable_parentesco|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Observaciones</strong></td>
+                        <td>{{ nomina.observaciones|default:"-" }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
