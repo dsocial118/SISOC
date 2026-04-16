@@ -402,19 +402,21 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
     mocker.patch("ciudadanos.views.redirect", return_value="redir")
     assert create_view.form_valid(form) == "redir"
     assert ciudadano.creado_por.id == 2
-    assert ciudadano.documento_unico_key == "DNI_12345678"
+    documento_esperado = "{}_{}".format(module.Ciudadano.DOCUMENTO_DNI, "12345678")
+    assert ciudadano.documento_unico_key == documento_esperado
     assert ciudadano.identificador_interno == "CIU-10"
     assert ciudadano.requiere_revision_manual is False
 
     update_view = module.CiudadanosUpdateView()
     update_view.request = SimpleNamespace(user=SimpleNamespace(id=3))
+    documento_previo = "{}_{}".format(module.Ciudadano.DOCUMENTO_DNI, "87654321")
     ciudadano2 = SimpleNamespace(
         pk=11,
         tipo_registro_identidad=module.Ciudadano.TIPO_REGISTRO_SIN_DNI,
         tipo_documento=module.Ciudadano.DOCUMENTO_DNI,
         documento=None,
         identificador_interno="CIU-11",
-        documento_unico_key="DNI_87654321",
+        documento_unico_key=documento_previo,
         requiere_revision_manual=False,
         modificado_por=None,
         save=mocker.Mock(),

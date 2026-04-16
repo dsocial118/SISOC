@@ -85,15 +85,24 @@
             <div>
                 <strong>Este ciudadano requiere revisión de identidad.</strong>
                 {% if object.tipo_registro_identidad == "SIN_DNI" %}
-                    <br>Tipo: <strong>Sin DNI</strong>
+                    <br />
+                    Tipo: <strong>Sin DNI</strong>
                     {% if object.motivo_sin_dni %}— Motivo: {{ object.get_motivo_sin_dni_display }}{% endif %}
-                    {% if object.motivo_sin_dni_descripcion %}<br><em>{{ object.motivo_sin_dni_descripcion }}</em>{% endif %}
+                    {% if object.motivo_sin_dni_descripcion %}
+                        <br />
+                        <em>{{ object.motivo_sin_dni_descripcion }}</em>
+                    {% endif %}
                 {% elif object.tipo_registro_identidad == "DNI_NO_VALIDADO_RENAPER" %}
-                    <br>Tipo: <strong>DNI no validado por RENAPER</strong>
+                    <br />
+                    Tipo: <strong>DNI no validado por RENAPER</strong>
                     {% if object.motivo_no_validacion_renaper %}— Motivo: {{ object.get_motivo_no_validacion_renaper_display }}{% endif %}
-                    {% if object.motivo_no_validacion_descripcion %}<br><em>{{ object.motivo_no_validacion_descripcion }}</em>{% endif %}
+                    {% if object.motivo_no_validacion_descripcion %}
+                        <br />
+                        <em>{{ object.motivo_no_validacion_descripcion }}</em>
+                    {% endif %}
                 {% endif %}
-                <br><small class="text-muted">Corregí los datos y luego marcá como revisado desde el detalle del ciudadano.</small>
+                <br />
+                <small class="text-muted">Corregí los datos y luego marcá como revisado desde el detalle del ciudadano.</small>
             </div>
         </div>
     {% endif %}
@@ -163,7 +172,9 @@
                         </div>
 
                         <!-- Campos dinámicos: Sin DNI -->
-                        <div id="bloque-sin-dni" class="alert alert-warning mb-3" style="display:none;">
+                        <div id="bloque-sin-dni"
+                             class="alert alert-warning mb-3"
+                             style="display:none">
                             <div class="row">
                                 <div class="col-md-4">
                                     {% with field=form.motivo_sin_dni %}
@@ -179,9 +190,7 @@
                                 <div class="col-md-8">
                                     {% with field=form.motivo_sin_dni_descripcion %}
                                         <div class="form-group">
-                                            <label class="form-label" for="{{ field.id_for_label }}">
-                                                {{ field.label }}
-                                            </label>
+                                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                                             {{ field }}
                                             {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
                                         </div>
@@ -191,7 +200,9 @@
                         </div>
 
                         <!-- Campos dinámicos: DNI no validado RENAPER -->
-                        <div id="bloque-no-validado" class="alert alert-danger mb-3" style="display:none;">
+                        <div id="bloque-no-validado"
+                             class="alert alert-danger mb-3"
+                             style="display:none">
                             <div class="row">
                                 <div class="col-md-4">
                                     {% with field=form.motivo_no_validacion_renaper %}
@@ -207,9 +218,7 @@
                                 <div class="col-md-8">
                                     {% with field=form.motivo_no_validacion_descripcion %}
                                         <div class="form-group">
-                                            <label class="form-label" for="{{ field.id_for_label }}">
-                                                {{ field.label }}
-                                            </label>
+                                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                                             {{ field }}
                                             {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
                                         </div>

@@ -53,12 +53,14 @@
                                     {% if ciudadano.tipo_registro_identidad == "SIN_DNI" %}
                                         {{ ciudadano.get_motivo_sin_dni_display|default:"-" }}
                                         {% if ciudadano.motivo_sin_dni_descripcion %}
-                                            <br><em>{{ ciudadano.motivo_sin_dni_descripcion|truncatechars:60 }}</em>
+                                            <br />
+                                            <em>{{ ciudadano.motivo_sin_dni_descripcion|truncatechars:60 }}</em>
                                         {% endif %}
                                     {% elif ciudadano.tipo_registro_identidad == "DNI_NO_VALIDADO_RENAPER" %}
                                         {{ ciudadano.get_motivo_no_validacion_renaper_display|default:"-" }}
                                         {% if ciudadano.motivo_no_validacion_descripcion %}
-                                            <br><em>{{ ciudadano.motivo_no_validacion_descripcion|truncatechars:60 }}</em>
+                                            <br />
+                                            <em>{{ ciudadano.motivo_no_validacion_descripcion|truncatechars:60 }}</em>
                                         {% endif %}
                                     {% else %}
                                         -
@@ -76,8 +78,12 @@
                                           class="d-inline"
                                           onsubmit="return confirm('¿Marcar este ciudadano como revisado?');">
                                         {% csrf_token %}
-                                        <input type="hidden" name="next" value="{% url 'ciudadanos_cola_revision' %}">
-                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Marcar como revisado">
+                                        <input type="hidden"
+                                               name="next"
+                                               value="{% url 'ciudadanos_cola_revision' %}" />
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-success"
+                                                title="Marcar como revisado">
                                             <i class="fas fa-check"></i> Revisado
                                         </button>
                                     </form>
@@ -98,8 +104,6 @@
     </div>
 
     {% if is_paginated %}
-        <div class="mt-3">
-            {% include 'components/pagination.html' %}
-        </div>
+        <div class="mt-3">{% include 'components/pagination.html' %}</div>
     {% endif %}
 {% endblock %}
