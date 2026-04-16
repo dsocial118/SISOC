@@ -1200,7 +1200,18 @@ def _resolver_identidad_postulante(datos_postulante):
     documento, usa_cuil_como_documento = _normalizar_documento_postulante(
         datos_postulante
     )
+    _validar_datos_postulante(nombre, apellido, documento)
 
+    return {
+        "nombre": nombre,
+        "apellido": apellido,
+        "documento": documento,
+        "tipo_documento": _resolver_tipo_documento_postulante(datos_postulante),
+        "usa_cuil_como_documento": usa_cuil_como_documento,
+    }
+
+
+def _validar_datos_postulante(nombre, apellido, documento):
     errores = {}
     if not nombre:
         errores["nombre"] = "Debe informar el nombre del postulante."
@@ -1213,14 +1224,6 @@ def _resolver_identidad_postulante(datos_postulante):
 
     if errores:
         _raise_datos_postulante_error(errores)
-
-    return {
-        "nombre": nombre,
-        "apellido": apellido,
-        "documento": documento,
-        "tipo_documento": _resolver_tipo_documento_postulante(datos_postulante),
-        "usa_cuil_como_documento": usa_cuil_como_documento,
-    }
 
 
 def _resolver_fecha_nacimiento_postulante(datos_postulante):
