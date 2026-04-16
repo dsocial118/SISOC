@@ -1257,8 +1257,8 @@ def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario
     if ciudadano_existente:
         return ciudadano_existente
 
-    fecha_nacimiento, observaciones_adicionales = (
-        _resolver_fecha_nacimiento_postulante(datos_postulante)
+    fecha_nacimiento, observaciones_adicionales = _resolver_fecha_nacimiento_postulante(
+        datos_postulante
     )
     observaciones = ["Ciudadano creado automáticamente desde inscripción libre web."]
     observaciones.extend(observaciones_adicionales)
