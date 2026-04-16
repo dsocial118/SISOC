@@ -4,6 +4,10 @@ from collections.abc import Iterable
 
 from django.utils.text import slugify
 
+from users.bootstrap.groups_seed import (
+    permission_codes_for_bootstrap_group as seed_permission_codes_for_bootstrap_group,
+)
+
 
 def _build_legacy_codename(alias: str) -> str:
     base = f"role_{slugify(alias).replace('-', '_')}"[:100]
@@ -91,6 +95,61 @@ LEGACY_ALIAS_TO_PERMISSION_CODES: dict[str, tuple[str, ...]] = {
     # Centro de Familia
     "ReferenteCentro": ("centrodefamilia.view_centro",),
     "CDF SSE": ("centrodefamilia.view_centro",),
+    # VAT - Centro Formación Profesional
+    "ReferenteCentroVAT": (
+        "VAT.view_centro",
+        "VAT.add_curso",
+        "VAT.change_curso",
+        "VAT.delete_curso",
+        "VAT.view_comisioncurso",
+        "VAT.add_comisioncurso",
+        "VAT.change_comisioncurso",
+        "VAT.delete_comisioncurso",
+        "VAT.view_comisionhorario",
+        "VAT.add_comisionhorario",
+        "VAT.change_comisionhorario",
+        "VAT.delete_comisionhorario",
+        "VAT.view_inscripcion",
+        "VAT.add_inscripcion",
+        "VAT.change_inscripcion",
+        "VAT.add_asistenciasesion",
+        "VAT.change_asistenciasesion",
+    ),
+    "CFP": (
+        "VAT.view_centro",
+        "VAT.add_curso",
+        "VAT.change_curso",
+        "VAT.delete_curso",
+        "VAT.view_comisioncurso",
+        "VAT.add_comisioncurso",
+        "VAT.change_comisioncurso",
+        "VAT.delete_comisioncurso",
+        "VAT.view_comisionhorario",
+        "VAT.add_comisionhorario",
+        "VAT.change_comisionhorario",
+        "VAT.delete_comisionhorario",
+        "VAT.view_inscripcion",
+        "VAT.add_inscripcion",
+        "VAT.change_inscripcion",
+        "VAT.add_asistenciasesion",
+        "VAT.change_asistenciasesion",
+    ),
+    "Provincia VAT": (
+        "VAT.view_centro",
+        "VAT.add_centro",
+        "VAT.change_centro",
+        "VAT.view_planversioncurricular",
+        "VAT.add_planversioncurricular",
+    ),
+    "CFPJuridicccion": (
+        "VAT.view_centro",
+        "VAT.add_centro",
+        "VAT.change_centro",
+        "VAT.view_planversioncurricular",
+        "VAT.add_planversioncurricular",
+    ),
+    "VAT SSE": ("VAT.view_centro", "VAT.add_centro", "VAT.change_centro"),
+    "CFPINET": ("VAT.view_centro", "VAT.add_centro", "VAT.change_centro"),
     "Dashboard Centrodefamilia": ("dashboard.view_dashboard",),
     "Dashboard Comedor": ("dashboard.view_dashboard",),
     # Centro de Infancia
@@ -142,74 +201,7 @@ LEGACY_ALIAS_TO_PERMISSION_CODES: dict[str, tuple[str, ...]] = {
     # Otros legacy usados en checks
     "Gestor prestaciones": ("core.view_montoprestacionprograma",),
     "Exportar a csv": ("auth.role_exportar_a_csv",),
-}
-
-
-# Alias extra para no perder capacidades operativas en grupos bootstrap.
-GROUP_BOOTSTRAP_PERMISSION_ALIASES: dict[str, tuple[str, ...]] = {
-    "Admin": (
-        "Admin",
-        "Usuario Ver",
-        "Usuario Crear",
-        "Usuario Editar",
-        "Usuario Eliminar",
-        "Grupos Ver",
-        "auth.add_group",
-        "auth.change_group",
-        "Exportar a csv",
-    ),
-    "Administrador": (
-        "Administrador",
-        "Usuario Ver",
-        "Usuario Crear",
-        "Usuario Editar",
-        "Usuario Eliminar",
-        "Grupos Ver",
-        "auth.add_group",
-        "auth.change_group",
-        "Exportar a csv",
-    ),
-    "superadmin": (
-        "superadmin",
-        "Usuario Ver",
-        "Usuario Crear",
-        "Usuario Editar",
-        "Usuario Eliminar",
-        "Grupos Ver",
-        "auth.add_group",
-        "auth.change_group",
-        "Exportar a csv",
-    ),
-    "Comedores": ("Comedores Ver",),
-    "Comedores Listar": ("Comedores Ver",),
-    "Tecnico Comedor": (
-        "Tecnico Comedor",
-        "Comedores Ver",
-        "Comedores Relevamiento Ver",
-        "Comedores Intervencion Ver",
-        "Comedores Nomina Ver",
-        "Acompanamiento Listar",
-    ),
-    "Abogado Dupla": (
-        "Abogado Dupla",
-        "Comedores Ver",
-        "Acompanamiento Listar",
-    ),
-    "Area Legales": (
-        "Area Legales",
-        "Comedores Ver",
-        "Acompanamiento Listar",
-    ),
-    "Area Contable": ("Area Contable", "Comedores Ver"),
-    "Coordinador Equipo Tecnico": (
-        "Coordinador Equipo Tecnico",
-        "Comedores Ver",
-        "Acompanamiento Listar",
-        "Comedores Relevamiento Ver",
-    ),
-    "Coordinador general": ("Coordinador general", "Comedores Ver"),
-    "ReferenteCentro": ("ReferenteCentro", "CDF SSE"),
-    "Dashboard Centrodefamilia": ("Dashboard Centrodefamilia", "CDF SSE"),
+    "Enviar credenciales masivas": ("auth.role_enviar_credenciales_masivas",),
 }
 
 
@@ -219,6 +211,7 @@ SIDEBAR_MODULE_PERMISSIONS: dict[str, tuple[str, ...]] = {
     "ciudadanos": ("ciudadanos.view_ciudadano",),
     "centro_infancia": ("centrodeinfancia.view_centrodeinfancia",),
     "centro_familia": ("centrodefamilia.view_centro",),
+    "vat": ("VAT.view_centro",),
     "celiaquia": ("celiaquia.view_expediente",),
 }
 
@@ -272,21 +265,16 @@ def resolve_permission_codes(values: str | Iterable[str]) -> tuple[str, ...]:
     return tuple(result)
 
 
-def aliases_for_bootstrap_group(group_name: str) -> tuple[str, ...]:
-    aliases = GROUP_BOOTSTRAP_PERMISSION_ALIASES.get(group_name)
-    if aliases:
-        return aliases
-    return (group_name,)
-
-
 def permission_codes_for_bootstrap_group(group_name: str) -> tuple[str, ...]:
-    aliases = aliases_for_bootstrap_group(group_name)
+    seeded_permission_codes = seed_permission_codes_for_bootstrap_group(group_name)
+    if seeded_permission_codes:
+        return seeded_permission_codes
+
     result: list[str] = []
     seen: set[str] = set()
-    for alias in aliases:
-        for code in permission_codes_for_alias(alias):
-            normalized = _normalize_permission_code(code)
-            if normalized and normalized not in seen:
-                seen.add(normalized)
-                result.append(normalized)
+    for code in permission_codes_for_alias(group_name):
+        normalized = _normalize_permission_code(code)
+        if normalized and normalized not in seen:
+            seen.add(normalized)
+            result.append(normalized)
     return tuple(result)

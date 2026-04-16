@@ -1,0 +1,53 @@
+name: Documentación automática de PR
+
+permissions:
+    contents: write
+    pull-requests: read
+
+on:
+    pull_request:
+        types:
+            - opened
+            - reopened
+            - synchronize
+            - edited
+        branches:
+            - development
+            - main
+
+jobs:
+    sync_pr_artifacts:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout branch del PR
+              uses: actions/checkout@v4.1.7
+              with:
+                  ref: ${{ github.event.pull_request.head.ref }}
+                  fetch-depth: 0
+
+            - name: Set up Python
+              uses: actions/setup-python@v5.2.0
+              with:
+                  python-version: "3.11.9"
+
+            - name: Generar artefactos spec-as-source
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+                  GITHUB_EVENT_PATH: ${{ github.event_path }}
+              run: python scripts/ci/pr_doc_automation.py
+
+            - name: Commit automático de artefactos
+              if: github.event.pull_request.head.repo.full_name == github.repository
+              run: |
+                  if git diff --quiet -- docs/registro/prs docs/contexto/features docs/registro/releases/pending; then
+                    echo "No hay cambios generados para commitear."
+                    exit 0
+                  fi
+
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+                  git add docs/registro/prs docs/contexto/features docs/registro/releases/pending
+                  git commit -m "docs(ci): actualizar artefactos automáticos del PR #${{ github.event.pull_request.number }}"
+                  git push

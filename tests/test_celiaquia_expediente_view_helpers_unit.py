@@ -37,6 +37,9 @@ def test_helper_functions_for_user_and_request(mocker):
 
     req = SimpleNamespace(headers={"X-Requested-With": "XMLHttpRequest"})
     assert module._is_ajax(req) is True
+    assert module._can_manage_registros_erroneos(_user_stub(coord=True)) is True
+    assert module._can_manage_registros_erroneos(_user_stub(is_admin=True)) is True
+    assert module._can_manage_registros_erroneos(_user_stub()) is False
 
 
 def test_provincial_helpers_and_parse_limit():
@@ -56,6 +59,57 @@ def test_provincial_helpers_and_parse_limit():
     assert module._parse_limit("-1", default=10) is None
     assert module._parse_limit("7", default=10, max_cap=5) == 5
     assert module._parse_limit("x", default=10) == 10
+
+
+def test_resolver_provincia_registro_erroneo_fallback_a_usuario_expediente():
+    expediente_user = SimpleNamespace(
+        profile=SimpleNamespace(provincia=SimpleNamespace(id=33))
+    )
+    expediente = SimpleNamespace(provincia=None, usuario_provincia=expediente_user)
+    user = SimpleNamespace(is_authenticated=True)
+
+    provincia_id = module._resolver_provincia_id_registro_erroneo(user, expediente)
+    assert provincia_id == 33
+
+
+def test_registro_erroneo_responsable_requerido_depende_de_edad():
+    assert (
+        module._registro_erroneo_responsable_requerido(
+            {"fecha_nacimiento": "01/01/2010"}
+        )
+        is True
+    )
+    assert (
+        module._registro_erroneo_responsable_requerido(
+            {"fecha_nacimiento": "01/01/1990"}
+        )
+        is False
+    )
+    assert (
+        module._registro_erroneo_responsable_requerido(
+            {"fecha_nacimiento": "fecha-invalida"}
+        )
+        is False
+    )
+
+
+def test_aplicar_defaults_registro_erroneo_fuerza_argentina_y_municipio_por_localidad(
+    mocker,
+):
+    mocker.patch.object(module, "_get_nacionalidad_argentina_id", return_value=1)
+    mocker.patch.object(
+        module,
+        "_resolver_municipio_id_desde_localidad",
+        return_value="77",
+    )
+
+    datos = module._aplicar_defaults_registro_erroneo(
+        {"nacionalidad": "9", "municipio": "", "localidad": "55"}
+    )
+
+    assert datos["nacionalidad"] == "1"
+    assert datos["municipio"] == "77"
+    assert datos["localidad"] == "55"
 
 
 def test_provincial_helpers_object_does_not_exist_branches(mocker):
@@ -698,7 +752,30 @@ def test_expediente_nomina_sintys_export_view(mocker):
 def test_actualizar_registro_erroneo_view_paths(mocker):
     view = module.ActualizarRegistroErroneoView()
     expediente = SimpleNamespace()
-    registro = SimpleNamespace(datos_raw={}, save=mocker.Mock())
+    registro = SimpleNamespace(
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "123",
+            "fecha_nacimiento": "01/01/2010",
+            "sexo": "1",
+            "nacionalidad": "1",
+            "municipio": "1",
+            "localidad": "1",
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+            "apellido_responsable": "Gomez",
+            "nombre_responsable": "Laura",
+            "documento_responsable": "20123456789",
+            "fecha_nacimiento_responsable": "01/01/1980",
+            "sexo_responsable": "2",
+            "domicilio_responsable": "Calle Resp 123",
+            "localidad_responsable": "Centro",
+        },
+        fila_excel=2,
+        save=mocker.Mock(),
+    )
 
     # Sin permisos
     mocker.patch(
@@ -717,12 +794,65 @@ def test_actualizar_registro_erroneo_view_paths(mocker):
     )
     req_ok = SimpleNamespace(
         user=SimpleNamespace(),
-        body=b'{"apellido":"Perez","nombre":"","documento":"123"}',
+        body=(
+            b'{"apellido":"Perez","nombre":"Ana","documento":"123","fecha_nacimiento":"01/01/2010",'
+            b'"sexo":"1","nacionalidad":"1","municipio":"1","localidad":"1","calle":"Calle 1",'
+            b'"altura":"123","codigo_postal":"1000","apellido_responsable":"Gomez",'
+            b'"nombre_responsable":"Laura","documento_responsable":"20123456789",'
+            b'"fecha_nacimiento_responsable":"01/01/1980","sexo_responsable":"2",'
+            b'"domicilio_responsable":"Calle Resp 123","localidad_responsable":"Centro"}'
+        ),
     )
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch(
+        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        return_value=1,
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._get_nacionalidad_argentina_id",
+        return_value="1",
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._resolver_municipio_id_desde_localidad",
+        return_value="1",
+    )
+    mocker.patch("celiaquia.views.expediente._validar_datos_registro_erroneo")
     ok = view.post(req_ok, pk=1, registro_id=2)
     assert ok.status_code == 200
-    assert registro.datos_raw == {"apellido": "Perez", "documento": "123"}
+    assert registro.datos_raw["apellido"] == "Perez"
+    assert registro.datos_raw["sexo"] == "1"
+
+    mocker.patch(
+        "celiaquia.views.expediente.get_object_or_404",
+        side_effect=[expediente, registro],
+    )
+    req_partial = SimpleNamespace(
+        user=SimpleNamespace(),
+        body=b'{"localidad":"99"}',
+    )
+    partial = view.post(req_partial, pk=1, registro_id=2)
+    assert partial.status_code == 200
+    assert registro.datos_raw["localidad"] == "99"
+    assert registro.datos_raw["sexo"] == "1"
+
+    mocker.patch(
+        "celiaquia.views.expediente.get_object_or_404",
+        side_effect=[expediente, registro],
+    )
+    req_invalid = SimpleNamespace(
+        user=SimpleNamespace(),
+        body=b'{"apellido":"Perez","documento":"123"}',
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        return_value=1,
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._validar_datos_registro_erroneo",
+        side_effect=module.ValidationError("sexo invalido"),
+    )
+    invalid = view.post(req_invalid, pk=1, registro_id=2)
+    assert invalid.status_code == 400
 
     # Error interno
     mocker.patch(
@@ -776,6 +906,10 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
     mocker.patch(
         "celiaquia.views.expediente.EstadoLegajo.objects.get",
         return_value=SimpleNamespace(),
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        return_value=None,
     )
     no_prov = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
         view, req_no_prov, pk=1

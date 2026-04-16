@@ -5,6 +5,8 @@ from django.apps import apps
 from django.core import serializers
 from django.db import transaction
 
+from intervenciones.services_catalogo import sync_catalogo_intervenciones
+
 
 class Command(BaseCommand):
     help = "Carga fixtures sin borrar: actualiza por PK si existe, crea si no. Nunca borra."
@@ -12,13 +14,19 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--force",
+            "--overwrite",
+            dest="force",
             action="store_true",
-            help="Ignora chequeos de vacíos y carga igual (sin borrar nada).",
+            help=(
+                "Ignora chequeos de vacíos y reaplica el fixture sobre registros "
+                "existentes (sin borrar nada)."
+            ),
         )
 
     def handle(self, *args, **options):
         self.force = options["force"]
         self.load_fixtures()
+        self.sync_post_load_catalogs()
 
     def get_models_from_fixture(self, fixture_path):
         try:
@@ -50,9 +58,11 @@ class Command(BaseCommand):
         return any(self.model_is_empty(m) for m in models)
 
     def upsert_fixture(self, fixture_path):
-        """
-        Deserializa y guarda: si PK existe → UPDATE; si no → INSERT.
-        M2M y FKs los maneja el Deserializer. Nunca borra.
+        """Deserializa y guarda: si PK existe actualiza, si no inserta.
+
+        Este es el mecanismo oficial para "pisar" fixtures sin borrar datos:
+        con ``--force`` o ``--overwrite`` vuelve a persistir el JSON sobre la
+        base existente.
         """
         try:
             with open(fixture_path, "r", encoding="utf-8") as f:
@@ -137,3 +147,12 @@ class Command(BaseCommand):
         for fx in fixtures:
             if self.should_load_fixture(fx):
                 self.upsert_fixture(fx)
+
+    def sync_post_load_catalogs(self):
+        resumen = sync_catalogo_intervenciones()
+        self.stdout.write(
+            "✅ Catálogo de intervenciones sincronizado: "
+            f"tipos={resumen['tipos_sincronizados']}, "
+            f"subtipos={resumen['subtipos_sincronizados']}, "
+            f"subtipos_vacios_eliminados={resumen['subtipos_vacios_eliminados']}"
+        )

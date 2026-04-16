@@ -60,6 +60,27 @@ Mantener orden consistente (como se ve en varios módulos del repo):
 
 Si el archivo ya usa comentarios de bloques de imports, conservar el estilo local.
 
+## Compatibilidad con black (Python)
+
+- Escribir pensando en `black` con `line-length = 88`.
+- Si una línea tiende a crecer, partirla con paréntesis implícitos; no usar barras invertidas salvo que Python lo exija.
+- Preferir trailing commas en estructuras multilínea para que `black` estabilice el formato.
+- No alinear parámetros, diccionarios o asignaciones “a mano”.
+- No preservar formato legacy si el bloque tocado queda claramente incompatible con `black`; corregir solo el bloque editado.
+
+## Compatibilidad con pylint (Python)
+
+- Tomar `.pylintrc` como contrato real, no como recomendación vaga.
+- Naming por defecto:
+  - funciones, métodos, variables y argumentos: `snake_case`
+  - clases: `PascalCase`
+  - constantes: `UPPER_CASE`
+- Evitar nombres descartables salvo los ya aceptados por configuración (`i`, `j`, `k`, `pk`, `id`, `_`, `VAT`).
+- Mantener imports agrupados por origen y evitar imports innecesarios o variables declaradas pero no usadas.
+- Cuando `pylint` marca una violación, primero buscar una corrección de código: simplificar funciones, extraer helpers, mover lógica al boundary correcto, hacer más explícito el flujo o renombrar símbolos ambiguos.
+- Evitar `# pylint: disable=...`, `# pylint: skip-file` y ampliaciones de ignore como salida por defecto. Si hay una falsa positiva o una restricción real del framework, usar la supresión más chica posible y dejar constancia en el cambio.
+- Aunque `pylint` permite `max-line-length = 150`, para código nuevo/modificado se prioriza el límite práctico de `black` (`88`). Las líneas más largas deberían quedar reservadas a casos difíciles de partir limpiamente (URLs, strings fijas, regex, SQL, etc.).
+
 ## Tipado en Python (cuándo y cómo)
 
 ## Usar typing cuando aporta valor
@@ -139,6 +160,14 @@ Priorizar type hints en:
 - Preferir includes/parciales para fragmentos reutilizables.
 - Mantener templates orientados a presentación.
 
+## Compatibilidad con djlint (templates)
+
+- Escribir templates con indentación de 4 espacios.
+- Separar bloques `{% if %}`, `{% for %}`, `{% include %}` y contenido HTML de forma legible; `djlint` no debería necesitar reestructurar todo el bloque.
+- No compactar atributos o contenido en una sola línea si el largo o los template tags ya anticipan wrapping.
+- Preservar líneas en blanco solo cuando ayudan a separar bloques visuales; evitar espaciado arbitrario.
+- Recordar que el formatter usa perfil `django`, preserva blank lines y tiene reglas ignoradas específicas en `.djlintrc`; no inventar reglas de estilo ajenas a esa configuración.
+
 ## DRF: convenciones prácticas
 
 - Verificar permisos existentes (`IsAuthenticated`, API keys, etc.) antes de agregar endpoints.
@@ -174,4 +203,27 @@ def normalizar_filtros(payload: Mapping[str, Any]) -> dict[str, Any]:
 comedor_id = request.GET.get("comedor_id")
 request_data = _parsear_datos_request(request)
 cache_key = f"comedores:{comedor_id}:detalle"
+```
+
+## Ejemplo C - llamada preparada para black
+
+```python
+response = client.post(
+    url,
+    data={
+        "comedor_id": comedor_id,
+        "beneficiarios": beneficiarios,
+        "observaciones": observaciones,
+    },
+)
+```
+
+## Ejemplo D - template preparado para djlint
+
+```django
+{% if comedor_activo %}
+    <div class="alert alert-info">
+        <span>{{ comedor_activo.nombre }}</span>
+    </div>
+{% endif %}
 ```

@@ -1,12 +1,12 @@
 # Management commands relevantes
 
 ## Core
-- `load_fixtures`: carga fixtures en modo upsert (no borra) con opción `--force`. Evidencia: core/management/commands/load_fixtures.py:8-77.
+- `load_fixtures`: carga fixtures en modo upsert (no borra) con opción `--force` o `--overwrite` para reaplicar datos existentes. Evidencia: core/management/commands/load_fixtures.py:8-77.
 - `generate_webp_images`: genera WebP para ImageFields con opciones de filtro, calidad y estadísticas. Evidencia: core/management/commands/generate_webp_images.py:1-111.
 - `debug_queries`: ejecuta depuración de queries para vistas (todas o Ciudadanos). Evidencia: core/management/commands/debug_queries.py:1-33.
 
 ## Users
-- `create_groups`: crea grupos predeterminados y sincroniza permisos bootstrap según el registro IAM. Evidencia: users/management/commands/create_groups.py:1-17.
+- `create_groups`: crea grupos predeterminados y sincroniza permisos bootstrap según la semilla declarativa de IAM (`users/bootstrap/groups_seed.py`). Evidencia: users/management/commands/create_groups.py:1-23.
 - `sync_group_permissions_from_registry`: sincroniza permisos Django por grupo para grupos ya existentes. Útil post-migración en staging/prod. Evidencia: users/management/commands/sync_group_permissions_from_registry.py:1-13.
 - `create_test_users`: genera usuarios de prueba cuando `DEBUG=True`. Evidencia: users/management/commands/create_test_users.py:1-80.
 - `import_users_from_csv`: crea/actualiza usuarios replicando grupos desde un usuario de referencia. Evidencia: users/management/commands/import_users_from_csv.py:1-35.

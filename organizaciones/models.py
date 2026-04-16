@@ -110,6 +110,7 @@ class Aval(SoftDeleteModelMixin, models.Model):
 
 class Organizacion(SoftDeleteModelMixin, models.Model):
     nombre = models.CharField(max_length=255)
+    sigla = models.CharField(max_length=30, blank=True, null=True, verbose_name="Sigla")
     cuit = models.BigIntegerField(
         blank=True,
         null=True,
@@ -153,3 +154,6 @@ class Organizacion(SoftDeleteModelMixin, models.Model):
         ordering = ["id"]
         verbose_name = "Organizacion"
         verbose_name_plural = "Organizaciones"
+        indexes = [
+            models.Index(fields=["telefono"], name="org_telefono_idx"),
+        ]

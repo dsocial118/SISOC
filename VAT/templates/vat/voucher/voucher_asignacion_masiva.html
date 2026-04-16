@@ -1,0 +1,114 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Asignación Masiva de Vouchers{% endblock %}
+{% block titulo-pagina %}Asignación Masiva{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-people me-2"></i>Asignación masiva de vouchers
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        Ingresá los DNIs separados por coma, espacio o salto de línea (máx. 500). Se creará un voucher por cada ciudadano encontrado que no tenga ya uno activo en el programa seleccionado.
+                    </p>
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                            </div>
+                        {% endfor %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-all me-1"></i>Procesar
+                            </button>
+                            <a href="{% url 'vat_voucher_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {% if resultado %}
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="bi bi-clipboard-check me-2"></i>Resultado
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Resumen -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-success bg-opacity-10 border border-success-subtle text-center">
+                                    <div class="fw-bold text-success fs-4">{{ resultado.creados|length }}</div>
+                                    <div class="small text-muted">Asignados</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-warning bg-opacity-10 border border-warning-subtle text-center">
+                                    <div class="fw-bold text-warning fs-4">{{ resultado.ya_tenia|length }}</div>
+                                    <div class="small text-muted">Ya tenían</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-secondary bg-opacity-10 border border-secondary-subtle text-center">
+                                    <div class="fw-bold text-secondary fs-4">{{ resultado.no_encontrados|length }}</div>
+                                    <div class="small text-muted">No encontrados</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-danger bg-opacity-10 border border-danger-subtle text-center">
+                                    <div class="fw-bold text-danger fs-4">{{ resultado.errores|length }}</div>
+                                    <div class="small text-muted">Errores</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if resultado.creados %}
+                            <details class="mb-2">
+                                <summary class="text-success fw-semibold small">Asignados ({{ resultado.creados|length }})</summary>
+                                <div class="mt-1 small text-muted">{{ resultado.creados|join:", " }}</div>
+                            </details>
+                        {% endif %}
+
+                        {% if resultado.ya_tenia %}
+                            <details class="mb-2">
+                                <summary class="text-warning fw-semibold small">Ya tenían voucher activo ({{ resultado.ya_tenia|length }})</summary>
+                                <div class="mt-1 small text-muted">{{ resultado.ya_tenia|join:", " }}</div>
+                            </details>
+                        {% endif %}
+
+                        {% if resultado.no_encontrados %}
+                            <details class="mb-2">
+                                <summary class="text-secondary fw-semibold small">DNIs no encontrados ({{ resultado.no_encontrados|length }})</summary>
+                                <div class="mt-1 small text-muted">{{ resultado.no_encontrados|join:", " }}</div>
+                            </details>
+                        {% endif %}
+
+                        {% if resultado.errores %}
+                            <details class="mb-2">
+                                <summary class="text-danger fw-semibold small">Errores al procesar ({{ resultado.errores|length }})</summary>
+                                <div class="mt-1 small text-muted">{{ resultado.errores|join:", " }}</div>
+                            </details>
+                        {% endif %}
+
+                        <a href="{% url 'vat_voucher_list' %}"
+                           class="btn btn-sm btn-outline-primary mt-2">
+                            <i class="bi bi-list me-1"></i>Ver todos los vouchers
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

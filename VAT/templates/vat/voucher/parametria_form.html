@@ -1,0 +1,433 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block titulo-pagina %}{{ titulo }}{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+
+    <style>
+    .vp-shell {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .vp-hero {
+        background: linear-gradient(135deg, #183a67 0%, #25518b 55%, #3b74b8 100%);
+        color: #fff;
+        border-radius: 18px;
+        padding: 1.75rem 2rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 18px 45px rgba(24, 58, 103, 0.18);
+    }
+
+    .vp-hero h1 {
+        margin: 0 0 .35rem;
+        font-size: 1.9rem;
+        font-weight: 700;
+    }
+
+    .vp-hero p {
+        margin: 0;
+        max-width: 760px;
+        color: rgba(255, 255, 255, 0.82);
+    }
+
+    .vp-panel {
+        border: 0;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+    }
+
+    .vp-panel-header {
+        padding: 1.15rem 1.35rem;
+        border-bottom: 1px solid rgba(126, 179, 255, 0.18);
+        background: linear-gradient(135deg, #132c4d 0%, #1d446f 55%, #2d649e 100%);
+        color: #f8fbff;
+    }
+
+    .vp-panel-header .card-title {
+        color: #ffffff;
+        font-weight: 700;
+    }
+
+    .vp-panel-header .text-muted,
+    .vp-panel-header .small {
+        color: rgba(240, 247, 255, 0.82) !important;
+    }
+
+    .vp-section {
+        padding: 1.35rem;
+        border-bottom: 1px solid #edf1f6;
+    }
+
+    .vp-section:last-child {
+        border-bottom: 0;
+    }
+
+    .vp-section-title {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e3558;
+        margin-bottom: .3rem;
+    }
+
+    .vp-section-text {
+        color: #64748b;
+        font-size: .92rem;
+        margin-bottom: 1rem;
+    }
+
+    .vp-badge {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #e7effb;
+        color: #25518b;
+        flex-shrink: 0;
+    }
+
+    .vp-field label {
+        font-weight: 600;
+        color: #243b5e;
+        margin-bottom: .35rem;
+    }
+
+    .vp-field .form-control,
+    .vp-field .form-select,
+    .vp-field textarea {
+        border-radius: 12px;
+        border: 1px solid #d8e1ee;
+        padding: .75rem .95rem;
+        box-shadow: none;
+    }
+
+    .vp-field .form-control:focus,
+    .vp-field .form-select:focus,
+    .vp-field textarea:focus {
+        border-color: #3b74b8;
+        box-shadow: 0 0 0 .2rem rgba(59, 116, 184, 0.12);
+    }
+
+    .vp-help {
+        color: #a9bdd6;
+        font-size: .82rem;
+        margin-top: .35rem;
+    }
+
+    .vp-radio-group {
+        display: grid;
+        gap: .75rem;
+    }
+
+    .vp-radio-option {
+        border: 1px solid rgba(126, 179, 255, 0.18);
+        border-radius: 14px;
+        padding: .85rem 1rem;
+        background: rgba(16, 32, 54, 0.78);
+        color: #edf4ff;
+    }
+
+    .vp-toggle-card {
+        border: 1px solid rgba(126, 179, 255, 0.18);
+        border-radius: 16px;
+        padding: 1rem 1.1rem;
+        background: linear-gradient(180deg, rgba(16, 34, 58, 0.94) 0%, rgba(21, 43, 72, 0.92) 100%);
+        color: #edf4ff;
+    }
+
+    .vp-toggle-card .form-check-label,
+    .vp-radio-option .form-check-label,
+    .vp-field .d-block {
+        color: #edf4ff;
+    }
+
+    .vp-toggle-card .form-check-input,
+    .vp-radio-option input[type="radio"] {
+        background-color: rgba(255, 255, 255, 0.08);
+        border-color: rgba(160, 194, 234, 0.45);
+    }
+
+    .vp-radio-option:hover,
+    .vp-toggle-card:hover {
+        border-color: rgba(126, 179, 255, 0.32);
+        box-shadow: 0 8px 22px rgba(6, 15, 29, 0.18);
+    }
+
+    .vp-sidecard {
+        border: 0;
+        border-radius: 18px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .vp-sidecard .card-body {
+        padding: 1.25rem;
+    }
+
+    .vp-sidecard h5 {
+        color: #1f3a67;
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: .9rem;
+    }
+
+    .vp-checklist {
+        margin: 0;
+        padding-left: 1rem;
+        color: #5f6f84;
+        font-size: .9rem;
+    }
+
+    .vp-checklist li {
+        margin-bottom: .6rem;
+    }
+
+    .vp-actions {
+        display: flex;
+        gap: .75rem;
+        justify-content: flex-end;
+        padding: 1.25rem 1.35rem 1.35rem;
+        background: linear-gradient(180deg, rgba(10, 21, 37, 0.98) 0%, rgba(15, 30, 50, 0.98) 100%);
+        border-top: 1px solid rgba(126, 179, 255, 0.18);
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+    }
+
+    .vp-actions .btn-outline-secondary {
+        color: #d8e7f8;
+        border-color: rgba(179, 206, 237, 0.38);
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .vp-actions .btn-outline-secondary:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(179, 206, 237, 0.5);
+    }
+
+    .vp-actions .btn-primary {
+        background: linear-gradient(135deg, #2e6fbc 0%, #4a8ddb 100%);
+        border-color: #4a8ddb;
+        box-shadow: 0 10px 20px rgba(46, 111, 188, 0.28);
+    }
+
+    .vp-actions .btn-primary:hover {
+        background: linear-gradient(135deg, #255d9f 0%, #3d7bc3 100%);
+        border-color: #3d7bc3;
+    }
+
+    @media (max-width: 991px) {
+        .vp-hero {
+            padding: 1.4rem 1.25rem;
+        }
+    }
+    </style>
+
+    <div class="vp-shell">
+        <div class="vp-hero">
+            <h1>
+                <i class="bi bi-sliders me-2"></i>{{ titulo }}
+            </h1>
+            <p>
+                Configurá cómo se asignan, vencen y renuevan los créditos de voucher para un programa. El objetivo es que la parametría quede legible y fácil de mantener.
+            </p>
+        </div>
+
+        <div class="row g-4 align-items-start">
+            <div class="col-lg-8">
+                <div class="card vp-panel">
+                    <div class="vp-panel-header">
+                        <h3 class="card-title mb-1">Configuración general</h3>
+                        <div class="text-muted small">Definí la identidad de la parametría y las reglas operativas del voucher.</div>
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="vp-section">
+                            <div class="vp-section-title">
+                                <span class="vp-badge"><i class="bi bi-card-text"></i></span>
+                                Identificación
+                            </div>
+                            <div class="vp-section-text">
+                                Primero asociá la parametría al programa correcto y asignale un nombre claro para reconocerla después.
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6 vp-field">
+                                    <label for="{{ form.programa.id_for_label }}">
+                                        {{ form.programa.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.programa }}
+                                    {% if form.programa.errors %}<div class="text-danger small mt-1">{{ form.programa.errors|join:", " }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6 vp-field">
+                                    <label for="{{ form.nombre.id_for_label }}">
+                                        {{ form.nombre.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.nombre }}
+                                    {% if form.nombre.errors %}<div class="text-danger small mt-1">{{ form.nombre.errors|join:", " }}</div>{% endif %}
+                                </div>
+                                <div class="col-12 vp-field">
+                                    <label for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
+                                    {{ form.descripcion }}
+                                    {% if form.descripcion.errors %}
+                                        <div class="text-danger small mt-1">{{ form.descripcion.errors|join:", " }}</div>
+                                    {% endif %}
+                                    <div class="vp-help">Usá este campo para aclarar alcance, público objetivo o criterios especiales.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="vp-section">
+                            <div class="vp-section-title">
+                                <span class="vp-badge"><i class="bi bi-ticket-perforated"></i></span>
+                                Créditos y vigencia
+                            </div>
+                            <div class="vp-section-text">Definí cuántos créditos recibe cada ciudadano y hasta cuándo serán válidos.</div>
+                            <div class="row g-3">
+                                <div class="col-md-6 vp-field">
+                                    <label for="{{ form.cantidad_inicial.id_for_label }}">
+                                        {{ form.cantidad_inicial.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.cantidad_inicial }}
+                                    {% if form.cantidad_inicial.errors %}
+                                        <div class="text-danger small mt-1">{{ form.cantidad_inicial.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 vp-field">
+                                    <label for="{{ form.fecha_vencimiento.id_for_label }}">
+                                        {{ form.fecha_vencimiento.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.fecha_vencimiento }}
+                                    {% if form.fecha_vencimiento.errors %}
+                                        <div class="text-danger small mt-1">{{ form.fecha_vencimiento.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="vp-section">
+                            <div class="vp-section-title">
+                                <span class="vp-badge"><i class="bi bi-arrow-repeat"></i></span>
+                                Renovación automática
+                            </div>
+                            <div class="vp-section-text">
+                                Configurá si el sistema debe renovar créditos todos los meses y de qué forma hacerlo.
+                            </div>
+                            <div class="vp-toggle-card mb-3">
+                                <div class="form-check mb-0">
+                                    {{ form.renovacion_mensual }}
+                                    <label class="form-check-label fw-semibold"
+                                           for="{{ form.renovacion_mensual.id_for_label }}">
+                                        {{ form.renovacion_mensual.label }}
+                                    </label>
+                                </div>
+                                {% if form.renovacion_mensual.help_text %}
+                                    <div class="vp-help">{{ form.renovacion_mensual.help_text }}</div>
+                                {% endif %}
+                                {% if form.renovacion_mensual.errors %}
+                                    <div class="text-danger small mt-1">{{ form.renovacion_mensual.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6 vp-field">
+                                    <label for="{{ form.cantidad_renovacion.id_for_label }}">{{ form.cantidad_renovacion.label }}</label>
+                                    {{ form.cantidad_renovacion }}
+                                    {% if form.cantidad_renovacion.errors %}
+                                        <div class="text-danger small mt-1">{{ form.cantidad_renovacion.errors|join:", " }}</div>
+                                    {% endif %}
+                                    {% if form.cantidad_renovacion.help_text %}
+                                        <div class="vp-help">{{ form.cantidad_renovacion.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 vp-field">
+                                    <label class="d-block">{{ form.renovacion_tipo.label }}</label>
+                                    <div class="vp-radio-group mt-2">
+                                        {% for radio in form.renovacion_tipo %}
+                                            <label class="vp-radio-option d-flex align-items-start gap-2 mb-0"
+                                                   for="{{ radio.id_for_label }}">
+                                                {{ radio.tag }}
+                                                <span>{{ radio.choice_label }}</span>
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                    {% if form.renovacion_tipo.errors %}
+                                        <div class="text-danger small mt-1">{{ form.renovacion_tipo.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="vp-section">
+                            <div class="vp-section-title">
+                                <span class="vp-badge"><i class="bi bi-shield-check"></i></span>
+                                Reglas de uso
+                            </div>
+                            <div class="vp-section-text">
+                                Determiná restricciones funcionales para las inscripciones que dependen de esta parametría.
+                            </div>
+                            <div class="vp-toggle-card">
+                                <div class="form-check mb-0">
+                                    {{ form.inscripcion_unica_activa }}
+                                    <label class="form-check-label fw-semibold"
+                                           for="{{ form.inscripcion_unica_activa.id_for_label }}">
+                                        {{ form.inscripcion_unica_activa.label }}
+                                    </label>
+                                </div>
+                                {% if form.inscripcion_unica_activa.help_text %}
+                                    <div class="vp-help">{{ form.inscripcion_unica_activa.help_text }}</div>
+                                {% endif %}
+                                {% if form.inscripcion_unica_activa.errors %}
+                                    <div class="text-danger small mt-1">{{ form.inscripcion_unica_activa.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="vp-actions">
+                            <a href="{% url 'vat_voucher_parametria_list' %}"
+                               class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-lg me-1"></i>Guardar parametría
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card vp-sidecard mb-3">
+                    <div class="card-body">
+                        <h5>
+                            <i class="bi bi-lightbulb me-2"></i>Sugerencia de orden
+                        </h5>
+                        <ol class="vp-checklist">
+                            <li>Elegí el programa y un nombre entendible.</li>
+                            <li>Definí créditos iniciales y fecha de vencimiento.</li>
+                            <li>Recién después configurá renovación mensual.</li>
+                            <li>Activá inscripción única solo si el programa lo requiere.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card vp-sidecard">
+                    <div class="card-body">
+                        <h5>
+                            <i class="bi bi-exclamation-circle me-2"></i>Impacto funcional
+                        </h5>
+                        <ul class="vp-checklist">
+                            <li>La fecha de vencimiento debe ser posterior a hoy.</li>
+                            <li>Si no completás créditos de renovación, se reutiliza la cantidad inicial.</li>
+                            <li>El tipo de renovación define si se acumula saldo o se reinicia.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

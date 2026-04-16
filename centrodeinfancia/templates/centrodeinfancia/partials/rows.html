@@ -1,3 +1,4 @@
+
 {% for item in centros %}
     <tr>
         {% for column_key in active_columns %}
@@ -7,8 +8,18 @@
                 </td>
             {% elif column_key == "organizacion" %}
                 <td data-organizacion="{{ item.organizacion|default:'' }}">{{ item.organizacion|default:"-" }}</td>
+            {% elif column_key == "tiene_nomina" %}
+                <td data-tiene-nomina="{% if item.tiene_nomina %}Si{% else %}No{% endif %}">
+                    {% if item.tiene_nomina %}
+                        Si
+                    {% else %}
+                        No
+                    {% endif %}
+                </td>
             {% elif column_key == "provincia" %}
                 <td data-provincia="{{ item.provincia|default:'' }}">{{ item.provincia|default:"-" }}</td>
+            {% elif column_key == "departamento" %}
+                <td data-departamento="{{ item.departamento|default:'' }}">{{ item.departamento|default:"-" }}</td>
             {% elif column_key == "municipio" %}
                 <td data-municipio="{{ item.municipio|default:'' }}">{{ item.municipio|default:"-" }}</td>
             {% elif column_key == "localidad" %}
@@ -58,7 +69,7 @@
     <tr>
         <td colspan="{{ active_columns|length|add:1 }}">
             <div class="no-comedores-message">
-                <h3>No se encontraron centros de infancia</h3>
+                <h3>No se encontraron centros de desarrollo infantil</h3>
                 <p>No hay centros que coincidan con los criterios de búsqueda.</p>
             </div>
         </td>

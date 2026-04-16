@@ -10,7 +10,22 @@
     </ol>
 {% endblock %}
 {% block content %}
-    {% with is_tec=request.user|has_perm_code:"celiaquia.view_expediente" is_coord=request.user|has_perm_code:"celiaquia.view_expediente" is_prov=request.user|has_perm_code:"celiaquia.view_expediente" %}
+    {% with is_tec=is_tecnico_celiaquia is_coord=is_coord_celiaquia is_prov=is_provincial_celiaquia %}
+        <style>
+            .form-editar-error [aria-invalid="true"] {
+                border: 1px solid rgba(154, 42, 54, 0.92) !important;
+                outline: 2px solid rgba(154, 42, 54, 0.16) !important;
+                outline-offset: 0 !important;
+                box-shadow:
+                    0 0 0 0.16rem rgba(154, 42, 54, 0.10),
+                    inset 0 0 0 1px rgba(154, 42, 54, 0.08) !important;
+            }
+
+            .form-editar-error select[aria-invalid="true"] option {
+                color: inherit;
+                background-color: inherit;
+            }
+        </style>
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
                 <a href="{% url 'expediente_list' %}"
@@ -518,7 +533,7 @@
                                                 <!-- Col 3: Archivos y Comentarios -->
                                                 <div class="col-lg-5">
                                                     {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
- 
+
                                                     <!-- Comentarios Técnicos -->
                                                     {% if is_tec or is_coord or is_prov and leg.revision_tecnico == 'SUBSANAR' %}
                                                         {% include 'components/legajo_comentarios.html' with legajo=leg is_tec=is_tec is_coord=is_coord %}
@@ -582,41 +597,43 @@
                                             </div>
                                             <div class="list-divider"></div>
                                             <!-- Acciones -->
-                                            {% if is_tec and expediente.estado.nombre in 'ASIGNADO,PROCESO_DE_CRUCE' %}
-                                                <div class="d-flex justify-content-end mt-2">
-                                                    <div class="btn-toolbar flex-wrap"
-                                                         role="toolbar"
-                                                         aria-label="Acciones del legajo">
-                                                        {% with estado=leg.revision_tecnico %}
-                                                            <div class="btn-group btn-group-sm me-2" role="group">
-                                                                <button type="button"
-                                                                        class="btn btn-info btn-validar-renaper"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-bs-toggle="modal"
-                                                                        data-bs-target="#modalValidarRenaper">
-                                                                    Validar Renaper
-                                                                </button>
-                                                            </div>
-                                                            <div class="btn-group btn-group-sm" role="group">
-                                                                <button type="button"
-                                                                        class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-accion="APROBAR">Aprobar</button>
-                                                                <button type="button"
-                                                                        class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-bs-toggle="modal"
-                                                                        data-bs-target="#modalSubsanar">
-                                                                    Subsanar
-                                                                </button>
-                                                                <button type="button"
-                                                                        class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
-                                                                        data-legajo-id="{{ leg.pk }}"
-                                                                        data-accion="RECHAZAR">Rechazar</button>
-                                                            </div>
-                                                        {% endwith %}
+                                            {% if leg.revision_tecnico == 'PENDIENTE' or leg.revision_tecnico == 'SUBSANADO' %}
+                                                {% if is_coord and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' or is_tec and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' %}
+                                                    <div class="d-flex justify-content-end mt-2">
+                                                        <div class="btn-toolbar flex-wrap"
+                                                             role="toolbar"
+                                                             aria-label="Acciones del legajo">
+                                                            {% with estado=leg.revision_tecnico %}
+                                                                <div class="btn-group btn-group-sm me-2" role="group">
+                                                                    <button type="button"
+                                                                            class="btn btn-info btn-validar-renaper"
+                                                                            data-legajo-id="{{ leg.pk }}"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#modalValidarRenaper">
+                                                                        Validar Renaper
+                                                                    </button>
+                                                                </div>
+                                                                <div class="btn-group btn-group-sm" role="group">
+                                                                    <button type="button"
+                                                                            class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
+                                                                            data-legajo-id="{{ leg.pk }}"
+                                                                            data-accion="APROBAR">Aprobar</button>
+                                                                    <button type="button"
+                                                                            class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
+                                                                            data-legajo-id="{{ leg.pk }}"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#modalSubsanar">
+                                                                        Subsanar
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
+                                                                            data-legajo-id="{{ leg.pk }}"
+                                                                            data-accion="RECHAZAR">Rechazar</button>
+                                                                </div>
+                                                            {% endwith %}
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </div>
@@ -764,37 +781,41 @@
                             </div>
                             <div class="list-divider"></div>
                             <!-- Acciones -->
-                            {% if is_tec and expediente.estado.nombre in 'ASIGNADO,PROCESO_DE_CRUCE' %}
-                                <div class="d-flex justify-content-end mt-2">
-                                    <div class="btn-toolbar flex-wrap"
-                                         role="toolbar"
-                                         aria-label="Acciones del legajo">
-                                        {% with estado=leg.revision_tecnico %}
-                                            <div class="btn-group btn-group-sm me-2" role="group">
-                                                <button type="button"
-                                                        class="btn btn-info btn-validar-renaper"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalValidarRenaper">Validar Renaper</button>
-                                            </div>
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <button type="button"
-                                                        class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-accion="APROBAR">Aprobar</button>
-                                                <button type="button"
-                                                        class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalSubsanar">Subsanar</button>
-                                                <button type="button"
-                                                        class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-accion="RECHAZAR">Rechazar</button>
-                                            </div>
-                                        {% endwith %}
+                            {% if leg.revision_tecnico == 'PENDIENTE' or leg.revision_tecnico == 'SUBSANADO' %}
+                                {% if is_coord and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' or is_tec and expediente.estado.nombre in 'EN_ESPERA,ASIGNADO,PROCESO_DE_CRUCE' %}
+                                    <div class="d-flex justify-content-end mt-2">
+                                        <div class="btn-toolbar flex-wrap"
+                                             role="toolbar"
+                                             aria-label="Acciones del legajo">
+                                            {% with estado=leg.revision_tecnico %}
+                                                <div class="btn-group btn-group-sm me-2" role="group">
+                                                    <button type="button"
+                                                            class="btn btn-info btn-validar-renaper"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalValidarRenaper">
+                                                        Validar Renaper
+                                                    </button>
+                                                </div>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button"
+                                                            class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-accion="APROBAR">Aprobar</button>
+                                                    <button type="button"
+                                                            class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalSubsanar">Subsanar</button>
+                                                    <button type="button"
+                                                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-accion="RECHAZAR">Rechazar</button>
+                                                </div>
+                                            {% endwith %}
+                                        </div>
                                     </div>
-                                </div>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>
@@ -805,7 +826,7 @@
     {% else %}
         <p class="text-muted">No hay legajos cargados.</p>
     {% endif %}
-    <!-- Confirmar EnvÃ­o: solo Provincia en EN_ESPERA -->
+    <!-- Confirmar Envío: solo Provincia en EN_ESPERA -->
     {% if legajos and is_prov and expediente.estado.nombre == 'EN_ESPERA' %}
         <div class="text-end mt-3">
             {% if registros_erroneos.count > 0 %}
@@ -831,7 +852,7 @@
             <h5 class="mb-0 registros-erroneos-title">
                 <i class="fas fa-exclamation-triangle"></i> Registros con Errores ({{ registros_erroneos.count }})
             </h5>
-            {% if is_prov %}
+            {% if can_manage_registros_erroneos %}
                 <button id="btn-reprocesar-errores" class="btn btn-warning btn-sm">
                     <i class="fas fa-sync"></i> Reprocesar Todos
                 </button>
@@ -896,7 +917,9 @@
                                 <div class="card mt-2" style="background: #2c3e50; border-color: #495057;">
                                     <div class="card-body">
                                         <h6 class="mb-3">Editar Datos - Fila {{ registro.fila_excel }}</h6>
-                                        <form class="form-editar-error" data-registro-id="{{ registro.pk }}">
+                                        <form class="form-editar-error"
+                                              data-registro-id="{{ registro.pk }}"
+                                              data-invalid-fields="{{ registro.invalid_fields|join:',' }}">
                                             <!-- DATOS DEL BENEFICIARIO -->
                                             <h6 class="text-primary mt-2 mb-2">
                                                 <i class="fas fa-child"></i> Beneficiario
@@ -905,43 +928,50 @@
                                                 <div class="col-md-4">
                                                     <label class="form-label">Apellido *</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'apellido' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="apellido"
                                                            value="{{ registro.datos_raw.apellido|default:'' }}"
+                                                           {% if 'apellido' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                            required />
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Nombre *</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'nombre' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="nombre"
                                                            value="{{ registro.datos_raw.nombre|default:'' }}"
+                                                           {% if 'nombre' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                            required />
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Documento *</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'documento' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="documento"
                                                            value="{{ registro.datos_raw.documento|default:'' }}"
+                                                           {% if 'documento' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                            required />
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Fecha Nacimiento *</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'fecha_nacimiento' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="fecha_nacimiento"
                                                            value="{{ registro.datos_raw.fecha_nacimiento|default:'' }}"
                                                            placeholder="DD/MM/YYYY"
+                                                           {% if 'fecha_nacimiento' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                            required />
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Sexo *</label>
-                                                    <select class="form-select" name="sexo" required>
+                                                    <select class="form-select{% if 'sexo' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                            name="sexo"
+                                                            {% if 'sexo' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                            required>
                                                         <option value="">Seleccionar...</option>
                                                         {% for sexo in sexos %}
                                                             <option value="{{ sexo.id }}"
-                                                                    {% if registro.datos_raw.sexo|stringformat:"s" == sexo.id|stringformat:"s" or registro.datos_raw.sexo|lower == sexo.sexo|lower %}selected{% endif %}>
+                                                                    {% if registro.datos_raw.sexo|stringformat:"s" == sexo.id|stringformat:"s" or registro.datos_raw.sexo|lower == sexo.sexo|lower or registro.datos_raw.sexo|upper == "M" and sexo.sexo|lower == "masculino" or registro.datos_raw.sexo|upper == "F" and sexo.sexo|lower == "femenino" %}selected{% endif %}>
                                                                 {{ sexo.sexo }}
                                                             </option>
                                                         {% endfor %}
@@ -949,26 +979,30 @@
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Nacionalidad *</label>
-                                                    <select class="form-select" name="nacionalidad" required>
+                                                    <select class="form-select{% if 'nacionalidad' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                            name="nacionalidad"
+                                                            {% if 'nacionalidad' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                            required>
                                                         <option value="">Seleccionar...</option>
-                                                        {% for nac in nacionalidades %}
-                                                            <option value="{{ nac.id }}"
-                                                                    {% if registro.datos_raw.nacionalidad|stringformat:"s" == nac.id|stringformat:"s" or registro.datos_raw.nacionalidad|lower == nac.nacionalidad|lower %}selected{% endif %}>
-                                                                {{ nac.nacionalidad }}
+                                                        {% for nacionalidad in nacionalidades %}
+                                                            <option value="{{ nacionalidad.id }}"
+                                                                    {% if registro.nacionalidad_autocomplete_id|stringformat:"s" == nacionalidad.id|stringformat:"s" %}selected{% endif %}>
+                                                                {{ nacionalidad.nacionalidad }}
                                                             </option>
                                                         {% endfor %}
                                                     </select>
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Municipio *</label>
-                                                    <select class="form-select select-municipio"
+                                                    <select class="form-select select-municipio{% if 'municipio' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                             name="municipio"
                                                             data-registro-id="{{ registro.pk }}"
+                                                            {% if 'municipio' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                             required>
                                                         <option value="">Seleccionar...</option>
                                                         {% for mun in municipios %}
                                                             <option value="{{ mun.id }}"
-                                                                    {% if registro.datos_raw.municipio|stringformat:"s" == mun.id|stringformat:"s" %}selected{% endif %}>
+                                                                    {% if registro.municipio_autocomplete_id|stringformat:"s" == mun.id|stringformat:"s" %}selected{% endif %}>
                                                                 {{ mun.nombre }}
                                                             </option>
                                                         {% endfor %}
@@ -976,9 +1010,10 @@
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Localidad *</label>
-                                                    <select class="form-select select-localidad"
+                                                    <select class="form-select select-localidad{% if 'localidad' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                             name="localidad"
                                                             data-registro-id="{{ registro.pk }}"
+                                                            {% if 'localidad' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                             required>
                                                         <option value="">Seleccionar...</option>
                                                         {% for loc in localidades %}
@@ -993,104 +1028,147 @@
                                                 <div class="col-md-4">
                                                     <label class="form-label">Teléfono</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'telefono' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="telefono"
-                                                           value="{{ registro.datos_raw.telefono|default:'' }}" />
+                                                           value="{{ registro.datos_raw.telefono|default:'' }}"
+                                                           {% if 'telefono' in registro.invalid_fields %}aria-invalid="true"{% endif %} />
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label class="form-label">Email</label>
                                                     <input type="email"
-                                                           class="form-control"
+                                                           class="form-control{% if 'email' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="email"
-                                                           value="{{ registro.datos_raw.email|default:'' }}" />
+                                                           value="{{ registro.datos_raw.email|default:'' }}"
+                                                           {% if 'email' in registro.invalid_fields %}aria-invalid="true"{% endif %} />
                                                 </div>
                                                 <div class="col-md-3">
-                                                    <label class="form-label">Calle</label>
+                                                    <label class="form-label">Calle *</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'calle' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="calle"
-                                                           value="{{ registro.datos_raw.calle|default:'' }}" />
+                                                           value="{{ registro.datos_raw.calle|default:'' }}"
+                                                           {% if 'calle' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                           required />
                                                 </div>
                                                 <div class="col-md-3">
-                                                    <label class="form-label">Altura</label>
+                                                    <label class="form-label">Altura *</label>
                                                     <input type="text"
-                                                           class="form-control"
+                                                           class="form-control{% if 'altura' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="altura"
-                                                           value="{{ registro.datos_raw.altura|default:'' }}" />
+                                                           value="{{ registro.datos_raw.altura|default:'' }}"
+                                                           {% if 'altura' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                           required />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Código Postal *</label>
+                                                    <input type="text"
+                                                           class="form-control{% if 'codigo_postal' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                           name="codigo_postal"
+                                                           value="{{ registro.datos_raw.codigo_postal|default:'' }}"
+                                                           {% if 'codigo_postal' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                           required />
                                                 </div>
                                             </div>
 
                                             <!-- DATOS DEL RESPONSABLE -->
-                                            {% if registro.datos_raw.apellido_responsable or registro.datos_raw.nombre_responsable or registro.datos_raw.documento_responsable %}
-                                                <hr class="my-3" />
-                                                <h6 class="text-info mt-2 mb-2">
-                                                    <i class="fas fa-user-tie"></i> Responsable
-                                                </h6>
-                                                <div class="row g-2">
-                                                    <div class="col-md-4">
-                                                        <label class="form-label">Apellido Responsable *</label>
-                                                        <input type="text"
-                                                               class="form-control"
-                                                               name="apellido_responsable"
-                                                               value="{{ registro.datos_raw.apellido_responsable|default:'' }}" />
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label">Nombre Responsable *</label>
-                                                        <input type="text"
-                                                               class="form-control"
-                                                               name="nombre_responsable"
-                                                               value="{{ registro.datos_raw.nombre_responsable|default:'' }}" />
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label">CUIT/Documento Responsable *</label>
-                                                        <input type="text"
-                                                               class="form-control"
-                                                               name="documento_responsable"
-                                                               value="{{ registro.datos_raw.documento_responsable|default:'' }}" />
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label">Fecha Nac. Responsable</label>
-                                                        <input type="text"
-                                                               class="form-control"
-                                                               name="fecha_nacimiento_responsable"
-                                                               value="{{ registro.datos_raw.fecha_nacimiento_responsable|default:'' }}"
-                                                               placeholder="DD/MM/YYYY" />
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label">Sexo Responsable</label>
-                                                        <select class="form-select" name="sexo_responsable">
-                                                            <option value="">Seleccionar...</option>
-                                                            {% for sexo in sexos %}
-                                                                <option value="{{ sexo.id }}"
-                                                                        {% if registro.datos_raw.sexo_responsable|stringformat:"s" == sexo.id|stringformat:"s" or registro.datos_raw.sexo_responsable|lower == sexo.sexo|lower %}selected{% endif %}>
-                                                                    {{ sexo.sexo }}
-                                                                </option>
-                                                            {% endfor %}
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label">Teléfono Responsable</label>
-                                                        <input type="text"
-                                                               class="form-control"
-                                                               name="telefono_responsable"
-                                                               value="{{ registro.datos_raw.telefono_responsable|default:'' }}" />
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Email Responsable</label>
-                                                        <input type="email"
-                                                               class="form-control"
-                                                               name="email_responsable"
-                                                               value="{{ registro.datos_raw.email_responsable|default:'' }}" />
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Domicilio Responsable</label>
-                                                        <input type="text"
-                                                               class="form-control"
-                                                               name="domicilio_responsable"
-                                                               value="{{ registro.datos_raw.domicilio_responsable|default:'' }}" />
-                                                    </div>
+                                            <hr class="my-3" />
+                                            <h6 class="text-info mt-2 mb-2">
+                                                <i class="fas fa-user-tie"></i> Responsable
+                                            </h6>
+                                            <div class="row g-2">
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Apellido Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <input type="text"
+                                                           class="form-control{% if 'apellido_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                           name="apellido_responsable"
+                                                           value="{{ registro.datos_raw.apellido_responsable|default:'' }}"
+                                                           {% if 'apellido_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
-                                            {% endif %}
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Nombre Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <input type="text"
+                                                           class="form-control{% if 'nombre_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                           name="nombre_responsable"
+                                                           value="{{ registro.datos_raw.nombre_responsable|default:'' }}"
+                                                           {% if 'nombre_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">CUIT/Documento Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <input type="text"
+                                                           class="form-control{% if 'documento_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                           name="documento_responsable"
+                                                           value="{{ registro.datos_raw.documento_responsable|default:'' }}"
+                                                           {% if 'documento_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Fecha Nac. Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <input type="text"
+                                                           class="form-control{% if 'fecha_nacimiento_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                           name="fecha_nacimiento_responsable"
+                                                           value="{{ registro.datos_raw.fecha_nacimiento_responsable|default:'' }}"
+                                                           placeholder="DD/MM/YYYY"
+                                                           {% if 'fecha_nacimiento_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Sexo Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <select class="form-select{% if 'sexo_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                            name="sexo_responsable"
+                                                            {% if 'sexo_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                            {% if registro.responsable_requerido %}required{% endif %}>
+                                                        <option value="">Seleccionar...</option>
+                                                        {% for sexo in sexos %}
+                                                            <option value="{{ sexo.id }}"
+                                                                    {% if registro.datos_raw.sexo_responsable|stringformat:"s" == sexo.id|stringformat:"s" or registro.datos_raw.sexo_responsable|lower == sexo.sexo|lower or registro.datos_raw.sexo_responsable|upper == "M" and sexo.sexo|lower == "masculino" or registro.datos_raw.sexo_responsable|upper == "F" and sexo.sexo|lower == "femenino" %}selected{% endif %}>
+                                                                {{ sexo.sexo }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Teléfono Responsable</label>
+                                                    <input type="text"
+                                                           class="form-control{% if 'telefono_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                           name="telefono_responsable"
+                                                           value="{{ registro.datos_raw.telefono_responsable|default:'' }}"
+                                                           {% if 'telefono_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %} />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Email Responsable</label>
+                                                    <input type="email"
+                                                           class="form-control{% if 'email_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                           name="email_responsable"
+                                                           value="{{ registro.datos_raw.email_responsable|default:'' }}"
+                                                           {% if 'email_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %} />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Domicilio Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <input type="text"
+                                                           class="form-control{% if 'domicilio_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                           name="domicilio_responsable"
+                                                           value="{{ registro.datos_raw.domicilio_responsable|default:'' }}"
+                                                           {% if 'domicilio_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                           {% if registro.responsable_requerido %}required{% endif %} />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Localidad Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <select class="form-select{% if 'localidad_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
+                                                            name="localidad_responsable"
+                                                            {% if 'localidad_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                            {% if registro.responsable_requerido %}required{% endif %}>
+                                                        <option value="">Seleccionar...</option>
+                                                        {% for loc in localidades %}
+                                                            <option value="{{ loc.id }}"
+                                                                    {% if registro.datos_raw.localidad_responsable|stringformat:"s" == loc.id|stringformat:"s" or registro.datos_raw.localidad_responsable|lower == loc.nombre|lower %}selected{% endif %}>
+                                                                {{ loc.nombre }} ({{ loc.municipio.nombre }})
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
 
                                             <div class="alert alert-info mt-3 mb-0">
                                                 <small><strong>Nota:</strong> Los campos se guardan automáticamente al cambiar. Luego usa "Reprocesar Todos" para crear los legajos.</small>
@@ -1108,7 +1186,7 @@
 {% endif %}
 
 
-<!-- Asignar TÃ©cnico: solo Coordinador (segÃºn tu condiciÃ³n actual por id) -->
+<!-- Asignar Técnico: solo Coordinador (según tu condición actual por id) -->
 {% if expediente.estado.id == 2 and is_coord %}
     <div class="card mb-4">
         <div class="card-header bg-body-tertiary">
@@ -1132,7 +1210,7 @@
     </div>
 {% endif %}
 
-<!-- Modal: pedir SUBSANACIÃ“N -->
+<!-- Modal: pedir SUBSANACIÓN -->
 <div class="modal fade"
      id="modalSubsanar"
      tabindex="-1"
@@ -1498,7 +1576,13 @@
                                     <td>{{ h.fecha|date:"d/m/Y H:i" }}</td>
                                     <td>{{ h.estado_anterior.display_name }}</td>
                                     <td>{{ h.estado_nuevo.display_name }}</td>
-                                    <td>{{ h.usuario.get_full_name|default:h.usuario.username|default:"-" }}</td>
+                                    <td>
+                                        {% if h.usuario %}
+                                            {{ h.usuario.get_full_name|default:h.usuario.username }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
                                     <td>{{ h.observaciones|default:"-" }}</td>
                                 </tr>
                             {% empty %}
@@ -1585,7 +1669,9 @@
                                     name="nacionalidad"
                                     required>
                                 <option value="">Seleccionar...</option>
-                                {% for nac in nacionalidades %}<option value="{{ nac.id }}">{{ nac.nacionalidad }}</option>{% endfor %}
+                                {% for nacionalidad in nacionalidades %}
+                                    <option value="{{ nacionalidad.id }}">{{ nacionalidad.nacionalidad }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -1778,10 +1864,12 @@
           content="{% url 'legajo_editar' expediente.pk 0 %}" />
     <meta name="expediente-id" content="{{ expediente.pk }}" />
     <script src="{% static 'custom/js/expediente_detail_config.js' %}"></script>
-    <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20260310-telefono-opcional"></script>
+    <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20260326-guardado-parcial-siempre"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
     <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
     <script src="{% static 'custom/js/legajo_comentarios.js' %}"></script>
 {% endblock %}
+
+

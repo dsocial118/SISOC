@@ -925,7 +925,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnConfirm = document.getElementById('btn-confirm');
   if (btnConfirm) {
     btnConfirm.addEventListener('click', async () => {
-      // Verificar si el botón está deshabilitado
       if (btnConfirm.disabled) {
         showAlert('warning', 'No se puede confirmar el envío mientras haya registros con errores pendientes.');
         return;
@@ -935,6 +934,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnConfirm.disabled = true;
       btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Enviando…';
 
+      let shouldReload = false;
       try {
         if (!window.CONFIRM_URL) throw new Error('No se configuró CONFIRM_URL.');
 
@@ -964,12 +964,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         showAlert('success', data.message || 'Envío confirmado.');
+        shouldReload = true;
       } catch (err) {
         console.error('Confirmar envío:', err);
         showAlert('danger', 'No se pudo confirmar el envío. ', err.message);
       } finally {
         btnConfirm.disabled = false;
         btnConfirm.innerHTML = original;
+      }
+
+      if (shouldReload) {
         window.location.reload();
       }
     });
@@ -1422,13 +1426,11 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== EDITAR LEGAJO ===== */
   const modalEditarLegajo = document.getElementById('modalEditarLegajo');
   if (modalEditarLegajo) {
-    // Configurar filtrado de localidades por municipio
     const selectMunicipio = document.getElementById('editar-municipio');
     const selectLocalidad = document.getElementById('editar-localidad');
     
     if (selectMunicipio && selectLocalidad) {
-      selectMunicipio.addEventListener('change', function() {
-        const municipioId = this.value;
+      const filtrarLocalidadesPorMunicipio = (municipioId) => {
         const opciones = selectLocalidad.querySelectorAll('option');
         
         opciones.forEach(option => {
@@ -1453,7 +1455,27 @@ document.addEventListener('DOMContentLoaded', () => {
             selectLocalidad.value = '';
           }
         }
+      };
+
+      const sincronizarMunicipioDesdeLocalidad = () => {
+        const optionSeleccionada = selectLocalidad.selectedOptions[0];
+        const municipioId = optionSeleccionada?.dataset?.municipio || '';
+        if (!municipioId) {
+          return;
+        }
+
+        if (selectMunicipio.value !== municipioId) {
+          selectMunicipio.value = municipioId;
+        }
+
+        filtrarLocalidadesPorMunicipio(municipioId);
+      };
+
+      selectMunicipio.addEventListener('change', function() {
+        filtrarLocalidadesPorMunicipio(this.value);
       });
+
+      selectLocalidad.addEventListener('change', sincronizarMunicipioDesdeLocalidad);
     }
     
     modalEditarLegajo.addEventListener('show.bs.modal', async function(event) {
@@ -1515,6 +1537,7 @@ document.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => {
             if (legajo.localidad) {
               document.getElementById('editar-localidad').value = legajo.localidad;
+              selectLocalidad.dispatchEvent(new Event('change'));
             }
           }, 100);
           

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from datetime import date, datetime, time
+from functools import lru_cache
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -15,19 +17,19 @@ from django.views.generic import DetailView, ListView
 from centrodeinfancia.access import aplicar_filtro_provincia_usuario
 from centrodeinfancia.forms import (
     FormularioCDIForm,
-    build_fixed_initial_rows,
-    build_articulation_formset_class,
-    build_room_distribution_formset_class,
-    build_waitlist_formset_class,
+    construir_filas_iniciales_fijas,
+    construir_clase_formset_articulacion,
+    construir_clase_formset_distribucion_salas,
+    construir_clase_formset_demanda_insatisfecha,
 )
 from centrodeinfancia.formulario_cdi_schema import (
-    ARTICULATION_INSTITUTION_OPTIONS,
-    CHOICE_FIELDS,
-    FIELD_LABELS,
-    FORMULARIO_CDI_SECTIONS,
-    MULTI_CHOICE_FIELDS,
-    ROOM_AGE_GROUP_OPTIONS,
-    WAITLIST_AGE_GROUP_OPTIONS,
+    OPCIONES_INSTITUCIONES_ARTICULACION,
+    CAMPOS_OPCIONES,
+    ETIQUETAS_CAMPOS,
+    SECCIONES_FORMULARIO_CDI,
+    CAMPOS_OPCIONES_MULTIPLES,
+    OPCIONES_GRUPO_ETARIO_SALAS,
+    OPCIONES_GRUPO_ETARIO_DEMANDA,
 )
 from centrodeinfancia.models import (
     CentroDeInfancia,
@@ -37,83 +39,105 @@ from centrodeinfancia.models import (
     FormularioCDIWaitlistByAgeGroup,
 )
 
-FULL_WIDTH_FIELD_NAMES = {"health_protocol_items", "meals_provided"}
-FORCED_FIELD_ROWS = {
-    "operation_months": ("operation_months", "operation_days"),
+CAMPOS_ANCHO_COMPLETO = {"items_protocolo_salud", "prestaciones_alimentarias"}
+FILAS_FORZADAS = {
+    "meses_funcionamiento": ("meses_funcionamiento", "dias_funcionamiento"),
 }
 
 
-def _formularios_cdi_queryset_scoped(user):
+def _obtener_queryset_formularios_cdi_filtrado(user):
     queryset = FormularioCDI.objects.select_related(
         "centro",
         "created_by",
-        "cdi_province",
-        "cdi_municipality",
-        "cdi_locality",
-        "org_province",
-        "org_municipality",
-        "org_locality",
+        "provincia_cdi",
+        "departamento_cdi",
+        "municipio_cdi",
+        "localidad_cdi",
+        "provincia_organizacion",
+        "departamento_organizacion",
+        "municipio_organizacion",
+        "localidad_organizacion",
     )
     return aplicar_filtro_provincia_usuario(
         queryset, user, provincia_lookup="centro__provincia"
     )
 
 
-def _get_centro_scoped_or_404(user, pk):
+def _obtener_centro_filtrado_o_404(user, pk):
     queryset = CentroDeInfancia.objects.select_related(
-        "organizacion", "provincia", "municipio", "localidad"
+        "provincia", "departamento", "municipio", "localidad"
     )
     queryset = aplicar_filtro_provincia_usuario(queryset, user)
     return get_object_or_404(queryset, pk=pk)
 
 
-def _get_formulario_scoped_or_404(user, centro_id, form_pk):
-    queryset = _formularios_cdi_queryset_scoped(user).filter(centro_id=centro_id)
+def _obtener_formulario_filtrado_o_404(user, centro_id, form_pk):
+    queryset = _obtener_queryset_formularios_cdi_filtrado(user).filter(
+        centro_id=centro_id
+    )
     return get_object_or_404(queryset, pk=form_pk)
 
 
-def _choice_map_for(field_name):
-    if field_name in CHOICE_FIELDS:
-        return dict(CHOICE_FIELDS[field_name])
-    if field_name in MULTI_CHOICE_FIELDS:
-        return dict(MULTI_CHOICE_FIELDS[field_name])
-    return {}
+def _obtener_mapa_opciones(field_name):
+    return _obtener_mapas_opciones_formulario().get(field_name, {})
 
 
-def _display_value(obj, field_name):
+@lru_cache(maxsize=1)
+def _obtener_mapas_opciones_formulario():
+    form = FormularioCDIForm()
+    field_names = set(CAMPOS_OPCIONES) | set(CAMPOS_OPCIONES_MULTIPLES)
+    choice_maps = {}
+    for field_name in field_names:
+        if field_name not in form.fields:
+            continue
+        choice_maps[field_name] = {
+            value: label
+            for value, label in form.fields[field_name].choices
+            if value not in ("", None)
+        }
+    return choice_maps
+
+
+@lru_cache(maxsize=1)
+def _obtener_etiquetas_campos_formulario():
+    form = FormularioCDIForm()
+    return {field_name: field.label for field_name, field in form.fields.items()}
+
+
+def _mostrar_valor_campo(obj, field_name):
     value = getattr(obj, field_name, None)
     display_value = "-"
 
     if value not in (None, "", []):
-        if hasattr(value, "strftime"):
-            if field_name.endswith("_time"):
-                display_value = value.strftime("%H:%M")
-            elif field_name.endswith("_date") or "date" in field_name:
-                display_value = value.strftime("%d/%m/%Y")
-            else:
-                display_value = value.strftime("%d/%m/%Y %H:%M")
+        if isinstance(value, time):
+            display_value = value.strftime("%H:%M")
+        elif isinstance(value, datetime):
+            display_value = value.strftime("%d/%m/%Y %H:%M")
+        elif isinstance(value, date):
+            display_value = value.strftime("%d/%m/%Y")
         elif isinstance(value, bool):
             display_value = "Si" if value else "No"
         elif isinstance(value, list):
-            option_map = _choice_map_for(field_name)
+            option_map = _obtener_mapa_opciones(field_name)
             display_value = (
                 ", ".join(option_map.get(item, item) for item in value) or "-"
             )
         else:
-            option_map = _choice_map_for(field_name)
+            option_map = _obtener_mapa_opciones(field_name)
             display_value = option_map.get(value, value) if option_map else str(value)
 
     return display_value
 
 
-def build_formulario_summary_items(formularios):
+def construir_resumenes_formularios(formularios):
     items = []
     for formulario in formularios:
         items.append(
             {
                 "id": formulario.id,
-                "survey_date": formulario.survey_date,
-                "respondent_full_name": formulario.respondent_full_name or "-",
+                "fecha_relevamiento": formulario.fecha_relevamiento,
+                "nombre_completo_respondente": formulario.nombre_completo_respondente
+                or "-",
                 "created_at": formulario.created_at,
                 "updated_at": formulario.updated_at,
                 "detail_url": reverse(
@@ -137,13 +161,13 @@ class FormularioCDIListView(LoginRequiredMixin, ListView):
 
     def get_centro(self):
         if not hasattr(self, "_centro_cache"):
-            self._centro_cache = _get_centro_scoped_or_404(
+            self._centro_cache = _obtener_centro_filtrado_o_404(
                 self.request.user, self.kwargs["pk"]
             )
         return self._centro_cache
 
     def get_queryset(self):
-        return _formularios_cdi_queryset_scoped(self.request.user).filter(
+        return _obtener_queryset_formularios_cdi_filtrado(self.request.user).filter(
             centro_id=self.kwargs["pk"]
         )
 
@@ -151,7 +175,7 @@ class FormularioCDIListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         centro = self.get_centro()
         context["centro"] = centro
-        context["summary_items"] = build_formulario_summary_items(
+        context["summary_items"] = construir_resumenes_formularios(
             context["object_list"]
         )
         page_obj = context.get("page_obj")
@@ -169,7 +193,7 @@ class FormularioCDIDetailView(LoginRequiredMixin, DetailView):
     pk_url_kwarg = "form_pk"
 
     def get_queryset(self):
-        return _formularios_cdi_queryset_scoped(self.request.user).filter(
+        return _obtener_queryset_formularios_cdi_filtrado(self.request.user).filter(
             centro_id=self.kwargs["pk"]
         )
 
@@ -177,15 +201,26 @@ class FormularioCDIDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context["centro"] = self.object.centro
         context["detail_sections"] = self._build_detail_sections(self.object)
-        context["room_rows"] = self.object.room_distribution_rows.order_by("id")
-        context["waitlist_rows"] = self.object.waitlist_rows.order_by("id")
-        context["articulation_rows"] = self.object.articulation_rows.order_by("id")
-        context["room_totals"] = self._sum_numeric_rows(
-            context["room_rows"],
-            ["room_count", "exclusive_area_m2", "children_count", "staff_count"],
+        context["filas_salas"] = self.object.filas_distribucion_salas.order_by("id")
+        context["filas_demanda_insatisfecha"] = (
+            self.object.filas_demanda_insatisfecha.order_by("id")
         )
-        context["waitlist_total"] = sum(
-            item.waitlist_count or 0 for item in context["waitlist_rows"]
+        context["filas_articulacion"] = self.object.filas_articulacion.order_by("id")
+        context["horarios_funcionamiento"] = (
+            self.object.horarios_funcionamiento.order_by("id")
+        )
+        context["totales_salas"] = self._sum_numeric_rows(
+            context["filas_salas"],
+            [
+                "cantidad_salas",
+                "superficie_exclusiva_m2",
+                "cantidad_ninos",
+                "cantidad_personal_sala",
+            ],
+        )
+        context["total_demanda_insatisfecha"] = sum(
+            item.cantidad_demanda_insatisfecha or 0
+            for item in context["filas_demanda_insatisfecha"]
         )
         return context
 
@@ -199,13 +234,15 @@ class FormularioCDIDetailView(LoginRequiredMixin, DetailView):
     @staticmethod
     def _build_detail_sections(formulario):
         sections = []
-        for section in FORMULARIO_CDI_SECTIONS:
+        for section in SECCIONES_FORMULARIO_CDI:
             items = []
             for field_name in section["fields"]:
                 items.append(
                     {
-                        "label": FIELD_LABELS.get(field_name, field_name),
-                        "value": _display_value(formulario, field_name),
+                        "label": _obtener_etiquetas_campos_formulario().get(
+                            field_name, ETIQUETAS_CAMPOS.get(field_name, field_name)
+                        ),
+                        "value": _mostrar_valor_campo(formulario, field_name),
                     }
                 )
             sections.append({"title": section["title"], "items": items})
@@ -217,99 +254,124 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
     form_class = FormularioCDIForm
 
     def get_centro(self):
-        return _get_centro_scoped_or_404(self.request.user, self.kwargs["pk"])
+        return _obtener_centro_filtrado_o_404(self.request.user, self.kwargs["pk"])
 
     def get_form_instance(self):
         return getattr(self, "_form_instance", None)
 
     def get_initial(self):
         centro = self.get_centro()
-        return {
-            "cdi_name": centro.nombre,
-            "cdi_code": centro.cdi_code,
-            "cdi_province": centro.provincia,
-            "cdi_municipality": centro.municipio,
-            "cdi_locality": centro.localidad,
-            "cdi_street": centro.calle,
-            "cdi_door_number": centro.numero,
-            "cdi_phone": centro.telefono,
-            "cdi_contact_first_name": centro.nombre_referente,
-            "cdi_contact_last_name": centro.apellido_referente,
-            "cdi_contact_phone": centro.telefono_referente,
-            "cdi_contact_email": centro.email_referente,
+        initial = {
+            "nombre_cdi": centro.nombre,
+            "codigo_cdi": centro.codigo_cdi,
+            "ambito": centro.ambito,
+            "provincia_cdi": centro.provincia,
+            "departamento_cdi": centro.departamento,
+            "municipio_cdi": centro.municipio,
+            "localidad_cdi": centro.localidad,
+            "calle_cdi": centro.calle,
+            "numero_puerta_cdi": centro.numero,
+            "codigo_postal_cdi": centro.codigo_postal,
+            "latitud_geografica_cdi": centro.latitud,
+            "longitud_geografica_cdi": centro.longitud,
+            "telefono_cdi": centro.telefono,
+            "email_cdi": centro.mail,
+            "nombre_referente_cdi": centro.nombre_referente,
+            "apellido_referente_cdi": centro.apellido_referente,
+            "telefono_referente_cdi": centro.telefono_referente,
+            "email_referente_cdi": centro.email_referente,
+            "meses_funcionamiento": centro.meses_funcionamiento,
+            "dias_funcionamiento": centro.dias_funcionamiento,
+            "tipo_jornada": centro.tipo_jornada,
+            "tipo_jornada_otra": centro.tipo_jornada_otra,
+            "oferta_servicios": centro.oferta_servicios,
+            "modalidad_gestion": centro.modalidad_gestion,
+            "modalidad_gestion_otra": centro.modalidad_gestion_otra,
+            "nombre_organizacion_gestora": centro.organizacion,
+            "cuit_organizacion_gestora": centro.cuit_organizacion_gestiona,
         }
+        for horario in centro.horarios_funcionamiento.all():
+            initial[f"horario_{horario.dia}_apertura"] = horario.hora_apertura
+            initial[f"horario_{horario.dia}_cierre"] = horario.hora_cierre
+        return initial
 
-    def build_form(self, data=None, instance=None):
+    def construir_formulario(self, data=None, instance=None):
         initial = None
         if not instance or not instance.pk:
             initial = self.get_initial()
         return self.form_class(data=data, instance=instance, initial=initial)
 
-    def build_formsets(self, data=None, instance=None):
+    def construir_formsets(self, data=None, instance=None):
         if instance and instance.pk:
             self.ensure_fixed_rows(instance)
 
-        room_formset_class = build_room_distribution_formset_class(
-            0 if instance and instance.pk else len(ROOM_AGE_GROUP_OPTIONS)
+        clase_formset_distribucion_salas = construir_clase_formset_distribucion_salas(
+            0 if instance and instance.pk else len(OPCIONES_GRUPO_ETARIO_SALAS)
         )
-        waitlist_formset_class = build_waitlist_formset_class(
-            0 if instance and instance.pk else len(WAITLIST_AGE_GROUP_OPTIONS)
+        clase_formset_demanda_insatisfecha = (
+            construir_clase_formset_demanda_insatisfecha(
+                0 if instance and instance.pk else len(OPCIONES_GRUPO_ETARIO_DEMANDA)
+            )
         )
-        articulation_formset_class = build_articulation_formset_class(
-            0 if instance and instance.pk else len(ARTICULATION_INSTITUTION_OPTIONS)
+        clase_formset_articulacion = construir_clase_formset_articulacion(
+            0 if instance and instance.pk else len(OPCIONES_INSTITUCIONES_ARTICULACION)
         )
 
-        room_initial = (
+        filas_iniciales_salas = (
             []
             if instance
-            else build_fixed_initial_rows(ROOM_AGE_GROUP_OPTIONS, "age_group")
+            else construir_filas_iniciales_fijas(
+                OPCIONES_GRUPO_ETARIO_SALAS, "grupo_etario"
+            )
         )
-        waitlist_initial = (
+        filas_iniciales_demanda = (
             []
             if instance
-            else build_fixed_initial_rows(WAITLIST_AGE_GROUP_OPTIONS, "age_group")
+            else construir_filas_iniciales_fijas(
+                OPCIONES_GRUPO_ETARIO_DEMANDA, "grupo_etario"
+            )
         )
-        articulation_initial = (
+        filas_iniciales_articulacion = (
             []
             if instance
-            else build_fixed_initial_rows(
-                ARTICULATION_INSTITUTION_OPTIONS, "institution_type"
+            else construir_filas_iniciales_fijas(
+                OPCIONES_INSTITUCIONES_ARTICULACION, "tipo_institucion"
             )
         )
         formsets = {
-            "room_formset": room_formset_class(
+            "formset_distribucion_salas": clase_formset_distribucion_salas(
                 data=data,
                 instance=instance or FormularioCDI(),
-                prefix="room_distribution",
-                initial=room_initial,
+                prefix="distribucion_salas",
+                initial=filas_iniciales_salas,
             ),
-            "waitlist_formset": waitlist_formset_class(
+            "formset_demanda_insatisfecha": clase_formset_demanda_insatisfecha(
                 data=data,
                 instance=instance or FormularioCDI(),
-                prefix="waitlist_by_age_group",
-                initial=waitlist_initial,
+                prefix="demanda_insatisfecha_por_grupo_etario",
+                initial=filas_iniciales_demanda,
             ),
-            "articulation_formset": articulation_formset_class(
+            "formset_articulacion": clase_formset_articulacion(
                 data=data,
                 instance=instance or FormularioCDI(),
-                prefix="articulation_frequency",
-                initial=articulation_initial,
+                prefix="frecuencia_articulacion",
+                initial=filas_iniciales_articulacion,
             ),
         }
         return formsets
 
     @staticmethod
-    def build_form_sections(form):
+    def construir_secciones_formulario(form):
         sections = []
-        for section in form.section_definitions:
+        for section in form.definiciones_secciones:
             rows = []
             field_names = section["fields"]
-            forced_row_starts = set(FORCED_FIELD_ROWS)
+            forced_row_starts = set(FILAS_FORZADAS)
             index = 0
 
             while index < len(field_names):
                 current_name = field_names[index]
-                forced_row = FORCED_FIELD_ROWS.get(current_name)
+                forced_row = FILAS_FORZADAS.get(current_name)
 
                 if (
                     forced_row
@@ -329,7 +391,7 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
                     index += len(forced_row)
                     continue
 
-                if current_name in FULL_WIDTH_FIELD_NAMES:
+                if current_name in CAMPOS_ANCHO_COMPLETO:
                     rows.append(
                         [
                             {
@@ -353,7 +415,7 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
 
                 if (
                     next_name
-                    and next_name not in FULL_WIDTH_FIELD_NAMES
+                    and next_name not in CAMPOS_ANCHO_COMPLETO
                     and next_name not in forced_row_starts
                 ):
                     rows.append(
@@ -385,58 +447,67 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
         return {
             "form": form,
             "centro": centro,
-            "section_fields": self.build_form_sections(form),
-            "room_formset": formsets["room_formset"],
-            "waitlist_formset": formsets["waitlist_formset"],
-            "articulation_formset": formsets["articulation_formset"],
+            "section_fields": self.construir_secciones_formulario(form),
+            "horario_fields": [
+                {
+                    "dia": dia,
+                    "etiqueta": etiqueta,
+                    "apertura": form[f"horario_{dia}_apertura"],
+                    "cierre": form[f"horario_{dia}_cierre"],
+                }
+                for dia, etiqueta in form.DIAS_SEMANA
+            ],
+            "formset_distribucion_salas": formsets["formset_distribucion_salas"],
+            "formset_demanda_insatisfecha": formsets["formset_demanda_insatisfecha"],
+            "formset_articulacion": formsets["formset_articulacion"],
             "is_edit": bool(instance and instance.pk),
         }
 
     @staticmethod
     def ensure_fixed_rows(formulario):
         room_existing = set(
-            formulario.room_distribution_rows.values_list("age_group", flat=True)
+            formulario.filas_distribucion_salas.values_list("grupo_etario", flat=True)
         )
         waitlist_existing = set(
-            formulario.waitlist_rows.values_list("age_group", flat=True)
+            formulario.filas_demanda_insatisfecha.values_list("grupo_etario", flat=True)
         )
         articulation_existing = set(
-            formulario.articulation_rows.values_list("institution_type", flat=True)
+            formulario.filas_articulacion.values_list("tipo_institucion", flat=True)
         )
 
-        for value, _label in ROOM_AGE_GROUP_OPTIONS:
+        for value, _label in OPCIONES_GRUPO_ETARIO_SALAS:
             if value not in room_existing:
                 FormularioCDIRoomDistribution.objects.create(
                     formulario=formulario,
-                    age_group=value,
+                    grupo_etario=value,
                 )
 
-        for value, _label in WAITLIST_AGE_GROUP_OPTIONS:
+        for value, _label in OPCIONES_GRUPO_ETARIO_DEMANDA:
             if value not in waitlist_existing:
                 FormularioCDIWaitlistByAgeGroup.objects.create(
                     formulario=formulario,
-                    age_group=value,
+                    grupo_etario=value,
                 )
 
-        for value, _label in ARTICULATION_INSTITUTION_OPTIONS:
+        for value, _label in OPCIONES_INSTITUCIONES_ARTICULACION:
             if value not in articulation_existing:
                 FormularioCDIArticulationFrequency.objects.create(
                     formulario=formulario,
-                    institution_type=value,
+                    tipo_institucion=value,
                 )
 
     def get(self, request, *args, **kwargs):
         instance = self.get_form_instance()
-        form = self.build_form(instance=instance)
-        formsets = self.build_formsets(instance=instance)
+        form = self.construir_formulario(instance=instance)
+        formsets = self.construir_formsets(instance=instance)
         return render(
             request, self.template_name, self.get_context(form, formsets, instance)
         )
 
     def post(self, request, *args, **kwargs):
         instance = self.get_form_instance()
-        form = self.build_form(data=request.POST, instance=instance)
-        formsets = self.build_formsets(data=request.POST, instance=instance)
+        form = self.construir_formulario(data=request.POST, instance=instance)
+        formsets = self.construir_formsets(data=request.POST, instance=instance)
 
         if form.is_valid() and all(formset.is_valid() for formset in formsets.values()):
             with transaction.atomic():
@@ -475,7 +546,7 @@ class FormularioCDICreateView(FormularioCDIEditBaseView):
 class FormularioCDIUpdateView(FormularioCDIEditBaseView):
     def get_form_instance(self):
         if not hasattr(self, "_form_instance"):
-            self._form_instance = _get_formulario_scoped_or_404(
+            self._form_instance = _obtener_formulario_filtrado_o_404(
                 self.request.user,
                 self.kwargs["pk"],
                 self.kwargs["form_pk"],

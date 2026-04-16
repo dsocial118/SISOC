@@ -1,13 +1,14 @@
-# pylint: disable=too-many-lines
+﻿# pylint: disable=too-many-lines
 
 import calendar
-from datetime import date
+from datetime import date, time
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Prefetch, Q
 from django.db.models.fields.files import FieldFile
 from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.utils.timezone import make_aware
@@ -29,23 +30,36 @@ from comedores.api_serializers import (
     NominaCreateSerializer,
     NominaSerializer,
     NominaUpdateSerializer,
+    RendicionMensualCreateSerializer,
     RendicionMensualDetailSerializer,
     RendicionMensualListSerializer,
 )
 from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraForm
 from comedores.models import (
     AuditComedorPrograma,
+    CapacitacionComedorCertificado,
     Comedor,
     ImagenComedor,
     Nomina,
     Observacion,
 )
 from comedores.services.comedor_service import ComedorService
+from comedores.services.capacitaciones_certificados_service import (
+    delete_certificate,
+    is_alimentar_comunidad_program,
+    list_capacitaciones_certificados,
+    serialize_certificate,
+    submit_certificate,
+)
 from intervenciones.models.intervenciones import Intervencion
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
-from users.api_permissions import IsPWARepresentativeForComedor
+from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from users.api_permissions import (
+    HasMobileRendicionPermission,
+    IsPWARepresentativeForComedor,
+)
 from users.api_serializers import (
     OperadorCreateResponseSerializer,
     OperadorCreateSerializer,
@@ -55,6 +69,7 @@ from users.services_pwa import (
     create_operador_for_comedor,
     deactivate_operador,
     get_accessible_comedor_ids,
+    get_access_rows,
     is_pwa_user,
     list_operadores_for_comedor,
 )
@@ -62,13 +77,21 @@ from users.services_pwa import (
 MAX_COMPROBANTE_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 ALLOWED_COMPROBANTE_CONTENT_TYPES = {
     "application/pdf",
+    "application/msword",
+    "application/vnd.ms-excel",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "image/jpeg",
     "image/png",
 }
 
 
 @extend_schema(tags=["Comedores"])
-class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class ComedorDetailViewSet(
+    mixins.RetrieveModelMixin, viewsets.GenericViewSet
+):  # pylint: disable=too-many-public-methods
     serializer_class = ComedorDetailSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -81,13 +104,84 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         filtered_rows = ComedorService.get_filtered_comedores(self.request, user=user)
         return [row["id"] for row in filtered_rows]
 
+    def _get_pwa_spaces_selector_rows(self, user):
+        access_rows = list(
+            get_access_rows(user).select_related(
+                "comedor__provincia",
+                "comedor__localidad",
+                "comedor__organizacion",
+                "comedor__programa",
+                "comedor__ultimo_estado__estado_general__estado_actividad",
+                "comedor__ultimo_estado__estado_general__estado_proceso",
+            )
+        )
+        comedor_ids = [row.comedor_id for row in access_rows]
+        access_by_comedor_id = {row.comedor_id: row for row in access_rows}
+
+        queryset = (
+            Comedor.objects.filter(id__in=comedor_ids)
+            .select_related(
+                "provincia",
+                "localidad",
+                "organizacion",
+                "programa",
+                "ultimo_estado__estado_general__estado_actividad",
+                "ultimo_estado__estado_general__estado_proceso",
+            )
+            .order_by("nombre", "id")
+        )
+
+        rows = []
+        for comedor in queryset:
+            access = access_by_comedor_id.get(comedor.id)
+            ultimo_estado = getattr(comedor, "ultimo_estado", None)
+            estado_general = getattr(ultimo_estado, "estado_general", None)
+            estado_actividad = getattr(
+                getattr(estado_general, "estado_actividad", None), "estado", None
+            )
+            estado_proceso = getattr(
+                getattr(estado_general, "estado_proceso", None), "estado", None
+            )
+            rows.append(
+                {
+                    "id": comedor.id,
+                    "nombre": comedor.nombre,
+                    "organizacion_id": comedor.organizacion_id,
+                    "organizacion__nombre": (
+                        comedor.organizacion.nombre if comedor.organizacion_id else None
+                    ),
+                    "programa_id": comedor.programa_id,
+                    "programa__nombre": (
+                        comedor.programa.nombre if comedor.programa_id else None
+                    ),
+                    "codigo_de_proyecto": comedor.codigo_de_proyecto,
+                    "provincia__nombre": (
+                        comedor.provincia.nombre if comedor.provincia_id else None
+                    ),
+                    "localidad__nombre": (
+                        comedor.localidad.nombre if comedor.localidad_id else None
+                    ),
+                    "ultimo_estado__estado_general__estado_actividad__estado": (
+                        estado_actividad
+                    ),
+                    "ultimo_estado__estado_general__estado_proceso__estado": (
+                        estado_proceso
+                    ),
+                    "tipo_asociacion": (
+                        getattr(access, "tipo_asociacion", None) if access else None
+                    ),
+                }
+            )
+        return rows
+
     def list(self, request, *args, **kwargs):
         user = request.user
         if is_pwa_user(user):
-            scoped_ids = self._get_scoped_comedor_ids()
-            queryset = ComedorService.get_filtered_comedores(request).filter(
-                id__in=scoped_ids
-            )
+            rows = self._get_pwa_spaces_selector_rows(user)
+            page = self.paginate_queryset(rows)
+            if page is not None:
+                return self.get_paginated_response(page)
+            return Response(rows, status=status.HTTP_200_OK)
         else:
             queryset = ComedorService.get_filtered_comedores(request, user=user)
         page = self.paginate_queryset(queryset)
@@ -122,12 +216,44 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 ),
                 Prefetch(
                     "relevamiento_set",
-                    queryset=Relevamiento.objects.only(
-                        "id",
-                        "fecha_visita",
-                        "estado",
+                    queryset=Relevamiento.objects.select_related(
+                        "comedor",
+                        "comedor__referente",
                         "prestacion",
-                    ).order_by("-fecha_visita", "-id"),
+                        "funcionamiento",
+                        "funcionamiento__modalidad_prestacion",
+                        "espacio",
+                        "espacio__tipo_espacio_fisico",
+                        "espacio__cocina",
+                        "espacio__cocina__abastecimiento_agua",
+                        "espacio__prestacion",
+                        "espacio__prestacion__desague_hinodoro",
+                        "espacio__prestacion__frecuencia_limpieza",
+                        "colaboradores",
+                        "colaboradores__cantidad_colaboradores",
+                        "recursos",
+                        "compras",
+                        "punto_entregas",
+                        "punto_entregas__tipo_comedor",
+                        "punto_entregas__frecuencia_entrega_bolsones",
+                        "punto_entregas__tipo_modulo_bolsones",
+                        "excepcion",
+                        "excepcion__motivo",
+                        "responsable_relevamiento",
+                        "anexo",
+                        "anexo__tecnologia",
+                        "anexo__distancia_transporte",
+                    )
+                    .prefetch_related(
+                        "espacio__cocina__abastecimiento_combustible",
+                        "recursos__recursos_donaciones_particulares",
+                        "recursos__recursos_estado_nacional",
+                        "recursos__recursos_estado_provincial",
+                        "recursos__recursos_estado_municipal",
+                        "recursos__recursos_otros",
+                        "punto_entregas__frecuencia_recepcion_mercaderias",
+                    )
+                    .order_by("-fecha_visita", "-id"),
                     to_attr="relevamientos_optimized",
                 ),
                 Prefetch(
@@ -328,6 +454,56 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
         return documentos
 
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="imagenes",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def upload_imagen(self, request, pk=None):
+        comedor = self.get_object()
+        imagen = request.FILES.get("imagen")
+
+        if not imagen:
+            return Response(
+                {"detail": "Debe adjuntar una imagen."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if comedor.imagenes.count() >= 3:
+            return Response(
+                {"detail": "El espacio ya tiene el máximo de 3 fotos."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        creado = ComedorService.create_imagenes(imagen, comedor.pk)
+        if isinstance(creado, dict):
+            return Response(creado, status=status.HTTP_400_BAD_REQUEST)
+
+        comedor_actualizado = self.get_queryset().get(pk=comedor.pk)
+        serializer = self.get_serializer(comedor_actualizado)
+        return Response(
+            {"imagenes": serializer.data.get("imagenes", [])},
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path=r"imagenes/(?P<imagen_id>[^/.]+)/eliminar",
+    )
+    def eliminar_imagen(self, request, pk=None, imagen_id=None):
+        comedor = self.get_object()
+        imagen = get_object_or_404(ImagenComedor, pk=imagen_id, comedor=comedor)
+        imagen.delete()
+
+        comedor_actualizado = self.get_queryset().get(pk=comedor.pk)
+        serializer = self.get_serializer(comedor_actualizado)
+        return Response(
+            {"imagenes": serializer.data.get("imagenes", [])},
+            status=status.HTTP_200_OK,
+        )
+
     @extend_schema(
         parameters=[
             OpenApiParameter(
@@ -395,7 +571,12 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                     else None
                 )
                 hasta_dt = (
-                    timezone.make_aware(timezone.datetime.strptime(hasta, "%Y-%m-%d"))
+                    timezone.make_aware(
+                        timezone.datetime.combine(
+                            timezone.datetime.strptime(hasta, "%Y-%m-%d").date(),
+                            time.max,
+                        )
+                    )
                     if hasta
                     else None
                 )
@@ -578,6 +759,120 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             return "El archivo excede el tamaño máximo permitido de 10 MB."
         return None
 
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="capacitaciones",
+        permission_classes=[IsPWARepresentativeForComedor],
+    )
+    def capacitaciones(self, request, pk=None):
+        comedor = self.get_object()
+        if not is_alimentar_comunidad_program(comedor):
+            return Response(
+                {
+                    "detail": "Capacitaciones disponibles solo para programa Alimentar Comunidad."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        records = list_capacitaciones_certificados(comedor)
+        return Response(
+            [serialize_certificate(record, request=request) for record in records],
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="capacitaciones/subir",
+        parser_classes=[MultiPartParser, FormParser],
+        permission_classes=[IsPWARepresentativeForComedor],
+    )
+    def subir_capacitacion(self, request, pk=None):
+        comedor = self.get_object()
+        if not is_alimentar_comunidad_program(comedor):
+            return Response(
+                {
+                    "detail": "Capacitaciones disponibles solo para programa Alimentar Comunidad."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        capacitacion = (request.data.get("capacitacion") or "").strip()
+        archivo = request.FILES.get("archivo")
+
+        if capacitacion not in dict(
+            CapacitacionComedorCertificado.CAPACITACION_CHOICES
+        ):
+            return Response(
+                {"detail": "Capacitación inválida."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        record = CapacitacionComedorCertificado.objects.filter(
+            comedor=comedor,
+            capacitacion=capacitacion,
+        ).first()
+        if not record:
+            records = list_capacitaciones_certificados(comedor)
+            record = next(
+                (row for row in records if row.capacitacion == capacitacion), None
+            )
+
+        try:
+            submit_certificate(record, archivo, request.user)
+        except ValidationError as exc:
+            return Response(
+                {"detail": self._format_validation_error(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            serialize_certificate(record, request=request),
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="capacitaciones/eliminar",
+    )
+    def eliminar_capacitacion(self, request, pk=None):
+        comedor = self.get_object()
+        if not is_alimentar_comunidad_program(comedor):
+            return Response(
+                {
+                    "detail": "La sección de capacitaciones aplica solo a Alimentar Comunidad."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        capacitacion = (request.data.get("capacitacion") or "").strip()
+        if capacitacion not in dict(
+            CapacitacionComedorCertificado.CAPACITACION_CHOICES
+        ):
+            return Response(
+                {"detail": "Capacitación inválida."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            records = list_capacitaciones_certificados(comedor)
+            record = next(
+                (row for row in records if row.capacitacion == capacitacion), None
+            )
+            if not record:
+                return Response(
+                    {"detail": "No se encontró la capacitación."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            delete_certificate(record)
+        except ValidationError as exc:
+            message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+            return Response({"detail": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            serialize_certificate(record, request=request),
+            status=status.HTTP_200_OK,
+        )
+
     @extend_schema(
         request=OperadorCreateSerializer,
         responses=OperadorListSerializer(many=True),
@@ -675,9 +970,29 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
     def _get_rendiciones_queryset(self, comedor):
         return (
-            RendicionCuentaMensual.objects.filter(comedor=comedor)
+            RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(comedor)
+            .only(
+                "id",
+                "convenio",
+                "numero_rendicion",
+                "mes",
+                "anio",
+                "periodo_inicio",
+                "periodo_fin",
+                "estado",
+                "documento_adjunto",
+                "observaciones",
+                "fecha_creacion",
+                "ultima_modificacion",
+            )
+            .order_by("-fecha_creacion", "-id")
+        )
+
+    def _get_rendiciones_detail_queryset(self, comedor):
+        return (
+            RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(comedor)
             .prefetch_related("archivos_adjuntos")
-            .order_by("-anio", "-mes", "-id")
+            .order_by("-fecha_creacion", "-id")
         )
 
     def _apply_periodo_filters_rendiciones(self, queryset, request):
@@ -725,12 +1040,43 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         return queryset
 
     @extend_schema(
+        request=RendicionMensualCreateSerializer,
         responses=RendicionMensualListSerializer(many=True),
         tags=["Rendiciones"],
     )
-    @action(detail=True, methods=["get"], url_path="rendiciones")
+    @action(
+        detail=True,
+        methods=["get", "post"],
+        url_path="rendiciones",
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
+    )
     def rendiciones(self, request, pk=None):
         comedor = self.get_object()
+        if request.method.lower() == "post":
+            serializer = RendicionMensualCreateSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            try:
+                rendicion = RendicionCuentaMensualService.crear_rendicion_mobile(
+                    comedor=comedor,
+                    data=serializer.validated_data,
+                    actor=request.user,
+                )
+            except ValidationError as exc:
+                return Response(
+                    {"detail": self._format_validation_error(exc)},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            return Response(
+                RendicionMensualDetailSerializer(
+                    rendicion,
+                    context={"request": request},
+                ).data,
+                status=status.HTTP_201_CREATED,
+            )
+
         queryset = self._get_rendiciones_queryset(comedor)
         try:
             queryset = self._apply_periodo_filters_rendiciones(queryset, request)
@@ -766,6 +1112,10 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         detail=True,
         methods=["get"],
         url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)",
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
     )
     def rendicion_detalle(self, request, pk=None, rendicion_id=None):
         comedor = self.get_object()
@@ -778,7 +1128,9 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             )
 
         rendicion = (
-            self._get_rendiciones_queryset(comedor).filter(id=rendicion_id).first()
+            self._get_rendiciones_detail_queryset(comedor)
+            .filter(id=rendicion_id)
+            .first()
         )
         if not rendicion:
             raise Http404("Rendición no encontrada.")
@@ -797,8 +1149,159 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     @action(
         detail=True,
         methods=["post"],
+        url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)/documentacion",
+        parser_classes=[MultiPartParser, FormParser],
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
+    )
+    def adjuntar_documentacion_rendicion(self, request, pk=None, rendicion_id=None):
+        comedor = self.get_object()
+        try:
+            rendicion_id = int(rendicion_id)
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "rendicion_id inválido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        rendicion = (
+            self._get_rendiciones_detail_queryset(comedor)
+            .filter(id=rendicion_id)
+            .first()
+        )
+        if not rendicion:
+            raise Http404("Rendición no encontrada.")
+
+        return self._adjuntar_documentacion_respuesta(
+            request,
+            comedor=comedor,
+            rendicion=rendicion,
+        )
+
+    def _adjuntar_documentacion_respuesta(
+        self,
+        request,
+        *,
+        comedor,
+        rendicion,
+        categoria_override=None,
+    ):
+
+        archivo = request.FILES.get("archivo")
+        file_error = self._validate_comprobante_file(archivo)
+        if file_error:
+            return Response(
+                {"detail": file_error},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        categoria = categoria_override or (request.data.get("categoria") or "").strip()
+        nombre = (request.data.get("nombre") or "").strip() or archivo.name
+        documento_subsanado_id = request.data.get("documento_subsanado_id")
+        if documento_subsanado_id not in (None, ""):
+            try:
+                documento_subsanado_id = int(documento_subsanado_id)
+            except (TypeError, ValueError):
+                return Response(
+                    {"detail": "documento_subsanado_id inválido."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        try:
+            RendicionCuentaMensualService.adjuntar_documentacion_mobile(
+                rendicion=rendicion,
+                categoria=categoria,
+                documento_data={"archivo": archivo, "nombre": nombre},
+                actor=request.user,
+                documento_subsanado_id=documento_subsanado_id,
+            )
+        except ValidationError as exc:
+            return Response(
+                {"detail": self._format_validation_error(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = RendicionMensualDetailSerializer(
+            self._get_rendiciones_detail_queryset(comedor).get(id=rendicion.id),
+            context={"request": request},
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        request=None,
+        responses=RendicionMensualDetailSerializer,
+        tags=["Rendiciones"],
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)/documentacion/(?P<documento_id>[^/.]+)/eliminar",
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
+    )
+    def eliminar_documentacion_rendicion(
+        self, request, pk=None, rendicion_id=None, documento_id=None
+    ):
+        comedor = self.get_object()
+        try:
+            rendicion_id = int(rendicion_id)
+            documento_id = int(documento_id)
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "documento_id inválido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        rendicion = (
+            self._get_rendiciones_detail_queryset(comedor)
+            .filter(id=rendicion_id)
+            .first()
+        )
+        if not rendicion:
+            raise Http404("Rendición no encontrada.")
+
+        documento = rendicion.archivos_adjuntos.filter(
+            id=documento_id,
+            deleted_at__isnull=True,
+        ).first()
+        if not documento:
+            raise Http404("Documento no encontrado.")
+
+        try:
+            RendicionCuentaMensualService.eliminar_documentacion_mobile(
+                rendicion=rendicion,
+                documento=documento,
+                actor=request.user,
+            )
+        except ValidationError as exc:
+            return Response(
+                {"detail": self._format_validation_error(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = RendicionMensualDetailSerializer(
+            self._get_rendiciones_detail_queryset(comedor).get(id=rendicion.id),
+            context={"request": request},
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        request=None,
+        responses=RendicionMensualDetailSerializer,
+        tags=["Rendiciones"],
+    )
+    @action(
+        detail=True,
+        methods=["post"],
         url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)/comprobantes",
         parser_classes=[MultiPartParser, FormParser],
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
     )
     def adjuntar_comprobante_rendicion(self, request, pk=None, rendicion_id=None):
         comedor = self.get_object()
@@ -811,34 +1314,19 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             )
 
         rendicion = (
-            self._get_rendiciones_queryset(comedor).filter(id=rendicion_id).first()
+            self._get_rendiciones_detail_queryset(comedor)
+            .filter(id=rendicion_id)
+            .first()
         )
         if not rendicion:
             raise Http404("Rendición no encontrada.")
 
-        archivo = request.FILES.get("archivo")
-        file_error = self._validate_comprobante_file(archivo)
-        if file_error:
-            return Response(
-                {"detail": file_error},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        nombre = (request.data.get("nombre") or "").strip() or archivo.name
-        DocumentacionAdjunta.objects.create(
-            nombre=nombre,
-            archivo=archivo,
-            rendicion_cuenta_mensual=rendicion,
+        return self._adjuntar_documentacion_respuesta(
+            request,
+            comedor=comedor,
+            rendicion=rendicion,
+            categoria_override=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
         )
-        if not rendicion.documento_adjunto:
-            rendicion.documento_adjunto = True
-            rendicion.save(update_fields=["documento_adjunto", "ultima_modificacion"])
-
-        serializer = RendicionMensualDetailSerializer(
-            self._get_rendiciones_queryset(comedor).get(id=rendicion.id),
-            context={"request": request},
-        )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
         request=None,
@@ -848,6 +1336,10 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         detail=True,
         methods=["post"],
         url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)/presentar",
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
     )
     def presentar_rendicion(self, request, pk=None, rendicion_id=None):
         comedor = self.get_object()
@@ -860,25 +1352,70 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             )
 
         rendicion = (
-            self._get_rendiciones_queryset(comedor).filter(id=rendicion_id).first()
+            self._get_rendiciones_detail_queryset(comedor)
+            .filter(id=rendicion_id)
+            .first()
         )
         if not rendicion:
             raise Http404("Rendición no encontrada.")
 
-        if not rendicion.archivos_adjuntos.exists():
+        try:
+            RendicionCuentaMensualService.presentar_rendicion_mobile(
+                rendicion,
+                actor=request.user,
+            )
+        except ValidationError as exc:
             return Response(
-                {
-                    "detail": "No se puede presentar una rendición sin comprobantes adjuntos."
-                },
+                {"detail": self._format_validation_error(exc)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not rendicion.documento_adjunto:
-            rendicion.documento_adjunto = True
-            rendicion.save(update_fields=["documento_adjunto", "ultima_modificacion"])
-
         return Response(
             {"detail": "Rendición presentada."},
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=None,
+        tags=["Rendiciones"],
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)/eliminar",
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
+    )
+    def eliminar_rendicion(self, request, pk=None, rendicion_id=None):
+        comedor = self.get_object()
+        try:
+            rendicion_id = int(rendicion_id)
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "rendicion_id inválido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        rendicion = (
+            self._get_rendiciones_detail_queryset(comedor)
+            .filter(id=rendicion_id)
+            .first()
+        )
+        if not rendicion:
+            raise Http404("Rendición no encontrada.")
+
+        try:
+            RendicionCuentaMensualService.eliminar_rendicion_mobile(rendicion)
+        except ValidationError as exc:
+            return Response(
+                {"detail": self._format_validation_error(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {"detail": "Rendición eliminada."},
             status=status.HTTP_200_OK,
         )
 

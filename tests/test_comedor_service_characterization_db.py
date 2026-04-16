@@ -315,7 +315,7 @@ def test_get_nomina_detail_con_db_real_calcula_resumen_y_rangos():
         (c_adulto, Nomina.ESTADO_ACTIVO),
         (c_adulto_mayor, Nomina.ESTADO_ACTIVO),
         (c_mayor_avanzado, Nomina.ESTADO_ACTIVO),
-        (c_pendiente, Nomina.ESTADO_PENDIENTE),
+        (c_pendiente, Nomina.ESTADO_ESPERA),
     ]:
         Nomina.objects.create(admision=admision, ciudadano=ciudadano, estado=estado)
 
@@ -356,7 +356,7 @@ def test_get_nomina_detail_con_db_real_sin_activos_no_divide_por_cero():
     )
     admision = Admision.objects.create(comedor=comedor)
     Nomina.objects.create(
-        admision=admision, ciudadano=ciudadano, estado=Nomina.ESTADO_PENDIENTE
+        admision=admision, ciudadano=ciudadano, estado=Nomina.ESTADO_ESPERA
     )
 
     _page_obj, _m, _f, _x, espera, total, rangos = (
@@ -392,8 +392,7 @@ def test_crear_admision_desde_comedor_crea_admision_y_hito_reales(mocker):
     assert out.status_code == 302
     adm = Admision.objects.get(comedor=comedor)
     assert adm.tipo == "incorporacion"
-    assert Hitos.objects.filter(comedor=comedor).exists() is True
-    assert success_msg.call_count == 2
+    assert success_msg.call_count == 1
     info_msg.assert_not_called()
     warn_msg.assert_not_called()
     err_msg.assert_not_called()

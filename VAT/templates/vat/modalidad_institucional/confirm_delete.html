@@ -1,0 +1,46 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}VAT - Confirmar eliminación de Modalidad Institucional{% endblock %}
+
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_centro_list' %}">VAT</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_modalidad_institucional_list' %}">Modalidades Institucionales</a>
+        </li>
+        <li class="breadcrumb-item active">Confirmar eliminación</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card card-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title">Confirmar eliminación</h3>
+                </div>
+                <div class="card-body">
+                    <p>
+                        ¿Está seguro de que desea eliminar la modalidad institucional <strong>{{ modalidad.nombre }}</strong>?
+                    </p>
+                    <p class="text-muted">Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="card-footer">
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                        <a href="{% url 'vat_modalidad_institucional_detail' modalidad.id %}"
+                           class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Cancelar
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

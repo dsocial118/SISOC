@@ -1,3 +1,4 @@
+import builtins as python_builtins
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from urllib.parse import quote_plus
@@ -46,6 +47,42 @@ def has_any_perm(user, permission_codes):
 
 
 @register.filter
+def has_any_group(user, group_names):
+    if not user or not python_builtins.getattr(user, "is_authenticated", False):
+        return False
+
+    if not group_names:
+        return False
+
+    if isinstance(group_names, str):
+        names = [part.strip() for part in group_names.split(",") if part.strip()]
+    else:
+        names = [str(part).strip() for part in group_names if str(part).strip()]
+
+    if not names:
+        return False
+
+    return user.groups.filter(name__in=names).exists()
+
+
+@register.filter
+def is_vat_sidebar_only(user):
+    """Indica si el usuario debe ver solo opciones VAT en el sidebar."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return False
+
+    from VAT.services.access_scope import (
+        is_vat_provincial,
+        is_vat_referente,
+        is_vat_sse,
+    )
+
+    return bool(is_vat_sse(user) or is_vat_referente(user) or is_vat_provincial(user))
+
+
+@register.filter
 def endswith(value, suffix):
     try:
         return str(value).lower().endswith(str(suffix).lower())
@@ -65,16 +102,14 @@ def is_url(value):
         return False
 
 
-@register.filter
-def getattr(obj, attr_name):
+@register.filter(name="getattr")
+def safe_getattr(obj, attr_name):
     """
     Obtiene un atributo de un objeto de forma segura, manejando relaciones
     Usage: {{ obj|getattr:"field_name" }}
     """
-    import builtins
-
     try:
-        value = builtins.getattr(obj, attr_name, None)
+        value = python_builtins.getattr(obj, attr_name, None)
         if value is None:
             return "-"
 
@@ -130,27 +165,25 @@ def _normalize_coordinate(value, min_value, max_value):
     if value is None:
         return None
 
+    text = value
     if isinstance(value, str):
         text = value.strip()
-        if not text:
+        if text:
+            text = text.replace(",", ".")
+        if not text or text.count(".") > 1:
             return None
-        text = text.replace(",", ".")
-        if text.count(".") > 1:
-            return None
-    else:
-        text = value
 
     try:
         decimal_value = Decimal(str(text))
     except (InvalidOperation, ValueError):
         return None
 
+    min_decimal = Decimal(str(min_value))
+    max_decimal = Decimal(str(max_value))
     if decimal_value.is_nan() or decimal_value.is_infinite():
         return None
 
-    min_decimal = Decimal(str(min_value))
-    max_decimal = Decimal(str(max_value))
-    if decimal_value < min_decimal or decimal_value > max_decimal:
+    if not min_decimal <= decimal_value <= max_decimal:
         return None
 
     return format(decimal_value, "f")
@@ -242,14 +275,12 @@ def dias_prestacion_semana(prestacion):
     if prestacion is None:
         return "-"
 
-    import builtins
-
     dias_con_servicio = 0
     for day in _DAYS:
         for meal in _MEALS:
             values = (
-                builtins.getattr(prestacion, f"{day}_{meal}_actual", None),
-                builtins.getattr(prestacion, f"aprobadas_{meal}_{day}", None),
+                python_builtins.getattr(prestacion, f"{day}_{meal}_actual", None),
+                python_builtins.getattr(prestacion, f"aprobadas_{meal}_{day}", None),
             )
             if any(_is_positive_number(value) for value in values):
                 dias_con_servicio += 1

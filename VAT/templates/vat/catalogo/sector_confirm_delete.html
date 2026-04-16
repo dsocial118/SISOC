@@ -1,0 +1,36 @@
+{% extends "includes/main.html" %}
+{% block title %}Confirmar eliminación{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_sector_list' %}">Sectores</a>
+        </li>
+        <li class="breadcrumb-item active">Eliminar</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card card-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title">Confirmar eliminación</h3>
+                </div>
+                <div class="card-body">
+                    <p>
+                        ¿Eliminar <strong>{{ sector.nombre }}</strong>?
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                        <a href="{% url 'vat_sector_detail' sector.id %}"
+                           class="btn btn-secondary">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

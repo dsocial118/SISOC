@@ -1,0 +1,57 @@
+[
+  {
+    "model": "VAT.modalidadinstitucional",
+    "pk": 1,
+    "fields": {
+      "nombre": "Presencial",
+      "descripcion": "Modalidad donde todas las actividades se desarrollan de forma presencial, con asistencia obligatoria en las sedes definidas.",
+      "activo": true,
+      "fecha_creacion": "2026-03-21T00:00:00Z",
+      "fecha_modificacion": "2026-03-21T00:00:00Z"
+    }
+  },
+  {
+    "model": "VAT.modalidadinstitucional",
+    "pk": 2,
+    "fields": {
+      "nombre": "Virtual",
+      "descripcion": "Modalidad completamente virtual donde todas las actividades se realizan a través de plataformas digitales.",
+      "activo": true,
+      "fecha_creacion": "2026-03-21T00:00:00Z",
+      "fecha_modificacion": "2026-03-21T00:00:00Z"
+    }
+  },
+  {
+    "model": "VAT.modalidadinstitucional",
+    "pk": 3,
+    "fields": {
+      "nombre": "Semipresencial",
+      "descripcion": "Modalidad híbrida que combina actividades presenciales con componentes virtuales.",
+      "activo": true,
+      "fecha_creacion": "2026-03-21T00:00:00Z",
+      "fecha_modificacion": "2026-03-21T00:00:00Z"
+    }
+  },
+  {
+    "model": "VAT.modalidadinstitucional",
+    "pk": 4,
+    "fields": {
+      "nombre": "A distancia",
+      "descripcion": "Modalidad a distancia con actividades autónomas y seguimiento remoto.",
+      "activo": true,
+      "fecha_creacion": "2026-03-21T00:00:00Z",
+      "fecha_modificacion": "2026-03-21T00:00:00Z"
+    }
+  },
+  {
+    "model": "VAT.modalidadinstitucional",
+    "pk": 5,
+    "fields": {
+      "nombre": "Mixta",
+      "descripcion": "Modalidad que permite a los participantes elegir entre presencial, virtual o semipresencial según su disponibilidad.",
+      "activo": true,
+      "fecha_creacion": "2026-03-21T00:00:00Z",
+      "fecha_modificacion": "2026-03-21T00:00:00Z"
+    }
+  }
+]

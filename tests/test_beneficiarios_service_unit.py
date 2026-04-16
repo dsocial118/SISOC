@@ -468,6 +468,9 @@ def test_procesar_formularios_ramas(mocker, rf):
 
 def test_buscar_responsable_renaper_ramas(rf, mocker):
     """Cubre validaciones, existente, no encontrado y cache de RENAPER."""
+    logger_exception = mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.logger.exception"
+    )
     request = rf.get("/")
     request.session = DummySession()
 
@@ -529,6 +532,7 @@ def test_buscar_responsable_renaper_ramas(rf, mocker):
     ok_resp = service.buscar_responsable_renaper(request2, "2", "M")
     assert b'"status": "possible"' in ok_resp.content
     assert request2.session.modified is True
+    logger_exception.assert_not_called()
 
 
 def test_buscar_cuil_beneficiario_ramas(rf, mocker):

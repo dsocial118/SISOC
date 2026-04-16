@@ -10,6 +10,7 @@ from drf_spectacular.views import (
 )
 from celiaquia.views.reporter_provincias import ReporterProvinciasView
 from core.decorators import permissions_any_required
+from config.views import VatSpectacularAPIView
 from users.views import (
     PasswordResetConfirmCustomView,
     SisocPasswordResetCompleteView,
@@ -49,6 +50,7 @@ urlpatterns = [
     path("", include("ciudadanos.urls")),
     path("", include("admisiones.urls")),
     path("", include("centrodefamilia.urls")),
+    path("", include("VAT.urls")),
     path("", include("healthcheck.urls")),
     path("", include("centrodeinfancia.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
@@ -68,6 +70,7 @@ urlpatterns = [
     path("api/users/", include("users.api_urls")),
     path("api/comedores/", include("comedores.api_urls")),
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
+    path("api/vat/", include("VAT.api_urls")),
     path("api/comunicados/", include("comunicados.api_urls")),
     path("api/renaper/", include("core.api_urls")),
     path("api/pwa/", include("pwa.api_urls")),
@@ -85,15 +88,26 @@ if getattr(settings, "ENABLE_API_DOCS", False):
     urlpatterns += [
         # Swagger/OpenAPI
         path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+        path("api/schema/VAT/", VatSpectacularAPIView.as_view(), name="schema-vat"),
         path(
             "api/docs/",
             SpectacularSwaggerView.as_view(url_name="schema"),
             name="swagger-ui",
         ),
         path(
+            "api/docs/VAT/",
+            SpectacularSwaggerView.as_view(url_name="schema-vat"),
+            name="swagger-ui-vat",
+        ),
+        path(
             "api/redoc/",
             SpectacularRedocView.as_view(url_name="schema"),
             name="redoc",
+        ),
+        path(
+            "api/redoc/VAT/",
+            SpectacularRedocView.as_view(url_name="schema-vat"),
+            name="redoc-vat",
         ),
     ]
 

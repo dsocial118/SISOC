@@ -65,6 +65,8 @@ def test_inscripto_actividad_permite_reingreso_tras_baja_logica(
         catalogo_actividad=catalogo,
         dia_actividad=dia_actividad,
         horario_actividad="18:00 a 19:30",
+        hora_inicio="18:00",
+        hora_fin="19:30",
         activo=True,
     )
     nomina = Nomina.objects.create(admision=admision, estado=Nomina.ESTADO_ACTIVO)

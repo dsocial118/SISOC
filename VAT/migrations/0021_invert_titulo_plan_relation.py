@@ -1,0 +1,251 @@
+import django.db.models.deletion
+from django.db import migrations, models
+
+
+def _raise_if_ambiguous_title_plan_rows(ambiguous_rows):
+    if not ambiguous_rows:
+        return
+
+    detalles = ", ".join(
+        f"titulo={titulo_id} planes=[{plan_ids}]"
+        for titulo_id, _count, plan_ids in ambiguous_rows
+    )
+    raise RuntimeError(
+        "No se puede invertir automáticamente la relación título-plan porque "
+        "existen títulos asociados a múltiples planes históricos. "
+        f"Requiere resolución manual antes de aplicar la migración: {detalles}."
+    )
+
+
+def _add_plan_estudio_column(apps, schema_editor):
+    db = schema_editor.connection
+    cursor = db.cursor()
+    cursor.execute(
+        """
+        SELECT DATA_TYPE FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'VAT_tituloreferencia'
+        AND COLUMN_NAME = 'plan_estudio_id'
+        """
+    )
+    row = cursor.fetchone()
+    if row is None:
+        cursor.execute(
+            """
+            ALTER TABLE `VAT_tituloreferencia`
+            ADD COLUMN `plan_estudio_id` bigint NULL
+            """
+        )
+    elif row[0] != "bigint":
+        cursor.execute(
+            """
+            ALTER TABLE `VAT_tituloreferencia`
+            MODIFY COLUMN `plan_estudio_id` bigint NULL
+            """
+        )
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'VAT_tituloreferencia'
+        AND CONSTRAINT_NAME = 'vat_titulo_plan_estudio_fk'
+        AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+        """
+    )
+    if cursor.fetchone()[0] == 0:
+        cursor.execute(
+            """
+            ALTER TABLE `VAT_tituloreferencia`
+            ADD CONSTRAINT `vat_titulo_plan_estudio_fk`
+            FOREIGN KEY (`plan_estudio_id`)
+            REFERENCES `VAT_planversioncurricular` (`id`)
+            ON DELETE SET NULL
+            """
+        )
+
+
+def _backfill_plan_estudio(apps, schema_editor):
+    """Backfill seguro cuando cada título tiene a lo sumo un plan histórico."""
+    db = schema_editor.connection
+    cursor = db.cursor()
+    # Verificar que aún existe titulo_referencia_id en planversioncurricular
+    cursor.execute(
+        """
+        SELECT COUNT(*) FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'VAT_planversioncurricular'
+        AND COLUMN_NAME = 'titulo_referencia_id'
+        """
+    )
+    if cursor.fetchone()[0] == 0:
+        return  # Ya fue removida, skip backfill
+
+    cursor.execute(
+        """
+        SELECT titulo_referencia_id, COUNT(*) AS total_planes,
+               GROUP_CONCAT(id ORDER BY id) AS plan_ids
+        FROM `VAT_planversioncurricular`
+        WHERE titulo_referencia_id IS NOT NULL
+        GROUP BY titulo_referencia_id
+        HAVING COUNT(*) > 1
+        """
+    )
+    _raise_if_ambiguous_title_plan_rows(cursor.fetchall())
+
+    cursor.execute(
+        """
+        UPDATE `VAT_tituloreferencia` t
+        INNER JOIN `VAT_planversioncurricular` p
+            ON t.id = p.titulo_referencia_id
+        SET t.plan_estudio_id = p.id
+        WHERE t.plan_estudio_id IS NULL
+        """
+    )
+
+
+def _drop_titulo_referencia(apps, schema_editor):
+    """Elimina la columna titulo_referencia_id de PlanVersionCurricular."""
+    db = schema_editor.connection
+    cursor = db.cursor()
+
+    # En MySQL primero debe caer la FK antes que cualquier índice que la
+    # respalde; si no, DROP INDEX falla con OperationalError 1553.
+    cursor.execute(
+        """
+        SELECT DISTINCT tc.CONSTRAINT_NAME
+        FROM information_schema.TABLE_CONSTRAINTS tc
+        INNER JOIN information_schema.KEY_COLUMN_USAGE kcu
+            ON tc.TABLE_SCHEMA = kcu.TABLE_SCHEMA
+            AND tc.TABLE_NAME = kcu.TABLE_NAME
+            AND tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
+        WHERE tc.TABLE_SCHEMA = DATABASE()
+        AND tc.TABLE_NAME = 'VAT_planversioncurricular'
+        AND tc.CONSTRAINT_TYPE = 'FOREIGN KEY'
+        AND kcu.COLUMN_NAME = 'titulo_referencia_id'
+        """
+    )
+    for (constraint_name,) in cursor.fetchall():
+        cursor.execute(
+            f"ALTER TABLE `VAT_planversioncurricular` "
+            f"DROP FOREIGN KEY `{constraint_name}`"
+        )
+
+    cursor.execute(
+        """
+        SELECT DISTINCT tc.CONSTRAINT_NAME
+        FROM information_schema.TABLE_CONSTRAINTS tc
+        INNER JOIN information_schema.KEY_COLUMN_USAGE kcu
+            ON tc.TABLE_SCHEMA = kcu.TABLE_SCHEMA
+            AND tc.TABLE_NAME = kcu.TABLE_NAME
+            AND tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
+        WHERE tc.TABLE_SCHEMA = DATABASE()
+        AND tc.TABLE_NAME = 'VAT_planversioncurricular'
+        AND tc.CONSTRAINT_TYPE = 'UNIQUE'
+        AND kcu.COLUMN_NAME = 'titulo_referencia_id'
+        """
+    )
+    for (constraint_name,) in cursor.fetchall():
+        cursor.execute(
+            f"ALTER TABLE `VAT_planversioncurricular` "
+            f"DROP INDEX `{constraint_name}`"
+        )
+
+    # Eliminar índices restantes sobre titulo_referencia_id
+    cursor.execute(
+        """
+        SELECT DISTINCT INDEX_NAME
+        FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'VAT_planversioncurricular'
+        AND COLUMN_NAME = 'titulo_referencia_id'
+        AND INDEX_NAME != 'PRIMARY'
+        """
+    )
+    for (index_name,) in cursor.fetchall():
+        try:
+            cursor.execute(
+                f"ALTER TABLE `VAT_planversioncurricular` DROP INDEX `{index_name}`"
+            )
+        except Exception:
+            pass
+
+    # Eliminar columna si existe
+    cursor.execute(
+        """
+        SELECT COUNT(*) FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'VAT_planversioncurricular'
+        AND COLUMN_NAME = 'titulo_referencia_id'
+        """
+    )
+    if cursor.fetchone()[0] > 0:
+        cursor.execute(
+            "ALTER TABLE `VAT_planversioncurricular` "
+            "DROP COLUMN `titulo_referencia_id`"
+        )
+
+
+class Migration(migrations.Migration):
+    dependencies = [
+        ("VAT", "0020_alter_planversioncurricular_options_and_more"),
+    ]
+
+    operations = [
+        # 1. Actualizar estado Django: quitar unique_together y ordering viejo
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AlterUniqueTogether(
+                    name="planversioncurricular",
+                    unique_together=set(),
+                ),
+                migrations.AlterModelOptions(
+                    name="planversioncurricular",
+                    options={
+                        "ordering": ["sector", "modalidad_cursada"],
+                        "verbose_name": "Plan de Estudio",
+                        "verbose_name_plural": "Planes de Estudio",
+                    },
+                ),
+            ],
+            database_operations=[],
+        ),
+        # 2. Agregar plan_estudio a TituloReferencia (estado + DB)
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AddField(
+                    model_name="tituloreferencia",
+                    name="plan_estudio",
+                    field=models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="titulos",
+                        to="VAT.planversioncurricular",
+                        verbose_name="Plan de Estudio",
+                    ),
+                ),
+            ],
+            database_operations=[
+                migrations.RunPython(
+                    _add_plan_estudio_column, migrations.RunPython.noop
+                ),
+            ],
+        ),
+        # 3. Backfill: asignar plan_estudio desde la relación existente
+        migrations.RunPython(_backfill_plan_estudio, migrations.RunPython.noop),
+        # 4. Eliminar titulo_referencia de PlanVersionCurricular (estado + DB)
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.RemoveField(
+                    model_name="planversioncurricular",
+                    name="titulo_referencia",
+                ),
+            ],
+            database_operations=[
+                migrations.RunPython(
+                    _drop_titulo_referencia, migrations.RunPython.noop
+                ),
+            ],
+        ),
+    ]

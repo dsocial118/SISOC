@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 
 from iam.services import get_effective_permission_codes, get_effective_role_names
 from users.models import AccesoComedorPWA
+from users.profile_utils import get_profile_or_none
 from users.services import UserPermissionService
 from users.services_pwa import get_pwa_context
 from users.services_auth import get_user_by_uid
@@ -39,7 +40,7 @@ class UserContextSerializer(serializers.Serializer):
         return list(obj.groups.values_list("name", flat=True))
 
     def get_profile(self, obj):
-        profile = getattr(obj, "profile", None)
+        profile = get_profile_or_none(obj)
         if not profile:
             return None
         return {
@@ -56,7 +57,7 @@ class UserContextSerializer(serializers.Serializer):
         if not getattr(obj, "is_authenticated", False):
             return {}
         is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(obj)
-        profile = getattr(obj, "profile", None)
+        profile = get_profile_or_none(obj)
         return {
             "is_coordinador": is_coordinador,
             "duplas_ids": duplas_ids,
@@ -128,7 +129,8 @@ class OperadorCreateResponseSerializer(serializers.ModelSerializer):
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(required=False)
+    username = serializers.CharField(required=False, max_length=150)
 
     def _raise_read_only(self):
         raise NotImplementedError("Serializer de solo lectura.")
@@ -138,6 +140,22 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         return self._raise_read_only()
+
+    def validate(self, attrs):
+        email = (attrs.get("email") or "").strip()
+        username = (attrs.get("username") or "").strip()
+
+        if bool(email) == bool(username):
+            raise serializers.ValidationError(
+                {"detail": ("Debe enviar email o username para solicitar el reseteo.")}
+            )
+
+        if username:
+            attrs["username"] = username
+            attrs.pop("email", None)
+        else:
+            attrs["email"] = email
+        return attrs
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
@@ -160,6 +178,29 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError({"detail": "Token inválido o expirado."})
 
+        try:
+            password_validation.validate_password(attrs.get("new_password"), user=user)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(
+                {"new_password": list(getattr(exc, "messages", [str(exc)]))}
+            ) from exc
+        return attrs
+
+
+class PasswordChangeRequiredSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def _raise_read_only(self):
+        raise NotImplementedError("Serializer de solo lectura.")
+
+    def create(self, validated_data):
+        return self._raise_read_only()
+
+    def update(self, instance, validated_data):
+        return self._raise_read_only()
+
+    def validate(self, attrs):
+        user = self.context["request"].user
         try:
             password_validation.validate_password(attrs.get("new_password"), user=user)
         except DjangoValidationError as exc:

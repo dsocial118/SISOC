@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from centrodeinfancia.models import (
     CentroDeInfancia,
+    DepartamentoIpi,
     FormularioCDI,
     FormularioCDIArticulationFrequency,
     FormularioCDIRoomDistribution,
@@ -9,13 +10,40 @@ from centrodeinfancia.models import (
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     ObservacionCentroInfancia,
+    Trabajador,
 )
 
 
 @admin.register(CentroDeInfancia)
 class CentroDeInfanciaAdmin(admin.ModelAdmin):
-    list_display = ("id", "nombre", "organizacion", "fecha_creacion")
-    search_fields = ("nombre", "organizacion__nombre")
+    list_display = (
+        "id",
+        "nombre",
+        "organizacion",
+        "provincia",
+        "departamento",
+        "fecha_creacion",
+    )
+    list_select_related = ("provincia", "departamento")
+    search_fields = (
+        "nombre",
+        "organizacion",
+        "provincia__nombre",
+        "departamento__nombre",
+    )
+
+
+@admin.register(DepartamentoIpi)
+class DepartamentoIpiAdmin(admin.ModelAdmin):
+    list_display = (
+        "codigo_departamento",
+        "nombre",
+        "provincia",
+        "decil_ipi",
+        "nivel_inequidad_ipi",
+    )
+    list_filter = ("provincia", "nivel_inequidad_ipi")
+    search_fields = ("codigo_departamento", "nombre", "provincia__nombre")
 
 
 @admin.register(NominaCentroInfancia)
@@ -23,6 +51,13 @@ class NominaCentroInfanciaAdmin(admin.ModelAdmin):
     list_display = ("id", "centro", "ciudadano", "estado", "fecha")
     list_filter = ("estado",)
     search_fields = ("centro__nombre", "ciudadano__apellido", "ciudadano__nombre")
+
+
+@admin.register(Trabajador)
+class TrabajadorAdmin(admin.ModelAdmin):
+    list_display = ("id", "centro", "apellido", "nombre", "rol", "telefono")
+    list_filter = ("rol",)
+    search_fields = ("centro__nombre", "apellido", "nombre", "telefono")
 
 
 @admin.register(IntervencionCentroInfancia)
@@ -41,24 +76,36 @@ class ObservacionCentroInfanciaAdmin(admin.ModelAdmin):
 
 @admin.register(FormularioCDI)
 class FormularioCDIAdmin(admin.ModelAdmin):
-    list_display = ("id", "centro", "survey_date", "respondent_full_name", "created_at")
-    list_filter = ("survey_date", "created_at")
-    search_fields = ("centro__nombre", "respondent_full_name", "cdi_code")
+    list_display = (
+        "id",
+        "centro",
+        "fecha_relevamiento",
+        "nombre_completo_respondente",
+        "created_at",
+    )
+    list_filter = ("fecha_relevamiento", "created_at")
+    search_fields = ("centro__nombre", "nombre_completo_respondente", "codigo_cdi")
 
 
 @admin.register(FormularioCDIRoomDistribution)
 class FormularioCDIRoomDistributionAdmin(admin.ModelAdmin):
-    list_display = ("id", "formulario", "age_group", "room_count", "children_count")
-    list_filter = ("age_group",)
+    list_display = (
+        "id",
+        "formulario",
+        "grupo_etario",
+        "cantidad_salas",
+        "cantidad_ninos",
+    )
+    list_filter = ("grupo_etario",)
 
 
 @admin.register(FormularioCDIWaitlistByAgeGroup)
 class FormularioCDIWaitlistByAgeGroupAdmin(admin.ModelAdmin):
-    list_display = ("id", "formulario", "age_group", "waitlist_count")
-    list_filter = ("age_group",)
+    list_display = ("id", "formulario", "grupo_etario", "cantidad_demanda_insatisfecha")
+    list_filter = ("grupo_etario",)
 
 
 @admin.register(FormularioCDIArticulationFrequency)
 class FormularioCDIArticulationFrequencyAdmin(admin.ModelAdmin):
-    list_display = ("id", "formulario", "institution_type", "frequency")
-    list_filter = ("frequency",)
+    list_display = ("id", "formulario", "tipo_institucion", "frecuencia")
+    list_filter = ("frecuencia",)

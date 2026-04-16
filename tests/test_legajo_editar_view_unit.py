@@ -98,6 +98,10 @@ def test_get_success_returns_legajo_data(mocker):
     legajo = _build_legajo()
 
     mocker.patch(
+        "celiaquia.views.legajo_editar._get_nacionalidad_argentina",
+        return_value=SimpleNamespace(id=7, nacionalidad="Argentina"),
+    )
+    mocker.patch(
         "celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo]
     )
     req = SimpleNamespace(user=_user(groups={"TecnicoCeliaquia"}))
@@ -119,6 +123,10 @@ def test_post_validation_error_and_internal_error(mocker):
     mocker.patch(
         "celiaquia.views.legajo_editar.transaction.atomic",
         return_value=contextlib.nullcontext(),
+    )
+    mocker.patch(
+        "celiaquia.views.legajo_editar._get_nacionalidad_argentina",
+        return_value=SimpleNamespace(id=7, nacionalidad="Argentina"),
     )
 
     # faltan obligatorios
@@ -146,8 +154,13 @@ def test_post_validation_error_and_internal_error(mocker):
     mocker.patch(
         "core.models.Municipio.objects.get", return_value=SimpleNamespace(id=3)
     )
+    localidad_manager = mocker.Mock()
+    localidad_manager.get.return_value = SimpleNamespace(
+        id=4, municipio=SimpleNamespace(id=3)
+    )
     mocker.patch(
-        "core.models.Localidad.objects.get", return_value=SimpleNamespace(id=4)
+        "celiaquia.views.legajo_editar.Localidad.objects.select_related",
+        return_value=localidad_manager,
     )
 
     req_err = SimpleNamespace(
@@ -191,6 +204,10 @@ def test_post_success(mocker):
         return_value=contextlib.nullcontext(),
     )
     mocker.patch(
+        "celiaquia.views.legajo_editar._get_nacionalidad_argentina",
+        return_value=SimpleNamespace(id=7, nacionalidad="Argentina"),
+    )
+    mocker.patch(
         "celiaquia.views.legajo_editar.Sexo.objects.get",
         return_value=SimpleNamespace(id=1),
     )
@@ -201,8 +218,13 @@ def test_post_success(mocker):
     mocker.patch(
         "core.models.Municipio.objects.get", return_value=SimpleNamespace(id=3)
     )
+    localidad_manager = mocker.Mock()
+    localidad_manager.get.return_value = SimpleNamespace(
+        id=4, municipio=SimpleNamespace(id=3)
+    )
     mocker.patch(
-        "core.models.Localidad.objects.get", return_value=SimpleNamespace(id=4)
+        "celiaquia.views.legajo_editar.Localidad.objects.select_related",
+        return_value=localidad_manager,
     )
 
     req = SimpleNamespace(

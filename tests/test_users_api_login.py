@@ -178,3 +178,88 @@ def test_web_login_blocks_pwa_user(client, comedor):
 
     assert response.status_code == 200
     assert SESSION_KEY not in client.session
+
+
+@pytest.mark.django_db
+def test_password_change_required_requires_authentication():
+    client = APIClient()
+
+    response = client.post(
+        "/api/users/password-change-required/",
+        {"new_password": "NuevaClave123!"},
+        format="json",
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_password_change_required_updates_password_and_clears_flags(comedor):
+    user = _create_representante(
+        comedor=comedor,
+        username="rep_pwd_change",
+        password="Temporal123!",
+    )
+    user.profile.must_change_password = True
+    user.profile.temporary_password_plaintext = "Temporal123!"
+    user.profile.save(
+        update_fields=["must_change_password", "temporary_password_plaintext"]
+    )
+    token, _ = Token.objects.get_or_create(user=user)
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    response = client.post(
+        "/api/users/password-change-required/",
+        {"new_password": "NuevaClave123!"},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    user.refresh_from_db()
+    assert user.check_password("NuevaClave123!") is True
+    assert user.profile.must_change_password is False
+    assert user.profile.temporary_password_plaintext is None
+
+
+@pytest.mark.django_db
+def test_password_change_required_rejects_when_not_needed(comedor):
+    user = _create_representante(
+        comedor=comedor,
+        username="rep_pwd_ok",
+        password="ClaveActual123!",
+    )
+    token, _ = Token.objects.get_or_create(user=user)
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    response = client.post(
+        "/api/users/password-change-required/",
+        {"new_password": "NuevaClave123!"},
+        format="json",
+    )
+
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_password_change_required_validates_new_password(comedor):
+    user = _create_representante(
+        comedor=comedor,
+        username="rep_pwd_invalid",
+        password="Temporal123!",
+    )
+    user.profile.must_change_password = True
+    user.profile.save(update_fields=["must_change_password"])
+    token, _ = Token.objects.get_or_create(user=user)
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    response = client.post(
+        "/api/users/password-change-required/",
+        {"new_password": "123"},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "new_password" in response.data

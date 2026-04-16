@@ -1,0 +1,57 @@
+{% extends "includes/main.html" %}
+
+{% block title %}
+    {% if form.instance.id %}
+        Editar Comisión de Curso
+    {% else %}
+        Nueva Comisión de Curso
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid py-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3">
+                    {% if form.instance.id %}
+                        Editar Comisión de Curso
+                    {% else %}
+                        Nueva Comisión de Curso
+                    {% endif %}
+                </h1>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        {% for field in form %}
+                            <div class="col-md-6">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                {{ field }}
+                                {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        {% if form.instance.id %}
+                            <a href="{% url 'vat_centro_detail' form.instance.curso.centro_id %}#cursos"
+                               class="btn btn-outline-secondary">Cancelar</a>
+                        {% else %}
+                            <button type="button"
+                                    onclick="history.back()"
+                                    class="btn btn-outline-secondary">Cancelar</button>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary">
+                            {% if form.instance.id %}
+                                Actualizar
+                            {% else %}
+                                Crear
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

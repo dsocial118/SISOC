@@ -21,7 +21,7 @@
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
-            <a href="{% url 'centrodeinfancia' %}">Centros de Infancia</a>
+            <a href="{% url 'centrodeinfancia' %}">Centros de Desarrollo Infantil</a>
         </li>
         <li class="breadcrumb-item">
             <a href="{% url 'centrodeinfancia_detalle' object.id %}">{{ object.nombre }}</a>
@@ -78,6 +78,14 @@
             </div>
         </div>
 
+        <div class="nomina-stat-card genero-x bg-purple">
+            <i class="fas fa-transgender nomina-stat-icon sisoclabel bg-lightpurple"></i>
+            <div class="nomina-stat-content">
+                <p class="nomina-stat-number">{{ nominaX|default:0 }}</p>
+                <p class="nomina-stat-label">Género X</p>
+            </div>
+        </div>
+
         <div class="nomina-stat-card menores bg-green">
             <i class="fas fa-child nomina-stat-icon sisoclabel bg-lightgreen"></i>
             <div class="nomina-stat-content">
@@ -105,20 +113,6 @@
         <div id="detailedStatsContent"
              class="nomina-detailed-content"
              style="display: none">
-
-            <!-- Sección: Distribución por Género -->
-            <h3 class="nomina-subsection-title">
-                <i class="fas fa-venus-mars me-2"></i>Distribución por Género
-            </h3>
-            <div class="nomina-stats-row">
-                <div class="nomina-stat-card genero-x bg-purple">
-                    <i class="fas fa-transgender nomina-stat-icon sisoclabel bg-lightpurple"></i>
-                    <div class="nomina-stat-content">
-                        <p class="nomina-stat-number">{{ nominaX|default:0 }}</p>
-                        <p class="nomina-stat-label">Género X / No binario</p>
-                    </div>
-                </div>
-            </div>
 
             <!-- Sección: Distribución por Edad -->
             <h3 class="nomina-subsection-title">
@@ -243,8 +237,10 @@
                         <th>Fecha</th>
                         <th>Nombre</th>
                         <th>Apellido</th>
-                        <th>CUIT</th>
-                        <th>Género</th>
+                        <th>DNI</th>
+                        <th>Sexo</th>
+                        <th>Edad</th>
+                        <th>Sala</th>
                         <th>Estado</th>
                         <th></th>
                     </tr>
@@ -256,14 +252,16 @@
                                 <i class="far fa-calendar-alt" style="margin-right: 5px; color: #7f8c8d"></i>
                                 {{ e.fecha|date:"d/m/Y" }}
                             </td>
-                            <td>{{ e.ciudadano.nombre }}</td>
+                            <td>{{ e.nombre|default:e.ciudadano.nombre }}</td>
                             <td>
                                 <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}"
                                    style="color: #3498db;
-                                          text-decoration: none">{{ e.ciudadano.apellido }}</a>
+                                          text-decoration: none">{{ e.apellido|default:e.ciudadano.apellido }}</a>
                             </td>
-                            <td>{{ e.ciudadano.documento|default:"-" }}</td>
-                            <td>{{ e.ciudadano.sexo.sexo|default:"-" }}</td>
+                            <td>{{ e.dni|default:e.ciudadano.documento|default:"-" }}</td>
+                            <td>{{ e.sexo|default:e.ciudadano.sexo.sexo|default:"-" }}</td>
+                            <td>{{ e.edad|default:e.ciudadano.edad|default:"-" }}</td>
+                            <td>{{ e.sala|default:"-" }}</td>
                             <td>
                                 {% if e.estado == "activo" %}
                                     <span class="nomina-badge activo">Activo</span>
@@ -305,7 +303,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="7" class="nomina-empty-message">No hay registros en la nómina.</td>
+                            <td colspan="9" class="nomina-empty-message">No hay registros en la nómina.</td>
                         </tr>
                     {% endfor %}
                 </tbody>

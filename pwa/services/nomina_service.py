@@ -3,6 +3,7 @@ from datetime import date
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from ciudadanos.models import Ciudadano
@@ -13,6 +14,7 @@ from pwa.models import (
     ActividadEspacioPWA,
     InscriptoActividadEspacioPWA,
     NominaEspacioPWA,
+    RegistroAsistenciaNominaPWA,
 )
 from pwa.services.auditoria_operacion_service import registrar_evento_operacion
 
@@ -20,7 +22,10 @@ DNI_REGEX = re.compile(r"^\d{7,8}$")
 
 
 def _nomina_comedor_id(nomina: Nomina):
-    return getattr(getattr(nomina, "admision", None), "comedor_id", None)
+    admision_comedor_id = getattr(getattr(nomina, "admision", None), "comedor_id", None)
+    if admision_comedor_id:
+        return admision_comedor_id
+    return getattr(nomina, "comedor_id", None)
 
 
 def _snapshot_nomina(nomina: Nomina) -> dict:
@@ -59,11 +64,32 @@ def _snapshot_inscripto(inscripto: InscriptoActividadEspacioPWA) -> dict:
     }
 
 
+def _snapshot_registro_asistencia(
+    registro: RegistroAsistenciaNominaPWA,
+) -> dict:
+    return {
+        "id": registro.id,
+        "nomina_id": registro.nomina_id,
+        "periodicidad": registro.periodicidad,
+        "periodo_referencia": registro.periodo_referencia,
+        "fecha_toma_asistencia": registro.fecha_toma_asistencia,
+        "tomado_por_id": registro.tomado_por_id,
+    }
+
+
 def _active_nomina_queryset(*, comedor_id: int):
     return Nomina.objects.filter(
-        admision__comedor_id=comedor_id,
+        (
+            Q(admision__comedor_id=comedor_id)
+            | Q(comedor_id=comedor_id, admision__isnull=True)
+        ),
         deleted_at__isnull=True,
     ).exclude(estado=Nomina.ESTADO_BAJA)
+
+
+def get_periodo_mensual_actual() -> date:
+    today = timezone.localdate()
+    return today.replace(day=1)
 
 
 def _resolve_admision_para_comedor(*, comedor_id: int):
@@ -698,3 +724,124 @@ def is_menor(fecha_nacimiento: date | None) -> bool:
         - ((today.month, today.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
     )
     return age < 18
+
+
+@transaction.atomic
+def registrar_asistencia_nomina_mes_actual(*, nomina: Nomina, actor):
+    comedor_id = _nomina_comedor_id(nomina)
+    periodo_referencia = get_periodo_mensual_actual()
+    registro, created = RegistroAsistenciaNominaPWA.objects.get_or_create(
+        nomina=nomina,
+        periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
+        periodo_referencia=periodo_referencia,
+        defaults={
+            "tomado_por": actor if getattr(actor, "is_authenticated", False) else None,
+            "metadata": {"origen": "mobile"},
+        },
+    )
+    if created:
+        registrar_evento_operacion(
+            actor=actor,
+            comedor_id=comedor_id,
+            entidad="nomina_asistencia",
+            entidad_id=registro.id,
+            accion="create",
+            snapshot_despues=_snapshot_registro_asistencia(registro),
+            metadata={
+                "periodicidad": registro.periodicidad,
+                "periodo_referencia": registro.periodo_referencia,
+            },
+        )
+    return registro, created
+
+
+@transaction.atomic
+def sync_asistencia_alimentaria_nomina_mes_actual(
+    *, comedor_id: int, actor, selected_nomina_ids: list[int]
+):
+    periodo_referencia = get_periodo_mensual_actual()
+    queryset = (
+        _active_nomina_queryset(comedor_id=comedor_id)
+        .select_related("perfil_pwa")
+        .filter(Q(perfil_pwa__asistencia_alimentaria=True) | Q(perfil_pwa__isnull=True))
+        .order_by("id")
+    )
+    valid_nomina_ids = set(queryset.values_list("id", flat=True))
+    selected_ids = {int(nomina_id) for nomina_id in selected_nomina_ids}
+    invalid_ids = sorted(selected_ids - valid_nomina_ids)
+    if invalid_ids:
+        raise ValidationError(
+            {
+                "nomina_ids": (
+                    "Hay personas inválidas para la asistencia alimentaria del espacio: "
+                    f"{', '.join(map(str, invalid_ids))}."
+                )
+            }
+        )
+
+    existing_records = list(
+        RegistroAsistenciaNominaPWA.objects.filter(
+            nomina_id__in=valid_nomina_ids,
+            periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
+            periodo_referencia=periodo_referencia,
+        ).select_related("tomado_por")
+    )
+    existing_by_nomina_id = {
+        registro.nomina_id: registro for registro in existing_records
+    }
+
+    created_records = []
+    deleted_records = []
+
+    for nomina_id in sorted(selected_ids):
+        if nomina_id in existing_by_nomina_id:
+            continue
+        registro = RegistroAsistenciaNominaPWA.objects.create(
+            nomina_id=nomina_id,
+            periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
+            periodo_referencia=periodo_referencia,
+            tomado_por=actor if getattr(actor, "is_authenticated", False) else None,
+            metadata={"origen": "mobile_bulk_alimentaria"},
+        )
+        created_records.append(registro)
+        registrar_evento_operacion(
+            actor=actor,
+            comedor_id=comedor_id,
+            entidad="nomina_asistencia",
+            entidad_id=registro.id,
+            accion="create",
+            snapshot_despues=_snapshot_registro_asistencia(registro),
+            metadata={
+                "periodicidad": registro.periodicidad,
+                "periodo_referencia": registro.periodo_referencia,
+                "origen": "bulk_alimentaria",
+            },
+        )
+
+    for nomina_id, registro in existing_by_nomina_id.items():
+        if nomina_id in selected_ids:
+            continue
+        snapshot_antes = _snapshot_registro_asistencia(registro)
+        deleted_records.append(registro.id)
+        registro.delete()
+        registrar_evento_operacion(
+            actor=actor,
+            comedor_id=comedor_id,
+            entidad="nomina_asistencia",
+            entidad_id=snapshot_antes["id"],
+            accion="delete",
+            snapshot_antes=snapshot_antes,
+            metadata={
+                "periodicidad": snapshot_antes["periodicidad"],
+                "periodo_referencia": snapshot_antes["periodo_referencia"],
+                "origen": "bulk_alimentaria",
+            },
+        )
+
+    return {
+        "periodo_referencia": periodo_referencia,
+        "periodo_label": periodo_referencia.strftime("%m/%Y"),
+        "selected_nomina_ids": sorted(selected_ids),
+        "created_count": len(created_records),
+        "deleted_count": len(deleted_records),
+    }

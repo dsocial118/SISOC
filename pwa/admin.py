@@ -9,6 +9,8 @@ from pwa.models import (
     InscriptoActividadEspacioPWA,
     LecturaMensajePWA,
     NominaEspacioPWA,
+    PushSubscriptionPWA,
+    RegistroAsistenciaNominaPWA,
 )
 
 
@@ -92,6 +94,24 @@ class LecturaMensajePWAAdmin(admin.ModelAdmin):
     readonly_fields = ("fecha_creacion", "fecha_actualizacion")
 
 
+@admin.register(PushSubscriptionPWA)
+class PushSubscriptionPWAAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "activo",
+        "fecha_actualizacion",
+        "fecha_baja",
+    )
+    list_filter = ("activo",)
+    search_fields = ("user__username", "endpoint", "user_agent")
+    readonly_fields = (
+        "fecha_creacion",
+        "fecha_actualizacion",
+        "fecha_baja",
+    )
+
+
 @admin.register(ColaboradorEspacioPWA)
 class ColaboradorEspacioPWAAdmin(admin.ModelAdmin):
     list_display = (
@@ -139,6 +159,8 @@ class ActividadEspacioPWAAdmin(admin.ModelAdmin):
         "comedor",
         "catalogo_actividad",
         "dia_actividad",
+        "hora_inicio",
+        "hora_fin",
         "horario_actividad",
         "activo",
         "fecha_alta",
@@ -213,4 +235,27 @@ class NominaEspacioPWAAdmin(admin.ModelAdmin):
         "fecha_baja",
         "creado_por",
         "actualizado_por",
+    )
+
+
+@admin.register(RegistroAsistenciaNominaPWA)
+class RegistroAsistenciaNominaPWAAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "nomina",
+        "periodicidad",
+        "periodo_referencia",
+        "fecha_toma_asistencia",
+        "tomado_por",
+    )
+    list_filter = ("periodicidad", "periodo_referencia")
+    search_fields = (
+        "nomina__ciudadano__apellido",
+        "nomina__ciudadano__nombre",
+        "nomina__ciudadano__documento",
+        "tomado_por__username",
+    )
+    readonly_fields = (
+        "fecha_toma_asistencia",
+        "metadata",
     )

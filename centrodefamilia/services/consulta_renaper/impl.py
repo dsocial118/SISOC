@@ -82,7 +82,6 @@ class APIClient:
             }
 
         if not data.get("isSuccess", False):
-            logger.error(f"No se encontró coincidencia RENAPER DNI {dni}")
             return {
                 "success": False,
                 "error": "No se encontró coincidencia.",

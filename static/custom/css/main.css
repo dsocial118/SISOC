@@ -12,6 +12,14 @@ footer.app-footer {
     display: flex;
 }
 
+/* Modales por encima del footer fijo (z-index: 3000) */
+.modal-backdrop {
+    z-index: 3050 !important;
+}
+.modal {
+    z-index: 3100 !important;
+}
+
 .app-sidebar {
     background-color: #232d4f !important;
     position: fixed;
@@ -22,6 +30,12 @@ footer.app-footer {
 .app-sidebar .sidebar-wrapper {
     overflow-y: auto;
     height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-sidebar .sidebar-wrapper nav {
+    flex: 1;
 }
 
 .app-main {
@@ -191,6 +205,12 @@ aside .nav-link p {
 
 .sidebar-wrapper div:nth-child(2) {
     overflow-x: hidden !important;
+}
+
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
 }
 
 .max-width-100 {

@@ -58,6 +58,8 @@ Cada aplicación del repositorio representa un módulo funcional (ej. `comedores
    ```
 4. Acceder a la app en [http://localhost:8001](http://localhost:8001) (valor por defecto de `DOCKER_DJANGO_PORT_FORWARD` en `.env.example`).
 
+`docker-compose.yml` queda reservado para desarrollo/local y es el unico compose versionado que levanta `mysql`.
+
 ## Reiniciar base de datos con nuevo dump
 ```bash
 docker compose down
@@ -67,7 +69,7 @@ docker compose up
 ```
 
 ## Debug con VSCode
-- Iniciar servicios con `docker compose up`.  
+- Iniciar servicios con `docker compose up`.
 - Seleccionar la configuración `Django in Docker` en el panel de debugging.  
 
 ---
@@ -162,6 +164,18 @@ curl -X GET http://localhost:8001/api/comedores/ \
 - **Semana 0 (jueves)** → abrir branch `development`.  
 - **Semana 2 (lunes, freeze)** → congelar `development`, crear tag `YY.MM.DD-rc1`.  
 - **Semana 2 (miércoles noche)** → deploy a PRD si QA aprueba último `rcX`.  
+
+##Entornos y compose de deploy
+- `qa`: branch `development`, compose `docker-compose.deploy.yml` + `docker-compose.qa.yml`.
+- `homologacion`: branch `homologacion`, compose `docker-compose.deploy.yml` + `docker-compose.homologacion.yml`.
+- `produccion`: branch `main`, compose `docker-compose.deploy.yml` + `docker-compose.produccion.yml`.
+- Los compose de deploy no levantan `mysql`; todos asumen base externa, comparten el servicio `django` y leen el `.env` normal del servidor.
+- Los `.env.qa`, `.env.homologacion` y `.env.prod` se conservan como plantillas base saneadas y no deben contener datos reales.
+
+##Comandos de referencia
+```bash
+docker compose -f docker-compose.deploy.yml up -d --build
+```
 
 ##Checklist
 - [ ] Branch `development` congelada sin features nuevos  

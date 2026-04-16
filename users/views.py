@@ -1,8 +1,8 @@
-from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import (
     INTERNAL_RESET_SESSION_TOKEN,
     LoginView,
@@ -11,22 +11,44 @@ from django.contrib.auth.views import (
     PasswordResetDoneView,
     PasswordResetView,
 )
+from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.db.models import Count
-from django.http import HttpResponseRedirect
-from django.urls import reverse_lazy
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView
+from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.generic import CreateView, DeleteView, FormView, ListView, UpdateView
+
 from core.services.column_preferences import build_columns_context
+
 from .forms import (
     BackofficeAuthenticationForm,
+    BulkCredentialsUploadForm,
     CustomUserChangeForm,
     GroupForm,
     UserCreationForm,
 )
 from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
-from .services import UsuariosService
+from .services import BULK_CREDENTIALS_PERMISSION_CODE, UsuariosService
+from .services_auth import generate_temporary_password_for_user
+from .services_bulk_credentials import (
+    generate_bulk_credentials_template,
+    get_bulk_credentials_send_type_config,
+    get_bulk_credentials_send_type_contexts,
+    get_bulk_credentials_template_filename,
+)
+from .services_bulk_credentials_jobs import (
+    can_resume_bulk_credentials_job,
+    create_bulk_credentials_job,
+    get_bulk_credentials_job_or_404,
+    get_recent_bulk_credentials_jobs,
+    request_resume_bulk_credentials_job,
+)
+from .temporary_passwords import clear_temporary_password, get_temporary_password
 
 
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -69,9 +91,12 @@ class UserListView(AdminRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # Configuración para el componente data_table
+        # Configuracion para el componente data_table
         context.update(UsuariosService.get_usuarios_list_context(self.request))
+        context["user_table_items"] = UsuariosService.build_user_table_items(
+            context["users"],
+            context["table_fields"],
+        )
         return context
 
 
@@ -82,6 +107,33 @@ class UserCreateView(AdminRequiredMixin, CreateView):
     success_url = reverse_lazy("usuarios")
     required_permissions = ("auth.add_user",)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        self.object = form.save()
+        generated_password = getattr(form, "generated_password", None)
+        if generated_password:
+            messages.success(
+                self.request,
+                (
+                    "Usuario mobile creado correctamente. "
+                    f"Contraseña inicial generada: {generated_password}"
+                ),
+            )
+            self._redirect_to_user_edit = True
+            return HttpResponseRedirect(self.get_success_url())
+        messages.success(self.request, "Usuario creado correctamente.")
+        self._redirect_to_user_edit = False
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        if getattr(self, "_redirect_to_user_edit", False):
+            return reverse_lazy("usuario_editar", kwargs={"pk": self.object.pk})
+        return super().get_success_url()
+
 
 class UserUpdateView(AdminRequiredMixin, UpdateView):
     model = User
@@ -89,6 +141,37 @@ class UserUpdateView(AdminRequiredMixin, UpdateView):
     template_name = "user/user_form.html"
     success_url = reverse_lazy("usuarios")
     required_permissions = ("auth.change_user",)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        profile = getattr(self.object, "profile", None)
+        context["password_reset_requested_at"] = (
+            getattr(profile, "password_reset_requested_at", None) if profile else None
+        )
+        temporary_password_plaintext = get_temporary_password(
+            self.request.session,
+            user_id=self.object.pk,
+        )
+        if not temporary_password_plaintext:
+            temporary_password_plaintext = getattr(
+                profile,
+                "temporary_password_plaintext",
+                None,
+            )
+        context["temporary_password_plaintext"] = temporary_password_plaintext
+        context["temporary_password_visible"] = bool(temporary_password_plaintext)
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if form.cleaned_data.get("password"):
+            clear_temporary_password(self.request.session, user_id=self.object.pk)
+        return response
 
 
 class UserDeleteView(AdminRequiredMixin, DeleteView):
@@ -103,6 +186,180 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
         self.object.save(update_fields=["is_active"])
         messages.success(request, "Usuario desactivado correctamente.")
         return HttpResponseRedirect(self.success_url)
+
+
+class UserGenerateTemporaryPasswordView(AdminRequiredMixin, View):
+    required_permissions = ("auth.change_user",)
+
+    def post(self, request, *args, **kwargs):
+        user = User.objects.select_related("profile").filter(pk=kwargs["pk"]).first()
+        if not user:
+            messages.error(request, "Usuario inexistente.")
+            return HttpResponseRedirect(reverse("usuarios"))
+
+        profile = getattr(user, "profile", None)
+        if not getattr(profile, "password_reset_requested_at", None):
+            messages.warning(
+                request,
+                (
+                    "El usuario no tiene una solicitud pendiente "
+                    "de reseteo de contraseña."
+                ),
+            )
+            return HttpResponseRedirect(reverse("usuarios"))
+
+        generate_temporary_password_for_user(user=user)
+        messages.success(
+            request,
+            (
+                "Se generó una nueva contraseña temporal. "
+                "Puede verla en la pantalla de edición del usuario."
+            ),
+        )
+        return HttpResponseRedirect(reverse("usuario_editar", kwargs={"pk": user.pk}))
+
+
+class UserActiveView(AdminRequiredMixin, UpdateView):
+    model = User
+    template_name = "user/user_confirm_delete.html"
+    success_url = reverse_lazy("usuarios")
+    required_permissions = ("auth.delete_user",)
+    fields = []
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.is_active = True
+        self.object.save(update_fields=["is_active"])
+        messages.success(request, "Usuario activado correctamente.")
+        return HttpResponseRedirect(self.success_url)
+
+
+class BulkCredentialsTemplateView(AdminRequiredMixin, View):
+    required_permissions = (
+        "auth.change_user",
+        BULK_CREDENTIALS_PERMISSION_CODE,
+    )
+    require_all_permissions = True
+
+    def get(self, request, *args, **kwargs):
+        send_type = request.GET.get("tipo_envio")
+        send_type_config = get_bulk_credentials_send_type_config(send_type)
+        content = generate_bulk_credentials_template(send_type_config.key)
+        response = HttpResponse(
+            content,
+            content_type=(
+                "application/vnd.openxmlformats-officedocument." "spreadsheetml.sheet"
+            ),
+        )
+        response["Content-Disposition"] = (
+            "attachment; filename="
+            f'"{get_bulk_credentials_template_filename(send_type_config.key)}"'
+        )
+        return response
+
+
+class BulkCredentialsUploadView(AdminRequiredMixin, FormView):
+    template_name = "user/bulk_credentials_form.html"
+    form_class = BulkCredentialsUploadForm
+    required_permissions = (
+        "auth.change_user",
+        BULK_CREDENTIALS_PERMISSION_CODE,
+    )
+    require_all_permissions = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form_title"] = "Enviar credenciales masivas"
+        context["template_download_url"] = reverse("usuarios_credenciales_plantilla")
+        context["send_type_options"] = get_bulk_credentials_send_type_contexts()
+        context["recent_jobs"] = get_recent_bulk_credentials_jobs(
+            requested_by=self.request.user,
+        )
+        return context
+
+    def form_valid(self, form):
+        send_type = form.cleaned_data["tipo_envio"]
+        send_type_config = get_bulk_credentials_send_type_config(send_type)
+        try:
+            job = create_bulk_credentials_job(
+                uploaded_file=form.cleaned_data["archivo"],
+                send_type=send_type,
+                requested_by=self.request.user,
+            )
+        except ValidationError as exc:
+            form.add_error("archivo", " ".join(exc.messages))
+            return self.form_invalid(form)
+
+        messages.success(
+            self.request,
+            (
+                f"Lote creado para {send_type_config.label}. "
+                "El procesamiento continuara en background. "
+                "Puede seguir el estado desde el detalle del lote."
+            ),
+        )
+        return HttpResponseRedirect(
+            reverse(
+                "usuarios_credenciales_masivas_detalle",
+                kwargs={"pk": job.pk},
+            )
+        )
+
+
+class BulkCredentialsJobDetailView(AdminRequiredMixin, View):
+    required_permissions = (
+        "auth.change_user",
+        BULK_CREDENTIALS_PERMISSION_CODE,
+    )
+    require_all_permissions = True
+    template_name = "user/bulk_credentials_job_detail.html"
+    paginate_by = 50
+
+    def get(self, request, *args, **kwargs):
+        job = get_bulk_credentials_job_or_404(job_id=kwargs["pk"])
+        rows_qs = job.rows.order_by("fila", "id")
+        paginator = Paginator(rows_qs, self.paginate_by)
+        page_obj = paginator.get_page(request.GET.get("page"))
+        return self.render_to_response(
+            {
+                "job": job,
+                "page_obj": page_obj,
+                "is_resume_available": can_resume_bulk_credentials_job(job),
+                "upload_url": reverse("usuarios_credenciales_masivas"),
+            }
+        )
+
+    def render_to_response(self, context):
+        return render(self.request, self.template_name, context)
+
+
+class BulkCredentialsJobResumeView(AdminRequiredMixin, View):
+    required_permissions = (
+        "auth.change_user",
+        BULK_CREDENTIALS_PERMISSION_CODE,
+    )
+    require_all_permissions = True
+
+    def post(self, request, *args, **kwargs):
+        job = get_bulk_credentials_job_or_404(job_id=kwargs["pk"])
+        try:
+            request_resume_bulk_credentials_job(job=job)
+        except ValidationError as exc:
+            messages.error(request, " ".join(exc.messages))
+        else:
+            messages.success(
+                request,
+                (
+                    "El lote quedo pendiente para reanudarse desde "
+                    "la ultima fila fallida."
+                ),
+            )
+        return HttpResponseRedirect(
+            reverse(
+                "usuarios_credenciales_masivas_detalle",
+                kwargs={"pk": job.pk},
+            )
+        )
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -124,7 +381,7 @@ class GroupListView(AdminRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Configuración para el componente data_table
+        # Configuracion para el componente data_table
         context.update(
             build_columns_context(
                 self.request,
@@ -168,11 +425,15 @@ class FirstLoginPasswordChangeView(LoginRequiredMixin, FormView):
             profile.must_change_password = False
             profile.password_changed_at = timezone.now()
             profile.initial_password_expires_at = None
+            profile.password_reset_requested_at = None
+            profile.temporary_password_plaintext = None
             profile.save(
                 update_fields=[
                     "must_change_password",
                     "password_changed_at",
                     "initial_password_expires_at",
+                    "password_reset_requested_at",
+                    "temporary_password_plaintext",
                 ]
             )
         update_session_auth_hash(self.request, user)
@@ -213,11 +474,15 @@ class PasswordResetConfirmCustomView(PasswordResetConfirmView):
             profile.must_change_password = False
             profile.password_changed_at = timezone.now()
             profile.initial_password_expires_at = None
+            profile.password_reset_requested_at = None
+            profile.temporary_password_plaintext = None
             profile.save(
                 update_fields=[
                     "must_change_password",
                     "password_changed_at",
                     "initial_password_expires_at",
+                    "password_reset_requested_at",
+                    "temporary_password_plaintext",
                 ]
             )
 

@@ -127,6 +127,8 @@
                                         </th>
                                     {% elif column_key == "fecha_validado" %}
                                         <th>Fecha validación</th>
+                                    {% elif column_key == "judicializado" %}
+                                        <th>Judicializado</th>
                                     {% endif %}
                                 {% endfor %}
                                 <th class="notexport">Acciones</th>
@@ -219,6 +221,16 @@
                                             </td>
                                         {% elif column_key == "fecha_validado" %}
                                             <td>{{ comedor.fecha_validado | date:"d/m/Y" | default_if_none:"Sin fecha" }}</td>
+                                        {% elif column_key == "judicializado" %}
+                                            <td>
+                                                {% if comedor.es_judicializado is None %}
+                                                    -
+                                                {% elif comedor.es_judicializado %}
+                                                    Sí
+                                                {% else %}
+                                                    No
+                                                {% endif %}
+                                            </td>
                                         {% endif %}
                                     {% endfor %}
                                     <td>

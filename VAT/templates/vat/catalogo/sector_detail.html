@@ -1,0 +1,55 @@
+{% extends "includes/main.html" %}
+{% block title %}Detalle Sector{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_centro_list' %}">VAT</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_sector_list' %}">Sectores</a>
+        </li>
+        <li class="breadcrumb-item active">{{ sector.nombre }}</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title">{{ sector.nombre }}</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'vat_sector_update' sector.id %}"
+                           class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                        <form method="post"
+                              action="{% url 'vat_sector_delete' sector.id %}"
+                              style="display:inline"
+                              onsubmit="return confirm('¿Está seguro?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p>
+                        <strong>Descripción:</strong>
+                    </p>
+                    <p>{{ sector.descripcion|default:"Sin descripción" }}</p>
+                    <hr />
+                    <h5>Subsectores ({{ subsectores.count }})</h5>
+                    {% if subsectores %}
+                        <ul>
+                            {% for sub in subsectores %}<li>{{ sub.nombre }}</li>{% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">Sin subsectores</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'vat_sector_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
