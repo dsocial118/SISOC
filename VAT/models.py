@@ -106,6 +106,14 @@ class Centro(SoftDeleteModelMixin, models.Model):
                 fields=["nombre"],
                 name="vat_centro_nombre_idx",
             ),
+            models.Index(
+                fields=["provincia", "id"],
+                name="vat_centro_prov_id_idx",
+            ),
+            models.Index(
+                fields=["referente", "id"],
+                name="vat_centro_ref_id_idx",
+            ),
         ]
 
 
