@@ -207,7 +207,9 @@ def check_encoding() -> int:
             print(finding)
         return 1
 
-    print("No se detectaron problemas de encoding corregibles en los archivos cambiados.")
+    print(
+        "No se detectaron problemas de encoding corregibles en los archivos cambiados."
+    )
     return 0
 
 
