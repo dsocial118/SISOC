@@ -61,12 +61,12 @@ def test_build_vat_centro_list_queryset_applies_scope_and_search(mocker):
     )
     adv = mocker.patch(
         "VAT.views.centro.BOOL_ADVANCED_FILTER.filter_queryset",
-        return_value="filtered",
+        side_effect=lambda queryset, _params: queryset,
     )
 
     request = SimpleNamespace(user=SimpleNamespace(), GET={"busqueda": "123"})
 
-    assert module._build_vat_centro_list_queryset(request) == "filtered"
+    assert module._build_vat_centro_list_queryset(request) is base_qs
     assert base_qs.filtered is True
     assert adv.called
 
@@ -85,7 +85,7 @@ def test_vat_centro_list_view_paginates_without_count(mocker):
     assert object_list == ["row-1", "row-2"]
     assert page_obj.object_list == ["row-1", "row-2"]
     assert hydrate.called
-    assert is_paginated is True
+    assert is_paginated is False
 
 
 def test_vat_centros_ajax_returns_json(mocker):

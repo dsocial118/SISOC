@@ -13,6 +13,9 @@ class _QuerySetStub:
     def filter(self, **_kwargs):
         return self
 
+    def exclude(self, **_kwargs):
+        return self
+
     def order_by(self, *_args, **_kwargs):
         return self
 
@@ -21,6 +24,9 @@ class _QuerySetStub:
 
     def exists(self):
         return bool(self._items)
+
+    def count(self):
+        return len(self._items)
 
     def __iter__(self):
         return iter(self._items)
@@ -32,6 +38,9 @@ def test_inscripcion_create_descuenta_costo_del_voucher(mocker):
 
     inscripcion = SimpleNamespace(
         ciudadano="Ciudadano Demo",
+        estado="inscripta",
+        voucher_debito=12500,
+        voucher_saldo=12500,
         _voucher_debito=12500,
         _voucher_saldo=12500,
     )
@@ -102,6 +111,7 @@ def test_inscripcion_service_crea_y_debita_voucher(mocker):
         id=6,
         oferta=oferta,
         oferta_id=10,
+        cupo_total=1,
         __str__=lambda self: "COM-6",
     )
     voucher = SimpleNamespace(cantidad_disponible=12500, parametria=None)

@@ -244,6 +244,15 @@
                                     <p>Búsqueda</p>
                                 </a>
                             </li>
+                            {% if request.user|has_perm_code:"ciudadanos.revision_identidad" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'ciudadanos_cola_revision' %}"
+                                       class="nav-link ms-4 {% if 'ciudadanos/revision' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Cola de revisión</p>
+                                    </a>
+                                </li>
+                            {% endif %}
                         </ul>
                     </li>
                 {% endif %}
