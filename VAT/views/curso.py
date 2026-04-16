@@ -385,7 +385,7 @@ class InscripcionRapidaComisionCursoView(LoginRequiredMixin, View):
             _scoped_comisiones_curso_queryset(request.user),
             pk=request.POST.get("comision"),
         )
-        if not comision.curso.programa_id:
+        if not comision.curso.programa_id and not comision.curso.inscripcion_libre:
             return JsonResponse(
                 {
                     "ok": False,

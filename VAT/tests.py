@@ -5362,6 +5362,94 @@ def test_inscripcion_rapida_comision_curso_envia_a_lista_espera(client, vat_geo_
 
 
 @pytest.mark.django_db
+def test_inscripcion_rapida_comision_curso_libre_sin_programa_crea_inscripcion(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial Libre", activo=True)
+    sexo = Sexo.objects.create(sexo="Femenino")
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-libre",
+        email="admin-comision-curso-libre@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Libre",
+        codigo="CFP-LIBRE",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="15",
+        numero=150,
+        domicilio_actividad="Calle 15 N° 150",
+        telefono="221-1111112",
+        celular="221-2222223",
+        correo="cfplibre@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Gomez",
+        telefono_referente="221-3333334",
+        correo_referente="ana-libre@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 15 N° 150",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso libre sin programa",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="LIBRE-FAST-01",
+        nombre="Comisión Libre Fast",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Libre",
+        nombre="Juana",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=22345678,
+        sexo=sexo,
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_inscripcion_rapida_comision_curso"),
+        data={
+            "comision": comision.pk,
+            "ciudadano_id": ciudadano.pk,
+            "observaciones": "Alta rápida curso libre",
+        },
+    )
+
+    payload = response.json()
+    inscripcion = Inscripcion.objects.get(comision_curso=comision, ciudadano=ciudadano)
+
+    assert response.status_code == 200
+    assert payload["ok"] is True
+    assert inscripcion.programa is None
+    assert inscripcion.estado == "inscripta"
+
+
+@pytest.mark.django_db
 def test_inscripcion_rapida_comision_legacy_envia_a_lista_espera(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     sexo = Sexo.objects.create(sexo="Femenino")
