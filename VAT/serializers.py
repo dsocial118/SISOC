@@ -1160,7 +1160,9 @@ def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario
     documento = documento_explicitado or cuil
     if usa_cuil_como_documento:
         documento = "".join(caracter for caracter in documento if caracter.isdigit())
-    tipo_documento = (datos_postulante.get("tipo_documento") or Ciudadano.DOCUMENTO_DNI).strip()
+    tipo_documento = (
+        datos_postulante.get("tipo_documento") or Ciudadano.DOCUMENTO_DNI
+    ).strip()
 
     errores = {}
     if not nombre:
@@ -1189,9 +1191,7 @@ def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario
 
     fecha_nacimiento_raw = datos_postulante.get("fecha_nacimiento")
     fecha_nacimiento = date(1900, 1, 1)
-    observaciones = [
-        "Ciudadano creado automáticamente desde inscripción libre web."
-    ]
+    observaciones = ["Ciudadano creado automáticamente desde inscripción libre web."]
     if fecha_nacimiento_raw:
         try:
             fecha_nacimiento = serializers.DateField().run_validation(
@@ -1210,11 +1210,7 @@ def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario
             "Se tomó el CUIL informado como documento para el alta automática."
         )
 
-    usuario_auditoria = (
-        usuario
-        if getattr(usuario, "is_authenticated", False)
-        else None
-    )
+    usuario_auditoria = usuario if getattr(usuario, "is_authenticated", False) else None
 
     return Ciudadano.objects.create(
         apellido=apellido,

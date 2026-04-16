@@ -405,7 +405,9 @@ class InscripcionService:
         )
         programa = programa or unidad_formativa.programa
 
-        if programa is None and not getattr(unidad_formativa, "inscripcion_libre", False):
+        if programa is None and not getattr(
+            unidad_formativa, "inscripcion_libre", False
+        ):
             raise ValueError(
                 "La comisión debe tener un programa configurado para poder inscribir ciudadanos."
             )

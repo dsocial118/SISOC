@@ -3260,7 +3260,6 @@ def test_api_vat_web_inscripcion_libre_usa_cuil_como_documento_si_no_viene_docum
     assert solicitud.datos_postulante["cuil"] == "27375343520"
 
 
-
 @pytest.mark.django_db
 def test_api_vat_web_inscripciones_informa_lista_espera_si_no_hay_cupo(
     vat_api_client, vat_curso_base
