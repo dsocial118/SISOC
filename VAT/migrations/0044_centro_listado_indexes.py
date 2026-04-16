@@ -3,7 +3,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("VAT", "0038_curso_prioritario"),
+        ("VAT", "0043_alter_curso_inscripcion_libre"),
     ]
 
     operations = [
