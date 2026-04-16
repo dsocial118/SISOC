@@ -16,6 +16,9 @@ class _QuerySetStub:
     def filter(self, **_kwargs):
         return self
 
+    def exclude(self, **_kwargs):
+        return self
+
     def order_by(self, *_args, **_kwargs):
         return self
 
@@ -24,6 +27,9 @@ class _QuerySetStub:
 
     def exists(self):
         return bool(self._items)
+
+    def count(self):
+        return len(self._items)
 
     def __iter__(self):
         return iter(self._items)
@@ -94,6 +100,7 @@ def test_inscripcion_service_crear_inscripcion_debita_voucher(mocker):
         id=8,
         oferta=oferta,
         oferta_id=11,
+        cupo_total=1,
         __str__=lambda self: "COM-8",
     )
     inscripcion = SimpleNamespace(
@@ -148,6 +155,7 @@ def test_inscripcion_service_rechaza_costo_con_decimales_en_voucher(mocker):
         id=8,
         oferta=oferta,
         oferta_id=11,
+        cupo_total=1,
         __str__=lambda self: "COM-8",
     )
     inscripcion = SimpleNamespace(
@@ -217,6 +225,7 @@ def test_inscripcion_unica_activa_bloquea_segunda_inscripcion(mocker):
         id=9,
         oferta=oferta,
         oferta_id=12,
+        cupo_total=1,
         __str__=lambda self: "COM-9",
     )
 
@@ -260,6 +269,7 @@ def test_inscripcion_unica_activa_permite_si_no_hay_activa(mocker):
         id=9,
         oferta=oferta,
         oferta_id=13,
+        cupo_total=1,
         __str__=lambda self: "COM-9",
     )
     inscripcion = SimpleNamespace(
@@ -323,6 +333,7 @@ def test_inscripcion_unica_activa_desactivado_permite_multiples(mocker):
         id=9,
         oferta=oferta,
         oferta_id=14,
+        cupo_total=1,
         __str__=lambda self: "COM-9",
     )
     inscripcion = SimpleNamespace(
