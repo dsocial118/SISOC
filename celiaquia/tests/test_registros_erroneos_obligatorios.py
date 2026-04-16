@@ -19,6 +19,7 @@ from celiaquia.models import (
     RegistroErroneo,
 )
 from celiaquia.services.importacion_service import ImportacionService
+from celiaquia.views import expediente as expediente_view
 from core.models import Localidad, Municipio, Nacionalidad, Provincia, Sexo
 from users.models import Profile
 
@@ -286,7 +287,7 @@ def test_detalle_expediente_autocompleta_sexo_m_f_en_registros_erroneos(client):
 
 
 @pytest.mark.django_db
-def test_detalle_expediente_oculta_nacionalidad_y_autocompleta_municipio_por_localidad(
+def test_detalle_expediente_muestra_nacionalidad_editable_y_autocompleta_municipio_por_localidad(
     client,
 ):
     user, provincia = _crear_usuario_provincial("prov_detail_defaults")
@@ -301,7 +302,7 @@ def test_detalle_expediente_oculta_nacionalidad_y_autocompleta_municipio_por_loc
     localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
     argentina = Nacionalidad.objects.create(nacionalidad="Argentina")
     Sexo.objects.create(sexo="Masculino")
-    RegistroErroneo.objects.create(
+    registro = RegistroErroneo.objects.create(
         expediente=expediente,
         fila_excel=4,
         datos_raw={
@@ -322,23 +323,247 @@ def test_detalle_expediente_oculta_nacionalidad_y_autocompleta_municipio_por_loc
     response = client.get(reverse("expediente_detail", args=[expediente.pk]))
 
     content = response.content.decode()
-    assert 'label class="form-label">Nacionalidad *' not in content
+    form_pattern = (
+        rf'<form[^>]+class="form-editar-error"[^>]+data-registro-id="{registro.pk}"'
+        rf'.*?</form>'
+    )
+    form_match = re.search(form_pattern, content, flags=re.DOTALL)
+
+    assert form_match is not None
+    form_html = form_match.group(0)
+    nacionalidad_select = re.search(
+        r'<select[^>]+name="nacionalidad".*?</select>',
+        form_html,
+        flags=re.DOTALL,
+    )
+    municipio_select = re.search(
+        r'<select[^>]+name="municipio".*?</select>',
+        form_html,
+        flags=re.DOTALL,
+    )
+    assert nacionalidad_select is not None
+    assert municipio_select is not None
     assert re.search(
-        rf'name="nacionalidad"\s+value="{argentina.pk}"',
+        rf'option value="{argentina.pk}"\s+selected',
+        nacionalidad_select.group(0),
+        flags=re.DOTALL,
+    ) is None
+    assert re.search(
+        rf'option value="{municipio.pk}"\s+selected',
+        municipio_select.group(0),
+        flags=re.DOTALL,
+    )
+    assert 'for="editar-nacionalidad"' in content
+
+
+@pytest.mark.django_db
+def test_detalle_expediente_no_autoselecciona_nacionalidad_invalida_o_vacia(client):
+    user, provincia = _crear_usuario_provincial("prov_detail_nacionalidad_sin_default")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    expediente = _crear_contexto_expediente(user)
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    argentina = Nacionalidad.objects.create(nacionalidad="Argentina")
+    Sexo.objects.create(sexo="Masculino")
+    registro_invalido = RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=10,
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "12345678",
+            "fecha_nacimiento": "01/01/1990",
+            "sexo": "Masculino",
+            "nacionalidad": "per",
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+        },
+        mensaje_error="Nacionalidad inválida: per",
+    )
+    registro_vacio = RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=11,
+        datos_raw={
+            "apellido": "Lopez",
+            "nombre": "Juan",
+            "documento": "87654321",
+            "fecha_nacimiento": "01/01/1990",
+            "sexo": "Masculino",
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 2",
+            "altura": "456",
+            "codigo_postal": "1000",
+        },
+        mensaje_error="Faltan campos obligatorios: nacionalidad",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    for registro in (registro_invalido, registro_vacio):
+        form_pattern = (
+            rf'<form[^>]+class="form-editar-error"[^>]+data-registro-id="{registro.pk}"'
+            rf'.*?</form>'
+        )
+        form_match = re.search(form_pattern, content, flags=re.DOTALL)
+        assert form_match is not None
+        form_html = form_match.group(0)
+        nacionalidad_select = re.search(
+            r'<select[^>]+name="nacionalidad".*?</select>',
+            form_html,
+            flags=re.DOTALL,
+        )
+        assert nacionalidad_select is not None
+        assert re.search(
+            rf'option value="{argentina.pk}"\s+selected',
+            nacionalidad_select.group(0),
+            flags=re.DOTALL,
+        ) is None
+
+
+@pytest.mark.django_db
+def test_detalle_expediente_marca_nacionalidad_invalida_en_campos_invalidos(client):
+    user, provincia = _crear_usuario_provincial("prov_detail_invalid_fields")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    expediente = _crear_contexto_expediente(user)
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    Nacionalidad.objects.create(nacionalidad="Argentina")
+    Sexo.objects.create(sexo="Masculino")
+    RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=9,
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "12345678",
+            "fecha_nacimiento": "01/01/1990",
+            "sexo": "Masculino",
+            "nacionalidad": "Narnia",
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+        },
+        mensaje_error="Nacionalidad inválida: Narnia",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert 'data-invalid-fields="nacionalidad"' in content
+
+
+@pytest.mark.django_db
+def test_detalle_expediente_marca_altura_faltante_en_campos_invalidos(client):
+    user, provincia = _crear_usuario_provincial("prov_detail_invalid_altura")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    expediente = _crear_contexto_expediente(user)
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    Nacionalidad.objects.create(nacionalidad="Argentina")
+    Sexo.objects.create(sexo="Masculino")
+    RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=12,
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "12345678",
+            "fecha_nacimiento": "01/01/1990",
+            "sexo": "Masculino",
+            "nacionalidad": "Argentina",
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 1",
+            "codigo_postal": "1000",
+        },
+        mensaje_error="Faltan campos obligatorios: altura",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert 'data-invalid-fields="altura"' in content
+
+
+@pytest.mark.django_db
+def test_detalle_expediente_autocompleta_nacionalidad_desde_pais_relacionado(client):
+    user, provincia = _crear_usuario_provincial("prov_detail_country_mapping")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    expediente = _crear_contexto_expediente(user)
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    brasileña = Nacionalidad.objects.create(nacionalidad="Brasileña")
+    Sexo.objects.create(sexo="Masculino")
+    RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=8,
+        datos_raw={
+            "apellido": "Silva",
+            "nombre": "Ana",
+            "documento": "12345678",
+            "fecha_nacimiento": "01/01/1990",
+            "sexo": "Masculino",
+            "nacionalidad": "Brasil",
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+        },
+        mensaje_error="Revision manual requerida",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert re.search(
+        rf'name="nacionalidad".*?option value="{brasileña.pk}"\s+selected',
         content,
         flags=re.DOTALL,
     )
-    assert re.search(
-        rf'name="municipio".*?option value="{municipio.pk}"\s+selected',
-        content,
-        flags=re.DOTALL,
+
+
+def test_campos_invalidos_desde_mensaje_error_soporta_prefijo_reproceso():
+    invalid_fields = expediente_view._campos_invalidos_desde_mensaje_error(
+        "Error al reprocesar: Faltan campos obligatorios: apellido, nombre"
     )
-    assert re.search(
-        rf'id="editar-nacionalidad".*?value="{argentina.pk}"',
-        content,
-        flags=re.DOTALL,
-    )
-    assert 'for="editar-nacionalidad"' not in content
+
+    assert invalid_fields == ["apellido", "nombre"]
 
 
 @pytest.mark.django_db
@@ -386,10 +611,58 @@ def test_actualizar_registro_erroneo_rechaza_campos_obligatorios_faltantes(clien
     assert response.status_code == 400
     assert "sexo" in response.json()["error"].lower()
     assert response.json()["saved_partial"] is True
+    assert response.json()["invalid_fields"] == ["sexo"]
 
     registro.refresh_from_db()
     assert registro.datos_raw["sexo"] == "1"
     assert "sexo" in registro.mensaje_error.lower()
+
+
+@pytest.mark.django_db
+def test_actualizar_registro_erroneo_informa_invalid_fields_para_validation_error_compuesto(
+    client,
+):
+    user, provincia = _crear_usuario_provincial("prov_update_invalid_fields_multiple")
+    user.is_superuser = True
+    user.save(update_fields=["is_superuser"])
+    expediente = _crear_contexto_expediente(user)
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    argentina = Nacionalidad.objects.create(nacionalidad="Argentina")
+    sexo = Sexo.objects.create(sexo="Masculino")
+    registro = RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=13,
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "12345678",
+            "fecha_nacimiento": "01/01/1990",
+            "sexo": str(sexo.pk),
+            "nacionalidad": str(argentina.pk),
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+        },
+        mensaje_error="Faltan campos obligatorios: apellido, nombre",
+    )
+
+    payload = dict(registro.datos_raw)
+    payload["apellido"] = ""
+    payload["nombre"] = ""
+
+    client.force_login(user)
+    response = client.post(
+        reverse("registro_erroneo_actualizar", args=[expediente.pk, registro.pk]),
+        data=json.dumps(payload),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert response.json()["saved_partial"] is True
+    assert set(response.json()["invalid_fields"]) == {"apellido", "nombre"}
 
 
 @pytest.mark.django_db
@@ -439,7 +712,7 @@ def test_actualizar_registro_erroneo_permite_mayor_con_responsable_incompleto(cl
 
 
 @pytest.mark.django_db
-def test_actualizar_registro_erroneo_fuerza_argentina_y_municipio_por_localidad(client):
+def test_actualizar_registro_erroneo_conserva_nacionalidad_elegida_y_corrige_municipio_por_localidad(client):
     user, provincia = _crear_usuario_provincial("prov_update_defaults")
     user.is_superuser = True
     user.save(update_fields=["is_superuser"])
@@ -489,9 +762,51 @@ def test_actualizar_registro_erroneo_fuerza_argentina_y_municipio_por_localidad(
 
     assert response.status_code == 200
     registro.refresh_from_db()
-    assert registro.datos_raw["nacionalidad"] == str(argentina.pk)
+    assert registro.datos_raw["nacionalidad"] == str(otra_nacionalidad.pk)
     assert registro.datos_raw["municipio"] == str(municipio_destino.pk)
     assert registro.datos_raw["localidad"] == str(localidad_destino.pk)
+
+
+@pytest.mark.django_db
+def test_actualizar_registro_erroneo_permite_corregir_nacionalidad_invalida(client):
+    user, provincia = _crear_usuario_provincial("prov_update_nacionalidad")
+    user.is_superuser = True
+    user.save(update_fields=["is_superuser"])
+    expediente = _crear_contexto_expediente(user)
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    argentina = Nacionalidad.objects.create(nacionalidad="Argentina")
+    uruguaya = Nacionalidad.objects.create(nacionalidad="Uruguaya")
+    sexo = Sexo.objects.create(sexo="Masculino")
+    registro = RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=7,
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "12345678",
+            "fecha_nacimiento": "01/01/1990",
+            "sexo": str(sexo.pk),
+            "nacionalidad": "Narnia",
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+        },
+        mensaje_error="Nacionalidad invalida: Narnia",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("registro_erroneo_actualizar", args=[expediente.pk, registro.pk]),
+        data=json.dumps({"nacionalidad": str(uruguaya.pk)}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    registro.refresh_from_db()
+    assert registro.datos_raw["nacionalidad"] == str(uruguaya.pk)
 
 
 @pytest.mark.django_db
@@ -954,6 +1269,7 @@ def test_actualizar_registro_erroneo_rechaza_email_responsable_invalido(client):
 
     assert response.status_code == 400
     assert "email_responsable" in response.json()["error"].lower()
+    assert response.json()["invalid_fields"] == ["email_responsable"]
 
     registro.refresh_from_db()
     assert registro.datos_raw["email_responsable"] == "laura@example.com"

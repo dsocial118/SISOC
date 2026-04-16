@@ -5,6 +5,7 @@ WORKDIR /sisoc
 # Variables de entorno generales para Python y el sistema
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV LANG=es_AR.UTF-8
 ENV LC_ALL=es_AR.UTF-8
 
@@ -30,8 +31,8 @@ RUN echo "es_AR.UTF-8 UTF-8" >> /etc/locale.gen && \
 # Instalación de dependencias de la aplicación
 COPY ./requirements.txt .
 COPY ./requirements ./requirements
-RUN pip install --upgrade pip && pip install -r requirements.txt && \
-    pip install pymysql
+RUN python -m pip install --upgrade pip setuptools wheel
+RUN python -m pip install --no-cache-dir --retries 5 --timeout 60 -r requirements.txt
 
 # Agrega el script de entrypoint y hazlo ejecutable
 COPY ./docker/django/entrypoint.py ./docker/django/entrypoint.py
