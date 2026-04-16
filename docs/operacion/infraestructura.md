@@ -13,7 +13,7 @@
 | Branch de despliegue PRD | `main`                                                         |
 | Hosting                  | Self-hosted + NGINX interno                                    |
 | Base de datos            | MySQL                                                          |
-| Compose de deploy        | Base `docker-compose.deploy.yml` + override versionado por entorno |
+| Compose de deploy        | Base `docker-compose.deploy.yml`; en produccion se suma `docker-compose.produccion.yml` |
 | Cola asincrona           | No Celery/Kafka (threads + ThreadPoolExecutor)                 |
 | Secret manager           | No (operacion actual con `.env`)                               |
 
@@ -33,9 +33,9 @@
 
 | Entorno      | URL(s)                                 | Hosting                     | Notas                                                                                                 | Owner     |
 | ------------ | -------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------- | --------- |
-| qa           | http://10.80.9.15/                     | Self-hosted + NGINX interno | Deploy desde branch `development`; usa `docker-compose.deploy.yml` + `docker-compose.qa.yml`         | Tech Lead |
-| homologacion | https://homologacion.sisoc.example.gov.ar/ | Self-hosted + NGINX interno | Deploy desde branch `homologacion`; entorno similar a produccion, con base externa y Sentry propio | Tech Lead |
-| prd          | https://sisoc.secretarianaf.gob.ar/    | Self-hosted + NGINX interno | Deploy desde branch `main`; host app reportado `10.80.5.45`; MySQL reportado `10.80.5.22`           | Tech Lead |
+| qa           | http://10.80.9.15/                     | Self-hosted + NGINX interno | Deploy desde branch `development`; usa `docker-compose.deploy.yml` + `.env` del servidor            | Tech Lead |
+| homologacion | https://homologacion.sisoc.example.gov.ar/ | Self-hosted + NGINX interno | Deploy desde branch `homologacion`; entorno similar a produccion, definido por `.env` del servidor | Tech Lead |
+| prd          | https://sisoc.secretarianaf.gob.ar/    | Self-hosted + NGINX interno | Deploy desde branch `main`; usa `docker-compose.deploy.yml` + `docker-compose.produccion.yml`       | Tech Lead |
 
 ## 3. Architecture (High-level)
 
@@ -82,7 +82,8 @@
 - Process model:
   - Proceso web Django.
   - `docker-compose.yml` local define `mysql` + `django`.
-  - Los deploys versionados usan `docker-compose.deploy.yml` mas un override por entorno y no levantan `mysql`.
+  - Los deploys versionados usan `docker-compose.deploy.yml`; hoy solo produccion agrega `docker-compose.produccion.yml`.
+  - QA y homologacion se resuelven con el mismo compose base y el `.env` del servidor.
   - Jobs programados por cron del host (limpieza logs, prune Docker, hetrixtools, purge_auditlog).
 
 - Autoscaling rules (if any):
@@ -131,8 +132,8 @@
 - How deploys happen (CI/CD):
   - CI ejecuta lint/tests en PR/push (`development`/`main`).
   - Los PRs contra `main` ejecutan ademas un sanity check de release (`check --deploy`, validacion de schema OpenAPI y `collectstatic`) para detectar fallas de despliegue antes del merge.
-  - Deploy a qa/homologacion/prd es manual por Tech Lead.
-  - Politica de release documentada: flujo `development` -> `homologacion` -> `main`, con validacion previa antes de promover a prd.
+- Deploy a qa/homologacion/prd es manual por Tech Lead.
+- Politica de release documentada: flujo `development` -> `homologacion` -> `main`, con validacion previa antes de promover a prd.
 
 - Migration strategy:
   - Migraciones Django en arranque del contenedor por entrypoint.

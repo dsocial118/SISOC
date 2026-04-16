@@ -15,6 +15,11 @@ icon = "terminal"
 command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_doctor.ps1"
 
 [[actions]]
+name = "Ver Memoria IA"
+icon = "book"
+command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_context.ps1"
+
+[[actions]]
 name = "Tests Smoke"
 icon = "beaker"
 command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 smoke"
