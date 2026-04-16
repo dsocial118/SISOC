@@ -20,9 +20,27 @@ def test_tablero_convierte_url_compartible_de_lookerstudio_a_embed():
     )
 
 
+<<<<<<< nomina_1329
 def test_dashboard_tablero_renderiza_iframe_con_url_embed_de_lookerstudio():
     template_path = Path(__file__).resolve().parent / "templates/dashboard_tablero.html"
     content = template_path.read_text(encoding="utf-8")
+=======
+def test_dashboard_tablero_renderiza_iframe_con_url_embed_de_lookerstudio(
+    admin_client,
+):
+    tablero = Tablero.objects.create(
+        nombre="FCH Google Analytics",
+        slug="fch-google-analytics",
+        url=(
+            "https://lookerstudio.google.com/u/0/reporting/"
+            "7feb7647-eadb-4fd8-910d-11a794227234"
+        ),
+        activo=True,
+        permisos=["dashboard.view_dashboard"],
+    )
+
+    response = admin_client.get(tablero.get_absolute_url())
+>>>>>>> development
 
     assert 'src="{{ tablero.get_embed_url }}"' in content
     assert 'target="_blank"' in content

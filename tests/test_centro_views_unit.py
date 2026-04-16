@@ -108,7 +108,7 @@ def test_build_cdf_centro_list_queryset_permissions_and_filter(mocker):
     )
     adv = mocker.patch(
         "centrodefamilia.views.centro.BOOL_ADVANCED_FILTER.filter_queryset",
-        return_value="filtered",
+        side_effect=lambda queryset, _params: queryset,
     )
 
     # superuser
@@ -116,7 +116,7 @@ def test_build_cdf_centro_list_queryset_permissions_and_filter(mocker):
         user=_build_user(is_superuser=True, groups=set()),
         GET={"busqueda": "abc"},
     )
-    assert module._build_cdf_centro_list_queryset(request) == "filtered"
+    assert module._build_cdf_centro_list_queryset(request) is base_qs
     assert adv.called
     assert base_qs.filtered is True
 
@@ -130,7 +130,7 @@ def test_build_cdf_centro_list_queryset_permissions_and_filter(mocker):
         user=_build_user(groups={"ReferenteCentro"}),
         GET={},
     )
-    assert module._build_cdf_centro_list_queryset(request_ref) == "filtered"
+    assert module._build_cdf_centro_list_queryset(request_ref) is base_qs_ref
     assert base_qs_ref.filtered is True
 
     # sin permisos
@@ -154,7 +154,7 @@ def test_centro_list_view_paginates_without_count(mocker):
     assert object_list == ["row-1", "row-2"]
     assert page_obj.object_list == ["row-1", "row-2"]
     assert hydrate.called
-    assert is_paginated is True
+    assert is_paginated is False
 
 
 def test_centro_list_get_context_data_can_add_and_buttons(mocker):

@@ -13,6 +13,9 @@ class _QuerySetStub:
     def filter(self, **_kwargs):
         return self
 
+    def exclude(self, **_kwargs):
+        return self
+
     def order_by(self, *_args, **_kwargs):
         return self
 
@@ -38,6 +41,11 @@ def test_inscripcion_create_descuenta_costo_del_voucher(mocker):
         estado="inscripta",
         voucher_debito=12500,
         voucher_saldo=12500,
+<<<<<<< nomina_1329
+=======
+        _voucher_debito=12500,
+        _voucher_saldo=12500,
+>>>>>>> development
     )
     mocker.patch(
         "VAT.views.persona.InscripcionService.crear_inscripcion",
