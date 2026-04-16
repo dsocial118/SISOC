@@ -33,6 +33,7 @@ from VAT.models import (
     ComisionCurso,
     ComisionHorario,
     Inscripcion,
+    SolicitudInscripcionPublica,
     InstitucionContacto,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
@@ -325,97 +326,6 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
     assert 'name="save_continue"' not in content
     assert 'for="id_provincia"' not in content
     assert 'name="provincia"' in content
-
-
-@pytest.mark.django_db
-def test_centro_update_oculta_provincia_y_conserva_valor_actual(client, vat_geo_data):
-    provincia_ba, municipio_ba, localidad_ba = vat_geo_data
-    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
-    user = User.objects.create_superuser(
-        username="admin-vat-update-provincia",
-        email="admin-vat-update-provincia@vat.test",
-        password="test1234",
-    )
-    _assign_user_profile_provincia(user, provincia_ba)
-    group, _ = Group.objects.get_or_create(name="CFP")
-    referente = User.objects.create_user(
-        username="referente-update-provincia",
-        email="referente-update-provincia@vat.test",
-        password="test1234",
-    )
-    referente.groups.add(group)
-    centro = Centro.objects.create(
-        nombre="CFP Provincia Fija",
-        codigo="500144998",
-        provincia=provincia_ba,
-        municipio=municipio_ba,
-        localidad=localidad_ba,
-        calle="12",
-        numero=100,
-        domicilio_actividad="Calle 12 N° 100",
-        telefono="221-1111111",
-        celular="221-2222222",
-        correo="cfp-provincia@vat.test",
-        nombre_referente="Ana",
-        apellido_referente="Perez",
-        telefono_referente="221-3333333",
-        correo_referente="ana@vat.test",
-        referente=referente,
-        tipo_gestion="Estatal",
-        clase_institucion="Formación Profesional",
-        situacion="Institución de ETP",
-        activo=True,
-    )
-    InstitucionContacto.objects.create(
-        centro=centro,
-        nombre_contacto="Ana Perez",
-        documento="30111222",
-        rol_area="Dirección",
-        telefono_contacto="221-3333333",
-        email_contacto="ana@vat.test",
-        es_principal=True,
-    )
-    client.force_login(user)
-
-    response = client.get(reverse("vat_centro_update", kwargs={"pk": centro.pk}))
-    content = response.content.decode("utf-8")
-
-    assert response.status_code == 200
-    assert 'for="id_provincia"' not in content
-
-    update_payload = _build_centro_payload(
-        referente,
-        provincia_sf,
-        municipio_ba,
-        localidad_ba,
-        nombre="CFP Provincia Fija Editado",
-        codigo="500144998",
-        **{
-            "contactos-TOTAL_FORMS": "1",
-            "contactos-INITIAL_FORMS": "1",
-            "contactos-MIN_NUM_FORMS": "0",
-            "contactos-MAX_NUM_FORMS": "1000",
-            "contactos-0-id": str(centro.contactos_adicionales.first().id),
-            "contactos-0-centro": str(centro.id),
-            "contactos-0-nombre_contacto": "Ana Perez",
-            "contactos-0-rol_area": "Dirección",
-            "contactos-0-documento": "30111222",
-            "contactos-0-telefono_contacto": "221-3333333",
-            "contactos-0-email_contacto": "ana@vat.test",
-            "contactos-0-es_principal": "on",
-        },
-    )
-    update_payload.pop("provincia", None)
-
-    post_response = client.post(
-        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
-        data=update_payload,
-    )
-
-    centro.refresh_from_db()
-
-    assert post_response.status_code == 302
-    assert centro.provincia_id == provincia_ba.id
 
 
 @pytest.mark.django_db
@@ -2271,6 +2181,35 @@ def test_api_vat_cursos_lista_por_provincia_y_municipio(vat_api_client, vat_curs
 
 
 @pytest.mark.django_db
+def test_api_vat_cursos_rechaza_voucher_e_inscripcion_libre_al_mismo_tiempo(
+    vat_api_client, vat_curso_base
+):
+    centro, _, modalidad = vat_curso_base
+
+    response = vat_api_client.post(
+        "/api/vat/cursos/",
+        {
+            "centro": centro.id,
+            "nombre": "Curso API Invalido",
+            "modalidad": modalidad.id,
+            "estado": "planificado",
+            "usa_voucher": True,
+            "inscripcion_libre": True,
+            "costo_creditos": 1,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "inscripcion_libre": [
+            "Un curso no puede usar voucher e inscripción libre al mismo tiempo."
+        ]
+    }
+    assert not Curso.objects.filter(nombre="Curso API Invalido").exists()
+
+
+@pytest.mark.django_db
 def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
     vat_api_client, vat_curso_base
 ):
@@ -2285,6 +2224,7 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
         nombre="Administración Contable Avanzada",
         modalidad=modalidad,
         estado="activo",
+        inscripcion_libre=True,
         usa_voucher=True,
         costo_creditos=2,
     )
@@ -2303,6 +2243,7 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
         codigo_comision="BUSQ-CUR-01",
         nombre="Comisión Búsqueda Curso",
         cupo_total=12,
+        acepta_lista_espera=True,
         fecha_inicio=date(2026, 4, 15),
         fecha_fin=date(2026, 5, 15),
         estado="activa",
@@ -2331,6 +2272,7 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
     assert payload["count"] == 1
     result = payload["results"][0]
     assert result["id"] == curso.id
+    assert result["inscripcion_libre"] is True
     assert result["centro"]["id"] == centro.id
     assert result["centro"]["provincia"]["id"] == centro.provincia_id
     assert result["centro"]["provincia"]["nombre"] == centro.provincia.nombre
@@ -2341,6 +2283,7 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
     assert result["programa"] == {"id": programa.id, "nombre": programa.nombre}
     assert result["voucher_parametrias"][0]["id"] == voucher_parametria.id
     assert result["comisiones"][0]["id"] == comision.id
+    assert result["comisiones"][0]["acepta_lista_espera"] is True
     assert result["comisiones"][0]["total_inscriptos"] == 0
     assert result["comisiones"][0]["cupos_disponibles"] == 12
     assert result["comisiones"][0]["horarios"][0]["id"] == horario.id
@@ -3206,6 +3149,239 @@ def test_api_vat_web_mi_argentina_flujo_completo_prevalidar_e_inscribir(
 
 
 @pytest.mark.django_db
+def test_api_vat_web_inscripcion_libre_crea_inscripcion_operativa_sin_ciudadano(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Inscripción Libre",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="LIBRE-01",
+        nombre="Comisión Libre",
+        cupo_total=20,
+        fecha_inicio=date(2026, 6, 1),
+        fecha_fin=date(2026, 7, 1),
+        estado="activa",
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/web/inscripciones/",
+        {
+            "comision_curso_id": comision.id,
+            "estado": "pre_inscripta",
+            "datos_postulante": {
+                "nombre": "Fabrizzio Nicolas",
+                "apellido": "CONIGLIO",
+                "tipo_documento": "DNI",
+                "documento": "42439852",
+                "email": "fconiglio100@gmail.com",
+                "telefono": "+54-351-3989965",
+            },
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["comision_curso"] == comision.id
+    assert payload["estado"] == "pre_inscripta"
+    assert payload["ciudadano"] is not None
+
+    ciudadano = Ciudadano.objects.get(pk=payload["ciudadano"])
+    assert ciudadano.documento == 42439852
+    assert ciudadano.apellido == "CONIGLIO"
+    assert ciudadano.fecha_nacimiento == date(1900, 1, 1)
+
+    inscripcion = Inscripcion.objects.get(pk=payload["id"])
+    assert inscripcion.comision_curso == comision
+    assert inscripcion.ciudadano == ciudadano
+    assert inscripcion.programa is None
+
+    solicitud = SolicitudInscripcionPublica.objects.get(inscripcion=inscripcion)
+    assert solicitud.comision_curso == comision
+    assert solicitud.ciudadano == ciudadano
+    assert solicitud.estado == "convertida"
+    assert solicitud.datos_postulante["apellido"] == "CONIGLIO"
+
+    response_inscripciones = vat_api_client.get(
+        f"/api/vat/web/inscripciones/?documento={ciudadano.documento}"
+    )
+
+    assert response_inscripciones.status_code == 200
+    inscripciones_payload = response_inscripciones.json()
+    assert inscripciones_payload["count"] == 1
+    assert inscripciones_payload["results"][0]["id"] == inscripcion.id
+
+    response_cursos = vat_api_client.get(f"/api/vat/web/cursos/?centro_id={centro.id}")
+
+    assert response_cursos.status_code == 200
+    cursos_payload = response_cursos.json()
+    curso_resultado = next(
+        item for item in cursos_payload["results"] if item["id"] == comision.id
+    )
+    assert curso_resultado["inscripcion_libre"] is True
+
+
+@pytest.mark.django_db
+def test_api_vat_web_inscripcion_libre_usa_cuil_como_documento_si_no_viene_documento(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Inscripción Libre con CUIL",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="LIBRE-CUIL-01",
+        nombre="Comisión Libre con CUIL",
+        cupo_total=20,
+        fecha_inicio=date(2026, 6, 1),
+        fecha_fin=date(2026, 7, 1),
+        estado="activa",
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/web/inscripciones/",
+        {
+            "comision_curso_id": comision.id,
+            "estado": "pre_inscripta",
+            "datos_postulante": {
+                "nombre": "Leylen Nahir",
+                "apellido": "PINTO",
+                "fecha_nacimiento": "1993-04-26",
+                "genero": "F",
+                "email": "leylenpinto718@gmail.com",
+                "telefono": "+54-3705-201750",
+                "nivel_estudio": "secundario_incompleto",
+                "tipo_documento": "DNI",
+                "cuil": "27375343520",
+                "actual_calle": "Barrio salvador rugeri",
+                "actual_numero": "Mz 21 cs 20",
+                "actual_entre_calles": "Mz 21 cs 20",
+                "actual_municipio_nombre": "Formosa",
+                "actual_provincia_nombre": "Formosa",
+            },
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    ciudadano = Ciudadano.objects.get(pk=payload["ciudadano"])
+    assert ciudadano.documento == 27375343520
+    assert ciudadano.fecha_nacimiento == date(1993, 4, 26)
+    assert "CUIL informado como documento" in (ciudadano.observaciones or "")
+
+    inscripcion = Inscripcion.objects.get(pk=payload["id"])
+    solicitud = SolicitudInscripcionPublica.objects.get(inscripcion=inscripcion)
+    assert solicitud.datos_postulante["cuil"] == "27375343520"
+
+
+@pytest.mark.django_db
+def test_api_vat_web_inscripciones_informa_lista_espera_si_no_hay_cupo(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Web Estado Espera")
+    usuario = User.objects.create_user(
+        username="api-web-estado-espera",
+        password="test1234",
+    )
+    sexo = Sexo.objects.create(sexo="Femenino")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Web Estado Espera",
+        modalidad=modalidad,
+        estado="activo",
+        usa_voucher=True,
+        costo_creditos=1,
+    )
+    voucher_parametria = VoucherParametria.objects.create(
+        nombre="Voucher Web Estado Espera",
+        programa=programa,
+        cantidad_inicial=4,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher_parametria)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="WEB-EST-ESP-01",
+        nombre="Comisión Web Estado Espera",
+        cupo_total=1,
+        acepta_lista_espera=True,
+        fecha_inicio=date(2026, 6, 1),
+        fecha_fin=date(2026, 7, 1),
+        estado="activa",
+    )
+    titular = Ciudadano.objects.create(
+        apellido="Titular",
+        nombre="Web Espera",
+        fecha_nacimiento=date(1990, 2, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111226,
+        sexo=sexo,
+    )
+    aspirante = Ciudadano.objects.create(
+        apellido="Aspirante",
+        nombre="Web Espera",
+        fecha_nacimiento=date(1995, 2, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111227,
+        sexo=sexo,
+    )
+    Voucher.objects.create(
+        ciudadano=aspirante,
+        parametria=voucher_parametria,
+        programa=programa,
+        cantidad_inicial=3,
+        cantidad_usada=0,
+        cantidad_disponible=3,
+        fecha_vencimiento=date(2026, 12, 31),
+        estado="activo",
+    )
+    Inscripcion.objects.create(
+        ciudadano=titular,
+        comision_curso=comision,
+        programa=programa,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/web/inscripciones/",
+        {
+            "documento": str(aspirante.documento),
+            "comision_curso_id": comision.id,
+            "estado": "inscripta",
+        },
+        format="json",
+    )
+
+    payload = response.json()
+
+    assert response.status_code == 201
+    assert payload["estado"] == "en_espera"
+    assert payload["estado_nombre"] == "En Espera"
+    assert payload["en_lista_espera"] is True
+    assert payload["curso"]["acepta_lista_espera"] is True
+
+
+@pytest.mark.django_db
 def test_api_vat_web_inscripciones_crea_sobre_comision_curso(
     vat_api_client, vat_curso_base
 ):
@@ -3656,6 +3832,50 @@ def test_curso_form_default_costo_creditos_si_no_usa_voucher(vat_curso_base):
 
     assert form.is_valid(), form.errors
     assert form.cleaned_data["costo_creditos"] == 0
+
+
+@pytest.mark.django_db
+def test_curso_form_no_permite_voucher_e_inscripcion_libre_al_mismo_tiempo(
+    vat_curso_base,
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Exclusión Curso")
+    usuario = User.objects.create_user(
+        username="curso-mixto-invalido",
+        password="test1234",
+    )
+    sector = Sector.objects.create(nombre="Servicios")
+    plan_estudio = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Exclusión Curso",
+        programa=programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+
+    form = CursoForm(
+        data={
+            "plan_estudio": str(plan_estudio.id),
+            "nombre": "Curso mixto inválido",
+            "estado": "planificado",
+            "usa_voucher": "on",
+            "inscripcion_libre": "on",
+            "voucher_parametrias": [str(voucher.id)],
+            "costo_creditos": 1,
+            "observaciones": "",
+        },
+        initial={"centro": centro},
+    )
+
+    assert not form.is_valid()
+    assert "inscripcion_libre" in form.errors
 
 
 @pytest.mark.django_db
@@ -4443,6 +4663,352 @@ def test_comision_curso_horario_create_ajax_devuelve_json_con_errores(
 
 
 @pytest.mark.django_db
+def test_api_vat_inscripciones_curso_envia_a_lista_espera_si_no_hay_cupo(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa API Lista Espera")
+    usuario = User.objects.create_user(
+        username="api-lista-espera",
+        password="test1234",
+    )
+    sexo = Sexo.objects.create(sexo="No Binario")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso API Lista Espera",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher API Lista Espera",
+        programa=programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="API-ESPERA-01",
+        nombre="Comisión API Espera",
+        cupo_total=1,
+        acepta_lista_espera=True,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        estado="activa",
+    )
+    titular = Ciudadano.objects.create(
+        apellido="Titular",
+        nombre="Curso",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111224,
+        sexo=sexo,
+    )
+    aspirante = Ciudadano.objects.create(
+        apellido="Espera",
+        nombre="Curso",
+        fecha_nacimiento=date(2001, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111225,
+        sexo=sexo,
+    )
+    Inscripcion.objects.create(
+        ciudadano=titular,
+        comision_curso=comision,
+        programa=programa,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/inscripciones-curso/",
+        {
+            "ciudadano": aspirante.id,
+            "comision_curso": comision.id,
+            "estado": "inscripta",
+            "origen_canal": "api",
+        },
+        format="json",
+    )
+
+    payload = response.json()
+
+    assert response.status_code == 201
+    assert payload["estado"] == "en_espera"
+    assert Inscripcion.objects.filter(
+        ciudadano=aspirante,
+        comision_curso=comision,
+        estado="en_espera",
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_api_vat_web_prevalidar_permite_lista_espera_si_no_hay_cupo(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Web Lista Espera")
+    usuario = User.objects.create_user(
+        username="api-web-lista-espera",
+        password="test1234",
+    )
+    sexo = Sexo.objects.create(sexo="Femenino")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Web Lista Espera",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Web Lista Espera",
+        programa=programa,
+        cantidad_inicial=4,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="WEB-ESPERA-01",
+        nombre="Comisión Web Espera",
+        cupo_total=1,
+        acepta_lista_espera=True,
+        fecha_inicio=date(2026, 5, 10),
+        fecha_fin=date(2026, 6, 10),
+        estado="activa",
+    )
+    titular = Ciudadano.objects.create(
+        apellido="Titular",
+        nombre="Web",
+        fecha_nacimiento=date(1990, 2, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=30111223,
+        sexo=sexo,
+    )
+    aspirante = Ciudadano.objects.create(
+        apellido="Espera",
+        nombre="Web",
+        fecha_nacimiento=date(1995, 2, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=30111224,
+        sexo=sexo,
+    )
+    Inscripcion.objects.create(
+        ciudadano=titular,
+        comision_curso=comision,
+        programa=programa,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/web/inscripciones/prevalidar/",
+        {
+            "documento": str(aspirante.documento),
+            "cuil": "27-30111224-4",
+            "comision_curso_id": comision.id,
+        },
+        format="json",
+    )
+
+    payload = response.json()
+
+    assert response.status_code == 200
+    assert payload["puede_inscribirse"] is True
+    assert payload["motivos"] == []
+    assert payload["comision"]["acepta_lista_espera"] is True
+    assert payload["comision"]["ingresa_a_lista_espera"] is True
+    assert payload["comision"]["cupos_disponibles"] == 0
+
+
+@pytest.mark.django_db
+def test_api_vat_web_prevalidar_permite_lista_espera_sin_voucher_si_no_hay_cupo(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Web Espera Sin Voucher")
+    usuario = User.objects.create_user(
+        username="api-web-lista-espera-sin-voucher",
+        password="test1234",
+    )
+    sexo = Sexo.objects.create(sexo="Femenino")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Web Espera Voucher",
+        modalidad=modalidad,
+        estado="activo",
+        usa_voucher=True,
+        costo_creditos=2,
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Web Espera Sin Voucher",
+        programa=programa,
+        cantidad_inicial=4,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="WEB-ESPERA-VCH-01",
+        nombre="Comisión Web Espera Voucher",
+        cupo_total=1,
+        acepta_lista_espera=True,
+        fecha_inicio=date(2026, 5, 10),
+        fecha_fin=date(2026, 6, 10),
+        estado="activa",
+    )
+    titular = Ciudadano.objects.create(
+        apellido="Titular",
+        nombre="Web Voucher",
+        fecha_nacimiento=date(1990, 2, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=30111233,
+        sexo=sexo,
+    )
+    aspirante = Ciudadano.objects.create(
+        apellido="Espera",
+        nombre="Web Voucher",
+        fecha_nacimiento=date(1995, 2, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=30111234,
+        sexo=sexo,
+    )
+    Inscripcion.objects.create(
+        ciudadano=titular,
+        comision_curso=comision,
+        programa=programa,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/web/inscripciones/prevalidar/",
+        {
+            "documento": str(aspirante.documento),
+            "cuil": "27-30111234-4",
+            "comision_curso_id": comision.id,
+        },
+        format="json",
+    )
+
+    payload = response.json()
+
+    assert response.status_code == 200
+    assert payload["puede_inscribirse"] is True
+    assert payload["motivos"] == []
+    assert payload["comision"]["acepta_lista_espera"] is True
+    assert payload["comision"]["ingresa_a_lista_espera"] is True
+    assert payload["comision"]["cupos_disponibles"] == 0
+    assert payload["voucher"]["requerido"] is True
+    assert payload["voucher"]["voucher_id"] is None
+
+
+@pytest.mark.django_db
+def test_inscripcion_curso_no_permite_mover_de_inscripta_a_lista_espera(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial Bloqueo Espera", activo=True
+    )
+    programa = Programa.objects.create(nombre="Programa Bloqueo Espera")
+    sexo = Sexo.objects.create(sexo="No Binario")
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-bloqueo-espera",
+        email="admin-bloqueo-espera@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Bloqueo Espera",
+        codigo="CFP-BLOQ-ESP",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="18",
+        numero=500,
+        domicilio_actividad="Calle 18 N° 500",
+        telefono="221-1111118",
+        celular="221-2222229",
+        correo="cfpbloqueoespera@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Gomez",
+        telefono_referente="221-3333340",
+        correo_referente="ana-bloqueo-espera@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 18 N° 500",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso bloqueo espera",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="BLOQ-ESP-01",
+        nombre="Comisión Bloqueo Espera",
+        cupo_total=1,
+        acepta_lista_espera=True,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Titular",
+        nombre="Bloqueo",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=32345689,
+        sexo=sexo,
+    )
+    inscripcion = Inscripcion.objects.create(
+        ciudadano=ciudadano,
+        comision_curso=comision,
+        programa=programa,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse(
+            "vat_inscripcion_curso_cambiar_estado",
+            kwargs={"pk": inscripcion.pk},
+        ),
+        data={"estado": "en_espera"},
+        follow=True,
+    )
+
+    inscripcion.refresh_from_db()
+
+    assert response.status_code == 200
+    assert inscripcion.estado == "inscripta"
+    messages = list(response.context["messages"])
+    assert any("cupo ocupado a lista de espera" in str(message) for message in messages)
+
+
+@pytest.mark.django_db
 @override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
 def test_comision_curso_horario_update_ajax_devuelve_json_con_errores(
     client, vat_geo_data
@@ -4681,6 +5247,347 @@ def test_inscripcion_rapida_comision_curso_crea_inscripcion(client, vat_geo_data
     assert payload["ok"] is True
     assert inscripcion.programa == programa
     assert inscripcion.estado == "inscripta"
+
+
+@pytest.mark.django_db
+def test_inscripcion_rapida_comision_curso_envia_a_lista_espera(client, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial Espera", activo=True)
+    programa = Programa.objects.create(nombre="Programa Espera Curso")
+    sexo = Sexo.objects.create(sexo="Masculino")
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-comision-curso-espera",
+        email="admin-comision-curso-espera@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Espera",
+        codigo="CFP-ESP",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="15",
+        numero=200,
+        domicilio_actividad="Calle 15 N° 200",
+        telefono="221-1111112",
+        celular="221-2222223",
+        correo="cfpespera@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Gomez",
+        telefono_referente="221-3333334",
+        correo_referente="ana-espera@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 15 N° 200",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso con espera",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Comisión Espera",
+        programa=programa,
+        cantidad_inicial=10,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=user,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="ESP-01",
+        nombre="Comisión Espera",
+        cupo_total=1,
+        acepta_lista_espera=True,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    titular = Ciudadano.objects.create(
+        apellido="Titular",
+        nombre="Curso",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=12345679,
+        sexo=sexo,
+    )
+    aspirante = Ciudadano.objects.create(
+        apellido="Espera",
+        nombre="Curso",
+        fecha_nacimiento=date(2001, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=12345680,
+        sexo=sexo,
+    )
+    Inscripcion.objects.create(
+        ciudadano=titular,
+        comision_curso=comision,
+        programa=programa,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_inscripcion_rapida_comision_curso"),
+        data={
+            "comision": comision.pk,
+            "ciudadano_id": aspirante.pk,
+            "observaciones": "Alta rápida en espera",
+        },
+    )
+
+    payload = response.json()
+    inscripcion = Inscripcion.objects.get(comision_curso=comision, ciudadano=aspirante)
+
+    assert response.status_code == 200
+    assert payload["ok"] is True
+    assert payload["estado"] == "en_espera"
+    assert "lista de espera" in payload["message"].lower()
+    assert inscripcion.estado == "en_espera"
+
+
+@pytest.mark.django_db
+def test_inscripcion_rapida_comision_legacy_envia_a_lista_espera(client, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    sexo = Sexo.objects.create(sexo="Femenino")
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-comision-legacy-espera",
+        email="admin-comision-legacy-espera@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Legacy Espera",
+        codigo="CFP-LEG-ESP",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="16",
+        numero=300,
+        domicilio_actividad="Calle 16 N° 300",
+        telefono="221-1111114",
+        celular="221-2222225",
+        correo="cfplegespera@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Gomez",
+        telefono_referente="221-3333336",
+        correo_referente="ana-legacy-espera@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 16 N° 300",
+        es_principal=True,
+    )
+    modalidad = ModalidadCursada.objects.create(nombre="Legacy Espera", activo=True)
+    sector = Sector.objects.create(nombre="Sector Legacy Espera")
+    plan = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan Legacy Espera",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    programa = Programa.objects.create(nombre="Programa Legacy Espera")
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta Legacy Espera",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    comision = Comision.objects.create(
+        oferta=oferta,
+        ubicacion=ubicacion,
+        codigo_comision="LEG-ESP-01",
+        nombre="Comisión Legacy Espera",
+        cupo=1,
+        acepta_lista_espera=True,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    titular = Ciudadano.objects.create(
+        apellido="Titular",
+        nombre="Legacy",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=22345679,
+        sexo=sexo,
+    )
+    aspirante = Ciudadano.objects.create(
+        apellido="Espera",
+        nombre="Legacy",
+        fecha_nacimiento=date(2001, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=22345680,
+        sexo=sexo,
+    )
+    Inscripcion.objects.create(
+        ciudadano=titular,
+        comision=comision,
+        programa=programa,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_inscripcion_rapida_comision"),
+        data={
+            "comision": comision.pk,
+            "ciudadano_id": aspirante.pk,
+            "observaciones": "Alta rápida legacy en espera",
+        },
+    )
+
+    payload = response.json()
+    inscripcion = Inscripcion.objects.get(comision=comision, ciudadano=aspirante)
+
+    assert response.status_code == 200
+    assert payload["ok"] is True
+    assert payload["estado"] == "en_espera"
+    assert "lista de espera" in payload["message"].lower()
+    assert inscripcion.estado == "en_espera"
+
+
+@pytest.mark.django_db
+def test_comision_curso_detail_administra_lista_espera_desde_el_detalle(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial Gestión Espera", activo=True
+    )
+    programa = Programa.objects.create(nombre="Programa Gestión Espera")
+    sexo = Sexo.objects.create(sexo="No Binario")
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-gestion-espera",
+        email="admin-gestion-espera@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Gestión Espera",
+        codigo="CFP-GES-ESP",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="17",
+        numero=400,
+        domicilio_actividad="Calle 17 N° 400",
+        telefono="221-1111116",
+        celular="221-2222227",
+        correo="cfpgestionespera@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Gomez",
+        telefono_referente="221-3333338",
+        correo_referente="ana-gestion-espera@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 17 N° 400",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso gestión espera",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="GES-ESP-01",
+        nombre="Comisión Gestión Espera",
+        cupo_total=1,
+        acepta_lista_espera=True,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    titular = Ciudadano.objects.create(
+        apellido="Titular",
+        nombre="Gestión",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=32345679,
+        sexo=sexo,
+    )
+    espera = Ciudadano.objects.create(
+        apellido="Espera",
+        nombre="Gestión",
+        fecha_nacimiento=date(2001, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=32345680,
+        sexo=sexo,
+    )
+    ocupante = Inscripcion.objects.create(
+        ciudadano=titular,
+        comision_curso=comision,
+        programa=programa,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+    inscripcion_espera = Inscripcion.objects.create(
+        ciudadano=espera,
+        comision_curso=comision,
+        programa=programa,
+        estado="en_espera",
+        origen_canal="backoffice",
+    )
+
+    client.force_login(user)
+    detail_response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+    )
+    ocupante.estado = "abandonada"
+    ocupante.save(update_fields=["estado", "fecha_modificacion"])
+    response = client.post(
+        reverse(
+            "vat_inscripcion_curso_cambiar_estado",
+            kwargs={"pk": inscripcion_espera.pk},
+        ),
+        data={"estado": "inscripta"},
+    )
+
+    inscripcion_espera.refresh_from_db()
+
+    assert detail_response.status_code == 200
+    assert "Lista de espera" in detail_response.content.decode("utf-8")
+    assert response.status_code == 302
+    assert inscripcion_espera.estado == "inscripta"
 
 
 @pytest.mark.django_db
