@@ -4188,7 +4188,8 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert f'data-curso-id="{_curso.id}"' in content
     assert 'data-curso-plan="Plan Industrial Inicial"' in content
     assert (
-        'aria-label="Seleccionar curso Curso Filtrable para filtrar comisiones"' in content
+        'aria-label="Seleccionar curso Curso Filtrable para filtrar comisiones"'
+        in content
     )
     assert "<td>Plan Industrial Inicial</td>" in content
     assert 'id="tablaComisionesCursoCentro"' in content
