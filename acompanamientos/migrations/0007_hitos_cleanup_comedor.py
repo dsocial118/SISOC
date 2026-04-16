@@ -41,6 +41,7 @@ class Migration(migrations.Migration):
             name="acompanamiento",
             field=models.OneToOneField(
                 on_delete=django.db.models.deletion.SET_NULL,
+                blank=True,
                 null=True,
                 related_name="hitos",
                 to="acompanamientos.acompanamiento",

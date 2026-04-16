@@ -24,7 +24,7 @@ def test_tablero_convierte_url_compartible_de_lookerstudio_a_embed():
 
 
 def test_dashboard_tablero_renderiza_iframe_con_url_embed_de_lookerstudio(
-    client, superuser
+    admin_client,
 ):
     tablero = Tablero.objects.create(
         nombre="FCH Google Analytics",
@@ -37,8 +37,7 @@ def test_dashboard_tablero_renderiza_iframe_con_url_embed_de_lookerstudio(
         permisos=["dashboard.view_dashboard"],
     )
 
-    client.force_login(superuser)
-    response = client.get(tablero.get_absolute_url())
+    response = admin_client.get(tablero.get_absolute_url())
 
     assert response.status_code == 200
     content = response.content.decode("utf-8")
