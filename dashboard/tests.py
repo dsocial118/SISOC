@@ -20,7 +20,6 @@ def test_tablero_convierte_url_compartible_de_lookerstudio_a_embed():
     )
 
 
-
 def test_dashboard_tablero_renderiza_iframe_con_url_embed_de_lookerstudio(
     admin_client,
 ):
