@@ -67,6 +67,9 @@ class _QS:
     def distinct(self):
         return self
 
+    def values_list(self, *_a, **_k):
+        return [1, 2]
+
 
 class _Page:
     number = 1
@@ -83,19 +86,21 @@ class _Page:
 
 class _PaginatorFake:
     def __init__(self, *_a, **_k):
-        self.count = 1
-        self.num_pages = 1
+        self.count = None
+        self.num_pages = None
 
     def get_page(self, page):
         if page == "boom":
-            raise ValueError("bad page")
-        return _Page()
+            page = 1
+        page_obj = _Page()
+        page_obj.object_list = [1, 2]
+        return page_obj
 
 
-def test_centro_list_get_queryset_permissions_and_filter(mocker):
+def test_build_cdf_centro_list_queryset_permissions_and_filter(mocker):
     base_qs = _QS()
     mocker.patch(
-        "centrodefamilia.views.centro.Centro.objects.select_related",
+        "centrodefamilia.views.centro._build_cdf_centro_list_base_queryset",
         return_value=base_qs,
     )
     none_qs = mocker.patch(
@@ -103,32 +108,53 @@ def test_centro_list_get_queryset_permissions_and_filter(mocker):
     )
     adv = mocker.patch(
         "centrodefamilia.views.centro.BOOL_ADVANCED_FILTER.filter_queryset",
-        return_value="filtered",
+        side_effect=lambda queryset, _params: queryset,
     )
 
     # superuser
-    view = module.CentroListView()
-    view.request = SimpleNamespace(
+    request = SimpleNamespace(
         user=_build_user(is_superuser=True, groups=set()),
         GET={"busqueda": "abc"},
     )
-    assert view.get_queryset() == "filtered"
+    assert module._build_cdf_centro_list_queryset(request) is base_qs
     assert adv.called
+    assert base_qs.filtered is True
 
     # referente
-    view_ref = module.CentroListView()
-    view_ref.request = SimpleNamespace(
+    base_qs_ref = _QS()
+    mocker.patch(
+        "centrodefamilia.views.centro._build_cdf_centro_list_base_queryset",
+        return_value=base_qs_ref,
+    )
+    request_ref = SimpleNamespace(
         user=_build_user(groups={"ReferenteCentro"}),
         GET={},
     )
-    assert view_ref.get_queryset() == "filtered"
-    assert base_qs.filtered is True
+    assert module._build_cdf_centro_list_queryset(request_ref) is base_qs_ref
+    assert base_qs_ref.filtered is True
 
     # sin permisos
-    view_no = module.CentroListView()
-    view_no.request = SimpleNamespace(user=_build_user(groups=set()), GET={})
-    assert view_no.get_queryset() == "none"
+    request_no = SimpleNamespace(user=_build_user(groups=set()), GET={})
+    assert module._build_cdf_centro_list_queryset(request_no) == "none"
     assert none_qs.called
+
+
+def test_centro_list_view_paginates_without_count(mocker):
+    hydrate = mocker.patch(
+        "centrodefamilia.views.centro._hydrate_cdf_centro_page",
+        return_value=["row-1", "row-2"],
+    )
+    view = module.CentroListView()
+    view.request = SimpleNamespace(GET={"page": "1"})
+    view.page_kwarg = "page"
+
+    paginator, page_obj, object_list, is_paginated = view.paginate_queryset(_QS(), 10)
+
+    assert paginator.count is None
+    assert object_list == ["row-1", "row-2"]
+    assert page_obj.object_list == ["row-1", "row-2"]
+    assert hydrate.called
+    assert is_paginated is False
 
 
 def test_centro_list_get_context_data_can_add_and_buttons(mocker):
@@ -241,13 +267,21 @@ def test_informe_cabal_archivo_por_centro_detail_context_paths(mocker):
 def test_centros_ajax_returns_json(mocker):
     qs = _QS()
     mocker.patch(
-        "centrodefamilia.views.centro.Centro.objects.select_related", return_value=qs
+        "centrodefamilia.views.centro._build_cdf_centro_list_queryset",
+        return_value=qs,
     )
-    mocker.patch("centrodefamilia.views.centro.Centro.objects.none", return_value=_QS())
+    mocker.patch(
+        "centrodefamilia.views.centro._hydrate_cdf_centro_page",
+        return_value=["row-1", "row-2"],
+    )
+    mocker.patch(
+        "centrodefamilia.views.centro.build_no_count_page_range",
+        return_value=[1, "…"],
+    )
     mocker.patch(
         "django.template.loader.render_to_string", side_effect=["<rows>", "<pag>"]
     )
-    mocker.patch("django.core.paginator.Paginator", _PaginatorFake)
+    mocker.patch("centrodefamilia.views.centro.NoCountPaginator", _PaginatorFake)
 
     request = SimpleNamespace(
         GET={"busqueda": "abc", "page": "1"},

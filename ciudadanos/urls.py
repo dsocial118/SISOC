@@ -7,8 +7,10 @@ from ciudadanos.views import (
     CiudadanosDetailView,
     CiudadanosListView,
     CiudadanosUpdateView,
+    ColaRevisionView,
     GrupoFamiliarCreateView,
     GrupoFamiliarDeleteView,
+    marcar_revisado,
 )
 from ciudadanos.api_views import buscar_ciudadanos
 from ciudadanos.views_export import CiudadanosExportView
@@ -60,5 +62,15 @@ urlpatterns = [
         "api/ciudadanos/buscar/",
         login_required(buscar_ciudadanos),
         name="api_buscar_ciudadanos",
+    ),
+    path(
+        "ciudadanos/revision/",
+        login_required(ColaRevisionView.as_view()),
+        name="ciudadanos_cola_revision",
+    ),
+    path(
+        "ciudadanos/<int:pk>/marcar-revisado/",
+        marcar_revisado,
+        name="ciudadanos_marcar_revisado",
     ),
 ]

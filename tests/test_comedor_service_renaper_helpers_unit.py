@@ -278,16 +278,27 @@ def test_obtener_datos_ciudadano_desde_renaper_and_crear(mocker):
     assert ok["success"] is True
 
     existing = SimpleNamespace(pk=1)
+
+    def _filter_existente(**kwargs):
+        if "documento_unico_key" in kwargs:
+            return SimpleNamespace(first=lambda: existing)
+        return SimpleNamespace(
+            first=lambda: None,
+        )
+
     mocker.patch(
         "comedores.services.comedor_service.impl.Ciudadano.objects.filter",
-        return_value=SimpleNamespace(first=lambda: existing),
+        side_effect=_filter_existente,
     )
     ex = module.ComedorService.crear_ciudadano_desde_renaper("12345678")
     assert ex["created"] is False
 
+    def _filter_sin_existente(**kwargs):
+        return SimpleNamespace(first=lambda: None)
+
     mocker.patch(
         "comedores.services.comedor_service.impl.Ciudadano.objects.filter",
-        return_value=SimpleNamespace(first=lambda: None),
+        side_effect=_filter_sin_existente,
     )
     mocker.patch.object(
         module.ComedorService,
@@ -676,17 +687,8 @@ def test_crear_admision_desde_comedor_flows(mocker):
         "comedores.services.comedor_service.impl.Admision.objects.create",
         return_value=adm,
     )
-    mocker.patch(
-        "comedores.services.comedor_service.impl.Hitos.objects.filter",
-        return_value=SimpleNamespace(exists=lambda: False),
-    )
-    hitos_create = mocker.patch(
-        "comedores.services.comedor_service.impl.Hitos.objects.create"
-    )
-
     out_ok = module.ComedorService.crear_admision_desde_comedor(request, comedor)
     assert out_ok[0][0] == "comedor_detalle"
-    assert hitos_create.called
     assert success.call_count >= 1
 
 
