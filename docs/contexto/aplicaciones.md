@@ -15,6 +15,9 @@
   - `POST /api/users/login/`
   - `GET /api/users/me/`
   - `POST /api/users/logout/`
+  - `POST /api/users/password-change-required/`
+  - `POST /api/users/password-reset/request/`
+  - `POST /api/users/password-reset/confirm/`
 - Comedores:
   - `GET /api/comedores/{id}/`
   - `GET /api/comedores/{id}/documentos/`
@@ -29,6 +32,31 @@
   - `POST /api/comedores/{id}/rendiciones/{rendicion_id}/presentar/`
   - `GET|POST /api/comedores/{id}/usuarios/`
   - `PATCH /api/comedores/{id}/usuarios/{user_id}/desactivar/`
+- PWA complementaria:
+  - `GET /api/pwa/health/`
+  - `GET /api/pwa/push/config/`
+  - `POST|DELETE /api/pwa/push/subscriptions/`
+  - `GET|POST /api/pwa/espacios/{comedor_id}/colaboradores/`
+  - `GET /api/pwa/espacios/{comedor_id}/colaboradores/generos/`
+  - `GET /api/pwa/espacios/{comedor_id}/colaboradores/actividades/`
+  - `POST /api/pwa/espacios/{comedor_id}/colaboradores/preview-dni/`
+  - `PATCH|DELETE /api/pwa/espacios/{comedor_id}/colaboradores/{id}/`
+  - `GET /api/pwa/espacios/{comedor_id}/actividades/catalogo/`
+  - `GET /api/pwa/espacios/{comedor_id}/actividades/dias/`
+  - `GET|POST /api/pwa/espacios/{comedor_id}/actividades/`
+  - `GET|PATCH|DELETE /api/pwa/espacios/{comedor_id}/actividades/{id}/`
+  - `GET /api/pwa/espacios/{comedor_id}/actividades/{id}/inscriptos/`
+  - `GET /api/pwa/espacios/{comedor_id}/mensajes/`
+  - `GET /api/pwa/espacios/{comedor_id}/mensajes/{id}/`
+  - `PATCH /api/pwa/espacios/{comedor_id}/mensajes/{id}/marcar-visto/`
+  - `GET|POST /api/pwa/espacios/{comedor_id}/nomina/`
+  - `GET /api/pwa/espacios/{comedor_id}/nomina/generos/`
+  - `POST /api/pwa/espacios/{comedor_id}/nomina/preview-dni/`
+  - `POST /api/pwa/espacios/{comedor_id}/nomina/asistencia-alimentaria/`
+  - `GET|PATCH|DELETE /api/pwa/espacios/{comedor_id}/nomina/{id}/`
+  - `POST /api/pwa/espacios/{comedor_id}/nomina/{id}/registrar-asistencia/`
+  - `GET /api/pwa/espacios/{comedor_id}/nomina/{id}/historial-asistencia/`
 - Scope:
   - usuarios PWA: por `AccesoComedorPWA` activo;
   - usuarios no PWA: se mantiene filtrado legacy de `ComedorService`.
+- Fuente de verdad funcional ampliada: `docs/implementaciones/pwa_backend.md`.

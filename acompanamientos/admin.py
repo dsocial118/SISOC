@@ -1,8 +1,13 @@
 from django.contrib import admin
-from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
+from acompanamientos.models.acompanamiento import (
+    Acompanamiento,
+    InformacionRelevante,
+    Prestacion,
+)
 from acompanamientos.models.hitos import Hitos, HitosIntervenciones
 
 # acompañamientos
+admin.site.register(Acompanamiento)
 admin.site.register(InformacionRelevante)
 admin.site.register(Prestacion)
 

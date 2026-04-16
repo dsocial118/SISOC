@@ -490,6 +490,7 @@ class CentroAltaForm(CentroForm):
         provincia_inicial = kwargs.pop("provincia_inicial", None)
         super().__init__(*args, **kwargs)
         self.fields["activo"].required = False
+        self.fields["activo"].widget.attrs["class"] = "form-check-input"
         for hidden_field in [
             "nombre_referente",
             "apellido_referente",
@@ -587,6 +588,12 @@ class CentroAltaForm(CentroForm):
             self.cleaned_data.get("telefono_referente"),
             "El teléfono del director/a",
         )
+
+    def clean_activo(self):
+        activo = self.cleaned_data.get("activo")
+        if self.instance.pk and "activo_present" not in self.data:
+            return self.instance.activo
+        return activo
 
     def clean_autoridad_dni(self):
         return _clean_numeric_text(
