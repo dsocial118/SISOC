@@ -36,7 +36,10 @@ from VAT.services.access_scope import (
     can_user_access_centro,
     filter_centros_queryset_for_user,
 )
-from VAT.services.inscripcion_service import InscripcionService
+from VAT.services.inscripcion_service import (
+    ESTADOS_INSCRIPCION_OCUPAN_CUPO,
+    InscripcionService,
+)
 from VAT.services.sesion_comision_service.impl import SesionComisionService
 
 
@@ -275,6 +278,11 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         horario_form.fields["comision_curso"].queryset = ComisionCurso.objects.filter(
             pk=comision.pk
         )
+        inscripciones = list(
+            Inscripcion.objects.filter(comision_curso=comision)
+            .select_related("ciudadano", "programa")
+            .order_by("estado", "fecha_inscripcion")
+        )
         context.update(
             {
                 "comision_curso": comision,
@@ -294,10 +302,20 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                     .select_related("horario__dia_semana")
                     .order_by("fecha", "horario__hora_desde")
                 ),
-                "inscripciones": list(
-                    Inscripcion.objects.filter(comision_curso=comision)
-                    .select_related("ciudadano", "programa")
-                    .order_by("estado", "fecha_inscripcion")
+                "inscripciones": [
+                    inscripcion
+                    for inscripcion in inscripciones
+                    if inscripcion.estado != "en_espera"
+                ],
+                "lista_espera": [
+                    inscripcion
+                    for inscripcion in inscripciones
+                    if inscripcion.estado == "en_espera"
+                ],
+                "cupo_ocupado": sum(
+                    1
+                    for inscripcion in inscripciones
+                    if inscripcion.estado in ESTADOS_INSCRIPCION_OCUPAN_CUPO
                 ),
                 "estado_choices": Inscripcion.ESTADO_INSCRIPCION_CHOICES,
                 "comision_tipo_titulo": "Comisión de Curso",
@@ -344,17 +362,20 @@ class InscripcionCursoCambiarEstadoView(LoginRequiredMixin, View):
         if nuevo_estado not in estados_validos:
             messages.error(request, "Estado no válido.")
         else:
-            inscripcion.estado = nuevo_estado
-            update_fields = ["estado"]
-            if nuevo_estado == "validada_presencial":
-                inscripcion.fecha_validacion_presencial = timezone.now()
-                update_fields.append("fecha_validacion_presencial")
-            inscripcion.save(update_fields=update_fields)
-            messages.success(
-                request,
-                f"Inscripción de {inscripcion.ciudadano.nombre_completo} "
-                f"actualizada a '{estados_validos[nuevo_estado]}'.",
-            )
+            try:
+                InscripcionService.actualizar_estado_inscripcion(
+                    inscripcion=inscripcion,
+                    nuevo_estado=nuevo_estado,
+                    usuario=request.user,
+                )
+            except ValueError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(
+                    request,
+                    f"Inscripción de {inscripcion.ciudadano.nombre_completo} "
+                    f"actualizada a '{estados_validos[nuevo_estado]}'.",
+                )
         return redirect("vat_comision_curso_detail", pk=inscripcion.comision_curso_id)
 
 
@@ -364,7 +385,7 @@ class InscripcionRapidaComisionCursoView(LoginRequiredMixin, View):
             _scoped_comisiones_curso_queryset(request.user),
             pk=request.POST.get("comision"),
         )
-        if not comision.curso.programa_id:
+        if not comision.curso.programa_id and not comision.curso.inscripcion_libre:
             return JsonResponse(
                 {
                     "ok": False,
@@ -416,8 +437,13 @@ class InscripcionRapidaComisionCursoView(LoginRequiredMixin, View):
         return JsonResponse(
             {
                 "ok": True,
-                "message": f"Inscripción creada para {inscripcion.ciudadano.nombre_completo}.",
+                "message": (
+                    f"{inscripcion.ciudadano.nombre_completo} quedó en lista de espera."
+                    if inscripcion.estado == "en_espera"
+                    else f"Inscripción creada para {inscripcion.ciudadano.nombre_completo}."
+                ),
                 "inscripcion_id": inscripcion.pk,
+                "estado": inscripcion.estado,
             }
         )
 

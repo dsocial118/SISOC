@@ -95,6 +95,11 @@
                                                 <i class="fas fa-ticket-alt me-1"></i>Voucher
                                             </span>
                                         {% endif %}
+                                        {% if curso.inscripcion_libre %}
+                                            <span class="badge bg-success-subtle text-success ms-1">
+                                                <i class="fas fa-users me-1"></i>Inscripción libre
+                                            </span>
+                                        {% endif %}
                                     </td>
                                     <td>{{ curso.comisiones_count }}</td>
                                     <td>
@@ -129,6 +134,7 @@
                                                         data-nombre="{{ curso.nombre }}"
                                                         data-estado="{{ curso.estado|default:'' }}"
                                                         data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}"
+                                                        data-inscripcion-libre="{{ curso.inscripcion_libre|yesno:'1,0' }}"
                                                         data-costo-creditos="{{ curso.costo_creditos|default:'' }}"
                                                         data-observaciones="{{ curso.observaciones|default:'' }}"
                                                         data-voucher-ids="{% for voucher in curso.voucher_parametrias.all %}{% if not forloop.first %},{% endif %}{{ voucher.id }}{% endfor %}">
