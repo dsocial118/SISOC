@@ -14,6 +14,11 @@ class _Session(dict):
     modified = False
 
 
+class _OrderableResult(list):
+    def order_by(self, *args):
+        return self
+
+
 def test_ciudadanos_list_view_get_queryset_filtra(mocker):
     qs = mocker.Mock()
     qs.filter.return_value = qs
@@ -76,10 +81,13 @@ def test_ciudadanos_create_busqueda_paths(mocker):
     assert invalid == "super-get"
     assert msg_warn.called
 
-    existing = SimpleNamespace(pk=5)
+    existing = SimpleNamespace(
+        pk=5,
+        tipo_registro_identidad=module.Ciudadano.TIPO_REGISTRO_ESTANDAR,
+    )
     mocker.patch(
         "ciudadanos.views.Ciudadano.objects.filter",
-        return_value=SimpleNamespace(first=lambda: existing),
+        return_value=_OrderableResult([existing]),
     )
     exists_resp = view._handle_ciudadano_busqueda(request, "12345678", None)
     assert exists_resp[0][0] == "ciudadanos_editar"
@@ -87,7 +95,7 @@ def test_ciudadanos_create_busqueda_paths(mocker):
 
     mocker.patch(
         "ciudadanos.views.Ciudadano.objects.filter",
-        return_value=SimpleNamespace(first=lambda: None),
+        return_value=_OrderableResult([]),
     )
     mocker.patch(
         "ciudadanos.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
@@ -376,6 +384,13 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
     assert initial["nombre"] == "Ana"
 
     ciudadano = SimpleNamespace(
+        pk=10,
+        tipo_registro_identidad=module.Ciudadano.TIPO_REGISTRO_ESTANDAR,
+        tipo_documento=module.Ciudadano.DOCUMENTO_DNI,
+        documento=12345678,
+        identificador_interno=None,
+        documento_unico_key=None,
+        requiere_revision_manual=None,
         creado_por=None,
         modificado_por=None,
         save=mocker.Mock(),
@@ -387,11 +402,23 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
     mocker.patch("ciudadanos.views.redirect", return_value="redir")
     assert create_view.form_valid(form) == "redir"
     assert ciudadano.creado_por.id == 2
+    assert ciudadano.documento_unico_key == "DNI_12345678"
+    assert ciudadano.identificador_interno == "CIU-10"
+    assert ciudadano.requiere_revision_manual is False
 
     update_view = module.CiudadanosUpdateView()
     update_view.request = SimpleNamespace(user=SimpleNamespace(id=3))
     ciudadano2 = SimpleNamespace(
-        modificado_por=None, save=mocker.Mock(), get_absolute_url=lambda: "/c/2/"
+        pk=11,
+        tipo_registro_identidad=module.Ciudadano.TIPO_REGISTRO_SIN_DNI,
+        tipo_documento=module.Ciudadano.DOCUMENTO_DNI,
+        documento=None,
+        identificador_interno="CIU-11",
+        documento_unico_key="DNI_87654321",
+        requiere_revision_manual=False,
+        modificado_por=None,
+        save=mocker.Mock(),
+        get_absolute_url=lambda: "/c/2/",
     )
     form2 = SimpleNamespace(
         save=lambda commit=False: ciudadano2, save_m2m=mocker.Mock()
@@ -400,3 +427,5 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
     mocker.patch("ciudadanos.views.redirect", return_value="redir2")
     assert update_view.form_valid(form2) == "redir2"
     assert ciudadano2.modificado_por.id == 3
+    assert ciudadano2.documento_unico_key is None
+    assert ciudadano2.requiere_revision_manual is True

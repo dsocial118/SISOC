@@ -3,13 +3,14 @@ from collections import defaultdict
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.db import IntegrityError, transaction
 from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required, permission_required
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -27,6 +28,38 @@ from core.security import safe_redirect
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 logger = logging.getLogger("django")
+
+
+def _documento_unico_key(ciudadano):
+    if (
+        ciudadano.tipo_registro_identidad == Ciudadano.TIPO_REGISTRO_ESTANDAR
+        and ciudadano.documento
+    ):
+        return f"{ciudadano.tipo_documento}_{ciudadano.documento}"
+    return None
+
+
+def _normalizar_identidad_ciudadano(ciudadano):
+    tipo = ciudadano.tipo_registro_identidad
+    ciudadano.documento_unico_key = _documento_unico_key(ciudadano)
+    ciudadano.requiere_revision_manual = tipo in (
+        Ciudadano.TIPO_REGISTRO_SIN_DNI,
+        Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+    )
+
+
+def _asegurar_identificador_interno(ciudadano):
+    if ciudadano.pk and not ciudadano.identificador_interno:
+        ciudadano.identificador_interno = f"CIU-{ciudadano.pk}"
+        return True
+    return False
+
+
+def _agregar_error_identidad_unica(form):
+    form.add_error(
+        "documento",
+        "Ya existe un ciudadano estándar con este tipo y número de documento.",
+    )
 
 
 class CiudadanosListView(LoginRequiredMixin, ListView):
@@ -553,32 +586,18 @@ class CiudadanosCreateView(LoginRequiredMixin, CreateView):
         ciudadano = form.save(commit=False)
         ciudadano.creado_por = self.request.user
         ciudadano.modificado_por = self.request.user
+        _normalizar_identidad_ciudadano(ciudadano)
 
-        tipo = ciudadano.tipo_registro_identidad
-        if tipo in (
-            Ciudadano.TIPO_REGISTRO_SIN_DNI,
-            Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
-        ):
-            ciudadano.requiere_revision_manual = True
-            ciudadano.documento_unico_key = None
-        else:
-            ciudadano.requiere_revision_manual = False
+        try:
+            with transaction.atomic():
+                ciudadano.save()
+                if _asegurar_identificador_interno(ciudadano):
+                    ciudadano.save(update_fields=["identificador_interno"])
+                form.save_m2m()
+        except IntegrityError:
+            _agregar_error_identidad_unica(form)
+            return self.form_invalid(form)
 
-        ciudadano.save()
-
-        # identificador_interno requiere el PK — se asigna post-save
-        if not ciudadano.identificador_interno:
-            ciudadano.identificador_interno = f"CIU-{ciudadano.pk}"
-            ciudadano.save(update_fields=["identificador_interno"])
-
-        # Para ESTANDAR, completar documento_unico_key si tiene documento
-        if tipo == Ciudadano.TIPO_REGISTRO_ESTANDAR and ciudadano.documento:
-            ciudadano.documento_unico_key = (
-                f"{ciudadano.tipo_documento}_{ciudadano.documento}"
-            )
-            ciudadano.save(update_fields=["documento_unico_key"])
-
-        form.save_m2m()
         messages.success(self.request, "Ciudadano creado correctamente.")
         return redirect(ciudadano.get_absolute_url())
 
@@ -591,8 +610,17 @@ class CiudadanosUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         ciudadano = form.save(commit=False)
         ciudadano.modificado_por = self.request.user
-        ciudadano.save()
-        form.save_m2m()
+        _normalizar_identidad_ciudadano(ciudadano)
+        _asegurar_identificador_interno(ciudadano)
+
+        try:
+            with transaction.atomic():
+                ciudadano.save()
+                form.save_m2m()
+        except IntegrityError:
+            _agregar_error_identidad_unica(form)
+            return self.form_invalid(form)
+
         messages.success(self.request, "Ciudadano actualizado.")
         return redirect(ciudadano.get_absolute_url())
 

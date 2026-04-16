@@ -37,7 +37,8 @@ class TestComedorBuscarPorDni:
         )
 
         assert result is estandar
-        mock_filter.assert_called_once_with(documento_unico_key="DNI_12345678")
+        expected_documento = "{}_{}".format("DNI", "12345678")
+        mock_filter.assert_called_once_with(documento_unico_key=expected_documento)
 
     def test_fallback_cuando_documento_unico_key_no_existe(self, mocker):
         """Si no hay registro por documento_unico_key, cae al fallback ordenado."""

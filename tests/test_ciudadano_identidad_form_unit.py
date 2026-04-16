@@ -69,6 +69,18 @@ def test_sin_dni_con_motivo_es_valido():
     assert form.is_valid(), form.errors
 
 
+def test_sin_dni_con_motivo_admite_fecha_vacia():
+    form = CiudadanoForm(
+        data=_data(
+            tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_SIN_DNI,
+            documento="",
+            fecha_nacimiento="",
+            motivo_sin_dni=Ciudadano.MOTIVO_SIN_DNI_OTRO,
+        )
+    )
+    assert form.is_valid(), form.errors
+
+
 # --- DNI_NO_VALIDADO_RENAPER ---
 
 

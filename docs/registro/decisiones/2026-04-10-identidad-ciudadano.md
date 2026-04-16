@@ -47,6 +47,12 @@ No crear modelos paralelos.
 | `identificador_interno` | CharField (unique, nullable) | Clave operativa generada (`CIU-<id>`) |
 | `documento_unico_key` | CharField (unique, nullable) | Reemplaza unique_together |
 
+### Campos base ajustados
+
+- `fecha_nacimiento` admite `NULL` para registros `SIN_DNI` o casos de identidad
+  incompleta. En registros `ESTANDAR`, el formulario web la sigue exigiendo como
+  dato obligatorio.
+
 ### Enums acordados con funcionales (2026-04-09)
 
 **Motivos sin DNI:**

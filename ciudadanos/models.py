@@ -110,7 +110,7 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
 
     apellido = models.CharField(max_length=255)
     nombre = models.CharField(max_length=255)
-    fecha_nacimiento = models.DateField()
+    fecha_nacimiento = models.DateField(null=True, blank=True)
     tipo_documento = models.CharField(
         max_length=20, choices=DOCUMENTO_CHOICES, default=DOCUMENTO_DNI
     )
