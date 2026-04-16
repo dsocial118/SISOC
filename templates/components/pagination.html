@@ -18,9 +18,9 @@
                 <!-- Páginas -->
                 {% if page_range %}
                     {% for i in page_range %}
-                        {% if i == '…' %}
+                        {% if i == '...' or i == '…' %}
                             <li class="page-item disabled">
-                                <a href="#" class="page-link">…</a>
+                                <a href="#" class="page-link">...</a>
                             </li>
                         {% else %}
                             <li class="page-item {% if page_obj.number == i %}active{% endif %}">
