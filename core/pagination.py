@@ -56,13 +56,32 @@ class NoCountPaginator:
             items = items[:-1]
         return items, has_next_page
 
+    def _find_last_non_empty_page(self, upper_bound):
+        left = 1
+        right = upper_bound - 1
+        best_number = 1
+        best_items = []
+        best_has_next_page = False
+
+        while left <= right:
+            middle = (left + right) // 2
+            items, has_next_page = self._fetch_page(middle)
+            if items:
+                best_number = middle
+                best_items = items
+                best_has_next_page = has_next_page
+                left = middle + 1
+            else:
+                right = middle - 1
+
+        return best_number, best_items, best_has_next_page
+
     def get_page(self, number):
         page_number = self._normalize_number(number)
         items, has_next_page = self._fetch_page(page_number)
 
-        while not items and page_number > 1:
-            page_number -= 1
-            items, has_next_page = self._fetch_page(page_number)
+        if not items and page_number > 1:
+            page_number, items, has_next_page = self._find_last_non_empty_page(page_number)
 
         return NoCountPage(items, page_number, self, has_next_page)
 
