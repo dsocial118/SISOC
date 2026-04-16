@@ -2,18 +2,10 @@
 key = "sisoc-base"
 title = "SISOC base IA"
 summary = "Resumen operativo del repo para arrancar tareas IA con menos lecturas y sin perder boundaries."
-paths = [
-  "AGENTS.md",
-  "CODEX.md",
-  "docs/indice.md",
-  "docs/ia/",
-  "docs/operacion/codex_desktop.md",
-  "scripts/ai/",
-  ".codex/environments/environment.toml",
-]
+paths = ["AGENTS.md", "CODEX.md", "docs/indice.md", "docs/ia", "docs/operacion/codex_desktop.md", "scripts/ai", ".codex/environments/environment.toml"]
 default = true
 confidence = "alta"
-validated_commit = "4650322e6"
+validated_commit = "46f325a2a"
 validated_at = "2026-04-16"
 +++
 
