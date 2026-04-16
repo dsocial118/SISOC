@@ -2181,6 +2181,35 @@ def test_api_vat_cursos_lista_por_provincia_y_municipio(vat_api_client, vat_curs
 
 
 @pytest.mark.django_db
+def test_api_vat_cursos_rechaza_voucher_e_inscripcion_libre_al_mismo_tiempo(
+    vat_api_client, vat_curso_base
+):
+    centro, _, modalidad = vat_curso_base
+
+    response = vat_api_client.post(
+        "/api/vat/cursos/",
+        {
+            "centro": centro.id,
+            "nombre": "Curso API Invalido",
+            "modalidad": modalidad.id,
+            "estado": "planificado",
+            "usa_voucher": True,
+            "inscripcion_libre": True,
+            "costo_creditos": 1,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "inscripcion_libre": [
+            "Un curso no puede usar voucher e inscripción libre al mismo tiempo."
+        ]
+    }
+    assert not Curso.objects.filter(nombre="Curso API Invalido").exists()
+
+
+@pytest.mark.django_db
 def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
     vat_api_client, vat_curso_base
 ):
