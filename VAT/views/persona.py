@@ -100,14 +100,22 @@ class InscripcionCreateView(LoginRequiredMixin, CreateView):
             messages.error(self.request, str(exc))
             return self.form_invalid(form)
 
-        cantidad_debito = getattr(self.object, "voucher_debito", 0)
+        cantidad_debito = getattr(
+            self.object,
+            "voucher_debito",
+            getattr(self.object, "_voucher_debito", 0),
+        )
         if self.object.estado == "en_espera":
             messages.success(
                 self.request,
                 f"{self.object.ciudadano} quedó en lista de espera.",
             )
         elif cantidad_debito > 0:
-            saldo = getattr(self.object, "voucher_saldo", 0)
+            saldo = getattr(
+                self.object,
+                "voucher_saldo",
+                getattr(self.object, "_voucher_saldo", 0),
+            )
             messages.success(
                 self.request,
                 f"Inscripción creada. Se descontaron {cantidad_debito} créditos del voucher de {self.object.ciudadano} ({saldo} restantes).",

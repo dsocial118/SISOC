@@ -1332,7 +1332,7 @@ class AdmisionService:
 
             admision.save()
 
-            AcompanamientoService.importar_datos_desde_admision(admision.comedor)
+            AcompanamientoService.importar_datos_desde_admision(admision)
 
             return admision
 

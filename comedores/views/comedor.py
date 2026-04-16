@@ -38,9 +38,9 @@ from comedores.services.capacitaciones_certificados_service import (
 )
 from comedores.services.filter_config import get_filters_ui_config
 from comedores.utils import comedor_usa_admision_para_nomina
+from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
-from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from core.utils import convert_string_to_int
 from intervenciones.models.intervenciones import Intervencion

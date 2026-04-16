@@ -441,18 +441,18 @@ def test_importacion_helpers_normalizar_enriquecer_payload(mocker):
     def _normalizar_sexo(value):
         return {"M": 1, "m": 1}.get(value)
 
-    def _nacionalidad_filter(**kwargs):
-        pk = kwargs.get("pk")
-        value = kwargs.get("nacionalidad__iexact")
-        if pk == 9:
-            return SimpleNamespace(first=lambda: SimpleNamespace(pk=9))
-        if value == "Argentina":
-            return SimpleNamespace(first=lambda: SimpleNamespace(pk=1))
-        return SimpleNamespace(first=lambda: None)
+    nacionalidades_cache = {
+        "argentina": SimpleNamespace(pk=1, nacionalidad="Argentina"),
+        "uruguaya": SimpleNamespace(pk=9, nacionalidad="Uruguaya"),
+    }
 
     mocker.patch(
-        "core.models.Nacionalidad.objects.filter",
-        side_effect=_nacionalidad_filter,
+        "celiaquia.services.importacion_service._cargar_nacionalidades_cache",
+        return_value=nacionalidades_cache,
+    )
+    mocker.patch(
+        "celiaquia.services.importacion_service._cargar_paises_a_nacionalidad_importacion",
+        return_value={"argentina": "Argentina", "uruguay": "Uruguaya"},
     )
 
     payload = {
@@ -535,6 +535,21 @@ def test_importacion_helpers_normalizar_enriquecer_payload(mocker):
             localidades_cache={},
             normalizar_sexo=_normalizar_sexo,
         )
+
+
+def test_resolver_nacionalidad_payload_importacion_por_pais_normalizado():
+    payload = {"nacionalidad": "Peru"}
+
+    module._resolver_nacionalidad_payload_importacion(
+        payload,
+        nacionalidades_cache={
+            "peruana": SimpleNamespace(pk=134, nacionalidad="Peruana"),
+            "argentina": SimpleNamespace(pk=1, nacionalidad="Argentina"),
+        },
+        paises_a_nacionalidad={"peru": "Peruana"},
+    )
+
+    assert payload["nacionalidad"] == 134
 
 
 def test_importacion_helpers_responsable_payload_and_same_document():
@@ -1346,6 +1361,8 @@ def test_importar_legajos_acumula_warnings_emitidos_por_callbacks(mocker):
             "municipios_cache": {},
             "localidades_cache": {},
             "sexos_cache": {},
+            "nacionalidades_cache": {},
+            "paises_a_nacionalidad": {},
             "nacionalidades_nombres": set(),
             "sexos_nombres": set(),
         },
@@ -1445,6 +1462,8 @@ def test_importar_legajos_orquesta_loop_principal_y_postprocesos(mocker):
             "municipios_cache": {},
             "localidades_cache": {},
             "sexos_cache": {},
+            "nacionalidades_cache": {},
+            "paises_a_nacionalidad": {},
             "nacionalidades_nombres": set(),
             "sexos_nombres": set(),
         },
@@ -1595,6 +1614,8 @@ def test_importar_legajos_registra_error_si_falla_responsable_tras_beneficiario(
             "municipios_cache": {},
             "localidades_cache": {},
             "sexos_cache": {},
+            "nacionalidades_cache": {},
+            "paises_a_nacionalidad": {},
             "nacionalidades_nombres": set(),
             "sexos_nombres": set(),
         },
