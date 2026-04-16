@@ -85,6 +85,9 @@ class EditarLegajoView(View):
                     else ""
                 ),
                 "sexo": ciudadano.sexo_id if ciudadano.sexo else "",
+                # En este modal legacy mantenemos el fallback visual a Argentina
+                # cuando el legajo no tiene nacionalidad persistida, para preservar
+                # compatibilidad con el flujo manual actual de edición.
                 "nacionalidad": getattr(ciudadano, "nacionalidad_id", "")
                 or getattr(nacionalidad_argentina, "pk", "")
                 or "",

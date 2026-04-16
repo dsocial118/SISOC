@@ -19,6 +19,7 @@ from celiaquia.models import (
     RegistroErroneo,
 )
 from celiaquia.services.importacion_service import ImportacionService
+from celiaquia.views import expediente as expediente_view
 from core.models import Localidad, Municipio, Nacionalidad, Provincia, Sexo
 from users.models import Profile
 
@@ -557,6 +558,14 @@ def test_detalle_expediente_autocompleta_nacionalidad_desde_pais_relacionado(cli
     )
 
 
+def test_campos_invalidos_desde_mensaje_error_soporta_prefijo_reproceso():
+    invalid_fields = expediente_view._campos_invalidos_desde_mensaje_error(
+        "Error al reprocesar: Faltan campos obligatorios: apellido, nombre"
+    )
+
+    assert invalid_fields == ["apellido", "nombre"]
+
+
 @pytest.mark.django_db
 def test_actualizar_registro_erroneo_rechaza_campos_obligatorios_faltantes(client):
     user, provincia = _crear_usuario_provincial("prov_update")
@@ -607,6 +616,53 @@ def test_actualizar_registro_erroneo_rechaza_campos_obligatorios_faltantes(clien
     registro.refresh_from_db()
     assert registro.datos_raw["sexo"] == "1"
     assert "sexo" in registro.mensaje_error.lower()
+
+
+@pytest.mark.django_db
+def test_actualizar_registro_erroneo_informa_invalid_fields_para_validation_error_compuesto(
+    client,
+):
+    user, provincia = _crear_usuario_provincial("prov_update_invalid_fields_multiple")
+    user.is_superuser = True
+    user.save(update_fields=["is_superuser"])
+    expediente = _crear_contexto_expediente(user)
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    argentina = Nacionalidad.objects.create(nacionalidad="Argentina")
+    sexo = Sexo.objects.create(sexo="Masculino")
+    registro = RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=13,
+        datos_raw={
+            "apellido": "Perez",
+            "nombre": "Ana",
+            "documento": "12345678",
+            "fecha_nacimiento": "01/01/1990",
+            "sexo": str(sexo.pk),
+            "nacionalidad": str(argentina.pk),
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 1",
+            "altura": "123",
+            "codigo_postal": "1000",
+        },
+        mensaje_error="Faltan campos obligatorios: apellido, nombre",
+    )
+
+    payload = dict(registro.datos_raw)
+    payload["apellido"] = ""
+    payload["nombre"] = ""
+
+    client.force_login(user)
+    response = client.post(
+        reverse("registro_erroneo_actualizar", args=[expediente.pk, registro.pk]),
+        data=json.dumps(payload),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert response.json()["saved_partial"] is True
+    assert set(response.json()["invalid_fields"]) == {"apellido", "nombre"}
 
 
 @pytest.mark.django_db

@@ -86,6 +86,23 @@ Cobertura agregada/ajustada:
 - resolucion por pais normalizado usando JSON
 - mantenimiento de validaciones existentes del helper principal
 - ajuste de unit tests de `legajo_editar` para evitar accesos involuntarios a DB
+- parsing de `invalid_fields` cuando el error llega envuelto en `ValidationError`
+  o con prefijo de reproceso (`Error al reprocesar: ...`)
+
+## Ajuste posterior de UI para registros erroneos
+
+Durante la revision del PR se detecto un caso en el que la UI dejaba de remarcar
+campos obligatorios faltantes cuando el mensaje de error no llegaba en su forma
+simple.
+
+Casos cubiertos por el ajuste:
+
+- `ValidationError` renderizado como lista/string
+- mensajes persistidos con prefijo `Error al reprocesar: ...`
+
+El parser de `invalid_fields` ahora normaliza ese mensaje antes de extraer los
+campos faltantes. Esto preserva el marcado de `apellido`, `nombre` y otros
+obligatorios corregibles en el flujo de reproceso desde la UI.
 
 ## Validacion ejecutada
 

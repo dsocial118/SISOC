@@ -170,16 +170,40 @@ def _resolver_municipio_id_desde_localidad(localidad_value):
     return str(localidad.municipio_id)
 
 
+def _normalizar_mensaje_error_invalid_fields(message):
+    if isinstance(message, ValidationError):
+        mensajes = getattr(message, "messages", None) or [str(message)]
+        msg = " ".join(str(item) for item in mensajes if item)
+    else:
+        msg = str(message or "")
+
+    msg = msg.strip()
+    if msg.startswith("[") and msg.endswith("]"):
+        msg = msg[1:-1].strip()
+    msg = msg.strip("'\" ")
+
+    prefijo_reproceso = "error al reprocesar:"
+    if msg.lower().startswith(prefijo_reproceso):
+        msg = msg[len(prefijo_reproceso) :].strip()
+
+    return msg
+
+
 def _campos_invalidos_desde_mensaje_error(message):
     if not message:
         return []
 
-    msg = str(message).strip()
+    msg = _normalizar_mensaje_error_invalid_fields(message)
     msg_lower = msg.lower()
     campos = []
 
-    if msg_lower.startswith("faltan campos obligatorios:"):
-        faltantes = msg.split(":", 1)[1]
+    faltantes_match = re.search(
+        r"faltan campos obligatorios:\s*(?P<faltantes>.+)$",
+        msg,
+        flags=re.IGNORECASE,
+    )
+    if faltantes_match:
+        faltantes = faltantes_match.group("faltantes")
         return [
             campo.strip()
             for campo in faltantes.split(",")
