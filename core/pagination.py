@@ -81,7 +81,9 @@ class NoCountPaginator:
         items, has_next_page = self._fetch_page(page_number)
 
         if not items and page_number > 1:
-            page_number, items, has_next_page = self._find_last_non_empty_page(page_number)
+            page_number, items, has_next_page = self._find_last_non_empty_page(
+                page_number
+            )
 
         return NoCountPage(items, page_number, self, has_next_page)
 
