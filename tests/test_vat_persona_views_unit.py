@@ -41,11 +41,8 @@ def test_inscripcion_create_descuenta_costo_del_voucher(mocker):
         estado="inscripta",
         voucher_debito=12500,
         voucher_saldo=12500,
-<<<<<<< nomina_1329
-=======
         _voucher_debito=12500,
         _voucher_saldo=12500,
->>>>>>> development
     )
     mocker.patch(
         "VAT.views.persona.InscripcionService.crear_inscripcion",
