@@ -1570,6 +1570,11 @@
                                                         <i class="fas fa-ticket-alt me-1"></i>Voucher
                                                     </span>
                                                 {% endif %}
+                                                {% if curso.inscripcion_libre %}
+                                                    <span class="badge bg-success-subtle text-success ms-1">
+                                                        <i class="fas fa-users me-1"></i>Inscripción libre
+                                                    </span>
+                                                {% endif %}
                                             </td>
                                             <td>{{ curso.comisiones.count }}</td>
                                             <td>
@@ -1585,7 +1590,7 @@
                                                         </button>
                                                     {% endif %}
                                                     {% if perms.VAT.change_curso %}
-                                                        <button type="button" class="btn btn-outline-warning btn-editar-curso" title="Editar Curso" data-bs-toggle="modal" data-bs-target="#modalCurso" data-curso-mode="edit" data-edit-url="{% url 'vat_curso_update' curso.id %}" data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}" data-nombre="{{ curso.nombre }}" data-estado="{{ curso.estado|default:'' }}" data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}" data-costo-creditos="{{ curso.costo_creditos|default:'' }}" data-observaciones="{{ curso.observaciones|default:'' }}" data-voucher-ids="{% for voucher in curso.voucher_parametrias.all %}{% if not forloop.first %},{% endif %}{{ voucher.id }}{% endfor %}">
+                                                        <button type="button" class="btn btn-outline-warning btn-editar-curso" title="Editar Curso" data-bs-toggle="modal" data-bs-target="#modalCurso" data-curso-mode="edit" data-edit-url="{% url 'vat_curso_update' curso.id %}" data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}" data-nombre="{{ curso.nombre }}" data-estado="{{ curso.estado|default:'' }}" data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}" data-inscripcion-libre="{{ curso.inscripcion_libre|yesno:'1,0' }}" data-costo-creditos="{{ curso.costo_creditos|default:'' }}" data-observaciones="{{ curso.observaciones|default:'' }}" data-voucher-ids="{% for voucher in curso.voucher_parametrias.all %}{% if not forloop.first %},{% endif %}{{ voucher.id }}{% endfor %}">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
                                                     {% endif %}
@@ -2148,13 +2153,39 @@
             var form = document.getElementById(formId);
             if (!form || form.dataset.modalSubmitBound === '1') return;
             form.dataset.modalSubmitBound = '1';
+
+            function clearFormErrors() {
+                form.querySelectorAll('.is-invalid').forEach(function(field) {
+                    field.classList.remove('is-invalid');
+                });
+                form.querySelectorAll('[data-modal-form-error="1"]').forEach(function(node) {
+                    node.remove();
+                });
+            }
+
+            function renderFormErrors(errors) {
+                Object.keys(errors || {}).forEach(function(fieldName) {
+                    var field = form.querySelector('[name="' + fieldName + '"]');
+                    if (!field) return;
+
+                    field.classList.add('is-invalid');
+                    var feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback d-block';
+                    feedback.dataset.modalFormError = '1';
+                    feedback.textContent = (errors[fieldName] || []).join(' ');
+                    field.insertAdjacentElement('afterend', feedback);
+                });
+            }
+
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
+                clearFormErrors();
                 if (!form.checkValidity()) {
                     form.reportValidity();
                     return;
                 }
                 var submitBtn = form.querySelector('button[type="submit"]');
+                var originalSubmitHtml = submitBtn ? submitBtn.innerHTML : '';
                 if (submitBtn) {
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
@@ -2165,6 +2196,20 @@
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
                     }
+                }).then(function(response) {
+                    var contentType = response.headers.get('content-type') || '';
+                    if (contentType.indexOf('application/json') !== -1) {
+                        return response.json().then(function(payload) {
+                            if (!response.ok || payload.ok === false) {
+                                throw payload;
+                            }
+                            return payload;
+                        });
+                    }
+                    if (!response.ok) {
+                        throw {};
+                    }
+                    return null;
                 }).then(function() {
                     var modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
                     if (modal) modal.hide();
@@ -2177,11 +2222,18 @@
                     }
                     location.reload();
                     return null;
-                }).catch(function() {
-                    alert('Error al guardar. Intente nuevamente.');
+                }).catch(function(payload) {
+                    if (payload && payload.errors) {
+                        renderFormErrors(payload.errors);
+                    }
+                    alert(
+                        payload && payload.message
+                            ? payload.message
+                            : 'Error al guardar. Intente nuevamente.'
+                    );
                     if (submitBtn) {
                         submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Guardar';
+                        submitBtn.innerHTML = originalSubmitHtml;
                     }
                 });
             });
@@ -3246,6 +3298,7 @@
                     setFormValue('nombre', triggerButton.getAttribute('data-nombre'));
                     setFormValue('estado', triggerButton.getAttribute('data-estado'));
                     setFormValue('usa_voucher', triggerButton.getAttribute('data-usa-voucher'));
+                    setFormValue('inscripcion_libre', triggerButton.getAttribute('data-inscripcion-libre'));
                     setFormValue('costo_creditos', triggerButton.getAttribute('data-costo-creditos'));
                     setFormValue('observaciones', triggerButton.getAttribute('data-observaciones'));
                     setFormValue('voucher_parametrias', triggerButton.getAttribute('data-voucher-ids'));

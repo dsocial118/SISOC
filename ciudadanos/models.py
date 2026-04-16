@@ -116,6 +116,15 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         indexes = [
             models.Index(fields=["apellido", "nombre"]),
             models.Index(fields=["documento"]),
+            models.Index(fields=["deleted_at", "id"], name="ciud_delid_idx"),
+            models.Index(
+                fields=["deleted_at", "provincia", "id"],
+                name="ciud_delprov_id_idx",
+            ),
+            models.Index(
+                fields=["deleted_at", "documento"],
+                name="ciud_deldoc_idx",
+            ),
         ]
 
     def __str__(self) -> str:

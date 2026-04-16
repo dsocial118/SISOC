@@ -1,4 +1,4 @@
-from django.contrib import messages
+﻿from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -21,6 +21,8 @@ from VAT.forms import (
     ComisionCursoForm,
     ComisionCursoHorarioForm,
     CiudadanoInscripcionRapidaForm,
+    build_curso_queryset_for_centros,
+    build_ubicacion_queryset_for_centros,
 )
 from VAT.models import (
     Centro,
@@ -36,7 +38,10 @@ from VAT.services.access_scope import (
     can_user_access_centro,
     filter_centros_queryset_for_user,
 )
-from VAT.services.inscripcion_service import InscripcionService
+from VAT.services.inscripcion_service import (
+    ESTADOS_INSCRIPCION_OCUPAN_CUPO,
+    InscripcionService,
+)
 from VAT.services.sesion_comision_service.impl import SesionComisionService
 
 
@@ -94,6 +99,21 @@ def _horario_json_success_response(redirect_url, message):
     )
 
 
+def _modal_json_error_response(form, message):
+    return JsonResponse(
+        {
+            "ok": False,
+            "message": message,
+            "errors": _serialize_form_errors(form),
+        },
+        status=400,
+    )
+
+
+def _modal_json_success_response(redirect_url, message):
+    return _horario_json_success_response(redirect_url, message)
+
+
 class CursoCreateView(LoginRequiredMixin, CreateView):
     model = Curso
     form_class = CursoForm
@@ -122,8 +142,23 @@ class CursoCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.centro = self.centro
-        messages.success(self.request, "Curso creado exitosamente.")
+        success_message = "Curso creado exitosamente."
+        messages.success(self.request, success_message)
+        if _is_ajax_request(self.request):
+            self.object = form.save()
+            return _modal_json_success_response(
+                self.get_success_url(),
+                success_message,
+            )
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if _is_ajax_request(self.request):
+            return _modal_json_error_response(
+                form,
+                "No se pudo guardar el curso. Revisa los datos e intenta nuevamente.",
+            )
+        return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -152,7 +187,14 @@ class CursoUpdateView(LoginRequiredMixin, UpdateView):
         )
 
     def form_valid(self, form):
-        messages.success(self.request, "Curso actualizado exitosamente.")
+        success_message = "Curso actualizado exitosamente."
+        messages.success(self.request, success_message)
+        if _is_ajax_request(self.request):
+            self.object = form.save()
+            return _modal_json_success_response(
+                self.get_success_url(),
+                success_message,
+            )
         if self.request.GET.get("modal") == "1":
             self.object = form.save()
             return HttpResponse(
@@ -165,6 +207,14 @@ class CursoUpdateView(LoginRequiredMixin, UpdateView):
                 "</script>"
             )
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if _is_ajax_request(self.request):
+            return _modal_json_error_response(
+                form,
+                "No se pudo actualizar el curso. Revisa los datos e intenta nuevamente.",
+            )
+        return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -226,20 +276,35 @@ class ComisionCursoCreateView(LoginRequiredMixin, CreateView):
         scoped_centros = filter_centros_queryset_for_user(
             Centro.objects.all(), self.request.user
         )
-        form.fields["curso"].queryset = Curso.objects.filter(
-            centro_id__in=scoped_centros.values_list("id", flat=True)
-        ).select_related("centro")
-        ubicaciones_qs = InstitucionUbicacion.objects.filter(
-            centro_id__in=scoped_centros.values_list("id", flat=True)
-        ).select_related("localidad")
+        scoped_centros_ids = list(scoped_centros.values_list("id", flat=True))
+        form.fields["curso"].queryset = build_curso_queryset_for_centros(
+            scoped_centros_ids
+        )
+        ubicaciones_qs = build_ubicacion_queryset_for_centros(scoped_centros_ids)
         if self.curso:
-            ubicaciones_qs = ubicaciones_qs.filter(centro_id=self.curso.centro_id)
+            ubicaciones_qs = build_ubicacion_queryset_for_centros(
+                [self.curso.centro_id]
+            )
         form.fields["ubicacion"].queryset = ubicaciones_qs
         return form
 
     def form_valid(self, form):
-        messages.success(self.request, "Comisión del curso creada exitosamente.")
+        messages.success(self.request, "Comision del curso creada exitosamente.")
+        if _is_ajax_request(self.request):
+            self.object = form.save()
+            return _modal_json_success_response(
+                self.get_success_url(),
+                "Comision del curso creada exitosamente.",
+            )
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if _is_ajax_request(self.request):
+            return _modal_json_error_response(
+                form,
+                "No se pudo guardar la comision. Revisa los datos e intenta nuevamente.",
+            )
+        return super().form_invalid(form)
 
     def get_success_url(self):
         return _centro_cursos_tab_url(self.object.curso.centro_id, refresh=True)
@@ -263,17 +328,25 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         scoped_centros = filter_centros_queryset_for_user(
             Centro.objects.all(), self.request.user
         )
-        comision_form.fields["curso"].queryset = Curso.objects.filter(
-            centro_id__in=scoped_centros.values_list("id", flat=True)
-        ).select_related("centro")
+        scoped_centros_ids = list(scoped_centros.values_list("id", flat=True))
+        comision_form.fields["curso"].queryset = build_curso_queryset_for_centros(
+            scoped_centros_ids,
+            include_curso_ids=[comision.curso_id],
+        )
         comision_form.fields["ubicacion"].queryset = (
-            InstitucionUbicacion.objects.filter(
-                centro_id=comision.curso.centro_id
-            ).select_related("localidad")
+            build_ubicacion_queryset_for_centros(
+                [comision.curso.centro_id],
+                include_ubicacion_ids=[comision.ubicacion_id],
+            )
         )
         horario_form = ComisionCursoHorarioForm(initial={"comision_curso": comision.id})
         horario_form.fields["comision_curso"].queryset = ComisionCurso.objects.filter(
             pk=comision.pk
+        )
+        inscripciones = list(
+            Inscripcion.objects.filter(comision_curso=comision)
+            .select_related("ciudadano", "programa")
+            .order_by("estado", "fecha_inscripcion")
         )
         context.update(
             {
@@ -294,10 +367,20 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                     .select_related("horario__dia_semana")
                     .order_by("fecha", "horario__hora_desde")
                 ),
-                "inscripciones": list(
-                    Inscripcion.objects.filter(comision_curso=comision)
-                    .select_related("ciudadano", "programa")
-                    .order_by("estado", "fecha_inscripcion")
+                "inscripciones": [
+                    inscripcion
+                    for inscripcion in inscripciones
+                    if inscripcion.estado != "en_espera"
+                ],
+                "lista_espera": [
+                    inscripcion
+                    for inscripcion in inscripciones
+                    if inscripcion.estado == "en_espera"
+                ],
+                "cupo_ocupado": sum(
+                    1
+                    for inscripcion in inscripciones
+                    if inscripcion.estado in ESTADOS_INSCRIPCION_OCUPAN_CUPO
                 ),
                 "estado_choices": Inscripcion.ESTADO_INSCRIPCION_CHOICES,
                 "comision_tipo_titulo": "Comisión de Curso",
@@ -344,17 +427,20 @@ class InscripcionCursoCambiarEstadoView(LoginRequiredMixin, View):
         if nuevo_estado not in estados_validos:
             messages.error(request, "Estado no válido.")
         else:
-            inscripcion.estado = nuevo_estado
-            update_fields = ["estado"]
-            if nuevo_estado == "validada_presencial":
-                inscripcion.fecha_validacion_presencial = timezone.now()
-                update_fields.append("fecha_validacion_presencial")
-            inscripcion.save(update_fields=update_fields)
-            messages.success(
-                request,
-                f"Inscripción de {inscripcion.ciudadano.nombre_completo} "
-                f"actualizada a '{estados_validos[nuevo_estado]}'.",
-            )
+            try:
+                InscripcionService.actualizar_estado_inscripcion(
+                    inscripcion=inscripcion,
+                    nuevo_estado=nuevo_estado,
+                    usuario=request.user,
+                )
+            except ValueError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(
+                    request,
+                    f"Inscripción de {inscripcion.ciudadano.nombre_completo} "
+                    f"actualizada a '{estados_validos[nuevo_estado]}'.",
+                )
         return redirect("vat_comision_curso_detail", pk=inscripcion.comision_curso_id)
 
 
@@ -364,7 +450,7 @@ class InscripcionRapidaComisionCursoView(LoginRequiredMixin, View):
             _scoped_comisiones_curso_queryset(request.user),
             pk=request.POST.get("comision"),
         )
-        if not comision.curso.programa_id:
+        if not comision.curso.programa_id and not comision.curso.inscripcion_libre:
             return JsonResponse(
                 {
                     "ok": False,
@@ -416,8 +502,13 @@ class InscripcionRapidaComisionCursoView(LoginRequiredMixin, View):
         return JsonResponse(
             {
                 "ok": True,
-                "message": f"Inscripción creada para {inscripcion.ciudadano.nombre_completo}.",
+                "message": (
+                    f"{inscripcion.ciudadano.nombre_completo} quedó en lista de espera."
+                    if inscripcion.estado == "en_espera"
+                    else f"Inscripción creada para {inscripcion.ciudadano.nombre_completo}."
+                ),
                 "inscripcion_id": inscripcion.pk,
+                "estado": inscripcion.estado,
             }
         )
 
@@ -634,17 +725,34 @@ class ComisionCursoUpdateView(LoginRequiredMixin, UpdateView):
         scoped_centros = filter_centros_queryset_for_user(
             Centro.objects.all(), self.request.user
         )
-        form.fields["curso"].queryset = Curso.objects.filter(
-            centro_id__in=scoped_centros.values_list("id", flat=True)
-        ).select_related("centro")
-        form.fields["ubicacion"].queryset = InstitucionUbicacion.objects.filter(
-            centro_id=self.object.curso.centro_id
-        ).select_related("localidad")
+        scoped_centros_ids = list(scoped_centros.values_list("id", flat=True))
+        form.fields["curso"].queryset = build_curso_queryset_for_centros(
+            scoped_centros_ids,
+            include_curso_ids=[self.object.curso_id],
+        )
+        form.fields["ubicacion"].queryset = build_ubicacion_queryset_for_centros(
+            [self.object.curso.centro_id],
+            include_ubicacion_ids=[self.object.ubicacion_id],
+        )
         return form
 
     def form_valid(self, form):
-        messages.success(self.request, "Comisión del curso actualizada exitosamente.")
+        messages.success(self.request, "Comision del curso actualizada exitosamente.")
+        if _is_ajax_request(self.request):
+            self.object = form.save()
+            return _modal_json_success_response(
+                self.get_success_url(),
+                "Comision del curso actualizada exitosamente.",
+            )
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if _is_ajax_request(self.request):
+            return _modal_json_error_response(
+                form,
+                "No se pudo actualizar la comision. Revisa los datos e intenta nuevamente.",
+            )
+        return super().form_invalid(form)
 
     def get_success_url(self):
         return _centro_cursos_tab_url(self.object.curso.centro_id, refresh=True)

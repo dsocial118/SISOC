@@ -6,6 +6,7 @@ from datetime import date
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Sexo
@@ -44,6 +45,77 @@ class VoucherParametriaSelectMultiple(forms.SelectMultiple):
         if value is not None and hasattr(value, "instance") and value.instance:
             option["attrs"]["data-programa-id"] = str(value.instance.programa_id)
         return option
+
+
+def _normalize_related_ids(values):
+    return [value for value in dict.fromkeys(values or []) if value]
+
+
+def build_plan_estudio_queryset_for_centro(
+    centro_provincia_id=None, include_plan_ids=None
+):
+    base_queryset = PlanVersionCurricular.objects.filter(activo=True)
+    if centro_provincia_id:
+        base_queryset = base_queryset.filter(provincia_id=centro_provincia_id)
+    else:
+        base_queryset = PlanVersionCurricular.objects.none()
+
+    include_plan_ids = _normalize_related_ids(include_plan_ids)
+    if include_plan_ids:
+        base_queryset = PlanVersionCurricular.objects.filter(
+            Q(pk__in=include_plan_ids) | Q(pk__in=base_queryset.values("pk"))
+        )
+
+    return base_queryset.select_related("sector", "modalidad_cursada").order_by(
+        "sector__nombre",
+        "modalidad_cursada__nombre",
+    )
+
+
+def build_voucher_parametria_queryset(include_voucher_ids=None):
+    base_queryset = VoucherParametria.objects.filter(activa=True)
+    include_voucher_ids = _normalize_related_ids(include_voucher_ids)
+    if include_voucher_ids:
+        base_queryset = VoucherParametria.objects.filter(
+            Q(pk__in=include_voucher_ids) | Q(pk__in=base_queryset.values("pk"))
+        )
+
+    return base_queryset.select_related("programa").order_by("nombre")
+
+
+def build_curso_queryset_for_centros(centro_ids, include_curso_ids=None):
+    base_queryset = Curso.objects.filter(
+        centro_id__in=_normalize_related_ids(centro_ids)
+    )
+    include_curso_ids = _normalize_related_ids(include_curso_ids)
+    if include_curso_ids:
+        manager = getattr(Curso, "all_objects", Curso._default_manager)
+        base_queryset = manager.filter(
+            Q(pk__in=include_curso_ids) | Q(pk__in=base_queryset.values("pk"))
+        )
+
+    return base_queryset.select_related("centro").order_by("nombre")
+
+
+def build_ubicacion_queryset_for_centros(centro_ids, include_ubicacion_ids=None):
+    base_queryset = InstitucionUbicacion.objects.filter(
+        centro_id__in=_normalize_related_ids(centro_ids)
+    )
+    include_ubicacion_ids = _normalize_related_ids(include_ubicacion_ids)
+    if include_ubicacion_ids:
+        manager = getattr(
+            InstitucionUbicacion,
+            "all_objects",
+            InstitucionUbicacion._default_manager,
+        )
+        base_queryset = manager.filter(
+            Q(pk__in=include_ubicacion_ids) | Q(pk__in=base_queryset.values("pk"))
+        )
+
+    return base_queryset.select_related("localidad").order_by(
+        "-es_principal",
+        "rol_ubicacion",
+    )
 
 
 class ReferenteModelChoiceField(forms.ModelChoiceField):
@@ -1255,9 +1327,7 @@ class InstitucionUbicacionForm(forms.ModelForm):
 
 class CursoForm(forms.ModelForm):
     plan_estudio = forms.ModelChoiceField(
-        queryset=PlanVersionCurricular.objects.filter(activo=True)
-        .select_related("sector", "modalidad_cursada")
-        .order_by("sector__nombre", "modalidad_cursada__nombre"),
+        queryset=build_plan_estudio_queryset_for_centro(),
         label="Plan Curricular",
         required=True,
         widget=forms.Select(attrs={"class": "form-control"}),
@@ -1278,10 +1348,16 @@ class CursoForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
         help_text="Al inscribirse, se valida y descuenta crédito del voucher del ciudadano.",
     )
-    voucher_parametrias = forms.ModelMultipleChoiceField(
-        queryset=VoucherParametria.objects.filter(activa=True).select_related(
-            "programa"
+    inscripcion_libre = forms.BooleanField(
+        label="Inscripción libre",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        help_text=(
+            "Permite altas públicas aunque el ciudadano todavía no exista en SISOC."
         ),
+    )
+    voucher_parametrias = forms.ModelMultipleChoiceField(
+        queryset=build_voucher_parametria_queryset(),
         label="Vouchers",
         required=False,
         widget=VoucherParametriaSelectMultiple(
@@ -1314,6 +1390,7 @@ class CursoForm(forms.ModelForm):
             "nombre",
             "estado",
             "usa_voucher",
+            "inscripcion_libre",
             "voucher_parametrias",
             "costo_creditos",
             "observaciones",
@@ -1322,17 +1399,18 @@ class CursoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["plan_estudio"].empty_label = "Seleccionar plan de estudio..."
-        self.fields["voucher_parametrias"].queryset = (
-            VoucherParametria.objects.filter(activa=True)
-            .select_related("programa")
-            .order_by("nombre")
-        )
         centro_id = None
         centro_provincia_id = None
+        current_plan_id = None
+        current_voucher_ids = []
 
         if self.instance and self.instance.pk and self.instance.centro_id:
             centro_id = self.instance.centro_id
             centro_provincia_id = self.instance.centro.provincia_id
+            current_plan_id = self.instance.plan_estudio_id
+            current_voucher_ids = list(
+                self.instance.voucher_parametrias.values_list("pk", flat=True)
+            )
         elif self.initial.get("centro"):
             centro = self.initial.get("centro")
             if isinstance(centro, Centro):
@@ -1348,22 +1426,19 @@ class CursoForm(forms.ModelForm):
                 .first()
             )
 
-        if centro_provincia_id:
-            self.fields["plan_estudio"].queryset = (
-                PlanVersionCurricular.objects.filter(
-                    activo=True,
-                    provincia_id=centro_provincia_id,
-                )
-                .select_related("sector", "modalidad_cursada")
-                .order_by("sector__nombre", "modalidad_cursada__nombre")
-            )
-        else:
-            self.fields["plan_estudio"].queryset = PlanVersionCurricular.objects.none()
+        self.fields["plan_estudio"].queryset = build_plan_estudio_queryset_for_centro(
+            centro_provincia_id,
+            include_plan_ids=[current_plan_id],
+        )
+        self.fields["voucher_parametrias"].queryset = build_voucher_parametria_queryset(
+            current_voucher_ids
+        )
 
     def clean(self):
         cleaned_data = super().clean()
         plan_estudio = cleaned_data.get("plan_estudio")
         usa_voucher = cleaned_data.get("usa_voucher")
+        inscripcion_libre = cleaned_data.get("inscripcion_libre")
         voucher_parametrias = cleaned_data.get("voucher_parametrias")
         costo_creditos = cleaned_data.get("costo_creditos")
 
@@ -1374,6 +1449,12 @@ class CursoForm(forms.ModelForm):
             )
         else:
             cleaned_data["modalidad"] = plan_estudio.modalidad_cursada
+
+        if usa_voucher and inscripcion_libre:
+            self.add_error(
+                "inscripcion_libre",
+                "No podés activar inscripción libre y voucher al mismo tiempo.",
+            )
 
         if usa_voucher and not voucher_parametrias:
             self.add_error(
@@ -1428,6 +1509,11 @@ class ComisionCursoForm(forms.ModelForm):
         min_value=1,
         widget=forms.NumberInput(attrs={"class": "form-control"}),
     )
+    acepta_lista_espera = forms.BooleanField(
+        label="Acepta Lista de Espera",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
     fecha_inicio = forms.DateField(
         label="Fecha de Inicio",
         widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
@@ -1453,6 +1539,7 @@ class ComisionCursoForm(forms.ModelForm):
             "curso",
             "ubicacion",
             "cupo_total",
+            "acepta_lista_espera",
             "fecha_inicio",
             "fecha_fin",
             "estado",
@@ -1462,6 +1549,7 @@ class ComisionCursoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         curso_id = None
+        current_ubicacion_id = self.instance.ubicacion_id if self.instance else None
 
         if self.is_bound:
             curso_id = self.data.get("curso")
@@ -1475,11 +1563,15 @@ class ComisionCursoForm(forms.ModelForm):
                 curso_id = curso_inicial
 
         if curso_id:
-            self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.filter(
-                centro_id=Curso.objects.filter(pk=curso_id)
+            centro_id = (
+                Curso.all_objects.filter(pk=curso_id)
                 .values_list("centro_id", flat=True)
                 .first()
-            ).select_related("localidad")
+            )
+            self.fields["ubicacion"].queryset = build_ubicacion_queryset_for_centros(
+                [centro_id],
+                include_ubicacion_ids=[current_ubicacion_id],
+            )
         else:
             self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.none()
 
@@ -1692,6 +1784,11 @@ class ComisionForm(forms.ModelForm):
         label="Cupo Total",
         widget=forms.NumberInput(attrs={"class": "form-control"}),
     )
+    acepta_lista_espera = forms.BooleanField(
+        label="Acepta Lista de Espera",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
     estado = forms.ChoiceField(
         label="Estado",
         choices=Comision.ESTADO_COMISION_CHOICES,
@@ -1713,6 +1810,7 @@ class ComisionForm(forms.ModelForm):
             "fecha_inicio",
             "fecha_fin",
             "cupo",
+            "acepta_lista_espera",
             "estado",
             "observaciones",
         ]
