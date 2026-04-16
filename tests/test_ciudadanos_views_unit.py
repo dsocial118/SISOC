@@ -17,8 +17,9 @@ class _Session(dict):
 def test_ciudadanos_list_view_get_queryset_filtra(mocker):
     qs = mocker.Mock()
     qs.filter.return_value = qs
-    qs.order_by.return_value = qs
-    mocker.patch("ciudadanos.views.Ciudadano.objects.order_by", return_value=qs)
+    order_by_mock = mocker.patch(
+        "ciudadanos.views.Ciudadano.objects.order_by", return_value=qs
+    )
 
     form = mocker.Mock()
     form.is_valid.return_value = True
@@ -30,7 +31,7 @@ def test_ciudadanos_list_view_get_queryset_filtra(mocker):
 
     result = view.get_queryset()
     assert result == qs
-    qs.order_by.assert_called_once_with("pk")
+    order_by_mock.assert_called_once_with("pk")
     assert qs.filter.called
 
 
@@ -98,7 +99,7 @@ def test_ciudadanos_list_view_build_page_range_sin_total():
     paginator = module.NoCountPaginator(list(range(80)), 25)
     page_obj = paginator.get_page(3)
 
-    assert module.CiudadanosListView.build_page_range(page_obj) == [1, 2, 3, 4, "…"]
+    assert module.build_no_count_page_range(page_obj) == [1, 2, 3, 4, "..."]
 
 
 def test_ciudadanos_detail_helpers_contexts(mocker):

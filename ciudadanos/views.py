@@ -21,6 +21,7 @@ from ciudadanos.forms import CiudadanoFiltroForm, CiudadanoForm, GrupoFamiliarFo
 from ciudadanos.models import Ciudadano, GrupoFamiliar
 from comedores.services.comedor_service import ComedorService
 from core.models import Localidad, Municipio
+from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.security import safe_redirect
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
@@ -81,70 +82,6 @@ def hydrate_ciudadanos_page(page_ids):
     return [ciudadanos_by_id[pk] for pk in page_ids if pk in ciudadanos_by_id]
 
 
-class NoCountPage:
-    """Representa una página sin requerir un COUNT(*) exacto."""
-
-    def __init__(self, object_list, number, paginator, has_next_page):
-        self.object_list = object_list
-        self.number = number
-        self.paginator = paginator
-        self._has_next_page = has_next_page
-
-    def has_next(self):
-        return self._has_next_page
-
-    def has_previous(self):
-        return self.number > 1
-
-    def has_other_pages(self):
-        return self.has_previous() or self.has_next()
-
-    def next_page_number(self):
-        return self.number + 1
-
-    def previous_page_number(self):
-        return self.number - 1
-
-
-class NoCountPaginator:
-    """Paginar por ventana evita el COUNT(*) sobre tablas grandes."""
-
-    count = None
-    num_pages = None
-    page_range = ()
-
-    def __init__(self, object_list, per_page):
-        self.object_list = object_list
-        self.per_page = per_page
-
-    @staticmethod
-    def _normalize_number(number):
-        try:
-            number = int(number)
-        except (TypeError, ValueError):
-            return 1
-        return number if number > 0 else 1
-
-    def _fetch_page(self, number):
-        slice_start = (number - 1) * self.per_page
-        slice_end = slice_start + self.per_page + 1
-        items = list(self.object_list[slice_start:slice_end])
-        has_next_page = len(items) > self.per_page
-        if has_next_page:
-            items = items[:-1]
-        return items, has_next_page
-
-    def get_page(self, number):
-        number = self._normalize_number(number)
-        items, has_next_page = self._fetch_page(number)
-
-        if not items and number > 1:
-            number -= 1
-            items, has_next_page = self._fetch_page(number)
-
-        return NoCountPage(items, number, self, has_next_page)
-
-
 class CiudadanosListView(LoginRequiredMixin, ListView):
     template_name = "ciudadanos/ciudadano_list.html"
     context_object_name = "ciudadanos"
@@ -164,30 +101,12 @@ class CiudadanosListView(LoginRequiredMixin, ListView):
         page_obj.object_list = object_list
         return paginator, page_obj, object_list, page_obj.has_other_pages()
 
-    @staticmethod
-    def build_page_range(page_obj, window=2):
-        start = max(1, page_obj.number - window)
-        page_range = []
-
-        if start > 1:
-            page_range.append(1)
-            if start > 2:
-                page_range.append("…")
-
-        page_range.extend(range(start, page_obj.number + 1))
-
-        if page_obj.has_next():
-            page_range.append(page_obj.number + 1)
-            page_range.append("…")
-
-        return page_range
-
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["filter_form"] = CiudadanoFiltroForm(self.request.GET or None)
         page_obj = ctx.get("page_obj")
         if page_obj and getattr(page_obj.paginator, "count", None) is None:
-            ctx["page_range"] = self.build_page_range(page_obj)
+            ctx["page_range"] = build_no_count_page_range(page_obj)
         return ctx
 
 
