@@ -936,6 +936,14 @@ class Curso(SoftDeleteModelMixin, models.Model):
         verbose_name="Usa Voucher",
         help_text="Si está activo, las inscripciones del curso validan y descuentan créditos de voucher.",
     )
+    inscripcion_libre = models.BooleanField(
+        default=False,
+        verbose_name="Inscripción libre",
+        help_text=(
+            "Si está activo, el curso admite altas públicas aunque el ciudadano "
+            "no exista todavía en SISOC."
+        ),
+    )
     voucher_parametrias = models.ManyToManyField(
         "VoucherParametria",
         related_name="cursos",
@@ -962,6 +970,15 @@ class Curso(SoftDeleteModelMixin, models.Model):
 
     def clean(self):
         from django.core.exceptions import ValidationError
+
+        if self.usa_voucher and self.inscripcion_libre:
+            raise ValidationError(
+                {
+                    "inscripcion_libre": (
+                        "Un curso no puede usar voucher e inscripción libre al mismo tiempo."
+                    )
+                }
+            )
 
         if self.usa_voucher and self.costo_creditos <= 0:
             raise ValidationError(
@@ -1074,6 +1091,14 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
     codigo_comision = models.CharField(max_length=50, verbose_name="Código de Comisión")
     nombre = models.CharField(max_length=255, verbose_name="Nombre")
     cupo_total = models.PositiveIntegerField(verbose_name="Cupo Total")
+    acepta_lista_espera = models.BooleanField(
+        default=False,
+        verbose_name="Acepta Lista de Espera",
+        help_text=(
+            "Si está activo, cuando la comisión se quede sin cupos "
+            "las nuevas inscripciones pasan a espera."
+        ),
+    )
     fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
     fecha_fin = models.DateField(verbose_name="Fecha de Fin")
     estado = models.CharField(
@@ -1311,6 +1336,14 @@ class Comision(SoftDeleteModelMixin, models.Model):
     fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
     fecha_fin = models.DateField(verbose_name="Fecha de Fin")
     cupo = models.PositiveIntegerField(verbose_name="Cupo Total")
+    acepta_lista_espera = models.BooleanField(
+        default=False,
+        verbose_name="Acepta Lista de Espera",
+        help_text=(
+            "Si está activo, cuando la comisión se quede sin cupos "
+            "las nuevas inscripciones pasan a espera."
+        ),
+    )
     estado = models.CharField(
         max_length=20,
         choices=ESTADO_COMISION_CHOICES,
@@ -1560,6 +1593,7 @@ class Inscripcion(SoftDeleteModelMixin, models.Model):
 
     ESTADO_INSCRIPCION_CHOICES = [
         ("pre_inscripta", "Pre-inscripta"),
+        ("en_espera", "En Espera"),
         ("inscripta", "Inscripta"),
         ("validada_presencial", "Validada Presencial"),
         ("completada", "Completada"),
@@ -1601,6 +1635,8 @@ class Inscripcion(SoftDeleteModelMixin, models.Model):
         on_delete=models.PROTECT,
         related_name="inscripciones_vat",
         verbose_name="Programa",
+        null=True,
+        blank=True,
     )
 
     estado = models.CharField(
@@ -1677,6 +1713,92 @@ class Inscripcion(SoftDeleteModelMixin, models.Model):
             models.Index(
                 fields=["ciudadano", "estado"],
                 name="vat_insc_ciu_est_idx",
+            ),
+        ]
+
+
+class SolicitudInscripcionPublica(SoftDeleteModelMixin, models.Model):
+    ESTADO_CHOICES = [
+        ("pendiente", "Pendiente"),
+        ("vinculada", "Vinculada"),
+        ("convertida", "Convertida"),
+        ("rechazada", "Rechazada"),
+    ]
+
+    comision_curso = models.ForeignKey(
+        ComisionCurso,
+        on_delete=models.CASCADE,
+        related_name="solicitudes_publicas",
+        verbose_name="Comisión de Curso",
+    )
+    ciudadano = models.ForeignKey(
+        Ciudadano,
+        on_delete=models.PROTECT,
+        related_name="solicitudes_publicas_vat",
+        verbose_name="Ciudadano",
+        null=True,
+        blank=True,
+    )
+    programa = models.ForeignKey(
+        Programa,
+        on_delete=models.PROTECT,
+        related_name="solicitudes_publicas_vat",
+        verbose_name="Programa",
+        null=True,
+        blank=True,
+    )
+    inscripcion = models.ForeignKey(
+        "Inscripcion",
+        on_delete=models.SET_NULL,
+        related_name="solicitudes_publicas",
+        verbose_name="Inscripción vinculada",
+        null=True,
+        blank=True,
+    )
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default="pendiente",
+        verbose_name="Estado",
+    )
+    origen_canal = models.CharField(
+        max_length=30,
+        choices=Inscripcion.ORIGEN_CANAL_CHOICES,
+        default="front_publico",
+        verbose_name="Origen del Canal",
+    )
+    datos_postulante = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Datos del postulante",
+    )
+    observaciones = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Observaciones",
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        documento = self.datos_postulante.get("documento") or "sin documento"
+        return (
+            f"Solicitud pública {self.comision_curso.codigo_comision} - "
+            f"{documento} [{self.estado}]"
+        )
+
+    class Meta:
+        verbose_name = "Solicitud pública de inscripción"
+        verbose_name_plural = "Solicitudes públicas de inscripción"
+        ordering = ["-fecha_creacion"]
+        indexes = [
+            models.Index(
+                fields=["comision_curso", "estado"],
+                name="vat_sol_pub_com_est_idx",
+            ),
+            models.Index(
+                fields=["ciudadano", "estado"],
+                name="vat_sol_pub_ciu_est_idx",
             ),
         ]
 
