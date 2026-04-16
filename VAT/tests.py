@@ -4466,6 +4466,12 @@ def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(client, vat_geo_d
     assert 'id="tablaComisionesCursoCentro"' not in content
     assert "loadCursosPanel" in content
     assert "cursosPageSizeSelect.value = '25';" in content
+    assert "row.addEventListener('click', lockRowFilter);" in content
+    assert "row.addEventListener('keydown', function(event)" in content
+    assert "row.addEventListener('mouseenter'" not in content
+    assert "row.addEventListener('focus'" not in content
+    assert "previewCursoId" not in content
+    assert "hoverFilterEnabled" not in content
 
 
 @pytest.mark.django_db
@@ -4554,6 +4560,10 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'class="curso-row"' in content
     assert f'data-curso-id="{_curso.id}"' in content
     assert 'data-curso-plan="Plan Industrial Inicial"' in content
+    assert (
+        'aria-label="Seleccionar curso Curso Filtrable para filtrar comisiones"'
+        in content
+    )
     assert "<td>Plan Industrial Inicial</td>" in content
     assert 'id="tablaComisionesCursoCentro"' in content
     assert "<th>Código</th>" in content
