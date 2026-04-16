@@ -3,6 +3,7 @@
 from datetime import date
 import json
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework import serializers
 from VAT.services.inscripcion_service import ESTADOS_INSCRIPCION_OCUPAN_CUPO
@@ -405,6 +406,31 @@ class CursoSerializer(serializers.ModelSerializer):
             "fecha_creacion",
             "fecha_modificacion",
         ]
+
+    def validate(self, attrs):
+        costo_creditos_default = Curso._meta.get_field("costo_creditos").get_default()
+        curso = Curso(
+            usa_voucher=attrs.get(
+                "usa_voucher",
+                getattr(self.instance, "usa_voucher", False),
+            ),
+            inscripcion_libre=attrs.get(
+                "inscripcion_libre",
+                getattr(self.instance, "inscripcion_libre", False),
+            ),
+            costo_creditos=attrs.get(
+                "costo_creditos",
+                getattr(self.instance, "costo_creditos", costo_creditos_default),
+            ),
+        )
+        try:
+            curso.clean()
+        except DjangoValidationError as exc:
+            detail = exc.message_dict if hasattr(exc, "message_dict") else exc.messages
+            raise serializers.ValidationError(detail) from exc
+
+        attrs["costo_creditos"] = curso.costo_creditos
+        return attrs
 
 
 class ComisionCursoSerializer(serializers.ModelSerializer):
