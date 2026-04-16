@@ -3,7 +3,11 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 
 from centrodeinfancia.models import CentroDeInfancia, IntervencionCentroInfancia
-from intervenciones.models.intervenciones import TipoContacto, TipoDestinatario, TipoIntervencion
+from intervenciones.models.intervenciones import (
+    TipoContacto,
+    TipoDestinatario,
+    TipoIntervencion,
+)
 
 
 @pytest.mark.django_db

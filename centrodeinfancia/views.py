@@ -1010,6 +1010,7 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
         context["plazo_ejecucion"] = "-"
         return context
 
+
 class NominaCentroInfanciaFormularioDetailView(LoginRequiredMixin, DetailView):
     model = NominaCentroInfancia
     template_name = "centrodeinfancia/nomina_formulario_detail.html"
@@ -1019,6 +1020,7 @@ class NominaCentroInfanciaFormularioDetailView(LoginRequiredMixin, DetailView):
         return _nomina_cdi_queryset_scoped(self.request.user).filter(
             centro_id=self.kwargs["pk"]
         )
+
 
 class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     model = NominaCentroInfancia
