@@ -1,5 +1,6 @@
 import importlib
 from datetime import date, time
+import json
 
 import pytest
 from django.contrib.auth.models import Group, User
@@ -326,10 +327,14 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
     assert 'name="save_continue"' not in content
     assert 'for="id_provincia"' not in content
     assert 'name="provincia"' in content
+    assert 'name="activo_present"' in content
+    assert "4. Estado de la sede" in content
 
 
 @pytest.mark.django_db
-def test_centro_update_permite_cambiar_activo(client, vat_geo_data):
+def test_centro_update_conserva_activo_si_el_form_no_envia_el_switch(
+    client, vat_geo_data
+):
     provincia_ba, municipio_ba, localidad_ba = vat_geo_data
     user = User.objects.create_superuser(
         username="admin-vat-update-activo",
@@ -384,6 +389,92 @@ def test_centro_update_permite_cambiar_activo(client, vat_geo_data):
         localidad_ba,
         nombre="CFP Estado Editable",
         codigo="500144999",
+        **{
+            "contactos-TOTAL_FORMS": "1",
+            "contactos-INITIAL_FORMS": "1",
+            "contactos-MIN_NUM_FORMS": "0",
+            "contactos-MAX_NUM_FORMS": "1000",
+            "contactos-0-id": str(contacto.id),
+            "contactos-0-centro": str(centro.id),
+            "contactos-0-nombre_contacto": "Ana Perez",
+            "contactos-0-rol_area": "Dirección",
+            "contactos-0-documento": "30111223",
+            "contactos-0-telefono_contacto": "221-3333333",
+            "contactos-0-email_contacto": "ana@vat.test",
+            "contactos-0-es_principal": "on",
+        },
+    )
+    update_payload.pop("provincia", None)
+    update_payload.pop("activo", None)
+
+    response = client.post(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
+        data=update_payload,
+    )
+
+    centro.refresh_from_db()
+
+    assert response.status_code == 302
+    assert centro.activo is True
+
+
+@pytest.mark.django_db
+def test_centro_update_permite_desactivar_activo_desde_switch(client, vat_geo_data):
+    provincia_ba, municipio_ba, localidad_ba = vat_geo_data
+    user = User.objects.create_superuser(
+        username="admin-vat-desactiva-centro",
+        email="admin-vat-desactiva-centro@vat.test",
+        password="test1234",
+    )
+    _assign_user_profile_provincia(user, provincia_ba)
+    group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user(
+        username="referente-desactiva-centro",
+        email="referente-desactiva-centro@vat.test",
+        password="test1234",
+    )
+    referente.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Estado Editable",
+        codigo="500144998",
+        provincia=provincia_ba,
+        municipio=municipio_ba,
+        localidad=localidad_ba,
+        calle="12",
+        numero=100,
+        domicilio_actividad="Calle 12 N° 100",
+        telefono="221-1111111",
+        celular="221-2222222",
+        correo="cfp-estado-off@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Perez",
+        telefono_referente="221-3333333",
+        correo_referente="ana@vat.test",
+        referente=referente,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    contacto = InstitucionContacto.objects.create(
+        centro=centro,
+        nombre_contacto="Ana Perez",
+        documento="30111223",
+        rol_area="Dirección",
+        telefono_contacto="221-3333333",
+        email_contacto="ana@vat.test",
+        es_principal=True,
+    )
+    client.force_login(user)
+
+    update_payload = _build_centro_payload(
+        referente,
+        provincia_ba,
+        municipio_ba,
+        localidad_ba,
+        nombre="CFP Estado Editable",
+        codigo="500144998",
+        activo_present="1",
         **{
             "contactos-TOTAL_FORMS": "1",
             "contactos-INITIAL_FORMS": "1",
@@ -845,6 +936,44 @@ def test_centro_update_no_reactiva_centros_inactivos(
 
 
 @pytest.mark.django_db
+def test_centro_update_permite_reactivar_centros_inactivos_desde_switch(
+    vat_admin_client, vat_referente_user, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    admin_user = User.objects.get(username="admin-vat")
+    _assign_user_profile_provincia(admin_user, provincia)
+    payload = _build_centro_payload(
+        vat_referente_user, provincia, municipio, localidad, save_continue="1"
+    )
+    vat_admin_client.post(reverse("vat_centro_create"), data=payload)
+
+    centro = Centro.objects.get(codigo="500144900")
+    centro.activo = False
+    centro.save(update_fields=["activo"])
+
+    update_payload = _build_centro_payload(
+        vat_referente_user,
+        provincia,
+        municipio,
+        localidad,
+        nombre="Centro reactivado",
+        codigo="500144902",
+        activo_present="1",
+    )
+
+    response = vat_admin_client.post(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
+        data=update_payload,
+    )
+
+    centro.refresh_from_db()
+
+    assert response.status_code == 302
+    assert centro.nombre == "Centro reactivado"
+    assert centro.activo is True
+
+
+@pytest.mark.django_db
 def test_centro_list_usuario_provincial_solo_ve_su_provincia(client):
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     provincia_sf = Provincia.objects.create(nombre="Santa Fe")
@@ -1013,6 +1142,121 @@ def test_filter_centros_queryset_usuario_con_role_provincia_vat_aplica_scope():
     centros = list(filter_centros_queryset_for_user(Centro.objects.all(), user))
 
     assert centros == [centro_corrientes]
+
+
+@pytest.mark.django_db
+def test_vat_centro_list_filters_config_expone_solo_nombre_y_codigo(mocker):
+    user = User.objects.create_superuser(
+        username="admin-vat-filtros",
+        email="admin-filtros@vat.test",
+        password="test1234",
+    )
+    request = RequestFactory().get("/vat/centros/")
+    request.user = user
+
+    mocker.patch.object(centro_views, "reverse", side_effect=lambda name: f"/{name}/")
+
+    view = centro_views.CentroListView()
+    view.request = request
+    view.kwargs = {}
+    view.object_list = Centro.objects.none()
+    context = view.get_context_data()
+
+    assert [field["name"] for field in context["filters_config"]["fields"]] == [
+        "nombre",
+        "codigo",
+    ]
+
+
+@pytest.mark.django_db
+def test_vat_centro_list_filtra_por_cue_actual_en_codigo(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_superuser(
+        username="centro-filtro-cue",
+        email="centro-filtro-cue@vat.test",
+        password="test1234",
+    )
+
+    centro_match = Centro.objects.create(
+        nombre="Centro CUE vigente",
+        codigo="LEG-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="7",
+        numero=123,
+        domicilio_actividad="Calle 7",
+        telefono="221-111111",
+        celular="221-111112",
+        correo="cue@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Perez",
+        telefono_referente="221-111113",
+        correo_referente="refcue@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    InstitucionIdentificadorHist.objects.create(
+        centro=centro_match,
+        tipo_identificador="cue",
+        valor_identificador="500144900",
+        rol_institucional="sede",
+        es_actual=True,
+    )
+    centro_other = Centro.objects.create(
+        nombre="Centro sin match",
+        codigo="LEG-002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8",
+        telefono="221-222221",
+        celular="221-222222",
+        correo="other@vat.test",
+        nombre_referente="Juan",
+        apellido_referente="Gomez",
+        telefono_referente="221-222223",
+        correo_referente="refother@vat.test",
+        tipo_gestion="Privada",
+        clase_institucion="Capacitación Laboral",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    InstitucionIdentificadorHist.objects.create(
+        centro=centro_other,
+        tipo_identificador="cue",
+        valor_identificador="500144901",
+        rol_institucional="sede",
+        es_actual=True,
+    )
+
+    request = RequestFactory().get(
+        "/vat/centros/",
+        data={
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {
+                            "field": "codigo",
+                            "op": "contains",
+                            "value": "500144900",
+                        }
+                    ],
+                }
+            )
+        },
+    )
+    request.user = user
+
+    view = centro_views.CentroListView()
+    view.request = request
+
+    assert list(view.get_queryset()) == [centro_match]
 
 
 @pytest.mark.django_db
@@ -4222,6 +4466,12 @@ def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(client, vat_geo_d
     assert 'id="tablaComisionesCursoCentro"' not in content
     assert "loadCursosPanel" in content
     assert "cursosPageSizeSelect.value = '25';" in content
+    assert "row.addEventListener('click', lockRowFilter);" in content
+    assert "row.addEventListener('keydown', function(event)" in content
+    assert "row.addEventListener('mouseenter'" not in content
+    assert "row.addEventListener('focus'" not in content
+    assert "previewCursoId" not in content
+    assert "hoverFilterEnabled" not in content
 
 
 @pytest.mark.django_db
@@ -4310,6 +4560,10 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'class="curso-row"' in content
     assert f'data-curso-id="{_curso.id}"' in content
     assert 'data-curso-plan="Plan Industrial Inicial"' in content
+    assert (
+        'aria-label="Seleccionar curso Curso Filtrable para filtrar comisiones"'
+        in content
+    )
     assert "<td>Plan Industrial Inicial</td>" in content
     assert 'id="tablaComisionesCursoCentro"' in content
     assert "<th>Código</th>" in content
@@ -4323,6 +4577,7 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'id="comisionesFilterCurso"' in content
     assert 'id="comisionesFilterEstado"' in content
     assert 'id="comisionesFilterPageSize"' in content
+    assert '<option value="25" selected>25</option>' in content
     assert 'id="comisionesFilterClear"' in content
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content

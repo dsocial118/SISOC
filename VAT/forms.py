@@ -51,6 +51,12 @@ def _normalize_related_ids(values):
     return [value for value in dict.fromkeys(values or []) if value]
 
 
+def _get_including_deleted_manager(model_class):
+    """Devuelve el manager publico con borrados incluidos cuando existe."""
+
+    return getattr(model_class, "all_objects", model_class.objects)
+
+
 def build_plan_estudio_queryset_for_centro(
     centro_provincia_id=None, include_plan_ids=None
 ):
@@ -89,7 +95,7 @@ def build_curso_queryset_for_centros(centro_ids, include_curso_ids=None):
     )
     include_curso_ids = _normalize_related_ids(include_curso_ids)
     if include_curso_ids:
-        manager = getattr(Curso, "all_objects", Curso._default_manager)
+        manager = _get_including_deleted_manager(Curso)
         base_queryset = manager.filter(
             Q(pk__in=include_curso_ids) | Q(pk__in=base_queryset.values("pk"))
         )
@@ -103,11 +109,7 @@ def build_ubicacion_queryset_for_centros(centro_ids, include_ubicacion_ids=None)
     )
     include_ubicacion_ids = _normalize_related_ids(include_ubicacion_ids)
     if include_ubicacion_ids:
-        manager = getattr(
-            InstitucionUbicacion,
-            "all_objects",
-            InstitucionUbicacion._default_manager,
-        )
+        manager = _get_including_deleted_manager(InstitucionUbicacion)
         base_queryset = manager.filter(
             Q(pk__in=include_ubicacion_ids) | Q(pk__in=base_queryset.values("pk"))
         )
@@ -488,6 +490,7 @@ class CentroAltaForm(CentroForm):
         provincia_inicial = kwargs.pop("provincia_inicial", None)
         super().__init__(*args, **kwargs)
         self.fields["activo"].required = False
+        self.fields["activo"].widget.attrs["class"] = "form-check-input"
         for hidden_field in [
             "nombre_referente",
             "apellido_referente",
@@ -585,6 +588,12 @@ class CentroAltaForm(CentroForm):
             self.cleaned_data.get("telefono_referente"),
             "El teléfono del director/a",
         )
+
+    def clean_activo(self):
+        activo = self.cleaned_data.get("activo")
+        if self.instance.pk and "activo_present" not in self.data:
+            return self.instance.activo
+        return activo
 
     def clean_autoridad_dni(self):
         return _clean_numeric_text(
