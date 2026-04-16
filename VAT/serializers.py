@@ -1154,7 +1154,12 @@ def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario
 
     nombre = (datos_postulante.get("nombre") or "").strip()
     apellido = (datos_postulante.get("apellido") or "").strip()
-    documento = str(datos_postulante.get("documento") or "").strip()
+    documento_explicitado = str(datos_postulante.get("documento") or "").strip()
+    cuil = str(datos_postulante.get("cuil") or "").strip()
+    usa_cuil_como_documento = not documento_explicitado and bool(cuil)
+    documento = documento_explicitado or cuil
+    if usa_cuil_como_documento:
+        documento = "".join(caracter for caracter in documento if caracter.isdigit())
     tipo_documento = (datos_postulante.get("tipo_documento") or Ciudadano.DOCUMENTO_DNI).strip()
 
     errores = {}
@@ -1163,7 +1168,7 @@ def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario
     if not apellido:
         errores["apellido"] = "Debe informar el apellido del postulante."
     if not documento:
-        errores["documento"] = "Debe informar el documento del postulante."
+        errores["documento"] = "Debe informar el documento o cuil del postulante."
     elif not documento.isdigit():
         errores["documento"] = "El documento del postulante debe ser numérico."
 
@@ -1199,6 +1204,10 @@ def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario
     else:
         observaciones.append(
             "Fecha de nacimiento no informada; se asignó 1900-01-01 para habilitar la inscripción operativa."
+        )
+    if usa_cuil_como_documento:
+        observaciones.append(
+            "Se tomó el CUIL informado como documento para el alta automática."
         )
 
     usuario_auditoria = (

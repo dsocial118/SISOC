@@ -3200,6 +3200,65 @@ def test_api_vat_web_inscripcion_libre_crea_inscripcion_operativa_sin_ciudadano(
     assert curso_resultado["inscripcion_libre"] is True
 
 
+@pytest.mark.django_db
+def test_api_vat_web_inscripcion_libre_usa_cuil_como_documento_si_no_viene_documento(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Inscripción Libre con CUIL",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="LIBRE-CUIL-01",
+        nombre="Comisión Libre con CUIL",
+        cupo_total=20,
+        fecha_inicio=date(2026, 6, 1),
+        fecha_fin=date(2026, 7, 1),
+        estado="activa",
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/web/inscripciones/",
+        {
+            "comision_curso_id": comision.id,
+            "estado": "pre_inscripta",
+            "datos_postulante": {
+                "nombre": "Leylen Nahir",
+                "apellido": "PINTO",
+                "fecha_nacimiento": "1993-04-26",
+                "genero": "F",
+                "email": "leylenpinto718@gmail.com",
+                "telefono": "+54-3705-201750",
+                "nivel_estudio": "secundario_incompleto",
+                "tipo_documento": "DNI",
+                "cuil": "27375343520",
+                "actual_calle": "Barrio salvador rugeri",
+                "actual_numero": "Mz 21 cs 20",
+                "actual_entre_calles": "Mz 21 cs 20",
+                "actual_municipio_nombre": "Formosa",
+                "actual_provincia_nombre": "Formosa",
+            },
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    ciudadano = Ciudadano.objects.get(pk=payload["ciudadano"])
+    assert ciudadano.documento == 27375343520
+    assert ciudadano.fecha_nacimiento == date(1993, 4, 26)
+    assert "CUIL informado como documento" in (ciudadano.observaciones or "")
+
+    inscripcion = Inscripcion.objects.get(pk=payload["id"])
+    solicitud = SolicitudInscripcionPublica.objects.get(inscripcion=inscripcion)
+    assert solicitud.datos_postulante["cuil"] == "27375343520"
+
 
 
 @pytest.mark.django_db
