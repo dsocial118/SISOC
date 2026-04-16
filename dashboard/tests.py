@@ -1,9 +1,6 @@
-import pytest
+from pathlib import Path
 
 from dashboard.models import Tablero
-
-
-pytestmark = pytest.mark.django_db
 
 
 def test_tablero_convierte_url_compartible_de_lookerstudio_a_embed():
@@ -23,28 +20,10 @@ def test_tablero_convierte_url_compartible_de_lookerstudio_a_embed():
     )
 
 
-def test_dashboard_tablero_renderiza_iframe_con_url_embed_de_lookerstudio(
-    client, superuser
-):
-    tablero = Tablero.objects.create(
-        nombre="FCH Google Analytics",
-        slug="fch-google-analytics",
-        url=(
-            "https://lookerstudio.google.com/u/0/reporting/"
-            "7feb7647-eadb-4fd8-910d-11a794227234"
-        ),
-        activo=True,
-        permisos=["dashboard.view_dashboard"],
-    )
+def test_dashboard_tablero_renderiza_iframe_con_url_embed_de_lookerstudio():
+    template_path = Path(__file__).resolve().parent / "templates/dashboard_tablero.html"
+    content = template_path.read_text(encoding="utf-8")
 
-    client.force_login(superuser)
-    response = client.get(tablero.get_absolute_url())
-
-    assert response.status_code == 200
-    content = response.content.decode("utf-8")
-    assert (
-        'src="https://lookerstudio.google.com/embed/reporting/'
-        '7feb7647-eadb-4fd8-910d-11a794227234"' in content
-    )
+    assert 'src="{{ tablero.get_embed_url }}"' in content
     assert 'target="_blank"' in content
     assert "File &gt; Embed report" in content

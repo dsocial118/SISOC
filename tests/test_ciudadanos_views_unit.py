@@ -1,5 +1,6 @@
 """Tests unitarios para ciudadanos.views."""
 
+from contextlib import nullcontext
 from types import SimpleNamespace
 
 from ciudadanos import views as module
@@ -398,6 +399,7 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
     )
     form = SimpleNamespace(save=lambda commit=False: ciudadano, save_m2m=mocker.Mock())
     create_view.request = SimpleNamespace(user=SimpleNamespace(id=2))
+    mocker.patch("ciudadanos.views.transaction.atomic", return_value=nullcontext())
     mocker.patch("ciudadanos.views.messages.success")
     mocker.patch("ciudadanos.views.redirect", return_value="redir")
     assert create_view.form_valid(form) == "redir"
