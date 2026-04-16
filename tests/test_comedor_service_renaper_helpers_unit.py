@@ -676,17 +676,8 @@ def test_crear_admision_desde_comedor_flows(mocker):
         "comedores.services.comedor_service.impl.Admision.objects.create",
         return_value=adm,
     )
-    mocker.patch(
-        "comedores.services.comedor_service.impl.Hitos.objects.filter",
-        return_value=SimpleNamespace(exists=lambda: False),
-    )
-    hitos_create = mocker.patch(
-        "comedores.services.comedor_service.impl.Hitos.objects.create"
-    )
-
     out_ok = module.ComedorService.crear_admision_desde_comedor(request, comedor)
     assert out_ok[0][0] == "comedor_detalle"
-    assert hitos_create.called
     assert success.call_count >= 1
 
 

@@ -45,7 +45,6 @@ from comedores.utils import (
 )
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
 from core.models import Provincia, Municipio, Localidad, Nacionalidad
-from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
@@ -571,13 +570,6 @@ def _validar_creacion_admision_desde_comedor(request, comedor, tipo_admision):
         )
         return _safe_redirect_comedor_detalle(request, comedor.pk)
     return None
-
-
-def _ensure_hito_para_comedor(comedor):
-    if Hitos.objects.filter(comedor=comedor).exists():
-        return True
-    Hitos.objects.create(comedor=comedor)
-    return False
 
 
 class ComedorService:
@@ -1482,19 +1474,9 @@ class ComedorService:
             comedor=comedor,
             tipo=tipo_admision,
         )
-        hitos_ya_existian = _ensure_hito_para_comedor(comedor)
-        if hitos_ya_existian:
-            messages.info(
-                request,
-                "El comedor ya tiene hitos registrados.",
-            )
         messages.success(
             request,
             f"Se creó una nueva admisión de tipo '{nueva_admision.get_tipo_display()}' correctamente.",
-        )
-        messages.success(
-            request,
-            "Se creó una nuevo hito correctamente.",
         )
 
         # 🔁 Redirigir al mismo comedor
