@@ -21,10 +21,65 @@ from ciudadanos.forms import CiudadanoFiltroForm, CiudadanoForm, GrupoFamiliarFo
 from ciudadanos.models import Ciudadano, GrupoFamiliar
 from comedores.services.comedor_service import ComedorService
 from core.models import Localidad, Municipio
+from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.security import safe_redirect
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 logger = logging.getLogger("django")
+
+LIST_RELATED_FIELDS = ("sexo", "provincia")
+LIST_ONLY_FIELDS = (
+    "id",
+    "apellido",
+    "nombre",
+    "documento",
+    "sexo",
+    "sexo__sexo",
+    "provincia",
+    "provincia__nombre",
+)
+
+
+def apply_ciudadanos_filters(queryset, cleaned_data):
+    """Aplica filtros indexables cuando el término es numérico."""
+
+    term = (cleaned_data.get("q") or "").strip()
+    provincia = cleaned_data.get("provincia")
+
+    if term:
+        if term.isdigit():
+            if len(term) < 7:
+                return queryset.none()
+            queryset = queryset.filter(Ciudadano.documento_prefix_filter(term))
+        else:
+            queryset = queryset.filter(
+                Q(apellido__icontains=term) | Q(nombre__icontains=term)
+            )
+
+    if provincia:
+        queryset = queryset.filter(provincia=provincia)
+
+    return queryset
+
+
+def build_ciudadanos_list_row_queryset():
+    """Prepara solo las relaciones y columnas que usa la grilla."""
+
+    return (
+        Ciudadano.objects.select_related(*LIST_RELATED_FIELDS)
+        .only(*LIST_ONLY_FIELDS)
+        .order_by("pk")
+    )
+
+
+def hydrate_ciudadanos_page(page_ids):
+    """Hidrata solo las filas visibles manteniendo el orden de paginación."""
+
+    ciudadanos_by_id = {
+        ciudadano.pk: ciudadano
+        for ciudadano in build_ciudadanos_list_row_queryset().filter(pk__in=page_ids)
+    }
+    return [ciudadanos_by_id[pk] for pk in page_ids if pk in ciudadanos_by_id]
 
 
 class CiudadanosListView(LoginRequiredMixin, ListView):
@@ -33,26 +88,25 @@ class CiudadanosListView(LoginRequiredMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        queryset = Ciudadano.objects.select_related(
-            "sexo", "provincia", "municipio", "localidad"
-        )
+        queryset = Ciudadano.objects.order_by("pk")
         form = CiudadanoFiltroForm(self.request.GET or None)
         if form.is_valid():
-            data = form.cleaned_data
-            if data.get("q"):
-                term = data["q"].strip()
-                queryset = queryset.filter(
-                    Q(apellido__icontains=term)
-                    | Q(nombre__icontains=term)
-                    | Q(documento__icontains=term)
-                )
-            if data.get("provincia"):
-                queryset = queryset.filter(provincia=data["provincia"])
-        return queryset.order_by("apellido", "nombre")
+            queryset = apply_ciudadanos_filters(queryset, form.cleaned_data)
+        return queryset
+
+    def paginate_queryset(self, queryset, page_size):
+        paginator = NoCountPaginator(queryset.values_list("pk", flat=True), page_size)
+        page_obj = paginator.get_page(self.request.GET.get(self.page_kwarg))
+        object_list = hydrate_ciudadanos_page(page_obj.object_list)
+        page_obj.object_list = object_list
+        return paginator, page_obj, object_list, page_obj.has_other_pages()
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["filter_form"] = CiudadanoFiltroForm(self.request.GET or None)
+        page_obj = ctx.get("page_obj")
+        if page_obj and getattr(page_obj.paginator, "count", None) is None:
+            ctx["page_range"] = build_no_count_page_range(page_obj)
         return ctx
 
 
