@@ -1428,6 +1428,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (modalEditarLegajo) {
     const selectMunicipio = document.getElementById('editar-municipio');
     const selectLocalidad = document.getElementById('editar-localidad');
+    const selectNacionalidad = document.getElementById('editar-nacionalidad');
     
     if (selectMunicipio && selectLocalidad) {
       const refreshSelect2 = (target) => {
@@ -1546,6 +1547,9 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('editar-fecha-nacimiento').value = legajo.fecha_nacimiento;
           document.getElementById('editar-sexo').value = legajo.sexo || '';
           document.getElementById('editar-nacionalidad').value = legajo.nacionalidad || '';
+          if (selectNacionalidad && window.refreshSelect2Element) {
+            window.refreshSelect2Element(selectNacionalidad);
+          }
           document.getElementById('editar-telefono').value = legajo.telefono;
           document.getElementById('editar-email').value = legajo.email;
           document.getElementById('editar-calle').value = legajo.calle;
@@ -1580,6 +1584,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (selectMunicipio && selectLocalidad && window.refreshSelect2Element) {
         window.refreshSelect2Element(selectMunicipio);
         window.refreshSelect2Element(selectLocalidad);
+      }
+      if (selectNacionalidad && window.refreshSelect2Element) {
+        window.refreshSelect2Element(selectNacionalidad);
       }
     });
 

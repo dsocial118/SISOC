@@ -3,6 +3,7 @@ from datetime import date, time
 import json
 
 import pytest
+from bs4 import BeautifulSoup
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -4546,6 +4547,8 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     client.force_login(user)
     response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
     content = response.content.decode("utf-8")
+    soup = BeautifulSoup(content, "html.parser")
+    comisiones_filter_curso = soup.select_one("#comisionesFilterCurso")
 
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
@@ -4582,6 +4585,9 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
     assert 'title="Gestionar Comisión"' in content
+    assert comisiones_filter_curso is not None
+    assert "select2" in comisiones_filter_curso.get("class", [])
+    assert comisiones_filter_curso.get("data-width") == "100%"
 
 
 @pytest.mark.django_db
@@ -4648,6 +4654,8 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     client.force_login(user)
     response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
     content = response.content.decode("utf-8")
+    soup = BeautifulSoup(content, "html.parser")
+    selector_sector = soup.select_one("#planCurricularSelectorSector")
 
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
@@ -4670,6 +4678,10 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert f'value="{plan.id}"' in content
     assert f'value="{plan_inactivo.id}"' not in content
     assert f'value="{plan_otra_provincia.id}"' not in content
+    assert selector_sector is not None
+    assert "select2" in selector_sector.get("class", [])
+    assert selector_sector.get("data-width") == "100%"
+    assert selector_sector.get("data-dropdown-parent") == "#modalPlanCurricularSelector"
 
 
 @pytest.mark.django_db

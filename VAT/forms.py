@@ -822,7 +822,7 @@ class SubsectorForm(forms.ModelForm):
     sector = forms.ModelChoiceField(
         queryset=Sector.objects.all(),
         label="Sector",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs=_select2_attrs(placeholder="Seleccionar sector...")),
     )
     nombre = forms.CharField(
         label="Nombre del Subsector",
@@ -865,7 +865,12 @@ class TituloReferenciaForm(forms.ModelForm):
         queryset=PlanVersionCurricular.objects.filter(activo=True),
         label="Plan de Estudio",
         required=False,
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(
+                placeholder="Seleccionar plan de estudio...",
+                allow_clear=True,
+            )
+        ),
     )
 
     class Meta:
@@ -916,18 +921,25 @@ class PlanVersionCurricularForm(forms.ModelForm):
     sector = forms.ModelChoiceField(
         queryset=Sector.objects.all(),
         label="Sector",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs=_select2_attrs(placeholder="Seleccionar sector...")),
     )
     subsector = forms.ModelChoiceField(
         queryset=Subsector.objects.all(),
         label="Subsector",
         required=False,
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(
+                placeholder="Seleccionar subsector...",
+                allow_clear=True,
+            )
+        ),
     )
     modalidad_cursada = forms.ModelChoiceField(
         queryset=ModalidadCursada.objects.all(),
         label="Modalidad",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar modalidad...")
+        ),
     )
     normativa_tipo = forms.ChoiceField(
         label="Normativa - Tipo",
@@ -1260,7 +1272,9 @@ class InstitucionIdentificadorHistForm(forms.ModelForm):
         label="Ubicación Asociada",
         required=False,
         widget=forms.Select(
-            attrs=_select2_attrs(placeholder="Seleccionar ubicación...", allow_clear=True)
+            attrs=_select2_attrs(
+                placeholder="Seleccionar ubicación...", allow_clear=True
+            )
         ),
     )
     es_actual = forms.BooleanField(
@@ -1831,7 +1845,9 @@ class ComisionForm(forms.ModelForm):
         label="Ubicación",
         required=False,
         widget=forms.Select(
-            attrs=_select2_attrs(placeholder="Seleccionar ubicación...", allow_clear=True)
+            attrs=_select2_attrs(
+                placeholder="Seleccionar ubicación...", allow_clear=True
+            )
         ),
     )
     codigo_comision = forms.CharField(
@@ -1890,7 +1906,9 @@ class ComisionHorarioForm(forms.ModelForm):
     comision = forms.ModelChoiceField(
         queryset=Comision.objects.all(),
         label="Comisión",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar comisión...")
+        ),
     )
     dia_semana = forms.ModelChoiceField(
         queryset=Dia.objects.all(),
@@ -1932,7 +1950,9 @@ class ComisionCursoHorarioForm(forms.ModelForm):
     comision_curso = forms.ModelChoiceField(
         queryset=ComisionCurso.objects.all(),
         label="Comisión de Curso",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar comisión de curso...")
+        ),
     )
     dia_semana = forms.ModelChoiceField(
         queryset=Dia.objects.all(),
@@ -2076,7 +2096,9 @@ class EvaluacionForm(forms.ModelForm):
     comision = forms.ModelChoiceField(
         queryset=Comision.objects.all(),
         label="Comisión",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar comisión...")
+        ),
     )
     tipo = forms.ChoiceField(
         label="Tipo de Evaluación",
@@ -2129,12 +2151,16 @@ class ResultadoEvaluacionForm(forms.ModelForm):
     evaluacion = forms.ModelChoiceField(
         queryset=Evaluacion.objects.all(),
         label="Evaluación",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar evaluación...")
+        ),
     )
     inscripcion = forms.ModelChoiceField(
         queryset=Inscripcion.objects.all(),
         label="Inscripción",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar inscripción...")
+        ),
     )
     calificacion = forms.DecimalField(
         label="Calificación",
