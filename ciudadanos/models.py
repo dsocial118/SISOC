@@ -58,8 +58,8 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         max_digits=9, decimal_places=6, null=True, blank=True
     )
 
-    telefono = models.CharField(max_length=30, null=True, blank=True)
-    telefono_alternativo = models.CharField(max_length=30, null=True, blank=True)
+    telefono = models.CharField(max_length=50, null=True, blank=True)
+    telefono_alternativo = models.CharField(max_length=50, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
 
     ESTADO_CIVIL_CHOICES = [
