@@ -196,7 +196,9 @@
                             <label for="comisionesFilterCurso"
                                    class="form-label small fw-semibold text-uppercase mb-1"
                                    style="letter-spacing:.05em">Curso</label>
-                            <select id="comisionesFilterCurso" class="form-select form-select-sm">
+                            <select id="comisionesFilterCurso"
+                                    class="form-select form-select-sm select2"
+                                    data-width="100%">
                                 <option value="">Todos los cursos</option>
                                 {% for curso in cursos %}<option value="{{ curso.id }}">{{ curso.nombre }}</option>{% endfor %}
                             </select>
@@ -435,7 +437,10 @@
                             <label for="planCurricularSelectorSector"
                                    class="form-label small fw-semibold text-uppercase mb-1"
                                    style="letter-spacing:.05em">Sector</label>
-                            <select id="planCurricularSelectorSector" class="form-select form-select-sm">
+                            <select id="planCurricularSelectorSector"
+                                    class="form-select form-select-sm select2"
+                                    data-width="100%"
+                                    data-dropdown-parent="#modalPlanCurricularSelector">
                                 <option value="">Todos los sectores</option>
                             </select>
                         </div>

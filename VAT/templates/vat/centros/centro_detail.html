@@ -2516,9 +2516,21 @@
 
             if (!sectorSelect || !subsectorSelect) return;
 
+            function refreshSelect2(target) {
+                if (window.refreshSelect2Element) {
+                    window.refreshSelect2Element(target);
+                }
+            }
+
+            if (window.initSelect2Elements) {
+                window.initSelect2Elements(sectorSelect);
+                window.initSelect2Elements(subsectorSelect);
+            }
+
             function loadSubsectores(selectedSubsectorId) {
                 var sectorId = sectorSelect.value;
                 subsectorSelect.innerHTML = '<option value="">---------</option>';
+                refreshSelect2(subsectorSelect);
 
                 if (!sectorId) return;
 
@@ -2536,6 +2548,7 @@
                         }
                         subsectorSelect.appendChild(opt);
                     });
+                    refreshSelect2(subsectorSelect);
                 });
             }
 
@@ -2679,6 +2692,10 @@
             var defaultHint = hint ? hint.textContent : '';
             var lockedCursoId = '';
             var lockedCursoNombre = '';
+
+            if (window.initSelect2Elements && comisionesCursoSelect) {
+                window.initSelect2Elements(comisionesCursoSelect);
+            }
 
             function normalizeText(value) {
                 return (value || '')
@@ -2848,6 +2865,16 @@
             function syncCursoSelect(cursoId) {
                 if (comisionesCursoSelect) {
                     comisionesCursoSelect.value = cursoId || '';
+                    if (
+                        window.jQuery
+                        && window.jQuery.fn
+                        && window.jQuery.fn.select2
+                        && window.jQuery(comisionesCursoSelect).data('select2')
+                    ) {
+                        window.jQuery(comisionesCursoSelect)
+                            .val(cursoId || '')
+                            .trigger('change.select2');
+                    }
                 }
             }
 
@@ -2934,9 +2961,7 @@
                     if (comisionesSearchInput) {
                         comisionesSearchInput.value = '';
                     }
-                    if (comisionesCursoSelect) {
-                        comisionesCursoSelect.value = '';
-                    }
+                    syncCursoSelect('');
                     if (comisionesEstadoSelect) {
                         comisionesEstadoSelect.value = '';
                     }
@@ -2974,6 +2999,12 @@
                 : [];
             var shouldReturnToCursoModal = false;
 
+            function refreshSelect2(target) {
+                if (window.refreshSelect2Element) {
+                    window.refreshSelect2Element(target);
+                }
+            }
+
             function normalizePlanSelectorValue(value) {
                 return (value || '').toString().trim().toLowerCase();
             }
@@ -2997,10 +3028,26 @@
                     Array.from(field.options).forEach(function(option) {
                         option.selected = selected.includes(option.value);
                     });
+                    if (
+                        window.jQuery
+                        && window.jQuery.fn
+                        && window.jQuery.fn.select2
+                        && window.jQuery(field).data('select2')
+                    ) {
+                        window.jQuery(field).val(selected).trigger('change.select2');
+                    }
                     return;
                 }
 
                 field.value = value || '';
+                if (
+                    window.jQuery
+                    && window.jQuery.fn
+                    && window.jQuery.fn.select2
+                    && window.jQuery(field).data('select2')
+                ) {
+                    window.jQuery(field).val(value || '').trigger('change.select2');
+                }
             }
 
             function getPlanEstudioSelect() {
@@ -3083,6 +3130,8 @@
                     option.selected = sector === selectedSector;
                     selectorSectorInput.appendChild(option);
                 });
+
+                refreshSelect2(selectorSectorInput);
             }
 
             function setPlanEstudioInfo(planLabel, locked) {
@@ -3181,6 +3230,9 @@
             }
 
             if (selectorSectorInput) {
+                if (window.initSelect2Elements) {
+                    window.initSelect2Elements(selectorSectorInput);
+                }
                 selectorSectorInput.addEventListener('change', applyPlanSelectorFilters);
             }
 
@@ -3204,6 +3256,7 @@
                 });
 
                 selectorModalEl.addEventListener('shown.bs.modal', function() {
+                    refreshSelect2(selectorSectorInput);
                     if (selectorSearchInput) {
                         selectorSearchInput.focus();
                     }
