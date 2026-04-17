@@ -121,7 +121,9 @@ class CruceService:
         from celiaquia.services.familia_service import FamiliaService
 
         rows = []
-        qs = expediente.expediente_ciudadanos.select_related("ciudadano")
+        qs = expediente.expediente_ciudadanos.select_related(
+            "ciudadano", "ciudadano__sexo"
+        )
 
         ciudadanos_ids = list(qs.values_list("ciudadano_id", flat=True))
         responsables_ids = FamiliaService.obtener_ids_responsables(ciudadanos_ids)
@@ -132,6 +134,7 @@ class CruceService:
         for legajo in qs:
             ciudadano = legajo.ciudadano
             es_responsable = ciudadano.id in responsables_ids
+            sexo = getattr(getattr(ciudadano, "sexo", None), "sexo", "") or ""
 
             # Solo exportar responsables o beneficiarios sin responsable
             if es_responsable:
@@ -146,6 +149,7 @@ class CruceService:
                         )(),
                         "nombre": getattr(ciudadano, "nombre", "") or "",
                         "apellido": getattr(ciudadano, "apellido", "") or "",
+                        "sexo": sexo,
                     }
                 )
             else:
@@ -163,12 +167,20 @@ class CruceService:
                             )(),
                             "nombre": getattr(ciudadano, "nombre", "") or "",
                             "apellido": getattr(ciudadano, "apellido", "") or "",
+                            "sexo": sexo,
                         }
                     )
 
         out = io.BytesIO()
         df = pd.DataFrame(
-            rows, columns=["Numero_documento", "TipoDocumento", "nombre", "apellido"]
+            rows,
+            columns=[
+                "Numero_documento",
+                "TipoDocumento",
+                "nombre",
+                "apellido",
+                "sexo",
+            ],
         )
         with pd.ExcelWriter(out, engine="openpyxl") as writer:
             df.to_excel(writer, index=False, sheet_name="nomina")
