@@ -6,10 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        (
-            "ciudadanos",
-            "0026_merge_0023_optimize_listado_ciudadanos_indexes_0025_alter_ciudadano_fecha_nacimiento_nullable",
-        ),
+        ("ciudadanos", "0022_alter_ciudadano_managers_and_more"),
     ]
 
     operations = [
