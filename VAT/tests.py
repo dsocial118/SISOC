@@ -3290,6 +3290,76 @@ def test_api_vat_web_inscripcion_libre_usa_cuil_como_documento_si_no_viene_docum
 
 
 @pytest.mark.django_db
+def test_api_vat_web_inscripcion_libre_prioriza_documento_principal_sobre_cuil(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Operario en Arbolado Urbano",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="COMCUR-31329-20260416191414474174",
+        nombre="Comision Operario en Arbolado Urbano",
+        cupo_total=35,
+        fecha_inicio=date(2026, 3, 20),
+        fecha_fin=date(2026, 12, 18),
+        estado="activa",
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/web/inscripciones/",
+        {
+            "documento": "29711907",
+            "comision_curso_id": comision.id,
+            "estado": "pre_inscripta",
+            "datos_postulante": {
+                "nombre": "Federico",
+                "apellido": "PIEDRASANTA",
+                "fecha_nacimiento": "1982-07-27",
+                "tipo_documento": "DNI",
+                "cuil": "23297119079",
+                "email": "fede.piedrasanta@gmail.com",
+                "telefono": "+54-351-6783108",
+            },
+            "observaciones": (
+                '{"nombre":"Federico","apellido":"PIEDRASANTA",'
+                '"fecha_nacimiento":"1982-07-27","genero":"M",'
+                '"email":"fede.piedrasanta@gmail.com",'
+                '"telefono":"+54-351-6783108",'
+                '"nivel_estudio":"universitario_completo",'
+                '"tipo_documento":"DNI","cuil":"23297119079",'
+                '"actual_calle":"Av de mayo","actual_numero":"200",'
+                '"actual_entre_calles":"Rosales y Chacabuco",'
+                '"actual_municipio_id":"44",'
+                '"actual_municipio_nombre":"Avellaneda",'
+                '"actual_provincia_id":"2",'
+                '"actual_provincia_nombre":"Buenos Aires"}'
+            ),
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    ciudadano = Ciudadano.objects.get(pk=payload["ciudadano"])
+    assert ciudadano.documento == 29711907
+    assert ciudadano.fecha_nacimiento == date(1982, 7, 27)
+
+    response_inscripciones = vat_api_client.get(
+        "/api/vat/web/inscripciones/?documento=29711907"
+    )
+
+    assert response_inscripciones.status_code == 200
+    assert response_inscripciones.json()["count"] == 1
+
+
+@pytest.mark.django_db
 def test_api_vat_web_inscripciones_informa_lista_espera_si_no_hay_cupo(
     vat_api_client, vat_curso_base
 ):
