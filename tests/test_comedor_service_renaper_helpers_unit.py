@@ -65,6 +65,18 @@ class _NominaQS:
         self.resumen = resumen
         self.calls = []
 
+    def filter(self, *args, **kwargs):
+        self.calls.append(("filter", args, kwargs))
+        return self
+
+    def order_by(self, *args):
+        self.calls.append(("order_by", args))
+        return self
+
+    def values(self, *args):
+        self.calls.append(("values", args))
+        return self
+
     def select_related(self, *args):
         self.calls.append(("select_related", args))
         return self
