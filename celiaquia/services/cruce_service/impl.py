@@ -86,6 +86,15 @@ class CruceService:
         return s.lstrip("0")
 
     @staticmethod
+    def normalizar_sexo_para_exportacion(ciudadano) -> str:
+        sexo_raw = (getattr(getattr(ciudadano, "sexo", None), "sexo", "") or "").strip()
+        sexo_map = {
+            "M": "Masculino",
+            "F": "Femenino",
+        }
+        return sexo_map.get(sexo_raw.upper(), sexo_raw)
+
+    @staticmethod
     def extraer_dni_de_cuit(cuit: str) -> str:
         if len(cuit) == 11:
             return cuit[2:10]
@@ -134,7 +143,7 @@ class CruceService:
         for legajo in qs:
             ciudadano = legajo.ciudadano
             es_responsable = ciudadano.id in responsables_ids
-            sexo = getattr(getattr(ciudadano, "sexo", None), "sexo", "") or ""
+            sexo = CruceService.normalizar_sexo_para_exportacion(ciudadano)
 
             # Solo exportar responsables o beneficiarios sin responsable
             if es_responsable:

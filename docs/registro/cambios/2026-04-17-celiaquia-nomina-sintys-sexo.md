@@ -7,6 +7,7 @@ En `/celiaquia/expedientes/<pk>/`, la acción **Descargar nómina Sintys** gener
 ## Cambio realizado
 
 - Se agregó la columna `sexo` al archivo Excel exportado desde `CruceService.generar_nomina_sintys_excel`.
+- Si el sexo estaba persistido como abreviatura (`M` / `F`), la exportación ahora lo normaliza al texto visible del sistema (`Masculino` / `Femenino`).
 - Se mantiene sin cambios el criterio actual de selección de personas exportadas:
   - responsables;
   - beneficiarios sin responsable asociado.

@@ -60,3 +60,36 @@ def test_exportar_nomina_sintys(client):
     assert row[2] == "Juan"
     assert row[3] == "Perez"
     assert row[4] == "Masculino"
+
+
+@pytest.mark.django_db
+def test_exportar_nomina_sintys_normaliza_sexo_abreviado_a_texto(client):
+    grupo = Group.objects.create(name="TecnicoCeliaquia")
+    user = User.objects.create_user(username="tec_abrev", password="pass")
+    user.groups.add(grupo)
+
+    estado_exp = EstadoExpediente.objects.create(nombre="ASIGNADO")
+    estado_leg = EstadoLegajo.objects.create(nombre="VALIDO")
+    sexo = Sexo.objects.create(sexo="M")
+    creador = User.objects.create_user(username="prov_abrev", password="pass")
+    expediente = Expediente.objects.create(usuario_provincia=creador, estado=estado_exp)
+
+    ciudadano = Ciudadano.objects.create(
+        apellido="Lopez",
+        nombre="Ana",
+        fecha_nacimiento="2001-02-03",
+        documento=87654321,
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        sexo=sexo,
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente, ciudadano=ciudadano, estado=estado_leg
+    )
+
+    client.force_login(user)
+    content = CruceService.generar_nomina_sintys_excel(expediente)
+
+    wb = load_workbook(BytesIO(content))
+    ws = wb.active
+    row = [cell.value for cell in next(ws.iter_rows(min_row=2, max_row=2))]
+    assert row[4] == "Masculino"
