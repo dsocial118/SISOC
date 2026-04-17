@@ -166,7 +166,10 @@ def test_create_view_crea_ficha_cdi_para_ciudadano_existente(client):
 
 
 def test_nomina_crear_template_conserva_ajax_nativo_ubicacion():
-    template_path = Path(settings.BASE_DIR) / "centrodeinfancia/templates/centrodeinfancia/nomina_form.html"
+    template_path = (
+        Path(settings.BASE_DIR)
+        / "centrodeinfancia/templates/centrodeinfancia/nomina_form.html"
+    )
     content = template_path.read_text(encoding="utf-8")
 
     assert "ajaxLoadMunicipiosUrl" in content
