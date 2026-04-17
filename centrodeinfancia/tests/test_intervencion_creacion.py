@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.urls import reverse
 
@@ -43,3 +44,10 @@ def test_intervencion_create_guardar_usuario_creador(client):
 
     intervencion = IntervencionCentroInfancia.objects.get(centro=centro)
     assert intervencion.creado_por == user
+
+
+def test_intervencion_creado_por_usa_auth_user_model_swappeable():
+    field = IntervencionCentroInfancia._meta.get_field("creado_por")
+
+    assert field.remote_field.model == get_user_model()
+    assert field.blank is True

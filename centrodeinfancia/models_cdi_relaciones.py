@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -45,9 +46,10 @@ class IntervencionCentroInfancia(SoftDeleteModelMixin, models.Model):
     tiene_documentacion = models.BooleanField(default=False)
     documentacion = models.FileField(upload_to="documentacion/", blank=True, null=True)
     creado_por = models.ForeignKey(
-        "auth.User",
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         verbose_name="Creado por",
     )
 
