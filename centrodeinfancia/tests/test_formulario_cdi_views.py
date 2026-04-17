@@ -224,18 +224,27 @@ def test_detalle_cdi_muestra_solo_ultimos_tres_formularios(client):
 
     assert response.status_code == 200
     content = response.content.decode("utf-8")
-    assert reverse(
-        "centrodeinfancia_formulario_detalle",
-        kwargs={"pk": centro.pk, "form_pk": formularios[3].id},
-    ) in content
-    assert reverse(
-        "centrodeinfancia_formulario_detalle",
-        kwargs={"pk": centro.pk, "form_pk": formularios[2].id},
-    ) in content
-    assert reverse(
-        "centrodeinfancia_formulario_detalle",
-        kwargs={"pk": centro.pk, "form_pk": formularios[1].id},
-    ) in content
+    assert (
+        reverse(
+            "centrodeinfancia_formulario_detalle",
+            kwargs={"pk": centro.pk, "form_pk": formularios[3].id},
+        )
+        in content
+    )
+    assert (
+        reverse(
+            "centrodeinfancia_formulario_detalle",
+            kwargs={"pk": centro.pk, "form_pk": formularios[2].id},
+        )
+        in content
+    )
+    assert (
+        reverse(
+            "centrodeinfancia_formulario_detalle",
+            kwargs={"pk": centro.pk, "form_pk": formularios[1].id},
+        )
+        in content
+    )
     assert (
         reverse(
             "centrodeinfancia_formulario_detalle",
