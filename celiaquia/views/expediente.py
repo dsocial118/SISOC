@@ -1972,5 +1972,3 @@ class ExpedienteDeleteView(View):
                 {"success": False, "error": "Error al eliminar el expediente."},
                 status=500,
             )
-
-
