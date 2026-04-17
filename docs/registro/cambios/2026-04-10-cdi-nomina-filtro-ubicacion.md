@@ -17,7 +17,7 @@ En la vista de alta de nómina CDI (`NominaCentroInfanciaCreateView`) los campos
 
 ## Validación
 - Se agregó test de regresión en `centrodeinfancia/tests/test_nomina_integridad.py` que verifica que la vista renderiza:
-  - script `ubicacionSelects.js`
+  - script inline de carga AJAX dentro de `centrodeinfancia/templates/centrodeinfancia/nomina_form.html`
   - endpoints AJAX esperados
   - selectores de los tres campos encadenados
 
