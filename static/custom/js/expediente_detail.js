@@ -1430,31 +1430,56 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectLocalidad = document.getElementById('editar-localidad');
     
     if (selectMunicipio && selectLocalidad) {
-      const filtrarLocalidadesPorMunicipio = (municipioId) => {
-        const opciones = selectLocalidad.querySelectorAll('option');
-        
-        opciones.forEach(option => {
-          if (option.value === '') {
-            option.style.display = '';
+      const refreshSelect2 = (target) => {
+        if (window.refreshSelect2Element) {
+          window.refreshSelect2Element(target);
+        }
+      };
+
+      const localidadOptions = Array.from(selectLocalidad.querySelectorAll('option')).map(
+        option => ({
+          value: option.value,
+          text: option.textContent,
+          municipioId: option.dataset.municipio || ''
+        })
+      );
+
+      const renderLocalidadesDisponibles = (municipioId, localidadSeleccionada = '') => {
+        const localidadId = localidadSeleccionada ? String(localidadSeleccionada) : '';
+        let localidadVisible = false;
+
+        selectLocalidad.innerHTML = '';
+
+        localidadOptions.forEach(optionData => {
+          if (optionData.value && municipioId && optionData.municipioId !== String(municipioId)) {
             return;
           }
-          
-          const optionMunicipioId = option.getAttribute('data-municipio');
-          if (!municipioId || optionMunicipioId === municipioId) {
-            option.style.display = '';
-          } else {
-            option.style.display = 'none';
+
+          const option = document.createElement('option');
+          option.value = optionData.value;
+          option.textContent = optionData.text;
+
+          if (optionData.municipioId) {
+            option.dataset.municipio = optionData.municipioId;
           }
+
+          if (localidadId && String(optionData.value) === localidadId) {
+            option.selected = true;
+            localidadVisible = true;
+          }
+
+          selectLocalidad.appendChild(option);
         });
-        
-        // Si la localidad actual no pertenece al municipio seleccionado, limpiar
-        const localidadActual = selectLocalidad.value;
-        if (localidadActual) {
-          const optionActual = selectLocalidad.querySelector(`option[value="${localidadActual}"]`);
-          if (optionActual && optionActual.style.display === 'none') {
-            selectLocalidad.value = '';
-          }
+
+        if (!localidadVisible) {
+          selectLocalidad.value = '';
         }
+
+        refreshSelect2(selectLocalidad);
+      };
+
+      const filtrarLocalidadesPorMunicipio = (municipioId) => {
+        renderLocalidadesDisponibles(municipioId, selectLocalidad.value);
       };
 
       const sincronizarMunicipioDesdeLocalidad = () => {
@@ -1466,9 +1491,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (selectMunicipio.value !== municipioId) {
           selectMunicipio.value = municipioId;
+          refreshSelect2(selectMunicipio);
         }
 
-        filtrarLocalidadesPorMunicipio(municipioId);
+        renderLocalidadesDisponibles(municipioId, selectLocalidad.value);
       };
 
       selectMunicipio.addEventListener('change', function() {
@@ -1527,19 +1553,15 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('editar-codigo-postal').value = legajo.codigo_postal;
           
           // Primero establecer municipio
-          if (legajo.municipio) {
-            document.getElementById('editar-municipio').value = legajo.municipio;
-            // Disparar el evento change para filtrar localidades
-            selectMunicipio.dispatchEvent(new Event('change'));
+          if (selectMunicipio && selectLocalidad) {
+            selectMunicipio.value = legajo.municipio || '';
+            if (window.refreshSelect2Element) {
+              window.refreshSelect2Element(selectMunicipio);
+            }
+            renderLocalidadesDisponibles(selectMunicipio.value, legajo.localidad || '');
           }
           
           // Luego establecer localidad (después del filtrado)
-          setTimeout(() => {
-            if (legajo.localidad) {
-              document.getElementById('editar-localidad').value = legajo.localidad;
-              selectLocalidad.dispatchEvent(new Event('change'));
-            }
-          }, 100);
           
           // Configurar la acción del formulario
           const form = document.getElementById('form-editar-legajo');
@@ -1554,6 +1576,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Manejar envío del formulario
+    modalEditarLegajo.addEventListener('shown.bs.modal', function() {
+      if (selectMunicipio && selectLocalidad && window.refreshSelect2Element) {
+        window.refreshSelect2Element(selectMunicipio);
+        window.refreshSelect2Element(selectLocalidad);
+      }
+    });
+
     const formEditarLegajo = document.getElementById('form-editar-legajo');
     if (formEditarLegajo) {
       formEditarLegajo.addEventListener('submit', async function(e) {

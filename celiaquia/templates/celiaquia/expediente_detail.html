@@ -1198,7 +1198,10 @@
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="tecnico">Seleccionar Técnico:</label>
-                    <select name="tecnico_id" id="tecnico" class="form-control">
+                    <select name="tecnico_id"
+                            id="tecnico"
+                            class="form-control select2"
+                            data-width="100%">
                         {% for tecnico in tecnicos %}
                             <option value="{{ tecnico.id }}">{{ tecnico.get_full_name|default:tecnico.username }}</option>
                         {% endfor %}
@@ -1699,14 +1702,26 @@
                         </div>
                         <div class="col-md-4">
                             <label for="editar-municipio" class="form-label">Municipio *</label>
-                            <select class="form-select" id="editar-municipio" name="municipio" required>
+                            <select class="form-select select2"
+                                    id="editar-municipio"
+                                    name="municipio"
+                                    data-width="100%"
+                                    data-placeholder="Seleccionar..."
+                                    data-dropdown-parent="#modalEditarLegajo"
+                                    required>
                                 <option value="">Seleccionar...</option>
                                 {% for mun in municipios %}<option value="{{ mun.id }}">{{ mun.nombre }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="col-md-4">
                             <label for="editar-localidad" class="form-label">Localidad *</label>
-                            <select class="form-select" id="editar-localidad" name="localidad" required>
+                            <select class="form-select select2"
+                                    id="editar-localidad"
+                                    name="localidad"
+                                    data-width="100%"
+                                    data-placeholder="Seleccionar..."
+                                    data-dropdown-parent="#modalEditarLegajo"
+                                    required>
                                 <option value="">Seleccionar...</option>
                                 {% for loc in localidades %}
                                     <option value="{{ loc.id }}" data-municipio="{{ loc.municipio_id }}">
