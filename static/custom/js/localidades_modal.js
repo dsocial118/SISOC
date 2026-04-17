@@ -18,8 +18,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const localidadSelect = document.getElementById("filtro-localidad");
   const tablaLocalidades = document.getElementById("tabla-localidades");
   const textoBusqueda = document.getElementById("filtro-texto");
+  const modal = document.getElementById("localidadesModal");
 
   let localidadesData = [];
+
+  function refreshSelect2(target) {
+    if (window.refreshSelect2Element) {
+      window.refreshSelect2Element(target);
+    }
+  }
 
   /**
    * Llena el select de provincias con los datos del contexto.
@@ -33,6 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
       opt.textContent = `${p.id} - ${p.nombre}`;
       provinciaSelect.appendChild(opt);
     });
+    refreshSelect2(provinciaSelect);
   }
 
   /**
@@ -52,9 +60,13 @@ document.addEventListener("DOMContentLoaded", () => {
    */
   function filtrarTabla() {
     const query = textoBusqueda ? textoBusqueda.value.toLowerCase() : "";
+    const localidadSeleccionada = localidadSelect ? localidadSelect.value : "";
     const filtradas = localidadesData.filter((item) => {
       return (
-        `${item.provincia_id} - ${item.provincia_nombre}`
+        (!localidadSeleccionada
+          || String(item.localidad_id) === String(localidadSeleccionada))
+        && (
+          `${item.provincia_id} - ${item.provincia_nombre}`
           .toLowerCase()
           .includes(query) ||
         `${item.municipio_id} - ${item.municipio_nombre}`
@@ -63,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `${item.localidad_id} - ${item.localidad_nombre}`
           .toLowerCase()
           .includes(query)
+        )
       );
     });
     pintarTabla(filtradas);
@@ -81,6 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const municipioActual = municipioSelect.value;
+    const localidadActual = localidadSelect.value;
     municipioSelect.innerHTML = '<option value="">Todos</option>';
     municipiosUnicos.forEach((nombre, id) => {
       const opt = document.createElement("option");
@@ -102,6 +116,16 @@ document.addEventListener("DOMContentLoaded", () => {
       locOpt.textContent = `${item.localidad_id} - ${item.localidad_nombre}`;
       localidadSelect.appendChild(locOpt);
     });
+
+    if (
+      localidadActual
+      && data.some((item) => String(item.localidad_id) === String(localidadActual))
+    ) {
+      localidadSelect.value = localidadActual;
+    }
+
+    refreshSelect2(municipioSelect);
+    refreshSelect2(localidadSelect);
   }
 
   /**
@@ -121,7 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .then((data) => {
         localidadesData = data;
         actualizarSelects(data);
-        pintarTabla(data);
+        filtrarTabla();
       })
       .catch((error) => {
         console.error("Error al cargar localidades:", error);
@@ -136,7 +160,10 @@ document.addEventListener("DOMContentLoaded", () => {
     municipioSelect.value = "";
     localidadSelect.value = "";
     if (textoBusqueda) textoBusqueda.value = "";
-    
+
+    refreshSelect2(provinciaSelect);
+    refreshSelect2(municipioSelect);
+    refreshSelect2(localidadSelect);
     cargarLocalidades();
   }
 
@@ -186,16 +213,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Inicializar
   poblarProvincias();
+  if (window.initSelect2Elements) {
+    window.initSelect2Elements(provinciaSelect);
+    window.initSelect2Elements(municipioSelect);
+    window.initSelect2Elements(localidadSelect);
+  }
 
   // Eventos
   provinciaSelect.addEventListener("change", () => {
     municipioSelect.value = "";
     localidadSelect.value = "";
     if (textoBusqueda) textoBusqueda.value = "";
+    refreshSelect2(municipioSelect);
+    refreshSelect2(localidadSelect);
     cargarLocalidades();
   });
 
-  municipioSelect.addEventListener("change", cargarLocalidades);
+  municipioSelect.addEventListener("change", () => {
+    localidadSelect.value = "";
+    refreshSelect2(localidadSelect);
+    cargarLocalidades();
+  });
+
+  localidadSelect.addEventListener("change", filtrarTabla);
 
   if (textoBusqueda) {
     textoBusqueda.addEventListener("input", filtrarTabla);
@@ -214,9 +254,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Cargar datos al abrir el modal
-  const modal = document.getElementById("localidadesModal");
   if (modal) {
     modal.addEventListener("shown.bs.modal", () => {
+      refreshSelect2(provinciaSelect);
+      refreshSelect2(municipioSelect);
+      refreshSelect2(localidadSelect);
       if (localidadesData.length === 0) {
         cargarLocalidades();
       }

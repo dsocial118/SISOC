@@ -22,9 +22,7 @@ def test_get_changed_files_usa_api_del_pr_si_falta_el_rango_git(monkeypatch):
     monkeypatch.setattr(
         pr_lint_tools,
         "read_event_payload",
-        lambda: {
-            "pull_request": {"url": "https://api.github.test/repos/org/repo/pulls/1"}
-        },
+        lambda: {"pull_request": {"url": "https://api.github.test/repos/org/repo/pulls/1"}},
     )
 
     def fake_run_git_command(*args, check=True):
@@ -40,10 +38,7 @@ def test_get_changed_files_usa_api_del_pr_si_falta_el_rango_git(monkeypatch):
         pr_lint_tools,
         "_fetch_github_json",
         lambda url: (
-            [
-                {"filename": "scripts/ci/pr_lint_tools.py"},
-                {"filename": "VAT/serializers.py"},
-            ]
+            [{"filename": "scripts/ci/pr_lint_tools.py"}, {"filename": "VAT/serializers.py"}]
             if "page=1" in url
             else []
         ),
@@ -64,9 +59,7 @@ def test_get_changed_files_usa_fallback_si_falta_el_base_sha(monkeypatch):
         "get_diff_range",
         lambda: ("base-sha", "head-sha"),
     )
-    monkeypatch.setattr(
-        pr_lint_tools, "get_pull_request_changed_files_from_api", lambda: []
-    )
+    monkeypatch.setattr(pr_lint_tools, "get_pull_request_changed_files_from_api", lambda: [])
 
     def fake_run_git_command(*args, check=True):
         if args in (
