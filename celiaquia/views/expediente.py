@@ -262,6 +262,10 @@ def _campos_invalidos_desde_mensaje_error(message):
 def _aplicar_defaults_registro_erroneo(datos):
     datos_con_defaults = dict(datos)
 
+    nacionalidad_argentina_id = _get_nacionalidad_argentina_id()
+    if nacionalidad_argentina_id:
+        datos_con_defaults["nacionalidad"] = str(nacionalidad_argentina_id)
+
     municipio_id = _resolver_municipio_id_desde_localidad(
         datos_con_defaults.get("localidad")
     )
