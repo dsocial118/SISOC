@@ -3442,6 +3442,7 @@ def test_api_vat_web_inscripcion_libre_crea_inscripcion_operativa_sin_ciudadano(
     assert ciudadano.documento == 42439852
     assert ciudadano.apellido == "CONIGLIO"
     assert ciudadano.fecha_nacimiento == date(1900, 1, 1)
+    assert ciudadano.telefono == "+54-351-3989965"
 
     inscripcion = Inscripcion.objects.get(pk=payload["id"])
     assert inscripcion.comision_curso == comision
