@@ -93,10 +93,9 @@ def test_registro_erroneo_responsable_requerido_depende_de_edad():
     )
 
 
-def test_aplicar_defaults_registro_erroneo_fuerza_argentina_y_municipio_por_localidad(
+def test_aplicar_defaults_registro_erroneo_solo_autocompleta_municipio_por_localidad(
     mocker,
 ):
-    mocker.patch.object(module, "_get_nacionalidad_argentina_id", return_value=1)
     mocker.patch.object(
         module,
         "_resolver_municipio_id_desde_localidad",
@@ -107,7 +106,7 @@ def test_aplicar_defaults_registro_erroneo_fuerza_argentina_y_municipio_por_loca
         {"nacionalidad": "9", "municipio": "", "localidad": "55"}
     )
 
-    assert datos["nacionalidad"] == "1"
+    assert datos["nacionalidad"] == "9"
     assert datos["municipio"] == "77"
     assert datos["localidad"] == "55"
 
