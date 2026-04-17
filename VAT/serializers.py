@@ -1172,12 +1172,27 @@ def _extraer_datos_postulante(attrs):
     return parsed if isinstance(parsed, dict) else None
 
 
+def _completar_documento_postulante(datos_postulante, documento_principal):
+    if not isinstance(datos_postulante, dict):
+        return datos_postulante
+
+    documento_principal = str(documento_principal or "").strip()
+    if not documento_principal:
+        return datos_postulante
+
+    if str(datos_postulante.get("documento") or "").strip():
+        return datos_postulante
+
+    datos_postulante_normalizado = dict(datos_postulante)
+    datos_postulante_normalizado["documento"] = documento_principal
+    return datos_postulante_normalizado
+
+
 def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario=None):
     if not isinstance(datos_postulante, dict):
         raise serializers.ValidationError(
             {"datos_postulante": "Debe enviar un objeto con los datos del postulante."}
         )
-
     nombre = (datos_postulante.get("nombre") or "").strip()
     apellido = (datos_postulante.get("apellido") or "").strip()
     documento_explicitado = str(datos_postulante.get("documento") or "").strip()
@@ -1257,6 +1272,7 @@ def _resolver_referencias_vat_web_inscripcion(attrs):
     ciudadano_id = attrs.get("ciudadano_id")
     documento = (attrs.get("documento") or "").strip()
     datos_postulante = _extraer_datos_postulante(attrs)
+    datos_postulante = _completar_documento_postulante(datos_postulante, documento)
     entidad_comision = _resolver_entidad_comision_vat_web_inscripcion(attrs)
     permite_solicitud_publica = bool(
         getattr(getattr(entidad_comision, "curso", None), "inscripcion_libre", False)
