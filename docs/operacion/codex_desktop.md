@@ -48,6 +48,8 @@ powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 djlint-check
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 pylint celiaquia/services/importacion_service/impl.py
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 shell
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 manage showmigrations
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_context.ps1
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_context.ps1 core/views.py
 ```
 
 ## Diagnostico rapido
@@ -73,6 +75,7 @@ El repo expone `.codex/environments/environment.toml` para que Codex Desktop ten
 - setup automatico al abrir el repo
 - accion de bootstrap
 - accion de diagnostico
+- accion para ver memoria IA reutilizable
 - accion de smoke tests
 - accion para abrir shell del contenedor Django
 

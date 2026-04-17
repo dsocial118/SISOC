@@ -45,9 +45,10 @@ No cargar contexto amplio por defecto.
 Lectura inicial obligatoria:
 1. `AGENTS.md`
 2. `docs/indice.md`
-3. archivo(s) objetivo
-4. tests del modulo o flujo afectado, si existen
-5. una sola guia de `docs/ia/` elegida segun la tarea
+3. memoria operativa reutilizable aplicable (`docs/contexto/memoria/` o `.codex/cache/context-memory/`), si existe
+4. archivo(s) objetivo
+5. tests del modulo o flujo afectado, si existen
+6. una sola guia de `docs/ia/` elegida segun la tarea
 
 Expandir solo si la evidencia lo requiere:
 - otra guia de `docs/ia/`,
@@ -67,6 +68,7 @@ Usar `docs/ia/CONTEXT_HYGIENE.md` como matriz de carga minima.
 
 Reglas:
 - Toda decision o cambio importante debe quedar documentado en `docs/`.
+- Cuando un analisis reusable evite releer codigo en tareas futuras, persistirlo como memoria operativa en `docs/contexto/memoria/`.
 - Si el cambio es trivial y no hace falta registro, explicitarlo en la entrega.
 - Convencion recomendada:
   - `docs/registro/cambios/YYYY-MM-DD-<tema>.md`

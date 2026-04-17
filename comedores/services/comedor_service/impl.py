@@ -7,12 +7,14 @@ import unicodedata
 from django.db.models import (
     Q,
     Count,
+    Max,
     Prefetch,
     QuerySet,
     Value,
     IntegerField,
     F,
     Func,
+    Subquery,
 )
 from django.db import transaction
 from django.core.paginator import Paginator
@@ -146,10 +148,23 @@ def _build_nomina_rangos_resumen(resumen):
     }
 
 
-def _build_nomina_qs_and_age_qs(admision_pk):
-    qs_nomina = Nomina.objects.filter(admision_id=admision_pk).select_related(
-        "ciudadano__sexo"
+def _dedupe_nomina_queryset_by_ciudadano(qs_nomina):
+    latest_ids = (
+        qs_nomina.filter(ciudadano_id__isnull=False)
+        .order_by()
+        .values("ciudadano_id")
+        .annotate(latest_id=Max("id"))
+        .values("latest_id")
     )
+    return qs_nomina.filter(
+        Q(ciudadano_id__isnull=True) | Q(id__in=Subquery(latest_ids))
+    )
+
+
+def _build_nomina_qs_and_age_qs(admision_pk):
+    qs_nomina = _dedupe_nomina_queryset_by_ciudadano(
+        Nomina.objects.filter(admision_id=admision_pk)
+    ).select_related("ciudadano__sexo")
     age_expr = TimestampDiffYears(F("ciudadano__fecha_nacimiento"), Now())
     return qs_nomina, qs_nomina.annotate(edad=age_expr)
 
@@ -860,8 +875,8 @@ class ComedorService:
         Variante de get_nomina_detail para prog 3/4: nóminas asociadas
         directamente al comedor (admision=null, comedor_id=comedor_pk).
         """
-        qs_nomina = Nomina.objects.filter(
-            comedor_id=comedor_pk, admision__isnull=True
+        qs_nomina = _dedupe_nomina_queryset_by_ciudadano(
+            Nomina.objects.filter(comedor_id=comedor_pk, admision__isnull=True)
         ).select_related("ciudadano__sexo")
         age_expr = TimestampDiffYears(F("ciudadano__fecha_nacimiento"), Now())
         qs_nomina_age = qs_nomina.annotate(edad=age_expr)
@@ -1378,6 +1393,13 @@ class ComedorService:
 
         try:
             with transaction.atomic():
+                ciudadano = get_object_or_404(
+                    Ciudadano.objects.select_for_update(), pk=ciudadano_id
+                )
+                if _nomina_ya_contiene_ciudadano(
+                    ciudadano, admision_id=admision_id, comedor_id=comedor_id
+                ):
+                    return False, "Esta persona ya está en la nómina."
                 _crear_nomina_registro(
                     ciudadano=ciudadano,
                     admision_id=admision_id,
