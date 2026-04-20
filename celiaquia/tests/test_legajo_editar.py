@@ -84,7 +84,9 @@ def test_legajo_editar_convierte_altura_y_telefono_vacios_en_none(client):
 
 
 @pytest.mark.django_db
-def test_legajo_editar_get_devuelve_nacionalidad_actual_y_municipio_desde_localidad(client):
+def test_legajo_editar_get_devuelve_nacionalidad_actual_y_municipio_desde_localidad(
+    client,
+):
     user = User.objects.create_superuser(
         username="tecnico_get",
         email="tecnico_get@example.com",
@@ -130,7 +132,9 @@ def test_legajo_editar_get_devuelve_nacionalidad_actual_y_municipio_desde_locali
 
 
 @pytest.mark.django_db
-def test_legajo_editar_actualiza_nacionalidad_elegida_y_municipio_desde_localidad(client):
+def test_legajo_editar_actualiza_nacionalidad_elegida_y_municipio_desde_localidad(
+    client,
+):
     user = User.objects.create_superuser(
         username="tecnico_defaults",
         email="tecnico_defaults@example.com",

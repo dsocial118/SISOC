@@ -15,6 +15,31 @@ LOGIN_URL = f"{API_BASE}/auth/login"
 CONSULTA_URL = f"{API_BASE}/consultarenaper"
 
 
+class RenaperServiceError(RuntimeError):
+    def __init__(self, message, error_type, raw_response=None):
+        super().__init__(message)
+        self.error_type = error_type
+        self.raw_response = raw_response
+
+
+def _safe_response_payload(response):
+    if response is None:
+        return None
+
+    try:
+        return response.json()
+    except ValueError:
+        return getattr(response, "text", None)
+
+
+def _build_error_result(message, error_type, raw_response=None, **extra):
+    result = {"success": False, "error": message, "error_type": error_type}
+    if raw_response is not None:
+        result["raw_response"] = raw_response
+    result.update(extra)
+    return result
+
+
 class APIClient:
     def __init__(self):
         self.username = settings.RENAPER_API_USERNAME
@@ -37,14 +62,46 @@ class APIClient:
                 timeout=10,
             )
             response.raise_for_status()
-        except Exception as exc:
-            logger.error(f"Error en login RENAPER: {str(exc)}")
-            raise RuntimeError(
-                f"No se pudo conectar al servicio de login: {str(exc)}"
+        except requests.Timeout as exc:
+            raise RenaperServiceError(
+                "RENAPER no respondio a tiempo durante la autenticacion.",
+                "timeout",
+            ) from exc
+        except requests.HTTPError as exc:
+            status_code = getattr(exc.response, "status_code", None)
+            error_type = "auth_error" if status_code in {401, 403} else "remote_error"
+            message = (
+                "RENAPER rechazo la autenticacion."
+                if error_type == "auth_error"
+                else "RENAPER devolvio un error durante la autenticacion."
+            )
+            raise RenaperServiceError(
+                message,
+                error_type,
+                raw_response=_safe_response_payload(exc.response),
+            ) from exc
+        except requests.RequestException as exc:
+            raise RenaperServiceError(
+                f"No se pudo conectar al servicio de login de RENAPER: {str(exc)}",
+                "remote_error",
             ) from exc
 
-        data = response.json()
-        token = data.get("token")
+        try:
+            data = response.json()
+        except ValueError as exc:
+            raise RenaperServiceError(
+                "RENAPER devolvio una respuesta invalida durante la autenticacion.",
+                "invalid_response",
+                raw_response=getattr(response, "text", None),
+            ) from exc
+
+        token = data.get("token") if isinstance(data, dict) else None
+        if not token:
+            raise RenaperServiceError(
+                "RENAPER no devolvio un token de autenticacion.",
+                "invalid_response",
+                raw_response=data,
+            )
 
         # Cache por 50 minutos
         cache.set("renaper_token", {"token": token}, 3000)
@@ -53,9 +110,10 @@ class APIClient:
     def consultar_ciudadano(self, dni, sexo):
         try:
             token = self.get_token()
-        except RuntimeError as exc:
-            logger.error(f"Error al obtener token: {str(exc)}")
-            return {"success": False, "error": f"Error al obtener token: {str(exc)}"}
+        except RenaperServiceError as exc:
+            return _build_error_result(
+                str(exc), exc.error_type, raw_response=exc.raw_response
+            )
 
         headers = {"Authorization": f"Bearer {token}"}
         params = {"dni": dni, "sexo": sexo.upper()}
@@ -65,30 +123,58 @@ class APIClient:
                 CONSULTA_URL, headers=headers, params=params, timeout=10
             )
             response.raise_for_status()
-        except Exception as exc:
-            logger.error(f"Error consulta RENAPER DNI {dni}: {str(exc)}")
-            return {
-                "success": False,
-                "error": f"Error inesperado: {str(exc)}",
-            }
+        except requests.Timeout:
+            return _build_error_result(
+                "RENAPER no respondio a tiempo durante la consulta.", "timeout"
+            )
+        except requests.HTTPError as exc:
+            status_code = getattr(exc.response, "status_code", None)
+            error_type = "auth_error" if status_code in {401, 403} else "remote_error"
+            message = (
+                "RENAPER rechazo la autenticacion de la consulta."
+                if error_type == "auth_error"
+                else "RENAPER devolvio un error durante la consulta."
+            )
+            return _build_error_result(
+                message,
+                error_type,
+                raw_response=_safe_response_payload(exc.response),
+            )
+        except requests.RequestException as exc:
+            return _build_error_result(
+                f"No se pudo consultar RENAPER: {str(exc)}", "remote_error"
+            )
 
         try:
             data = response.json()
-        except Exception as exc:
-            logger.error(f"Error decodificar JSON RENAPER DNI {dni}: {str(exc)}")
-            return {
-                "success": False,
-                "error": f"No se pudo decodificar JSON: {str(exc)}",
-            }
+        except ValueError as exc:
+            return _build_error_result(
+                f"No se pudo decodificar JSON de RENAPER: {str(exc)}",
+                "invalid_response",
+                raw_response=getattr(response, "text", None),
+            )
+
+        if not isinstance(data, dict):
+            return _build_error_result(
+                "RENAPER devolvio una estructura de respuesta invalida.",
+                "invalid_response",
+                raw_response=data,
+            )
 
         if not data.get("isSuccess", False):
-            return {
-                "success": False,
-                "error": "No se encontró coincidencia.",
-                "raw_response": data,
-            }
+            return _build_error_result(
+                "No se encontro coincidencia.", "no_match", raw_response=data
+            )
 
-        return {"success": True, "data": data["result"]}
+        result = data.get("result")
+        if not isinstance(result, dict):
+            return _build_error_result(
+                "RENAPER devolvio una respuesta invalida.",
+                "invalid_response",
+                raw_response=data,
+            )
+
+        return {"success": True, "data": result}
 
 
 def normalizar(texto):
@@ -109,16 +195,27 @@ def consultar_datos_renaper(dni, sexo):
         response = client.consultar_ciudadano(dni, sexo)
 
         if not response["success"]:
-            return {
-                "success": False,
-                "error": response.get("error", "Error desconocido"),
-                "raw_response": response.get("raw_response"),
-            }
+            return _build_error_result(
+                response.get("error", "Error desconocido al consultar RENAPER"),
+                response.get("error_type", "unexpected_error"),
+                raw_response=response.get("raw_response"),
+            )
 
         datos = response["data"]
+        if not isinstance(datos, dict):
+            return _build_error_result(
+                "RENAPER devolvio un payload invalido del ciudadano.",
+                "invalid_response",
+                raw_response=datos,
+            )
 
         if datos.get("mensaf") == "FALLECIDO":
-            return {"success": False, "error": "El ciudadano se encuentra fallecido."}
+            return _build_error_result(
+                "El ciudadano se encuentra fallecido.",
+                "fallecido",
+                raw_response=datos,
+                fallecido=True,
+            )
 
         sexo_map = {"F": "Femenino", "M": "Masculino", "X": "X"}
         sexo_texto = sexo_map.get(sexo)
@@ -127,8 +224,7 @@ def consultar_datos_renaper(dni, sexo):
             sexo_obj = Sexo.objects.filter(sexo=sexo_texto).first()
             sexo_pk = sexo_obj.pk if sexo_obj else None
 
-        # Solo datos básicos de RENAPER, sin mapeo de ubicación
-
+        # Solo datos basicos de RENAPER, sin mapeo de ubicacion
         # Mapeo optimizado de datos
         def safe_int(value):
             try:
@@ -150,7 +246,7 @@ def consultar_datos_renaper(dni, sexo):
             "sexo": sexo_pk,
             "tipo_documento": Ciudadano.DOCUMENTO_DNI,
             "fecha_nacimiento": datos.get("fechaNacimiento"),
-            # Datos de ubicación sin mapear (se seleccionarán manualmente)
+            # Datos de ubicacion sin mapear (se seleccionaran manualmente)
             "provincia_api": datos.get("provincia", ""),
             "municipio_api": datos.get("municipio", ""),
             "localidad_api": datos.get("ciudad", ""),
@@ -171,7 +267,7 @@ def consultar_datos_renaper(dni, sexo):
         return {"success": True, "data": datos_mapeados, "datos_api": datos}
     except Exception as exc:
         logger.exception(f"Error inesperado consultando RENAPER: {str(exc)}")
-        return {
-            "success": False,
-            "error": f"Error inesperado al consultar RENAPER: {str(exc)}",
-        }
+        return _build_error_result(
+            f"Error inesperado al consultar RENAPER: {str(exc)}",
+            "unexpected_error",
+        )

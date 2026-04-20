@@ -2578,4 +2578,3 @@ class ImportacionService:
                 extra={"expediente_id": expediente.id, "archivo": archivo_excel.name},
             )
             raise
-
