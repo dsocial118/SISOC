@@ -2334,7 +2334,10 @@ def test_api_vat_cursos_buscar_sin_texto_devuelve_listado_paginado(
     assert response.status_code == 200
     payload = response.json()
     assert payload["count"] == 2
-    assert [item["id"] for item in payload["results"]] == [curso_prioritario.id, curso_no_prioritario.id]
+    assert [item["id"] for item in payload["results"]] == [
+        curso_prioritario.id,
+        curso_no_prioritario.id,
+    ]
 
 
 @pytest.mark.django_db
