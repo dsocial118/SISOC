@@ -1139,6 +1139,7 @@
                                                     <input type="text"
                                                            class="form-control{% if 'apellido_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="apellido_responsable"
+                                                           {% if registro.responsable_requerido %}aria-label="Apellido Responsable *"{% endif %}
                                                            value="{{ registro.datos_raw.apellido_responsable|default:'' }}"
                                                            {% if 'apellido_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                            {% if registro.responsable_requerido %}required{% endif %} />

@@ -1,5 +1,5 @@
 import logging
-from datetime import date
+from datetime import date, datetime
 from functools import lru_cache
 from django.db import transaction
 from django.core.exceptions import ValidationError
@@ -48,6 +48,19 @@ def _recalc_archivos_ok(obj, update_fields, responsables_ids=None):
         if obj.archivos_ok != val:
             obj.archivos_ok = val
             update_fields.append("archivos_ok")
+
+
+def _normalizar_fecha_nacimiento(valor):
+    if isinstance(valor, datetime):
+        return valor.date()
+    if isinstance(valor, date):
+        return valor
+    if isinstance(valor, str):
+        try:
+            return date.fromisoformat(valor)
+        except ValueError:
+            return None
+    return None
 
 
 class LegajoService:
@@ -383,15 +396,15 @@ class LegajoService:
         # Calcular edad para beneficiarios
         # Por defecto asumir mayor de edad si no hay fecha_nacimiento
         es_menor = False
-        if (
-            hasattr(legajo.ciudadano, "fecha_nacimiento")
-            and legajo.ciudadano.fecha_nacimiento
-        ):
+        fecha_nacimiento = _normalizar_fecha_nacimiento(
+            getattr(legajo.ciudadano, "fecha_nacimiento", None)
+        )
+        if fecha_nacimiento:
             today = date.today()
-            edad = today.year - legajo.ciudadano.fecha_nacimiento.year
-            if today.month < legajo.ciudadano.fecha_nacimiento.month or (
-                today.month == legajo.ciudadano.fecha_nacimiento.month
-                and today.day < legajo.ciudadano.fecha_nacimiento.day
+            edad = today.year - fecha_nacimiento.year
+            if today.month < fecha_nacimiento.month or (
+                today.month == fecha_nacimiento.month
+                and today.day < fecha_nacimiento.day
             ):
                 edad -= 1
             es_menor = edad < 18
@@ -399,7 +412,7 @@ class LegajoService:
                 "Legajo %s - DNI: %s, Fecha nacimiento: %s, Edad calculada: %s, Es menor: %s",
                 legajo.pk,
                 legajo.ciudadano.documento,
-                legajo.ciudadano.fecha_nacimiento,
+                fecha_nacimiento,
                 edad,
                 es_menor,
             )
