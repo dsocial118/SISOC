@@ -618,6 +618,7 @@ class AdmisionService:
             return False, "Error al enviar a Acompañamiento."
 
         AdmisionService.actualizar_estado_admision(admision, "enviar_a_acompaniamiento")
+        AcompanamientoService.importar_datos_desde_admision(admision)
         return True, "Se envió a Acompañamiento correctamente."
 
     @staticmethod
