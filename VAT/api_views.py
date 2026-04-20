@@ -37,6 +37,7 @@ from VAT.api_schema_examples import (
     CURSO_BUSCAR_EXAMPLES,
     CURSO_PRIORITARIOS_EXAMPLES,
 )
+from VAT.pagination import VATPageNumberPagination
 from VAT.services.inscripcion_service import ESTADOS_INSCRIPCION_OCUPAN_CUPO
 from VAT.serializers import (
     CentroSerializer,
@@ -95,8 +96,16 @@ class SoftDeleteDestroyMixin:
         super().perform_destroy(instance)
 
 
+class VATModelViewSet(viewsets.ModelViewSet):
+    pagination_class = VATPageNumberPagination
+
+
+class VATReadOnlyModelViewSet(viewsets.ReadOnlyModelViewSet):
+    pagination_class = VATPageNumberPagination
+
+
 @extend_schema(tags=["VAT - Centros"])
-class CentroViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+class CentroViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     queryset = Centro.objects.select_related(
         "referente", "provincia", "municipio", "localidad"
     ).order_by("id")
@@ -127,7 +136,7 @@ class CentroViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Ubicación"])
-class ProvinciaViewSet(viewsets.ReadOnlyModelViewSet):
+class ProvinciaViewSet(VATReadOnlyModelViewSet):
     queryset = Provincia.objects.all().order_by("nombre")
     serializer_class = ProvinciaSerializer
     permission_classes = [HasAPIKey]
@@ -135,7 +144,7 @@ class ProvinciaViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @extend_schema(tags=["VAT - Ubicación"])
-class MunicipioViewSet(viewsets.ReadOnlyModelViewSet):
+class MunicipioViewSet(VATReadOnlyModelViewSet):
     queryset = Municipio.objects.select_related("provincia").order_by("nombre")
     serializer_class = MunicipioSerializer
     permission_classes = [HasAPIKey]
@@ -150,7 +159,7 @@ class MunicipioViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @extend_schema(tags=["VAT - Ubicación"])
-class LocalidadViewSet(viewsets.ReadOnlyModelViewSet):
+class LocalidadViewSet(VATReadOnlyModelViewSet):
     queryset = Localidad.objects.select_related("municipio__provincia").order_by(
         "nombre"
     )
@@ -170,7 +179,7 @@ class LocalidadViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @extend_schema(tags=["VAT - Modalidades Institucionales"])
-class ModalidadInstitucionalViewSet(viewsets.ModelViewSet):
+class ModalidadInstitucionalViewSet(VATModelViewSet):
     queryset = ModalidadInstitucional.objects.all().order_by("nombre")
     serializer_class = ModalidadInstitucionalSerializer
     permission_classes = [HasAPIKey]
@@ -184,14 +193,14 @@ class ModalidadInstitucionalViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Catálogos Académicos"])
-class SectorViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+class SectorViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     queryset = Sector.objects.all().order_by("nombre")
     serializer_class = SectorSerializer
     permission_classes = [HasAPIKey]
 
 
 @extend_schema(tags=["VAT - Catálogos Académicos"])
-class SubsectorViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+class SubsectorViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     queryset = Subsector.objects.select_related("sector").order_by("sector", "nombre")
     serializer_class = SubsectorSerializer
     permission_classes = [HasAPIKey]
@@ -205,7 +214,7 @@ class SubsectorViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Catálogos Académicos"])
-class TituloReferenciaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+class TituloReferenciaViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     queryset = TituloReferencia.objects.select_related(
         "plan_estudio", "plan_estudio__sector", "plan_estudio__subsector"
     ).order_by("nombre")
@@ -227,7 +236,7 @@ class TituloReferenciaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Catálogos Académicos"])
-class ModalidadCursadaViewSet(viewsets.ModelViewSet):
+class ModalidadCursadaViewSet(VATModelViewSet):
     queryset = ModalidadCursada.objects.all().order_by("nombre")
     serializer_class = ModalidadCursadaSerializer
     permission_classes = [HasAPIKey]
@@ -241,7 +250,7 @@ class ModalidadCursadaViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Catálogos Académicos"])
-class PlanVersionCurricularViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+class PlanVersionCurricularViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     queryset = PlanVersionCurricular.objects.select_related(
         "sector", "subsector", "modalidad_cursada"
     ).order_by("sector", "modalidad_cursada")
@@ -269,7 +278,7 @@ class PlanVersionCurricularViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet
 
 
 @extend_schema(tags=["VAT - Inscripciones"])
-class InscripcionOfertaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+class InscripcionOfertaViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     queryset = InscripcionOferta.objects.select_related("oferta", "ciudadano").order_by(
         "-fecha_inscripcion"
     )
@@ -302,7 +311,7 @@ class InscripcionOfertaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Vouchers"])
-class VoucherViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+class VoucherViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     """
     ViewSet for Voucher management.
     Supports filtering by ciudadano_id, estado, programa_id.
@@ -363,7 +372,7 @@ class VoucherViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Institución"])
-class InstitucionContactoViewSet(viewsets.ModelViewSet):
+class InstitucionContactoViewSet(VATModelViewSet):
     queryset = InstitucionContacto.objects.select_related("centro").order_by("tipo")
     serializer_class = InstitucionContactoSerializer
     permission_classes = [HasAPIKey]
@@ -380,7 +389,7 @@ class InstitucionContactoViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Institución"])
-class InstitucionIdentificadorHistViewSet(viewsets.ModelViewSet):
+class InstitucionIdentificadorHistViewSet(VATModelViewSet):
     queryset = InstitucionIdentificadorHist.objects.select_related("centro").order_by(
         "-vigencia_desde"
     )
@@ -399,7 +408,7 @@ class InstitucionIdentificadorHistViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Institución"])
-class InstitucionUbicacionViewSet(viewsets.ModelViewSet):
+class InstitucionUbicacionViewSet(VATModelViewSet):
     queryset = InstitucionUbicacion.objects.select_related(
         "centro", "localidad"
     ).order_by("rol_ubicacion")
@@ -465,7 +474,7 @@ class InstitucionUbicacionViewSet(viewsets.ModelViewSet):
         ),
     ],
 )
-class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+class CursoViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     queryset = (
         Curso.objects.select_related("centro", "modalidad")
         .prefetch_related(
@@ -771,7 +780,7 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         ),
     ],
 )
-class ComisionCursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+class ComisionCursoViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     queryset = (
         ComisionCurso.objects.select_related("curso", "curso__centro", "ubicacion")
         .prefetch_related(
@@ -807,7 +816,7 @@ class ComisionCursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Oferta Institucional"])
-class OfertaInstitucionalViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+class OfertaInstitucionalViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     queryset = OfertaInstitucional.objects.select_related(
         "centro", "plan_curricular"
     ).order_by("-fecha_publicacion")
@@ -826,7 +835,7 @@ class OfertaInstitucionalViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Oferta Institucional"])
-class ComisionViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+class ComisionViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     queryset = (
         Comision.objects.select_related("oferta")
         .prefetch_related("horarios")
@@ -847,7 +856,7 @@ class ComisionViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Oferta Institucional"])
-class ComisionHorarioViewSet(viewsets.ModelViewSet):
+class ComisionHorarioViewSet(VATModelViewSet):
     queryset = ComisionHorario.objects.select_related("comision").order_by(
         "dia_semana", "hora_desde"
     )
@@ -866,7 +875,7 @@ class ComisionHorarioViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Inscripciones"])
-class InscripcionViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+class InscripcionViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     queryset = Inscripcion.objects.select_related(
         "ciudadano",
         "programa",
@@ -945,7 +954,7 @@ class InscripcionCursoViewSet(InscripcionViewSet):
 
 
 @extend_schema(tags=["VAT - Evaluaciones"])
-class EvaluacionViewSet(viewsets.ModelViewSet):
+class EvaluacionViewSet(VATModelViewSet):
     queryset = (
         Evaluacion.objects.select_related("comision")
         .prefetch_related("resultados")
@@ -966,7 +975,7 @@ class EvaluacionViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["VAT - Evaluaciones"])
-class ResultadoEvaluacionViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
+class ResultadoEvaluacionViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     queryset = ResultadoEvaluacion.objects.select_related("evaluacion").order_by("id")
     serializer_class = ResultadoEvaluacionSerializer
     permission_classes = [HasAPIKey]
