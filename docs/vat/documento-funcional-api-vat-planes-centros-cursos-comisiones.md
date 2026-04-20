@@ -59,8 +59,9 @@ Implicancias para consumo:
 
 - para conocer el total no hace falta recorrer todas las páginas: alcanza con leer `count`,
 - para obtener todos los registros sí hace falta iterar por páginas,
-- hoy la API no documenta en este flujo un parámetro de `page_size` configurable por query string,
-- por lo tanto, el consumidor debe asumir navegación paginada estándar.
+- la API admite `page_size` como query param opcional en endpoints paginados de este flujo,
+- `page_size` acepta enteros positivos hasta un máximo de `200`,
+- si `page_size` es inválido (texto, `0`, negativo o mayor al máximo), la API aplica silenciosamente el tamaño por defecto.
 
 Uso funcional de la paginación:
 

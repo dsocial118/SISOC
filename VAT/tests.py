@@ -2,6 +2,7 @@ import importlib
 from datetime import date, time
 
 import pytest
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -2060,7 +2061,7 @@ def test_api_vat_provincias_lista_sin_paginacion(vat_api_client):
         [Provincia(nombre=f"Provincia VAT {index:02d}") for index in range(12)]
     )
 
-    response = vat_api_client.get("/api/vat/provincias/")
+    response = vat_api_client.get("/api/vat/provincias/?page_size=1")
 
     assert response.status_code == 200
     payload = response.json()
@@ -2081,7 +2082,7 @@ def test_api_vat_localidades_lista_sin_paginacion(vat_api_client):
         ]
     )
 
-    response = vat_api_client.get("/api/vat/localidades/")
+    response = vat_api_client.get("/api/vat/localidades/?page_size=1")
 
     assert response.status_code == 200
     payload = response.json()
@@ -2089,6 +2090,52 @@ def test_api_vat_localidades_lista_sin_paginacion(vat_api_client):
     assert len(payload) == 12
     assert payload[0]["nombre"] == "Localidad VAT 00"
     assert payload[-1]["nombre"] == "Localidad VAT 11"
+
+
+@pytest.mark.django_db
+def test_api_vat_municipios_lista_sin_paginacion(vat_api_client):
+    provincia = Provincia.objects.create(nombre="Provincia VAT")
+    Municipio.objects.bulk_create(
+        [
+            Municipio(nombre=f"Municipio VAT {index:02d}", provincia=provincia)
+            for index in range(12)
+        ]
+    )
+
+    response = vat_api_client.get("/api/vat/municipios/")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    assert len(payload) == 12
+    assert payload[0]["nombre"] == "Municipio VAT 00"
+    assert payload[-1]["nombre"] == "Municipio VAT 11"
+
+
+@pytest.mark.django_db
+def test_api_vat_municipios_filtra_por_provincia_sin_paginacion(vat_api_client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_caba = Provincia.objects.create(nombre="CABA")
+    Municipio.objects.bulk_create(
+        [
+            Municipio(nombre="Municipio BA 01", provincia=provincia_ba),
+            Municipio(nombre="Municipio BA 02", provincia=provincia_ba),
+            Municipio(nombre="Municipio CABA 01", provincia=provincia_caba),
+        ]
+    )
+
+    response = vat_api_client.get(
+        f"/api/vat/municipios/?provincia_id={provincia_ba.id}"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    assert len(payload) == 2
+    assert [item["nombre"] for item in payload] == [
+        "Municipio BA 01",
+        "Municipio BA 02",
+    ]
 
 
 @pytest.mark.django_db
@@ -2121,6 +2168,57 @@ def test_api_vat_cursos_lista_por_centro(vat_api_client, vat_curso_base):
     assert payload["count"] == 1
     assert payload["results"][0]["id"] == curso.id
     assert payload["results"][0]["centro"] == centro.id
+
+
+@pytest.mark.django_db
+def test_api_vat_cursos_acepta_page_size(vat_api_client, vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    Curso.objects.bulk_create(
+        [
+            Curso(
+                centro=centro,
+                nombre=f"Curso API VAT page size {index}",
+                modalidad=modalidad,
+                estado="activo",
+            )
+            for index in range(12)
+        ]
+    )
+
+    response = vat_api_client.get(f"/api/vat/cursos/?centro_id={centro.id}&page_size=3")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 12
+    assert len(payload["results"]) == 3
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("invalid_page_size", ["abc", "0", "-1", "201"])
+def test_api_vat_cursos_page_size_invalido_hace_fallback_default(
+    vat_api_client, vat_curso_base, invalid_page_size
+):
+    centro, _, modalidad = vat_curso_base
+    Curso.objects.bulk_create(
+        [
+            Curso(
+                centro=centro,
+                nombre=f"Curso API VAT invalid page size {index}",
+                modalidad=modalidad,
+                estado="activo",
+            )
+            for index in range(12)
+        ]
+    )
+
+    response = vat_api_client.get(
+        f"/api/vat/cursos/?centro_id={centro.id}&page_size={invalid_page_size}"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    expected_default_size = settings.REST_FRAMEWORK["PAGE_SIZE"]
+    assert len(payload["results"]) == min(expected_default_size, payload["count"])
 
 
 @pytest.mark.django_db
@@ -2295,20 +2393,37 @@ def test_api_vat_cursos_buscar_sin_texto_devuelve_listado_paginado(
     vat_api_client, vat_curso_base
 ):
     centro, ubicacion, modalidad = vat_curso_base
-    curso = Curso.objects.create(
+    curso_prioritario = Curso.objects.create(
         centro=centro,
         nombre="Operador de Primera Carga",
         modalidad=modalidad,
         estado="activo",
+        prioritario=True,
+    )
+    curso_no_prioritario = Curso.objects.create(
+        centro=centro,
+        nombre="Operador de Segunda Carga",
+        modalidad=modalidad,
+        estado="activo",
     )
     ComisionCurso.objects.create(
-        curso=curso,
+        curso=curso_prioritario,
         ubicacion=ubicacion,
-        codigo_comision="PC-001",
+        codigo_comision="PC-002",
         nombre="Comisión Primera Carga",
         cupo_total=20,
-        fecha_inicio=date(2026, 4, 10),
-        fecha_fin=date(2026, 5, 10),
+        fecha_inicio=date(2026, 4, 11),
+        fecha_fin=date(2026, 5, 11),
+        estado="activa",
+    )
+    ComisionCurso.objects.create(
+        curso=curso_no_prioritario,
+        ubicacion=ubicacion,
+        codigo_comision="PC-001",
+        nombre="Comisión Segunda Carga",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 12),
+        fecha_fin=date(2026, 5, 12),
         estado="activa",
     )
 
@@ -2316,9 +2431,11 @@ def test_api_vat_cursos_buscar_sin_texto_devuelve_listado_paginado(
 
     assert response.status_code == 200
     payload = response.json()
-    result_ids = {item["id"] for item in payload["results"]}
-    assert payload["count"] == 1
-    assert curso.id in result_ids
+    assert payload["count"] == 2
+    assert [item["id"] for item in payload["results"]] == [
+        curso_prioritario.id,
+        curso_no_prioritario.id,
+    ]
 
 
 @pytest.mark.django_db
