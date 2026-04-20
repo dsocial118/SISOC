@@ -564,7 +564,7 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
                     ),
                 ),
             )
-            .order_by("-fecha_creacion", "nombre")
+            .order_by("-prioritario", "-fecha_creacion", "nombre")
         )
 
     def get_queryset(self):
@@ -577,6 +577,7 @@ class CursoViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
             "Lista cursos operativos paginados y, cuando se envía `q`, busca por texto libre "
             "en nombre de curso, plan de estudio o título de referencia. Devuelve la información "
             "enriquecida del curso, su centro, geografía y las comisiones con horarios y cupos. "
+            "Los cursos marcados como prioritarios se listan primero. "
             "Solo expone cursos activos que tengan al menos una comisión activa, para mostrar "
             "únicamente opciones vigentes de inscripción. "
             "Ejemplo base de primera carga: `/api/vat/cursos/buscar/`. "

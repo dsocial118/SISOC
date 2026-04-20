@@ -2295,20 +2295,37 @@ def test_api_vat_cursos_buscar_sin_texto_devuelve_listado_paginado(
     vat_api_client, vat_curso_base
 ):
     centro, ubicacion, modalidad = vat_curso_base
-    curso = Curso.objects.create(
+    curso_prioritario = Curso.objects.create(
         centro=centro,
         nombre="Operador de Primera Carga",
         modalidad=modalidad,
         estado="activo",
+        prioritario=True,
+    )
+    curso_no_prioritario = Curso.objects.create(
+        centro=centro,
+        nombre="Operador de Segunda Carga",
+        modalidad=modalidad,
+        estado="activo",
     )
     ComisionCurso.objects.create(
-        curso=curso,
+        curso=curso_prioritario,
         ubicacion=ubicacion,
-        codigo_comision="PC-001",
+        codigo_comision="PC-002",
         nombre="Comisión Primera Carga",
         cupo_total=20,
-        fecha_inicio=date(2026, 4, 10),
-        fecha_fin=date(2026, 5, 10),
+        fecha_inicio=date(2026, 4, 11),
+        fecha_fin=date(2026, 5, 11),
+        estado="activa",
+    )
+    ComisionCurso.objects.create(
+        curso=curso_no_prioritario,
+        ubicacion=ubicacion,
+        codigo_comision="PC-001",
+        nombre="Comisión Segunda Carga",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 12),
+        fecha_fin=date(2026, 5, 12),
         estado="activa",
     )
 
@@ -2316,9 +2333,8 @@ def test_api_vat_cursos_buscar_sin_texto_devuelve_listado_paginado(
 
     assert response.status_code == 200
     payload = response.json()
-    result_ids = {item["id"] for item in payload["results"]}
-    assert payload["count"] == 1
-    assert curso.id in result_ids
+    assert payload["count"] == 2
+    assert [item["id"] for item in payload["results"]] == [curso_prioritario.id, curso_no_prioritario.id]
 
 
 @pytest.mark.django_db
