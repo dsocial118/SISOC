@@ -201,7 +201,9 @@ def test_consultar_renaper_guard_clauses(mocker):
     resp_bad_doc = view._consultar_renaper(
         SimpleNamespace(user=_User(superuser=True)), pk=1, legajo_id=1
     )
-    assert "DNI v" in json.loads(resp_bad_doc.content)["error"]
+    assert json.loads(resp_bad_doc.content)["error"].startswith(
+        "No se pudo extraer DNI válido"
+    )
 
 
 def test_consultar_renaper_fallecido_y_exito(mocker):
