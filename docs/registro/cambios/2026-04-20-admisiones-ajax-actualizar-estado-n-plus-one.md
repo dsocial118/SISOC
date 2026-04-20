@@ -53,6 +53,10 @@ La decision fue combinar:
 - Verificacion funcional manual del flujo `/ajax/actualizar-estado/`.
 - Observacion en Django Debug Toolbar: la familia de queries sobre
   `admisiones_archivoadmision` dejo de repetirse N veces en el mismo request.
+- Se agregaron regresiones automáticas para fijar el filtro `admision_id` en
+  `actualizar_estado_ajax()` y para verificar por conteo de queries que
+  `_todos_obligatorios_aceptados()` / `_todos_obligatorios_tienen_archivos()`
+  mantienen el prefetch sin volver al patron N+1.
 - Test ejecutado dentro de Docker:
 
 ```bash

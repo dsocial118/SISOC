@@ -404,8 +404,10 @@ def test_handle_upload_personalizado_and_delete_file(mocker):
     assert archivo_obj.delete.called
 
 
-def test_actualizar_estado_ajax_and_update_estado_archivo(mocker):
-    """AJAX state update should validate payload, permissions and observation rules."""
+def test_actualizar_estado_ajax_filtra_documento_por_admision_y_actualiza_estado(
+    mocker,
+):
+    """AJAX state update should scope the document lookup to the admision payload."""
     req_bad = SimpleNamespace(POST={}, user=SimpleNamespace(is_superuser=True))
     out_bad = module.AdmisionService.actualizar_estado_ajax(req_bad)
     assert out_bad["success"] is False
@@ -442,6 +444,10 @@ def test_actualizar_estado_ajax_and_update_estado_archivo(mocker):
     assert upd_mock.called
     archivo_queryset = get_object_or_404.call_args_list[1].args[0]
     assert archivo_queryset is not module.ArchivoAdmision
+    assert get_object_or_404.call_args_list[1].kwargs == {
+        "id": "2",
+        "admision_id": "1",
+    }
 
 
 def test_update_estado_archivo_none_returns_false():
