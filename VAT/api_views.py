@@ -139,6 +139,7 @@ class MunicipioViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Municipio.objects.select_related("provincia").order_by("nombre")
     serializer_class = MunicipioSerializer
     permission_classes = [HasAPIKey]
+    pagination_class = None
 
     def get_queryset(self):
         queryset = super().get_queryset()
