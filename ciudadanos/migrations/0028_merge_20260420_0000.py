@@ -1,0 +1,11 @@
+from django.db import migrations
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ("ciudadanos", "0026_merge_0023_optimize_listado_ciudadanos_indexes_0025_alter_ciudadano_fecha_nacimiento_nullable"),
+        ("ciudadanos", "0027_alter_ciudadano_telefono_longitud"),
+    ]
+
+    operations = []
