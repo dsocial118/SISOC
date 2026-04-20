@@ -1190,6 +1190,22 @@ def _raise_datos_postulante_error(detail):
     raise serializers.ValidationError({"datos_postulante": detail})
 
 
+def _completar_documento_postulante(datos_postulante, documento_principal):
+    if not isinstance(datos_postulante, dict):
+        return datos_postulante
+
+    documento_principal = str(documento_principal or "").strip()
+    if not documento_principal:
+        return datos_postulante
+
+    if str(datos_postulante.get("documento") or "").strip():
+        return datos_postulante
+
+    datos_postulante_normalizado = dict(datos_postulante)
+    datos_postulante_normalizado["documento"] = documento_principal
+    return datos_postulante_normalizado
+
+
 def _normalizar_documento_postulante(datos_postulante):
     documento_explicitado = str(datos_postulante.get("documento") or "").strip()
     cuil = str(datos_postulante.get("cuil") or "").strip()
