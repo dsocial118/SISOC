@@ -2338,6 +2338,52 @@ def test_api_vat_localidades_lista_sin_paginacion(vat_api_client):
 
 
 @pytest.mark.django_db
+def test_api_vat_municipios_lista_sin_paginacion(vat_api_client):
+    provincia = Provincia.objects.create(nombre="Provincia VAT")
+    Municipio.objects.bulk_create(
+        [
+            Municipio(nombre=f"Municipio VAT {index:02d}", provincia=provincia)
+            for index in range(12)
+        ]
+    )
+
+    response = vat_api_client.get("/api/vat/municipios/")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    assert len(payload) == 12
+    assert payload[0]["nombre"] == "Municipio VAT 00"
+    assert payload[-1]["nombre"] == "Municipio VAT 11"
+
+
+@pytest.mark.django_db
+def test_api_vat_municipios_filtra_por_provincia_sin_paginacion(vat_api_client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_caba = Provincia.objects.create(nombre="CABA")
+    Municipio.objects.bulk_create(
+        [
+            Municipio(nombre="Municipio BA 01", provincia=provincia_ba),
+            Municipio(nombre="Municipio BA 02", provincia=provincia_ba),
+            Municipio(nombre="Municipio CABA 01", provincia=provincia_caba),
+        ]
+    )
+
+    response = vat_api_client.get(
+        f"/api/vat/municipios/?provincia_id={provincia_ba.id}"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    assert len(payload) == 2
+    assert [item["nombre"] for item in payload] == [
+        "Municipio BA 01",
+        "Municipio BA 02",
+    ]
+
+
+@pytest.mark.django_db
 def test_api_vat_centros_lista_con_api_key(vat_api_client, vat_curso_base):
     centro, _, _ = vat_curso_base
 
@@ -2594,20 +2640,37 @@ def test_api_vat_cursos_buscar_sin_texto_devuelve_listado_paginado(
     vat_api_client, vat_curso_base
 ):
     centro, ubicacion, modalidad = vat_curso_base
-    curso = Curso.objects.create(
+    curso_prioritario = Curso.objects.create(
         centro=centro,
         nombre="Operador de Primera Carga",
         modalidad=modalidad,
         estado="activo",
+        prioritario=True,
+    )
+    curso_no_prioritario = Curso.objects.create(
+        centro=centro,
+        nombre="Operador de Segunda Carga",
+        modalidad=modalidad,
+        estado="activo",
     )
     ComisionCurso.objects.create(
-        curso=curso,
+        curso=curso_prioritario,
         ubicacion=ubicacion,
-        codigo_comision="PC-001",
+        codigo_comision="PC-002",
         nombre="Comisión Primera Carga",
         cupo_total=20,
-        fecha_inicio=date(2026, 4, 10),
-        fecha_fin=date(2026, 5, 10),
+        fecha_inicio=date(2026, 4, 11),
+        fecha_fin=date(2026, 5, 11),
+        estado="activa",
+    )
+    ComisionCurso.objects.create(
+        curso=curso_no_prioritario,
+        ubicacion=ubicacion,
+        codigo_comision="PC-001",
+        nombre="Comisión Segunda Carga",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 12),
+        fecha_fin=date(2026, 5, 12),
         estado="activa",
     )
 
@@ -2615,9 +2678,11 @@ def test_api_vat_cursos_buscar_sin_texto_devuelve_listado_paginado(
 
     assert response.status_code == 200
     payload = response.json()
-    result_ids = {item["id"] for item in payload["results"]}
-    assert payload["count"] == 1
-    assert curso.id in result_ids
+    assert payload["count"] == 2
+    assert [item["id"] for item in payload["results"]] == [
+        curso_prioritario.id,
+        curso_no_prioritario.id,
+    ]
 
 
 @pytest.mark.django_db
