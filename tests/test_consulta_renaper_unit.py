@@ -32,7 +32,9 @@ def test_api_client_no_log_error_when_no_match(mocker):
     client = module.APIClient()
     client.session = session
     mocker.patch.object(client, "get_token", return_value="token")
-    log_error = mocker.patch("centrodefamilia.services.consulta_renaper.impl.logger.error")
+    log_error = mocker.patch(
+        "centrodefamilia.services.consulta_renaper.impl.logger.error"
+    )
 
     out = client.consultar_ciudadano("13163071", "M")
 
@@ -60,7 +62,9 @@ def test_api_client_clasifica_timeout_en_consulta(mocker):
 
 def test_api_client_clasifica_auth_error_en_consulta(mocker):
     session = mocker.Mock()
-    session.get.return_value = _HTTPErrorResponse({"detail": "unauthorized"}, status_code=401)
+    session.get.return_value = _HTTPErrorResponse(
+        {"detail": "unauthorized"}, status_code=401
+    )
 
     client = module.APIClient()
     client.session = session
@@ -75,7 +79,9 @@ def test_api_client_clasifica_auth_error_en_consulta(mocker):
 
 def test_api_client_clasifica_invalid_response_en_consulta(mocker):
     session = mocker.Mock()
-    session.get.return_value = _ResponseMock(ValueError("bad json"), text="<html>broken</html>")
+    session.get.return_value = _ResponseMock(
+        ValueError("bad json"), text="<html>broken</html>"
+    )
 
     client = module.APIClient()
     client.session = session
@@ -96,7 +102,9 @@ def test_consultar_datos_renaper_propagates_error_type(mocker):
         "error_type": "remote_error",
         "raw_response": {"detail": "boom"},
     }
-    mocker.patch("centrodefamilia.services.consulta_renaper.impl.APIClient", return_value=client)
+    mocker.patch(
+        "centrodefamilia.services.consulta_renaper.impl.APIClient", return_value=client
+    )
 
     out = module.consultar_datos_renaper("13163071", "M")
 
@@ -111,7 +119,9 @@ def test_consultar_datos_renaper_detecta_fallecido(mocker):
         "success": True,
         "data": {"mensaf": "FALLECIDO"},
     }
-    mocker.patch("centrodefamilia.services.consulta_renaper.impl.APIClient", return_value=client)
+    mocker.patch(
+        "centrodefamilia.services.consulta_renaper.impl.APIClient", return_value=client
+    )
 
     out = module.consultar_datos_renaper("13163071", "M")
 
@@ -126,7 +136,9 @@ def test_consultar_datos_renaper_clasifica_payload_invalido(mocker):
         "success": True,
         "data": "payload roto",
     }
-    mocker.patch("centrodefamilia.services.consulta_renaper.impl.APIClient", return_value=client)
+    mocker.patch(
+        "centrodefamilia.services.consulta_renaper.impl.APIClient", return_value=client
+    )
 
     out = module.consultar_datos_renaper("13163071", "M")
 

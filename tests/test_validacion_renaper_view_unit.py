@@ -156,7 +156,9 @@ def test_consultar_renaper_guard_clauses(mocker):
     view = module.ValidacionRenaperView()
     tecnico = _User(groups=_Groups({"TecnicoCeliaquia"}))
 
-    legajo_no_asig = _Legajo(ciudadano=SimpleNamespace(documento="12345678"), assigned=False)
+    legajo_no_asig = _Legajo(
+        ciudadano=SimpleNamespace(documento="12345678"), assigned=False
+    )
     mocker.patch(
         "celiaquia.views.validacion_renaper.get_object_or_404",
         return_value=legajo_no_asig,
@@ -347,7 +349,10 @@ def test_no_match_no_reintenta_ni_loguea_retry(mocker):
     assert out["max_retries"] == 3
     assert consultar.call_count == 1
     sleep.assert_not_called()
-    assert not any(call.args[0] == "renaper.validation.retrying_remote_query" for call in warning.call_args_list)
+    assert not any(
+        call.args[0] == "renaper.validation.retrying_remote_query"
+        for call in warning.call_args_list
+    )
 
 
 def test_no_match_loguea_solo_no_match_y_mensaje_funcional(mocker):
@@ -385,7 +390,9 @@ def test_no_match_loguea_solo_no_match_y_mensaje_funcional(mocker):
     error_messages = [call.args[0] for call in error.call_args_list]
     assert "renaper.validation.response_error" not in error_messages
     no_match_logs = [
-        call for call in info.call_args_list if call.args[0] == "renaper.validation.no_match"
+        call
+        for call in info.call_args_list
+        if call.args[0] == "renaper.validation.no_match"
     ]
     assert len(no_match_logs) == 1
     log_data = no_match_logs[0].kwargs["extra"]["data"]
@@ -418,7 +425,11 @@ def test_consultar_datos_renaper_con_reintentos_respeta_backoff_y_retry_log(mock
     assert sleep.call_count == 2
     assert sleep.call_args_list[0].args == (0.25,)
     assert sleep.call_args_list[1].args == (0.5,)
-    retry_logs = [call for call in warning.call_args_list if call.args[0] == "renaper.validation.retrying_remote_query"]
+    retry_logs = [
+        call
+        for call in warning.call_args_list
+        if call.args[0] == "renaper.validation.retrying_remote_query"
+    ]
     assert len(retry_logs) == 2
     assert retry_logs[0].kwargs["extra"]["data"]["error_type"] == "timeout"
 

@@ -676,9 +676,7 @@
                                 <div class="col-lg-4 col-md-7">
                                     {% if is_prov %}
                                         {% if leg.observacion_tecnica_texto %}
-                                            <div class="small muted">
-                                                {{ leg.observacion_tecnica_titulo|default:"Observación técnica" }}:
-                                            </div>
+                                            <div class="small muted">{{ leg.observacion_tecnica_titulo|default:"Observación técnica" }}:</div>
                                             <div class="mt-1">
                                                 <div class="p-2 rounded"
                                                      style="background:rgba(255,255,255,.04);
@@ -687,18 +685,18 @@
                                                 </div>
                                             </div>
                                         {% else %}
-                                        <div class="small muted">Observación (subsanación):</div>
-                                        <div class="mt-1">
-                                            {% if leg.subsanacion_motivo %}
-                                                <div class="p-2 rounded"
-                                                     style="background:rgba(255,255,255,.04);
-                                                            border:1px solid rgba(255,255,255,.08)">
-                                                    <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
-                                                </div>
-                                            {% else %}
-                                                <span class="muted">-</span>
-                                            {% endif %}
-                                        </div>
+                                            <div class="small muted">Observación (subsanación):</div>
+                                            <div class="mt-1">
+                                                {% if leg.subsanacion_motivo %}
+                                                    <div class="p-2 rounded"
+                                                         style="background:rgba(255,255,255,.04);
+                                                                border:1px solid rgba(255,255,255,.08)">
+                                                        <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                    </div>
+                                                {% else %}
+                                                    <span class="muted">-</span>
+                                                {% endif %}
+                                            </div>
                                         {% endif %}
                                         {% if leg.subsanacion_renaper_comentario %}
                                             <div class="small muted mt-2">Respuesta provincia:</div>
@@ -890,7 +888,7 @@
                               maxlength="500"></textarea>
                 </div>
                 <small class="text-muted d-block">
-                    El legajo quedarÃ¡ en estado <strong>RECHAZADO</strong> y la provincia verÃ¡ esta observaciÃ³n.
+                    El legajo quedará en estado <strong>RECHAZADO</strong> y la provincia verá esta observación.
                 </small>
             </div>
             <div class="modal-footer">
@@ -1134,7 +1132,10 @@
                                             </h6>
                                             <div class="row g-2">
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Apellido Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label">
+                                                        Apellido Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <input type="text"
                                                            class="form-control{% if 'apellido_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="apellido_responsable"
@@ -1143,7 +1144,10 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Nombre Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label">
+                                                        Nombre Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <input type="text"
                                                            class="form-control{% if 'nombre_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="nombre_responsable"
@@ -1152,7 +1156,10 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">CUIT/Documento Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label">
+                                                        CUIT/Documento Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <input type="text"
                                                            class="form-control{% if 'documento_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="documento_responsable"
@@ -1161,7 +1168,10 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Fecha Nac. Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label">
+                                                        Fecha Nac. Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <input type="text"
                                                            class="form-control{% if 'fecha_nacimiento_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="fecha_nacimiento_responsable"
@@ -1171,7 +1181,10 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Sexo Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label">
+                                                        Sexo Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <select class="form-select{% if 'sexo_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                             name="sexo_responsable"
                                                             {% if 'sexo_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
@@ -1202,7 +1215,10 @@
                                                            {% if 'email_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %} />
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label class="form-label">Domicilio Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label">
+                                                        Domicilio Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <input type="text"
                                                            class="form-control{% if 'domicilio_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="domicilio_responsable"
@@ -1211,7 +1227,10 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label class="form-label">Localidad Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label">
+                                                        Localidad Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <select class="form-select{% if 'localidad_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                             name="localidad_responsable"
                                                             {% if 'localidad_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
@@ -1946,5 +1965,3 @@
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
     <script src="{% static 'custom/js/legajo_comentarios.js' %}"></script>
 {% endblock %}
-
-

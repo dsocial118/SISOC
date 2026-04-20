@@ -1403,7 +1403,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 });
-
   /* ===== CONFIRMAR SUBSANACIÓN INDIVIDUAL ===== */
   const botonesConfirmarSubsanacion = document.querySelectorAll('.btn-confirmar-subsanacion-individual');
   botonesConfirmarSubsanacion.forEach(btn => {
@@ -1850,3 +1849,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+

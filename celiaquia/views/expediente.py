@@ -20,7 +20,7 @@ from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoes
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
-from django.db.models import Q, Count
+from django.db.models import Q, Count, OuterRef, Subquery
 from django.core.paginator import Paginator
 from iam.services import user_has_permission_code
 
@@ -776,12 +776,15 @@ class ExpedienteDetailView(DetailView):
 
         legajos_enriquecidos = []
         legajos_list = list(q.all())
-        historial_tecnico = (
-            HistorialValidacionTecnica.objects.filter(
-                legajo_id__in=[legajo.pk for legajo in legajos_list]
-            )
+        ultimo_historial_tecnico_con_motivo = (
+            HistorialValidacionTecnica.objects.filter(legajo_id=OuterRef("legajo_id"))
             .exclude(Q(motivo__isnull=True) | Q(motivo=""))
-            .order_by("legajo_id", "-creado_en")
+            .order_by("-creado_en", "-pk")
+            .values("pk")[:1]
+        )
+        historial_tecnico = HistorialValidacionTecnica.objects.filter(
+            legajo_id__in=[legajo.pk for legajo in legajos_list],
+            pk=Subquery(ultimo_historial_tecnico_con_motivo),
         )
         observaciones_tecnicas_por_legajo = {}
         for historial_item in historial_tecnico:
