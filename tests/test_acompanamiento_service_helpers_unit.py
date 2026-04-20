@@ -381,9 +381,9 @@ def test_importar_datos_desde_admision_ok(mocker):
         numero_convenio="CONV-1",
         convenio_numero=None,
         comedor=SimpleNamespace(pk=10),
-        numero_expediente="EX-1",
-        numero_resolucion="RES-1",
-        vencimiento_mandato=date(2026, 1, 1),
+        num_expediente="EX-1",
+        numero_disposicion="DISP-1",
+        fecha_vencimiento_mandatos=date(2026, 1, 1),
         if_relevamiento="IF-1",
         prestaciones=SimpleNamespace(
             all=lambda: [
