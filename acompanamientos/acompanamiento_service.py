@@ -323,15 +323,24 @@ class AcompanamientoService:
             )
 
             try:
-                fecha_vencimiento = admision.fecha_vencimiento_mandatos
-                if fecha_vencimiento is not None:
+                informe_tecnico = (
+                    InformeTecnico.objects.filter(admision=admision)
+                    .order_by("-id")
+                    .first()
+                )
+                fecha_vencimiento = (
+                    informe_tecnico.fecha_vencimiento_mandatos
+                    if informe_tecnico
+                    else None
+                )
+                if informe_tecnico and fecha_vencimiento is not None:
                     InformacionRelevante.objects.update_or_create(
                         acompanamiento=acompanamiento,
                         defaults={
                             "numero_expediente": admision.num_expediente or "",
                             "numero_resolucion": admision.numero_disposicion or "",
                             "vencimiento_mandato": fecha_vencimiento,
-                            "if_relevamiento": admision.if_relevamiento or "",
+                            "if_relevamiento": informe_tecnico.if_relevamiento or "",
                         },
                     )
             except Exception:

@@ -3,7 +3,9 @@
 from datetime import datetime
 from types import SimpleNamespace
 from io import BytesIO
+from contextlib import nullcontext
 
+import pytest
 from django.utils import timezone
 
 from admisiones.services import admisiones_service as module
@@ -282,6 +284,10 @@ def test_post_update_router_cubre_ramas_restantes(mocker):
     importar_mock = mocker.patch(
         "admisiones.services.admisiones_service.AcompanamientoService.importar_datos_desde_admision"
     )
+    mocker.patch(
+        "admisiones.services.admisiones_service.transaction.atomic",
+        return_value=nullcontext(),
+    )
     ok, msg = module.AdmisionService.procesar_post_update(req_acomp, adm)
     assert (ok, msg) == (True, "Se envió a Acompañamiento correctamente.")
     upd_estado.assert_called_with(adm, "enviar_a_acompaniamiento")
@@ -331,6 +337,34 @@ def test_post_update_router_cubre_ramas_restantes(mocker):
     mocker.patch.object(module.AdmisionService, "update_convenio", return_value=True)
     ok_tipo, msg_tipo = module.AdmisionService.procesar_post_update(req_tipo, adm)
     assert (ok_tipo, msg_tipo) == (True, "Tipo de convenio actualizado correctamente.")
+
+
+def test_procesar_post_disponibilizar_acomp_no_persiste_estado_parcial_si_importar_falla(
+    mocker,
+):
+    adm = SimpleNamespace(pk=3)
+    user = SimpleNamespace()
+    importar_mock = mocker.patch(
+        "admisiones.services.admisiones_service.AcompanamientoService.importar_datos_desde_admision",
+        side_effect=RuntimeError("boom"),
+    )
+    marcar_envio = mocker.patch.object(
+        module.AdmisionService, "marcar_como_enviado_a_acompaniamiento"
+    )
+    actualizar_estado = mocker.patch.object(
+        module.AdmisionService, "actualizar_estado_admision"
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.transaction.atomic",
+        return_value=nullcontext(),
+    )
+
+    with pytest.raises(RuntimeError, match="boom"):
+        module.AdmisionService._procesar_post_disponibilizar_acomp(adm, user)
+
+    importar_mock.assert_called_once_with(adm)
+    marcar_envio.assert_not_called()
+    actualizar_estado.assert_not_called()
 
 
 def test_handle_upload_personalizado_and_delete_file(mocker):
