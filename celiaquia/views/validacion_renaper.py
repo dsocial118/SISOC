@@ -172,7 +172,9 @@ def _es_error_reintentable(error_type):
 def _enriquecer_resultado_renaper(resultado, retry_attempt, max_retries):
     resultado_normalizado = dict(resultado or {})
     if not resultado_normalizado.get("success", False):
-        resultado_normalizado.setdefault("error", "Error desconocido al consultar Renaper")
+        resultado_normalizado.setdefault(
+            "error", "Error desconocido al consultar Renaper"
+        )
         resultado_normalizado.setdefault("error_type", "unexpected_error")
 
     resultado_normalizado["retry_attempt"] = retry_attempt
