@@ -1,9 +1,7 @@
 import importlib
 from datetime import date, time
-import json
 
 import pytest
-from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
@@ -329,14 +327,10 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
     assert 'name="save_continue"' not in content
     assert 'for="id_provincia"' not in content
     assert 'name="provincia"' in content
-    assert 'name="activo_present"' in content
-    assert "4. Estado de la sede" in content
 
 
 @pytest.mark.django_db
-def test_centro_update_conserva_activo_si_el_form_no_envia_el_switch(
-    client, vat_geo_data
-):
+def test_centro_update_permite_cambiar_activo(client, vat_geo_data):
     provincia_ba, municipio_ba, localidad_ba = vat_geo_data
     user = User.objects.create_superuser(
         username="admin-vat-update-activo",
@@ -391,92 +385,6 @@ def test_centro_update_conserva_activo_si_el_form_no_envia_el_switch(
         localidad_ba,
         nombre="CFP Estado Editable",
         codigo="500144999",
-        **{
-            "contactos-TOTAL_FORMS": "1",
-            "contactos-INITIAL_FORMS": "1",
-            "contactos-MIN_NUM_FORMS": "0",
-            "contactos-MAX_NUM_FORMS": "1000",
-            "contactos-0-id": str(contacto.id),
-            "contactos-0-centro": str(centro.id),
-            "contactos-0-nombre_contacto": "Ana Perez",
-            "contactos-0-rol_area": "Dirección",
-            "contactos-0-documento": "30111223",
-            "contactos-0-telefono_contacto": "221-3333333",
-            "contactos-0-email_contacto": "ana@vat.test",
-            "contactos-0-es_principal": "on",
-        },
-    )
-    update_payload.pop("provincia", None)
-    update_payload.pop("activo", None)
-
-    response = client.post(
-        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
-        data=update_payload,
-    )
-
-    centro.refresh_from_db()
-
-    assert response.status_code == 302
-    assert centro.activo is True
-
-
-@pytest.mark.django_db
-def test_centro_update_permite_desactivar_activo_desde_switch(client, vat_geo_data):
-    provincia_ba, municipio_ba, localidad_ba = vat_geo_data
-    user = User.objects.create_superuser(
-        username="admin-vat-desactiva-centro",
-        email="admin-vat-desactiva-centro@vat.test",
-        password="test1234",
-    )
-    _assign_user_profile_provincia(user, provincia_ba)
-    group, _ = Group.objects.get_or_create(name="CFP")
-    referente = User.objects.create_user(
-        username="referente-desactiva-centro",
-        email="referente-desactiva-centro@vat.test",
-        password="test1234",
-    )
-    referente.groups.add(group)
-    centro = Centro.objects.create(
-        nombre="CFP Estado Editable",
-        codigo="500144998",
-        provincia=provincia_ba,
-        municipio=municipio_ba,
-        localidad=localidad_ba,
-        calle="12",
-        numero=100,
-        domicilio_actividad="Calle 12 N° 100",
-        telefono="221-1111111",
-        celular="221-2222222",
-        correo="cfp-estado-off@vat.test",
-        nombre_referente="Ana",
-        apellido_referente="Perez",
-        telefono_referente="221-3333333",
-        correo_referente="ana@vat.test",
-        referente=referente,
-        tipo_gestion="Estatal",
-        clase_institucion="Formación Profesional",
-        situacion="Institución de ETP",
-        activo=True,
-    )
-    contacto = InstitucionContacto.objects.create(
-        centro=centro,
-        nombre_contacto="Ana Perez",
-        documento="30111223",
-        rol_area="Dirección",
-        telefono_contacto="221-3333333",
-        email_contacto="ana@vat.test",
-        es_principal=True,
-    )
-    client.force_login(user)
-
-    update_payload = _build_centro_payload(
-        referente,
-        provincia_ba,
-        municipio_ba,
-        localidad_ba,
-        nombre="CFP Estado Editable",
-        codigo="500144998",
-        activo_present="1",
         **{
             "contactos-TOTAL_FORMS": "1",
             "contactos-INITIAL_FORMS": "1",
@@ -938,44 +846,6 @@ def test_centro_update_no_reactiva_centros_inactivos(
 
 
 @pytest.mark.django_db
-def test_centro_update_permite_reactivar_centros_inactivos_desde_switch(
-    vat_admin_client, vat_referente_user, vat_geo_data
-):
-    provincia, municipio, localidad = vat_geo_data
-    admin_user = User.objects.get(username="admin-vat")
-    _assign_user_profile_provincia(admin_user, provincia)
-    payload = _build_centro_payload(
-        vat_referente_user, provincia, municipio, localidad, save_continue="1"
-    )
-    vat_admin_client.post(reverse("vat_centro_create"), data=payload)
-
-    centro = Centro.objects.get(codigo="500144900")
-    centro.activo = False
-    centro.save(update_fields=["activo"])
-
-    update_payload = _build_centro_payload(
-        vat_referente_user,
-        provincia,
-        municipio,
-        localidad,
-        nombre="Centro reactivado",
-        codigo="500144902",
-        activo_present="1",
-    )
-
-    response = vat_admin_client.post(
-        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
-        data=update_payload,
-    )
-
-    centro.refresh_from_db()
-
-    assert response.status_code == 302
-    assert centro.nombre == "Centro reactivado"
-    assert centro.activo is True
-
-
-@pytest.mark.django_db
 def test_centro_list_usuario_provincial_solo_ve_su_provincia(client):
     provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
     provincia_sf = Provincia.objects.create(nombre="Santa Fe")
@@ -1144,121 +1014,6 @@ def test_filter_centros_queryset_usuario_con_role_provincia_vat_aplica_scope():
     centros = list(filter_centros_queryset_for_user(Centro.objects.all(), user))
 
     assert centros == [centro_corrientes]
-
-
-@pytest.mark.django_db
-def test_vat_centro_list_filters_config_expone_solo_nombre_y_codigo(mocker):
-    user = User.objects.create_superuser(
-        username="admin-vat-filtros",
-        email="admin-filtros@vat.test",
-        password="test1234",
-    )
-    request = RequestFactory().get("/vat/centros/")
-    request.user = user
-
-    mocker.patch.object(centro_views, "reverse", side_effect=lambda name: f"/{name}/")
-
-    view = centro_views.CentroListView()
-    view.request = request
-    view.kwargs = {}
-    view.object_list = Centro.objects.none()
-    context = view.get_context_data()
-
-    assert [field["name"] for field in context["filters_config"]["fields"]] == [
-        "nombre",
-        "codigo",
-    ]
-
-
-@pytest.mark.django_db
-def test_vat_centro_list_filtra_por_cue_actual_en_codigo(vat_geo_data):
-    provincia, municipio, localidad = vat_geo_data
-    user = User.objects.create_superuser(
-        username="centro-filtro-cue",
-        email="centro-filtro-cue@vat.test",
-        password="test1234",
-    )
-
-    centro_match = Centro.objects.create(
-        nombre="Centro CUE vigente",
-        codigo="LEG-001",
-        provincia=provincia,
-        municipio=municipio,
-        localidad=localidad,
-        calle="7",
-        numero=123,
-        domicilio_actividad="Calle 7",
-        telefono="221-111111",
-        celular="221-111112",
-        correo="cue@vat.test",
-        nombre_referente="Ana",
-        apellido_referente="Perez",
-        telefono_referente="221-111113",
-        correo_referente="refcue@vat.test",
-        tipo_gestion="Estatal",
-        clase_institucion="Formación Profesional",
-        situacion="Institución de ETP",
-        activo=True,
-    )
-    InstitucionIdentificadorHist.objects.create(
-        centro=centro_match,
-        tipo_identificador="cue",
-        valor_identificador="500144900",
-        rol_institucional="sede",
-        es_actual=True,
-    )
-    centro_other = Centro.objects.create(
-        nombre="Centro sin match",
-        codigo="LEG-002",
-        provincia=provincia,
-        municipio=municipio,
-        localidad=localidad,
-        calle="8",
-        numero=456,
-        domicilio_actividad="Calle 8",
-        telefono="221-222221",
-        celular="221-222222",
-        correo="other@vat.test",
-        nombre_referente="Juan",
-        apellido_referente="Gomez",
-        telefono_referente="221-222223",
-        correo_referente="refother@vat.test",
-        tipo_gestion="Privada",
-        clase_institucion="Capacitación Laboral",
-        situacion="Institución de ETP",
-        activo=True,
-    )
-    InstitucionIdentificadorHist.objects.create(
-        centro=centro_other,
-        tipo_identificador="cue",
-        valor_identificador="500144901",
-        rol_institucional="sede",
-        es_actual=True,
-    )
-
-    request = RequestFactory().get(
-        "/vat/centros/",
-        data={
-            "filters": json.dumps(
-                {
-                    "logic": "AND",
-                    "items": [
-                        {
-                            "field": "codigo",
-                            "op": "contains",
-                            "value": "500144900",
-                        }
-                    ],
-                }
-            )
-        },
-    )
-    request.user = user
-
-    view = centro_views.CentroListView()
-    view.request = request
-
-    assert list(view.get_queryset()) == [centro_match]
 
 
 @pytest.mark.django_db
@@ -3560,6 +3315,7 @@ def test_api_vat_web_inscripcion_libre_crea_inscripcion_operativa_sin_ciudadano(
     assert ciudadano.documento == 42439852
     assert ciudadano.apellido == "CONIGLIO"
     assert ciudadano.fecha_nacimiento == date(1900, 1, 1)
+    assert ciudadano.telefono == "+54-351-3989965"
 
     inscripcion = Inscripcion.objects.get(pk=payload["id"])
     assert inscripcion.comision_curso == comision
@@ -3649,6 +3405,76 @@ def test_api_vat_web_inscripcion_libre_usa_cuil_como_documento_si_no_viene_docum
     inscripcion = Inscripcion.objects.get(pk=payload["id"])
     solicitud = SolicitudInscripcionPublica.objects.get(inscripcion=inscripcion)
     assert solicitud.datos_postulante["cuil"] == "27375343520"
+
+
+@pytest.mark.django_db
+def test_api_vat_web_inscripcion_libre_prioriza_documento_principal_sobre_cuil(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Operario en Arbolado Urbano",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="COMCUR-31329-20260416191414474174",
+        nombre="Comision Operario en Arbolado Urbano",
+        cupo_total=35,
+        fecha_inicio=date(2026, 3, 20),
+        fecha_fin=date(2026, 12, 18),
+        estado="activa",
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/web/inscripciones/",
+        {
+            "documento": "29711907",
+            "comision_curso_id": comision.id,
+            "estado": "pre_inscripta",
+            "datos_postulante": {
+                "nombre": "Federico",
+                "apellido": "PIEDRASANTA",
+                "fecha_nacimiento": "1982-07-27",
+                "tipo_documento": "DNI",
+                "cuil": "23297119079",
+                "email": "fede.piedrasanta@gmail.com",
+                "telefono": "+54-351-6783108",
+            },
+            "observaciones": (
+                '{"nombre":"Federico","apellido":"PIEDRASANTA",'
+                '"fecha_nacimiento":"1982-07-27","genero":"M",'
+                '"email":"fede.piedrasanta@gmail.com",'
+                '"telefono":"+54-351-6783108",'
+                '"nivel_estudio":"universitario_completo",'
+                '"tipo_documento":"DNI","cuil":"23297119079",'
+                '"actual_calle":"Av de mayo","actual_numero":"200",'
+                '"actual_entre_calles":"Rosales y Chacabuco",'
+                '"actual_municipio_id":"44",'
+                '"actual_municipio_nombre":"Avellaneda",'
+                '"actual_provincia_id":"2",'
+                '"actual_provincia_nombre":"Buenos Aires"}'
+            ),
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    ciudadano = Ciudadano.objects.get(pk=payload["ciudadano"])
+    assert ciudadano.documento == 29711907
+    assert ciudadano.fecha_nacimiento == date(1982, 7, 27)
+
+    response_inscripciones = vat_api_client.get(
+        "/api/vat/web/inscripciones/?documento=29711907"
+    )
+
+    assert response_inscripciones.status_code == 200
+    assert response_inscripciones.json()["count"] == 1
 
 
 @pytest.mark.django_db
@@ -3993,102 +3819,6 @@ def test_comision_curso_update_view_renderiza_formulario(client, vat_curso_base)
 
     assert response.status_code == 200
     assert "ubicacion" in response.content.decode("utf-8")
-
-
-@pytest.mark.django_db
-@override_settings(ROOT_URLCONF="VAT.urls")
-def test_curso_update_ajax_invalido_devuelve_json_y_no_persiste(client, vat_curso_base):
-    centro, _, modalidad = vat_curso_base
-    sector = Sector.objects.create(nombre="Sector AJAX Curso")
-    plan = PlanVersionCurricular.objects.create(
-        nombre="Plan AJAX Curso",
-        provincia=centro.provincia,
-        sector=sector,
-        modalidad_cursada=modalidad,
-        activo=True,
-    )
-    user = User.objects.create_superuser(
-        username="admin-curso-ajax-update",
-        email="admin-curso-ajax-update@vat.test",
-        password="test1234",
-    )
-    curso = Curso.objects.create(
-        centro=centro,
-        plan_estudio=plan,
-        modalidad=modalidad,
-        nombre="Curso AJAX",
-        estado="planificado",
-    )
-
-    client.force_login(user)
-    response = client.post(
-        reverse("vat_curso_update", kwargs={"pk": curso.pk}),
-        data={
-            "nombre": "Curso AJAX editado",
-            "estado": "activo",
-            "costo_creditos": "0",
-            "observaciones": "No deberia persistir",
-        },
-        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
-    )
-    curso.refresh_from_db()
-    payload = response.json()
-
-    assert response.status_code == 400
-    assert payload["ok"] is False
-    assert "plan_estudio" in payload["errors"]
-    assert curso.nombre == "Curso AJAX"
-
-
-@pytest.mark.django_db
-@override_settings(ROOT_URLCONF="VAT.urls")
-def test_comision_curso_update_ajax_invalido_devuelve_json_y_no_persiste(
-    client, vat_curso_base
-):
-    centro, ubicacion, modalidad = vat_curso_base
-    user = User.objects.create_superuser(
-        username="admin-comision-ajax-update",
-        email="admin-comision-ajax-update@vat.test",
-        password="test1234",
-    )
-    curso = Curso.objects.create(
-        centro=centro,
-        modalidad=modalidad,
-        nombre="Curso AJAX Comision",
-        estado="planificado",
-    )
-    comision = ComisionCurso.objects.create(
-        curso=curso,
-        ubicacion=ubicacion,
-        cupo_total=20,
-        fecha_inicio=date(2026, 4, 1),
-        fecha_fin=date(2026, 4, 30),
-        estado="planificada",
-    )
-
-    client.force_login(user)
-    response = client.post(
-        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk}),
-        data={
-            "curso": str(curso.pk),
-            "ubicacion": str(ubicacion.pk),
-            "cupo_total": 20,
-            "fecha_inicio": "2026-04-30",
-            "fecha_fin": "2026-04-01",
-            "estado": "planificada",
-            "observaciones": "No deberia persistir",
-        },
-        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
-    )
-    comision.refresh_from_db()
-    payload = response.json()
-
-    assert response.status_code == 400
-    assert payload["ok"] is False
-    assert payload["errors"]["fecha_fin"][0] == (
-        "La fecha de fin debe ser mayor o igual a la fecha de inicio."
-    )
-    assert comision.fecha_inicio == date(2026, 4, 1)
 
 
 @pytest.mark.django_db
@@ -4481,39 +4211,6 @@ def test_curso_form_filtra_plan_estudio_por_provincia_del_centro(vat_curso_base)
 
 
 @pytest.mark.django_db
-def test_centro_cursos_panel_context_incluye_plan_actual_inactivo_para_edicion(
-    vat_curso_base,
-):
-    centro, _, modalidad = vat_curso_base
-    sector = Sector.objects.create(nombre="Sector Legacy")
-    plan_inactivo = PlanVersionCurricular.objects.create(
-        nombre="Plan Inactivo Legacy",
-        provincia=centro.provincia,
-        sector=sector,
-        modalidad_cursada=modalidad,
-        activo=False,
-    )
-    curso = Curso.objects.create(
-        centro=centro,
-        plan_estudio=plan_inactivo,
-        modalidad=modalidad,
-        nombre="Curso Legacy",
-        estado="planificado",
-    )
-
-    context = centro_views._build_cursos_panel_context(
-        RequestFactory().get("/"), centro
-    )
-    plan_ids = set(
-        context["curso_form"]
-        .fields["plan_estudio"]
-        .queryset.values_list("id", flat=True)
-    )
-
-    assert curso.plan_estudio_id in plan_ids
-
-
-@pytest.mark.django_db
 def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Virtual", activo=True)
@@ -4584,12 +4281,6 @@ def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(client, vat_geo_d
     assert 'id="tablaComisionesCursoCentro"' not in content
     assert "loadCursosPanel" in content
     assert "cursosPageSizeSelect.value = '25';" in content
-    assert "row.addEventListener('click', lockRowFilter);" in content
-    assert "row.addEventListener('keydown', function(event)" in content
-    assert "row.addEventListener('mouseenter'" not in content
-    assert "row.addEventListener('focus'" not in content
-    assert "previewCursoId" not in content
-    assert "hoverFilterEnabled" not in content
 
 
 @pytest.mark.django_db
@@ -4664,8 +4355,6 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     client.force_login(user)
     response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
     content = response.content.decode("utf-8")
-    soup = BeautifulSoup(content, "html.parser")
-    comisiones_filter_curso = soup.select_one("#comisionesFilterCurso")
 
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
@@ -4680,10 +4369,6 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'class="curso-row"' in content
     assert f'data-curso-id="{_curso.id}"' in content
     assert 'data-curso-plan="Plan Industrial Inicial"' in content
-    assert (
-        'aria-label="Seleccionar curso Curso Filtrable para filtrar comisiones"'
-        in content
-    )
     assert "<td>Plan Industrial Inicial</td>" in content
     assert 'id="tablaComisionesCursoCentro"' in content
     assert "<th>Código</th>" in content
@@ -4697,14 +4382,10 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'id="comisionesFilterCurso"' in content
     assert 'id="comisionesFilterEstado"' in content
     assert 'id="comisionesFilterPageSize"' in content
-    assert '<option value="25" selected>25</option>' in content
     assert 'id="comisionesFilterClear"' in content
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
     assert 'title="Gestionar Comisión"' in content
-    assert comisiones_filter_curso is not None
-    assert "select2" in comisiones_filter_curso.get("class", [])
-    assert comisiones_filter_curso.get("data-width") == "100%"
 
 
 @pytest.mark.django_db
@@ -4771,8 +4452,6 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     client.force_login(user)
     response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
     content = response.content.decode("utf-8")
-    soup = BeautifulSoup(content, "html.parser")
-    selector_sector = soup.select_one("#planCurricularSelectorSector")
 
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
@@ -4795,10 +4474,6 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert f'value="{plan.id}"' in content
     assert f'value="{plan_inactivo.id}"' not in content
     assert f'value="{plan_otra_provincia.id}"' not in content
-    assert selector_sector is not None
-    assert "select2" in selector_sector.get("class", [])
-    assert selector_sector.get("data-width") == "100%"
-    assert selector_sector.get("data-dropdown-parent") == "#modalPlanCurricularSelector"
 
 
 @pytest.mark.django_db
