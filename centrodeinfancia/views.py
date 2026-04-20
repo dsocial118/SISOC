@@ -594,11 +594,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
                 else "-"
             ),
             "tipo_jornada_otra": self.object.tipo_jornada_otra or "",
-            "oferta_servicios": (
-                self.object.get_oferta_servicios_display()
-                if self.object.oferta_servicios
-                else "-"
-            ),
+            "oferta_servicios": self.object.get_oferta_servicios_display() or "-",
             "modalidad_gestion": (
                 self.object.get_modalidad_gestion_display()
                 if self.object.modalidad_gestion

@@ -8,6 +8,7 @@ from centrodeinfancia.forms import CentroDeInfanciaForm
 from centrodeinfancia.models import (
     CentroDeInfancia,
     DepartamentoIpi,
+    OfertaServicio,
 )
 from core.models import Provincia
 from users.models import Profile
@@ -184,6 +185,40 @@ def test_form_rechaza_fecha_inicio_anterior_a_1990():
 
     assert not form.is_valid()
     assert "fecha_inicio" in form.errors
+
+
+@pytest.mark.django_db
+def test_form_guarda_oferta_servicios_multiple():
+    user = User.objects.create_user(
+        username="user-ofertas-multiples",
+        password="test1234",
+    )
+    lactantes, _ = OfertaServicio.objects.get_or_create(
+        codigo="lactantes",
+        defaults={"orden": 0},
+    )
+    multiedad, _ = OfertaServicio.objects.get_or_create(
+        codigo="multiedad",
+        defaults={"orden": 5},
+    )
+
+    form = CentroDeInfanciaForm(
+        data={
+            "nombre": "CDI Servicios",
+            "telefono": "1122334455",
+            "telefono_referente": "1199887766",
+            "oferta_servicios": [str(lactantes.pk), str(multiedad.pk)],
+        },
+        user=user,
+        lock_provincia_from_user=False,
+    )
+
+    assert form.is_valid(), form.errors
+
+    centro = form.save()
+    assert list(
+        centro.oferta_servicios.values_list("codigo", flat=True)
+    ) == ["lactantes", "multiedad"]
 
 
 @pytest.mark.django_db

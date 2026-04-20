@@ -10,6 +10,7 @@ from centrodeinfancia.models import (
     CentroDeInfancia,
     CentroDeInfanciaHorarioFuncionamiento,
     FormularioCDI,
+    OfertaServicio,
 )
 from centrodeinfancia.views_formulario_cdi import (
     FormularioCDIDetailView,
@@ -415,6 +416,10 @@ def test_formulario_cdi_editar_vacio_sin_cambios_guarda_correctamente(client):
 def test_formulario_cdi_crear_autocompleta_campos_nuevos_desde_centro(client):
     user = _crear_usuario("super-form-autocomplete", superuser=True)
     client.force_login(user)
+    oferta_servicio, _ = OfertaServicio.objects.get_or_create(
+        codigo="multiedad",
+        defaults={"orden": 5},
+    )
     centro = CentroDeInfancia.objects.create(
         nombre="CDI Autocomplete",
         organizacion="Asociacion Civil Horizonte",
@@ -425,9 +430,9 @@ def test_formulario_cdi_crear_autocompleta_campos_nuevos_desde_centro(client):
         dias_funcionamiento=["lunes", "martes"],
         meses_funcionamiento=["enero", "febrero"],
         tipo_jornada="simple_single_shift",
-        oferta_servicios="multiedad",
         modalidad_gestion="gestion_tercer_sector",
     )
+    centro.oferta_servicios.add(oferta_servicio)
     CentroDeInfanciaHorarioFuncionamiento.objects.create(
         centro=centro,
         dia="lunes",
@@ -456,6 +461,14 @@ def test_formulario_cdi_crear_autocompleta_campos_nuevos_desde_centro(client):
 def test_detalle_cdi_muestra_nuevos_paneles_y_campos(client):
     user = _crear_usuario("super-cdi-detalle-campos", superuser=True)
     client.force_login(user)
+    lactantes_servicio, _ = OfertaServicio.objects.get_or_create(
+        codigo="lactantes",
+        defaults={"orden": 0},
+    )
+    oferta_servicio, _ = OfertaServicio.objects.get_or_create(
+        codigo="multiedad",
+        defaults={"orden": 5},
+    )
     centro = CentroDeInfancia.objects.create(
         nombre="CDI Detalle",
         organizacion="Asociacion Civil Horizonte",
@@ -469,9 +482,9 @@ def test_detalle_cdi_muestra_nuevos_paneles_y_campos(client):
         meses_funcionamiento=["enero", "febrero"],
         dias_funcionamiento=["lunes", "martes"],
         tipo_jornada="simple_single_shift",
-        oferta_servicios="multiedad",
         modalidad_gestion="gestion_tercer_sector",
     )
+    centro.oferta_servicios.set([lactantes_servicio, oferta_servicio])
     CentroDeInfanciaHorarioFuncionamiento.objects.create(
         centro=centro,
         dia="lunes",
@@ -497,7 +510,7 @@ def test_detalle_cdi_muestra_nuevos_paneles_y_campos(client):
     assert "Enero, Febrero" in content
     assert "Lunes, Martes" in content
     assert "Lunes: 08:00 a 12:00" in content
-    assert "Multiedad" in content
+    assert "Lactantes, Multiedad" in content
 
 
 @pytest.mark.django_db
