@@ -496,6 +496,93 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
+  /* ===== MODAL RECHAZAR (técnico) ===== */
+  const modalRechazar = document.getElementById('modalRechazar');
+  if (modalRechazar) {
+    modalRechazar.addEventListener('show.bs.modal', function (event) {
+      const trigger = event.relatedTarget;
+      const legajoId = trigger?.getAttribute('data-legajo-id') || '';
+      modalRechazar.querySelector('#rechazar-legajo-id').value = legajoId;
+      const ta = modalRechazar.querySelector('#rechazar-motivo');
+      if (ta) ta.value = '';
+    });
+
+    const formRechazar = document.getElementById('form-rechazar');
+    formRechazar.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const legajoId = modalRechazar.querySelector('#rechazar-legajo-id').value;
+      const motivo = (modalRechazar.querySelector('#rechazar-motivo').value || '').trim();
+      const btn = document.getElementById('btn-confirm-rechazar');
+      const original = btn.innerHTML;
+
+      if (!legajoId) {
+        showAlert('danger', 'No se pudo identificar el legajo.');
+        return;
+      }
+      if (!motivo) {
+        showAlert('warning', 'Indicá el motivo del rechazo.');
+        return;
+      }
+
+      if (!window.REVISAR_URL_TEMPLATE) {
+        showAlert('danger', 'No se configuró la URL de revisión de legajos.');
+        return;
+      }
+      const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
+
+      try {
+        const fd = new FormData();
+        fd.append('accion', 'RECHAZAR');
+        fd.append('motivo', motivo);
+
+        const resp = await fetch(url, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const ct = resp.headers.get('Content-Type') || '';
+        let data = {};
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+          data = { success: true, message: text, estado: 'RECHAZADO' };
+        }
+
+        if (!resp.ok || data.success === false) {
+          const msg = data.error || data.message || `HTTP ${resp.status}`;
+          throw new Error(msg);
+        }
+
+        showAlert('success', data.message || `Legajo ${legajoId}: quedó rechazado.`);
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(modalRechazar);
+          modal.hide();
+          window.location.reload();
+        }, 800);
+
+      } catch (err) {
+        console.error('Rechazar legajo:', err);
+        showAlert('danger', 'No se pudo registrar el rechazo. ', err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    });
+  }
+
+
   /* ===== CRUCE CUIT (Nuevo/Reprocesar) ===== */
   const modalCruce = document.getElementById('modalCruceCuit');
   if (modalCruce) {
@@ -649,16 +736,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function toggleActive(btnAprobar, btnRechazar, estado) {
-      [btnAprobar, btnRechazar].forEach(b => {
-        if (!b) return;
-        b.classList.remove('active');
-        b.classList.remove('btn-success', 'btn-danger');
-        b.classList.add('btn-outline-success');
-        if (b && b.dataset.accion === 'RECHAZAR') {
-          b.classList.remove('btn-outline-success');
-          b.classList.add('btn-outline-danger');
-        }
-      });
+      if (btnAprobar) {
+        btnAprobar.classList.remove('active', 'btn-success', 'btn-danger', 'btn-outline-danger');
+        btnAprobar.classList.add('btn-outline-success');
+      }
+      if (btnRechazar) {
+        btnRechazar.classList.remove('active', 'btn-success', 'btn-danger', 'btn-outline-success');
+        btnRechazar.classList.add('btn-outline-danger');
+      }
 
       if (estado === 'APROBADO' && btnAprobar) {
         btnAprobar.classList.add('active');
@@ -689,7 +774,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const container = btn.closest('.legajo-item') || document;
         const btnAprobar = container.querySelector(`.btn-revision[data-legajo-id="${legajoId}"][data-accion="APROBAR"]`);
-        const btnRechazar = container.querySelector(`.btn-revision[data-legajo-id="${legajoId}"][data-accion="RECHAZAR"]`);
+        const btnRechazar = container.querySelector(`.btn-rechazar[data-legajo-id="${legajoId}"]`);
 
         setLoading(btn, true);
 

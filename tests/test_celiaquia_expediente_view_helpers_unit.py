@@ -598,14 +598,24 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
     no_motivo = view.post(no_motivo_req, pk=1, legajo_id=3)
     assert no_motivo.status_code == 400
 
+    no_motivo_rechazo_req = SimpleNamespace(
+        user=_user_stub(user_id=1, tec=True), POST={"accion": "RECHAZAR", "motivo": ""}
+    )
+    no_motivo_rechazo = view.post(no_motivo_rechazo_req, pk=1, legajo_id=3)
+    assert no_motivo_rechazo.status_code == 400
+
     liberar = mocker.patch("celiaquia.views.expediente.CupoService.liberar_slot")
-    mocker.patch("celiaquia.views.expediente.HistorialValidacionTecnica.objects.create")
+    historial_create = mocker.patch(
+        "celiaquia.views.expediente.HistorialValidacionTecnica.objects.create"
+    )
     rechazar_req = SimpleNamespace(
-        user=_user_stub(user_id=1, tec=True), POST={"accion": "RECHAZAR"}
+        user=_user_stub(user_id=1, tec=True),
+        POST={"accion": "RECHAZAR", "motivo": "Documento ilegible"},
     )
     rechazar = view.post(rechazar_req, pk=1, legajo_id=3)
     assert rechazar.status_code == 200
     assert liberar.called
+    assert historial_create.call_args.kwargs["motivo"] == "Documento ilegible"
 
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
     eliminar_req = SimpleNamespace(
