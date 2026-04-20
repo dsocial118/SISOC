@@ -42,6 +42,10 @@ from VAT.services.inscripcion_service import (
     ESTADOS_INSCRIPCION_OCUPAN_CUPO,
     InscripcionService,
 )
+from VAT.services.nomina_export import (
+    build_comision_curso_nomina_excel,
+    build_nomina_filename,
+)
 from VAT.services.sesion_comision_service.impl import SesionComisionService
 
 
@@ -410,9 +414,58 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                 "horario_update_url_name": "vat_comision_curso_horario_update",
                 "horario_delete_url_name": "vat_comision_curso_horario_delete",
                 "inscripcion_rapida_url_name": "vat_inscripcion_rapida_comision_curso",
+                "export_preinscriptos_url": reverse(
+                    "vat_comision_curso_export_preinscriptos",
+                    kwargs={"pk": comision.pk},
+                ),
+                "export_inscriptos_url": reverse(
+                    "vat_comision_curso_export_inscriptos",
+                    kwargs={"pk": comision.pk},
+                ),
             }
         )
         return context
+
+
+class _ComisionCursoNominaExportView(LoginRequiredMixin, View):
+    filename_prefix = "nomina_preinscriptos"
+    only_inscriptos = False
+
+    def get_inscripciones(self, comision):
+        queryset = (
+            Inscripcion.objects.filter(comision_curso=comision)
+            .select_related("ciudadano__sexo")
+            .order_by("fecha_inscripcion", "pk")
+        )
+        if self.only_inscriptos:
+            queryset = queryset.filter(estado="inscripta")
+        return queryset
+
+    def get(self, request, pk):
+        comision = get_object_or_404(
+            _scoped_comisiones_curso_queryset(request.user),
+            pk=pk,
+        )
+        content = build_comision_curso_nomina_excel(
+            comision,
+            self.get_inscripciones(comision),
+        )
+        filename = build_nomina_filename(self.filename_prefix, comision)
+        response = HttpResponse(
+            content,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
+class ComisionCursoPreinscriptosExportView(_ComisionCursoNominaExportView):
+    filename_prefix = "nomina_preinscriptos"
+
+
+class ComisionCursoInscriptosExportView(_ComisionCursoNominaExportView):
+    filename_prefix = "nomina_inscriptos"
+    only_inscriptos = True
 
 
 class InscripcionCursoCambiarEstadoView(LoginRequiredMixin, View):
