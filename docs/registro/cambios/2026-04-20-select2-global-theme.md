@@ -10,13 +10,16 @@ Se definió un tema global de `Select2` reutilizable, cargado desde la base com�
 
 ## Cambios implementados
 
-### `templates/includes/base.html`
+### `templates/includes/base.html` y `templates/includes/new_base.html`
 
-Se incorporó la carga de una hoja de estilos global dedicada a `Select2`.
+Se incorporó la carga de una hoja de estilos global dedicada a `Select2` en ambas
+bases compartidas del proyecto.
 
 ### `static/custom/css/select2_theme.css`
 
-Se agregó una hoja de estilos con el tema visual global para `Select2` en contexto `dark-mode`, contemplando:
+Se agregó una hoja de estilos con el tema visual global para `Select2` en contexto
+`dark-mode`, contemplando los temas `default`, `bootstrap4` y `bootstrap5`, y
+contemplando:
 
 - fondo y borde del selector;
 - color del texto seleccionado;
@@ -26,13 +29,22 @@ Se agregó una hoja de estilos con el tema visual global para `Select2` en conte
 - estados hover y selección;
 - variantes `single` y `multiple`.
 
+### Templates con override legacy removido
+
+Se retiró la carga de `admin/css/select2templated.css` en formularios ya
+migrados a la base común para evitar que la cascada vuelva a pisar el tema
+global.
+
 ## Alcance
 
-El cambio impacta a los componentes `Select2` renderizados en las vistas que utilizan la base común y el esquema visual oscuro del sistema.
+El cambio impacta a los componentes `Select2` renderizados en las vistas que
+utilizan las bases compartidas del sistema y el esquema visual oscuro, incluyendo
+inicializaciones con tema `default`, `bootstrap4` y `bootstrap5`.
 
 ## Exclusiones explicitas
 
-- No se mantuvieron cambios particulares por modal o por pantalla.
+- No se mantuvieron overrides legacy por pantalla en formularios ya alineados al
+  tema global.
 - No se modificó logica de backend ni validaciones de formularios.
 - No se alteró el comportamiento funcional de provincia, municipio o localidad.
 
