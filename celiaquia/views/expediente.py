@@ -943,9 +943,7 @@ class ExpedienteDetailView(DetailView):
         ):
             tecnicos = _tecnicos_queryset().order_by("last_name", "first_name")
 
-        faltan_archivos = expediente.expediente_ciudadanos.filter(
-            Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
-        ).exists()
+        faltan_archivos = bool(faltantes_list)
 
         # Cupo: usar propiedad expediente.provincia (puede ser None)
         cupo = None

@@ -90,14 +90,23 @@ class ExpedienteService:
                 f"El expediente no está en estado EN_ESPERA. Estado actual: {expediente.estado.nombre}"
             )
 
-        for leg in expediente.expediente_ciudadanos.all():
+        legajos_qs = expediente.expediente_ciudadanos
+        if hasattr(legajos_qs, "select_related"):
+            legajos_qs = legajos_qs.select_related("ciudadano")
+
+        responsables_ids = LegajoService.obtener_ids_responsables_expediente(
+            expediente, legajos_qs
+        )
+        for leg in legajos_qs.all():
             if hasattr(leg, "archivos_ok"):
-                leg.archivos_ok = bool(leg.archivo2 and leg.archivo3)
+                leg.archivos_ok = LegajoService.tiene_archivos_requeridos(
+                    leg, responsables_ids
+                )
                 leg.save(update_fields=["archivos_ok"])
 
         if not LegajoService.all_legajos_loaded(expediente):
             raise ValidationError(
-                "Debes subir un archivo para cada legajo antes de confirmar."
+                "Debes subir toda la documentacion obligatoria de cada legajo antes de confirmar."
             )
 
         _set_estado(expediente, "CONFIRMACION_DE_ENVIO", usuario)
