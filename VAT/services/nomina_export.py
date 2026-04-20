@@ -11,15 +11,15 @@ NOMINA_HEADERS = [
     "Nombre",
     "DNI / CUIL",
     "Fecha de Nacimiento",
-    "G\u00e9nero",
-    "Comisi\u00f3n",
+    "Género",
+    "Comisión",
     "Curso",
-    "Centro de Formaci\u00f3n",
-    "Estado de Inscripci\u00f3n",
-    "Fecha de Inscripci\u00f3n",
-    "Canal de Inscripci\u00f3n",
+    "Centro de Formación",
+    "Estado de Inscripción",
+    "Fecha de Inscripción",
+    "Canal de Inscripción",
     "Email",
-    "Tel\u00e9fono",
+    "Teléfono",
 ]
 
 
