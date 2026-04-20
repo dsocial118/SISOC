@@ -1,0 +1,107 @@
+body.dark-mode .select2-container {
+    width: 100% !important;
+}
+
+body.dark-mode .select2-container--default .select2-selection--single,
+body.dark-mode .select2-container--default .select2-selection--multiple {
+    min-height: 38px;
+    background-color: #1e2a3a !important;
+    border: 1px solid #3d4f63 !important;
+    border-radius: 0.25rem;
+}
+
+body.dark-mode .select2-container--default.select2-container--focus .select2-selection--single,
+body.dark-mode .select2-container--default.select2-container--focus .select2-selection--multiple,
+body.dark-mode .select2-container--default.select2-container--open .select2-selection--single,
+body.dark-mode .select2-container--default.select2-container--open .select2-selection--multiple {
+    background-color: #253446 !important;
+    border-color: #f39c12 !important;
+    box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15) !important;
+}
+
+body.dark-mode .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 36px !important;
+    color: #e5e7eb !important;
+    padding-left: 12px !important;
+    padding-right: 34px !important;
+}
+
+body.dark-mode .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: #e5e7eb !important;
+    padding: 4px 8px !important;
+}
+
+body.dark-mode .select2-container--default .select2-selection--single .select2-selection__placeholder,
+body.dark-mode .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
+    color: #9ca3af !important;
+}
+
+body.dark-mode .select2-container--default .select2-selection--single .select2-selection__clear,
+body.dark-mode .select2-container--default .select2-selection--multiple .select2-selection__clear {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 36px !important;
+}
+
+body.dark-mode .select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #9ca3af transparent transparent transparent !important;
+}
+
+body.dark-mode .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
+    border-color: transparent transparent #9ca3af transparent !important;
+}
+
+body.dark-mode .select2-dropdown,
+body.dark-mode .select2-container--default .select2-dropdown {
+    background-color: #1e2a3a !important;
+    border: 1px solid #3d4f63 !important;
+    color: #e5e7eb !important;
+}
+
+body.dark-mode .select2-search--dropdown,
+body.dark-mode .select2-search--dropdown .select2-search__field {
+    background-color: #253446 !important;
+    color: #e5e7eb !important;
+    border-color: #3d4f63 !important;
+}
+
+body.dark-mode .select2-search--dropdown .select2-search__field::placeholder,
+body.dark-mode .select2-search--inline .select2-search__field::placeholder {
+    color: #9ca3af !important;
+}
+
+body.dark-mode .select2-search--inline .select2-search__field {
+    color: #e5e7eb !important;
+}
+
+body.dark-mode .select2-results__option,
+body.dark-mode .select2-results__option[aria-selected],
+body.dark-mode .select2-container--default .select2-results__option[aria-selected="true"] {
+    background-color: #1e2a3a !important;
+    color: #e5e7eb !important;
+}
+
+body.dark-mode .select2-container--default .select2-results__option--highlighted[aria-selected],
+body.dark-mode .select2-container--default .select2-results__option--highlighted[aria-selected="true"] {
+    background-color: #f39c12 !important;
+    color: #1e2a3a !important;
+}
+
+body.dark-mode .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: #2c3e50 !important;
+    border: 1px solid #3d4f63 !important;
+    color: #e5e7eb !important;
+    padding: 2px 8px !important;
+}
+
+body.dark-mode .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #cbd5e1 !important;
+    margin-right: 6px !important;
+}
+
+body.dark-mode .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+    color: #ffffff !important;
+    background: transparent !important;
+}
