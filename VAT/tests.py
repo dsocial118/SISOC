@@ -2430,9 +2430,7 @@ def test_api_vat_cursos_acepta_page_size(vat_api_client, vat_curso_base):
         ]
     )
 
-    response = vat_api_client.get(
-        f"/api/vat/cursos/?centro_id={centro.id}&page_size=3"
-    )
+    response = vat_api_client.get(f"/api/vat/cursos/?centro_id={centro.id}&page_size=3")
 
     assert response.status_code == 200
     payload = response.json()
