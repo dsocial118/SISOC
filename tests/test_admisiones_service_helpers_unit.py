@@ -279,9 +279,13 @@ def test_post_update_router_cubre_ramas_restantes(mocker):
     upd_estado = mocker.patch.object(
         module.AdmisionService, "actualizar_estado_admision"
     )
+    importar_mock = mocker.patch(
+        "admisiones.services.admisiones_service.AcompanamientoService.importar_datos_desde_admision"
+    )
     ok, msg = module.AdmisionService.procesar_post_update(req_acomp, adm)
     assert (ok, msg) == (True, "Se envió a Acompañamiento correctamente.")
     upd_estado.assert_called_with(adm, "enviar_a_acompaniamiento")
+    importar_mock.assert_called_once_with(adm)
 
     # rectificar documentación
     req_rect = SimpleNamespace(POST={"btnRectificarDocumentacion": "1"}, user=user)
