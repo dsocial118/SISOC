@@ -1958,7 +1958,9 @@ class AdmisionService:
     @staticmethod
     def _iter_documentos_obligatorios_admision(admision):
         admision_lookup = (
-            admision.pk if hasattr(admision, "pk") and getattr(admision, "pk") else admision
+            admision.pk
+            if hasattr(admision, "pk") and getattr(admision, "pk")
+            else admision
         )
         archivos_qs = (
             ArchivoAdmision.objects.filter(admision_id=admision_lookup)
@@ -1997,7 +1999,9 @@ class AdmisionService:
         return True
 
     @staticmethod
-    def _obtener_archivo_obligatorio_admision(*, admision, doc_obligatorio, estado=None):
+    def _obtener_archivo_obligatorio_admision(
+        *, admision, doc_obligatorio, estado=None
+    ):
         archivos_prefetch = getattr(
             doc_obligatorio, "archivos_prefetch_para_admision", None
         )
