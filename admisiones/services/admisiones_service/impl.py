@@ -1003,6 +1003,7 @@ class AdmisionService:
             archivo = get_object_or_404(
                 ArchivoAdmision.objects.select_related("admision", "documentacion"),
                 id=documento_id,
+                admision_id=admision_id,
             )
 
             grupo_usuario, observacion, display_objetivo, estado_canonico = (
@@ -1957,13 +1958,8 @@ class AdmisionService:
 
     @staticmethod
     def _iter_documentos_obligatorios_admision(admision):
-        admision_lookup = (
-            admision.pk
-            if hasattr(admision, "pk") and getattr(admision, "pk")
-            else admision
-        )
         archivos_qs = (
-            ArchivoAdmision.objects.filter(admision_id=admision_lookup)
+            ArchivoAdmision.objects.filter(admision_id=admision.pk)
             .select_related("admision", "documentacion")
             .order_by("id")
         )
