@@ -12,6 +12,9 @@ from admisiones.services import admisiones_service as module
 class _ListChain(list):
     """Minimal queryset-like list for service unit tests."""
 
+    def prefetch_related(self, *_args, **_kwargs):
+        return self
+
     def select_related(self, *_args, **_kwargs):
         return self
 
@@ -419,7 +422,7 @@ def test_actualizar_estado_ajax_and_update_estado_archivo(mocker):
         },
         user=SimpleNamespace(is_superuser=False),
     )
-    mocker.patch(
+    get_object_or_404 = mocker.patch(
         "admisiones.services.admisiones_service.get_object_or_404",
         side_effect=[adm, archivo],
     )
@@ -437,6 +440,8 @@ def test_actualizar_estado_ajax_and_update_estado_archivo(mocker):
     out = module.AdmisionService.actualizar_estado_ajax(req)
     assert out["success"] is True
     assert upd_mock.called
+    archivo_queryset = get_object_or_404.call_args_list[1].args[0]
+    assert archivo_queryset is not module.ArchivoAdmision
 
 
 def test_update_estado_archivo_none_returns_false():
@@ -628,27 +633,28 @@ def test_transiciones_estado_y_helpers_obligatorios(mocker):
         is False
     )
 
-    docs = [SimpleNamespace(pk=1), SimpleNamespace(pk=2)]
-    mocker.patch(
-        "admisiones.services.admisiones_service.Documentacion.objects.filter",
-        return_value=docs,
+    docs_prefetch = _ListChain(
+        [
+            SimpleNamespace(pk=1, archivos_prefetch_para_admision=[SimpleNamespace()]),
+            SimpleNamespace(pk=2, archivos_prefetch_para_admision=[]),
+        ]
     )
     mocker.patch(
-        "admisiones.services.admisiones_service.ArchivoAdmision.objects.filter",
-        side_effect=[
-            SimpleNamespace(first=lambda: SimpleNamespace()),
-            SimpleNamespace(first=lambda: None),
-        ],
+        "admisiones.services.admisiones_service.Documentacion.objects.filter",
+        return_value=docs_prefetch,
     )
     assert module.AdmisionService._todos_obligatorios_aceptados(adm) is False
 
     mocker.patch(
         "admisiones.services.admisiones_service.Documentacion.objects.filter",
-        return_value=[SimpleNamespace(pk=1)],
-    )
-    mocker.patch(
-        "admisiones.services.admisiones_service.ArchivoAdmision.objects.filter",
-        return_value=SimpleNamespace(first=lambda: SimpleNamespace(archivo="x")),
+        return_value=_ListChain(
+            [
+                SimpleNamespace(
+                    pk=1,
+                    archivos_prefetch_para_admision=[SimpleNamespace(archivo="x")],
+                )
+            ]
+        ),
     )
     assert module.AdmisionService._todos_obligatorios_tienen_archivos(adm) is True
 
