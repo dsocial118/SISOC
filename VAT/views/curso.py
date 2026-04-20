@@ -434,12 +434,12 @@ class _ComisionCursoNominaExportView(LoginRequiredMixin, View):
     def get_inscripciones(self, comision):
         queryset = (
             Inscripcion.objects.filter(comision_curso=comision)
-            .select_related("ciudadano__sexo", "comision_curso__curso__centro")
+            .select_related("ciudadano__sexo")
             .order_by("fecha_inscripcion", "pk")
         )
         if self.only_inscriptos:
             queryset = queryset.filter(estado="inscripta")
-        return list(queryset)
+        return queryset
 
     def get(self, request, pk):
         comision = get_object_or_404(
