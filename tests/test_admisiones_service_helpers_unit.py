@@ -637,9 +637,7 @@ def test_transiciones_estado_y_helpers_obligatorios(mocker):
         [
             SimpleNamespace(
                 pk=1,
-                archivos_prefetch_para_admision=[
-                    SimpleNamespace(estado="Aceptado")
-                ],
+                archivos_prefetch_para_admision=[SimpleNamespace(estado="Aceptado")],
             ),
             SimpleNamespace(pk=2, archivos_prefetch_para_admision=[]),
         ]
