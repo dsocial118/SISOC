@@ -1,6 +1,7 @@
 # pylint: disable=too-many-lines
 import json
 import logging
+from django.forms import ValidationError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
@@ -701,16 +702,22 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             relevamiento_id = request.POST.get("relevamiento_id")
             relevamiento = Relevamiento.objects.get(id=relevamiento_id)
             territorial_data = request.POST.get("territorial_editar")
+            if not territorial_data:
+                raise ValidationError("Debe seleccionar un territorial válido.")
 
-            if territorial_data:
+            try:
                 territorial_data = json.loads(territorial_data)
-                relevamiento.territorial_uid = territorial_data.get("gestionar_uid")
-                relevamiento.territorial_nombre = territorial_data.get("nombre")
-                relevamiento.estado = "Visita pendiente"
-            else:
-                relevamiento.territorial_nombre = None
-                relevamiento.territorial_uid = None
-                relevamiento.estado = "Pendiente"
+            except json.JSONDecodeError as exc:
+                raise ValidationError("Debe seleccionar un territorial válido.") from exc
+
+            territorial_uid = territorial_data.get("gestionar_uid")
+            territorial_nombre = territorial_data.get("nombre")
+            if not territorial_uid or not territorial_nombre:
+                raise ValidationError("Debe seleccionar un territorial válido.")
+
+            relevamiento.territorial_uid = territorial_uid
+            relevamiento.territorial_nombre = territorial_nombre
+            relevamiento.estado = "Visita pendiente"
 
             relevamiento.save()
 
