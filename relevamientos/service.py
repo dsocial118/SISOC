@@ -708,7 +708,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             try:
                 territorial_data = json.loads(territorial_data)
             except json.JSONDecodeError as exc:
-                raise ValidationError("Debe seleccionar un territorial válido.") from exc
+                raise ValidationError(
+                    "Debe seleccionar un territorial válido."
+                ) from exc
 
             territorial_uid = territorial_data.get("gestionar_uid")
             territorial_nombre = territorial_data.get("nombre")
