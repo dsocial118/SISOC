@@ -5,6 +5,7 @@ from typing import Any
 import unicodedata
 
 from django.db.models import (
+    Case,
     Q,
     Count,
     Max,
@@ -15,6 +16,7 @@ from django.db.models import (
     F,
     Func,
     Subquery,
+    When,
 )
 from django.db import transaction
 from django.core.paginator import Paginator
@@ -161,6 +163,17 @@ def _dedupe_nomina_queryset_by_ciudadano(qs_nomina):
     )
 
 
+def _order_nomina_queryset(qs_nomina):
+    estado_order = Case(
+        When(estado=Nomina.ESTADO_ACTIVO, then=Value(0)),
+        When(estado=Nomina.ESTADO_ESPERA, then=Value(1)),
+        When(estado=Nomina.ESTADO_BAJA, then=Value(2)),
+        default=Value(99),
+        output_field=IntegerField(),
+    )
+    return qs_nomina.order_by(estado_order, "-fecha", "-id")
+
+
 def _build_nomina_qs_and_age_qs(admision_pk):
     qs_nomina = _dedupe_nomina_queryset_by_ciudadano(
         Nomina.objects.filter(admision_id=admision_pk)
@@ -182,7 +195,7 @@ def _apply_nomina_dni_filter(qs_nomina, dni_query):
 
 def _build_nomina_page(qs_nomina, page, per_page):
     paginator = Paginator(
-        qs_nomina.order_by("-fecha", "-id").only(
+        _order_nomina_queryset(qs_nomina).only(
             "fecha",
             "ciudadano__apellido",
             "ciudadano__nombre",

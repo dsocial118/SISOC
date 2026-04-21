@@ -1365,6 +1365,90 @@ def test_get_nomina_detail_desempata_por_id_para_paginacion_estable(
 
 
 @pytest.mark.django_db
+def test_nomina_detail_view_prioriza_activos_y_excluye_soft_deleted(
+    client_nomina_fixture, admision_fixture
+):
+    """La página 1 debe priorizar activos y no reexponer bajas lógicas."""
+    from datetime import date, timedelta
+
+    sexo = Sexo.objects.create(sexo="X")
+    ciudadanos_activos = []
+    for idx, documento in enumerate((22334455, 22334456), start=1):
+        ciudadano = Ciudadano.objects.create(
+            nombre=f"Activo{idx}",
+            apellido=f"Visible{idx}",
+            documento=documento,
+            fecha_nacimiento=date(1990, 1, idx),
+            sexo=sexo,
+        )
+        nomina = Nomina.objects.create(
+            admision=admision_fixture,
+            ciudadano=ciudadano,
+            estado=Nomina.ESTADO_ACTIVO,
+        )
+        Nomina.all_objects.filter(pk=nomina.pk).update(
+            fecha=timezone.now() - timedelta(days=30 + idx)
+        )
+        ciudadanos_activos.append(ciudadano)
+
+    for idx in range(100):
+        ciudadano = Ciudadano.objects.create(
+            nombre=f"Baja{idx}",
+            apellido=f"Reciente{idx}",
+            documento=34000000 + idx,
+            fecha_nacimiento=date(1990, 2, 1),
+            sexo=sexo,
+        )
+        Nomina.objects.create(
+            admision=admision_fixture,
+            ciudadano=ciudadano,
+            estado=Nomina.ESTADO_BAJA,
+        )
+
+    ciudadano_borrado = Ciudadano.objects.create(
+        nombre="Borrado",
+        apellido="Logico",
+        documento=99887766,
+        fecha_nacimiento=date(1990, 3, 1),
+        sexo=sexo,
+    )
+    nomina_borrada = Nomina.objects.create(
+        admision=admision_fixture,
+        ciudadano=ciudadano_borrado,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+    nomina_borrada.delete()
+
+    comedor = admision_fixture.comedor
+    url = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_fixture.pk},
+    )
+
+    response = client_nomina_fixture.get(url, {"page": 1})
+
+    assert response.status_code == 200
+    assert response.context["cantidad_nomina"] == 102
+    assert response.context["nomina"].paginator.count == 102
+    for ciudadano in ciudadanos_activos:
+        assert str(ciudadano.documento) in response.content.decode()
+    assert "99887766" not in response.content.decode()
+    assert [item.estado for item in response.context["nomina"].object_list[:2]] == [
+        Nomina.ESTADO_ACTIVO,
+        Nomina.ESTADO_ACTIVO,
+    ]
+
+    response_soft_deleted = client_nomina_fixture.get(
+        url,
+        {"page": 1, "dni": "99887766"},
+    )
+
+    assert response_soft_deleted.status_code == 200
+    assert response_soft_deleted.context["nomina"].paginator.count == 0
+    assert list(response_soft_deleted.context["nomina"].object_list) == []
+
+
+@pytest.mark.django_db
 def test_nomina_detail_view_404_si_admision_no_corresponde(client_nomina_fixture):
     """Retorna 404 si la admisión no pertenece al comedor de la URL."""
     comedor_a = Comedor.objects.create(nombre="Comedor A")
