@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -44,6 +45,13 @@ class IntervencionCentroInfancia(SoftDeleteModelMixin, models.Model):
     observaciones = models.TextField(blank=True, null=True)
     tiene_documentacion = models.BooleanField(default=False)
     documentacion = models.FileField(upload_to="documentacion/", blank=True, null=True)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Creado por",
+    )
 
     class Meta:
         verbose_name = "Intervención Centro de Desarrollo Infantil"

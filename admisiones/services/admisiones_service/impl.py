@@ -37,7 +37,7 @@ from admisiones.services.admisiones_filter_config import (
 )
 from comedores.utils import comedor_usa_admision_para_nomina
 
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 import logging
 
 logger = logging.getLogger("django")
@@ -1009,7 +1009,11 @@ class AdmisionService:
             if permission_error:
                 return permission_error
 
-            archivo = get_object_or_404(ArchivoAdmision, id=documento_id)
+            archivo = get_object_or_404(
+                ArchivoAdmision.objects.select_related("admision", "documentacion"),
+                id=documento_id,
+                admision_id=admision_id,
+            )
 
             grupo_usuario, observacion, display_objetivo, estado_canonico = (
                 AdmisionService._resolver_estado_y_observacion_actualizar_estado_ajax(
@@ -1963,9 +1967,19 @@ class AdmisionService:
 
     @staticmethod
     def _iter_documentos_obligatorios_admision(admision):
-
+        archivos_qs = (
+            ArchivoAdmision.objects.filter(admision_id=admision.pk)
+            .select_related("admision", "documentacion")
+            .order_by("id")
+        )
         return Documentacion.objects.filter(
             convenios=admision.tipo_convenio, obligatorio=True
+        ).prefetch_related(
+            Prefetch(
+                "archivoadmision_set",
+                queryset=archivos_qs,
+                to_attr="archivos_prefetch_para_admision",
+            )
         )
 
     @staticmethod
@@ -1976,6 +1990,31 @@ class AdmisionService:
         estado=None,
         requiere_archivo=False,
     ):
+        archivo = AdmisionService._obtener_archivo_obligatorio_admision(
+            admision=admision,
+            doc_obligatorio=doc_obligatorio,
+            estado=estado,
+        )
+        if not archivo:
+            return False
+
+        if requiere_archivo and not archivo.archivo:
+            return False
+
+        return True
+
+    @staticmethod
+    def _obtener_archivo_obligatorio_admision(
+        *, admision, doc_obligatorio, estado=None
+    ):
+        archivos_prefetch = getattr(
+            doc_obligatorio, "archivos_prefetch_para_admision", None
+        )
+        if archivos_prefetch is not None:
+            for archivo in archivos_prefetch:
+                if estado is None or archivo.estado == estado:
+                    return archivo
+            return None
 
         filtros = {
             "admision": admision,
@@ -1984,14 +2023,12 @@ class AdmisionService:
         if estado is not None:
             filtros["estado"] = estado
 
-        archivo = ArchivoAdmision.objects.filter(**filtros).first()
-        if not archivo:
-            return False
-
-        if requiere_archivo and not archivo.archivo:
-            return False
-
-        return True
+        return (
+            ArchivoAdmision.objects.filter(**filtros)
+            .select_related("admision", "documentacion")
+            .order_by("id")
+            .first()
+        )
 
     @staticmethod
     def _actualizar_estados_por_cambio_documento(admision, estado_documento):
