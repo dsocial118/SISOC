@@ -513,7 +513,9 @@ def test_populate_relevamiento_and_update_territorial_without_data(mocker):
     )
     starter = mocker.patch("relevamientos.service.AsyncSendRelevamientoToGestionar")
     req = SimpleNamespace(POST={"relevamiento_id": "2", "territorial_editar": ""})
-    with pytest.raises(ValidationError, match="Debe seleccionar un territorial válido."):
+    with pytest.raises(
+        ValidationError, match="Debe seleccionar un territorial válido."
+    ):
         module.RelevamientoService.update_territorial(req)
     assert rel2.estado == "Pendiente"
     starter.assert_not_called()
@@ -533,7 +535,9 @@ def test_update_territorial_rechaza_json_valido_no_objeto(mocker):
 
     req = SimpleNamespace(POST={"relevamiento_id": "3", "territorial_editar": "[]"})
 
-    with pytest.raises(ValidationError, match="Debe seleccionar un territorial válido."):
+    with pytest.raises(
+        ValidationError, match="Debe seleccionar un territorial válido."
+    ):
         module.RelevamientoService.update_territorial(req)
 
     assert rel.estado == "Pendiente"

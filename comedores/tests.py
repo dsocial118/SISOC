@@ -964,7 +964,9 @@ def test_relevamiento_create_edit_ajax_editar_rechaza_payload_vacio(
         estado="Pendiente",
     )
     user_model = get_user_model()
-    user_instance = user_model.objects.get(pk=client_logged_fixture.session["_auth_user_id"])
+    user_instance = user_model.objects.get(
+        pk=client_logged_fixture.session["_auth_user_id"]
+    )
     user_instance.user_permissions.add(
         Permission.objects.get(
             content_type__app_label="relevamientos",
