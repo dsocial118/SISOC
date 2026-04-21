@@ -20,7 +20,7 @@ from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoes
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
-from django.db.models import Q, Count
+from django.db.models import Q, Count, OuterRef, Subquery
 from django.core.paginator import Paginator
 from iam.services import user_has_permission_code
 
@@ -776,6 +776,21 @@ class ExpedienteDetailView(DetailView):
 
         legajos_enriquecidos = []
         legajos_list = list(q.all())
+        ultimo_historial_tecnico_con_motivo = (
+            HistorialValidacionTecnica.objects.filter(legajo_id=OuterRef("legajo_id"))
+            .exclude(Q(motivo__isnull=True) | Q(motivo=""))
+            .order_by("-creado_en", "-pk")
+            .values("pk")[:1]
+        )
+        historial_tecnico = HistorialValidacionTecnica.objects.filter(
+            legajo_id__in=[legajo.pk for legajo in legajos_list],
+            pk=Subquery(ultimo_historial_tecnico_con_motivo),
+        )
+        observaciones_tecnicas_por_legajo = {}
+        for historial_item in historial_tecnico:
+            observaciones_tecnicas_por_legajo.setdefault(
+                historial_item.legajo_id, historial_item
+            )
         legajos_por_ciudadano = {}
         ciudadanos_ids = [leg.ciudadano_id for leg in legajos_list]
         responsables_ids = set()
@@ -836,6 +851,19 @@ class ExpedienteDetailView(DetailView):
                     legajo, responsables_ids
                 )
             )
+            legajo.observacion_tecnica_titulo = None
+            legajo.observacion_tecnica_texto = None
+
+            observacion_tecnica = observaciones_tecnicas_por_legajo.get(legajo.pk)
+            if observacion_tecnica:
+                if observacion_tecnica.estado_nuevo == RevisionTecnico.RECHAZADO:
+                    legajo.observacion_tecnica_titulo = "Motivo del Rechazo"
+                else:
+                    legajo.observacion_tecnica_titulo = "Observación (subsanación)"
+                legajo.observacion_tecnica_texto = observacion_tecnica.motivo
+            elif legajo.subsanacion_motivo:
+                legajo.observacion_tecnica_titulo = "Observación (subsanación)"
+                legajo.observacion_tecnica_texto = legajo.subsanacion_motivo
 
             if (
                 legajo.es_responsable
@@ -943,9 +971,7 @@ class ExpedienteDetailView(DetailView):
         ):
             tecnicos = _tecnicos_queryset().order_by("last_name", "first_name")
 
-        faltan_archivos = expediente.expediente_ciudadanos.filter(
-            Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
-        ).exists()
+        faltan_archivos = bool(faltantes_list)
 
         # Cupo: usar propiedad expediente.provincia (puede ser None)
         cupo = None
@@ -1474,7 +1500,15 @@ class RevisarLegajoView(View):
                 }
             )
 
+        motivo = (request.POST.get("motivo") or "").strip()
+
         if accion == "RECHAZAR":
+            if not motivo:
+                return JsonResponse(
+                    {"success": False, "error": "Debe indicar un motivo de rechazo."},
+                    status=400,
+                )
+
             estado_anterior = leg.revision_tecnico
             leg.revision_tecnico = "RECHAZADO"
             # Marcar RENAPER como rechazado también
@@ -1495,7 +1529,7 @@ class RevisarLegajoView(View):
                 estado_anterior=estado_anterior,
                 estado_nuevo="RECHAZADO",
                 usuario=user,
-                motivo=None,
+                motivo=motivo[:500],
             )
 
             return JsonResponse(
@@ -1570,7 +1604,6 @@ class RevisarLegajoView(View):
                 )
 
         # SUBSANAR
-        motivo = (request.POST.get("motivo") or "").strip()
         tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
         if not motivo:
             return JsonResponse(
