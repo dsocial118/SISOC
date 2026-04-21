@@ -43,7 +43,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from expedientespagos.services import ExpedientesPagosService
-from iam.services import user_has_any_permission_codes
+from iam.services import user_has_any_permission_codes, user_has_permission_code
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from rendicioncuentasfinal.models import RendicionCuentasFinal
 from rendicioncuentasfinal.rendicion_cuentas_final_service import (
@@ -484,6 +484,11 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
                 },
                 status=403,
             )
+    error_modificacion = AdmisionService._validar_modificacion_documental_por_tecnico(
+        request.user, admision
+    )
+    if error_modificacion:
+        return JsonResponse({"success": False, "error": error_modificacion}, status=400)
 
     archivo = (
         ArchivoAdmision.objects.filter(
@@ -498,7 +503,18 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
     )
 
     estado_actual = (archivo.estado or "").strip().lower()
-    if estado_actual in {"aceptado", "a validar abogado"}:
+    es_tecnico_dupla = (
+        not request.user.is_superuser
+        and admision.comedor
+        and AdmisionService._verificar_permiso_dupla(request.user, admision.comedor)
+        and (
+            user_has_permission_code(request.user, "auth.role_tecnico_comedor")
+            or request.user.groups.filter(name="Tecnico Comedor").exists()
+        )
+    )
+    if estado_actual in {"aceptado", "a validar abogado"} and not (
+        es_tecnico_dupla or request.user.is_superuser
+    ):
         return JsonResponse(
             {
                 "success": False,

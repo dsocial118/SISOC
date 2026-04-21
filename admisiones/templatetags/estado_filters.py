@@ -17,6 +17,7 @@ def format_estado(value):
         "documentacion_en_proceso": "Documentación en proceso",
         "documentacion_finalizada": "Documentación cargada",
         "documentacion_aprobada": "Documentación aprobada",
+        "documentacion_carga_finalizada": "Carga de documentación finalizada",
         "expediente_cargado": "Expediente cargado",
         "informe_tecnico_en_proceso": "Informe técnico en proceso",
         "informe_tecnico_en_revision": "Informe técnico en revisión",
