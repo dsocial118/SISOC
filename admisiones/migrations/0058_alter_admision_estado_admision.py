@@ -31,7 +31,10 @@ class Migration(migrations.Migration):
                         "informe_tecnico_docx_editado",
                         "Informe t\u00e9cnico DOCX enviado a validar",
                     ),
-                    ("informe_tecnico_en_revision", "Informe t\u00e9cnico en revisi\u00f3n"),
+                    (
+                        "informe_tecnico_en_revision",
+                        "Informe t\u00e9cnico en revisi\u00f3n",
+                    ),
                     (
                         "informe_tecnico_en_subsanacion",
                         "Informe t\u00e9cnico en subsanaci\u00f3n",
