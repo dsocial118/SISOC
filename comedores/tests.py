@@ -12,6 +12,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
 from django.test import Client, RequestFactory, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.html import escape
 
 from admisiones.models.admisiones import Admision
@@ -1325,6 +1326,42 @@ def test_nomina_detail_view_filtra_por_dni_en_toda_la_nomina(
     assert response_filtrada.status_code == 200
     assert "12345678" in response_filtrada.content.decode()
     assert response_filtrada.context["nomina"].paginator.count == 1
+
+
+@pytest.mark.django_db
+def test_get_nomina_detail_desempata_por_id_para_paginacion_estable(
+    admision_fixture,
+):
+    """Cuando varias filas comparten fecha, la paginacion debe usar un desempate estable."""
+    from datetime import date
+
+    created_ids = []
+    for idx in range(101):
+        ciudadano = Ciudadano.objects.create(
+            nombre=f"Persona{idx}",
+            apellido=f"Empate{idx}",
+            documento=41000000 + idx,
+            fecha_nacimiento=date(1990, 1, 1),
+        )
+        nomina = Nomina.objects.create(
+            admision=admision_fixture,
+            ciudadano=ciudadano,
+            estado=Nomina.ESTADO_ACTIVO,
+        )
+        created_ids.append(nomina.id)
+
+    fecha_empate = timezone.now().replace(microsecond=0)
+    Nomina.objects.filter(admision=admision_fixture).update(fecha=fecha_empate)
+
+    page_1, *_ = ComedorService.get_nomina_detail(admision_fixture.pk, page=1)
+    page_2, *_ = ComedorService.get_nomina_detail(admision_fixture.pk, page=2)
+
+    orden_esperado = sorted(created_ids, reverse=True)
+    page_1_ids = [nomina.id for nomina in page_1.object_list]
+    page_2_ids = [nomina.id for nomina in page_2.object_list]
+
+    assert page_1_ids == orden_esperado[:100]
+    assert page_2_ids == orden_esperado[100:]
 
 
 @pytest.mark.django_db

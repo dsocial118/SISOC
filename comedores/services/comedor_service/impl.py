@@ -182,7 +182,7 @@ def _apply_nomina_dni_filter(qs_nomina, dni_query):
 
 def _build_nomina_page(qs_nomina, page, per_page):
     paginator = Paginator(
-        qs_nomina.only(
+        qs_nomina.order_by("-fecha", "-id").only(
             "fecha",
             "ciudadano__apellido",
             "ciudadano__nombre",

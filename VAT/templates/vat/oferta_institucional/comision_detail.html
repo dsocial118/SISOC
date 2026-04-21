@@ -862,6 +862,22 @@
                             <i class="bi bi-hourglass-split me-1"></i>{{ lista_espera|length }} en espera
                         </div>
                     {% endif %}
+                    {% if export_preinscriptos_url or export_inscriptos_url %}
+                        <div class="d-grid gap-2 mt-3">
+                            {% if export_preinscriptos_url %}
+                                <a href="{{ export_preinscriptos_url }}"
+                                   class="btn btn-outline-primary btn-sm rounded-3">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>Descargar nómina de preinscriptos
+                                </a>
+                            {% endif %}
+                            {% if export_inscriptos_url %}
+                                <a href="{{ export_inscriptos_url }}"
+                                   class="btn btn-outline-secondary btn-sm rounded-3">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>Descargar nómina de inscriptos
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 </div>
 
                 <div class="ci-scard">
