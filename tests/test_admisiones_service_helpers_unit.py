@@ -270,6 +270,7 @@ def test_post_update_router_and_update_convenio(mocker):
 def test_post_update_router_cubre_ramas_restantes(mocker):
     adm = SimpleNamespace(
         pk=2,
+        estado_admision="documentacion_aprobada",
         refresh_from_db=mocker.Mock(),
     )
     user = SimpleNamespace()
@@ -306,7 +307,24 @@ def test_post_update_router_cubre_ramas_restantes(mocker):
     ok_rect, msg_rect = module.AdmisionService.procesar_post_update(req_rect, adm)
     assert (ok_rect, msg_rect) == (True, "Se rectificó la documentación.")
 
+    # finalizar carga documentación
+    req_finalizar = SimpleNamespace(
+        POST={"btnFinalizarCargaDocumentacion": "1"}, user=user
+    )
+    upd_estado_finalizar = mocker.patch.object(
+        module.AdmisionService, "actualizar_estado_admision", return_value=True
+    )
+    ok_finalizar, msg_finalizar = module.AdmisionService.procesar_post_update(
+        req_finalizar, adm
+    )
+    assert (ok_finalizar, msg_finalizar) == (
+        True,
+        "Carga de documentación finalizada correctamente.",
+    )
+    upd_estado_finalizar.assert_called_with(adm, "finalizar_carga_documentacion")
+
     # caratulación válida
+    adm.estado_admision = "documentacion_carga_finalizada"
     req_carat = SimpleNamespace(POST={"btnCaratulacion": "1"}, user=user)
     form_ok = SimpleNamespace(is_valid=lambda: True, save=mocker.Mock())
     mocker.patch(
@@ -334,6 +352,17 @@ def test_post_update_router_cubre_ramas_restantes(mocker):
         req_carat_bad, adm
     )
     assert (ok_carat_bad, msg_carat_bad) == (False, "Error al guardar la caratulación.")
+
+    # caratulación bloqueada si no finalizó la carga documental
+    adm.estado_admision = "documentacion_aprobada"
+    req_carat_bloq = SimpleNamespace(POST={"btnCaratulacion": "1"}, user=user)
+    ok_carat_bloq, msg_carat_bloq = module.AdmisionService.procesar_post_update(
+        req_carat_bloq, adm
+    )
+    assert (ok_carat_bloq, msg_carat_bloq) == (
+        False,
+        "Debe finalizar la carga de documentación antes de caratular.",
+    )
 
     # tipo convenio
     req_tipo = SimpleNamespace(POST={"tipo_convenio": "7"}, user=user)
@@ -672,6 +701,14 @@ def test_transiciones_estado_y_helpers_obligatorios(mocker):
         is True
     )
     assert adm.estado_admision == "documentacion_en_proceso"
+    adm.estado_admision = "documentacion_aprobada"
+    assert (
+        module.AdmisionService.actualizar_estado_admision(
+            adm, "finalizar_carga_documentacion"
+        )
+        is True
+    )
+    assert adm.estado_admision == "documentacion_carga_finalizada"
     assert (
         module.AdmisionService.actualizar_estado_admision(adm, "accion_inexistente")
         is False
