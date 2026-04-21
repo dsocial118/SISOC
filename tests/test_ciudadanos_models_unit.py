@@ -47,3 +47,17 @@ def test_buscar_por_documento_usa_rangos_numericos_indexables(db):
     assert "documento" in sql
     assert ">=" in sql
     assert "<=" in sql
+
+
+def test_ciudadano_full_clean_acepta_telefono_internacional_formateado(db):
+    ciudadano = Ciudadano(
+        nombre="Ana",
+        apellido="Perez",
+        fecha_nacimiento=date(1990, 1, 1),
+        documento=12345678,
+        telefono="+54 9 351 398-9965 interno 1234",
+    )
+
+    ciudadano.full_clean()
+
+    assert ciudadano.telefono == "+54 9 351 398-9965 interno 1234"
