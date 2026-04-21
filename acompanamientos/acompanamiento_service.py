@@ -322,28 +322,49 @@ class AcompanamientoService:
                 defaults={"nro_convenio": nro},
             )
 
-            InformacionRelevante.objects.update_or_create(
-                acompanamiento=acompanamiento,
-                defaults={
-                    "numero_expediente": admision.numero_expediente,
-                    "numero_resolucion": admision.numero_resolucion,
-                    "vencimiento_mandato": admision.vencimiento_mandato,
-                    "if_relevamiento": admision.if_relevamiento,
-                },
-            )
-
-            prestaciones_admision = admision.prestaciones.all()
-            with transaction.atomic():
-                Prestacion.objects.filter(acompanamiento=acompanamiento).delete()
-                for prestacion in prestaciones_admision:
-                    Prestacion.objects.create(
+            try:
+                informe_tecnico = (
+                    InformeTecnico.objects.filter(admision=admision)
+                    .order_by("-id")
+                    .first()
+                )
+                fecha_vencimiento = (
+                    informe_tecnico.fecha_vencimiento_mandatos
+                    if informe_tecnico
+                    else None
+                )
+                if informe_tecnico and fecha_vencimiento is not None:
+                    InformacionRelevante.objects.update_or_create(
                         acompanamiento=acompanamiento,
-                        dia=prestacion.dia,
-                        desayuno=prestacion.desayuno,
-                        almuerzo=prestacion.almuerzo,
-                        merienda=prestacion.merienda,
-                        cena=prestacion.cena,
+                        defaults={
+                            "numero_expediente": admision.num_expediente or "",
+                            "numero_resolucion": admision.numero_disposicion or "",
+                            "vencimiento_mandato": fecha_vencimiento,
+                            "if_relevamiento": informe_tecnico.if_relevamiento or "",
+                        },
                     )
+            except Exception:
+                logger.exception(
+                    f"Error al importar InformacionRelevante para admision: {admision.pk}"
+                )
+
+            try:
+                prestaciones_admision = admision.prestaciones.all()
+                with transaction.atomic():
+                    Prestacion.objects.filter(acompanamiento=acompanamiento).delete()
+                    for prestacion in prestaciones_admision:
+                        Prestacion.objects.create(
+                            acompanamiento=acompanamiento,
+                            dia=prestacion.dia,
+                            desayuno=prestacion.desayuno,
+                            almuerzo=prestacion.almuerzo,
+                            merienda=prestacion.merienda,
+                            cena=prestacion.cena,
+                        )
+            except Exception:
+                logger.exception(
+                    f"Error al importar Prestaciones para admision: {admision.pk}"
+                )
 
             Hitos.objects.get_or_create(acompanamiento=acompanamiento)
 

@@ -21,11 +21,27 @@ document.addEventListener("DOMContentLoaded", () => {
   const modal = document.getElementById("localidadesModal");
 
   let localidadesData = [];
+  let activeRequestId = 0;
 
   function refreshSelect2(target) {
     if (window.refreshSelect2Element) {
       window.refreshSelect2Element(target);
     }
+  }
+
+  function getSelectValue(select) {
+    return select ? select.value : "";
+  }
+
+  function bindSelectEvents(select, handler) {
+    if (!select) return;
+
+    if (window.jQuery) {
+      window.jQuery(select).on("change.localidadesModal", handler);
+      return;
+    }
+
+    select.addEventListener("change", handler);
   }
 
   /**
@@ -60,10 +76,16 @@ document.addEventListener("DOMContentLoaded", () => {
    */
   function filtrarTabla() {
     const query = textoBusqueda ? textoBusqueda.value.toLowerCase() : "";
-    const localidadSeleccionada = localidadSelect ? localidadSelect.value : "";
+    const provinciaSeleccionada = getSelectValue(provinciaSelect);
+    const municipioSeleccionado = getSelectValue(municipioSelect);
+    const localidadSeleccionada = getSelectValue(localidadSelect);
     const filtradas = localidadesData.filter((item) => {
       return (
-        (!localidadSeleccionada
+        (!provinciaSeleccionada
+          || String(item.provincia_id) === String(provinciaSeleccionada))
+        && (!municipioSeleccionado
+          || String(item.municipio_id) === String(municipioSeleccionado))
+        && (!localidadSeleccionada
           || String(item.localidad_id) === String(localidadSeleccionada))
         && (
           `${item.provincia_id} - ${item.provincia_nombre}`
@@ -132,6 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
    * Solicita al servidor las localidades filtradas y actualiza la tabla.
    */
   function cargarLocalidades() {
+    const requestId = ++activeRequestId;
     const params = new URLSearchParams();
     if (provinciaSelect.value) {
       params.append("provincia", provinciaSelect.value);
@@ -143,6 +166,9 @@ document.addEventListener("DOMContentLoaded", () => {
     fetch(`${window.EXPEDIENTE_LOCALIDADES_URL}?${params.toString()}`)
       .then((resp) => resp.json())
       .then((data) => {
+        if (requestId !== activeRequestId) {
+          return;
+        }
         localidadesData = data;
         actualizarSelects(data);
         filtrarTabla();
@@ -219,23 +245,25 @@ document.addEventListener("DOMContentLoaded", () => {
     window.initSelect2Elements(localidadSelect);
   }
 
-  // Eventos
-  provinciaSelect.addEventListener("change", () => {
+  function handleProvinciaChange() {
     municipioSelect.value = "";
     localidadSelect.value = "";
     if (textoBusqueda) textoBusqueda.value = "";
     refreshSelect2(municipioSelect);
     refreshSelect2(localidadSelect);
     cargarLocalidades();
-  });
+  }
 
-  municipioSelect.addEventListener("change", () => {
+  function handleMunicipioChange() {
     localidadSelect.value = "";
     refreshSelect2(localidadSelect);
     cargarLocalidades();
-  });
+  }
 
-  localidadSelect.addEventListener("change", filtrarTabla);
+  // Eventos
+  bindSelectEvents(provinciaSelect, handleProvinciaChange);
+  bindSelectEvents(municipioSelect, handleMunicipioChange);
+  bindSelectEvents(localidadSelect, filtrarTabla);
 
   if (textoBusqueda) {
     textoBusqueda.addEventListener("input", filtrarTabla);
