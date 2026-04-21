@@ -280,21 +280,11 @@ class ExpedienteCiudadano(SoftDeleteModelMixin, models.Model):
     def _recompute_archivos_ok(self):
         """Calcula archivos_ok basado en documentos requeridos."""
         # Usar nuevo sistema si está disponible
-        if hasattr(self, "documentos"):
-            try:
-                tipos_requeridos = TipoDocumento.objects.filter(
-                    requerido=True, activo=True
-                ).count()
-                documentos_cargados = self.documentos.filter(
-                    tipo_documento__requerido=True, tipo_documento__activo=True
-                ).count()
-                self.archivos_ok = documentos_cargados >= tipos_requeridos
-            except:
-                # Fallback al sistema anterior
-                self.archivos_ok = bool(self.archivo2 and self.archivo3)
-        else:
-            # Sistema anterior
-            self.archivos_ok = bool(self.archivo2 and self.archivo3)
+        from .services.legajo_service import (  # pylint: disable=import-outside-toplevel
+            LegajoService,
+        )
+
+        self.archivos_ok = LegajoService.tiene_archivos_requeridos(self)
 
     def save(self, *args, **kwargs):
         self._recompute_archivos_ok()
@@ -360,19 +350,21 @@ class ExpedienteCiudadano(SoftDeleteModelMixin, models.Model):
     @property
     def documentos_completos(self):
         """Verifica si tiene todos los documentos requeridos."""
-        tipos_requeridos = TipoDocumento.objects.filter(
-            requerido=True, activo=True
-        ).count()
-        documentos_cargados = self.documentos.filter(
-            tipo_documento__requerido=True, tipo_documento__activo=True
-        ).count()
-        return tipos_requeridos == documentos_cargados
+        from .services.legajo_service import (  # pylint: disable=import-outside-toplevel
+            LegajoService,
+        )
+
+        return LegajoService.tiene_archivos_requeridos(self)
 
     def documentos_faltantes(self):
         """Lista los tipos de documentos faltantes."""
-        tipos_requeridos = TipoDocumento.objects.filter(requerido=True, activo=True)
-        tipos_cargados = self.documentos.values_list("tipo_documento_id", flat=True)
-        return tipos_requeridos.exclude(id__in=tipos_cargados)
+        from .services.legajo_service import (  # pylint: disable=import-outside-toplevel
+            LegajoService,
+        )
+
+        campos_faltantes = LegajoService.campos_archivos_faltantes(self)
+        archivos_requeridos = LegajoService.get_archivos_requeridos_por_legajo(self)
+        return [archivos_requeridos[campo] for campo in campos_faltantes]
 
 
 class AsignacionTecnico(SoftDeleteModelMixin, models.Model):

@@ -1,5 +1,5 @@
 import logging
-from datetime import date
+from datetime import date, datetime
 from functools import lru_cache
 from django.db import transaction
 from django.core.exceptions import ValidationError
@@ -19,6 +19,14 @@ from celiaquia.services.familia_service import (
 logger = logging.getLogger("django")
 
 
+def _iter_legajos(qs):
+    if hasattr(qs, "iterator"):
+        return qs.iterator()
+    if hasattr(qs, "all"):
+        return iter(qs.all())
+    return iter(qs)
+
+
 @lru_cache(maxsize=1)
 def _estado_archivo_cargado_id():
     try:
@@ -34,15 +42,79 @@ def _set_estado_archivo_cargado(obj, update_fields):
         update_fields.append("estado")
 
 
-def _recalc_archivos_ok(obj, update_fields):
+def _recalc_archivos_ok(obj, update_fields, responsables_ids=None):
     if hasattr(obj, "archivos_ok"):
-        val = bool(obj.archivo2 and obj.archivo3)
+        val = LegajoService.tiene_archivos_requeridos(obj, responsables_ids)
         if obj.archivos_ok != val:
             obj.archivos_ok = val
             update_fields.append("archivos_ok")
 
 
+def _normalizar_fecha_nacimiento(valor):
+    if isinstance(valor, datetime):
+        return valor.date()
+    if isinstance(valor, date):
+        return valor
+    if isinstance(valor, str):
+        try:
+            return date.fromisoformat(valor)
+        except ValueError:
+            return None
+    return None
+
+
 class LegajoService:
+    @staticmethod
+    def obtener_ids_responsables_expediente(expediente, qs=None):
+        if qs is None:
+            qs = expediente.expediente_ciudadanos
+
+        ciudadanos_ids = []
+        if hasattr(qs, "values_list"):
+            try:
+                ciudadanos_ids = list(qs.values_list("ciudadano_id", flat=True))
+            except Exception:
+                ciudadanos_ids = []
+        if not ciudadanos_ids and (hasattr(qs, "iterator") or hasattr(qs, "all")):
+            ciudadanos_ids = [
+                getattr(legajo, "ciudadano_id", None)
+                for legajo in _iter_legajos(qs)
+                if getattr(legajo, "ciudadano_id", None) is not None
+            ]
+
+        if not ciudadanos_ids:
+            return set()
+
+        try:
+            return FamiliaService.obtener_ids_responsables(ciudadanos_ids)
+        except Exception as exc:
+            logger.warning(
+                "No se pudo determinar responsables en expediente %s: %s",
+                getattr(expediente, "id", None),
+                exc,
+            )
+            return set()
+
+    @staticmethod
+    def campos_archivos_faltantes(legajo, responsables_ids=None):
+        if not hasattr(legajo, "ciudadano") and not hasattr(legajo, "ciudadano_id"):
+            return [
+                campo
+                for campo in ("archivo2", "archivo3")
+                if not getattr(legajo, campo, None)
+            ]
+
+        archivos_requeridos = LegajoService.get_archivos_requeridos_por_legajo(
+            legajo, responsables_ids
+        )
+        return [
+            campo for campo in archivos_requeridos if not getattr(legajo, campo, None)
+        ]
+
+    @staticmethod
+    def tiene_archivos_requeridos(legajo, responsables_ids=None):
+        return not LegajoService.campos_archivos_faltantes(legajo, responsables_ids)
+
     @staticmethod
     def listar_legajos(expediente):
         return expediente.expediente_ciudadanos.select_related(
@@ -189,12 +261,24 @@ class LegajoService:
     @staticmethod
     def all_legajos_loaded(expediente) -> bool:
         qs = expediente.expediente_ciudadanos
-        if hasattr(ExpedienteCiudadano, "archivos_ok"):
-            return not qs.filter(archivos_ok=False).exists()
-        return (
-            not qs.filter(archivo2__isnull=True).exists()
-            and not qs.filter(archivo3__isnull=True).exists()
+        if hasattr(qs, "select_related"):
+            qs = qs.select_related("ciudadano")
+
+        if not hasattr(qs, "iterator") and not hasattr(qs, "all"):
+            if hasattr(ExpedienteCiudadano, "archivos_ok") and hasattr(qs, "filter"):
+                return not qs.filter(archivos_ok=False).exists()
+            return (
+                not qs.filter(archivo2__isnull=True).exists()
+                and not qs.filter(archivo3__isnull=True).exists()
+            )
+
+        responsables_ids = LegajoService.obtener_ids_responsables_expediente(
+            expediente, qs
         )
+        for legajo in _iter_legajos(qs):
+            if not LegajoService.tiene_archivos_requeridos(legajo, responsables_ids):
+                return False
+        return True
 
     @staticmethod
     def faltantes_archivos(
@@ -208,43 +292,31 @@ class LegajoService:
         if friendly_names is None:
             friendly_names = {}
 
-        qs = expediente.expediente_ciudadanos.select_related(
-            "ciudadano", "estado"
-        ).only(
-            "id",
-            "archivo1",
-            "archivo2",
-            "archivo3",
-            "revision_tecnico",
-            "estado_id",
-            "ciudadano__documento",
-            "ciudadano__nombre",
-            "ciudadano__apellido",
-        )
-        if hasattr(ExpedienteCiudadano, "archivos_ok"):
-            qs = qs.filter(archivos_ok=False)
+        qs = expediente.expediente_ciudadanos
+        if hasattr(qs, "select_related"):
+            qs = qs.select_related("ciudadano", "estado")
+        if hasattr(qs, "only"):
+            qs = qs.only(
+                "id",
+                "archivo1",
+                "archivo2",
+                "archivo3",
+                "revision_tecnico",
+                "estado_id",
+                "rol",
+                "ciudadano__documento",
+                "ciudadano__nombre",
+                "ciudadano__apellido",
+                "ciudadano__fecha_nacimiento",
+            )
 
-        ciudadanos_ids = list(qs.values_list("ciudadano_id", flat=True))
-        responsables_ids = set()
-        if ciudadanos_ids:
-            try:
-                responsables_ids = FamiliaService.obtener_ids_responsables(
-                    ciudadanos_ids
-                )
-            except Exception as exc:
-                logger.warning(
-                    "No se pudo determinar responsables en expediente %s: %s",
-                    expediente.id,
-                    exc,
-                )
+        responsables_ids = LegajoService.obtener_ids_responsables_expediente(
+            expediente, qs
+        )
 
         faltantes = []
-        for leg in qs.iterator():
-            miss = []
-            if not leg.archivo2:
-                miss.append("archivo2")
-            if not leg.archivo3:
-                miss.append("archivo3")
+        for leg in _iter_legajos(qs):
+            miss = LegajoService.campos_archivos_faltantes(leg, responsables_ids)
 
             if miss:
                 es_responsable = LegajoService._es_responsable(
@@ -297,8 +369,11 @@ class LegajoService:
             rol_legajo == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
         )
 
-        es_responsable = LegajoService._es_responsable(
-            legajo.ciudadano, responsables_ids
+        ciudadano = getattr(legajo, "ciudadano", getattr(legajo, "ciudadano_id", None))
+        es_responsable = (
+            LegajoService._es_responsable(ciudadano, responsables_ids)
+            if ciudadano is not None
+            else False
         )
 
         # Caso especial: Doble rol (beneficiario Y responsable)
@@ -321,15 +396,15 @@ class LegajoService:
         # Calcular edad para beneficiarios
         # Por defecto asumir mayor de edad si no hay fecha_nacimiento
         es_menor = False
-        if (
-            hasattr(legajo.ciudadano, "fecha_nacimiento")
-            and legajo.ciudadano.fecha_nacimiento
-        ):
+        fecha_nacimiento = _normalizar_fecha_nacimiento(
+            getattr(legajo.ciudadano, "fecha_nacimiento", None)
+        )
+        if fecha_nacimiento:
             today = date.today()
-            edad = today.year - legajo.ciudadano.fecha_nacimiento.year
-            if today.month < legajo.ciudadano.fecha_nacimiento.month or (
-                today.month == legajo.ciudadano.fecha_nacimiento.month
-                and today.day < legajo.ciudadano.fecha_nacimiento.day
+            edad = today.year - fecha_nacimiento.year
+            if today.month < fecha_nacimiento.month or (
+                today.month == fecha_nacimiento.month
+                and today.day < fecha_nacimiento.day
             ):
                 edad -= 1
             es_menor = edad < 18
@@ -337,7 +412,7 @@ class LegajoService:
                 "Legajo %s - DNI: %s, Fecha nacimiento: %s, Edad calculada: %s, Es menor: %s",
                 legajo.pk,
                 legajo.ciudadano.documento,
-                legajo.ciudadano.fecha_nacimiento,
+                fecha_nacimiento,
                 edad,
                 es_menor,
             )

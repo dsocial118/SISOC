@@ -1170,8 +1170,40 @@ def _extraer_datos_postulante(attrs):
     return parsed if isinstance(parsed, dict) else None
 
 
+def _completar_documento_postulante(datos_postulante, documento_principal):
+    if not isinstance(datos_postulante, dict):
+        return datos_postulante
+
+    documento_principal = str(documento_principal or "").strip()
+    if not documento_principal:
+        return datos_postulante
+
+    if str(datos_postulante.get("documento") or "").strip():
+        return datos_postulante
+
+    datos_postulante_normalizado = dict(datos_postulante)
+    datos_postulante_normalizado["documento"] = documento_principal
+    return datos_postulante_normalizado
+
+
 def _raise_datos_postulante_error(detail):
     raise serializers.ValidationError({"datos_postulante": detail})
+
+
+def _completar_documento_postulante(datos_postulante, documento_principal):
+    if not isinstance(datos_postulante, dict):
+        return datos_postulante
+
+    documento_principal = str(documento_principal or "").strip()
+    if not documento_principal:
+        return datos_postulante
+
+    if str(datos_postulante.get("documento") or "").strip():
+        return datos_postulante
+
+    datos_postulante_normalizado = dict(datos_postulante)
+    datos_postulante_normalizado["documento"] = documento_principal
+    return datos_postulante_normalizado
 
 
 def _normalizar_documento_postulante(datos_postulante):
@@ -1291,6 +1323,7 @@ def _resolver_referencias_vat_web_inscripcion(attrs):
     ciudadano_id = attrs.get("ciudadano_id")
     documento = (attrs.get("documento") or "").strip()
     datos_postulante = _extraer_datos_postulante(attrs)
+    datos_postulante = _completar_documento_postulante(datos_postulante, documento)
     entidad_comision = _resolver_entidad_comision_vat_web_inscripcion(attrs)
     permite_solicitud_publica = bool(
         getattr(getattr(entidad_comision, "curso", None), "inscripcion_libre", False)
