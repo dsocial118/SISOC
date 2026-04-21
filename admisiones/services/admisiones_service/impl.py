@@ -614,10 +614,19 @@ class AdmisionService:
 
     @staticmethod
     def _procesar_post_disponibilizar_acomp(admision, user):
-        if not AdmisionService.marcar_como_enviado_a_acompaniamiento(admision, user):
-            return False, "Error al enviar a Acompañamiento."
+        with transaction.atomic():
+            AcompanamientoService.importar_datos_desde_admision(admision)
+            if not AdmisionService.marcar_como_enviado_a_acompaniamiento(
+                admision, user
+            ):
+                return False, "Error al enviar a Acompañamiento."
+            if not AdmisionService.actualizar_estado_admision(
+                admision, "enviar_a_acompaniamiento"
+            ):
+                raise RuntimeError(
+                    "No se pudo actualizar el estado de la admisión a acompañamiento."
+                )
 
-        AdmisionService.actualizar_estado_admision(admision, "enviar_a_acompaniamiento")
         return True, "Se envió a Acompañamiento correctamente."
 
     @staticmethod
