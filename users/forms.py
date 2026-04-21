@@ -468,7 +468,7 @@ class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
     provincia = forms.ModelChoiceField(
         queryset=Provincia.objects.all(),
         required=False,
-        widget=forms.Select(attrs={"class": "select"}),
+        widget=forms.Select(attrs={"class": "select2"}),
         label="Provincia",
     )
     es_coordinador = forms.BooleanField(

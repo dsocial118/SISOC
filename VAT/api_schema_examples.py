@@ -3,6 +3,92 @@ from drf_spectacular.utils import OpenApiExample
 
 CURSO_BUSCAR_EXAMPLES = [
     OpenApiExample(
+        "Primera carga paginada sin texto",
+        value={
+            "count": 2,
+            "next": "http://localhost:8000/api/vat/cursos/buscar/?page=2",
+            "previous": None,
+            "results": [
+                {
+                    "id": 120,
+                    "nombre": "Herramientas Digitales",
+                    "prioritario": True,
+                    "estado": "activo",
+                    "observaciones": None,
+                    "fecha_creacion": "2026-04-12T10:00:00Z",
+                    "fecha_modificacion": "2026-04-12T10:00:00Z",
+                    "usa_voucher": True,
+                    "inscripcion_libre": False,
+                    "costo_creditos": 2,
+                    "centro": {
+                        "id": 12,
+                        "nombre": "CFP 401",
+                        "referente": None,
+                        "referente_nombre": "",
+                        "codigo": "CFP-401",
+                        "activo": True,
+                        "provincia": {"id": 2, "nombre": "Buenos Aires"},
+                        "ciudad": {
+                            "provincia": {"id": 2, "nombre": "Buenos Aires"},
+                            "municipio": {
+                                "id": 15,
+                                "nombre": "La Plata",
+                                "provincia": 2,
+                                "provincia_nombre": "Buenos Aires",
+                            },
+                            "localidad": {
+                                "id": 120,
+                                "nombre": "Tolosa",
+                                "municipio": 15,
+                                "municipio_nombre": "La Plata",
+                                "provincia_nombre": "Buenos Aires",
+                            },
+                            "direccion": "Calle 1 Nro 123",
+                        },
+                        "telefono": "221-4000000",
+                        "celular": "221-4000001",
+                        "correo": "cfp401@example.org",
+                        "nombre_referente": "Ana",
+                        "apellido_referente": "Perez",
+                        "tipo_gestion": "Estatal",
+                        "clase_institucion": "Formación Profesional",
+                        "situacion": "Institución de ETP",
+                    },
+                    "plan_estudio": 30,
+                    "plan_estudio_nombre": "Herramientas Digitales I",
+                    "modalidad": 1,
+                    "modalidad_nombre": "Presencial",
+                    "programa": {
+                        "id": 7,
+                        "nombre": "Programa Prioridad Formación",
+                    },
+                    "voucher_parametrias": [],
+                    "comisiones": [
+                        {
+                            "id": 200,
+                            "codigo_comision": "HD-01",
+                            "nombre": "Comisión Mañana",
+                            "estado": "activa",
+                            "acepta_lista_espera": True,
+                            "cupo_total": 20,
+                            "total_inscriptos": 18,
+                            "cupos_disponibles": 2,
+                            "fecha_inicio": "2026-04-20",
+                            "fecha_fin": "2026-06-20",
+                            "observaciones": None,
+                            "ubicacion": None,
+                            "horarios": [],
+                            "sesiones": [],
+                            "fecha_creacion": "2026-04-12T10:00:00Z",
+                            "fecha_modificacion": "2026-04-12T10:00:00Z",
+                        }
+                    ],
+                }
+            ],
+        },
+        response_only=True,
+    ),
+    OpenApiExample(
         "Búsqueda exitosa paginada",
         value={
             "count": 1,
@@ -94,6 +180,7 @@ CURSO_PRIORITARIOS_EXAMPLES = [
                     "fecha_creacion": "2026-04-12T10:00:00Z",
                     "fecha_modificacion": "2026-04-12T10:00:00Z",
                     "usa_voucher": True,
+                    "inscripcion_libre": False,
                     "costo_creditos": 3,
                     "centro": {
                         "id": 12,

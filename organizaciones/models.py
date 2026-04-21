@@ -154,3 +154,6 @@ class Organizacion(SoftDeleteModelMixin, models.Model):
         ordering = ["id"]
         verbose_name = "Organizacion"
         verbose_name_plural = "Organizaciones"
+        indexes = [
+            models.Index(fields=["telefono"], name="org_telefono_idx"),
+        ]

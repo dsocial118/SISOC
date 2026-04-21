@@ -496,6 +496,93 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
+  /* ===== MODAL RECHAZAR (técnico) ===== */
+  const modalRechazar = document.getElementById('modalRechazar');
+  if (modalRechazar) {
+    modalRechazar.addEventListener('show.bs.modal', function (event) {
+      const trigger = event.relatedTarget;
+      const legajoId = trigger?.getAttribute('data-legajo-id') || '';
+      modalRechazar.querySelector('#rechazar-legajo-id').value = legajoId;
+      const ta = modalRechazar.querySelector('#rechazar-motivo');
+      if (ta) ta.value = '';
+    });
+
+    const formRechazar = document.getElementById('form-rechazar');
+    formRechazar.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const legajoId = modalRechazar.querySelector('#rechazar-legajo-id').value;
+      const motivo = (modalRechazar.querySelector('#rechazar-motivo').value || '').trim();
+      const btn = document.getElementById('btn-confirm-rechazar');
+      const original = btn.innerHTML;
+
+      if (!legajoId) {
+        showAlert('danger', 'No se pudo identificar el legajo.');
+        return;
+      }
+      if (!motivo) {
+        showAlert('warning', 'Indicá el motivo del rechazo.');
+        return;
+      }
+
+      if (!window.REVISAR_URL_TEMPLATE) {
+        showAlert('danger', 'No se configuró la URL de revisión de legajos.');
+        return;
+      }
+      const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
+
+      try {
+        const fd = new FormData();
+        fd.append('accion', 'RECHAZAR');
+        fd.append('motivo', motivo);
+
+        const resp = await fetch(url, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const ct = resp.headers.get('Content-Type') || '';
+        let data = {};
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+          data = { success: true, message: text, estado: 'RECHAZADO' };
+        }
+
+        if (!resp.ok || data.success === false) {
+          const msg = data.error || data.message || `HTTP ${resp.status}`;
+          throw new Error(msg);
+        }
+
+        showAlert('success', data.message || `Legajo ${legajoId}: quedó rechazado.`);
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(modalRechazar);
+          modal.hide();
+          window.location.reload();
+        }, 800);
+
+      } catch (err) {
+        console.error('Rechazar legajo:', err);
+        showAlert('danger', 'No se pudo registrar el rechazo. ', err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    });
+  }
+
+
   /* ===== CRUCE CUIT (Nuevo/Reprocesar) ===== */
   const modalCruce = document.getElementById('modalCruceCuit');
   if (modalCruce) {
@@ -649,16 +736,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function toggleActive(btnAprobar, btnRechazar, estado) {
-      [btnAprobar, btnRechazar].forEach(b => {
-        if (!b) return;
-        b.classList.remove('active');
-        b.classList.remove('btn-success', 'btn-danger');
-        b.classList.add('btn-outline-success');
-        if (b && b.dataset.accion === 'RECHAZAR') {
-          b.classList.remove('btn-outline-success');
-          b.classList.add('btn-outline-danger');
-        }
-      });
+      if (btnAprobar) {
+        btnAprobar.classList.remove('active', 'btn-success', 'btn-danger', 'btn-outline-danger');
+        btnAprobar.classList.add('btn-outline-success');
+      }
+      if (btnRechazar) {
+        btnRechazar.classList.remove('active', 'btn-success', 'btn-danger', 'btn-outline-success');
+        btnRechazar.classList.add('btn-outline-danger');
+      }
 
       if (estado === 'APROBADO' && btnAprobar) {
         btnAprobar.classList.add('active');
@@ -689,7 +774,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const container = btn.closest('.legajo-item') || document;
         const btnAprobar = container.querySelector(`.btn-revision[data-legajo-id="${legajoId}"][data-accion="APROBAR"]`);
-        const btnRechazar = container.querySelector(`.btn-revision[data-legajo-id="${legajoId}"][data-accion="RECHAZAR"]`);
+        const btnRechazar = container.querySelector(`.btn-rechazar[data-legajo-id="${legajoId}"]`);
 
         setLoading(btn, true);
 
@@ -1318,7 +1403,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 });
-
   /* ===== CONFIRMAR SUBSANACIÓN INDIVIDUAL ===== */
   const botonesConfirmarSubsanacion = document.querySelectorAll('.btn-confirmar-subsanacion-individual');
   botonesConfirmarSubsanacion.forEach(btn => {
@@ -1428,33 +1512,59 @@ document.addEventListener('DOMContentLoaded', () => {
   if (modalEditarLegajo) {
     const selectMunicipio = document.getElementById('editar-municipio');
     const selectLocalidad = document.getElementById('editar-localidad');
+    const selectNacionalidad = document.getElementById('editar-nacionalidad');
     
     if (selectMunicipio && selectLocalidad) {
-      const filtrarLocalidadesPorMunicipio = (municipioId) => {
-        const opciones = selectLocalidad.querySelectorAll('option');
-        
-        opciones.forEach(option => {
-          if (option.value === '') {
-            option.style.display = '';
+      const refreshSelect2 = (target) => {
+        if (window.refreshSelect2Element) {
+          window.refreshSelect2Element(target);
+        }
+      };
+
+      const localidadOptions = Array.from(selectLocalidad.querySelectorAll('option')).map(
+        option => ({
+          value: option.value,
+          text: option.textContent,
+          municipioId: option.dataset.municipio || ''
+        })
+      );
+
+      const renderLocalidadesDisponibles = (municipioId, localidadSeleccionada = '') => {
+        const localidadId = localidadSeleccionada ? String(localidadSeleccionada) : '';
+        let localidadVisible = false;
+
+        selectLocalidad.innerHTML = '';
+
+        localidadOptions.forEach(optionData => {
+          if (optionData.value && municipioId && optionData.municipioId !== String(municipioId)) {
             return;
           }
-          
-          const optionMunicipioId = option.getAttribute('data-municipio');
-          if (!municipioId || optionMunicipioId === municipioId) {
-            option.style.display = '';
-          } else {
-            option.style.display = 'none';
+
+          const option = document.createElement('option');
+          option.value = optionData.value;
+          option.textContent = optionData.text;
+
+          if (optionData.municipioId) {
+            option.dataset.municipio = optionData.municipioId;
           }
+
+          if (localidadId && String(optionData.value) === localidadId) {
+            option.selected = true;
+            localidadVisible = true;
+          }
+
+          selectLocalidad.appendChild(option);
         });
-        
-        // Si la localidad actual no pertenece al municipio seleccionado, limpiar
-        const localidadActual = selectLocalidad.value;
-        if (localidadActual) {
-          const optionActual = selectLocalidad.querySelector(`option[value="${localidadActual}"]`);
-          if (optionActual && optionActual.style.display === 'none') {
-            selectLocalidad.value = '';
-          }
+
+        if (!localidadVisible) {
+          selectLocalidad.value = '';
         }
+
+        refreshSelect2(selectLocalidad);
+      };
+
+      const filtrarLocalidadesPorMunicipio = (municipioId) => {
+        renderLocalidadesDisponibles(municipioId, selectLocalidad.value);
       };
 
       const sincronizarMunicipioDesdeLocalidad = () => {
@@ -1466,9 +1576,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (selectMunicipio.value !== municipioId) {
           selectMunicipio.value = municipioId;
+          refreshSelect2(selectMunicipio);
         }
 
-        filtrarLocalidadesPorMunicipio(municipioId);
+        renderLocalidadesDisponibles(municipioId, selectLocalidad.value);
       };
 
       selectMunicipio.addEventListener('change', function() {
@@ -1520,6 +1631,9 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('editar-fecha-nacimiento').value = legajo.fecha_nacimiento;
           document.getElementById('editar-sexo').value = legajo.sexo || '';
           document.getElementById('editar-nacionalidad').value = legajo.nacionalidad || '';
+          if (selectNacionalidad && window.refreshSelect2Element) {
+            window.refreshSelect2Element(selectNacionalidad);
+          }
           document.getElementById('editar-telefono').value = legajo.telefono;
           document.getElementById('editar-email').value = legajo.email;
           document.getElementById('editar-calle').value = legajo.calle;
@@ -1527,19 +1641,15 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('editar-codigo-postal').value = legajo.codigo_postal;
           
           // Primero establecer municipio
-          if (legajo.municipio) {
-            document.getElementById('editar-municipio').value = legajo.municipio;
-            // Disparar el evento change para filtrar localidades
-            selectMunicipio.dispatchEvent(new Event('change'));
+          if (selectMunicipio && selectLocalidad) {
+            selectMunicipio.value = legajo.municipio || '';
+            if (window.refreshSelect2Element) {
+              window.refreshSelect2Element(selectMunicipio);
+            }
+            renderLocalidadesDisponibles(selectMunicipio.value, legajo.localidad || '');
           }
           
           // Luego establecer localidad (después del filtrado)
-          setTimeout(() => {
-            if (legajo.localidad) {
-              document.getElementById('editar-localidad').value = legajo.localidad;
-              selectLocalidad.dispatchEvent(new Event('change'));
-            }
-          }, 100);
           
           // Configurar la acción del formulario
           const form = document.getElementById('form-editar-legajo');
@@ -1554,6 +1664,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Manejar envío del formulario
+    modalEditarLegajo.addEventListener('shown.bs.modal', function() {
+      if (selectMunicipio && selectLocalidad && window.refreshSelect2Element) {
+        window.refreshSelect2Element(selectMunicipio);
+        window.refreshSelect2Element(selectLocalidad);
+      }
+      if (selectNacionalidad && window.refreshSelect2Element) {
+        window.refreshSelect2Element(selectNacionalidad);
+      }
+    });
+
     const formEditarLegajo = document.getElementById('form-editar-legajo');
     if (formEditarLegajo) {
       formEditarLegajo.addEventListener('submit', async function(e) {
@@ -1729,3 +1849,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+

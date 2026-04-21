@@ -7,12 +7,14 @@ import unicodedata
 from django.db.models import (
     Q,
     Count,
+    Max,
     Prefetch,
     QuerySet,
     Value,
     IntegerField,
     F,
     Func,
+    Subquery,
 )
 from django.db import transaction
 from django.core.paginator import Paginator
@@ -45,7 +47,6 @@ from comedores.utils import (
 )
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
 from core.models import Provincia, Municipio, Localidad, Nacionalidad
-from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
@@ -147,10 +148,23 @@ def _build_nomina_rangos_resumen(resumen):
     }
 
 
-def _build_nomina_qs_and_age_qs(admision_pk):
-    qs_nomina = Nomina.objects.filter(admision_id=admision_pk).select_related(
-        "ciudadano__sexo"
+def _dedupe_nomina_queryset_by_ciudadano(qs_nomina):
+    latest_ids = (
+        qs_nomina.filter(ciudadano_id__isnull=False)
+        .order_by()
+        .values("ciudadano_id")
+        .annotate(latest_id=Max("id"))
+        .values("latest_id")
     )
+    return qs_nomina.filter(
+        Q(ciudadano_id__isnull=True) | Q(id__in=Subquery(latest_ids))
+    )
+
+
+def _build_nomina_qs_and_age_qs(admision_pk):
+    qs_nomina = _dedupe_nomina_queryset_by_ciudadano(
+        Nomina.objects.filter(admision_id=admision_pk)
+    ).select_related("ciudadano__sexo")
     age_expr = TimestampDiffYears(F("ciudadano__fecha_nacimiento"), Now())
     return qs_nomina, qs_nomina.annotate(edad=age_expr)
 
@@ -168,7 +182,7 @@ def _apply_nomina_dni_filter(qs_nomina, dni_query):
 
 def _build_nomina_page(qs_nomina, page, per_page):
     paginator = Paginator(
-        qs_nomina.only(
+        qs_nomina.order_by("-fecha", "-id").only(
             "fecha",
             "ciudadano__apellido",
             "ciudadano__nombre",
@@ -573,13 +587,6 @@ def _validar_creacion_admision_desde_comedor(request, comedor, tipo_admision):
     return None
 
 
-def _ensure_hito_para_comedor(comedor):
-    if Hitos.objects.filter(comedor=comedor).exists():
-        return True
-    Hitos.objects.create(comedor=comedor)
-    return False
-
-
 class ComedorService:
     """Operaciones de alto nivel relacionadas a comedores."""
 
@@ -868,8 +875,8 @@ class ComedorService:
         Variante de get_nomina_detail para prog 3/4: nóminas asociadas
         directamente al comedor (admision=null, comedor_id=comedor_pk).
         """
-        qs_nomina = Nomina.objects.filter(
-            comedor_id=comedor_pk, admision__isnull=True
+        qs_nomina = _dedupe_nomina_queryset_by_ciudadano(
+            Nomina.objects.filter(comedor_id=comedor_pk, admision__isnull=True)
         ).select_related("ciudadano__sexo")
         age_expr = TimestampDiffYears(F("ciudadano__fecha_nacimiento"), Now())
         qs_nomina_age = qs_nomina.annotate(edad=age_expr)
@@ -1146,8 +1153,25 @@ class ComedorService:
 
     @staticmethod
     def _buscar_ciudadano_existente_por_dni_renaper(dni_str):
+        # Buscar primero por documento_unico_key para encontrar solo registros
+        # ESTANDAR verificados. Esto evita retornar un duplicado ambiguo cuando
+        # hay múltiples ciudadanos con el mismo DNI (DNI_NO_VALIDADO_RENAPER).
+        doc_key = f"DNI_{dni_str}"
+        ciudadano = Ciudadano.objects.filter(documento_unico_key=doc_key).first()
+        if ciudadano:
+            return ciudadano
+        # Fallback: si el backfill aún no corrió o el registro es previo a Fase 1,
+        # buscar por documento directo prefiriendo ESTANDAR.
+        ciudadano = Ciudadano.objects.filter(
+            tipo_documento=Ciudadano.DOCUMENTO_DNI,
+            documento=int(dni_str),
+            tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR,
+        ).first()
+        if ciudadano:
+            return ciudadano
         return Ciudadano.objects.filter(
-            tipo_documento=Ciudadano.DOCUMENTO_DNI, documento=int(dni_str)
+            tipo_documento=Ciudadano.DOCUMENTO_DNI,
+            documento=int(dni_str),
         ).first()
 
     @staticmethod
@@ -1369,6 +1393,13 @@ class ComedorService:
 
         try:
             with transaction.atomic():
+                ciudadano = get_object_or_404(
+                    Ciudadano.objects.select_for_update(), pk=ciudadano_id
+                )
+                if _nomina_ya_contiene_ciudadano(
+                    ciudadano, admision_id=admision_id, comedor_id=comedor_id
+                ):
+                    return False, "Esta persona ya está en la nómina."
                 _crear_nomina_registro(
                     ciudadano=ciudadano,
                     admision_id=admision_id,
@@ -1482,19 +1513,9 @@ class ComedorService:
             comedor=comedor,
             tipo=tipo_admision,
         )
-        hitos_ya_existian = _ensure_hito_para_comedor(comedor)
-        if hitos_ya_existian:
-            messages.info(
-                request,
-                "El comedor ya tiene hitos registrados.",
-            )
         messages.success(
             request,
             f"Se creó una nueva admisión de tipo '{nueva_admision.get_tipo_display()}' correctamente.",
-        )
-        messages.success(
-            request,
-            "Se creó una nuevo hito correctamente.",
         )
 
         # 🔁 Redirigir al mismo comedor

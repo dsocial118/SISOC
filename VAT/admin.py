@@ -16,12 +16,14 @@ from .models import (
     InstitucionContacto,
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
+    Curso,
     # Fase 4
     OfertaInstitucional,
     Comision,
     ComisionHorario,
     # Fase 5
     Inscripcion,
+    SolicitudInscripcionPublica,
     # Fase 6
     AsistenciaSesion,
     # Fase 7
@@ -156,6 +158,7 @@ class InscripcionOfertaAdmin(admin.ModelAdmin):
     list_display = ("ciudadano", "oferta", "estado", "fecha_inscripcion")
     list_filter = ("estado", "fecha_inscripcion")
     search_fields = ("ciudadano__nombre", "ciudadano__apellido")
+    readonly_fields = ("fecha_inscripcion", "fecha_modificacion", "inscrito_por")
     fieldsets = (
         ("Información", {"fields": ("oferta", "ciudadano", "estado")}),
         (
@@ -166,7 +169,40 @@ class InscripcionOfertaAdmin(admin.ModelAdmin):
             },
         ),
     )
-    readonly_fields = ("fecha_inscripcion", "fecha_modificacion", "inscrito_por")
+
+
+@admin.register(Curso)
+class CursoAdmin(admin.ModelAdmin):
+    list_display = (
+        "nombre",
+        "centro",
+        "estado",
+        "usa_voucher",
+        "inscripcion_libre",
+        "prioritario",
+    )
+    list_filter = ("estado", "centro", "usa_voucher", "inscripcion_libre")
+    search_fields = ("nombre", "centro__nombre")
+    readonly_fields = ("fecha_creacion", "fecha_modificacion")
+
+
+@admin.register(SolicitudInscripcionPublica)
+class SolicitudInscripcionPublicaAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "comision_curso",
+        "ciudadano",
+        "estado",
+        "origen_canal",
+        "fecha_creacion",
+    )
+    list_filter = ("estado", "origen_canal", "comision_curso__curso__centro")
+    search_fields = (
+        "comision_curso__codigo_comision",
+        "ciudadano__documento",
+        "ciudadano__apellido",
+    )
+    readonly_fields = ("fecha_creacion", "fecha_modificacion")
 
 
 # ============================================================================

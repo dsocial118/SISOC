@@ -5,7 +5,6 @@ from typing import Iterator, Tuple
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from comedores.models import Comedor
 from comedores.utils import comedor_usa_admision_para_nomina
@@ -144,9 +143,6 @@ class Command(BaseCommand):
                                 comedor=comedor,
                                 tipo="incorporacion",
                             )
-
-                        if not Hitos.objects.filter(comedor=comedor).exists():
-                            Hitos.objects.create(comedor=comedor)
 
             stats["applied"] += 1
             self.stdout.write(self.style.SUCCESS(f"[APLICADO] {change_message}"))

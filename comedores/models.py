@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
@@ -518,6 +519,113 @@ class Nomina(SoftDeleteModelMixin, models.Model):
             comedor_nombre = "Comedor sin nombre"
         ciudadano = str(self.ciudadano) if self.ciudadano else "Ciudadano no asignado"
         return f"{ciudadano} en {comedor_nombre} ({self.get_estado_display()})"
+
+
+class CapacitacionComedorCertificado(models.Model):
+    CAPACITACION_CREACION_USUARIO = "creacion_usuario_plataforma"
+    CAPACITACION_CRITERIOS_NUTRICIONALES = "criterios_nutricionales"
+    CAPACITACION_GASTOS_ACCESORIOS = "gastos_accesorios_6"
+    CAPACITACION_PAUTAS_HIGIENE = "pautas_higiene"
+    CAPACITACION_RENDICION_CUENTAS = "rendicion_cuentas_650_25"
+    CAPACITACION_RETIRO_USO_TARJETA = "retiro_uso_tarjeta"
+    CAPACITACION_SEGURIDAD_COCINA = "seguridad_cocina"
+    CAPACITACION_USO_PLATAFORMA = "uso_plataforma_consulta_saldo_comprobantes"
+
+    CAPACITACION_CHOICES = [
+        (
+            CAPACITACION_CREACION_USUARIO,
+            "Creación de Usuario en Plataforma Alimentar Comunidad",
+        ),
+        (
+            CAPACITACION_CRITERIOS_NUTRICIONALES,
+            "Criterios Nutricionales - Alimentar Comunidad",
+        ),
+        (
+            CAPACITACION_GASTOS_ACCESORIOS,
+            "Gastos Accesorios 6% - Resolución 650/25 - Alimentar Comunidad",
+        ),
+        (
+            CAPACITACION_PAUTAS_HIGIENE,
+            "Pautas de Higiene - Alimentar Comunidad",
+        ),
+        (
+            CAPACITACION_RENDICION_CUENTAS,
+            "Rendición de Cuentas Resolución 650/25 - Alimentar Comunidad",
+        ),
+        (
+            CAPACITACION_RETIRO_USO_TARJETA,
+            "Retiro y Uso de la Tarjeta Alimentar Comunidad",
+        ),
+        (
+            CAPACITACION_SEGURIDAD_COCINA,
+            "Seguridad en la Cocina - Alimentar Comunidad",
+        ),
+        (
+            CAPACITACION_USO_PLATAFORMA,
+            "Uso de Plataforma Alimentar Comunidad: Cómo consultar saldo y subir comprobantes",
+        ),
+    ]
+
+    ESTADO_SIN_PRESENTAR = "sin_presentar"
+    ESTADO_PRESENTADO = "presentado"
+    ESTADO_RECHAZADO = "rechazado"
+    ESTADO_ACEPTADO = "aceptado"
+    ESTADO_CHOICES = [
+        (ESTADO_SIN_PRESENTAR, "SIN PRESENTAR"),
+        (ESTADO_PRESENTADO, "PRESENTADO"),
+        (ESTADO_RECHAZADO, "RECHAZADO"),
+        (ESTADO_ACEPTADO, "ACEPTADO"),
+    ]
+
+    comedor = models.ForeignKey(
+        "Comedor",
+        on_delete=models.CASCADE,
+        related_name="certificados_capacitacion",
+    )
+    capacitacion = models.CharField(max_length=80, choices=CAPACITACION_CHOICES)
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default=ESTADO_SIN_PRESENTAR,
+    )
+    archivo = models.FileField(
+        upload_to="comedores/capacitaciones/",
+        null=True,
+        blank=True,
+    )
+    observacion = models.TextField(null=True, blank=True)
+    presentado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="certificados_capacitacion_presentados",
+    )
+    revisado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="certificados_capacitacion_revisados",
+    )
+    fecha_presentacion = models.DateTimeField(null=True, blank=True)
+    fecha_revision = models.DateTimeField(null=True, blank=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    modificado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Certificado de Capacitación del Comedor"
+        verbose_name_plural = "Certificados de Capacitaciones del Comedor"
+        ordering = ["comedor_id", "capacitacion"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["comedor", "capacitacion"],
+                name="uniq_certificado_capacitacion_por_comedor",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.comedor_id} - {self.get_capacitacion_display()} ({self.get_estado_display()})"
 
 
 class ActividadColaboradorEspacio(models.Model):

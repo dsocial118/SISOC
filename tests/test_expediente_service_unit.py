@@ -86,6 +86,22 @@ class _LegajosQS:
     def count(self):
         return len(self._legs)
 
+    def select_related(self, *args, **kwargs):
+        return self
+
+    def values_list(self, *args, **kwargs):
+        return [leg.ciudadano_id for leg in self._legs]
+
+    def filter(self, **kwargs):
+        if kwargs == {"archivos_ok": False}:
+            return SimpleNamespace(
+                exists=lambda: any(not leg.archivos_ok for leg in self._legs)
+            )
+        raise AssertionError(f"Filtro no esperado: {kwargs}")
+
+    def iterator(self):
+        return iter(self._legs)
+
 
 def test_confirmar_envio_paths(mocker):
     exp_bad = SimpleNamespace(estado=SimpleNamespace(nombre="CREADO"))
@@ -120,6 +136,34 @@ def test_confirmar_envio_paths(mocker):
     out = module.ExpedienteService.confirmar_envio(exp, usuario="u")
     assert out == {"validos": 2, "errores": 0}
     assert set_estado.called
+
+
+def test_confirmar_envio_rechaza_doble_rol_sin_archivo1(mocker):
+    leg = SimpleNamespace(
+        pk=12,
+        rol="beneficiario_y_responsable",
+        archivo1=None,
+        archivo2=object(),
+        archivo3=object(),
+        archivos_ok=False,
+        ciudadano=SimpleNamespace(id=4, documento="400", fecha_nacimiento=None),
+        ciudadano_id=4,
+        save=mocker.Mock(),
+    )
+    exp = SimpleNamespace(
+        pk=13,
+        estado=SimpleNamespace(nombre="EN_ESPERA"),
+        expediente_ciudadanos=_LegajosQS([leg]),
+    )
+    mocker.patch(
+        "celiaquia.services.legajo_service.FamiliaService.obtener_ids_responsables",
+        return_value={4},
+    )
+
+    with pytest.raises(ValidationError):
+        module.ExpedienteService.confirmar_envio(exp, usuario="u")
+
+    assert leg.archivos_ok is False
 
 
 def test_asignar_tecnico_with_id_and_user(mocker):

@@ -100,9 +100,22 @@ class InscripcionCreateView(LoginRequiredMixin, CreateView):
             messages.error(self.request, str(exc))
             return self.form_invalid(form)
 
-        cantidad_debito = getattr(self.object, "voucher_debito", 0)
-        if cantidad_debito > 0:
-            saldo = getattr(self.object, "voucher_saldo", 0)
+        cantidad_debito = getattr(
+            self.object,
+            "voucher_debito",
+            getattr(self.object, "_voucher_debito", 0),
+        )
+        if self.object.estado == "en_espera":
+            messages.success(
+                self.request,
+                f"{self.object.ciudadano} quedó en lista de espera.",
+            )
+        elif cantidad_debito > 0:
+            saldo = getattr(
+                self.object,
+                "voucher_saldo",
+                getattr(self.object, "_voucher_saldo", 0),
+            )
             messages.success(
                 self.request,
                 f"Inscripción creada. Se descontaron {cantidad_debito} créditos del voucher de {self.object.ciudadano} ({saldo} restantes).",
@@ -179,8 +192,13 @@ class InscripcionRapidaComisionView(LoginRequiredMixin, View):
         return JsonResponse(
             {
                 "ok": True,
-                "message": f"Inscripción creada para {inscripcion.ciudadano.nombre_completo}.",
+                "message": (
+                    f"{inscripcion.ciudadano.nombre_completo} quedó en lista de espera."
+                    if inscripcion.estado == "en_espera"
+                    else f"Inscripción creada para {inscripcion.ciudadano.nombre_completo}."
+                ),
                 "inscripcion_id": inscripcion.pk,
+                "estado": inscripcion.estado,
             }
         )
 
