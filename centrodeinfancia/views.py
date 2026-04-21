@@ -1011,6 +1011,17 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
         return context
 
 
+class NominaCentroInfanciaFormularioDetailView(LoginRequiredMixin, DetailView):
+    model = NominaCentroInfancia
+    template_name = "centrodeinfancia/nomina_formulario_detail.html"
+    context_object_name = "nomina"
+
+    def get_queryset(self):
+        return _nomina_cdi_queryset_scoped(self.request.user).filter(
+            id=self.kwargs["pk"]
+        )
+
+
 class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     model = NominaCentroInfancia
     form_class = NominaCentroInfanciaCreateForm
@@ -1376,8 +1387,11 @@ class IntervencionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         centro = _get_centro_cdi_scoped_or_404(self.request.user, pk=self.kwargs["pk"])
         form.instance.centro = centro
+        if self.request.user.is_authenticated:
+            form.instance.creado_por = self.request.user
         if form.destinatario_fijo_instance:
             form.instance.destinatario = form.destinatario_fijo_instance
+
         messages.success(self.request, "Intervención creada correctamente.")
         return super().form_valid(form)
 
