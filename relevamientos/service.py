@@ -701,6 +701,10 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         try:
             relevamiento_id = request.POST.get("relevamiento_id")
             relevamiento = Relevamiento.objects.get(id=relevamiento_id)
+            if relevamiento.estado != "Pendiente":
+                raise ValidationError(
+                    "Solo se puede asignar territorial a relevamientos pendientes."
+                )
             territorial_data = request.POST.get("territorial_editar")
             if not territorial_data:
                 relevamiento.territorial_uid = None
@@ -715,6 +719,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 raise ValidationError(
                     "Debe seleccionar un territorial válido."
                 ) from exc
+
+            if not isinstance(territorial_data, dict):
+                raise ValidationError("Debe seleccionar un territorial válido.")
 
             territorial_uid = territorial_data.get("gestionar_uid")
             territorial_nombre = territorial_data.get("nombre")

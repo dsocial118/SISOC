@@ -4,6 +4,7 @@ from contextlib import nullcontext
 from types import SimpleNamespace
 
 import pytest
+from django.forms import ValidationError
 
 from relevamientos import service as module
 
@@ -471,7 +472,7 @@ def test_populate_excepcion_data_parses_motivo_and_adjuntos(mocker):
 
 
 def test_populate_relevamiento_and_update_territorial_without_data(mocker):
-    """populate_relevamiento and update_territorial should handle default branches."""
+    """populate_relevamiento should work and update_territorial reject empty data."""
     rel = SimpleNamespace(save=mocker.Mock())
     relevamiento_form = SimpleNamespace(
         save=lambda commit=False: rel,
@@ -502,7 +503,7 @@ def test_populate_relevamiento_and_update_territorial_without_data(mocker):
     rel2 = SimpleNamespace(
         territorial_nombre="x",
         territorial_uid="y",
-        estado="Visita pendiente",
+        estado="Pendiente",
         id=2,
         save=mocker.Mock(),
     )
@@ -512,10 +513,33 @@ def test_populate_relevamiento_and_update_territorial_without_data(mocker):
     )
     starter = mocker.patch("relevamientos.service.AsyncSendRelevamientoToGestionar")
     req = SimpleNamespace(POST={"relevamiento_id": "2", "territorial_editar": ""})
-    out2 = module.RelevamientoService.update_territorial(req)
-    assert out2 is rel2
+    with pytest.raises(ValidationError, match="Debe seleccionar un territorial válido."):
+        module.RelevamientoService.update_territorial(req)
     assert rel2.estado == "Pendiente"
-    assert starter.called
+    starter.assert_not_called()
+
+
+def test_update_territorial_rechaza_json_valido_no_objeto(mocker):
+    """update_territorial should reject JSON payloads without expected keys."""
+    rel = SimpleNamespace(
+        id=3,
+        territorial_nombre=None,
+        territorial_uid=None,
+        estado="Pendiente",
+        save=mocker.Mock(),
+    )
+    mocker.patch("relevamientos.service.Relevamiento.objects.get", return_value=rel)
+    starter = mocker.patch("relevamientos.service.AsyncSendRelevamientoToGestionar")
+
+    req = SimpleNamespace(POST={"relevamiento_id": "3", "territorial_editar": "[]"})
+
+    with pytest.raises(ValidationError, match="Debe seleccionar un territorial válido."):
+        module.RelevamientoService.update_territorial(req)
+
+    assert rel.estado == "Pendiente"
+    assert rel.territorial_uid is None
+    assert rel.territorial_nombre is None
+    starter.assert_not_called()
 
 
 def test_create_or_update_anexo_and_populate_helpers(mocker):
