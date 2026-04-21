@@ -17,6 +17,13 @@
         {{ relevamiento.estado | default_if_none:"Sin información" }}
     </span>
 {% endblock %}
+
+{% block customJS %}
+    {% if relevamiento.estado == "Pendiente" and perms.relevamientos.change_relevamiento %}
+        <script nonce="{{ request.csp_nonce }}">const comedorId = "{{ relevamiento.comedor.id }}";</script>
+        <script src="{% static 'custom/js/comedordetail_territorial_cache.js' %}"></script>
+    {% endif %}
+{% endblock %}
 ;
 {% block breadcrumb %}
 
@@ -40,6 +47,12 @@
         <div class="col-auto"></div>
         <div class="col-auto">
             <!-- <a href="{% url 'relevamiento_editar' relevamiento.comedor.id relevamiento.id %}" class="btn btn-primary mr-1">Editar</a> -->
+            {% if relevamiento.estado == "Pendiente" and perms.relevamientos.change_relevamiento %}
+                <button type="button"
+                        class="btn btn-primary mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalAsignarTerritorial">Asignar</button>
+            {% endif %}
             {% if relevamiento.estado == "Finalizado" or relevamiento.estado == "Finalizado/Excepciones" %}
                 <a href="{{ relevamiento.docPDF }}"
                    target="_blank"
@@ -53,6 +66,46 @@
                class="btn btn-danger">Eliminar</a>
         </div>
     </div>
+    {% if relevamiento.estado == "Pendiente" and perms.relevamientos.change_relevamiento %}
+        <div class="modal fade"
+             id="modalAsignarTerritorial"
+             tabindex="-1"
+             aria-labelledby="modalAsignarTerritorialLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post"
+                          action="{% url 'relevamiento_create_edit_ajax' relevamiento.comedor.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="relevamiento_id" value="{{ relevamiento.id }}" />
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalAsignarTerritorialLabel">Asignar territorial</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-2">
+                                <label for="update_territorial_select" class="form-label">Territorial asignado</label>
+                                <select id="update_territorial_select"
+                                        name="territorial_editar"
+                                        class="form-select"
+                                        required>
+                                    <option value="" selected disabled>Seleccionar territorial</option>
+                                </select>
+                            </div>
+                            <small class="text-muted">Al confirmar, el relevamiento pasará a estado Visita pendiente.</small>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Asignar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 
     <!-- Header Comedor - Figma Design -->
     <div class="comedor-header-card mb-5">
