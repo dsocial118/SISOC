@@ -9,6 +9,9 @@ from organizaciones.models import Organizacion
 
 
 class Centro(SoftDeleteModelMixin, models.Model):
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"activo": False}
+    SOFT_RESTORE_OPERATIONAL_UPDATES = {"activo": True}
+
     TIPO_CHOICES = [
         ("faro", "faro"),
         ("adherido", "Adherido"),

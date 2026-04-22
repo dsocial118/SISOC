@@ -58,6 +58,8 @@ from relevamientos.tasks import (
 
 logger = logging.getLogger("django")
 
+TERRITORIAL_INVALIDO_ERROR = "Debe seleccionar un territorial valido."
+
 
 RELEVAMIENTO_DETAIL_PREFETCH_FIELDS = (
     "comedor",
@@ -539,6 +541,26 @@ def _has_payload_values(data):
     return bool(data and any(data.values()))
 
 
+def _parse_territorial_payload(raw_territorial_data):
+    if not raw_territorial_data:
+        raise ValidationError(TERRITORIAL_INVALIDO_ERROR)
+
+    try:
+        territorial_data = json.loads(raw_territorial_data)
+    except json.JSONDecodeError as exc:
+        raise ValidationError(TERRITORIAL_INVALIDO_ERROR) from exc
+
+    if not isinstance(territorial_data, dict):
+        raise ValidationError(TERRITORIAL_INVALIDO_ERROR)
+
+    territorial_uid = territorial_data.get("gestionar_uid")
+    territorial_nombre = territorial_data.get("nombre")
+    if not territorial_uid or not territorial_nombre:
+        raise ValidationError(TERRITORIAL_INVALIDO_ERROR)
+
+    return territorial_uid, territorial_nombre
+
+
 def _upsert_referente_por_documento_data(referente_data):
     referente = Referente.objects.filter(
         documento=referente_data.get("documento")
@@ -707,11 +729,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 )
             territorial_data = request.POST.get("territorial_editar")
             if not territorial_data:
-                relevamiento.territorial_uid = None
-                relevamiento.territorial_nombre = None
-                relevamiento.estado = "Pendiente"
-                relevamiento.save()
-                return relevamiento
+                raise ValidationError("Debe seleccionar un territorial válido.")
 
             try:
                 territorial_data = json.loads(territorial_data)
@@ -728,6 +746,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             if not territorial_uid or not territorial_nombre:
                 raise ValidationError("Debe seleccionar un territorial válido.")
 
+            territorial_uid, territorial_nombre = _parse_territorial_payload(
+                request.POST.get("territorial_editar")
+            )
             relevamiento.territorial_uid = territorial_uid
             relevamiento.territorial_nombre = territorial_nombre
             relevamiento.estado = "Visita pendiente"
