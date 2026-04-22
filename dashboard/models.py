@@ -1,3 +1,6 @@
+import re
+from urllib.parse import urlparse, urlunparse
+
 from django.db import models
 from django.urls import reverse
 
@@ -8,6 +11,10 @@ ADMIN_DASHBOARD_PERMISSION_CODES = (
     "auth.role_administrador",
     "auth.role_superadmin",
 )
+LOOKER_STUDIO_HOSTS = {
+    "datastudio.google.com",
+    "lookerstudio.google.com",
+}
 
 
 class Dashboard(models.Model):
@@ -83,6 +90,42 @@ class Tablero(models.Model):
 
     def get_absolute_url(self):
         return reverse("dashboard_tablero", kwargs={"slug": self.slug})
+
+    @staticmethod
+    def _strip_looker_user_prefix(path):
+        return re.sub(r"^/u/\d+/", "/", path or "")
+
+    def usa_url_compartible_looker_studio(self):
+        if not self.url:
+            return False
+
+        parsed_url = urlparse(self.url)
+        hostname = (parsed_url.hostname or "").lower()
+        if hostname not in LOOKER_STUDIO_HOSTS:
+            return False
+
+        normalized_path = self._strip_looker_user_prefix(parsed_url.path)
+        return normalized_path.startswith("/reporting/")
+
+    def get_embed_url(self):
+        if not self.url:
+            return ""
+
+        parsed_url = urlparse(self.url)
+        hostname = (parsed_url.hostname or "").lower()
+        if hostname not in LOOKER_STUDIO_HOSTS:
+            return self.url
+
+        normalized_path = self._strip_looker_user_prefix(parsed_url.path)
+        if normalized_path.startswith("/embed/reporting/"):
+            if normalized_path == parsed_url.path:
+                return self.url
+            return urlunparse(parsed_url._replace(path=normalized_path))
+
+        if not normalized_path.startswith("/reporting/"):
+            return self.url
+
+        return urlunparse(parsed_url._replace(path=f"/embed{normalized_path}"))
 
     @staticmethod
     def permission_codes_de_usuario(user):

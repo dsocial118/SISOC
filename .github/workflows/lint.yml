@@ -10,6 +10,13 @@ on:
             - main
             - development
 
+permissions:
+    contents: read
+
+concurrency:
+    group: lint-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
+
 jobs:
     setup:
         runs-on: ubuntu-latest
@@ -18,6 +25,8 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v4.1.7
+              with:
+                  fetch-depth: 0
 
             - name: Set up Python
               id: python-version
@@ -28,12 +37,114 @@ jobs:
             - name: Install dependencies
               run: |
                   python -m pip install --upgrade pip
-                  pip install black==24.8.0 djlint pylint
+                  pip install black==24.8.0 djlint==1.34.2 pylint==3.2.6
               id: install-dependencies
+
+    autofix:
+        runs-on: ubuntu-latest
+        needs: setup
+        permissions:
+            contents: write
+        steps:
+            - name: Checkout PR head branch
+              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              uses: actions/checkout@v4.1.7
+              with:
+                  fetch-depth: 0
+                  ref: ${{ github.event.pull_request.head.ref }}
+
+            - name: Skip autofix outside internal pull requests
+              if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+              run: echo "Autofix solo habilitado para pull requests del mismo repositorio."
+
+            - name: Set up Python
+              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              uses: actions/setup-python@v5.2.0
+              with:
+                  python-version: ${{ needs.setup.outputs.python-version }}
+
+            - name: Install autofix dependencies
+              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install black==24.8.0 djlint==1.34.2
+
+            - name: Detect changed Python files
+              id: detect-changed-python
+              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              run: echo "files=$(python scripts/ci/pr_lint_tools.py changed-files --kind python)" >> "$GITHUB_OUTPUT"
+
+            - name: Detect changed templates
+              id: detect-changed-templates
+              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              run: echo "files=$(python scripts/ci/pr_lint_tools.py changed-files --kind templates)" >> "$GITHUB_OUTPUT"
+
+            - name: Run Black autofix
+              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.detect-changed-python.outputs.files != '[]'
+              run: |
+                  python - <<'PY'
+                  import json
+                  import os
+                  import subprocess
+
+                  files = json.loads(os.environ.get("PYTHON_FILES_JSON") or "[]")
+                  print("Running black on", len(files), "Python file(s)")
+                  subprocess.run(
+                      ["black", "--config", "pyproject.toml", *files],
+                      check=True,
+                  )
+                  PY
+              env:
+                  PYTHON_FILES_JSON: ${{ steps.detect-changed-python.outputs.files }}
+
+            - name: Run DJLint autofix
+              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.detect-changed-templates.outputs.files != '[]'
+              run: |
+                  python - <<'PY'
+                  import json
+                  import os
+                  import subprocess
+
+                  templates = json.loads(
+                      os.environ.get("TEMPLATE_FILES_JSON") or "[]"
+                  )
+                  print("Running djlint --reformat on", len(templates), "template file(s)")
+                  subprocess.run(
+                      [
+                          "djlint",
+                          *templates,
+                          "--reformat",
+                          "--configuration=.djlintrc",
+                      ],
+                      check=True,
+                  )
+                  PY
+              env:
+                  TEMPLATE_FILES_JSON: ${{ steps.detect-changed-templates.outputs.files }}
+
+            - name: Normalize mojibake in changed text files
+              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              run: python scripts/ci/pr_lint_tools.py fix-encoding
+
+            - name: Commit and push autofix
+              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              run: |
+                  if git diff --quiet; then
+                      echo "No hubo cambios automaticos para commitear."
+                      exit 0
+                  fi
+
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add -A
+                  git commit -m "chore(ci): autoformatear PR"
+                  git push origin HEAD:${{ github.event.pull_request.head.ref }}
 
     encoding_check:
         runs-on: ubuntu-latest
-        needs: setup
+        needs:
+            - setup
+            - autofix
         steps:
             - name: Checkout code
               uses: actions/checkout@v4.1.7
@@ -45,105 +156,14 @@ jobs:
               with:
                   python-version: ${{ needs.setup.outputs.python-version }}
 
-            - name: Detect mojibake in changed text files
-              run: |
-                  python - <<'PY'
-                  import json
-                  import os
-                  import subprocess
-                  from pathlib import Path
-
-                  EXCLUDED_DIRS = {
-                      ".git",
-                      ".venv",
-                      "__pycache__",
-                      "node_modules",
-                      "staticfiles",
-                      "media",
-                  }
-                  EXCLUDED_SUFFIXES = {
-                      ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp",
-                      ".woff", ".woff2", ".ttf", ".eot", ".pdf", ".zip",
-                      ".sqlite3", ".pyc", ".pyo",
-                  }
-                  EXCLUDED_FILENAMES = {
-                      "package-lock.json",
-                      "poetry.lock",
-                  }
-                  PATTERNS = (
-                      "\u00c3\u00a1", "\u00c3\u00a9", "\u00c3\u00ad",
-                      "\u00c3\u00b3", "\u00c3\u00ba", "\u00c3\u00b1",
-                      "\u00c3\u0081", "\u00c3\u0089", "\u00c3\u008d",
-                      "\u00c3\u0093", "\u00c3\u009a", "\u00c3\u0091",
-                      "\u00c2\u00bf", "\u00c2\u00a1", "\u00c2\u00b0",
-                      "\u00e2\u20ac\u2122", "\u00e2\u20ac\u0153",
-                      "\u00e2\u20ac\u009d", "\u00e2\u20ac\u201c",
-                      "\u00e2\u20ac\u201d",
-                  )
-
-                  event_name = os.environ["GITHUB_EVENT_NAME"]
-                  event_path = os.environ["GITHUB_EVENT_PATH"]
-                  with open(event_path, encoding="utf-8") as fh:
-                      event = json.load(fh)
-
-                  if event_name == "pull_request":
-                      base_sha = event["pull_request"]["base"]["sha"]
-                      head_sha = event["pull_request"]["head"]["sha"]
-                  elif event_name == "push":
-                      base_sha = event["before"]
-                      head_sha = event["after"]
-                  else:
-                      raise SystemExit(f"Unsupported event: {event_name}")
-
-                  changed_output = subprocess.check_output(
-                      ["git", "diff", "--name-only", base_sha, head_sha],
-                      text=True,
-                  )
-                  changed_files = [
-                      Path(item.strip())
-                      for item in changed_output.splitlines()
-                      if item.strip()
-                  ]
-
-                  if not changed_files:
-                      print("No changed files to scan for mojibake.")
-                      raise SystemExit(0)
-
-                  findings = []
-                  for path in changed_files:
-                      if not path.is_file():
-                          continue
-                      if any(part in EXCLUDED_DIRS for part in path.parts):
-                          continue
-                      if path.name in EXCLUDED_FILENAMES:
-                          continue
-                      if path.suffix.lower() in EXCLUDED_SUFFIXES:
-                          continue
-
-                      try:
-                          text = path.read_text(encoding="utf-8")
-                      except UnicodeDecodeError:
-                          continue
-
-                      for line_number, line in enumerate(text.splitlines(), start=1):
-                          matches = [pattern for pattern in PATTERNS if pattern in line]
-                          if matches:
-                              findings.append(
-                                  f"{path}:{line_number}: suspicious patterns {matches} -> {line.strip()}"
-                              )
-
-                  if findings:
-                      print("Possible mojibake sequences detected:")
-                      for finding in findings:
-                          print(finding)
-                      raise SystemExit(1)
-
-                  print("No typical mojibake patterns were found in changed text files.")
-                  PY
+            - name: Validate encoding on changed text files
+              run: python scripts/ci/pr_lint_tools.py check-encoding
 
     black:
         runs-on: ubuntu-latest
-        needs: setup
+        needs:
+            - setup
+            - autofix
         steps:
             - name: Checkout code
               uses: actions/checkout@v4.1.7
@@ -158,7 +178,35 @@ jobs:
                   python -m pip install --upgrade pip
                   pip install black==24.8.0
 
-            - name: Run Black
+            - name: Detect changed Python files
+              id: detect-changed-python
+              if: github.event_name == 'pull_request'
+              run: echo "files=$(python scripts/ci/pr_lint_tools.py changed-files --kind python)" >> "$GITHUB_OUTPUT"
+
+            - name: Run Black on changed Python files
+              if: github.event_name == 'pull_request' && steps.detect-changed-python.outputs.files != '[]'
+              run: |
+                  python - <<'PY'
+                  import json
+                  import os
+                  import subprocess
+
+                  files = json.loads(os.environ.get("PYTHON_FILES_JSON") or "[]")
+                  print("Checking black on", len(files), "Python file(s)")
+                  subprocess.run(
+                      ["black", "--check", "--config", "pyproject.toml", *files],
+                      check=True,
+                  )
+                  PY
+              env:
+                  PYTHON_FILES_JSON: ${{ steps.detect-changed-python.outputs.files }}
+
+            - name: Skip Black when PR has no Python changes
+              if: github.event_name == 'pull_request' && steps.detect-changed-python.outputs.files == '[]'
+              run: echo "No changed Python files detected in this pull request."
+
+            - name: Run Black on repository
+              if: github.event_name == 'push'
               run: black --check . --config pyproject.toml
 
             - name: Upload Black report
@@ -171,7 +219,9 @@ jobs:
 
     djlint:
         runs-on: ubuntu-latest
-        needs: setup
+        needs:
+            - setup
+            - autofix
         steps:
             - name: Checkout code
               uses: actions/checkout@v4.1.7
@@ -190,48 +240,7 @@ jobs:
 
             - name: Detect changed templates
               id: detect-changed-templates
-              run: |
-                  python - <<'PY'
-                  import json
-                  import os
-                  import subprocess
-                  from pathlib import Path
-
-                  TEMPLATE_SUFFIXES = {".html", ".htm", ".djhtml", ".jinja", ".j2"}
-
-                  event_name = os.environ["GITHUB_EVENT_NAME"]
-                  with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as fh:
-                      event = json.load(fh)
-
-                  if event_name == "pull_request":
-                      base_sha = event["pull_request"]["base"]["sha"]
-                      head_sha = event["pull_request"]["head"]["sha"]
-                  elif event_name == "push":
-                      base_sha = event["before"]
-                      head_sha = event["after"]
-                  else:
-                      raise SystemExit(f"Unsupported event: {event_name}")
-
-                  changed_output = subprocess.check_output(
-                      ["git", "diff", "--name-only", base_sha, head_sha],
-                      text=True,
-                  )
-                  changed_templates = []
-                  for raw_path in changed_output.splitlines():
-                      path = Path(raw_path.strip())
-                      if path.suffix.lower() in TEMPLATE_SUFFIXES:
-                          changed_templates.append(str(path))
-
-                  with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
-                      fh.write(f"templates={json.dumps(changed_templates)}\n")
-
-                  if changed_templates:
-                      print("Templates to lint:")
-                      for template in changed_templates:
-                          print(template)
-                  else:
-                      print("No changed templates detected.")
-                  PY
+              run: echo "templates=$(python scripts/ci/pr_lint_tools.py changed-files --kind templates)" >> "$GITHUB_OUTPUT"
 
             - name: Run DJLint
               if: steps.detect-changed-templates.outputs.templates != '[]'
@@ -242,7 +251,7 @@ jobs:
                   import subprocess
 
                   templates = json.loads(
-                      os.environ["TEMPLATE_FILES_JSON"]
+                      os.environ.get("TEMPLATE_FILES_JSON") or "[]"
                   )
                   print("Running djlint on", len(templates), "template file(s)")
                   subprocess.run(
@@ -255,7 +264,9 @@ jobs:
 
     pylint:
         runs-on: ubuntu-latest
-        needs: setup
+        needs:
+            - setup
+            - autofix
         steps:
             - name: Checkout code
               uses: actions/checkout@v4.1.7

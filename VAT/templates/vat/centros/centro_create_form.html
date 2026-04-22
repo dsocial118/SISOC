@@ -200,6 +200,53 @@
             font-weight: 600;
         }
 
+        .vp-status-card {
+            margin-top: 1rem;
+            border: 1px solid rgba(126, 179, 255, 0.25);
+            border-radius: 14px;
+            padding: 1rem 1.1rem;
+            background: linear-gradient(180deg, rgba(20, 44, 73, 0.82) 0%, rgba(18, 39, 65, 0.8) 100%);
+        }
+
+        .vp-status-card h4 {
+            margin: 0 0 .35rem;
+            color: #f8fbff;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .vp-status-card p {
+            margin: 0;
+            color: #c9ddf6;
+        }
+
+        .vp-switch {
+            min-height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 1rem 1.1rem;
+            border-radius: 14px;
+            border: 1px solid rgba(126, 179, 255, 0.22);
+            background: rgba(9, 22, 39, 0.28);
+            color: #f8fbff;
+        }
+
+        .vp-switch .form-check-label {
+            color: #f8fbff;
+            font-weight: 600;
+        }
+
+        .vp-switch .form-check-input {
+            margin-right: .65rem;
+        }
+
+        .vp-inline-errors {
+            color: #ffc9c9;
+            margin-top: .35rem;
+            font-size: .875rem;
+        }
+
         .vp-actions {
             display: flex;
             gap: .75rem;
@@ -393,6 +440,24 @@
                             </div>
                         {% endfor %}
                     </div>
+                    {% if show_activo_toggle %}
+                        <div class="vp-status-card">
+                            <div class="row align-items-center gy-3">
+                                <div class="col-md-8">
+                                    <h4>4. Estado de la sede</h4>
+                                    <p>Las ediciones conservan el estado actual salvo que cambies este switch de forma explícita.</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="hidden" name="activo_present" value="1" />
+                                    <div class="vp-switch form-check form-switch mb-0">
+                                        {{ form.activo }}
+                                        <label class="form-check-label" for="{{ form.activo.id_for_label }}">{{ form.activo.label }}</label>
+                                    </div>
+                                    {% if form.activo.errors %}<div class="vp-inline-errors">{{ form.activo.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                     <div class="vp-actions">
                         <a href="{{ cancel_url }}" class="btn btn-secondary">
                             <i class="fas fa-times mr-1"></i>Cancelar

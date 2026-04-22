@@ -7,7 +7,7 @@ Fecha: 2026-04-12
 - Se crea la colección Postman `VAT - Cursos Busqueda y Prioritarios` con ejemplos específicos para:
   - `GET /api/vat/cursos/buscar/`
   - `GET /api/vat/cursos/prioritarios/`
-- La colección incluye casos felices, filtros combinados y errores esperados para el buscador.
+- La colección incluye casos de primera carga sin texto, casos felices, filtros combinados y errores esperados para el buscador.
 - Se corrige el bloque de cursos en la colección existente `VAT - Planes Centros Cursos Comisiones` para que los requests `Buscar cursos por texto` y `Listar cursos prioritarios` queden separados correctamente.
 - Se actualiza Swagger/OpenAPI en `VAT/api_views.py` con:
   - ejemplos de respuesta,
@@ -17,7 +17,8 @@ Fecha: 2026-04-12
 ## Criterio funcional
 
 - La colección nueva está pensada como material de prueba y referencia rápida para integraciones y QA.
-- Swagger ahora expone mejor el contrato operativo real de ambos endpoints, incluyendo filtros y errores frecuentes.
+- Swagger ahora expone mejor el contrato operativo real de ambos endpoints, incluyendo primera carga paginada, filtros y errores frecuentes.
+- Swagger ahora también deja explícito que ambos endpoints muestran solo cursos activos con comisiones activas.
 
 ## Validación
 

@@ -23,6 +23,7 @@ from pwa.api_serializers import (
     InscriptoActividadPWAListSerializer,
     MensajeEspacioPWASerializer,
     NominaEspacioPWACreateUpdateSerializer,
+    NominaAsistenciaAlimentariaBulkSerializer,
     NominaEspacioPWAListSerializer,
     NominaRenaperPreviewSerializer,
     PushSubscriptionPWAConfigSerializer,
@@ -56,6 +57,7 @@ from pwa.services.nomina_service import (
     get_periodo_mensual_actual,
     is_menor,
     registrar_asistencia_nomina_mes_actual,
+    sync_asistencia_alimentaria_nomina_mes_actual,
     soft_delete_nomina_persona,
     split_gender_bucket,
     update_nomina_persona,
@@ -601,7 +603,8 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         periodo_actual = get_periodo_mensual_actual()
         return (
             Nomina.objects.filter(
-                admision__comedor_id=comedor_id,
+                Q(admision__comedor_id=comedor_id)
+                | Q(comedor_id=comedor_id, admision__isnull=True),
                 deleted_at__isnull=True,
                 estado=Nomina.ESTADO_ACTIVO,
             )
@@ -838,6 +841,20 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         ).order_by("-periodo_referencia", "-fecha_toma_asistencia", "-id")
         serializer = RegistroAsistenciaNominaPWAListSerializer(registros, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def registrar_asistencia_alimentaria(self, request, comedor_id=None):
+        serializer = NominaAsistenciaAlimentariaBulkSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            result = sync_asistencia_alimentaria_nomina_mes_actual(
+                comedor_id=comedor_id,
+                actor=request.user,
+                selected_nomina_ids=serializer.validated_data["nomina_ids"],
+            )
+        except ValidationError as exc:
+            detail = exc.message_dict if hasattr(exc, "message_dict") else exc.messages
+            return Response({"detail": detail}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(result, status=status.HTTP_200_OK)
 
     def generos(self, request, comedor_id=None):
         serializer = SexoSerializer(Sexo.objects.order_by("id"), many=True)

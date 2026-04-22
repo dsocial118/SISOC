@@ -1,3 +1,28 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-04-16 -->
+# Versión SISOC 16.04.2026
+
+## Nuevas Funcionalidades
+
+- Nuevo modelo de identidad de Ciudadanos con identificador interno, cola de revisión manual, comando `backfill_identidad` y filtros/badges para tratar DNIs duplicados, sin DNI y registros no validados por RENAPER.
+- Nuevo flujo de Acompañamientos por admisión, con entidad propia, migración de hitos/prestaciones/información relevante y detalle web asociado para sostener seguimiento más consistente.
+- Sistema reproducible de benchmarks con `python manage.py run_benchmarks`, baseline versionado y métricas de tiempo/queries para monitorear regresiones en listados críticos.
+
+## Actualizaciones
+
+- Evolución de VAT en centros y cursos: edición preservando `activo`, filtro `Código` alineado al CUE vigente, detalle de cursos con filtrado de comisiones por selección explícita y tabla de comisiones mostrando 25 registros por defecto.
+- Ajustes fuertes en Celiaquía para importación y reproceso: nacionalidad por país normalizado, responsable obligatorio solo para menores, comparación RENAPER priorizando localidad y UI más clara en registros erróneos.
+- Optimización transversal de listados pesados en Ciudadanos y Organizaciones mediante paginación sin `COUNT(*)`, nuevos índices y pruebas unitarias para sostener búsquedas y navegación en grandes volúmenes.
+- Mejoras operativas del repo: memoria de contexto reutilizable para agentes, correcciones de workflows/lint y alineación de dependencias de runtime (`cffi`/`tinycss2`) para estabilizar builds.
+
+## Corrección de Errores
+
+- Corrección de duplicados visibles en nómina de Comedores, con revalidación transaccional al alta para reducir carreras y priorizar un único registro por ciudadano.
+- Correcciones en VAT para edición de cursos/comisiones y compatibilidad de vouchers/fixtures de CI, evitando regresiones recientes en centros, cursos e inscripciones.
+- Ajustes de merge y compatibilidad en Ciudadanos para priorizar registros `ESTANDAR` en lookups por DNI y evitar asociaciones erróneas en Celiaquía y Comedores.
+- Correcciones de infraestructura y CI para que la resolución de dependencias y los jobs de lint no fallen por pins incompatibles o entradas vacías.
+
+<!-- AUTO-GENERATED RELEASE END: 2026-04-16 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-04-09 -->
 # Versión SISOC 09.04.2026
 

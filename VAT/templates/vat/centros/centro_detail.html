@@ -1570,6 +1570,11 @@
                                                         <i class="fas fa-ticket-alt me-1"></i>Voucher
                                                     </span>
                                                 {% endif %}
+                                                {% if curso.inscripcion_libre %}
+                                                    <span class="badge bg-success-subtle text-success ms-1">
+                                                        <i class="fas fa-users me-1"></i>Inscripción libre
+                                                    </span>
+                                                {% endif %}
                                             </td>
                                             <td>{{ curso.comisiones.count }}</td>
                                             <td>
@@ -1585,7 +1590,7 @@
                                                         </button>
                                                     {% endif %}
                                                     {% if perms.VAT.change_curso %}
-                                                        <button type="button" class="btn btn-outline-warning btn-editar-curso" title="Editar Curso" data-bs-toggle="modal" data-bs-target="#modalCurso" data-curso-mode="edit" data-edit-url="{% url 'vat_curso_update' curso.id %}" data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}" data-nombre="{{ curso.nombre }}" data-estado="{{ curso.estado|default:'' }}" data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}" data-costo-creditos="{{ curso.costo_creditos|default:'' }}" data-observaciones="{{ curso.observaciones|default:'' }}" data-voucher-ids="{% for voucher in curso.voucher_parametrias.all %}{% if not forloop.first %},{% endif %}{{ voucher.id }}{% endfor %}">
+                                                        <button type="button" class="btn btn-outline-warning btn-editar-curso" title="Editar Curso" data-bs-toggle="modal" data-bs-target="#modalCurso" data-curso-mode="edit" data-edit-url="{% url 'vat_curso_update' curso.id %}" data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}" data-nombre="{{ curso.nombre }}" data-estado="{{ curso.estado|default:'' }}" data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}" data-inscripcion-libre="{{ curso.inscripcion_libre|yesno:'1,0' }}" data-costo-creditos="{{ curso.costo_creditos|default:'' }}" data-observaciones="{{ curso.observaciones|default:'' }}" data-voucher-ids="{% for voucher in curso.voucher_parametrias.all %}{% if not forloop.first %},{% endif %}{{ voucher.id }}{% endfor %}">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
                                                     {% endif %}
@@ -2148,13 +2153,39 @@
             var form = document.getElementById(formId);
             if (!form || form.dataset.modalSubmitBound === '1') return;
             form.dataset.modalSubmitBound = '1';
+
+            function clearFormErrors() {
+                form.querySelectorAll('.is-invalid').forEach(function(field) {
+                    field.classList.remove('is-invalid');
+                });
+                form.querySelectorAll('[data-modal-form-error="1"]').forEach(function(node) {
+                    node.remove();
+                });
+            }
+
+            function renderFormErrors(errors) {
+                Object.keys(errors || {}).forEach(function(fieldName) {
+                    var field = form.querySelector('[name="' + fieldName + '"]');
+                    if (!field) return;
+
+                    field.classList.add('is-invalid');
+                    var feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback d-block';
+                    feedback.dataset.modalFormError = '1';
+                    feedback.textContent = (errors[fieldName] || []).join(' ');
+                    field.insertAdjacentElement('afterend', feedback);
+                });
+            }
+
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
+                clearFormErrors();
                 if (!form.checkValidity()) {
                     form.reportValidity();
                     return;
                 }
                 var submitBtn = form.querySelector('button[type="submit"]');
+                var originalSubmitHtml = submitBtn ? submitBtn.innerHTML : '';
                 if (submitBtn) {
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
@@ -2165,6 +2196,20 @@
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
                     }
+                }).then(function(response) {
+                    var contentType = response.headers.get('content-type') || '';
+                    if (contentType.indexOf('application/json') !== -1) {
+                        return response.json().then(function(payload) {
+                            if (!response.ok || payload.ok === false) {
+                                throw payload;
+                            }
+                            return payload;
+                        });
+                    }
+                    if (!response.ok) {
+                        throw {};
+                    }
+                    return null;
                 }).then(function() {
                     var modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
                     if (modal) modal.hide();
@@ -2177,11 +2222,18 @@
                     }
                     location.reload();
                     return null;
-                }).catch(function() {
-                    alert('Error al guardar. Intente nuevamente.');
+                }).catch(function(payload) {
+                    if (payload && payload.errors) {
+                        renderFormErrors(payload.errors);
+                    }
+                    alert(
+                        payload && payload.message
+                            ? payload.message
+                            : 'Error al guardar. Intente nuevamente.'
+                    );
                     if (submitBtn) {
                         submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Guardar';
+                        submitBtn.innerHTML = originalSubmitHtml;
                     }
                 });
             });
@@ -2464,9 +2516,21 @@
 
             if (!sectorSelect || !subsectorSelect) return;
 
+            function refreshSelect2(target) {
+                if (window.refreshSelect2Element) {
+                    window.refreshSelect2Element(target);
+                }
+            }
+
+            if (window.initSelect2Elements) {
+                window.initSelect2Elements(sectorSelect);
+                window.initSelect2Elements(subsectorSelect);
+            }
+
             function loadSubsectores(selectedSubsectorId) {
                 var sectorId = sectorSelect.value;
                 subsectorSelect.innerHTML = '<option value="">---------</option>';
+                refreshSelect2(subsectorSelect);
 
                 if (!sectorId) return;
 
@@ -2484,6 +2548,7 @@
                         }
                         subsectorSelect.appendChild(opt);
                     });
+                    refreshSelect2(subsectorSelect);
                 });
             }
 
@@ -2627,9 +2692,10 @@
             var defaultHint = hint ? hint.textContent : '';
             var lockedCursoId = '';
             var lockedCursoNombre = '';
-            var hoverFilterEnabled = false;
-            var previewCursoId = '';
-            var previewCursoNombre = '';
+
+            if (window.initSelect2Elements && comisionesCursoSelect) {
+                window.initSelect2Elements(comisionesCursoSelect);
+            }
 
             function normalizeText(value) {
                 return (value || '')
@@ -2698,12 +2764,6 @@
                     return {
                         cursoId: lockedCursoId,
                         cursoNombre: lockedCursoNombre || getSelectedCursoName(lockedCursoId),
-                    };
-                }
-                if (previewCursoId) {
-                    return {
-                        cursoId: previewCursoId,
-                        cursoNombre: previewCursoNombre || getSelectedCursoName(previewCursoId),
                     };
                 }
                 return { cursoId: '', cursoNombre: '' };
@@ -2802,39 +2862,26 @@
                 }
             }
 
-            function resetPreviewFilter() {
-                previewCursoId = '';
-                previewCursoNombre = '';
-                applyCursoFilter();
-            }
-
             function syncCursoSelect(cursoId) {
                 if (comisionesCursoSelect) {
                     comisionesCursoSelect.value = cursoId || '';
+                    if (
+                        window.jQuery
+                        && window.jQuery.fn
+                        && window.jQuery.fn.select2
+                        && window.jQuery(comisionesCursoSelect).data('select2')
+                    ) {
+                        window.jQuery(comisionesCursoSelect)
+                            .val(cursoId || '')
+                            .trigger('change.select2');
+                    }
                 }
             }
 
             applyCourseFilters();
             applyCursoFilter();
 
-            cursosTable.addEventListener('mousemove', function() {
-                hoverFilterEnabled = true;
-            }, { once: true });
-
-            cursosTable.addEventListener('mouseleave', function() {
-                if (lockedCursoId || (comisionesCursoSelect && comisionesCursoSelect.value)) {
-                    return;
-                }
-                resetPreviewFilter();
-            });
-
             cursoRows.forEach(function(row) {
-                function filterRow() {
-                    previewCursoId = row.getAttribute('data-curso-id') || '';
-                    previewCursoNombre = row.getAttribute('data-curso-nombre') || 'Curso';
-                    applyCursoFilter();
-                }
-
                 function lockRowFilter(event) {
                     if (event && event.target && event.target.closest('.btn-group')) {
                         return;
@@ -2845,30 +2892,17 @@
                         lockedCursoId = '';
                         lockedCursoNombre = '';
                         syncCursoSelect('');
-                        resetPreviewFilter();
+                        applyCursoFilter();
                         return;
                     }
 
                     lockedCursoId = rowCursoId;
                     lockedCursoNombre = row.getAttribute('data-curso-nombre') || 'Curso';
                     syncCursoSelect(lockedCursoId);
-                    previewCursoId = '';
-                    previewCursoNombre = '';
                     applyCursoFilter();
                 }
 
-                row.addEventListener('mouseenter', function() {
-                    if (lockedCursoId || (comisionesCursoSelect && comisionesCursoSelect.value) || !hoverFilterEnabled) return;
-                    filterRow();
-                });
                 row.addEventListener('click', lockRowFilter);
-                row.addEventListener('focus', function() {
-                    if (lockedCursoId || (comisionesCursoSelect && comisionesCursoSelect.value)) {
-                        applyCursoFilter();
-                        return;
-                    }
-                    filterRow();
-                });
                 row.addEventListener('keydown', function(event) {
                     if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
@@ -2878,7 +2912,7 @@
                         lockedCursoId = '';
                         lockedCursoNombre = '';
                         syncCursoSelect('');
-                        resetPreviewFilter();
+                        applyCursoFilter();
                     }
                 });
             });
@@ -2907,52 +2941,36 @@
                 });
             }
             if (comisionesSearchInput) {
-                comisionesSearchInput.addEventListener('input', function() {
-                    previewCursoId = '';
-                    previewCursoNombre = '';
-                    applyCursoFilter();
-                });
+                comisionesSearchInput.addEventListener('input', applyCursoFilter);
             }
             if (comisionesCursoSelect) {
                 comisionesCursoSelect.addEventListener('change', function() {
                     lockedCursoId = comisionesCursoSelect.value || '';
                     lockedCursoNombre = getSelectedCursoName(lockedCursoId);
-                    previewCursoId = '';
-                    previewCursoNombre = '';
                     applyCursoFilter();
                 });
             }
             if (comisionesEstadoSelect) {
-                comisionesEstadoSelect.addEventListener('change', function() {
-                    previewCursoId = '';
-                    previewCursoNombre = '';
-                    applyCursoFilter();
-                });
+                comisionesEstadoSelect.addEventListener('change', applyCursoFilter);
             }
             if (comisionesPageSizeSelect) {
-                comisionesPageSizeSelect.addEventListener('change', function() {
-                    previewCursoId = '';
-                    previewCursoNombre = '';
-                    applyCursoFilter();
-                });
+                comisionesPageSizeSelect.addEventListener('change', applyCursoFilter);
             }
             if (comisionesClearBtn) {
                 comisionesClearBtn.addEventListener('click', function() {
                     if (comisionesSearchInput) {
                         comisionesSearchInput.value = '';
                     }
-                    if (comisionesCursoSelect) {
-                        comisionesCursoSelect.value = '';
-                    }
+                    syncCursoSelect('');
                     if (comisionesEstadoSelect) {
                         comisionesEstadoSelect.value = '';
                     }
                     if (comisionesPageSizeSelect) {
-                        comisionesPageSizeSelect.value = '10';
+                        comisionesPageSizeSelect.value = '25';
                     }
                     lockedCursoId = '';
                     lockedCursoNombre = '';
-                    resetPreviewFilter();
+                    applyCursoFilter();
                 });
             }
         }
@@ -2981,6 +2999,12 @@
                 : [];
             var shouldReturnToCursoModal = false;
 
+            function refreshSelect2(target) {
+                if (window.refreshSelect2Element) {
+                    window.refreshSelect2Element(target);
+                }
+            }
+
             function normalizePlanSelectorValue(value) {
                 return (value || '').toString().trim().toLowerCase();
             }
@@ -3004,10 +3028,26 @@
                     Array.from(field.options).forEach(function(option) {
                         option.selected = selected.includes(option.value);
                     });
+                    if (
+                        window.jQuery
+                        && window.jQuery.fn
+                        && window.jQuery.fn.select2
+                        && window.jQuery(field).data('select2')
+                    ) {
+                        window.jQuery(field).val(selected).trigger('change.select2');
+                    }
                     return;
                 }
 
                 field.value = value || '';
+                if (
+                    window.jQuery
+                    && window.jQuery.fn
+                    && window.jQuery.fn.select2
+                    && window.jQuery(field).data('select2')
+                ) {
+                    window.jQuery(field).val(value || '').trigger('change.select2');
+                }
             }
 
             function getPlanEstudioSelect() {
@@ -3090,6 +3130,8 @@
                     option.selected = sector === selectedSector;
                     selectorSectorInput.appendChild(option);
                 });
+
+                refreshSelect2(selectorSectorInput);
             }
 
             function setPlanEstudioInfo(planLabel, locked) {
@@ -3188,6 +3230,9 @@
             }
 
             if (selectorSectorInput) {
+                if (window.initSelect2Elements) {
+                    window.initSelect2Elements(selectorSectorInput);
+                }
                 selectorSectorInput.addEventListener('change', applyPlanSelectorFilters);
             }
 
@@ -3211,6 +3256,7 @@
                 });
 
                 selectorModalEl.addEventListener('shown.bs.modal', function() {
+                    refreshSelect2(selectorSectorInput);
                     if (selectorSearchInput) {
                         selectorSearchInput.focus();
                     }
@@ -3246,6 +3292,7 @@
                     setFormValue('nombre', triggerButton.getAttribute('data-nombre'));
                     setFormValue('estado', triggerButton.getAttribute('data-estado'));
                     setFormValue('usa_voucher', triggerButton.getAttribute('data-usa-voucher'));
+                    setFormValue('inscripcion_libre', triggerButton.getAttribute('data-inscripcion-libre'));
                     setFormValue('costo_creditos', triggerButton.getAttribute('data-costo-creditos'));
                     setFormValue('observaciones', triggerButton.getAttribute('data-observaciones'));
                     setFormValue('voucher_parametrias', triggerButton.getAttribute('data-voucher-ids'));

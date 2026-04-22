@@ -31,8 +31,14 @@ from comedores.forms.comedor_form import ComedorForm, ReferenteForm
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.models import Comedor, HistorialValidacion, ImagenComedor, Observacion
 from comedores.services.comedor_service import ComedorService
+from comedores.services.capacitaciones_certificados_service import (
+    is_alimentar_comunidad_program,
+    list_capacitaciones_certificados,
+    serialize_certificate,
+)
 from comedores.services.filter_config import get_filters_ui_config
 from comedores.utils import comedor_usa_admision_para_nomina
+from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -790,6 +796,12 @@ class ComedorListView(LoginRequiredMixin, ListView):
             self.request, user=self.request.user
         )
 
+    def paginate_queryset(self, queryset, page_size):
+        paginator = NoCountPaginator(queryset, page_size)
+        page_obj = paginator.get_page(self.request.GET.get(self.page_kwarg))
+        object_list = page_obj.object_list
+        return paginator, page_obj, object_list, page_obj.has_other_pages()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -885,6 +897,10 @@ class ComedorListView(LoginRequiredMixin, ListView):
             }
         )
         context.update(columns_context)
+
+        page_obj = context.get("page_obj")
+        if page_obj and getattr(page_obj.paginator, "count", None) is None:
+            context["page_range"] = build_no_count_page_range(page_obj)
 
         return context
 
@@ -1234,6 +1250,17 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "monto_prestacion_mensual": selected_admision_context[
                     "monto_prestacion_mensual_aprobadas"
                 ],
+                "show_capacitaciones_certificados": is_alimentar_comunidad_program(
+                    self.object
+                ),
+                "capacitaciones_certificados": (
+                    [
+                        serialize_certificate(item, request=self.request)
+                        for item in list_capacitaciones_certificados(self.object)
+                    ]
+                    if is_alimentar_comunidad_program(self.object)
+                    else []
+                ),
                 **responsables_context,
             }
         )

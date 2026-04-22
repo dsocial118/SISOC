@@ -1411,6 +1411,83 @@
         </div>
     </div>
     <!-- /Historial de interacciones -->
+    {% if show_capacitaciones_certificados %}
+        <!-- Capacitaciones -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card bg-card">
+                    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                        <h4 class="fw-bold my-1">Capacitaciones</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive-lg">
+                            <table class="table table-bordered table-striped projects table-hover align-middle"
+                                   id="capacitacionesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Capacitación</th>
+                                        <th>Estado</th>
+                                        <th>Certificado</th>
+                                        <th>Observación</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cert in capacitaciones_certificados %}
+                                        <tr data-cert-id="{{ cert.id }}">
+                                            <td>{{ cert.capacitacion_label }}</td>
+                                            <td class="cert-estado">
+                                                {% if cert.estado == 'aceptado' %}
+                                                    <span class="badge bg-success">ACEPTADO</span>
+                                                {% elif cert.estado == 'rechazado' %}
+                                                    <span class="badge bg-danger">RECHAZADO</span>
+                                                {% elif cert.estado == 'presentado' %}
+                                                    <span class="badge bg-warning text-dark">PRESENTADO</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">SIN PRESENTAR</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="cert-archivo">
+                                                {% if cert.archivo_url %}
+                                                    <a href="{{ cert.archivo_url }}" target="_blank" rel="noreferrer">Ver archivo</a>
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td class="cert-observacion">{{ cert.observacion|default:"-" }}</td>
+                                            <td>
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-success cert-accept-btn"
+                                                            data-url="{% url 'capacitacion_certificado_estado_ajax' pk=comedor.id certificado_id=cert.id %}"
+                                                            data-cert-id="{{ cert.id }}"
+                                                            {% if cert.estado == 'sin_presentar' %}disabled{% endif %}>
+                                                        Aceptar
+                                                    </button>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-danger cert-reject-btn"
+                                                            data-url="{% url 'capacitacion_certificado_estado_ajax' pk=comedor.id certificado_id=cert.id %}"
+                                                            data-cert-id="{{ cert.id }}"
+                                                            {% if cert.estado == 'sin_presentar' %}disabled{% endif %}>
+                                                        Rechazar
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">Sin capacitaciones registradas.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /Capacitaciones -->
+    {% endif %}
     <!-- Modal Intervención -->
     <div class="modal fade"
          id="modalIntervencion"
@@ -1648,6 +1725,192 @@
     </div>
 {% endblock %}
 {% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("DOMContentLoaded", function () {
+            const tableElement = document.getElementById("capacitacionesTable");
+            let dataTable = null;
+            if (tableElement && typeof $ !== "undefined" && $.fn.DataTable) {
+                dataTable = $("#capacitacionesTable").DataTable({
+                    paging: true,
+                    searching: true,
+                    ordering: true,
+                    info: true,
+                    pageLength: 10,
+                });
+            }
+
+            function csrfToken() {
+                const input = document.querySelector("[name=csrfmiddlewaretoken]");
+                return input ? input.value : "";
+            }
+
+            function stateBadgeHtml(estado) {
+                if (estado === "aceptado") {
+                    return '<span class="badge bg-success">ACEPTADO</span>';
+                }
+                if (estado === "rechazado") {
+                    return '<span class="badge bg-danger">RECHAZADO</span>';
+                }
+                if (estado === "presentado") {
+                    return '<span class="badge bg-warning text-dark">PRESENTADO</span>';
+                }
+                return '<span class="badge bg-secondary">SIN PRESENTAR</span>';
+            }
+
+            function getMainRowByCertId(certId) {
+                if (!tableElement || !certId) {
+                    return null;
+                }
+                return tableElement.querySelector(`tr[data-cert-id="${certId}"]`);
+            }
+
+            function closeRejectEditor(certId) {
+                if (!dataTable || !certId) {
+                    return;
+                }
+                const row = getMainRowByCertId(certId);
+                if (!row) {
+                    return;
+                }
+                const rowApi = dataTable.row(row);
+                if (rowApi?.child?.isShown()) {
+                    rowApi.child.hide();
+                }
+            }
+
+            function closeAllRejectEditors() {
+                if (!dataTable) {
+                    return;
+                }
+                dataTable.rows().every(function () {
+                    if (this.child && this.child.isShown()) {
+                        this.child.hide();
+                    }
+                });
+            }
+
+            function rejectEditorHtml(certId, url) {
+                return `
+                    <div class="cert-reject-editor py-2">
+                        <textarea id="cert-reject-text-${certId}" class="form-control cert-reject-text" rows="2" placeholder="Ingrese una observacion"></textarea>
+                        <div class="d-flex justify-content-end gap-2 mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary cert-reject-cancel-btn" data-cert-id="${certId}">Cancelar</button>
+                            <button type="button" class="btn btn-sm btn-danger cert-reject-confirm-btn" data-cert-id="${certId}" data-url="${url}">Aceptar</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function openRejectEditor(button) {
+                const certId = button?.dataset?.certId;
+                const url = button?.dataset?.url;
+                if (!dataTable || !certId || !url) {
+                    return;
+                }
+                const row = getMainRowByCertId(certId);
+                if (!row) {
+                    return;
+                }
+                const rowApi = dataTable.row(row);
+                const alreadyOpen = rowApi?.child?.isShown();
+                closeAllRejectEditors();
+                if (alreadyOpen) {
+                    return;
+                }
+                rowApi.child(rejectEditorHtml(certId, url)).show();
+            }
+
+            async function updateEstado(triggerElement, estado, observacion) {
+                const url = triggerElement?.dataset?.url;
+                const certId = triggerElement?.dataset?.certId;
+                if (!url) {
+                    return;
+                }
+                const row = getMainRowByCertId(certId) || triggerElement.closest("tr");
+                if (!row) {
+                    return;
+                }
+
+                const formData = new URLSearchParams();
+                formData.append("estado", estado);
+                if (observacion) {
+                    formData.append("observacion", observacion);
+                }
+
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+                        "X-CSRFToken": csrfToken(),
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    body: formData.toString(),
+                });
+                const payload = await response.json();
+                if (!response.ok || !payload.success) {
+                    throw new Error(
+                        typeof payload.error === "string"
+                            ? payload.error
+                            : "No se pudo actualizar el estado.",
+                    );
+                }
+                const item = payload.item || {};
+                const estadoCell = row.querySelector(".cert-estado");
+                const observacionCell = row.querySelector(".cert-observacion");
+                if (estadoCell) {
+                    estadoCell.innerHTML = stateBadgeHtml(item.estado);
+                }
+                if (observacionCell) {
+                    observacionCell.textContent = item.observacion || "-";
+                }
+                row.querySelectorAll(".cert-accept-btn, .cert-reject-btn").forEach((actionButton) => {
+                    actionButton.disabled = item.estado === "sin_presentar";
+                });
+                closeRejectEditor(certId);
+            }
+
+            tableElement?.addEventListener("click", async function (event) {
+                const acceptButton = event.target.closest(".cert-accept-btn");
+                if (acceptButton) {
+                    closeAllRejectEditors();
+                    try {
+                        await updateEstado(acceptButton, "aceptado", "");
+                    } catch (error) {
+                        alert(error.message || "No se pudo aceptar el certificado.");
+                    }
+                    return;
+                }
+
+                const rejectButton = event.target.closest(".cert-reject-btn");
+                if (rejectButton) {
+                    openRejectEditor(rejectButton);
+                    return;
+                }
+
+                const cancelButton = event.target.closest(".cert-reject-cancel-btn");
+                if (cancelButton) {
+                    closeRejectEditor(cancelButton.dataset.certId);
+                    return;
+                }
+
+                const confirmButton = event.target.closest(".cert-reject-confirm-btn");
+                if (confirmButton) {
+                    const editor = confirmButton.closest(".cert-reject-editor");
+                    const textarea = editor?.querySelector(".cert-reject-text");
+                    const observacion = textarea?.value?.trim();
+                    if (!observacion) {
+                        alert("Debe ingresar una observación para rechazar.");
+                        return;
+                    }
+                    try {
+                        await updateEstado(confirmButton, "rechazado", observacion);
+                    } catch (error) {
+                        alert(error.message || "No se pudo rechazar el certificado.");
+                    }
+                }
+            });
+        });
+    </script>
     <script nonce="{{ request.csp_nonce }}">
     function validarComedor() {
       const form = document.createElement('form');

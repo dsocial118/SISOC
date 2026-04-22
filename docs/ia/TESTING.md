@@ -58,8 +58,11 @@ Patrón frecuente en repo:
 Usar marker `smoke` para checks rápidos de integraciones o flujos críticos.
 
 CI ejecuta:
-- `pytest -m smoke`
-- `pytest -n auto` (pull requests)
+- `smoke`: `docker compose run --build --rm --no-deps -T django pytest -m smoke`
+- `migrations_check`: `docker compose exec -T django python manage.py makemigrations --check --dry-run` con MySQL
+- `pytest`: `docker compose run --build --rm --no-deps -T django pytest -n auto --cov=. --cov-report=term-missing --cov-fail-under=75` en PRs
+- `mysql_compat`: `docker compose exec -T django pytest -m mysql_compat -q` en PRs
+- `deploy_guard`: exige checks requeridos (`encoding_check`, `black`, `djlint`, `pylint`, `smoke`, `pytest`, `migrations_check`, `mysql_compat` y `release_sanity` cuando el PR apunta a `main`)
 
 ## Qué testear (checklist por tipo de cambio)
 
@@ -150,7 +153,8 @@ docker compose exec django pytest -n auto core/tests/test_monto_prestacion_views
 
 ## CI (referencia)
 
-- `.github/workflows/tests.yml` ejecuta smoke y tests en Docker Compose.
+- `.github/workflows/tests.yml` ejecuta smoke, migrations check, pytest con cobertura, compatibilidad MySQL y deploy guard.
+- `.github/workflows/lint.yml` ejecuta autofix acotado en PRs internos, `encoding_check`, `black`, `djlint` y `pylint`.
 
 ## Cómo evitar tests frágiles en templates/views
 

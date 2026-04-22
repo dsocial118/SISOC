@@ -4,6 +4,7 @@ import sys
 import logging
 import tempfile
 from pathlib import Path
+from urllib.parse import urlsplit
 from django.contrib.messages import constants as messages
 from django.utils.module_loading import import_string
 from dotenv import load_dotenv
@@ -46,6 +47,61 @@ def _to_origin(h: str) -> str:
     return h if h.startswith(("http://", "https://")) else f"{DEFAULT_SCHEME}://{h}"
 
 
+def _normalize_origin(value: str) -> str | None:
+    raw_value = (value or "").strip().rstrip("/")
+    if not raw_value:
+        return None
+
+    candidate = raw_value if "://" in raw_value else _to_origin(raw_value)
+    parsed = urlsplit(candidate)
+    if not parsed.scheme or not parsed.netloc:
+        return None
+
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
+def _extract_hostname(value: str) -> str:
+    candidate = (value or "").strip()
+    if not candidate:
+        return ""
+
+    parsed = urlsplit(candidate if "://" in candidate else f"http://{candidate}")
+    return (parsed.hostname or "").strip().lower()
+
+
+def _is_local_origin_host(host_value: str) -> bool:
+    return _extract_hostname(host_value) in {"localhost", "127.0.0.1", "::1"}
+
+
+def _build_csrf_trusted_origins() -> list[str]:
+    trusted_origins = []
+
+    def _append_origin(candidate: str) -> None:
+        normalized = _normalize_origin(candidate)
+        if normalized and normalized not in trusted_origins:
+            trusted_origins.append(normalized)
+
+    for allowed_host in ALLOWED_HOSTS:
+        _append_origin(allowed_host)
+
+        if _is_local_origin_host(allowed_host):
+            local_host = _extract_hostname(allowed_host)
+            _append_origin(f"http://{local_host}")
+            _append_origin(f"https://{local_host}")
+
+            local_port = os.getenv("DOCKER_DJANGO_PORT_FORWARD", "").strip()
+            if local_port:
+                _append_origin(f"http://{local_host}:{local_port}")
+                _append_origin(f"https://{local_host}:{local_port}")
+
+    _append_origin(os.getenv("DOMINIO", ""))
+
+    for raw_origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(","):
+        _append_origin(raw_origin)
+
+    return trusted_origins
+
+
 def _safe_int_env(var_name: str, default: int) -> int:
     raw_value = os.getenv(var_name)
     if raw_value is None or raw_value.strip() == "":
@@ -79,7 +135,7 @@ def _safe_bool_env(var_name: str, default: bool) -> bool:
     return default
 
 
-CSRF_TRUSTED_ORIGINS = [_to_origin(h) for h in ALLOWED_HOSTS]
+CSRF_TRUSTED_ORIGINS = _build_csrf_trusted_origins()
 
 # Apps
 INSTALLED_APPS = [

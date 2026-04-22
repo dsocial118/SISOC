@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from django.conf import settings
@@ -17,11 +18,44 @@ logger = logging.getLogger(__name__)
 ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
 ROLE_TECNICO_CELIAQUIA_PERMISSION = "auth.role_tecnicoceliaquia"
 
+RENAPER_TRANSIENT_ERROR_TYPES = {
+    "timeout",
+    "remote_error",
+    "auth_error",
+    "invalid_response",
+    "unexpected_error",
+}
+RENAPER_REMOTE_UNAVAILABLE_MESSAGE = (
+    "No pudimos validar con RENAPER en este momento. "
+    "Por favor, intentá nuevamente en unos minutos."
+)
+RENAPER_INVALID_RESPONSE_MESSAGE = (
+    "RENAPER devolvió una respuesta inválida y no pudimos completar la validación. "
+    "Intentá nuevamente más tarde."
+)
+RENAPER_NO_MATCH_MESSAGE = (
+    "RENAPER no pudo validar los datos ingresados. "
+    "Verificá el DNI y el sexo registrados."
+)
+
 
 def _truncate(value, length=500):
     if isinstance(value, str) and len(value) > length:
         return f"{value[:length]}…"
     return value
+
+
+def _build_raw_response_excerpt(raw_response):
+    if raw_response in (None, ""):
+        return None
+
+    if isinstance(raw_response, (dict, list, tuple)):
+        try:
+            raw_response = json.dumps(raw_response, ensure_ascii=True)
+        except (TypeError, ValueError):
+            raw_response = str(raw_response)
+
+    return _truncate(str(raw_response))
 
 
 def _build_log_data(
@@ -66,6 +100,16 @@ def _es_dni_valido_para_renaper(documento_consulta):
     return documento_consulta.isdigit() and len(documento_consulta) == 8
 
 
+def _resolver_ciudad_provincia(ciudadano):
+    localidad = getattr(ciudadano, "localidad", None)
+    if localidad:
+        localidad_nombre = getattr(localidad, "nombre", localidad)
+        if localidad_nombre:
+            return str(localidad_nombre).title()
+
+    return (getattr(ciudadano, "ciudad", "") or "").title()
+
+
 def _build_datos_provincia(ciudadano, documento_consulta):
     fecha_nacimiento = getattr(ciudadano, "fecha_nacimiento", None)
     altura = getattr(ciudadano, "altura", None)
@@ -84,7 +128,7 @@ def _build_datos_provincia(ciudadano, documento_consulta):
         "piso_departamento": (
             getattr(ciudadano, "piso_departamento", "") or ""
         ).title(),
-        "ciudad": (getattr(ciudadano, "ciudad", "") or "").title(),
+        "ciudad": _resolver_ciudad_provincia(ciudadano),
         "provincia": getattr(provincia, "nombre", None),
         "codigo_postal": str(codigo_postal) if codigo_postal else "",
     }
@@ -121,16 +165,65 @@ def _get_renaper_retry_config():
     return max_retries, backoff_seconds
 
 
+def _es_error_reintentable(error_type):
+    return error_type in RENAPER_TRANSIENT_ERROR_TYPES
+
+
+def _enriquecer_resultado_renaper(resultado, retry_attempt, max_retries):
+    resultado_normalizado = dict(resultado or {})
+    if not resultado_normalizado.get("success", False):
+        resultado_normalizado.setdefault(
+            "error", "Error desconocido al consultar Renaper"
+        )
+        resultado_normalizado.setdefault("error_type", "unexpected_error")
+
+    resultado_normalizado["retry_attempt"] = retry_attempt
+    resultado_normalizado["max_retries"] = max_retries
+    return resultado_normalizado
+
+
+def _build_error_log_data(log_data, resultado_renaper, stage="response"):
+    return {
+        **log_data,
+        "stage": stage,
+        "error": resultado_renaper.get("error"),
+        "error_type": resultado_renaper.get("error_type"),
+        "retry_attempt": resultado_renaper.get("retry_attempt"),
+        "max_retries": resultado_renaper.get("max_retries"),
+        "raw_response_excerpt": _build_raw_response_excerpt(
+            resultado_renaper.get("raw_response")
+        ),
+    }
+
+
+def _get_error_message(resultado_renaper):
+    error_type = resultado_renaper.get("error_type")
+
+    if error_type == "fallecido" or resultado_renaper.get("fallecido"):
+        return "La persona figura como fallecida en Renaper"
+    if error_type == "invalid_response":
+        return RENAPER_INVALID_RESPONSE_MESSAGE
+    if error_type == "no_match":
+        return RENAPER_NO_MATCH_MESSAGE
+    return RENAPER_REMOTE_UNAVAILABLE_MESSAGE
+
+
 def _consultar_datos_renaper_con_reintentos(documento_consulta, sexo_renaper):
     max_retries, backoff_seconds = _get_renaper_retry_config()
     ultimo_resultado = None
 
     for intento in range(1, max_retries + 1):
-        ultimo_resultado = consultar_datos_renaper(documento_consulta, sexo_renaper)
+        ultimo_resultado = _enriquecer_resultado_renaper(
+            consultar_datos_renaper(documento_consulta, sexo_renaper),
+            retry_attempt=intento,
+            max_retries=max_retries,
+        )
         if ultimo_resultado.get("success"):
             return ultimo_resultado
 
-        if intento >= max_retries:
+        if intento >= max_retries or not _es_error_reintentable(
+            ultimo_resultado.get("error_type")
+        ):
             break
 
         logger.warning(
@@ -142,6 +235,10 @@ def _consultar_datos_renaper_con_reintentos(documento_consulta, sexo_renaper):
                     "retry_attempt": intento + 1,
                     "max_retries": max_retries,
                     "error": ultimo_resultado.get("error"),
+                    "error_type": ultimo_resultado.get("error_type"),
+                    "raw_response_excerpt": _build_raw_response_excerpt(
+                        ultimo_resultado.get("raw_response")
+                    ),
                 }
             },
         )
@@ -149,10 +246,15 @@ def _consultar_datos_renaper_con_reintentos(documento_consulta, sexo_renaper):
         if backoff_seconds > 0:
             time.sleep(backoff_seconds * (2 ** (intento - 1)))
 
-    return ultimo_resultado or {
-        "success": False,
-        "error": "Error desconocido al consultar Renaper",
-    }
+    return ultimo_resultado or _enriquecer_resultado_renaper(
+        {
+            "success": False,
+            "error": "Error desconocido al consultar Renaper",
+            "error_type": "unexpected_error",
+        },
+        retry_attempt=max_retries,
+        max_retries=max_retries,
+    )
 
 
 def _formatear_fecha_renaper(fecha_renaper):
@@ -226,20 +328,21 @@ def _log_respuesta_renaper(log_data, resultado_renaper):
     }
 
     if not success:
-        response_summary["error"] = resultado_renaper.get("error")
-        response_summary["raw_response_excerpt"] = _truncate(
-            resultado_renaper.get("raw_response", "Sin respuesta")
-        )
-        logger.warning(
-            "renaper.validation.response_error",
-            extra={
-                "data": {
-                    **log_data,
-                    "stage": "response",
-                    "response": response_summary,
-                }
-            },
-        )
+        error_type = resultado_renaper.get("error_type")
+        log_extra = {"data": _build_error_log_data(log_data, resultado_renaper)}
+
+        if error_type == "no_match":
+            logger.info("renaper.validation.no_match", extra=log_extra)
+        elif error_type in {"timeout", "remote_error"}:
+            logger.warning("renaper.validation.remote_unavailable", extra=log_extra)
+        elif error_type == "auth_error":
+            logger.error("renaper.validation.remote_unavailable", extra=log_extra)
+        elif error_type == "invalid_response":
+            logger.error("renaper.validation.invalid_response", extra=log_extra)
+        elif error_type == "fallecido":
+            logger.info("renaper.validation.fallecido", extra=log_extra)
+        else:
+            logger.error("renaper.validation.response_error", extra=log_extra)
         return
 
     response_summary["data_keys"] = sorted(
@@ -543,47 +646,18 @@ class ValidacionRenaperView(View):
             fallecido = resultado_renaper.get("fallecido")
 
             if fallecido:
-                logger.warning(
-                    "renaper.validation.fallecido",
-                    extra={
-                        "data": {
-                            **log_data,
-                            "stage": "response",
-                            "fallecido": True,
-                        }
-                    },
-                )
                 return JsonResponse(
                     {
                         "success": False,
-                        "error": "La persona figura como fallecida en Renaper",
+                        "error": _get_error_message(resultado_renaper),
                     }
                 )
 
             if not success:
-                error_msg = resultado_renaper.get(
-                    "error", "Error desconocido al consultar Renaper"
-                )
-                raw_response = resultado_renaper.get(
-                    "raw_response", "Sin respuesta raw"
-                )
-
-                logger.error(
-                    "renaper.validation.remote_error",
-                    extra={
-                        "data": {
-                            **log_data,
-                            "stage": "response",
-                            "error": error_msg,
-                            "raw_response_excerpt": _truncate(raw_response),
-                        }
-                    },
-                )
-
                 return JsonResponse(
                     {
                         "success": False,
-                        "error": "Ocurrió un error El Cuit o el Sexo no coincide con esos datos.",
+                        "error": _get_error_message(resultado_renaper),
                     }
                 )
 
