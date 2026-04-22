@@ -5,12 +5,14 @@ from typing import Any
 import unicodedata
 
 from django.db.models import (
+    Case,
     Q,
     Count,
     Max,
     Prefetch,
     QuerySet,
     Value,
+    When,
     IntegerField,
     F,
     Func,
@@ -102,6 +104,7 @@ def _aggregate_nomina_resumen(qs_nomina_age):
         cantidad_nomina_x=Count("id", filter=Q(ciudadano__sexo__sexo="X")),
         espera=Count("id", filter=Q(estado=Nomina.ESTADO_ESPERA)),
         cantidad_total=Count("id"),
+        cantidad_activos=Count("id", filter=Q(estado=Nomina.ESTADO_ACTIVO)),
         rango_ninos=Count("id", filter=Q(edad__lte=13, estado=Nomina.ESTADO_ACTIVO)),
         rango_adolescentes=Count(
             "id", filter=Q(edad__gte=14, edad__lte=17, estado=Nomina.ESTADO_ACTIVO)
@@ -139,6 +142,7 @@ def _build_nomina_rangos_resumen(resumen):
         "adultos": resumen["rango_adultos"],
         "adultos_mayores": resumen["rango_adultos_mayores"],
         "adulto_mayor_avanzado": resumen["rango_adulto_mayor_avanzado"],
+        "cantidad_activos": resumen["cantidad_activos"] or 0,
         "total_activos": total_activos,
         "pct_ninos": _pct(resumen["rango_ninos"]),
         "pct_adolescentes": _pct(resumen["rango_adolescentes"]),
@@ -181,8 +185,17 @@ def _apply_nomina_dni_filter(qs_nomina, dni_query):
 
 
 def _build_nomina_page(qs_nomina, page, per_page):
+    prioridad_estado = Case(
+        When(estado=Nomina.ESTADO_ACTIVO, then=Value(0)),
+        When(estado=Nomina.ESTADO_ESPERA, then=Value(1)),
+        When(estado=Nomina.ESTADO_BAJA, then=Value(2)),
+        default=Value(99),
+        output_field=IntegerField(),
+    )
     paginator = Paginator(
-        qs_nomina.order_by("-fecha", "-id").only(
+        qs_nomina.annotate(_estado_orden=prioridad_estado)
+        .order_by("_estado_orden", "-fecha", "-id")
+        .only(
             "fecha",
             "ciudadano__apellido",
             "ciudadano__nombre",
