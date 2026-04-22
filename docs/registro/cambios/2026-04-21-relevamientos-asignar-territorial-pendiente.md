@@ -14,6 +14,7 @@ Fecha: 2026-04-21
 - `relevamientos/service.py` bloquea la asignacion cuando el relevamiento no esta en `Pendiente` y rechaza JSON validos con forma incorrecta.
 - `comedores/views/relevamientos.py` valida permiso `relevamientos.change_relevamiento` en la rama de edicion de territorial y responde con `400`/`403` consistentes para AJAX y redirect con mensaje para submit normal.
 - `relevamientos/templates/relevamiento_detail.html` incorpora el boton, modal y carga del JS de cache de territoriales solo cuando corresponde.
+- Seguimiento 2026-04-22: se restauro el rechazo de `territorial_editar` vacio para no mutar ni persistir el relevamiento cuando el submit de edicion llega sin un territorial valido.
 
 ## Validacion cubierta
 
