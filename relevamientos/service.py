@@ -727,6 +727,24 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 raise ValidationError(
                     "Solo se puede asignar territorial a relevamientos pendientes."
                 )
+            territorial_data = request.POST.get("territorial_editar")
+            if not territorial_data:
+                raise ValidationError("Debe seleccionar un territorial válido.")
+
+            try:
+                territorial_data = json.loads(territorial_data)
+            except json.JSONDecodeError as exc:
+                raise ValidationError(
+                    "Debe seleccionar un territorial válido."
+                ) from exc
+
+            if not isinstance(territorial_data, dict):
+                raise ValidationError("Debe seleccionar un territorial válido.")
+
+            territorial_uid = territorial_data.get("gestionar_uid")
+            territorial_nombre = territorial_data.get("nombre")
+            if not territorial_uid or not territorial_nombre:
+                raise ValidationError("Debe seleccionar un territorial válido.")
 
             territorial_uid, territorial_nombre = _parse_territorial_payload(
                 request.POST.get("territorial_editar")
