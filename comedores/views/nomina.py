@@ -50,6 +50,10 @@ def _get_admision_del_comedor_or_404(comedor_pk, admision_pk, user):
     return get_object_or_404(Admision, pk=admision_pk, comedor_id=comedor.id)
 
 
+def _get_cantidad_asistentes_activos(rangos):
+    return (rangos or {}).get("cantidad_activos") or 0
+
+
 @login_required
 def nomina_editar_ajax(request, pk):
     nomina = _get_nomina_scoped_or_404(pk, request.user)
@@ -81,7 +85,7 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
         page = int(self.request.GET.get("page", 1))
         dni_query = (self.request.GET.get("dni") or "").strip()
 
-        page_obj, nomina_m, nomina_f, nomina_x, espera, total, rangos = (
+        page_obj, nomina_m, nomina_f, nomina_x, espera, _total, rangos = (
             ComedorService.get_nomina_detail(admision.pk, page, dni_query=dni_query)
         )
 
@@ -94,7 +98,7 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "nominaF": nomina_f,
                 "nominaX": nomina_x,
                 "espera": espera,
-                "cantidad_nomina": total,
+                "cantidad_nomina": _get_cantidad_asistentes_activos(rangos),
                 "menores": menores,
                 "nomina_rangos": rangos,
                 "object": admision.comedor,
@@ -354,7 +358,7 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
         page = int(self.request.GET.get("page", 1))
         dni_query = (self.request.GET.get("dni") or "").strip()
 
-        page_obj, nomina_m, nomina_f, nomina_x, espera, total, rangos = (
+        page_obj, nomina_m, nomina_f, nomina_x, espera, _total, rangos = (
             ComedorService.get_nomina_detail_by_comedor(
                 comedor.pk, page, dni_query=dni_query
             )
@@ -369,7 +373,7 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
                 "nominaF": nomina_f,
                 "nominaX": nomina_x,
                 "espera": espera,
-                "cantidad_nomina": total,
+                "cantidad_nomina": _get_cantidad_asistentes_activos(rangos),
                 "menores": menores,
                 "nomina_rangos": rangos,
                 "object": comedor,

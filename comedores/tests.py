@@ -1511,6 +1511,84 @@ def test_get_nomina_detail_desempata_por_id_para_paginacion_estable(
 
 
 @pytest.mark.django_db
+def test_nomina_detail_view_prioriza_bajas_al_final(
+    client_nomina_fixture,
+    admision_fixture,
+):
+    """La nómina debe mostrar las bajas al final, aunque sean más nuevas."""
+    from datetime import date, timedelta
+
+    fecha_base = timezone.now().replace(microsecond=0)
+    registros = []
+    for nombre, apellido, documento, estado, offset in (
+        ("Ana", "Activa", 40111222, Nomina.ESTADO_ACTIVO, -2),
+        ("Beto", "Espera", 40111223, Nomina.ESTADO_ESPERA, -1),
+        ("Carla", "Baja", 40111224, Nomina.ESTADO_BAJA, 0),
+    ):
+        ciudadano = Ciudadano.objects.create(
+            nombre=nombre,
+            apellido=apellido,
+            documento=documento,
+            fecha_nacimiento=date(1990, 1, 1),
+        )
+        nomina = Nomina.objects.create(
+            admision=admision_fixture,
+            ciudadano=ciudadano,
+            estado=estado,
+        )
+        Nomina.objects.filter(pk=nomina.pk).update(
+            fecha=fecha_base + timedelta(days=offset)
+        )
+        nomina.refresh_from_db()
+        registros.append(nomina)
+
+    comedor = admision_fixture.comedor
+    url = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_fixture.pk},
+    )
+    response = client_nomina_fixture.get(url)
+
+    assert response.status_code == 200
+    assert list(response.context["nomina"].object_list) == registros
+
+
+@pytest.mark.django_db
+def test_nomina_detail_view_cantidad_nomina_cuenta_solo_activos(
+    client_nomina_fixture,
+    admision_fixture,
+):
+    """La tarjeta de asistentes debe contar solo los registros activos."""
+    from datetime import date
+
+    for idx, estado in enumerate(
+        [Nomina.ESTADO_ACTIVO, Nomina.ESTADO_ESPERA, Nomina.ESTADO_BAJA]
+    ):
+        ciudadano = Ciudadano.objects.create(
+            nombre=f"Persona{idx}",
+            apellido=f"Apellido{idx}",
+            documento=40111300 + idx,
+            fecha_nacimiento=date(1990, 1, 1),
+        )
+        Nomina.objects.create(
+            admision=admision_fixture,
+            ciudadano=ciudadano,
+            estado=estado,
+        )
+
+    comedor = admision_fixture.comedor
+    url = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_fixture.pk},
+    )
+    response = client_nomina_fixture.get(url)
+
+    assert response.status_code == 200
+    assert response.context["cantidad_nomina"] == 1
+    assert response.context["nomina"].paginator.count == 3
+
+
+@pytest.mark.django_db
 def test_nomina_detail_view_404_si_admision_no_corresponde(client_nomina_fixture):
     """Retorna 404 si la admisión no pertenece al comedor de la URL."""
     comedor_a = Comedor.objects.create(nombre="Comedor A")
