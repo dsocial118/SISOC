@@ -136,7 +136,7 @@ def test_soft_delete_apaga_activo_antes_de_emitir_post_soft_delete():
 
 
 @pytest.mark.django_db
-def test_restore_no_reactiva_activo_despues_de_soft_delete():
+def test_restore_reactiva_activo_despues_de_soft_delete():
     user = get_user_model().objects.create_user(
         username="restore-flag",
         password="x",
@@ -149,7 +149,7 @@ def test_restore_no_reactiva_activo_despues_de_soft_delete():
 
     restored = VatCentro.objects.get(pk=centro.pk)
     assert restored.deleted_at is None
-    assert restored.activo is False
+    assert restored.activo is True
 
 
 @pytest.mark.django_db

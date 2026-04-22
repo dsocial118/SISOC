@@ -15,6 +15,9 @@ User = get_user_model()
 class Ciudadano(SoftDeleteModelMixin, models.Model):
     """Datos básicos del ciudadano/a."""
 
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"activo": False}
+    SOFT_RESTORE_OPERATIONAL_UPDATES = {"activo": True}
+
     DOCUMENTO_DNI = "DNI"
     DOCUMENTO_CUIT = "CUIT"
     DOCUMENTO_PASAPORTE = "PASAPORTE"

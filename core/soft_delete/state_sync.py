@@ -2,48 +2,68 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Any
 
 from django.apps import apps
-from django.core.exceptions import FieldDoesNotExist
-from django.utils import timezone
+
+
+_UNSET = object()
 
 
 def build_soft_delete_operational_updates(model) -> dict[str, Any]:
     """Return operational field updates that should accompany a soft delete."""
-    updates: dict[str, Any] = {}
-
     explicit_updates = getattr(model, "SOFT_DELETE_OPERATIONAL_UPDATES", None)
-    if explicit_updates is not None:
-        updates.update(explicit_updates)
+    return dict(explicit_updates or {})
 
-    try:
-        model._meta.get_field("activo")  # noqa: SLF001
-    except FieldDoesNotExist:
-        pass
-    else:
-        updates.setdefault("activo", False)
 
-    return updates
+def build_soft_restore_operational_updates(model) -> dict[str, Any]:
+    """Return operational field updates that should accompany a restore."""
+    explicit_updates = getattr(model, "SOFT_RESTORE_OPERATIONAL_UPDATES", None)
+    return dict(explicit_updates or {})
+
+
+@lru_cache(maxsize=1)
+def _get_backfill_side_effect_handlers():
+    from VAT.cache_utils import invalidate_planes_centro_cache_on_soft_delete
+    from core.cache_utils import invalidate_cache_on_soft_delete_events
+
+    return (
+        invalidate_cache_on_soft_delete_events,
+        invalidate_planes_centro_cache_on_soft_delete,
+    )
 
 
 def sync_soft_delete_instance_state(
     instance,
     *,
-    deleted_at=None,
-    deleted_by=None,
+    deleted_at=_UNSET,
+    deleted_by=_UNSET,
     operational_updates=None,
 ) -> None:
     """Mirror soft-delete state on an in-memory instance."""
-    if deleted_at is None:
-        deleted_at = timezone.now()
     if operational_updates is None:
         operational_updates = {}
 
-    instance.deleted_at = deleted_at
-    instance.deleted_by = deleted_by
+    if deleted_at is not _UNSET:
+        instance.deleted_at = deleted_at
+    if deleted_by is not _UNSET:
+        instance.deleted_by = deleted_by
     for field_name, value in operational_updates.items():
         setattr(instance, field_name, value)
+
+
+def run_soft_delete_backfill_side_effects(instance) -> None:
+    """Run safe soft-delete side effects for backfilled legacy rows."""
+    sender = instance.__class__
+    for handler in _get_backfill_side_effect_handlers():
+        handler(
+            sender=sender,
+            instance=instance,
+            user=None,
+            cascade=False,
+            root=instance,
+        )
 
 
 def is_soft_delete_model(model) -> bool:

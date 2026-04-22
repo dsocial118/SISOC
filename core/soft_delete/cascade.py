@@ -11,6 +11,7 @@ from django.utils import timezone
 
 from .state_sync import (
     build_soft_delete_operational_updates,
+    build_soft_restore_operational_updates,
     sync_soft_delete_instance_state,
 )
 
@@ -330,6 +331,61 @@ def _group_soft_nodes(plan: CascadePlan):
     return by_model
 
 
+def _perform_hard_deletes(hard_nodes: list[CascadeNode]) -> None:
+    for node in hard_nodes:
+        model = node.instance.__class__
+        pk = int(node.instance.pk)
+        if _is_soft_delete_model(model):
+            instance = model.all_objects.filter(pk=pk).first()
+        else:
+            instance = model._meta.base_manager.filter(pk=pk).first()  # noqa: SLF001
+        if instance is None:
+            continue
+        _hard_delete_instance(instance)
+
+
+def _bulk_soft_delete_nodes(
+    *,
+    soft_nodes_by_model: dict[type[models.Model], list[int]],
+    operational_updates_by_model: dict[type[models.Model], dict[str, object]],
+    updated_by_model: dict[type[models.Model], set[int]],
+    deleted_at,
+    user=None,
+) -> None:
+    for model, ids in soft_nodes_by_model.items():
+        operational_updates = operational_updates_by_model[model]
+        existing = set(
+            model.all_objects.filter(pk__in=ids, deleted_at__isnull=True).values_list(
+                "pk",
+                flat=True,
+            )
+        )
+        if not existing:
+            continue
+        model.all_objects.filter(pk__in=existing).update(
+            deleted_at=deleted_at,
+            deleted_by=user,
+            **operational_updates,
+        )
+        updated_by_model[model].update(existing)
+
+
+def _build_delete_summary(
+    *,
+    updated_by_model: dict[type[models.Model], set[int]],
+    hard_nodes: list[CascadeNode],
+) -> dict[str, int]:
+    by_model = defaultdict(int)
+    for model, ids in updated_by_model.items():
+        by_model[f"{model._meta.app_label}.{model.__name__}"] += len(ids)
+    for node in hard_nodes:
+        model_key = (
+            f"{node.instance._meta.app_label}.{node.instance.__class__.__name__}"
+        )
+        by_model[model_key] += 1
+    return dict(by_model)
+
+
 def _emit_soft_delete_signals(
     plan: CascadePlan,
     updated_by_model: dict[type[models.Model], set[int]],
@@ -362,6 +418,7 @@ def _emit_soft_delete_signals(
 def _emit_restore_signals(
     plan: CascadePlan,
     updated_by_model: dict[type[models.Model], set[int]],
+    restore_updates_by_model: dict[type[models.Model], dict[str, object]],
     *,
     user=None,
 ):
@@ -371,8 +428,12 @@ def _emit_restore_signals(
         model = node.instance.__class__
         if int(node.instance.pk) not in updated_by_model.get(model, set()):
             continue
-        node.instance.deleted_at = None
-        node.instance.deleted_by = None
+        sync_soft_delete_instance_state(
+            node.instance,
+            deleted_at=None,
+            deleted_by=None,
+            operational_updates=restore_updates_by_model.get(model, {}),
+        )
         post_restore.send(
             sender=model,
             instance=node.instance,
@@ -403,37 +464,14 @@ def execute_delete_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
             for model in soft_nodes_by_model
         }
 
-        for node in hard_nodes:
-            model = node.instance.__class__
-            pk = int(node.instance.pk)
-            if _is_soft_delete_model(model):
-                instance = model.all_objects.filter(pk=pk).first()
-            else:
-                instance = model._meta.base_manager.filter(
-                    pk=pk
-                ).first()  # noqa: SLF001
-            if instance is None:
-                continue
-            _hard_delete_instance(instance)
-
-        for model, ids in soft_nodes_by_model.items():
-            operational_updates = operational_updates_by_model[model]
-            existing = set(
-                model.all_objects.filter(
-                    pk__in=ids, deleted_at__isnull=True
-                ).values_list(
-                    "pk",
-                    flat=True,
-                )
-            )
-            if not existing:
-                continue
-            model.all_objects.filter(pk__in=existing).update(
-                deleted_at=now,
-                deleted_by=user,
-                **operational_updates,
-            )
-            updated_by_model[model].update(existing)
+        _perform_hard_deletes(hard_nodes)
+        _bulk_soft_delete_nodes(
+            soft_nodes_by_model=soft_nodes_by_model,
+            operational_updates_by_model=operational_updates_by_model,
+            updated_by_model=updated_by_model,
+            deleted_at=now,
+            user=user,
+        )
 
         _emit_soft_delete_signals(
             plan,
@@ -443,17 +481,12 @@ def execute_delete_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
             user=user,
         )
 
-    by_model = defaultdict(int)
-    for model, ids in updated_by_model.items():
-        by_model[f"{model._meta.app_label}.{model.__name__}"] += len(ids)
-    for node in hard_nodes:
-        model_key = (
-            f"{node.instance._meta.app_label}.{node.instance.__class__.__name__}"
-        )
-        by_model[model_key] += 1
-
+    by_model = _build_delete_summary(
+        updated_by_model=updated_by_model,
+        hard_nodes=hard_nodes,
+    )
     total = sum(by_model.values())
-    return total, dict(by_model)
+    return total, by_model
 
 
 def execute_restore_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
@@ -464,7 +497,13 @@ def execute_restore_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
     updated_by_model: dict[type[models.Model], set[int]] = defaultdict(set)
 
     with transaction.atomic():
-        for model, ids in _group_soft_nodes(plan).items():
+        soft_nodes_by_model = _group_soft_nodes(plan)
+        restore_updates_by_model = {
+            model: build_soft_restore_operational_updates(model)
+            for model in soft_nodes_by_model
+        }
+
+        for model, ids in soft_nodes_by_model.items():
             existing = set(
                 model.all_objects.filter(
                     pk__in=ids, deleted_at__isnull=False
@@ -475,13 +514,20 @@ def execute_restore_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
             )
             if not existing:
                 continue
+            restore_updates = restore_updates_by_model[model]
             model.all_objects.filter(pk__in=existing).update(
                 deleted_at=None,
                 deleted_by=None,
+                **restore_updates,
             )
             updated_by_model[model].update(existing)
 
-        _emit_restore_signals(plan, updated_by_model, user=user)
+        _emit_restore_signals(
+            plan,
+            updated_by_model,
+            restore_updates_by_model,
+            user=user,
+        )
 
     by_model = {
         f"{model._meta.app_label}.{model.__name__}": len(ids)

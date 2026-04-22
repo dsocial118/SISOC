@@ -5,12 +5,15 @@ import pytest
 from django.core.management import call_command
 from django.utils import timezone
 
+from VAT.cache_utils import get_planes_centro_cache_version
 from VAT.models import (
     Centro,
     ComisionCurso,
     Curso,
     InstitucionUbicacion,
     ModalidadCursada,
+    PlanVersionCurricular,
+    Sector,
 )
 from core.models import Localidad, Municipio, Provincia
 
@@ -150,3 +153,35 @@ def test_sync_soft_deleted_operational_state_updates_legacy_rows():
     assert "VAT.Curso: 1 registro(s) -> {'estado': 'cancelado'}" in output
     assert "VAT.ComisionCurso: 1 registro(s) -> {'estado': 'cerrada'}" in output
     assert "Sincronizados: 3 registro(s)." in output
+
+
+def test_sync_soft_deleted_operational_state_invalidates_planes_cache():
+    provincia = Provincia.objects.create(nombre="Provincia Cache Sync Soft Delete")
+    sector = Sector.objects.create(nombre="Sector Cache Sync Soft Delete")
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Modalidad Cache Sync Soft Delete",
+        activo=True,
+    )
+    plan = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan Cache Sync Soft Delete",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    _mark_as_legacy_soft_deleted(plan)
+
+    initial_cache_version = get_planes_centro_cache_version()
+
+    call_command(
+        "sync_soft_deleted_operational_state",
+        "--app-label",
+        "VAT",
+        "--model",
+        "PlanVersionCurricular",
+    )
+
+    plan = _reload_deleted(plan)
+
+    assert plan.activo is False
+    assert get_planes_centro_cache_version() == initial_cache_version + 1

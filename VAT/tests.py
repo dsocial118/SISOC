@@ -3927,6 +3927,35 @@ def test_soft_delete_directo_de_comision_curso_cierra_estado(vat_curso_base):
 
 
 @pytest.mark.django_db
+def test_restore_directo_de_comision_curso_recupera_estado_operativo(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Restore Directo",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="REST-01",
+        nombre="Comision Restore Directo",
+        cupo_total=30,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+
+    comision.delete(cascade=False)
+    ComisionCurso.all_objects.get(pk=comision.pk).restore(cascade=False)
+
+    comision_refrescada = ComisionCurso.objects.get(pk=comision.pk)
+
+    assert comision_refrescada.deleted_at is None
+    assert comision_refrescada.estado == "planificada"
+
+
+@pytest.mark.django_db
 def test_soft_delete_cascade_de_curso_cierra_comisiones_hijas(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     curso = Curso.objects.create(
@@ -3977,6 +4006,53 @@ def test_soft_delete_cascade_de_curso_cierra_comisiones_hijas(vat_curso_base):
 
 
 @pytest.mark.django_db
+def test_restore_cascade_de_curso_recupera_estados_operativos(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Restore Cascade",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="REST-02",
+        nombre="Comision Restore 1",
+        cupo_total=30,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="REST-03",
+        nombre="Comision Restore 2",
+        cupo_total=24,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 5, 31),
+        estado="activa",
+    )
+
+    curso.delete(cascade=True)
+    Curso.all_objects.get(pk=curso.pk).restore(cascade=True)
+
+    curso_refrescado = Curso.objects.get(pk=curso.pk)
+    comisiones_refrescadas = list(
+        ComisionCurso.objects.filter(curso_id=curso.pk).order_by("codigo_comision")
+    )
+
+    assert curso_refrescado.deleted_at is None
+    assert curso_refrescado.estado == "planificado"
+    assert [comision.estado for comision in comisiones_refrescadas] == [
+        "planificada",
+        "planificada",
+    ]
+    assert all(comision.deleted_at is None for comision in comisiones_refrescadas)
+
+
+@pytest.mark.django_db
 def test_soft_delete_cascade_de_oferta_institucional_cancela_estado_y_cierra_comision(
     vat_curso_base,
 ):
@@ -4018,6 +4094,51 @@ def test_soft_delete_cascade_de_oferta_institucional_cancela_estado_y_cierra_com
     assert oferta_refrescada.estado == "cancelada"
     assert comision_refrescada.deleted_at is not None
     assert comision_refrescada.estado == "cerrada"
+
+
+@pytest.mark.django_db
+def test_restore_cascade_de_oferta_institucional_recupera_estados_operativos(
+    vat_curso_base,
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Restore Oferta")
+    sector = Sector.objects.create(nombre="Sector Restore Oferta")
+    plan = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        nombre="Plan Restore Oferta",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta Restore",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    Comision.objects.create(
+        oferta=oferta,
+        ubicacion=ubicacion,
+        codigo_comision="REST-OFE-01",
+        nombre="Comision Restore Oferta",
+        cupo=25,
+        fecha_inicio=date(2026, 6, 1),
+        fecha_fin=date(2026, 7, 1),
+        estado="activa",
+    )
+
+    oferta.delete(cascade=True)
+    OfertaInstitucional.all_objects.get(pk=oferta.pk).restore(cascade=True)
+
+    oferta_refrescada = OfertaInstitucional.objects.get(pk=oferta.pk)
+    comision_refrescada = Comision.objects.get(oferta=oferta_refrescada)
+
+    assert oferta_refrescada.deleted_at is None
+    assert oferta_refrescada.estado == "planificada"
+    assert comision_refrescada.deleted_at is None
+    assert comision_refrescada.estado == "planificada"
 
 
 @pytest.mark.django_db
