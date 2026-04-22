@@ -707,11 +707,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 )
             territorial_data = request.POST.get("territorial_editar")
             if not territorial_data:
-                relevamiento.territorial_uid = None
-                relevamiento.territorial_nombre = None
-                relevamiento.estado = "Pendiente"
-                relevamiento.save()
-                return relevamiento
+                raise ValidationError("Debe seleccionar un territorial válido.")
 
             try:
                 territorial_data = json.loads(territorial_data)

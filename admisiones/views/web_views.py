@@ -503,13 +503,20 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
     )
 
     estado_actual = (archivo.estado or "").strip().lower()
+    user_groups = getattr(request.user, "groups", None)
+    groups_filter = getattr(user_groups, "filter", None)
+    tecnico_comedor_group = (
+        groups_filter(name="Tecnico Comedor").exists()
+        if callable(groups_filter)
+        else False
+    )
     es_tecnico_dupla = (
         not request.user.is_superuser
         and admision.comedor
         and AdmisionService._verificar_permiso_dupla(request.user, admision.comedor)
         and (
             user_has_permission_code(request.user, "auth.role_tecnico_comedor")
-            or request.user.groups.filter(name="Tecnico Comedor").exists()
+            or tecnico_comedor_group
         )
     )
     if estado_actual in {"aceptado", "a validar abogado"} and not (
