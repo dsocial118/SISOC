@@ -13,6 +13,10 @@ from .cascade import (
     execute_restore_plan,
 )
 from .signals import post_restore, post_soft_delete
+from .state_sync import (
+    build_soft_delete_operational_updates,
+    sync_soft_delete_instance_state,
+)
 
 
 class SoftDeleteQuerySet(models.QuerySet):
@@ -96,16 +100,22 @@ class SoftDeleteModelMixin(models.Model):
         if self.pk is None or self.deleted_at is not None:
             return 0, {}
         now = timezone.now()
+        operational_updates = build_soft_delete_operational_updates(self.__class__)
         updated = self.__class__.all_objects.filter(
             pk=self.pk,
             deleted_at__isnull=True,
         ).update(
             deleted_at=now,
             deleted_by=user,
+            **operational_updates,
         )
         if updated:
-            self.deleted_at = now
-            self.deleted_by = user
+            sync_soft_delete_instance_state(
+                self,
+                deleted_at=now,
+                deleted_by=user,
+                operational_updates=operational_updates,
+            )
             post_soft_delete.send(
                 sender=self.__class__,
                 instance=self,

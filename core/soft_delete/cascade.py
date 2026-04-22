@@ -9,6 +9,11 @@ from functools import lru_cache
 from django.db import models, transaction
 from django.utils import timezone
 
+from .state_sync import (
+    build_soft_delete_operational_updates,
+    sync_soft_delete_instance_state,
+)
+
 
 MODE_SOFT = "soft"
 MODE_HARD = "hard"
@@ -328,7 +333,9 @@ def _group_soft_nodes(plan: CascadePlan):
 def _emit_soft_delete_signals(
     plan: CascadePlan,
     updated_by_model: dict[type[models.Model], set[int]],
+    operational_updates_by_model: dict[type[models.Model], dict[str, object]],
     *,
+    deleted_at,
     user=None,
 ):
     from .signals import post_soft_delete
@@ -337,8 +344,12 @@ def _emit_soft_delete_signals(
         model = node.instance.__class__
         if int(node.instance.pk) not in updated_by_model.get(model, set()):
             continue
-        node.instance.deleted_at = timezone.now()
-        node.instance.deleted_by = user
+        sync_soft_delete_instance_state(
+            node.instance,
+            deleted_at=deleted_at,
+            deleted_by=user,
+            operational_updates=operational_updates_by_model.get(model, {}),
+        )
         post_soft_delete.send(
             sender=model,
             instance=node.instance,
@@ -386,6 +397,12 @@ def execute_delete_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
     )
 
     with transaction.atomic():
+        soft_nodes_by_model = _group_soft_nodes(plan)
+        operational_updates_by_model = {
+            model: build_soft_delete_operational_updates(model)
+            for model in soft_nodes_by_model
+        }
+
         for node in hard_nodes:
             model = node.instance.__class__
             pk = int(node.instance.pk)
@@ -399,7 +416,8 @@ def execute_delete_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
                 continue
             _hard_delete_instance(instance)
 
-        for model, ids in _group_soft_nodes(plan).items():
+        for model, ids in soft_nodes_by_model.items():
+            operational_updates = operational_updates_by_model[model]
             existing = set(
                 model.all_objects.filter(
                     pk__in=ids, deleted_at__isnull=True
@@ -413,10 +431,17 @@ def execute_delete_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
             model.all_objects.filter(pk__in=existing).update(
                 deleted_at=now,
                 deleted_by=user,
+                **operational_updates,
             )
             updated_by_model[model].update(existing)
 
-        _emit_soft_delete_signals(plan, updated_by_model, user=user)
+        _emit_soft_delete_signals(
+            plan,
+            updated_by_model,
+            operational_updates_by_model,
+            deleted_at=now,
+            user=user,
+        )
 
     by_model = defaultdict(int)
     for model, ids in updated_by_model.items():

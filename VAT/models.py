@@ -895,6 +895,7 @@ class Curso(SoftDeleteModelMixin, models.Model):
         ("finalizado", "Finalizado"),
         ("cancelado", "Cancelado"),
     ]
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"estado": "cancelado"}
 
     centro = models.ForeignKey(
         Centro,
@@ -1050,6 +1051,7 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
         ("cerrada", "Cerrada"),
         ("suspendida", "Suspendida"),
     ]
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"estado": "cerrada"}
 
     curso = models.ForeignKey(
         Curso,
@@ -1178,6 +1180,7 @@ class OfertaInstitucional(SoftDeleteModelMixin, models.Model):
         ("cerrada", "Cerrada"),
         ("cancelada", "Cancelada"),
     ]
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"estado": "cancelada"}
 
     centro = models.ForeignKey(
         Centro,
@@ -1280,6 +1283,7 @@ class Comision(SoftDeleteModelMixin, models.Model):
         ("cerrada", "Cerrada"),
         ("suspendida", "Suspendida"),
     ]
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"estado": "cerrada"}
 
     oferta = models.ForeignKey(
         OfertaInstitucional,
