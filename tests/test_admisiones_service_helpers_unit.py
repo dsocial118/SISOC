@@ -773,6 +773,67 @@ def test_actualizar_estados_por_cambio_documento(mocker):
     assert adm2.estado_admision == "documentacion_aprobada"
 
 
+def test_limpiar_if_gde_recalcula_estado_documental_si_falta_aprobacion(mocker):
+    adm = SimpleNamespace(
+        estado_admision="documentacion_carga_finalizada",
+        numero_if_tecnico="IF-1",
+        archivo_informe_tecnico_GDE="if.pdf",
+        save=mocker.Mock(),
+    )
+    mocker.patch.object(
+        module.AdmisionService, "_todos_obligatorios_tienen_archivos", return_value=True
+    )
+    mocker.patch.object(
+        module.AdmisionService, "_todos_obligatorios_aceptados", return_value=False
+    )
+
+    module.AdmisionService._limpiar_if_gde_admision_por_cambio_documental(adm)
+
+    assert adm.numero_if_tecnico is None
+    assert adm.archivo_informe_tecnico_GDE is None
+    assert adm.estado_admision == "documentacion_finalizada"
+
+
+def test_limpiar_if_gde_recalcula_estado_documental_si_falta_obligatorio(mocker):
+    adm = SimpleNamespace(
+        estado_admision="documentacion_aprobada",
+        numero_if_tecnico=None,
+        archivo_informe_tecnico_GDE=None,
+        save=mocker.Mock(),
+    )
+    mocker.patch.object(
+        module.AdmisionService,
+        "_todos_obligatorios_tienen_archivos",
+        return_value=False,
+    )
+    mocker.patch.object(
+        module.AdmisionService, "_todos_obligatorios_aceptados", return_value=False
+    )
+
+    module.AdmisionService._limpiar_if_gde_admision_por_cambio_documental(adm)
+
+    assert adm.estado_admision == "documentacion_en_proceso"
+
+
+def test_obtener_ultimo_informe_tecnico_filtra_tipo_base(mocker):
+    informe = SimpleNamespace(estado="Iniciado", estado_formulario="borrador")
+    qs = mocker.Mock()
+    qs.order_by.return_value = qs
+    qs.only.return_value = qs
+    qs.first.return_value = informe
+    filter_mock = mocker.patch(
+        "admisiones.services.admisiones_service.InformeTecnico.objects.filter",
+        return_value=qs,
+    )
+
+    resultado = module.AdmisionService._obtener_ultimo_informe_tecnico(
+        SimpleNamespace(id=99)
+    )
+
+    filter_mock.assert_called_once_with(admision=SimpleNamespace(id=99), tipo="base")
+    assert resultado is informe
+
+
 def test_verificar_estado_admision_actualiza_solo_cuando_corresponde(mocker):
     """verificar_estado_admision should approve docs state only on expected branch."""
     adm = SimpleNamespace(pk=10, estado_id=1, save=mocker.Mock())

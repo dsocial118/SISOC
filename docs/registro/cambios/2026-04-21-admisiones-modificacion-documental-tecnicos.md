@@ -15,9 +15,10 @@ Se incluyeron reglas backend para subir/reemplazar, crear personalizado, elimina
 - admisiones/templates/admisiones/includes/documento_row.html
 
 ## Cambios realizados
-- Se agregó validación centralizada para bloquear modificaciones documentales por técnico cuando el último informe técnico ya no está en estado `Iniciado` ni con formulario `borrador`.
+- Se agregó validación centralizada para bloquear modificaciones documentales por técnico cuando el último informe técnico `base` ya no está en estado `Iniciado` ni con formulario `borrador`.
 - Se aplicó esa validación en altas/reemplazos de archivo, creación de documento personalizado, eliminación, cambio de estado de documento y edición de número GDE.
 - Se agregó limpieza de IF/GDE de admisión ante cambios documentales (reseteo de `numero_if_tecnico`, `archivo_informe_tecnico_GDE` y rollback de estado desde `if_informe_tecnico_cargado` a `informe_tecnico_aprobado` cuando corresponde).
+- Cuando una modificación documental deja de cumplir la etapa vigente, la admisión vuelve al estado documental consistente (`documentacion_en_proceso`, `documentacion_finalizada` o `documentacion_aprobada` según corresponda).
 - Se habilitó visualmente el botón `Eliminar` también en documentos validados; el permiso efectivo queda controlado por backend y etapa del informe.
 
 ## Supuestos
@@ -28,5 +29,5 @@ Se incluyeron reglas backend para subir/reemplazar, crear personalizado, elimina
 - `python -m compileall` sobre archivos modificados para verificar sintaxis.
 
 ## Pendientes / riesgos
-- No se ejecutaron tests automáticos de integración/funcionales en este cierre.
+- La regresión quedó cubierta con tests unitarios enfocados sobre recálculo documental y selección del informe técnico `base`.
 - El branch contiene cambios previos relacionados al flujo documental (estado intermedio de finalización), documentados por separado.

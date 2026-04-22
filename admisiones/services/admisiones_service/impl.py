@@ -1529,7 +1529,7 @@ class AdmisionService:
     @staticmethod
     def _obtener_ultimo_informe_tecnico(admision):
         return (
-            InformeTecnico.objects.filter(admision=admision)
+            InformeTecnico.objects.filter(admision=admision, tipo="base")
             .order_by("-id")
             .only("estado", "estado_formulario")
             .first()
@@ -1537,9 +1537,15 @@ class AdmisionService:
 
     @staticmethod
     def _validar_modificacion_documental_por_tecnico(user, admision):
-        if not user or user.is_superuser or not admision or not admision.comedor:
+        comedor = getattr(admision, "comedor", None)
+        if (
+            not user
+            or getattr(user, "is_superuser", False)
+            or not admision
+            or not comedor
+        ):
             return None
-        if not AdmisionService._verificar_permiso_tecnico_dupla(user, admision.comedor):
+        if not AdmisionService._verificar_permiso_tecnico_dupla(user, comedor):
             return None
 
         informe = AdmisionService._obtener_ultimo_informe_tecnico(admision)
@@ -1559,18 +1565,54 @@ class AdmisionService:
             return
 
         update_fields = []
-        if admision.numero_if_tecnico:
+        if getattr(admision, "numero_if_tecnico", None):
             admision.numero_if_tecnico = None
             update_fields.append("numero_if_tecnico")
-        if admision.archivo_informe_tecnico_GDE:
+        if getattr(admision, "archivo_informe_tecnico_GDE", None):
             admision.archivo_informe_tecnico_GDE = None
             update_fields.append("archivo_informe_tecnico_GDE")
-        if admision.estado_admision == "if_informe_tecnico_cargado":
+        if getattr(admision, "estado_admision", None) == "if_informe_tecnico_cargado":
             admision.estado_admision = "informe_tecnico_aprobado"
             update_fields.append("estado_admision")
+        else:
+            nuevo_estado_documental = (
+                AdmisionService._resolver_estado_documental_por_cambio_documental(
+                    admision
+                )
+            )
+            if (
+                nuevo_estado_documental
+                and nuevo_estado_documental != admision.estado_admision
+            ):
+                admision.estado_admision = nuevo_estado_documental
+                update_fields.append("estado_admision")
 
         if update_fields:
             admision.save(update_fields=update_fields)
+
+    @staticmethod
+    def _resolver_estado_documental_por_cambio_documental(admision):
+        estado_admision = getattr(admision, "estado_admision", None)
+        if estado_admision not in {
+            "documentacion_finalizada",
+            "documentacion_aprobada",
+            "documentacion_carga_finalizada",
+        }:
+            return None
+
+        if not AdmisionService._todos_obligatorios_tienen_archivos(admision):
+            return "documentacion_en_proceso"
+
+        if estado_admision in {
+            "documentacion_aprobada",
+            "documentacion_carga_finalizada",
+        } and not AdmisionService._todos_obligatorios_aceptados(admision):
+            return "documentacion_finalizada"
+
+        if estado_admision == "documentacion_carga_finalizada":
+            return "documentacion_aprobada"
+
+        return None
 
     @staticmethod
     def actualizar_numero_gde_ajax(request):
