@@ -1,6 +1,7 @@
 """Tests for test expediente service unit."""
 
 from types import SimpleNamespace
+import json
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -26,6 +27,52 @@ def test_estado_helpers(mocker):
     exp2 = SimpleNamespace(save=mocker.Mock(), estado_id=None, usuario_modificador=None)
     module._set_estado(exp2, "X", usuario="u")
     exp2.save.assert_called_with(update_fields=["estado", "usuario_modificador"])
+
+
+def test_build_observaciones_importacion_resume_excluidos():
+    out = json.loads(
+        module._build_observaciones_importacion(
+            {
+                "validos": 0,
+                "errores": 1,
+                "excluidos": [
+                    {
+                        "documento": "123",
+                        "apellido": "Perez",
+                        "nombre": "Ana",
+                        "estado_programa": "ACEPTADO",
+                        "expediente_origen_id": 77,
+                    }
+                ],
+            }
+        )
+    )
+    assert "Se crearon 0 legajos" in out["resumen"]
+    assert "Errores detectados: 1." in out["resumen"]
+    assert "No se crearon 1 legajos" in out["excluidos"]
+    assert "Documento 123" in out["excluidos"]
+    assert "Exp #77" in out["excluidos"]
+    assert out["excluidos_detalle"][0]["documento"] == "123"
+    assert out["tiene_errores"] is True
+    assert out["creados_total"] == 0
+    assert out["errores_actuales"] == 1
+
+
+def test_build_observaciones_importacion_sin_errores_deja_resumen_en_success():
+    out = json.loads(
+        module._build_observaciones_importacion(
+            {
+                "validos": 2,
+                "errores": 0,
+                "excluidos": [],
+            }
+        )
+    )
+    assert "Se crearon 2 legajos" in out["resumen"]
+    assert out["excluidos"] == ""
+    assert out["tiene_errores"] is False
+    assert out["creados_total"] == 2
+    assert out["errores_actuales"] == 0
 
 
 def test_create_expediente_and_provincia_guard(mocker):
@@ -74,6 +121,7 @@ def test_procesar_expediente_validations_and_success(mocker):
         "excluidos_detalle": ["x"],
     }
     assert set_estado.call_count == 2
+    assert set_estado.call_args_list[1].kwargs["observaciones"]
 
 
 class _LegajosQS:

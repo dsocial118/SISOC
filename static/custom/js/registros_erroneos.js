@@ -132,6 +132,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         mensaje += ` ${data.errores} registros aún tienen errores.`;
                     }
                     
+                    if (
+                        data.errores === 0 &&
+                        Number(data.creados || 0) > 0 &&
+                        data.alerta_resumen &&
+                        typeof window.queueExpedienteTimedAlert === 'function'
+                    ) {
+                        window.queueExpedienteTimedAlert('success', data.alerta_resumen, 120000);
+                    }
+
                     if (data.registros_restantes === 0) {
                         const btnConfirm = document.getElementById('btn-confirm');
                         if (btnConfirm) {
