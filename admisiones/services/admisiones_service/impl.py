@@ -636,21 +636,7 @@ class AdmisionService:
         return True, "Se rectificó la documentación."
 
     @staticmethod
-    def _procesar_post_finalizar_carga_documentacion(admision):
-        if not AdmisionService.actualizar_estado_admision(
-            admision, "finalizar_carga_documentacion"
-        ):
-            return False, "No se pudo finalizar la carga de documentación."
-        return True, "Carga de documentación finalizada correctamente."
-
-    @staticmethod
     def _procesar_post_caratulacion(request, admision):
-        if admision.estado_admision != "documentacion_carga_finalizada":
-            return (
-                False,
-                "Debe finalizar la carga de documentación antes de caratular.",
-            )
-
         form = CaratularForm(request.POST, instance=admision)
         if not form.is_valid():
             return False, "Error al guardar la caratulación."
@@ -691,12 +677,6 @@ class AdmisionService:
                 "btnRectificarDocumentacion",
                 lambda: AdmisionService._procesar_post_rectificar_documentacion(
                     admision, request.user
-                ),
-            ),
-            (
-                "btnFinalizarCargaDocumentacion",
-                lambda: AdmisionService._procesar_post_finalizar_carga_documentacion(
-                    admision
                 ),
             ),
             (
@@ -768,7 +748,6 @@ class AdmisionService:
         defaults = {
             "archivo": archivo,
             "estado": "Documento adjunto",
-            "numero_gde": None,
             "nombre_personalizado": None,
         }
         if usuario and usuario.is_authenticated:
@@ -793,13 +772,6 @@ class AdmisionService:
         try:
 
             admision = get_object_or_404(Admision, pk=admision_id)
-            error_modificacion = (
-                AdmisionService._validar_modificacion_documental_por_tecnico(
-                    usuario, admision
-                )
-            )
-            if error_modificacion:
-                return None, False
 
             documentacion = get_object_or_404(Documentacion, pk=documentacion_id)
 
@@ -818,7 +790,6 @@ class AdmisionService:
                 admision=admision,
                 usuario=usuario,
             )
-            AdmisionService._limpiar_if_gde_admision_por_cambio_documental(admision)
 
             return archivo_admision, created
 
@@ -876,13 +847,6 @@ class AdmisionService:
             )
             if not has_permission:
                 return None, permission_error
-            error_modificacion = (
-                AdmisionService._validar_modificacion_documental_por_tecnico(
-                    usuario, admision
-                )
-            )
-            if error_modificacion:
-                return None, error_modificacion
 
             with transaction.atomic():
 
@@ -899,7 +863,6 @@ class AdmisionService:
                         usuario if usuario and usuario.is_authenticated else None
                     ),
                 )
-                AdmisionService._limpiar_if_gde_admision_por_cambio_documental(admision)
 
             return archivo_admision, None
 
@@ -933,10 +896,6 @@ class AdmisionService:
                 archivo.hard_delete()
             else:
                 archivo.delete()
-
-            AdmisionService._limpiar_if_gde_admision_por_cambio_documental(
-                archivo.admision
-            )
 
             if (
                 documentacion
@@ -1049,13 +1008,6 @@ class AdmisionService:
             )
             if permission_error:
                 return permission_error
-            error_modificacion = (
-                AdmisionService._validar_modificacion_documental_por_tecnico(
-                    request.user, admision
-                )
-            )
-            if error_modificacion:
-                return {"success": False, "error": error_modificacion}
 
             archivo = get_object_or_404(
                 ArchivoAdmision.objects.select_related("admision", "documentacion"),
@@ -1528,94 +1480,6 @@ class AdmisionService:
         )
 
     @staticmethod
-    def _obtener_ultimo_informe_tecnico(admision):
-        return (
-            InformeTecnico.objects.filter(admision=admision, tipo="base")
-            .order_by("-id")
-            .only("estado", "estado_formulario")
-            .first()
-        )
-
-    @staticmethod
-    def _validar_modificacion_documental_por_tecnico(user, admision):
-        comedor = getattr(admision, "comedor", None)
-        if (
-            not user
-            or getattr(user, "is_superuser", False)
-            or not admision
-            or not comedor
-        ):
-            return None
-        if not AdmisionService._verificar_permiso_tecnico_dupla(user, comedor):
-            return None
-
-        informe = AdmisionService._obtener_ultimo_informe_tecnico(admision)
-        if not informe:
-            return None
-
-        if informe.estado != "Iniciado" and informe.estado_formulario != "borrador":
-            return (
-                "No puede modificar documentos cuando el informe tecnico ya no esta "
-                "iniciado ni en borrador."
-            )
-        return None
-
-    @staticmethod
-    def _limpiar_if_gde_admision_por_cambio_documental(admision):
-        if not admision:
-            return
-
-        update_fields = []
-        if getattr(admision, "numero_if_tecnico", None):
-            admision.numero_if_tecnico = None
-            update_fields.append("numero_if_tecnico")
-        if getattr(admision, "archivo_informe_tecnico_GDE", None):
-            admision.archivo_informe_tecnico_GDE = None
-            update_fields.append("archivo_informe_tecnico_GDE")
-        if getattr(admision, "estado_admision", None) == "if_informe_tecnico_cargado":
-            admision.estado_admision = "informe_tecnico_aprobado"
-            update_fields.append("estado_admision")
-        else:
-            nuevo_estado_documental = (
-                AdmisionService._resolver_estado_documental_por_cambio_documental(
-                    admision
-                )
-            )
-            if (
-                nuevo_estado_documental
-                and nuevo_estado_documental != admision.estado_admision
-            ):
-                admision.estado_admision = nuevo_estado_documental
-                update_fields.append("estado_admision")
-
-        if update_fields:
-            admision.save(update_fields=update_fields)
-
-    @staticmethod
-    def _resolver_estado_documental_por_cambio_documental(admision):
-        estado_admision = getattr(admision, "estado_admision", None)
-        if estado_admision not in {
-            "documentacion_finalizada",
-            "documentacion_aprobada",
-            "documentacion_carga_finalizada",
-        }:
-            return None
-
-        if not AdmisionService._todos_obligatorios_tienen_archivos(admision):
-            return "documentacion_en_proceso"
-
-        if estado_admision in {
-            "documentacion_aprobada",
-            "documentacion_carga_finalizada",
-        } and not AdmisionService._todos_obligatorios_aceptados(admision):
-            return "documentacion_finalizada"
-
-        if estado_admision == "documentacion_carga_finalizada":
-            return "documentacion_aprobada"
-
-        return None
-
-    @staticmethod
     def actualizar_numero_gde_ajax(request):
         """
 
@@ -1717,24 +1581,12 @@ class AdmisionService:
                 return AdmisionService._build_error_response_actualizar_numero_gde(
                     "No tiene permisos para editar este documento."
                 )
-            error_modificacion = (
-                AdmisionService._validar_modificacion_documental_por_tecnico(
-                    request.user, archivo.admision
-                )
-            )
-            if error_modificacion:
-                return AdmisionService._build_error_response_actualizar_numero_gde(
-                    error_modificacion
-                )
 
             valor_anterior = archivo.numero_gde
 
             archivo.numero_gde = numero_gde if numero_gde else None
 
             archivo.save()
-            AdmisionService._limpiar_if_gde_admision_por_cambio_documental(
-                archivo.admision
-            )
 
             logger.info(
                 f"Número GDE actualizado: documento_id={documento_id}, "
@@ -2009,12 +1861,6 @@ class AdmisionService:
             admision.estado_admision == "documentacion_aprobada"
             and not admision.num_expediente
         ):
-            botones.append("finalizar_carga_documentacion")
-
-        if (
-            admision.estado_admision == "documentacion_carga_finalizada"
-            and not admision.num_expediente
-        ):
             botones.append("caratular_expediente")
 
         if admision.num_expediente:
@@ -2083,7 +1929,6 @@ class AdmisionService:
             "cargar_documento": "documentacion_en_proceso",
             "finalizar_documentacion": "documentacion_finalizada",
             "aprobar_documentacion": "documentacion_aprobada",
-            "finalizar_carga_documentacion": "documentacion_carga_finalizada",
             "rectificar_documento": "documentacion_en_proceso",
             "cargar_expediente": "expediente_cargado",
             "iniciar_informe_tecnico": "informe_tecnico_en_proceso",
@@ -2219,7 +2064,6 @@ class AdmisionService:
         if admision.estado_admision not in [
             "documentacion_finalizada",
             "documentacion_aprobada",
-            "documentacion_carga_finalizada",
         ]:
 
             return True
