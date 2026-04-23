@@ -14,7 +14,8 @@ La extracción se hace sobre `origin/development` verificado el `2026-04-23` en 
 
 La reversión es funcional, no estructural:
 
-- se retiran rutas, vistas, templates visibles, filtros, badges, acciones y hooks de negocio asociados a estas implementaciones;
+- se retiran filtros, badges, acciones y hooks de negocio asociados a estas implementaciones;
+- el módulo histórico de Acompañamiento se mantiene visible y accesible; la extracción no debe apagar su menú ni sus rutas preexistentes;
 - se preserva la compatibilidad del grafo de migraciones ya encadenado en `development`;
 - se mantienen en código los artefactos mínimos de modelo/schema que hoy exigen las migraciones;
 - no se eliminan migraciones históricas ni se intenta volver atrás la base.
@@ -25,7 +26,7 @@ La reversión es funcional, no estructural:
 
 - `/ciudadanos/crear/` deja de permitir altas manuales sin validación RENAPER;
 - `/ciudadanos/revision/` deja de estar disponible;
-- `/acompanamientos/acompanamiento/...` deja de exponerse como superficie web activa;
+- `/acompanamientos/acompanamiento/...` debe seguir disponible como módulo preexistente;
 - la admisión deja de permitir la eliminación documental técnica agregada por `#1606`;
 - se quitan badges, filtros y wiring de identidad manual en nómina y legajo.
 
@@ -54,4 +55,4 @@ Esa branch debe rearmar commits nuevos, mergeables a futuro, reintroduciendo:
 ## Trade-offs
 
 - Se prioriza preservar `migrate` y la compatibilidad entre entornos por encima de un rollback total del schema.
-- Quedan artefactos de compatibilidad dormidos en `development`, pero sin exposición funcional al usuario final.
+- Quedan artefactos de compatibilidad dormidos en `development`, pero sin apagar superficies históricas que ya estaban disponibles antes de estas PRs.
