@@ -1,6 +1,5 @@
 from django.urls import path
 from acompanamientos import views
-from acompanamientos.views_export import AcompanamientoExportView
 
 from core.decorators import permissions_any_required
 
@@ -14,7 +13,7 @@ urlpatterns = [
                 "admisiones.view_admision",
                 "expedientespagos.view_expedientepago",
             ]
-        )(views.AcompanamientoDetailView.as_view()),
+        )(views.AcompanamientoUnavailableView.as_view()),
         name="detalle_acompanamiento",
     ),
     path(
@@ -26,14 +25,12 @@ urlpatterns = [
                 "admisiones.view_admision",
                 "expedientespagos.view_expedientepago",
             ]
-        )(views.ComedoresAcompanamientoListView.as_view()),
+        )(views.AcompanamientoUnavailableView.as_view()),
         name="lista_comedores_acompanamiento",
     ),
     path(
         "acompanamiento/exportar/",
-        permissions_any_required(["auth.role_exportar_a_csv"])(
-            AcompanamientoExportView.as_view()
-        ),
+        permissions_any_required(["auth.role_exportar_a_csv"])(views.acompanamiento_unavailable),
         name="lista_comedores_acompanamiento_exportar",
     ),
     path(
@@ -44,7 +41,7 @@ urlpatterns = [
                 "admisiones.view_admision",
                 "acompanamientos.view_informacionrelevante",
             ]
-        )(views.restaurar_hito),
+        )(views.acompanamiento_unavailable),
         name="restaurar_hito",
     ),
     path(
@@ -56,7 +53,7 @@ urlpatterns = [
                 "admisiones.view_admision",
                 "expedientespagos.view_expedientepago",
             ]
-        )(views.comedores_acompanamiento_ajax),
+        )(views.acompanamiento_unavailable),
         name="comedores_acompanamiento_ajax",
     ),
 ]

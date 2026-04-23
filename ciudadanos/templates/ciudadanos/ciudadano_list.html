@@ -26,13 +26,9 @@
                     <form method="get"
                           class="row g-3 align-items-end mb-4"
                           id="province-filter-form">
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-md-8">
                             {{ filter_form.provincia.label_tag }}
                             {{ filter_form.provincia }}
-                        </div>
-                        <div class="col-12 col-md-4">
-                            {{ filter_form.tipo_registro.label_tag }}
-                            {{ filter_form.tipo_registro }}
                         </div>
                         <input type="hidden"
                                name="q"
@@ -66,32 +62,17 @@
                                         Provincia
                                         <i class="fas fa-sort sort-icon"></i>
                                     </th>
-                                    <th>Estado identidad</th>
                                     <th style="width: 15%" class="text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="ciudadanos-table-body">
                                 {% for ciudadano in object_list %}
                                     <tr>
-                                        <td data-apellido="{{ ciudadano.apellido }}">{{ ciudadano.apellido|default:"-" }}</td>
-                                        <td data-nombre="{{ ciudadano.nombre }}">{{ ciudadano.nombre|default:"-" }}</td>
+                                        <td data-apellido="{{ ciudadano.apellido }}">{{ ciudadano.apellido }}</td>
+                                        <td data-nombre="{{ ciudadano.nombre }}">{{ ciudadano.nombre }}</td>
                                         <td data-documento="{{ ciudadano.documento|default:'' }}">{{ ciudadano.documento|default:"-" }}</td>
                                         <td data-sexo="{{ ciudadano.sexo|default:'' }}">{{ ciudadano.sexo|default:"-" }}</td>
                                         <td data-provincia="{{ ciudadano.provincia|default:'' }}">{{ ciudadano.provincia|default:"-" }}</td>
-                                        <td>
-                                            {% if ciudadano.tipo_registro_identidad == "SIN_DNI" %}
-                                                <span class="badge bg-warning text-dark" title="Sin DNI">Sin DNI</span>
-                                            {% elif ciudadano.tipo_registro_identidad == "DNI_NO_VALIDADO_RENAPER" %}
-                                                <span class="badge bg-danger" title="DNI no validado por RENAPER">RENAPER no validado</span>
-                                            {% else %}
-                                                <span class="badge bg-success" title="Estándar">Estándar</span>
-                                            {% endif %}
-                                            {% if ciudadano.requiere_revision_manual %}
-                                                <span class="badge bg-secondary ms-1" title="Requiere revisión manual">
-                                                    <i class="fas fa-exclamation-triangle"></i> Revisión
-                                                </span>
-                                            {% endif %}
-                                        </td>
                                         <td class="text-center">
                                             <a href="{% url 'ciudadanos_ver' ciudadano.pk %}"
                                                class="btn btn-primary"
@@ -103,7 +84,7 @@
                                     </tr>
                                 {% empty %}
                                     <tr>
-                                        <td colspan="7" class="text-center">No se encontraron ciudadanos.</td>
+                                        <td colspan="6" class="text-center">No se encontraron ciudadanos.</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>

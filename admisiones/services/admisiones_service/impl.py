@@ -23,7 +23,6 @@ from admisiones.forms.admisiones_forms import (
     CaratularForm,
     IFInformeTecnicoForm,
 )
-from acompanamientos.acompanamiento_service import AcompanamientoService
 from ..docx_service import DocumentTemplateService, TextFormatterService
 from core.services.advanced_filters import AdvancedFilterEngine
 from iam.services import user_has_any_permission_codes, user_has_permission_code
@@ -615,7 +614,6 @@ class AdmisionService:
     @staticmethod
     def _procesar_post_disponibilizar_acomp(admision, user):
         with transaction.atomic():
-            AcompanamientoService.importar_datos_desde_admision(admision)
             if not AdmisionService.marcar_como_enviado_a_acompaniamiento(
                 admision, user
             ):
@@ -1344,8 +1342,6 @@ class AdmisionService:
             admision.estado = estado_admitido
 
             admision.save()
-
-            AcompanamientoService.importar_datos_desde_admision(admision)
 
             return admision
 

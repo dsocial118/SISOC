@@ -244,15 +244,6 @@
                                     <p>Búsqueda</p>
                                 </a>
                             </li>
-                            {% if request.user|has_perm_code:"ciudadanos.revision_identidad" %}
-                                <li class="nav-item">
-                                    <a href="{% url 'ciudadanos_cola_revision' %}"
-                                       class="nav-link ms-4 {% if 'ciudadanos/revision' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Cola de revisión</p>
-                                    </a>
-                                </li>
-                            {% endif %}
                         </ul>
                     </li>
                 {% endif %}
@@ -307,15 +298,6 @@
                                 </li>
                             {% endif %}
                             <!-- ACOMPAÑAMIENTO -->
-                            {% if request.user|has_perm_code:"acompanamientos.view_informacionrelevante" %}
-                                <li class="nav-item">
-                                    <a href="{% url 'lista_comedores_acompanamiento' %}"
-                                       class="nav-link ms-4 {% if 'acompanamiento' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Acompañamiento</p>
-                                    </a>
-                                </li>
-                            {% endif %}
                             {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
                                 <li class="nav-item">
                                     <a href="{% url 'rendicioncuentasmensual_global_list' %}"
