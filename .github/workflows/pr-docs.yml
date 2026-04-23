@@ -37,8 +37,43 @@ jobs:
                   GITHUB_EVENT_PATH: ${{ github.event_path }}
               run: python scripts/ci/pr_doc_automation.py
 
-            - name: Commit automático de artefactos
+            - name: Detectar rama origen protegida
+              id: head_policy
               if: github.event.pull_request.head.repo.full_name == github.repository
+              run: |
+                  case "${{ github.event.pull_request.head.ref }}" in
+                    development|main)
+                      echo "protected_head=true" >> "$GITHUB_OUTPUT"
+                      ;;
+                    *)
+                      echo "protected_head=false" >> "$GITHUB_OUTPUT"
+                      ;;
+                  esac
+
+            - name: Reportar artefactos en rama protegida
+              if: github.event.pull_request.head.repo.full_name == github.repository && steps.head_policy.outputs.protected_head == 'true'
+              run: |
+                  if git diff --quiet -- docs/registro/prs docs/contexto/features docs/registro/releases/pending; then
+                    {
+                      echo "## Rama protegida"
+                      echo
+                      echo "No se generaron cambios adicionales para la rama protegida \`${{ github.event.pull_request.head.ref }}\`."
+                    } >> "$GITHUB_STEP_SUMMARY"
+                    exit 0
+                  fi
+
+                  {
+                    echo "## Rama protegida"
+                    echo
+                    echo "La rama origen \`${{ github.event.pull_request.head.ref }}\` está protegida y el repositorio exige cambios vía PR."
+                    echo "Este workflow genera los artefactos, pero no intenta pushear directo a esa rama."
+                    echo
+                    echo "### Diff generado"
+                    git diff --stat -- docs/registro/prs docs/contexto/features docs/registro/releases/pending
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Commit automático de artefactos
+              if: github.event.pull_request.head.repo.full_name == github.repository && steps.head_policy.outputs.protected_head != 'true'
               run: |
                   if git diff --quiet -- docs/registro/prs docs/contexto/features docs/registro/releases/pending; then
                     echo "No hay cambios generados para commitear."

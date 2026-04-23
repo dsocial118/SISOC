@@ -1,43 +1,45 @@
 import os
 from datetime import datetime
+from io import BytesIO
+import logging
+
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.db import models
 from django.db import transaction
+from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django.core.files.base import ContentFile
-from io import BytesIO
 from django.utils import timezone
 
+from acompanamientos.acompanamiento_service import AcompanamientoService
 from admisiones.models.admisiones import (
     Admision,
-    EstadoAdmision,
-    TipoConvenio,
-    Documentacion,
     ArchivoAdmision,
+    Documentacion,
+    InformeComplementario,
     InformeTecnico,
     InformeTecnicoPDF,
-    InformeComplementario,
+    EstadoAdmision,
+    TipoConvenio,
 )
 from admisiones.forms.admisiones_forms import (
     CaratularForm,
     IFInformeTecnicoForm,
 )
-from ..docx_service import DocumentTemplateService, TextFormatterService
-from core.services.advanced_filters import AdvancedFilterEngine
-from iam.services import user_has_any_permission_codes, user_has_permission_code
 from admisiones.services.admisiones_filter_config import (
     FIELD_MAP as ADMISION_FILTER_MAP,
     FIELD_TYPES as ADMISION_FIELD_TYPES,
-    TEXT_OPS as ADMISION_TEXT_OPS,
-    NUM_OPS as ADMISION_NUM_OPS,
-    DATE_OPS as ADMISION_DATE_OPS,
     CHOICE_OPS as ADMISION_CHOICE_OPS,
+    DATE_OPS as ADMISION_DATE_OPS,
+    NUM_OPS as ADMISION_NUM_OPS,
+    TEXT_OPS as ADMISION_TEXT_OPS,
 )
 from comedores.utils import comedor_usa_admision_para_nomina
+from core.services.advanced_filters import AdvancedFilterEngine
+from iam.services import user_has_any_permission_codes, user_has_permission_code
+from ..docx_service import DocumentTemplateService, TextFormatterService
 
-from django.db.models import Prefetch, Q
-import logging
 
 logger = logging.getLogger("django")
 
@@ -614,6 +616,7 @@ class AdmisionService:
     @staticmethod
     def _procesar_post_disponibilizar_acomp(admision, user):
         with transaction.atomic():
+            AcompanamientoService.importar_datos_desde_admision(admision)
             if not AdmisionService.marcar_como_enviado_a_acompaniamiento(
                 admision, user
             ):
@@ -1342,6 +1345,7 @@ class AdmisionService:
             admision.estado = estado_admitido
 
             admision.save()
+            AcompanamientoService.importar_datos_desde_admision(admision)
 
             return admision
 

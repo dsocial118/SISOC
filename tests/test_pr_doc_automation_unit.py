@@ -69,6 +69,41 @@ def test_next_wednesday_devuelve_mismo_dia_si_ya_es_miercoles():
     assert following == date(2026, 3, 18)
 
 
+def test_normalize_changed_file_path_decodifica_paths_quoteados_por_git():
+    """Normaliza rutas quoted con octales UTF-8 para que queden legibles."""
+
+    raw_path = '"acompanamientos/templates/acompa\\303\\261amiento_detail.html"'
+
+    assert (
+        pr_doc_automation.normalize_changed_file_path(raw_path)
+        == "acompanamientos/templates/acompañamiento_detail.html"
+    )
+
+
+def test_resolve_release_target_date_prioriza_fecha_del_pr():
+    """Usa la fecha explícita del release cuando el PR ya la declara."""
+
+    pr = pr_doc_automation.PullRequestData(
+        number=1613,
+        title="Release: development -> main (2026-04-23)",
+        body="",
+        html_url="https://example.test/pr/1613",
+        base_ref="main",
+        head_ref="development",
+        author="tester",
+        updated_at="2026-04-23T12:00:00Z",
+        repo_full_name="org/repo",
+    )
+
+    resolved = pr_doc_automation.resolve_release_target_date(
+        pr,
+        metadata={},
+        today=date(2026, 4, 24),
+    )
+
+    assert resolved == date(2026, 4, 23)
+
+
 def test_render_changelog_reemplaza_bloque_auto_generado_de_misma_release(tmp_path):
     """Regenera el bloque auto y preserva el historial previo."""
 
@@ -145,6 +180,65 @@ def test_fetch_changed_files_consulta_endpoint_de_pulls_sin_codificar_la_barra(
     assert requested_urls == [
         "https://api.github.com/repos/org/repo/pulls/15/files?per_page=100&page=1"
     ]
+
+
+def test_sync_pr_artifacts_respeta_fecha_del_release_declarada_en_el_pr(
+    tmp_path, monkeypatch
+):
+    """Mantiene la fecha del release draft cuando el PR ya la hace explícita."""
+
+    monkeypatch.setattr(
+        pr_doc_automation, "DOCS_PR_DIR", tmp_path / "docs/registro/prs"
+    )
+    monkeypatch.setattr(
+        pr_doc_automation,
+        "DOCS_FEATURE_DIR",
+        tmp_path / "docs/contexto/features",
+    )
+    monkeypatch.setattr(
+        pr_doc_automation,
+        "DOCS_RELEASE_PENDING_DIR",
+        tmp_path / "docs/registro/releases/pending",
+    )
+    monkeypatch.setattr(
+        pr_doc_automation,
+        "CHANGELOG_PATH",
+        tmp_path / "CHANGELOG.md",
+    )
+    monkeypatch.setattr(
+        pr_doc_automation,
+        "fetch_changed_files",
+        lambda pr, token: [
+            '"acompanamientos/templates/acompa\\303\\261amiento_detail.html"'
+        ],
+    )
+
+    pr = pr_doc_automation.PullRequestData(
+        number=1613,
+        title="Release: development -> main (2026-04-23)",
+        body="""
+        - Contexto funcional: Release train
+        - Tipo de cambio: fix
+        - Área principal: release
+        - Resumen para changelog: Ajusta saneamientos del release
+        """,
+        html_url="https://example.test/pr/1613",
+        base_ref="main",
+        head_ref="development",
+        author="tester",
+        updated_at="2026-04-23T12:00:00Z",
+        repo_full_name="org/repo",
+    )
+
+    pr_doc_automation.sync_pr_artifacts(pr, token="fake-token", today=date(2026, 4, 24))
+
+    pending_files = list(
+        (tmp_path / "docs/registro/releases/pending").glob("2026-04-23-pr-1613.md")
+    )
+    pr_doc = (tmp_path / "docs/registro/prs/PR-1613.md").read_text(encoding="utf-8")
+
+    assert len(pending_files) == 1
+    assert "acompañamiento_detail.html" in pr_doc
 
 
 def test_sync_pr_artifacts_genera_docs_y_changelog_para_pr_a_main(

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import os
 import re
@@ -80,6 +81,12 @@ BODY_FIELD_ALIASES = {
         "pruebas manuales",
         "prubeas manuales",
     },
+    "fecha_release": {
+        "fecha objetivo de release",
+        "fecha de release",
+        "fecha release",
+        "release date",
+    },
 }
 
 CHANGELOG_CATEGORY_LABELS = {
@@ -142,6 +149,24 @@ def clean_text(value: str) -> str:
     return collapsed
 
 
+def normalize_changed_file_path(file_path: str) -> str:
+    """Normaliza paths quoted por git para que queden legibles en Markdown."""
+
+    cleaned = clean_text(file_path)
+    if not cleaned:
+        return cleaned
+    if not (cleaned.startswith('"') and cleaned.endswith('"')):
+        return cleaned
+    try:
+        unescaped = ast.literal_eval(cleaned)
+    except (SyntaxError, ValueError):
+        return cleaned.strip('"')
+    try:
+        return unescaped.encode("latin-1").decode("utf-8")
+    except UnicodeError:
+        return unescaped
+
+
 def parse_pr_body_metadata(body: str) -> dict[str, str]:
     """Extrae metadata estructurada desde listas del body del PR."""
 
@@ -173,6 +198,30 @@ def next_wednesday(today: date) -> date:
 
     days_until = (2 - today.weekday()) % 7
     return today + timedelta(days=days_until)
+
+
+def resolve_release_target_date(
+    pr: PullRequestData,
+    metadata: dict[str, str],
+    today: date | None = None,
+) -> date:
+    """Resuelve la fecha objetivo de release priorizando metadata o título del PR."""
+
+    for candidate in (
+        metadata.get("fecha_release"),
+        clean_text(pr.title),
+    ):
+        if not candidate:
+            continue
+        match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", candidate)
+        if not match:
+            continue
+        try:
+            return date.fromisoformat(match.group(1))
+        except ValueError:
+            continue
+
+    return next_wednesday(today or date.today())
 
 
 def remove_previous_pr_files(directory: Path, pattern: str) -> None:
@@ -641,7 +690,9 @@ def fetch_changed_files(pr: PullRequestData, token: str) -> list[str]:
         response_data = github_api_get_json(url, token)
         if not response_data:
             break
-        files.extend(item["filename"] for item in response_data)
+        files.extend(
+            normalize_changed_file_path(item["filename"]) for item in response_data
+        )
         if len(response_data) < 100:
             break
         page += 1
@@ -671,7 +722,9 @@ def sync_pr_artifacts(
     """Genera todos los artefactos requeridos para un PR."""
 
     ensure_parent_dirs()
-    changed_files = fetch_changed_files(pr, token)
+    changed_files = [
+        normalize_changed_file_path(path) for path in fetch_changed_files(pr, token)
+    ]
     metadata = parse_pr_body_metadata(pr.body)
 
     pr_document_path = DOCS_PR_DIR / f"PR-{pr.number}.md"
@@ -691,7 +744,7 @@ def sync_pr_artifacts(
     if pr.base_ref != "main":
         return
 
-    release_target = next_wednesday(today or date.today())
+    release_target = resolve_release_target_date(pr, metadata, today=today)
     release_file_date = release_target.strftime("%Y-%m-%d")
     remove_previous_pr_files(DOCS_RELEASE_PENDING_DIR, f"*-pr-{pr.number}.md")
     pending_note = PendingReleaseNote(
