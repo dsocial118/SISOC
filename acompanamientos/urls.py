@@ -30,7 +30,9 @@ urlpatterns = [
     ),
     path(
         "acompanamiento/exportar/",
-        permissions_any_required(["auth.role_exportar_a_csv"])(views.acompanamiento_unavailable),
+        permissions_any_required(["auth.role_exportar_a_csv"])(
+            views.acompanamiento_unavailable
+        ),
         name="lista_comedores_acompanamiento_exportar",
     ),
     path(

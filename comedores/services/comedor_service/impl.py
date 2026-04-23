@@ -598,6 +598,8 @@ def _validar_creacion_admision_desde_comedor(request, comedor, tipo_admision):
         )
         return _safe_redirect_comedor_detalle(request, comedor.pk)
     return None
+
+
 class ComedorService:
     """Operaciones de alto nivel relacionadas a comedores."""
 
