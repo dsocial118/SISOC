@@ -9,7 +9,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse
 
@@ -18,6 +18,20 @@ from comedores.models import Comedor
 from core.services.column_preferences import build_columns_context_for_custom_cells
 from core.security import safe_redirect
 from iam.services import user_has_permission_code
+
+
+class AcompanamientoUnavailableView(LoginRequiredMixin, DetailView):
+    """Deshabilita temporalmente la superficie web de acompañamientos."""
+
+    def dispatch(self, request, *args, **kwargs):
+        raise Http404("Acompañamientos no disponible en development.")
+
+
+@login_required
+def acompanamiento_unavailable(*_args, **_kwargs):
+    """Deshabilita temporalmente endpoints web de acompañamientos."""
+
+    raise Http404("Acompañamientos no disponible en development.")
 
 
 def _parse_admision_id(raw_admision_id):

@@ -31,23 +31,17 @@ def get_cached_provincia_filter_choices():
 class CiudadanoForm(forms.ModelForm):
     fecha_nacimiento = forms.DateField(
         widget=forms.DateInput(attrs={"type": "date"}),
-        required=False,
         error_messages={"invalid": "Ingrese una fecha válida."},
     )
 
     class Meta:
         model = Ciudadano
         fields = [
-            "tipo_registro_identidad",
             "apellido",
             "nombre",
             "fecha_nacimiento",
             "tipo_documento",
             "documento",
-            "motivo_sin_dni",
-            "motivo_sin_dni_descripcion",
-            "motivo_no_validacion_renaper",
-            "motivo_no_validacion_descripcion",
             "sexo",
             "nacionalidad",
             "calle",
@@ -67,8 +61,6 @@ class CiudadanoForm(forms.ModelForm):
         ]
         widgets = {
             "observaciones": forms.Textarea(attrs={"rows": 3}),
-            "motivo_sin_dni_descripcion": forms.Textarea(attrs={"rows": 2}),
-            "motivo_no_validacion_descripcion": forms.Textarea(attrs={"rows": 2}),
             "activo": forms.CheckboxInput(
                 attrs={"class": "form-check-input", "role": "switch"}
             ),
@@ -100,23 +92,6 @@ class CiudadanoForm(forms.ModelForm):
                     "id": "foto-input",
                 }
             )
-
-        # Los campos de identidad/nombre/doc son opcionales a nivel form —
-        # la obligatoriedad se valida condicionalmente en clean() según
-        # tipo_registro_identidad.
-        for field_name in (
-            "apellido",
-            "nombre",
-            "fecha_nacimiento",
-            "documento",
-            "motivo_sin_dni",
-            "motivo_sin_dni_descripcion",
-            "motivo_no_validacion_renaper",
-            "motivo_no_validacion_descripcion",
-        ):
-            if field_name in self.fields:
-                self.fields[field_name].required = False
-
         self.fields["provincia"].queryset = Provincia.objects.all().order_by("nombre")
         self.fields["municipio"].queryset = Municipio.objects.none()
         self.fields["localidad"].queryset = Localidad.objects.none()
@@ -146,44 +121,6 @@ class CiudadanoForm(forms.ModelForm):
             self.fields["localidad"].queryset = Localidad.objects.filter(
                 municipio=self.instance.municipio
             ).order_by("nombre")
-
-    def clean(self):
-        cleaned = super().clean()
-        tipo = cleaned.get("tipo_registro_identidad", Ciudadano.TIPO_REGISTRO_ESTANDAR)
-
-        if tipo == Ciudadano.TIPO_REGISTRO_ESTANDAR:
-            cleaned["motivo_sin_dni"] = None
-            cleaned["motivo_sin_dni_descripcion"] = ""
-            cleaned["motivo_no_validacion_renaper"] = None
-            cleaned["motivo_no_validacion_descripcion"] = ""
-            for field in ("apellido", "nombre", "fecha_nacimiento", "documento"):
-                if not cleaned.get(field):
-                    self.add_error(field, "Este campo es obligatorio.")
-
-        elif tipo == Ciudadano.TIPO_REGISTRO_SIN_DNI:
-            cleaned["documento"] = None
-            cleaned["motivo_no_validacion_renaper"] = None
-            cleaned["motivo_no_validacion_descripcion"] = ""
-            if not cleaned.get("motivo_sin_dni"):
-                self.add_error(
-                    "motivo_sin_dni",
-                    "Debe indicar el motivo por el que no posee DNI.",
-                )
-
-        elif tipo == Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO:
-            cleaned["motivo_sin_dni"] = None
-            cleaned["motivo_sin_dni_descripcion"] = ""
-            if not cleaned.get("documento"):
-                self.add_error(
-                    "documento", "El DNI es obligatorio para este tipo de registro."
-                )
-            if not cleaned.get("motivo_no_validacion_renaper"):
-                self.add_error(
-                    "motivo_no_validacion_renaper",
-                    "Debe indicar el motivo por el que RENAPER no validó el documento.",
-                )
-
-        return cleaned
 
     def _apply_bootstrap_styles(self):
         text_like = (
@@ -291,16 +228,6 @@ class CiudadanoFiltroForm(forms.Form):
         coerce=int,
         empty_value=None,
         choices=(),
-    )
-    tipo_registro = forms.ChoiceField(
-        label="Tipo de registro",
-        required=False,
-        choices=[("", "Todos")]
-        + [
-            (Ciudadano.TIPO_REGISTRO_ESTANDAR, "Estándar"),
-            (Ciudadano.TIPO_REGISTRO_SIN_DNI, "Sin DNI"),
-            (Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO, "DNI no validado RENAPER"),
-        ],
     )
 
     def __init__(self, *args, **kwargs):

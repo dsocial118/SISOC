@@ -14,9 +14,6 @@ class _FirstResult:
     def __init__(self, value):
         self._value = value
 
-    def order_by(self, *args):
-        return self
-
     def first(self):
         return self._value
 
