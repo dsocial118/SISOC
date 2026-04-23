@@ -31,6 +31,12 @@
 - Se agregó una regresión en `tests/test_settings_env_parsing.py` para evitar que vuelvan a entrar asignaciones inválidas en la sección de email.
 - Se actualizó `CHANGELOG.md` para reflejar el corte completo que hoy viaja de `development` hacia `main` con fecha `2026-04-23`.
 
+## Seguimiento de pytest
+
+- Los cuatro fallos observados en GitHub Actions no respondían a una regresión nueva de runtime sino a tests desalineados respecto de contratos ya mergeados en `development`.
+- `relevamientos`: `update_territorial()` ya había recuperado el contrato de validación estricta y el mensaje `"Debe seleccionar un territorial válido."`; dos asserts seguían matcheando la variante sin tilde.
+- `comedores/nomina`: desde `fix(comedores): ordenar bajas y contar asistentes activos` la vista usa `cantidad_activos` para la tarjeta de asistentes y el resumen agrega ese campo explícitamente; los mocks de tests seguían modelando el contrato previo.
+
 ## Validaciones ejecutadas
 
 - `powershell -ExecutionPolicy Bypass -File scripts/ai/codex_bootstrap.ps1`
