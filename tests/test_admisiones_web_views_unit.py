@@ -167,6 +167,31 @@ def test_eliminar_archivo_admision_estado_no_permitido_and_success(mocker):
     assert resp2.status_code == 200
 
 
+def test_eliminar_archivo_admision_bloqueado_si_informe_finalizado(mocker):
+    admision = SimpleNamespace(
+        comedor=SimpleNamespace(), estado_admision="informe_tecnico_finalizado"
+    )
+    req = _Req(method="DELETE", user=_user(False), GET={})
+
+    mocker.patch("admisiones.views.web_views.get_object_or_404", return_value=admision)
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService._verificar_permiso_dupla",
+        return_value=True,
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService._validar_modificacion_documental_por_tecnico",
+        return_value=None,
+    )
+    archivo_filter_mock = mocker.patch(
+        "admisiones.views.web_views.ArchivoAdmision.objects.filter"
+    )
+
+    resp = module.eliminar_archivo_admision(req, 1, 2)
+
+    assert resp.status_code == 400
+    archivo_filter_mock.assert_not_called()
+
+
 def test_subir_archivo_admision_paths(mocker):
     req_no = _Req(FILES={}, user=_user(), method="POST")
     assert module.subir_archivo_admision(req_no, 1, 2).status_code == 400
