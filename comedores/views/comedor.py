@@ -43,6 +43,7 @@ from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from core.utils import convert_string_to_int
+from acompanamientos.acompanamiento_service import AcompanamientoService
 from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm, build_programa_aliases
 
@@ -247,12 +248,14 @@ def _build_intervencion_creator_map(intervencion_ids):
     return creator_map
 
 
-def _build_intervenciones_table_context(comedor_obj, request):
-    intervenciones_qs = (
-        Intervencion.objects.filter(comedor=comedor_obj)
-        .select_related("tipo_intervencion", "subintervencion", "destinatario")
-        .order_by("-fecha")
-    )
+def _build_intervenciones_table_context(comedor_obj, request, admision_id=None):
+    base_qs = Intervencion.objects.select_related(
+        "tipo_intervencion", "subintervencion", "destinatario"
+    ).order_by("-fecha")
+    if admision_id:
+        intervenciones_qs = base_qs.filter(admision_id=admision_id)
+    else:
+        intervenciones_qs = base_qs.filter(comedor=comedor_obj)
     intervenciones_paginator = Paginator(intervenciones_qs, 10)
     intervenciones_page_number = request.GET.get("intervenciones_page", 1)
     intervenciones_page_obj = intervenciones_paginator.get_page(
@@ -1051,9 +1054,15 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         }
 
     def _build_relaciones_table_contexts(self, admisiones_qs):
+        raw_admision_id = self.request.GET.get("admision_id")
+        admision_id = int(raw_admision_id) if raw_admision_id and raw_admision_id.isdigit() else None
+        admisiones_disponibles = list(
+            AcompanamientoService.obtener_admisiones_para_selector(self.object)
+        )
         intervenciones_context = _build_intervenciones_table_context(
             comedor_obj=self.object,
             request=self.request,
+            admision_id=admision_id,
         )
         observaciones_context = _build_observaciones_table_context(
             comedor_obj=self.object,
@@ -1075,6 +1084,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             **interacciones_context,
             **admisiones_context,
             **validaciones_context,
+            "intervenciones_admision_id": admision_id,
+            "intervenciones_admisiones_disponibles": admisiones_disponibles,
         }
 
     def _redirect_to_detail(self):
