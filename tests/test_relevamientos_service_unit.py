@@ -1,6 +1,5 @@
 """Tests for relevamientos service helpers and update flows."""
 
-from contextlib import nullcontext
 from types import SimpleNamespace
 
 import pytest
@@ -541,6 +540,37 @@ def test_update_territorial_rechaza_json_valido_no_objeto(mocker):
         module.RelevamientoService.update_territorial(req)
 
     assert rel.estado == "Pendiente"
+    assert rel.territorial_uid is None
+    assert rel.territorial_nombre is None
+    starter.assert_not_called()
+
+
+def test_update_territorial_rechaza_estado_no_pendiente(mocker):
+    """update_territorial should reject assignments over non-pending records."""
+    rel = SimpleNamespace(
+        id=4,
+        territorial_nombre=None,
+        territorial_uid=None,
+        estado="Finalizado",
+        save=mocker.Mock(),
+    )
+    mocker.patch("relevamientos.service.Relevamiento.objects.get", return_value=rel)
+    starter = mocker.patch("relevamientos.service.AsyncSendRelevamientoToGestionar")
+
+    req = SimpleNamespace(
+        POST={
+            "relevamiento_id": "4",
+            "territorial_editar": '{"gestionar_uid":"u4","nombre":"N4"}',
+        }
+    )
+
+    with pytest.raises(
+        ValidationError,
+        match="Solo se puede asignar territorial a relevamientos pendientes.",
+    ):
+        module.RelevamientoService.update_territorial(req)
+
+    assert rel.estado == "Finalizado"
     assert rel.territorial_uid is None
     assert rel.territorial_nombre is None
     starter.assert_not_called()

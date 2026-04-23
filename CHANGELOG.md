@@ -1,27 +1,27 @@
-<!-- AUTO-GENERATED RELEASE START: 2026-04-16 -->
-# Versión SISOC 16.04.2026
+<!-- AUTO-GENERATED RELEASE START: 2026-04-23 -->
+# Versión SISOC 23.04.2026
 
 ## Nuevas Funcionalidades
 
 - Nuevo modelo de identidad de Ciudadanos con identificador interno, cola de revisión manual, comando `backfill_identidad` y filtros/badges para tratar DNIs duplicados, sin DNI y registros no validados por RENAPER.
 - Nuevo flujo de Acompañamientos por admisión, con entidad propia, migración de hitos/prestaciones/información relevante y detalle web asociado para sostener seguimiento más consistente.
-- Sistema reproducible de benchmarks con `python manage.py run_benchmarks`, baseline versionado y métricas de tiempo/queries para monitorear regresiones en listados críticos.
+- Nuevos flujos operativos en CDI, Relevamientos y Core: formulario detallado de nómina/intervenciones con trazabilidad de creación, asignación de territorial desde pendientes y comandos para benchmarks/exportes técnicos reproducibles.
 
 ## Actualizaciones
 
-- Evolución de VAT en centros y cursos: edición preservando `activo`, filtro `Código` alineado al CUE vigente, detalle de cursos con filtrado de comisiones por selección explícita y tabla de comisiones mostrando 25 registros por defecto.
-- Ajustes fuertes en Celiaquía para importación y reproceso: nacionalidad por país normalizado, responsable obligatorio solo para menores, comparación RENAPER priorizando localidad y UI más clara en registros erróneos.
-- Optimización transversal de listados pesados en Ciudadanos y Organizaciones mediante paginación sin `COUNT(*)`, nuevos índices y pruebas unitarias para sostener búsquedas y navegación en grandes volúmenes.
-- Mejoras operativas del repo: memoria de contexto reutilizable para agentes, correcciones de workflows/lint y alineación de dependencias de runtime (`cffi`/`tinycss2`) para estabilizar builds.
+- Evolución de VAT en centros, cursos y comisiones: edición preservando `activo`, filtro `Código` alineado al CUE vigente, exportación de nómina de preinscriptos, filtrado explícito de comisiones y refresco visual con tema global de `select2`.
+- Ajustes fuertes en Celiaquía y Admisiones: nacionalidad por país normalizado, responsable obligatorio solo para menores, comparación RENAPER priorizando localidad, buscador de localidades más estable y mejoras documentales/técnicas en la carga de expedientes.
+- Optimización transversal de listados pesados en Ciudadanos, Organizaciones y Comedores mediante paginación sin `COUNT(*)`, nuevos índices, reordenamiento de nóminas activas y sincronización de estado operativo para soft-delete.
+- Mejoras operativas del repo: memoria de contexto reutilizable para agentes, endurecimiento de CI/lint, actualización de documentación IAM/infraestructura y saneamiento del bootstrap de worktrees nuevas.
 
 ## Corrección de Errores
 
-- Corrección de duplicados visibles en nómina de Comedores, con revalidación transaccional al alta para reducir carreras y priorizar un único registro por ciudadano.
-- Correcciones en VAT para edición de cursos/comisiones y compatibilidad de vouchers/fixtures de CI, evitando regresiones recientes en centros, cursos e inscripciones.
-- Ajustes de merge y compatibilidad en Ciudadanos para priorizar registros `ESTANDAR` en lookups por DNI y evitar asociaciones erróneas en Celiaquía y Comedores.
-- Correcciones de infraestructura y CI para que la resolución de dependencias y los jobs de lint no fallen por pins incompatibles o entradas vacías.
+- Corrección de duplicados visibles y orden inestable en nóminas de Comedores, con revalidación transaccional al alta para reducir carreras y priorizar un único registro por ciudadano.
+- Correcciones en VAT, Ciudadanos y Acompañamientos para resolver regresiones de edición, merges de migraciones y compatibilidad de vouchers/fixtures sin romper el flujo productivo reciente.
+- Ajustes en Celiaquía para rechazo con motivo, reprocesos RENAPER, exportación SINTyS y localización de datos inválidos sin perder trazabilidad para el usuario.
+- Corrección de infraestructura y release para que `.env.example`, la resolución de dependencias y los jobs de lint/bootstrap no fallen por configuraciones inválidas o entradas vacías.
 
-<!-- AUTO-GENERATED RELEASE END: 2026-04-16 -->
+<!-- AUTO-GENERATED RELEASE END: 2026-04-23 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-04-09 -->
 # Versión SISOC 09.04.2026

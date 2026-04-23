@@ -836,12 +836,13 @@ def test_get_nomina_detail_calcula_resumen_y_porcentajes(mocker):
         "cantidad_nomina_x": 1,
         "espera": 2,
         "cantidad_total": 10,
+        "cantidad_activos": 8,
         "rango_ninos": 2,
         "rango_adolescentes": 1,
-        "rango_adultos": 3,
+        "rango_adultos": 2,
         "rango_adultos_mayores": 2,
         "rango_adulto_mayor_avanzado": 1,
-        "rango_total_activos": 9,
+        "rango_total_activos": 8,
     }
     nomina_qs = _NominaQS(resumen)
     mocker.patch(
@@ -859,12 +860,13 @@ def test_get_nomina_detail_calcula_resumen_y_porcentajes(mocker):
     assert out[0] is page_obj
     assert out[1:6] == (3, 4, 1, 2, 10)
     rangos = out[6]
-    assert rangos["total_activos"] == 9
-    assert rangos["pct_ninos"] == 22
-    assert rangos["pct_adolescentes"] == 11
-    assert rangos["pct_adultos"] == 33
-    assert rangos["pct_adultos_mayores"] == 22
-    assert rangos["pct_adulto_mayor_avanzado"] == 11
+    assert rangos["cantidad_activos"] == 8
+    assert rangos["total_activos"] == 8
+    assert rangos["pct_ninos"] == 25
+    assert rangos["pct_adolescentes"] == 12
+    assert rangos["pct_adultos"] == 25
+    assert rangos["pct_adultos_mayores"] == 25
+    assert rangos["pct_adulto_mayor_avanzado"] == 12
     assert any(call[0] == "aggregate" for call in nomina_qs.calls)
     paginator_mock.assert_called_once()
 

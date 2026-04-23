@@ -418,38 +418,40 @@
                                                 {% for doc in documentos_personalizados %}
                                                     {% include "admisiones/includes/documento_row.html" %}
                                                 {% endfor %}
-                                                {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" and not admision.enviada_a_archivo and admision.estado.nombre != "Descartado" %}
-                                                    <tr id="fila-agregar-documento"
-                                                        data-documentacion-id=""
-                                                        data-archivo-id="">
-                                                        <td class="ps-1">
-                                                            <input type="text"
-                                                                   class="form-control form-control-sm"
-                                                                   id="nuevoDocumentoNombre"
-                                                                   placeholder="Nombre del documento adicional" />
-                                                        </td>
-                                                        <td class="ps-1">
-                                                            <span class="badge bg-secondary"></span>
-                                                        </td>
-                                                        <td>
-                                                            <input type="file" id="nuevoDocumentoArchivo" class="d-none" />
-                                                            <button type="button"
-                                                                    class="btn btn-sm btn-outline-primary"
-                                                                    id="btnAbrirFile">Adjuntar</button>
-                                                            <div class="progress mt-2"
-                                                                 id="progress-container-nuevo"
-                                                                 style="display:none;
-                                                                        height:3px">
-                                                                <div class="progress-bar progress-bar-striped"
-                                                                     role="progressbar"
-                                                                     id="progress-bar-nuevo"
-                                                                     style="width:0%">0%</div>
-                                                            </div>
-                                                        </td>
-                                                        <td>
-                                                            <span class="text-muted">-</span>
-                                                        </td>
-                                                    </tr>
+                                                {% if not admision.enviada_a_archivo and admision.estado_admision != "descartado" %}
+                                                    {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                                                        <tr id="fila-agregar-documento"
+                                                            data-documentacion-id=""
+                                                            data-archivo-id="">
+                                                            <td class="ps-1">
+                                                                <input type="text"
+                                                                       class="form-control form-control-sm"
+                                                                       id="nuevoDocumentoNombre"
+                                                                       placeholder="Nombre del documento adicional" />
+                                                            </td>
+                                                            <td class="ps-1">
+                                                                <span class="badge bg-secondary"></span>
+                                                            </td>
+                                                            <td>
+                                                                <input type="file" id="nuevoDocumentoArchivo" class="d-none" />
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-outline-primary"
+                                                                        id="btnAbrirFile">Adjuntar</button>
+                                                                <div class="progress mt-2"
+                                                                     id="progress-container-nuevo"
+                                                                     style="display:none;
+                                                                            height:3px">
+                                                                    <div class="progress-bar progress-bar-striped"
+                                                                         role="progressbar"
+                                                                         id="progress-bar-nuevo"
+                                                                         style="width:0%">0%</div>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <span class="text-muted">-</span>
+                                                            </td>
+                                                        </tr>
+                                                    {% endif %}
                                                 {% endif %}
                                             </tbody>
                                         </table>
@@ -682,6 +684,35 @@
                                         <button type="submit"
                                                 id="btnRectificarDocumentacion_id"
                                                 name="btnRectificarDocumentacion"
+                                                class="btn btn-primary">Confirmar</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Modal para confirmar finalizar carga de documentación -->
+                    <div class="modal fade"
+                         id="modalFinalizarCargaDocumentacion"
+                         tabindex="-1"
+                         aria-labelledby="modalFinalizarCargaDocumentacionLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalFinalizarCargaDocumentacionLabel">Confirmar finalizar carga de documentación</h5>
+                                    <button type="button"
+                                            class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body mb-2">¿Estás seguro que querés finalizar la carga de documentación?</div>
+                                <div class="modal-footer">
+                                    <form method="POST" action="">
+                                        {% csrf_token %}
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit"
+                                                id="btnFinalizarCargaDocumentacion_id"
+                                                name="btnFinalizarCargaDocumentacion"
                                                 class="btn btn-primary">Confirmar</button>
                                     </form>
                                 </div>
