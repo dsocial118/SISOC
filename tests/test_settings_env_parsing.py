@@ -1,5 +1,6 @@
 import importlib.util
 from pathlib import Path
+from unittest import mock
 from uuid import uuid4
 
 
@@ -10,7 +11,8 @@ def _load_settings_module():
     module_name = f"config_settings_test_{uuid4().hex}"
     spec = importlib.util.spec_from_file_location(module_name, SETTINGS_PATH)
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    with mock.patch("dotenv.load_dotenv", return_value=False):
+        spec.loader.exec_module(module)
     return module
 
 
@@ -69,6 +71,8 @@ def test_settings_email_backend_falls_back_to_console_when_smtp_is_incomplete(
 
 def test_settings_homologacion_usa_perfil_similar_a_produccion(monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "homologacion")
+    monkeypatch.delenv("DB_CONN_MAX_AGE", raising=False)
+    monkeypatch.delenv("DB_CONN_HEALTH_CHECKS", raising=False)
 
     module = _load_settings_module()
 

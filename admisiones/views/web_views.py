@@ -357,12 +357,14 @@ def _build_admision_detail_dupla_context(comedor):
     }
 
 
-def _build_admision_detail_acompanamiento_context(comedor):
+def _build_admision_detail_acompanamiento_context(comedor, admision_id=None):
     acompanamiento_data = (
-        AcompanamientoService.obtener_datos_admision(comedor) if comedor else {}
+        AcompanamientoService.obtener_datos_admision(comedor, admision_id=admision_id)
+        if comedor
+        else {}
     )
     prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(
-        acompanamiento_data.get("anexo")
+        acompanamiento_data.get("info_relevante")
     )
 
     return {
@@ -868,7 +870,10 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             admision
         )
 
-        acompanamiento_context = _build_admision_detail_acompanamiento_context(comedor)
+        acompanamiento_context = _build_admision_detail_acompanamiento_context(
+            comedor,
+            admision_id=getattr(admision, "id", None),
+        )
         rendiciones_context = _build_admision_detail_rendiciones_context(comedor)
         historial_context = _build_admision_detail_historial_context(
             admision, self.request

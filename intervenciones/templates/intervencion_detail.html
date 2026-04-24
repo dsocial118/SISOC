@@ -11,9 +11,33 @@
     </ol>
 {% endblock %}
 {% block content %}
+    {% if admisiones_disponibles %}
+        <div class="row mb-2">
+            <div class="col-12">
+                <div class="card card-outline card-secondary">
+                    <div class="card-header d-flex align-items-center gap-3">
+                        <span class="fw-bold">
+                            <i class="fas fa-file-contract me-1"></i>Convenio:
+                        </span>
+                        {% for adm in admisiones_disponibles %}
+                            <a href="?admision_id={{ adm.id }}"
+                               class="btn btn-sm {% if adm.id == admision_id %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                                {% if adm.acompanamiento.nro_convenio %}
+                                    {{ adm.acompanamiento.nro_convenio }}
+                                {% else %}
+                                    Admisión #{{ adm.id }}
+                                {% endif %}
+                                {% if not adm.activa %}<span class="badge bg-secondary ms-1">Cerrada</span>{% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <div class="row">
         <div class="col-12 my-3 mx-2 d-print-none">
-            <a href="{% url 'comedor_intervencion_crear' object.id %}"
+            <a href="{% url 'comedor_intervencion_crear' object.id %}{% if admision_id %}?admision_id={{ admision_id }}{% endif %}"
                class="btn btn-primary mr-1">Agregar Intervención</a>
         </div>
     </div>
@@ -21,6 +45,7 @@
     <div class="row mb-4">
         <div class="col-12">
             <form method="get" class="row g-3 align-items-center" id="filtros-form">
+                {% if admision_id %}<input type="hidden" name="admision_id" value="{{ admision_id }}" />{% endif %}
                 <div class="col-md-3">
                     <input type="date"
                            name="fecha"
@@ -127,7 +152,10 @@
     function resetFilters() {
         const form = document.getElementById('filtros-form');
         form.reset();
-        const url = window.location.pathname;
+        const admisionId = form.querySelector('input[name="admision_id"]');
+        const url = admisionId
+            ? window.location.pathname + '?admision_id=' + admisionId.value
+            : window.location.pathname;
         window.location.href = url;
     }
     </script>
