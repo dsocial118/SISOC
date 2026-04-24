@@ -184,9 +184,7 @@ def test_eliminar_archivo_admision_estado_no_permitido_and_success(mocker):
         "inactivada",
     ],
 )
-def test_eliminar_archivo_admision_bloqueado_si_estado_cerrado(
-    mocker, estado_admision
-):
+def test_eliminar_archivo_admision_bloqueado_si_estado_cerrado(mocker, estado_admision):
     admision = SimpleNamespace(
         comedor=SimpleNamespace(), estado_admision=estado_admision
     )
