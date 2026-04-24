@@ -186,7 +186,10 @@ def resolve_release_date(metadata: dict[str, str], today: date) -> str:
     explicit_value = metadata.get("fecha_release", "")
     match = re.search(r"\d{4}-\d{2}-\d{2}", explicit_value)
     if match:
-        return date.fromisoformat(match.group(0)).isoformat()
+        try:
+            return date.fromisoformat(match.group(0)).isoformat()
+        except ValueError:
+            pass
     return next_wednesday(today).isoformat()
 
 

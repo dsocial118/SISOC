@@ -83,6 +83,18 @@ def test_resolve_release_date_prioriza_fecha_explicita_del_pr():
     assert fallback == "2026-04-29"
 
 
+def test_resolve_release_date_ignora_fecha_explicita_invalida():
+    """Usa fallback si el body trae un patron de fecha fuera de rango."""
+
+    metadata = pr_doc_automation.parse_pr_body_metadata(
+        "- Fecha objetivo de release: 2026-13-40"
+    )
+
+    assert pr_doc_automation.resolve_release_date(metadata, date(2026, 4, 24)) == (
+        "2026-04-29"
+    )
+
+
 def test_render_changelog_reemplaza_bloque_auto_generado_de_misma_release(tmp_path):
     """Regenera el bloque auto y preserva el historial previo."""
 
