@@ -490,6 +490,35 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
     if error_modificacion:
         return JsonResponse({"success": False, "error": error_modificacion}, status=400)
 
+    if AdmisionService.bloquea_eliminacion_documental(admision):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": (
+                    "No se pueden eliminar documentos cuando el informe tecnico "
+                    "esta finalizado o en etapas posteriores."
+                ),
+    estados_bloqueo_eliminacion = {
+        "informe_tecnico_finalizado",
+        "informe_tecnico_docx_editado",
+        "informe_tecnico_en_revision",
+        "informe_tecnico_en_subsanacion",
+        "informe_tecnico_aprobado",
+        "if_informe_tecnico_cargado",
+        "enviado_a_legales",
+        "enviado_a_acompaniamiento",
+        "descartado",
+        "inactivada",
+    }
+    if getattr(admision, "estado_admision", None) in estados_bloqueo_eliminacion:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "No se pueden eliminar documentos cuando el informe tecnico esta finalizado o en etapas posteriores.",
+            },
+            status=400,
+        )
+
     archivo = (
         ArchivoAdmision.objects.filter(
             admision_id=admision_id, documentacion_id=documentacion_id

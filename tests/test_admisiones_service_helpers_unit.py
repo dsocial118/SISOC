@@ -815,6 +815,24 @@ def test_limpiar_if_gde_recalcula_estado_documental_si_falta_obligatorio(mocker)
     assert adm.estado_admision == "documentacion_en_proceso"
 
 
+def test_bloquea_eliminacion_documental_solo_desde_informe_finalizado():
+    for estado in module.AdmisionService.ESTADOS_BLOQUEO_ELIMINACION_DOCUMENTAL:
+        assert module.AdmisionService.bloquea_eliminacion_documental(
+            SimpleNamespace(estado_admision=estado)
+        )
+
+    for estado in (
+        None,
+        "documentacion_aprobada",
+        "expediente_cargado",
+        "informe_tecnico_en_proceso",
+        "documentacion_en_proceso",
+    ):
+        assert not module.AdmisionService.bloquea_eliminacion_documental(
+            SimpleNamespace(estado_admision=estado)
+        )
+
+
 def test_obtener_ultimo_informe_tecnico_filtra_tipo_base(mocker):
     informe = SimpleNamespace(estado="Iniciado", estado_formulario="borrador")
     qs = mocker.Mock()
