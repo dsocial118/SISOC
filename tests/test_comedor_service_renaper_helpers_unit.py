@@ -331,7 +331,7 @@ def test_obtener_datos_ciudadano_desde_renaper_and_crear(mocker):
 def test_agregar_nomina_and_crear_y_agregar(mocker):
     mocker.patch(
         "comedores.services.comedor_service.impl.get_object_or_404",
-        return_value=SimpleNamespace(pk=1),
+        return_value=SimpleNamespace(pk=1, requiere_revision_manual=False),
     )
     mocker.patch(
         "comedores.services.comedor_service.impl.Nomina.objects.filter",
