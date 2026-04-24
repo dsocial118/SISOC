@@ -500,6 +500,9 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
                     "No se pueden eliminar documentos cuando el informe tecnico "
                     "esta finalizado o en etapas posteriores."
                 ),
+            },
+            status=400,
+        )
     estados_bloqueo_eliminacion = {
         "informe_tecnico_finalizado",
         "informe_tecnico_docx_editado",
