@@ -1336,7 +1336,7 @@
         </div>
     </div>
     <!-- Intervenciones y Observaciones -->
-    <div class="row mb-3">
+    <div class="row mb-3 mt-5">
         <div class="col-12 tabs-comedor-wrap">
             <ul class="nav nav-tabs tabs-comedor ms-2 mb-0"
                 id="intervencionesObservacionesTabs"
@@ -1372,10 +1372,6 @@
                             {% if intervenciones_admisiones_disponibles %}
                                 <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
                                     <span class="fw-bold text-muted small"><i class="fas fa-file-contract me-1"></i>Convenio:</span>
-                                    <a href="?#intervenciones-tab"
-                                       class="btn btn-sm {% if not intervenciones_admision_id %}btn-primary{% else %}btn-outline-secondary{% endif %}">
-                                        Todos
-                                    </a>
                                     {% for adm in intervenciones_admisiones_disponibles %}
                                         <a href="?admision_id={{ adm.id }}#intervenciones-tab"
                                            class="btn btn-sm {% if adm.id == intervenciones_admision_id %}btn-primary{% else %}btn-outline-secondary{% endif %}">
