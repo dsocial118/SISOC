@@ -169,6 +169,9 @@ def test_eliminar_archivo_admision_estado_no_permitido_and_success(mocker):
     assert resp2.status_code == 200
 
 
+def test_eliminar_archivo_admision_bloqueado_si_informe_finalizado(mocker):
+    admision = SimpleNamespace(
+        comedor=SimpleNamespace(), estado_admision="informe_tecnico_finalizado"
 @pytest.mark.parametrize(
     "estado_admision",
     [
