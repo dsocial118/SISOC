@@ -1059,6 +1059,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         admisiones_disponibles = list(
             AcompanamientoService.obtener_admisiones_para_selector(self.object)
         )
+        if admision_id is None and admisiones_disponibles:
+            active = next((a for a in admisiones_disponibles if getattr(a, "activa", False)), None)
+            admision_id = (active or admisiones_disponibles[0]).id
         intervenciones_context = _build_intervenciones_table_context(
             comedor_obj=self.object,
             request=self.request,
