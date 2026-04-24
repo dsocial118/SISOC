@@ -42,3 +42,14 @@ def test_ciudadano_filtro_form_clean_provincia_devuelve_instancia(mocker):
 
     assert form.is_valid() is True
     assert form.cleaned_data["provincia"] is provincia
+
+
+def test_ciudadano_filtro_form_expone_tipo_registro(mocker):
+    mocker.patch(
+        "ciudadanos.forms.get_cached_provincia_filter_choices",
+        return_value=[],
+    )
+
+    form = module.CiudadanoFiltroForm()
+
+    assert "tipo_registro" in form.fields
