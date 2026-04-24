@@ -290,7 +290,7 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
             return f"{self.tipo_documento}_{self.documento}"
         return None
 
-    def normalizar_identidad(self):
+    def normalizar_identidad(self, preservar_revision_manual=False):
         changed_fields = set()
         tipo = self.tipo_registro_identidad or self.TIPO_REGISTRO_ESTANDAR
 
@@ -322,15 +322,22 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         changed_fields |= self._set_identity_field(
             "documento_unico_key", self.build_documento_unico_key()
         )
-        changed_fields |= self._set_identity_field(
-            "requiere_revision_manual",
-            tipo in (self.TIPO_REGISTRO_SIN_DNI, self.TIPO_REGISTRO_DNI_NO_VALIDADO),
-        )
+        if not preservar_revision_manual:
+            changed_fields |= self._set_identity_field(
+                "requiere_revision_manual",
+                tipo
+                in (self.TIPO_REGISTRO_SIN_DNI, self.TIPO_REGISTRO_DNI_NO_VALIDADO),
+            )
         return changed_fields
 
     def save(self, *args, **kwargs):
-        changed_fields = self.normalizar_identidad()
         update_fields = kwargs.get("update_fields")
+        preservar_revision_manual = (
+            update_fields is not None and "requiere_revision_manual" in update_fields
+        )
+        changed_fields = self.normalizar_identidad(
+            preservar_revision_manual=preservar_revision_manual
+        )
         if update_fields is not None and changed_fields:
             kwargs["update_fields"] = set(update_fields) | changed_fields
         return super().save(*args, **kwargs)

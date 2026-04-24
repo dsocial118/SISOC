@@ -20,6 +20,7 @@
 - Correcciones en VAT, Ciudadanos y Acompañamientos para resolver regresiones de edición, merges de migraciones y compatibilidad de vouchers/fixtures sin romper el flujo productivo reciente.
 - Ajustes en Celiaquía para rechazo con motivo, reprocesos RENAPER, exportación SINTyS y localización de datos inválidos sin perder trazabilidad para el usuario.
 - Corrección de infraestructura y release para que `.env.example`, la resolución de dependencias y los jobs de lint/bootstrap no fallen por configuraciones inválidas o entradas vacías.
+- Saneamiento de predeploy para respetar cierres explícitos de revisión manual de identidad, mantener la nómina de Comedores compatible con ciudadanos ya revisados y evitar bloqueos de lint/docs en la promoción a `main`.
 
 <!-- AUTO-GENERATED RELEASE END: 2026-04-24 -->
 

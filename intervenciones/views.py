@@ -36,6 +36,46 @@ def _resolve_valid_admision(comedor, raw_admision_id):
     ).first()
 
 
+INTERVENCION_FIELD_MAPPING = {
+    "tipo_intervencion": TipoIntervencion,
+    "subintervencion": SubIntervencion,
+    "destinatario": "Destinatario",
+    "fecha": "Fecha",
+    "forma_contacto": "Forma de Contacto",
+    "observaciones": "Descripcion",
+    "tiene_documentacion": "Documentacion Adjunta",
+}
+
+
+def _validar_subintervencion_requerida(form):
+    tipo_intervencion = form.cleaned_data.get("tipo_intervencion")
+    if not tipo_intervencion:
+        return True
+
+    if not tipo_intervencion.subintervenciones.exists():
+        form.cleaned_data["subintervencion"] = None
+        return True
+
+    if form.cleaned_data.get("subintervencion"):
+        return True
+
+    form.add_error("subintervencion", "Debe seleccionar una subintervencion.")
+    return False
+
+
+def _asignar_campo_intervencion(instance, field, model, value):
+    if isinstance(model, type) and not isinstance(value, model):
+        value = model.objects.get(id=value)
+    setattr(instance, field, value)
+
+
+def _aplicar_campos_intervencion(form):
+    for field, model in INTERVENCION_FIELD_MAPPING.items():
+        value = form.cleaned_data.get(field)
+        if value is not None:
+            _asignar_campo_intervencion(form.instance, field, model, value)
+
+
 @login_required
 @require_GET
 def sub_estados_intervenciones_ajax(request):
@@ -144,39 +184,10 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
         if admision is not None:
             form.instance.admision = admision
 
-        tipo_intervencion = form.cleaned_data.get("tipo_intervencion")
-        if tipo_intervencion:
-            subintervenciones = tipo_intervencion.subintervenciones.all()
-            if subintervenciones.exists():
-                subintervencion = form.cleaned_data.get("subintervencion")
-                if not subintervencion:
-                    form.add_error(
-                        "subintervencion", "Debe seleccionar una subintervención."
-                    )
-                    return self.form_invalid(form)
-            else:
-                form.cleaned_data["subintervencion"] = None
+        if not _validar_subintervencion_requerida(form):
+            return self.form_invalid(form)
 
-        field_mapping = {
-            "tipo_intervencion": TipoIntervencion,
-            "subintervencion": SubIntervencion,
-            "destinatario": "Destinatario",
-            "fecha": "Fecha",
-            "forma_contacto": "Forma de Contacto",
-            "observaciones": "Descripción",
-            "tiene_documentacion": "Documentación Adjunta",
-        }
-
-        for field, model in field_mapping.items():
-            value = form.cleaned_data.get(field)
-            if value is not None:
-                if isinstance(model, type):
-                    if isinstance(value, model):
-                        setattr(form.instance, field, value)
-                    else:
-                        setattr(form.instance, field, model.objects.get(id=value))
-                else:
-                    setattr(form.instance, field, value)
+        _aplicar_campos_intervencion(form)
 
         form.instance.save()
         next_url = self.request.POST.get("next") or self.request.GET.get("next")
