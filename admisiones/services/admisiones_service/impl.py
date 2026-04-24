@@ -64,6 +64,8 @@ class AdmisionService:
         "if_informe_tecnico_cargado",
         "enviado_a_legales",
         "enviado_a_acompaniamiento",
+        "descartado",
+        "inactivada",
     )
     ESTADOS_BLOQUEO_AVANCE_DOCUMENTAL = (
         "documentacion_aprobada",
