@@ -15,7 +15,7 @@
             <p class="text-muted mb-0">Complete los datos de la intervención en 2 pasos</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{% url 'comedor_intervencion_ver' pk=object.pk %}"
+            <a href="{% url 'comedor_intervencion_ver' pk=object.pk %}{% if admision_id %}?admision_id={{ admision_id }}{% endif %}"
                class="btn btn-secondary">
                 <i class="fas fa-arrow-left mr-1"></i>
                 Volver
@@ -46,6 +46,7 @@
                   enctype="multipart/form-data"
                   novalidate>
                 {% csrf_token %}
+                {% if admision_id %}<input type="hidden" name="admision_id" value="{{ admision_id }}" />{% endif %}
 
                 <!-- Paso 1 - Datos Iniciales -->
                 <div id="step-1" class="step-container">
