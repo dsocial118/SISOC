@@ -46,7 +46,7 @@
                   enctype="multipart/form-data"
                   novalidate>
                 {% csrf_token %}
-                {% if admision_id %}<input type="hidden" name="admision_id" value="{{ admision_id }}">{% endif %}
+                {% if admision_id %}<input type="hidden" name="admision_id" value="{{ admision_id }}" />{% endif %}
 
                 <!-- Paso 1 - Datos Iniciales -->
                 <div id="step-1" class="step-container">

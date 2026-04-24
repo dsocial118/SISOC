@@ -1375,7 +1375,11 @@
                                     {% for adm in intervenciones_admisiones_disponibles %}
                                         <a href="?admision_id={{ adm.id }}#intervenciones-tab"
                                            class="btn btn-sm {% if adm.id == intervenciones_admision_id %}btn-primary{% else %}btn-outline-secondary{% endif %}">
-                                            {% if adm.acompanamiento.nro_convenio %}{{ adm.acompanamiento.nro_convenio }}{% else %}Admisión #{{ adm.id }}{% endif %}
+                                            {% if adm.acompanamiento.nro_convenio %}
+                                                {{ adm.acompanamiento.nro_convenio }}
+                                            {% else %}
+                                                Admisión #{{ adm.id }}
+                                            {% endif %}
                                             {% if not adm.activa %}<span class="badge bg-secondary ms-1">Cerrada</span>{% endif %}
                                         </a>
                                     {% endfor %}
@@ -1517,7 +1521,9 @@
                            name="next"
                            value="{% url 'comedor_detalle' pk=comedor.id %}{% if intervenciones_admision_id %}?admision_id={{ intervenciones_admision_id }}{% endif %}" />
                     {% if intervenciones_admision_id %}
-                        <input type="hidden" name="admision_id" value="{{ intervenciones_admision_id }}" />
+                        <input type="hidden"
+                               name="admision_id"
+                               value="{{ intervenciones_admision_id }}" />
                     {% endif %}
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalIntervencionLabel">Nueva intervención</h5>
