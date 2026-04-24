@@ -400,7 +400,9 @@ def _actualizar_alerta_importacion_persistente(
     if not isinstance(payload, dict):
         return
 
-    creados_total = int(payload.get("creados_total") or 0) + int(creados_incremento or 0)
+    creados_total = int(payload.get("creados_total") or 0) + int(
+        creados_incremento or 0
+    )
     errores_vigentes = (
         int(errores_actuales)
         if errores_actuales is not None
@@ -1107,13 +1109,17 @@ class ExpedienteDetailView(DetailView):
         historial = expediente.historial.select_related(
             "estado_anterior", "estado_nuevo", "usuario"
         )
-        historial_estado_actual = historial.filter(
-            estado_nuevo=expediente.estado,
-            observaciones__isnull=False,
-        ).exclude(observaciones="").order_by("-fecha")
-        alerta_importacion_persistente = (
-            historial_estado_actual.values_list("observaciones", flat=True).first()
+        historial_estado_actual = (
+            historial.filter(
+                estado_nuevo=expediente.estado,
+                observaciones__isnull=False,
+            )
+            .exclude(observaciones="")
+            .order_by("-fecha")
         )
+        alerta_importacion_persistente = historial_estado_actual.values_list(
+            "observaciones", flat=True
+        ).first()
         ctx["alerta_importacion_persistente"] = alerta_importacion_persistente
         ctx["alerta_importacion_resumen"] = ""
         ctx["alerta_importacion_resumen_style"] = ""

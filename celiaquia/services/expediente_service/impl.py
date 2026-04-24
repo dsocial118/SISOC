@@ -17,7 +17,9 @@ def _estado_id(nombre: str) -> int:
     return EstadoExpediente.objects.get_or_create(nombre=nombre)[0].pk
 
 
-def _set_estado(expediente: Expediente, nombre: str, usuario=None, observaciones=None) -> None:
+def _set_estado(
+    expediente: Expediente, nombre: str, usuario=None, observaciones=None
+) -> None:
     """Actualiza el estado del expediente y el usuario modificador."""
 
     expediente.estado_id = _estado_id(nombre)
@@ -126,7 +128,6 @@ def _build_observaciones_importacion(result: dict) -> str:
             "errores_actuales": errores,
         }
     )
-
 
 
 class ExpedienteService:
@@ -242,4 +243,3 @@ class ExpedienteService:
             "Técnico %s asignado al expediente %s", tecnico.username, expediente.pk
         )
         return expediente
-

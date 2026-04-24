@@ -936,6 +936,7 @@ def test_actualizar_registro_erroneo_view_paths(mocker):
 
 def test_reprocesar_registros_erroneos_early_branches(mocker):
     view = module.ReprocesarRegistrosErroneosView()
+
     class _RegistrosQS:
         def __init__(self, exists_result):
             self._exists_result = exists_result
@@ -999,6 +1000,7 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
 
 def test_reprocesar_registros_erroneos_convierte_conflicto_en_excluido(mocker):
     view = module.ReprocesarRegistrosErroneosView()
+
     class _RegistrosQS:
         def __init__(self, registros):
             self._registros = registros
@@ -1069,9 +1071,14 @@ def test_reprocesar_registros_erroneos_convierte_conflicto_en_excluido(mocker):
     )
     actualizar_mock = mocker.patch(
         "celiaquia.views.expediente._actualizar_alerta_importacion_persistente",
-        return_value={"resumen": "Importacion procesada. Se crearon 0 legajos y el expediente paso a EN ESPERA."},
+        return_value={
+            "resumen": "Importacion procesada. Se crearon 0 legajos y el expediente paso a EN ESPERA."
+        },
     )
-    mocker.patch("celiaquia.views.expediente.transaction.atomic", side_effect=lambda: nullcontext())
+    mocker.patch(
+        "celiaquia.views.expediente.transaction.atomic",
+        side_effect=lambda: nullcontext(),
+    )
     mocker.patch("celiaquia.views.expediente.timezone.now", return_value="ahora")
 
     request = SimpleNamespace(user=SimpleNamespace())
