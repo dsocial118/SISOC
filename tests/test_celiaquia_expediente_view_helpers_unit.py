@@ -133,6 +133,23 @@ def test_actualizar_alerta_importacion_persistente_recalcula_resumen():
     historial_actual.save.assert_called_once_with(update_fields=["observaciones"])
 
 
+def test_formatear_observaciones_historial_muestra_texto_visible_de_payload():
+    payload = {
+        "resumen": "Importacion procesada. Se crearon 0 legajos.",
+        "excluidos": "No se crearon 2 legajos porque ya existen.",
+        "excluidos_detalle": [{"documento": "123"}],
+    }
+
+    assert module._formatear_observaciones_historial(json.dumps(payload)) == (
+        "Importacion procesada. Se crearon 0 legajos.\n"
+        "No se crearon 2 legajos porque ya existen."
+    )
+    assert module._formatear_observaciones_historial("Observacion manual") == (
+        "Observacion manual"
+    )
+    assert module._formatear_observaciones_historial("") == ""
+
+
 def test_registro_erroneo_responsable_requerido_depende_de_edad():
     assert (
         module._registro_erroneo_responsable_requerido(

@@ -30,14 +30,17 @@ def _set_estado(
     expediente.save(update_fields=update_fields)
 
     if observaciones and getattr(expediente, "pk", None):
-        (
+        historial_actual = (
             ExpedienteEstadoHistorial.objects.filter(
                 expediente=expediente,
                 estado_nuevo_id=expediente.estado_id,
             )
             .order_by("-fecha")
-            .update(observaciones=observaciones)
+            .first()
         )
+        if historial_actual:
+            historial_actual.observaciones = observaciones
+            historial_actual.save(update_fields=["observaciones"])
 
 
 def _build_resumen_importacion_alerta(*, creados_total=0, errores_actuales=0):

@@ -29,6 +29,40 @@ def test_estado_helpers(mocker):
     exp2.save.assert_called_with(update_fields=["estado", "usuario_modificador"])
 
 
+def test_set_estado_observaciones_actualiza_solo_ultimo_historial(mocker):
+    historial_actual = SimpleNamespace(observaciones="", save=mocker.Mock())
+
+    class HistorialQS:
+        def order_by(self, *args):
+            assert args == ("-fecha",)
+            return self
+
+        def first(self):
+            return historial_actual
+
+    filter_mock = mocker.patch(
+        "celiaquia.services.expediente_service.ExpedienteEstadoHistorial.objects.filter",
+        return_value=HistorialQS(),
+    )
+    mocker.patch("celiaquia.services.expediente_service._estado_id", return_value=3)
+
+    expediente = SimpleNamespace(
+        pk=8,
+        estado_id=None,
+        usuario_modificador=None,
+        save=mocker.Mock(),
+    )
+    observaciones = '{"resumen": "Importacion procesada."}'
+
+    module._set_estado(
+        expediente, "EN_ESPERA", usuario="u", observaciones=observaciones
+    )
+
+    filter_mock.assert_called_once_with(expediente=expediente, estado_nuevo_id=3)
+    assert historial_actual.observaciones == observaciones
+    historial_actual.save.assert_called_once_with(update_fields=["observaciones"])
+
+
 def test_build_observaciones_importacion_resume_excluidos():
     out = json.loads(
         module._build_observaciones_importacion(

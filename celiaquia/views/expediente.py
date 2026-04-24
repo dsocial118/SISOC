@@ -436,6 +436,26 @@ def _build_resumen_importacion_alerta(*, creados_total=0, errores_actuales=0):
     return "\n".join(resumen_lineas)
 
 
+def _formatear_observaciones_historial(observaciones):
+    if not observaciones:
+        return ""
+
+    try:
+        payload = json.loads(observaciones)
+    except (TypeError, ValueError):
+        return observaciones
+
+    if not isinstance(payload, dict):
+        return observaciones
+
+    partes = [
+        str(payload.get(clave)).strip()
+        for clave in ("resumen", "excluidos")
+        if payload.get(clave)
+    ]
+    return "\n".join(partes) or observaciones
+
+
 def _validar_datos_registro_erroneo(payload, provincia_id, fila_excel=0):
     return validar_y_normalizar_payloads_importacion(
         payload=payload,
@@ -1174,9 +1194,14 @@ class ExpedienteDetailView(DetailView):
                 ctx["alerta_importacion_success"] = (
                     resumen_bloque if resumen_bloque_style == "success" else ""
                 )
-        ctx["historial_page_obj"] = Paginator(historial, 5).get_page(
+        historial_page_obj = Paginator(historial, 5).get_page(
             self.request.GET.get("historial_page")
         )
+        for item in historial_page_obj.object_list:
+            item.observaciones_visibles = _formatear_observaciones_historial(
+                item.observaciones
+            )
+        ctx["historial_page_obj"] = historial_page_obj
 
         # Obtener registros erróneos
         registros_erroneos = list(

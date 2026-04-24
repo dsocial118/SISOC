@@ -63,3 +63,11 @@ Resultado:
 - el usuario ve primero el resumen de importacion/subsanacion;
 - los warnings relevantes siguen visibles al volver a entrar al expediente;
 - los success de resumen no quedan pegados indefinidamente, pero tampoco desaparecen por una recarga inmediata durante el tiempo definido para pruebas y operacion.
+
+## Ajuste post-review 2026-04-24
+
+Se corrigieron tres puntos de consistencia:
+
+- el historial de estado mantiene observaciones legibles para el usuario y no muestra el payload JSON tecnico;
+- la persistencia de alertas actualiza solo el ultimo historial del cambio de estado recien generado;
+- el reproceso de registros erroneos muestra warning cuando no crea legajos nuevos y solo suma excluidos por conflicto en otro expediente activo.

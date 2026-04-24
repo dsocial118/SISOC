@@ -1672,7 +1672,7 @@
                                             -
                                         {% endif %}
                                     </td>
-                                    <td>{{ h.observaciones|default:"-" }}</td>
+                                    <td>{{ h.observaciones_visibles|default:"-"|linebreaksbr }}</td>
                                 </tr>
                             {% empty %}
                                 <tr>
