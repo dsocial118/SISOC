@@ -477,6 +477,25 @@ class InformeService:
     def guardar_informe(form, admision, es_creacion=False, action=None, usuario=None):
         """Guarda el informe técnico."""
         try:
+            from ..admisiones_service import AdmisionService
+
+            if (
+                action == "submit"
+                and not AdmisionService._todos_obligatorios_tienen_archivos(admision)
+            ):
+                return {
+                    "success": False,
+                    "error": "No puede finalizar el informe técnico si faltan documentos obligatorios por cargar.",
+                }
+            if (
+                action == "submit"
+                and not AdmisionService._todos_obligatorios_aceptados(admision)
+            ):
+                return {
+                    "success": False,
+                    "error": "No puede finalizar el informe técnico si hay documentos obligatorios sin validar.",
+                }
+
             if es_creacion:
                 existente = (
                     InformeTecnico.objects.filter(
@@ -530,8 +549,6 @@ class InformeService:
                     raise Exception("No se pudo generar el DOCX borrador")
 
             # Actualizar estado de admisión según la acción
-            from ..admisiones_service import AdmisionService
-
             if es_creacion and action != "submit":
                 AdmisionService.actualizar_estado_admision(
                     admision, "iniciar_informe_tecnico"

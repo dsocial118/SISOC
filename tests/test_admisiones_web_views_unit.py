@@ -2,6 +2,8 @@
 
 from types import SimpleNamespace
 
+import pytest
+
 from admisiones.views import web_views as module
 
 
@@ -165,6 +167,46 @@ def test_eliminar_archivo_admision_estado_no_permitido_and_success(mocker):
 
     resp2 = module.eliminar_archivo_admision(req, 1, 2)
     assert resp2.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "estado_admision",
+    [
+        "informe_tecnico_finalizado",
+        "informe_tecnico_docx_editado",
+        "informe_tecnico_en_revision",
+        "informe_tecnico_en_subsanacion",
+        "informe_tecnico_aprobado",
+        "if_informe_tecnico_cargado",
+        "enviado_a_legales",
+        "enviado_a_acompaniamiento",
+        "descartado",
+        "inactivada",
+    ],
+)
+def test_eliminar_archivo_admision_bloqueado_si_estado_cerrado(mocker, estado_admision):
+    admision = SimpleNamespace(
+        comedor=SimpleNamespace(), estado_admision=estado_admision
+    )
+    req = _Req(method="DELETE", user=_user(False), GET={})
+
+    mocker.patch("admisiones.views.web_views.get_object_or_404", return_value=admision)
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService._verificar_permiso_dupla",
+        return_value=True,
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService._validar_modificacion_documental_por_tecnico",
+        return_value=None,
+    )
+    archivo_filter_mock = mocker.patch(
+        "admisiones.views.web_views.ArchivoAdmision.objects.filter"
+    )
+
+    resp = module.eliminar_archivo_admision(req, 1, 2)
+
+    assert resp.status_code == 400
+    archivo_filter_mock.assert_not_called()
 
 
 def test_subir_archivo_admision_paths(mocker):
