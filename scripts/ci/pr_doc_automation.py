@@ -72,6 +72,11 @@ BODY_FIELD_ALIASES = {
         "riesgos / rollback",
         "riesgos",
     },
+    "fecha_release": {
+        "fecha objetivo de release",
+        "fecha release",
+        "release date",
+    },
     "pruebas_automaticas": {
         "pruebas automaticas",
         "pruebas automáticas",
@@ -173,6 +178,16 @@ def next_wednesday(today: date) -> date:
 
     days_until = (2 - today.weekday()) % 7
     return today + timedelta(days=days_until)
+
+
+def resolve_release_date(metadata: dict[str, str], today: date) -> str:
+    """Resuelve la fecha de release declarada en el PR o el fallback historico."""
+
+    explicit_value = metadata.get("fecha_release", "")
+    match = re.search(r"\d{4}-\d{2}-\d{2}", explicit_value)
+    if match:
+        return date.fromisoformat(match.group(0)).isoformat()
+    return next_wednesday(today).isoformat()
 
 
 def remove_previous_pr_files(directory: Path, pattern: str) -> None:
@@ -691,8 +706,7 @@ def sync_pr_artifacts(
     if pr.base_ref != "main":
         return
 
-    release_target = next_wednesday(today or date.today())
-    release_file_date = release_target.strftime("%Y-%m-%d")
+    release_file_date = resolve_release_date(metadata, today or date.today())
     remove_previous_pr_files(DOCS_RELEASE_PENDING_DIR, f"*-pr-{pr.number}.md")
     pending_note = PendingReleaseNote(
         pr_number=pr.number,

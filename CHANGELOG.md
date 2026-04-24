@@ -1,5 +1,5 @@
-<!-- AUTO-GENERATED RELEASE START: 2026-04-23 -->
-# Versión SISOC 23.04.2026
+<!-- AUTO-GENERATED RELEASE START: 2026-04-24 -->
+# Versión SISOC 24.04.2026
 
 ## Nuevas Funcionalidades
 
@@ -21,7 +21,7 @@
 - Ajustes en Celiaquía para rechazo con motivo, reprocesos RENAPER, exportación SINTyS y localización de datos inválidos sin perder trazabilidad para el usuario.
 - Corrección de infraestructura y release para que `.env.example`, la resolución de dependencias y los jobs de lint/bootstrap no fallen por configuraciones inválidas o entradas vacías.
 
-<!-- AUTO-GENERATED RELEASE END: 2026-04-23 -->
+<!-- AUTO-GENERATED RELEASE END: 2026-04-24 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-04-09 -->
 # Versión SISOC 09.04.2026

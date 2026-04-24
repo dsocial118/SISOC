@@ -1932,4 +1932,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
