@@ -119,7 +119,9 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
 
         form.instance.comedor_id = self.kwargs["pk"]
 
-        raw_admision_id = self.request.POST.get("admision_id") or self.request.GET.get("admision_id")
+        raw_admision_id = self.request.POST.get("admision_id") or self.request.GET.get(
+            "admision_id"
+        )
         if raw_admision_id and str(raw_admision_id).isdigit():
             form.instance.admision_id = int(raw_admision_id)
 
@@ -159,11 +161,14 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
 
         form.instance.save()
         next_url = self.request.POST.get("next") or self.request.GET.get("next")
-        raw_admision_id = self.request.POST.get("admision_id") or self.request.GET.get("admision_id")
+        raw_admision_id = self.request.POST.get("admision_id") or self.request.GET.get(
+            "admision_id"
+        )
         if not next_url and raw_admision_id and str(raw_admision_id).isdigit():
-            next_url = reverse(
-                "comedor_intervencion_ver", kwargs={"pk": self.kwargs["pk"]}
-            ) + f"?admision_id={raw_admision_id}"
+            next_url = (
+                reverse("comedor_intervencion_ver", kwargs={"pk": self.kwargs["pk"]})
+                + f"?admision_id={raw_admision_id}"
+            )
         return safe_redirect(
             self.request,
             default=reverse(
@@ -179,7 +184,11 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
         comedor = ComedorService.get_comedor(self.kwargs["pk"])
         context["object"] = comedor
         raw_admision_id = self.request.GET.get("admision_id")
-        context["admision_id"] = int(raw_admision_id) if raw_admision_id and raw_admision_id.isdigit() else None
+        context["admision_id"] = (
+            int(raw_admision_id)
+            if raw_admision_id and raw_admision_id.isdigit()
+            else None
+        )
         return context
 
     def get_success_url(self):

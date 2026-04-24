@@ -270,7 +270,9 @@ class AcompanamientoService:
         try:
             fechas_hitos = {}
 
-            qs = Intervencion.objects.select_related("tipo_intervencion", "subintervencion").order_by("fecha")
+            qs = Intervencion.objects.select_related(
+                "tipo_intervencion", "subintervencion"
+            ).order_by("fecha")
             if admision_id:
                 intervenciones = qs.filter(admision_id=admision_id)
             else:

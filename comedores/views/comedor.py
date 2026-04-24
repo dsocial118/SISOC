@@ -1055,12 +1055,18 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
     def _build_relaciones_table_contexts(self, admisiones_qs):
         raw_admision_id = self.request.GET.get("admision_id")
-        admision_id = int(raw_admision_id) if raw_admision_id and raw_admision_id.isdigit() else None
+        admision_id = (
+            int(raw_admision_id)
+            if raw_admision_id and raw_admision_id.isdigit()
+            else None
+        )
         admisiones_disponibles = list(
             AcompanamientoService.obtener_admisiones_para_selector(self.object)
         )
         if admision_id is None and admisiones_disponibles:
-            active = next((a for a in admisiones_disponibles if getattr(a, "activa", False)), None)
+            active = next(
+                (a for a in admisiones_disponibles if getattr(a, "activa", False)), None
+            )
             admision_id = (active or admisiones_disponibles[0]).id
         intervenciones_context = _build_intervenciones_table_context(
             comedor_obj=self.object,
