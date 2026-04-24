@@ -247,6 +247,16 @@ def _nomina_ya_contiene_ciudadano(ciudadano, admision_id=None, comedor_id=None):
     ).exists()
 
 
+MENSAJE_IDENTIDAD_PENDIENTE_NOMINA = (
+    "La identidad de esta persona está pendiente de revisión. "
+    "No puede agregarse a la nómina hasta que sea validada."
+)
+
+
+def _ciudadano_puede_ingresar_a_nomina(ciudadano):
+    return not ciudadano.requiere_revision_manual
+
+
 def _crear_nomina_registro(
     ciudadano, estado=None, observaciones=None, admision_id=None, comedor_id=None
 ):
@@ -1391,6 +1401,9 @@ class ComedorService:
     ):
         ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
 
+        if not _ciudadano_puede_ingresar_a_nomina(ciudadano):
+            return False, MENSAJE_IDENTIDAD_PENDIENTE_NOMINA
+
         if comedor_id is not None and admision_id is None:
             comedor = get_object_or_404(Comedor, pk=comedor_id)
             if comedor_usa_admision_para_nomina(comedor):
@@ -1409,6 +1422,8 @@ class ComedorService:
                 ciudadano = get_object_or_404(
                     Ciudadano.objects.select_for_update(), pk=ciudadano_id
                 )
+                if not _ciudadano_puede_ingresar_a_nomina(ciudadano):
+                    return False, MENSAJE_IDENTIDAD_PENDIENTE_NOMINA
                 if _nomina_ya_contiene_ciudadano(
                     ciudadano, admision_id=admision_id, comedor_id=comedor_id
                 ):

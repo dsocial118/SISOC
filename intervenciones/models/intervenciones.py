@@ -144,6 +144,15 @@ class Intervencion(SoftDeleteModelMixin, models.Model):
         related_name="intervenciones",
         verbose_name="Comedor intervenido",
     )
+    admision = models.ForeignKey(
+        "admisiones.Admision",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_index=True,
+        related_name="intervenciones",
+        verbose_name="Admisión",
+    )
     subintervencion = models.ForeignKey(
         SubIntervencion,
         on_delete=models.SET_NULL,
