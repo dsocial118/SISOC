@@ -56,15 +56,17 @@ def _build_excluidos_importacion_alerta(excluidos):
     excluidos_lineas = []
     if excluidos:
         cantidad = len(excluidos)
-        sujeto = "No se creó 1 legajo" if cantidad == 1 else f"No se crearon {cantidad} legajos"
+        sujeto = (
+            "No se creó 1 legajo"
+            if cantidad == 1
+            else f"No se crearon {cantidad} legajos"
+        )
         predicado = (
             "porque pertenece a otro expediente."
             if cantidad == 1
             else "porque pertenecen a otro expediente."
         )
-        excluidos_lineas.append(
-            f"{sujeto} {predicado}"
-        )
+        excluidos_lineas.append(f"{sujeto} {predicado}")
         for item in excluidos[:10]:
             if not isinstance(item, dict):
                 excluidos_lineas.append(str(item))
@@ -102,15 +104,17 @@ def _build_observaciones_importacion(result: dict) -> str:
     excluidos_lineas = []
     if excluidos:
         cantidad = len(excluidos)
-        sujeto = "No se creó 1 legajo" if cantidad == 1 else f"No se crearon {cantidad} legajos"
+        sujeto = (
+            "No se creó 1 legajo"
+            if cantidad == 1
+            else f"No se crearon {cantidad} legajos"
+        )
         predicado = (
             "porque pertenece a otro expediente."
             if cantidad == 1
             else "porque pertenecen a otro expediente."
         )
-        excluidos_lineas.append(
-            f"{sujeto} {predicado}"
-        )
+        excluidos_lineas.append(f"{sujeto} {predicado}")
         for item in excluidos[:10]:
             if not isinstance(item, dict):
                 excluidos_lineas.append(str(item))

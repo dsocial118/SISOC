@@ -1358,9 +1358,8 @@ def _agregar_exclusion_beneficiario_existente_importacion(
 def _agregar_exclusion_beneficiario_en_programa_importacion(
     *, excluidos, offset, ciudadano, ciudadano_id, programa_data
 ):
-    estado_text = (
-        programa_data.get("revision_tecnico")
-        or ("ACEPTADO" if programa_data["es_titular_activo"] else "SUSPENDIDO")
+    estado_text = programa_data.get("revision_tecnico") or (
+        "ACEPTADO" if programa_data["es_titular_activo"] else "SUSPENDIDO"
     )
     _agregar_exclusion_beneficiario_importacion(
         excluidos=excluidos,
