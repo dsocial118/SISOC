@@ -10,6 +10,8 @@
  */
 
 /* ===== Helpers básicos ===== */
+const EXPEDIENTE_SUCCESS_ALERT_DURATION_MS = 120000;
+
 function getCookie(name) {
   const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
   return m ? m[2] : null;
@@ -27,6 +29,69 @@ function ensureAlertsZone() {
   }
   return zone;
 }
+function getExpedienteAlertStorage() {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage;
+    }
+  } catch (_err) {
+    // Sigue con sessionStorage como fallback.
+  }
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      return window.sessionStorage;
+    }
+  } catch (_err) {
+    // Sin storage disponible.
+  }
+  return null;
+}
+function getExpedienteTimedAlertKey() {
+  const expedienteId = document.querySelector('meta[name="expediente-id"]')?.content || 'default';
+  return `expediente-detail-timed-alert:${expedienteId}`;
+}
+function queueTimedAlert(kind, message, durationMs = EXPEDIENTE_SUCCESS_ALERT_DURATION_MS) {
+  const storage = getExpedienteAlertStorage();
+  if (!storage) return;
+  try {
+    storage.setItem(
+      getExpedienteTimedAlertKey(),
+      JSON.stringify({
+        kind,
+        message,
+        expiresAt: Date.now() + durationMs,
+      })
+    );
+  } catch (_err) {
+    // Si el storage no esta disponible, no interrumpe el flujo.
+  }
+}
+function getTimedAlert() {
+  const storage = getExpedienteAlertStorage();
+  if (!storage) return null;
+  try {
+    const key = getExpedienteTimedAlertKey();
+    const raw = storage.getItem(key);
+    if (!raw) return null;
+    const alertData = JSON.parse(raw);
+    if (!alertData?.expiresAt || alertData.expiresAt <= Date.now()) {
+      storage.removeItem(key);
+      return null;
+    }
+    return alertData;
+  } catch (_err) {
+    return null;
+  }
+}
+function clearTimedAlert() {
+  const storage = getExpedienteAlertStorage();
+  if (!storage) return;
+  try {
+    storage.removeItem(getExpedienteTimedAlertKey());
+  } catch (_err) {
+    // Ignorar errores de storage.
+  }
+}
 function showAlert(kind, ...parts) {
   const zone = ensureAlertsZone();
   const msg = parts.map((p) => escapeHtml(String(p))).join('');
@@ -37,11 +102,25 @@ function showAlert(kind, ...parts) {
       </div>`;
 }
 
+if (typeof window !== 'undefined') {
+  window.queueExpedienteTimedAlert = queueTimedAlert;
+}
+
 if (typeof module !== 'undefined') {
   module.exports = { showAlert };
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  const timedAlert = getTimedAlert();
+  if (timedAlert?.kind && timedAlert?.message) {
+    showAlert(timedAlert.kind, timedAlert.message);
+    const remainingMs = Math.max(0, timedAlert.expiresAt - Date.now());
+    setTimeout(() => {
+      clearTimedAlert();
+      ensureAlertsZone().innerHTML = '';
+    }, remainingMs);
+  }
+
   const editarLegajoMeta = document.querySelector('meta[name="editar-legajo-url-template"]');
   const editarLegajoUrlTemplate = (window.EDITAR_LEGAJO_URL_TEMPLATE ||
     editarLegajoMeta?.getAttribute('content')?.replace('/0/', '/{id}/')) || null;
@@ -253,10 +332,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setTimeout(() => {
           const baseMsg =
+            data.alerta_resumen ||
             data.message ||
             `Se crearon ${data.creados ?? '-'} legajos y el expediente pasó a EN ESPERA.`;
           const errorExtra = data.errores ? ` ${data.errores} errores.` : '';
           const alertType = data.errores > 0 ? 'warning' : 'success';
+          if (alertType === 'success' && Number(data.creados ?? 0) > 0) {
+            queueTimedAlert('success', baseMsg, EXPEDIENTE_SUCCESS_ALERT_DURATION_MS);
+          }
           showAlert(alertType, '¡Listo! ', baseMsg, errorExtra);
 
           setTimeout(() => window.location.reload(), 1000);
