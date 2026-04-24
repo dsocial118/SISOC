@@ -476,6 +476,15 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
         save=mocker.Mock(),
         get_absolute_url=lambda: "/ciudadano/1/",
     )
+
+    def _normalizar_estandar():
+        ciudadano.documento_unico_key = "{}_{}".format(
+            module.Ciudadano.DOCUMENTO_DNI, "12345678"
+        )
+        ciudadano.requiere_revision_manual = False
+        return {"documento_unico_key", "requiere_revision_manual"}
+
+    ciudadano.normalizar_identidad = _normalizar_estandar
     form = SimpleNamespace(save=lambda commit=False: ciudadano, save_m2m=mocker.Mock())
     create_view.request = SimpleNamespace(user=SimpleNamespace(id=2))
     mocker.patch("ciudadanos.views.transaction.atomic", return_value=nullcontext())
@@ -507,6 +516,22 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
         save=mocker.Mock(),
         get_absolute_url=lambda: "/c/2/",
     )
+
+    def _normalizar_sin_dni():
+        ciudadano2.documento = None
+        ciudadano2.documento_unico_key = None
+        ciudadano2.requiere_revision_manual = True
+        ciudadano2.motivo_no_validacion_renaper = None
+        ciudadano2.motivo_no_validacion_descripcion = None
+        return {
+            "documento",
+            "documento_unico_key",
+            "requiere_revision_manual",
+            "motivo_no_validacion_renaper",
+            "motivo_no_validacion_descripcion",
+        }
+
+    ciudadano2.normalizar_identidad = _normalizar_sin_dni
     form2 = SimpleNamespace(
         save=lambda commit=False: ciudadano2, save_m2m=mocker.Mock()
     )

@@ -5,7 +5,9 @@ from datetime import date, datetime
 from types import SimpleNamespace
 
 import pytest
+from django.db import IntegrityError
 
+from ciudadanos.models import Ciudadano
 from comedores.services import comedor_service as module
 from comedores.views import comedor as comedor_views_module
 
@@ -369,6 +371,55 @@ def test_agregar_nomina_and_crear_y_agregar(mocker):
     )
     assert ok3 is False
     assert c.delete.called
+
+
+def test_crear_ciudadano_y_agregar_a_nomina_puebla_documento_unico_key(db, mocker):
+    mocker.patch.object(
+        module.ComedorService,
+        "agregar_ciudadano_a_nomina",
+        return_value=(True, "ok"),
+    )
+
+    ok, msg = module.ComedorService.crear_ciudadano_y_agregar_a_nomina.__wrapped__(
+        ciudadano_data={
+            "nombre": "Ana",
+            "apellido": "Perez",
+            "fecha_nacimiento": date(1990, 1, 1),
+            "tipo_documento": Ciudadano.DOCUMENTO_DNI,
+            "documento": 30111226,
+        },
+        user=SimpleNamespace(id=1),
+        estado=None,
+        observaciones=None,
+    )
+
+    ciudadano = Ciudadano.objects.get(documento=30111226)
+    assert ok is True
+    assert msg == "ok"
+    assert ciudadano.documento_unico_key == "DNI_30111226"
+
+
+def test_crear_ciudadano_y_agregar_a_nomina_dup_estandar_devuelve_error(db, mocker):
+    mocker.patch(
+        "comedores.services.comedor_service.impl.Ciudadano.objects.create",
+        side_effect=IntegrityError("duplicate"),
+    )
+
+    ok, msg = module.ComedorService.crear_ciudadano_y_agregar_a_nomina.__wrapped__(
+        ciudadano_data={
+            "nombre": "Ana",
+            "apellido": "Perez",
+            "fecha_nacimiento": date(1990, 1, 1),
+            "tipo_documento": Ciudadano.DOCUMENTO_DNI,
+            "documento": 30111227,
+        },
+        user=SimpleNamespace(id=1),
+        estado=None,
+        observaciones=None,
+    )
+
+    assert ok is False
+    assert "Ya existe un ciudadano estandar" in msg
 
 
 def test_timeline_context_helpers_cover_both_states():
