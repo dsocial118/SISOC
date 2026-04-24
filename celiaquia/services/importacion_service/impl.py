@@ -433,7 +433,7 @@ def _persistir_legajos_importacion(
     legajos_crear, batch_size, relaciones_familiares, warnings
 ):
     if not legajos_crear:
-        logger.warning("No hay legajos para crear - lista vacía")
+        logger.info("No hay legajos para crear - lista vacia")
         return
 
     try:

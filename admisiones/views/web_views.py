@@ -357,12 +357,14 @@ def _build_admision_detail_dupla_context(comedor):
     }
 
 
-def _build_admision_detail_acompanamiento_context(comedor):
+def _build_admision_detail_acompanamiento_context(comedor, admision_id=None):
     acompanamiento_data = (
-        AcompanamientoService.obtener_datos_admision(comedor) if comedor else {}
+        AcompanamientoService.obtener_datos_admision(comedor, admision_id=admision_id)
+        if comedor
+        else {}
     )
     prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(
-        acompanamiento_data.get("anexo")
+        acompanamiento_data.get("info_relevante")
     )
 
     return {
@@ -498,23 +500,6 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
                     "No se pueden eliminar documentos cuando el informe tecnico "
                     "esta finalizado o en etapas posteriores."
                 ),
-    estados_bloqueo_eliminacion = {
-        "informe_tecnico_finalizado",
-        "informe_tecnico_docx_editado",
-        "informe_tecnico_en_revision",
-        "informe_tecnico_en_subsanacion",
-        "informe_tecnico_aprobado",
-        "if_informe_tecnico_cargado",
-        "enviado_a_legales",
-        "enviado_a_acompaniamiento",
-        "descartado",
-        "inactivada",
-    }
-    if getattr(admision, "estado_admision", None) in estados_bloqueo_eliminacion:
-        return JsonResponse(
-            {
-                "success": False,
-                "error": "No se pueden eliminar documentos cuando el informe tecnico esta finalizado o en etapas posteriores.",
             },
             status=400,
         )
@@ -885,7 +870,10 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             admision
         )
 
-        acompanamiento_context = _build_admision_detail_acompanamiento_context(comedor)
+        acompanamiento_context = _build_admision_detail_acompanamiento_context(
+            comedor,
+            admision_id=getattr(admision, "id", None),
+        )
         rendiciones_context = _build_admision_detail_rendiciones_context(comedor)
         historial_context = _build_admision_detail_historial_context(
             admision, self.request
