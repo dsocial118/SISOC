@@ -2,6 +2,8 @@
 
 from types import SimpleNamespace
 
+import pytest
+
 from admisiones.views import web_views as module
 
 
@@ -170,6 +172,24 @@ def test_eliminar_archivo_admision_estado_no_permitido_and_success(mocker):
 def test_eliminar_archivo_admision_bloqueado_si_informe_finalizado(mocker):
     admision = SimpleNamespace(
         comedor=SimpleNamespace(), estado_admision="informe_tecnico_finalizado"
+@pytest.mark.parametrize(
+    "estado_admision",
+    [
+        "informe_tecnico_finalizado",
+        "informe_tecnico_docx_editado",
+        "informe_tecnico_en_revision",
+        "informe_tecnico_en_subsanacion",
+        "informe_tecnico_aprobado",
+        "if_informe_tecnico_cargado",
+        "enviado_a_legales",
+        "enviado_a_acompaniamiento",
+        "descartado",
+        "inactivada",
+    ],
+)
+def test_eliminar_archivo_admision_bloqueado_si_estado_cerrado(mocker, estado_admision):
+    admision = SimpleNamespace(
+        comedor=SimpleNamespace(), estado_admision=estado_admision
     )
     req = _Req(method="DELETE", user=_user(False), GET={})
 

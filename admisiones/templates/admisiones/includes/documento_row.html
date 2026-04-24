@@ -73,11 +73,11 @@
             <a href="{{ doc.archivo_url }}"
                target="_blank"
                class="btn btn-primary btn-sm">Ver Archivo</a>
-            {% if not admision.enviada_a_archivo and admision.estado_admision != "descartado" %}
+            {% if not admision.enviada_a_archivo and admision.estado_admision != "descartado" and admision.estado_admision != "informe_tecnico_finalizado" and admision.estado_admision != "informe_tecnico_docx_editado" and admision.estado_admision != "informe_tecnico_en_revision" and admision.estado_admision != "informe_tecnico_en_subsanacion" and admision.estado_admision != "informe_tecnico_aprobado" and admision.estado_admision != "if_informe_tecnico_cargado" and admision.estado_admision != "enviado_a_legales" and admision.estado_admision != "enviado_a_acompaniamiento" %}
                 {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
                     <button class="btn btn-sm btn-danger px-3 ms-2"
                             data-call-click="confirmarEliminar"
-                            data-call-args='[{{ admision.id }}, {{ doc.documentacion_id|default:"null" }}, {{ doc.archivo_id|default:"null" }}]'>
+                            data-call-args='[{{ admision.id }}, {{ doc.documentacion_id|default:"null" }}, {{ doc.archivo_id|default:"null" }}, "{{ doc.nombre|escapejs }}"]'>
                         Eliminar
                     </button>
                 {% endif %}
