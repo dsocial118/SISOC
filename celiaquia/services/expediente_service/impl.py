@@ -55,8 +55,15 @@ def _build_resumen_importacion_alerta(*, creados_total=0, errores_actuales=0):
 def _build_excluidos_importacion_alerta(excluidos):
     excluidos_lineas = []
     if excluidos:
+        cantidad = len(excluidos)
+        sujeto = "No se creó 1 legajo" if cantidad == 1 else f"No se crearon {cantidad} legajos"
+        predicado = (
+            "porque pertenece a otro expediente."
+            if cantidad == 1
+            else "porque pertenecen a otro expediente."
+        )
         excluidos_lineas.append(
-            f"No se crearon {len(excluidos)} legajos porque ya existen en otro expediente activo."
+            f"{sujeto} {predicado}"
         )
         for item in excluidos[:10]:
             if not isinstance(item, dict):
@@ -67,13 +74,13 @@ def _build_excluidos_importacion_alerta(excluidos):
             nombre = item.get("nombre", "-")
             estado = (
                 item.get("estado_programa")
-                or item.get("estado_expediente_origen")
+                or item.get("estado_legajo_origen")
                 or item.get("motivo")
                 or "-"
             )
             expediente_origen = item.get("expediente_origen_id", "-")
             excluidos_lineas.append(
-                f"- Documento {documento} - {apellido}, {nombre} - {estado} - Exp #{expediente_origen}"
+                f"- Documento {documento} - {apellido}, {nombre} - Estado legajo: {estado} - Exp #{expediente_origen}"
             )
         restantes = len(excluidos) - 10
         if restantes > 0:
@@ -94,8 +101,15 @@ def _build_observaciones_importacion(result: dict) -> str:
 
     excluidos_lineas = []
     if excluidos:
+        cantidad = len(excluidos)
+        sujeto = "No se creó 1 legajo" if cantidad == 1 else f"No se crearon {cantidad} legajos"
+        predicado = (
+            "porque pertenece a otro expediente."
+            if cantidad == 1
+            else "porque pertenecen a otro expediente."
+        )
         excluidos_lineas.append(
-            f"No se crearon {len(excluidos)} legajos porque ya existen en otro expediente activo."
+            f"{sujeto} {predicado}"
         )
         for item in excluidos[:10]:
             if not isinstance(item, dict):
@@ -106,13 +120,13 @@ def _build_observaciones_importacion(result: dict) -> str:
             nombre = item.get("nombre", "-")
             estado = (
                 item.get("estado_programa")
-                or item.get("estado_expediente_origen")
+                or item.get("estado_legajo_origen")
                 or item.get("motivo")
                 or "-"
             )
             expediente_origen = item.get("expediente_origen_id", "-")
             excluidos_lineas.append(
-                f"- Documento {documento} - {apellido}, {nombre} - {estado} - Exp #{expediente_origen}"
+                f"- Documento {documento} - {apellido}, {nombre} - Estado legajo: {estado} - Exp #{expediente_origen}"
             )
         restantes = len(excluidos) - 10
         if restantes > 0:
