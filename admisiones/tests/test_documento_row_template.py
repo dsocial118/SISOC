@@ -37,7 +37,7 @@ def _ensure_auth_role_permission(codename, name):
     return permission
 
 
-def _build_template_context():
+def _build_template_context(estado_admision="documentacion_en_proceso"):
     doc = SimpleNamespace(
         row_id="1",
         es_personalizado=False,
@@ -55,6 +55,7 @@ def _build_template_context():
     admision = SimpleNamespace(
         id=99,
         enviada_a_archivo=False,
+        estado_admision=estado_admision,
         estado=SimpleNamespace(nombre="En Proceso"),
     )
     return {"doc": doc, "admision": admision}
@@ -103,3 +104,35 @@ def test_documento_row_no_muestra_selector_para_usuario_sin_rol_abogado():
 
     assert '<span class="badge bg-primary">A Validar Abogado</span>' in html
     assert 'data-documento-id="1"' not in html
+
+
+def test_documento_row_muestra_boton_eliminar_en_estado_previo_a_finalizado():
+    tecnico = User.objects.create_user(username="tecnico_btn_visible", password="test")
+    _assign_base_admisiones_permissions(tecnico)
+
+    request = RequestFactory().get("/")
+    request.user = tecnico
+
+    html = render_to_string(
+        "admisiones/includes/documento_row.html",
+        _build_template_context(estado_admision="informe_tecnico_en_proceso"),
+        request=request,
+    )
+
+    assert "confirmarEliminar" in html
+
+
+def test_documento_row_oculta_boton_eliminar_en_informe_tecnico_finalizado():
+    tecnico = User.objects.create_user(username="tecnico_btn_oculto", password="test")
+    _assign_base_admisiones_permissions(tecnico)
+
+    request = RequestFactory().get("/")
+    request.user = tecnico
+
+    html = render_to_string(
+        "admisiones/includes/documento_row.html",
+        _build_template_context(estado_admision="informe_tecnico_finalizado"),
+        request=request,
+    )
+
+    assert "confirmarEliminar" not in html

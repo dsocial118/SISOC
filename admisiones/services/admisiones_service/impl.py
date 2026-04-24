@@ -55,6 +55,22 @@ ADMISION_ADVANCED_FILTER = AdvancedFilterEngine(
 
 
 class AdmisionService:
+    ESTADOS_BLOQUEO_ELIMINACION_DOCUMENTAL = (
+        "informe_tecnico_finalizado",
+        "informe_tecnico_docx_editado",
+        "informe_tecnico_en_revision",
+        "informe_tecnico_en_subsanacion",
+        "informe_tecnico_aprobado",
+        "if_informe_tecnico_cargado",
+        "enviado_a_legales",
+        "enviado_a_acompaniamiento",
+    )
+    ESTADOS_BLOQUEO_AVANCE_DOCUMENTAL = (
+        "documentacion_aprobada",
+        "expediente_cargado",
+        "informe_tecnico_en_proceso",
+        *ESTADOS_BLOQUEO_ELIMINACION_DOCUMENTAL,
+    )
 
     @staticmethod
     def _normalize_estado_display(estado):
@@ -2236,19 +2252,19 @@ class AdmisionService:
     @staticmethod
     def _bloquea_avance_estado_documental(admision):
 
-        return admision.estado_admision in [
-            "documentacion_aprobada",
-            "expediente_cargado",
-            "informe_tecnico_en_proceso",
-            "informe_tecnico_finalizado",
-            "informe_tecnico_docx_editado",
-            "informe_tecnico_en_revision",
-            "informe_tecnico_en_subsanacion",
-            "informe_tecnico_aprobado",
-            "if_informe_tecnico_cargado",
-            "enviado_a_legales",
-            "enviado_a_acompaniamiento",
-        ]
+        return (
+            admision.estado_admision
+            in AdmisionService.ESTADOS_BLOQUEO_AVANCE_DOCUMENTAL
+        )
+
+    @staticmethod
+    def bloquea_eliminacion_documental(admision):
+        """Indica si la admision ya no admite borrado de documentos adjuntos."""
+
+        return (
+            getattr(admision, "estado_admision", None)
+            in AdmisionService.ESTADOS_BLOQUEO_ELIMINACION_DOCUMENTAL
+        )
 
     @staticmethod
     def _marcar_documentacion_finalizada_si_corresponde(admision):
