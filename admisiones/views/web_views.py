@@ -499,6 +499,8 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
         "if_informe_tecnico_cargado",
         "enviado_a_legales",
         "enviado_a_acompaniamiento",
+        "descartado",
+        "inactivada",
     }
     if getattr(admision, "estado_admision", None) in estados_bloqueo_eliminacion:
         return JsonResponse(
