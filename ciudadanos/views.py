@@ -549,8 +549,6 @@ class CiudadanosCreateView(LoginRequiredMixin, CreateView):
                 "pero ninguno está validado como estándar. "
                 "Revisá la cola de revisión o creá un nuevo registro.",
             )
-            return super().get(request, *args, **kwargs)
-
         sexo = (request.GET.get("sexo") or "M").upper()
         if sexo not in {"M", "F", "X"}:
             sexo = None

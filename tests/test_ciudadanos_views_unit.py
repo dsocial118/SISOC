@@ -199,6 +199,43 @@ def test_ciudadanos_create_busqueda_paths(mocker):
     assert redir.called
 
 
+def test_ciudadanos_create_busqueda_con_existente_no_estandar_precarga_renaper(mocker):
+    view = module.CiudadanosCreateView()
+    request = SimpleNamespace(GET={"sexo": "F"}, session=_Session(), headers={})
+
+    super_get = mocker.patch(
+        "django.views.generic.edit.BaseCreateView.get",
+        return_value="super-get",
+    )
+    mocker.patch("ciudadanos.views.messages.warning")
+    msg_success = mocker.patch("ciudadanos.views.messages.success")
+
+    existente_no_estandar = SimpleNamespace(
+        pk=7,
+        tipo_registro_identidad=module.Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+    )
+    mocker.patch(
+        "ciudadanos.views.Ciudadano.objects.filter",
+        return_value=_OrderableResult([existente_no_estandar]),
+    )
+    renaper = mocker.patch(
+        "ciudadanos.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        return_value={
+            "success": True,
+            "data": {"documento": 12345678, "nombre": "Ana"},
+        },
+    )
+
+    response = view._handle_ciudadano_busqueda(request, "12345678", None)
+
+    assert response == "super-get"
+    renaper.assert_called_once_with("12345678", sexo="F")
+    assert request.session["ciudadano_prefill"]["nombre"] == "Ana"
+    assert request.session.modified is True
+    assert msg_success.called
+    assert super_get.called
+
+
 def test_ciudadanos_create_get_form_and_safe_int(mocker):
     view = module.CiudadanosCreateView()
     view._prefill_ciudadano = {"provincia": "1", "municipio": "2", "localidad": "3"}
