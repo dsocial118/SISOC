@@ -30,31 +30,37 @@
                     <option value="Aceptado">Aceptado</option>
                     <option value="Rectificar">Rectificar</option>
                 </select>
-            {% elif request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+            {% elif request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" %}
                 <span class="badge bg-primary">A Validar Abogado</span>
             {% else %}
                 {{ doc.estado }}
             {% endif %}
         {% else %}
-            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" and doc.archivo_id %}
-                <select class="form-control form-control-sm mb-2{% if doc.estado == 'Rectificar' %} border border-danger border-2{% endif %}"
-                        data-call-change="actualizarEstado"
-                        data-call-pass-this="true"
-                        data-admision-id="{{ admision.id }}"
-                        data-documento-id="{{ doc.archivo_id }}"
-                        data-url="{% url 'actualizar_estado_archivo' %}"
-                        data-requires-observacion="0"
-                        data-current-value="{{ doc.estado_valor }}">
-                    {% if doc.estado == 'Rectificar' %}<option value="Rectificar" selected disabled>Rectificar</option>{% endif %}
-                    <option value="Documento adjunto"
-                            {% if doc.estado_valor == 'Documento adjunto' %}selected disabled{% endif %}>
-                        Documento adjunto
-                    </option>
-                    <option value="A Validar Abogado"
-                            {% if doc.estado_valor == 'A Validar Abogado' %}selected{% endif %}>
-                        A Validar Abogado
-                    </option>
-                </select>
+            {% if doc.archivo_id %}
+                {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                    <select class="form-control form-control-sm mb-2{% if doc.estado == 'Rectificar' %} border border-danger border-2{% endif %}"
+                            data-call-change="actualizarEstado"
+                            data-call-pass-this="true"
+                            data-admision-id="{{ admision.id }}"
+                            data-documento-id="{{ doc.archivo_id }}"
+                            data-url="{% url 'actualizar_estado_archivo' %}"
+                            data-requires-observacion="0"
+                            data-current-value="{{ doc.estado_valor }}">
+                        {% if doc.estado == 'Rectificar' %}<option value="Rectificar" selected disabled>Rectificar</option>{% endif %}
+                        <option value="Documento adjunto"
+                                {% if doc.estado_valor == 'Documento adjunto' %}selected disabled{% endif %}>
+                            Documento adjunto
+                        </option>
+                        <option value="A Validar Abogado"
+                                {% if doc.estado_valor == 'A Validar Abogado' %}selected{% endif %}>
+                            A Validar Abogado
+                        </option>
+                    </select>
+                {% else %}
+                    <span class="badge {% if doc.estado == 'Rectificar' %}bg-danger {% elif doc.estado == 'Aceptado' %}bg-success {% elif doc.estado == 'Pendiente' or doc.estado == 'Documento adjunto' %}bg-secondary {% else %}bg-primary {% endif %}">
+                        {{ doc.estado }}
+                    </span>
+                {% endif %}
             {% else %}
                 <span class="badge {% if doc.estado == 'Rectificar' %}bg-danger {% elif doc.estado == 'Aceptado' %}bg-success {% elif doc.estado == 'Pendiente' or doc.estado == 'Documento adjunto' %}bg-secondary {% else %}bg-primary {% endif %}">
                     {{ doc.estado }}
@@ -67,8 +73,8 @@
             <a href="{{ doc.archivo_url }}"
                target="_blank"
                class="btn btn-primary btn-sm">Ver Archivo</a>
-            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
-                {% if doc.estado_valor != "Aceptado" and doc.estado_valor != "A Validar Abogado" %}
+            {% if not admision.enviada_a_archivo and admision.estado_admision != "descartado" %}
+                {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
                     <button class="btn btn-sm btn-danger px-3 ms-2"
                             data-call-click="confirmarEliminar"
                             data-call-args='[{{ admision.id }}, {{ doc.documentacion_id|default:"null" }}, {{ doc.archivo_id|default:"null" }}]'>
@@ -77,30 +83,32 @@
                 {% endif %}
             {% endif %}
         {% else %}
-            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" and not doc.es_personalizado and not admision.enviada_a_archivo and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
-                <input type="file"
-                       id="file-{{ doc.documentacion_id }}"
-                       class="d-none"
-                       data-call-change="subirArchivo"
-                       data-call-args='[{{ admision.id }}, {{ doc.documentacion_id }}]' />
-                <button type="button"
-                        class="btn btn-sm btn-outline-primary"
-                        data-click-target-id="file-{{ doc.documentacion_id }}">Adjuntar</button>
-                <div class="progress mt-2"
-                     id="progress-container-{{ doc.documentacion_id }}"
-                     style="display:none;
-                            height: 3px">
-                    <div class="progress-bar  progress-bar-striped"
-                         role="progressbar"
-                         id="progress-bar-{{ doc.documentacion_id }}"
-                         style="width: 0%">0%</div>
-                </div>
+            {% if not doc.es_personalizado and not admision.enviada_a_archivo and admision.estado_admision != "descartado" %}
+                {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                    <input type="file"
+                           id="file-{{ doc.documentacion_id }}"
+                           class="d-none"
+                           data-call-change="subirArchivo"
+                           data-call-args='[{{ admision.id }}, {{ doc.documentacion_id }}]' />
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary"
+                            data-click-target-id="file-{{ doc.documentacion_id }}">Adjuntar</button>
+                    <div class="progress mt-2"
+                         id="progress-container-{{ doc.documentacion_id }}"
+                         style="display:none;
+                                height: 3px">
+                        <div class="progress-bar  progress-bar-striped"
+                             role="progressbar"
+                             id="progress-bar-{{ doc.documentacion_id }}"
+                             style="width: 0%">0%</div>
+                    </div>
+                {% endif %}
             {% endif %}
         {% endif %}
     </td>
     <td id="gde-{{ doc.id }}">
         {% if doc.estado == "Aceptado" %}
-            {% if request.user.is_superuser or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+            {% if request.user.is_superuser or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" %}
                 <!-- Modo vista (por defecto) -->
                 <div id="gde-display-{{ doc.id }}"
                      class="gde-display"
