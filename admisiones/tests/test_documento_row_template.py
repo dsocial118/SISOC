@@ -119,7 +119,7 @@ def test_documento_row_muestra_boton_eliminar_en_estado_previo_a_finalizado():
         request=request,
     )
 
-    assert ">Eliminar<" in html
+    assert "confirmarEliminar" in html
 
 
 def test_documento_row_oculta_boton_eliminar_en_informe_tecnico_finalizado():
@@ -135,4 +135,4 @@ def test_documento_row_oculta_boton_eliminar_en_informe_tecnico_finalizado():
         request=request,
     )
 
-    assert ">Eliminar<" not in html
+    assert "confirmarEliminar" not in html
