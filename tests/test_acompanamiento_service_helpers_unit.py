@@ -236,6 +236,26 @@ def test_obtener_hitos_con_admision_id_restringe_por_comedor(mocker):
     )
 
 
+def test_crear_hitos_con_admision_id_restringe_acompanamiento_por_comedor(mocker):
+    acompanamiento_filter = mocker.patch(
+        "acompanamientos.acompanamiento_service.Acompanamiento.objects.filter",
+        return_value=SimpleNamespace(first=lambda: None),
+    )
+    intervencion = SimpleNamespace(
+        comedor=SimpleNamespace(id=4),
+        admision_id=18,
+        subintervencion_id=1,
+        tipo_intervencion=SimpleNamespace(nombre="Intervencion 1"),
+    )
+
+    AcompanamientoService.crear_hitos(intervencion)
+
+    acompanamiento_filter.assert_called_once_with(
+        admision_id=18,
+        admision__comedor=intervencion.comedor,
+    )
+
+
 def test_crear_hitos_crea_subintervencion_y_nuevo_hito(mocker):
     mocker.patch(
         "acompanamientos.acompanamiento_service.Hitos._meta.fields",

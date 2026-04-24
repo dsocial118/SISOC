@@ -871,7 +871,8 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         )
 
         acompanamiento_context = _build_admision_detail_acompanamiento_context(
-            comedor, admision_id=admision.id
+            comedor,
+            admision_id=getattr(admision, "id", None),
         )
         rendiciones_context = _build_admision_detail_rendiciones_context(comedor)
         historial_context = _build_admision_detail_historial_context(

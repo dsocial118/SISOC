@@ -481,6 +481,10 @@ def test_comedor_detail_get_relaciones_optimizadas_compone_contextos(mocker):
         "comedores.views.comedor._build_validaciones_table_context",
         return_value={"validaciones_items": [4]},
     )
+    mocker.patch(
+        "comedores.views.comedor.AcompanamientoService.obtener_admisiones_para_selector",
+        return_value=[],
+    )
 
     ctx = view.get_relaciones_optimizadas()
 

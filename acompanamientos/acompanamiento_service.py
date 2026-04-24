@@ -38,9 +38,11 @@ class AcompanamientoService:
             None
         """
         try:
-            if intervenciones.admision_id:
+            admision_id = getattr(intervenciones, "admision_id", None)
+            if admision_id:
                 acompanamiento = Acompanamiento.objects.filter(
-                    admision_id=intervenciones.admision_id,
+                    admision_id=admision_id,
+                    admision__comedor=intervenciones.comedor,
                 ).first()
             else:
                 acompanamiento = (
@@ -86,7 +88,7 @@ class AcompanamientoService:
                 AcompanamientoService._verificar_hito_capacitacion_fch(
                     hito_objeto,
                     intervenciones.comedor,
-                    admision_id=intervenciones.admision_id,
+                    admision_id=admision_id,
                 )
         except Exception:
             logger.exception(
@@ -155,7 +157,7 @@ class AcompanamientoService:
                 subintervencion__nombre__in=subtipos_fch,
             )
             if admision_id:
-                qs = qs.filter(admision_id=admision_id)
+                qs = qs.filter(comedor=comedor, admision_id=admision_id)
             else:
                 qs = qs.filter(comedor=comedor)
             subtipos_registrados = set(
@@ -269,14 +271,17 @@ class AcompanamientoService:
         """
         try:
             fechas_hitos = {}
-
-            qs = Intervencion.objects.select_related(
-                "tipo_intervencion", "subintervencion"
-            ).order_by("fecha")
             if admision_id:
-                intervenciones = qs.filter(admision_id=admision_id)
+                intervenciones = Intervencion.objects.filter(
+                    comedor=comedor,
+                    admision_id=admision_id,
+                )
             else:
-                intervenciones = qs.filter(comedor=comedor)
+                intervenciones = Intervencion.objects.filter(comedor=comedor)
+            intervenciones = intervenciones.select_related(
+                "tipo_intervencion",
+                "subintervencion",
+            ).order_by("fecha")
 
             # Prepara un mapeo verbose_name -> field_name para Hitos para evitar loop anidado
             verbose_to_field = {

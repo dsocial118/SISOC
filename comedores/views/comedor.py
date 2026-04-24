@@ -249,13 +249,18 @@ def _build_intervencion_creator_map(intervencion_ids):
 
 
 def _build_intervenciones_table_context(comedor_obj, request, admision_id=None):
-    base_qs = Intervencion.objects.select_related(
-        "tipo_intervencion", "subintervencion", "destinatario"
-    ).order_by("-fecha")
     if admision_id:
-        intervenciones_qs = base_qs.filter(admision_id=admision_id)
+        intervenciones_qs = Intervencion.objects.filter(
+            comedor=comedor_obj,
+            admision_id=admision_id,
+        )
     else:
-        intervenciones_qs = base_qs.filter(comedor=comedor_obj)
+        intervenciones_qs = Intervencion.objects.filter(comedor=comedor_obj)
+    intervenciones_qs = intervenciones_qs.select_related(
+        "tipo_intervencion",
+        "subintervencion",
+        "destinatario",
+    ).order_by("-fecha")
     intervenciones_paginator = Paginator(intervenciones_qs, 10)
     intervenciones_page_number = request.GET.get("intervenciones_page", 1)
     intervenciones_page_obj = intervenciones_paginator.get_page(
@@ -1063,9 +1068,15 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         admisiones_disponibles = list(
             AcompanamientoService.obtener_admisiones_para_selector(self.object)
         )
+        admisiones_ids_disponibles = {
+            admision.id for admision in admisiones_disponibles
+        }
+        if admision_id not in admisiones_ids_disponibles:
+            admision_id = None
         if admision_id is None and admisiones_disponibles:
             active = next(
-                (a for a in admisiones_disponibles if getattr(a, "activa", False)), None
+                (a for a in admisiones_disponibles if getattr(a, "activa", False)),
+                None,
             )
             admision_id = (active or admisiones_disponibles[0]).id
         intervenciones_context = _build_intervenciones_table_context(
