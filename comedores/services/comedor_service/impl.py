@@ -18,7 +18,7 @@ from django.db.models import (
     Func,
     Subquery,
 )
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.core.paginator import Paginator
 from django.core.files.storage import default_storage
 from django.contrib import messages
@@ -1454,19 +1454,26 @@ class ComedorService:
         Crea un ciudadano nuevo y lo agrega a la nómina con estado y observaciones.
         ciudadano_data: dict con datos para crear ciudadano (ej: datos validados del form).
         """
-        ciudadano = Ciudadano.objects.create(**ciudadano_data)
+        try:
+            with transaction.atomic():
+                ciudadano = Ciudadano.objects.create(**ciudadano_data)
 
-        ok, msg = ComedorService.agregar_ciudadano_a_nomina(
-            ciudadano_id=ciudadano.id,
-            user=user,
-            estado=estado,
-            observaciones=observaciones,
-            admision_id=admision_id,
-            comedor_id=comedor_id,
-        )
-        if not ok:
-            ciudadano.delete()
-        return ok, msg
+                ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+                    ciudadano_id=ciudadano.id,
+                    user=user,
+                    estado=estado,
+                    observaciones=observaciones,
+                    admision_id=admision_id,
+                    comedor_id=comedor_id,
+                )
+                if not ok:
+                    ciudadano.delete()
+                return ok, msg
+        except IntegrityError:
+            return (
+                False,
+                "Ya existe un ciudadano estandar con este tipo y numero de documento.",
+            )
 
     @staticmethod
     def importar_nomina_ultimo_convenio(admision_id, comedor_id):
