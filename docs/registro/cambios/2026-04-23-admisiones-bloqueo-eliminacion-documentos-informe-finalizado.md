@@ -1,4 +1,4 @@
-﻿# Admisiones: bloqueo de eliminacion de documentos tras informe tecnico finalizado
+# Admisiones: bloqueo de eliminacion de documentos tras informe tecnico finalizado
 
 ## Fecha
 2026-04-23
