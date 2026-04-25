@@ -15,6 +15,7 @@ Arranque minimo:
 
 Usar:
 - `docs/ia/CONTEXT_HYGIENE.md` para decidir que abrir,
+- `scripts/ai/codex_task.ps1 <slug>` para crear branch, worktree y bootstrap desde `origin/development`,
 - `scripts/ai/preflight.sh <tipo> [path]` para un resumen corto del contexto.
 - `python scripts/ai/context_memory.py preflight --target <path>` para resolver memoria reusable y detectar si quedo vieja.
 
