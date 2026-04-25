@@ -113,6 +113,25 @@ def test_ciudadano_save_update_fields_incluye_clave_derivada(db):
     assert ciudadano.documento_unico_key == "DNI_30111229"
 
 
+def test_ciudadano_save_update_fields_respeta_revision_manual_explicita(db):
+    ciudadano = Ciudadano.objects.create(
+        nombre="Ana",
+        apellido="Perez",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=30111230,
+        tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+        motivo_no_validacion_renaper=Ciudadano.MOTIVO_NO_VALIDADO_OTRO,
+    )
+
+    ciudadano.requiere_revision_manual = False
+    ciudadano.save(update_fields=["requiere_revision_manual"])
+    ciudadano.refresh_from_db()
+
+    assert ciudadano.tipo_registro_identidad == Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO
+    assert ciudadano.requiere_revision_manual is False
+
+
 def test_ciudadano_no_validado_permite_dni_duplicado(db):
     for nombre in ("Ana", "Beto"):
         Ciudadano.objects.create(
