@@ -9,3 +9,5 @@ window.REVISAR_URL_TEMPLATE = revisarMeta?.content?.replace('/0/', '/{id}/');
 window.CONFIRM_SUBS_URL = document.querySelector('meta[name="confirm-subs-url"]')?.content;
 const validarMeta = document.querySelector('meta[name="validar-renaper-url-template"]');
 window.VALIDAR_RENAPER_URL_TEMPLATE = validarMeta?.content?.replace('/0/', '/{id}/');
+const editarLegajoMeta = document.querySelector('meta[name="editar-legajo-url-template"]');
+window.EDITAR_LEGAJO_URL_TEMPLATE = editarLegajoMeta?.content?.replace('/0/', '/{id}/');
