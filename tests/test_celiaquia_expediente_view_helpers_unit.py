@@ -484,7 +484,15 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
         POST={"accion": "SUBSANAR", "motivo": "faltan docs"},
     )
     resp_sub = revisar.post(req_subs, pk=1, legajo_id=3)
-    assert resp_sub.status_code == 200
+    assert resp_sub.status_code == 400
+
+    leg.revision_tecnico = "APROBADO"
+    resp_ap_bloqueado = revisar.post(req_aprobar, pk=1, legajo_id=3)
+    assert resp_ap_bloqueado.status_code == 400
+
+    leg.revision_tecnico = "SUBSANADO"
+    resp_subsanado = revisar.post(req_subs, pk=1, legajo_id=3)
+    assert resp_subsanado.status_code == 200
 
 
 def test_expediente_import_view_success_and_errors(mocker):

@@ -243,8 +243,10 @@ class EditarLegajoView(View):
                 )
 
         except ValidationError as e:
+            msgs = getattr(e, "messages", None)
+            error_msg = " ".join(str(m) for m in msgs) if msgs else str(e)
             return JsonResponse(
-                {"success": False, "error": "Los datos ingresados no son válidos."},
+                {"success": False, "error": error_msg},
                 status=400,
             )
         except Exception as e:

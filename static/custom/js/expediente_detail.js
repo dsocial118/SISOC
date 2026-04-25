@@ -1485,7 +1485,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // para evitar conflictos y mantener la consistencia de datos
 
 
-});
+
   /* ===== CONFIRMAR SUBSANACIÓN INDIVIDUAL ===== */
   const botonesConfirmarSubsanacion = document.querySelectorAll('.btn-confirmar-subsanacion-individual');
   botonesConfirmarSubsanacion.forEach(btn => {
@@ -1596,80 +1596,74 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectMunicipio = document.getElementById('editar-municipio');
     const selectLocalidad = document.getElementById('editar-localidad');
     const selectNacionalidad = document.getElementById('editar-nacionalidad');
+    const formEditarLegajo = document.getElementById('form-editar-legajo');
+    const refreshSelect2 = (target) => {
+      if (target && window.refreshSelect2Element) {
+        window.refreshSelect2Element(target);
+      }
+    };
     
-    if (selectMunicipio && selectLocalidad) {
-      const refreshSelect2 = (target) => {
-        if (window.refreshSelect2Element) {
-          window.refreshSelect2Element(target);
-        }
-      };
-
-      const localidadOptions = Array.from(selectLocalidad.querySelectorAll('option')).map(
-        option => ({
+    // localidadOptions y renderLocalidadesDisponibles se declaran aqui para
+    // que sean accesibles tanto desde el listener show.bs.modal como desde
+    // los event listeners de cambio de municipio/localidad.
+    const localidadOptions = selectLocalidad
+      ? Array.from(selectLocalidad.querySelectorAll('option')).map(option => ({
           value: option.value,
           text: option.textContent,
           municipioId: option.dataset.municipio || ''
-        })
-      );
+        }))
+      : [];
 
-      const renderLocalidadesDisponibles = (municipioId, localidadSeleccionada = '') => {
-        const localidadId = localidadSeleccionada ? String(localidadSeleccionada) : '';
-        let localidadVisible = false;
+    const renderLocalidadesDisponibles = (municipioId, localidadSeleccionada = '') => {
+      if (!selectLocalidad) return;
+      const localidadId = localidadSeleccionada ? String(localidadSeleccionada) : '';
+      let localidadVisible = false;
 
-        selectLocalidad.innerHTML = '';
+      selectLocalidad.innerHTML = '';
 
-        localidadOptions.forEach(optionData => {
-          if (optionData.value && municipioId && optionData.municipioId !== String(municipioId)) {
-            return;
-          }
-
-          const option = document.createElement('option');
-          option.value = optionData.value;
-          option.textContent = optionData.text;
-
-          if (optionData.municipioId) {
-            option.dataset.municipio = optionData.municipioId;
-          }
-
-          if (localidadId && String(optionData.value) === localidadId) {
-            option.selected = true;
-            localidadVisible = true;
-          }
-
-          selectLocalidad.appendChild(option);
-        });
-
-        if (!localidadVisible) {
-          selectLocalidad.value = '';
-        }
-
-        refreshSelect2(selectLocalidad);
-      };
-
-      const filtrarLocalidadesPorMunicipio = (municipioId) => {
-        renderLocalidadesDisponibles(municipioId, selectLocalidad.value);
-      };
-
-      const sincronizarMunicipioDesdeLocalidad = () => {
-        const optionSeleccionada = selectLocalidad.selectedOptions[0];
-        const municipioId = optionSeleccionada?.dataset?.municipio || '';
-        if (!municipioId) {
+      localidadOptions.forEach(optionData => {
+        if (optionData.value && municipioId && optionData.municipioId !== String(municipioId)) {
           return;
         }
 
+        const option = document.createElement('option');
+        option.value = optionData.value;
+        option.textContent = optionData.text;
+
+        if (optionData.municipioId) {
+          option.dataset.municipio = optionData.municipioId;
+        }
+
+        if (localidadId && String(optionData.value) === localidadId) {
+          option.selected = true;
+          localidadVisible = true;
+        }
+
+        selectLocalidad.appendChild(option);
+      });
+
+      if (!localidadVisible) {
+        selectLocalidad.value = '';
+      }
+
+      refreshSelect2(selectLocalidad);
+    };
+
+    if (selectMunicipio && selectLocalidad) {
+      selectMunicipio.addEventListener('change', function() {
+        renderLocalidadesDisponibles(this.value, selectLocalidad.value);
+      });
+
+      selectLocalidad.addEventListener('change', function() {
+        const optionSeleccionada = selectLocalidad.selectedOptions[0];
+        const municipioId = optionSeleccionada?.dataset?.municipio || '';
+        if (!municipioId) return;
         if (selectMunicipio.value !== municipioId) {
           selectMunicipio.value = municipioId;
           refreshSelect2(selectMunicipio);
         }
-
         renderLocalidadesDisponibles(municipioId, selectLocalidad.value);
-      };
-
-      selectMunicipio.addEventListener('change', function() {
-        filtrarLocalidadesPorMunicipio(this.value);
       });
-
-      selectLocalidad.addEventListener('change', sincronizarMunicipioDesdeLocalidad);
     }
     
     modalEditarLegajo.addEventListener('show.bs.modal', async function(event) {
@@ -1684,8 +1678,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       try {
         // Cargar datos actuales del legajo
-        const editarLegajoMeta = document.querySelector('meta[name="editar-legajo-url-template"]');
-        const editarLegajoUrlTemplate = editarLegajoMeta?.getAttribute('content')?.replace('/0/', '/{id}/');
+        const editarLegajoUrlTemplate = window.EDITAR_LEGAJO_URL_TEMPLATE;
         if (!editarLegajoUrlTemplate) {
           showAlert('danger', 'URL de edición no configurada.');
           return;
@@ -1702,6 +1695,15 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
         
+        if (!response.ok) {
+          let errMsg = 'Error al cargar los datos del legajo.';
+          try {
+            const errData = await response.json();
+            errMsg = errData.error || errMsg;
+          } catch (_) {}
+          showAlert('danger', errMsg);
+          return;
+        }
         const data = await response.json();
         
         if (data.success) {
@@ -1717,26 +1719,28 @@ document.addEventListener('DOMContentLoaded', () => {
           if (selectNacionalidad && window.refreshSelect2Element) {
             window.refreshSelect2Element(selectNacionalidad);
           }
-          document.getElementById('editar-telefono').value = legajo.telefono;
-          document.getElementById('editar-email').value = legajo.email;
-          document.getElementById('editar-calle').value = legajo.calle;
-          document.getElementById('editar-altura').value = legajo.altura;
-          document.getElementById('editar-codigo-postal').value = legajo.codigo_postal;
+          document.getElementById('editar-telefono').value = legajo.telefono || '';
+          document.getElementById('editar-email').value = legajo.email || '';
+          document.getElementById('editar-calle').value = legajo.calle || '';
+          document.getElementById('editar-altura').value = legajo.altura || '';
+          document.getElementById('editar-codigo-postal').value = legajo.codigo_postal || '';
           
-          // Primero establecer municipio
+          // Establecer municipio y filtrar localidades
           if (selectMunicipio && selectLocalidad) {
-            selectMunicipio.value = legajo.municipio || '';
-            if (window.refreshSelect2Element) {
-              window.refreshSelect2Element(selectMunicipio);
-            }
-            renderLocalidadesDisponibles(selectMunicipio.value, legajo.localidad || '');
+            const municipioId = String(legajo.municipio || '');
+            selectMunicipio.value = municipioId;
+            refreshSelect2(selectMunicipio);
+            renderLocalidadesDisponibles(municipioId, legajo.localidad || '');
           }
           
-          // Luego establecer localidad (después del filtrado)
-          
           // Configurar la acción del formulario
-          const form = document.getElementById('form-editar-legajo');
-          form.setAttribute('action', editarUrl);
+          if (formEditarLegajo) {
+            formEditarLegajo.setAttribute('action', editarUrl);
+            formEditarLegajo.dataset.actionUrl = editarUrl;
+            formEditarLegajo.dataset.legajoId = legajoId;
+          }
+          modalEditarLegajo.dataset.actionUrl = editarUrl;
+          modalEditarLegajo.dataset.legajoId = legajoId;
         } else {
           showAlert('danger', 'Error al cargar los datos: ' + data.error);
         }
@@ -1757,7 +1761,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    const formEditarLegajo = document.getElementById('form-editar-legajo');
     if (formEditarLegajo) {
       formEditarLegajo.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -1765,14 +1768,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
         const alertasDiv = document.getElementById('modal-alertas-editar');
+        let actionUrl = this.getAttribute('action') || this.dataset.actionUrl || modalEditarLegajo.dataset.actionUrl;
+        const legajoId = this.dataset.legajoId || modalEditarLegajo.dataset.legajoId;
+        if ((!actionUrl || actionUrl === 'null') && window.EDITAR_LEGAJO_URL_TEMPLATE && legajoId) {
+          actionUrl = window.EDITAR_LEGAJO_URL_TEMPLATE.replace('{id}', legajoId);
+          this.setAttribute('action', actionUrl);
+          this.dataset.actionUrl = actionUrl;
+          modalEditarLegajo.dataset.actionUrl = actionUrl;
+        }
         
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando...';
         alertasDiv.innerHTML = '';
         
         try {
+          if (!actionUrl || actionUrl === 'null') {
+            throw new Error('La URL de edición del legajo no está configurada.');
+          }
+
           const formData = new FormData(this);
-          const response = await fetch(this.getAttribute('action'), {
+          const response = await fetch(actionUrl, {
             method: 'POST',
             body: formData,
             credentials: 'same-origin',
@@ -1783,7 +1798,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           });
           
-          const data = await response.json();
+          const ct = response.headers.get('Content-Type') || '';
+          let data = {};
+          if (ct.includes('application/json')) {
+            data = await response.json();
+          } else {
+            const text = await response.text();
+            throw new Error(text || `HTTP ${response.status}`);
+          }
           
           if (data.success) {
             showAlert('success', data.message);
@@ -1793,7 +1815,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } else {
             alertasDiv.innerHTML = `
               <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                ${data.error}
+                ${escapeHtml(data.error || 'Error al guardar los cambios.')}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
               </div>
             `;
@@ -1802,7 +1824,7 @@ document.addEventListener('DOMContentLoaded', () => {
           console.error('Error guardando cambios:', error);
           alertasDiv.innerHTML = `
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-              Error al guardar los cambios.
+              ${escapeHtml(error.message || 'Error al guardar los cambios.')}
               <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
           `;
@@ -1908,6 +1930,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+
+});
+
 // Buscador de legajos
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('search-legajos');
@@ -1932,4 +1957,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-

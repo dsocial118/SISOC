@@ -338,7 +338,7 @@ def _deduplicar_excluidos_alerta(excluidos):
                 item.get("documento"),
                 item.get("expediente_origen_id"),
                 item.get("estado_programa"),
-                item.get("estado_expediente_origen"),
+                item.get("estado_legajo_origen"),
                 item.get("motivo"),
             )
         else:
@@ -353,9 +353,18 @@ def _deduplicar_excluidos_alerta(excluidos):
 def _build_excluidos_importacion_alerta(excluidos):
     excluidos_lineas = []
     if excluidos:
-        excluidos_lineas.append(
-            f"No se crearon {len(excluidos)} legajos porque ya existen en otro expediente activo."
+        cantidad = len(excluidos)
+        sujeto = (
+            "No se creó 1 legajo"
+            if cantidad == 1
+            else f"No se crearon {cantidad} legajos"
         )
+        predicado = (
+            "porque pertenece a otro expediente."
+            if cantidad == 1
+            else "porque pertenecen a otro expediente."
+        )
+        excluidos_lineas.append(f"{sujeto} {predicado}")
         for item in excluidos[:10]:
             if not isinstance(item, dict):
                 excluidos_lineas.append(str(item))
@@ -365,13 +374,13 @@ def _build_excluidos_importacion_alerta(excluidos):
             nombre = item.get("nombre", "-")
             estado = (
                 item.get("estado_programa")
-                or item.get("estado_expediente_origen")
+                or item.get("estado_legajo_origen")
                 or item.get("motivo")
                 or "-"
             )
             expediente_origen = item.get("expediente_origen_id", "-")
             excluidos_lineas.append(
-                f"- Documento {documento} - {apellido}, {nombre} - {estado} - Exp #{expediente_origen}"
+                f"- Documento {documento} - {apellido}, {nombre} - Estado legajo: {estado} - Exp #{expediente_origen}"
             )
         restantes = len(excluidos) - 10
         if restantes > 0:
@@ -693,9 +702,16 @@ class ProcesarExpedienteView(View):
                     doc = d.get("documento", "")
                     ape = d.get("apellido", "")
                     nom = d.get("nombre", "")
-                    estado = d.get("estado_programa") or d.get("motivo") or "-"
+                    estado = (
+                        d.get("estado_programa")
+                        or d.get("estado_legajo_origen")
+                        or d.get("motivo")
+                        or "-"
+                    )
                     expid = d.get("expediente_origen_id", "-")
-                    preview.append(f"• {doc} — {ape}, {nom} ({estado}) — Exp #{expid}")
+                    preview.append(
+                        f"• {doc} — {ape}, {nom} (Estado legajo: {estado}) — Exp #{expid}"
+                    )
 
                 extra = ""
                 if len(det) > 10:
@@ -704,10 +720,12 @@ class ProcesarExpedienteView(View):
                 # Escapar contenido para prevenir XSS
                 preview_escaped = [escape(p) for p in preview]
                 extra_escaped = escape(extra) if extra else ""
-                html = (
-                    f"Se excluyeron {excluidos_count} registros porque ya están en otro expediente:"
-                    f"<br>{'<br>'.join(preview_escaped)}{extra_escaped}"
+                encabezado = (
+                    "Se excluyó 1 registro porque pertenece a otro expediente:"
+                    if excluidos_count == 1
+                    else f"Se excluyeron {excluidos_count} registros porque pertenecen a otro expediente:"
                 )
+                html = f"{encabezado}<br>{'<br>'.join(preview_escaped)}{extra_escaped}"
                 messages.warning(request, html)
 
             return redirect("expediente_detail", pk=pk)
@@ -1648,6 +1666,37 @@ class RevisarLegajoView(View):
             return JsonResponse(
                 {"success": False, "error": "Acción inválida."}, status=400
             )
+
+        estado_actual = leg.revision_tecnico
+        if accion in ("APROBAR", "RECHAZAR", "SUBSANAR"):
+            if estado_actual in (
+                RevisionTecnico.APROBADO,
+                RevisionTecnico.RECHAZADO,
+            ):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": f"No se puede modificar un legajo en estado {estado_actual}.",
+                    },
+                    status=400,
+                )
+
+            transiciones_permitidas = {
+                RevisionTecnico.PENDIENTE: {"APROBAR", "RECHAZAR", "SUBSANAR"},
+                RevisionTecnico.SUBSANADO: {"APROBAR", "RECHAZAR", "SUBSANAR"},
+            }
+            acciones_permitidas = transiciones_permitidas.get(estado_actual, set())
+            if accion not in acciones_permitidas:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": (
+                            "La acción solicitada no es válida para el estado actual "
+                            f"del legajo ({estado_actual})."
+                        ),
+                    },
+                    status=400,
+                )
 
         # Validar RENAPER automáticamente antes de cualquier acción (excepto ELIMINAR)
         if accion in ("APROBAR", "RECHAZAR", "SUBSANAR"):
