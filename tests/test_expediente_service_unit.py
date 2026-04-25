@@ -83,8 +83,9 @@ def test_build_observaciones_importacion_resume_excluidos():
     )
     assert "Se crearon 0 legajos" in out["resumen"]
     assert "Errores detectados: 1." in out["resumen"]
-    assert "No se crearon 1 legajos" in out["excluidos"]
+    assert "No se creó 1 legajo" in out["excluidos"]
     assert "Documento 123" in out["excluidos"]
+    assert "Estado legajo: ACEPTADO" in out["excluidos"]
     assert "Exp #77" in out["excluidos"]
     assert out["excluidos_detalle"][0]["documento"] == "123"
     assert out["tiene_errores"] is True
