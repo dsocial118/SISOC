@@ -8,7 +8,11 @@ from admisiones.models.admisiones import (
     InformeTecnico,
 )
 from acompanamientos.models.hitos import Hitos, HitosIntervenciones
-from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
+from acompanamientos.models.acompanamiento import (
+    Acompanamiento,
+    InformacionRelevante,
+    Prestacion,
+)
 from duplas.models import Dupla
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
 from comedores.models import Comedor
@@ -23,19 +27,39 @@ class AcompanamientoService:
     def crear_hitos(intervenciones: Intervencion):
         """Crear o actualizar los hitos para una intervención.
 
+        Busca el Acompanamiento activo más reciente del comedor para vincular
+        los hitos. Si no existe ninguno (comedor aún sin acompañamiento iniciado),
+        no hace nada.
+
         Args:
             intervenciones (Intervencion): Intervención a procesar.
 
         Returns:
             None
         """
-        # Optimización: select_related para evitar query adicional al comedor
         try:
-            hitos_existente = (
-                Hitos.objects.select_related("comedor")
-                .filter(comedor=intervenciones.comedor)
-                .first()
-            )
+            admision_id = getattr(intervenciones, "admision_id", None)
+            if admision_id:
+                acompanamiento = Acompanamiento.objects.filter(
+                    admision_id=admision_id,
+                    admision__comedor=intervenciones.comedor,
+                ).first()
+            else:
+                acompanamiento = (
+                    Acompanamiento.objects.filter(
+                        admision__comedor=intervenciones.comedor,
+                        admision__activa=True,
+                    )
+                    .order_by("-admision__id")
+                    .first()
+                )
+
+            if not acompanamiento:
+                return
+
+            hitos_existente = Hitos.objects.filter(
+                acompanamiento=acompanamiento
+            ).first()
 
             if not intervenciones.subintervencion_id:
                 intervenciones.subintervencion = SubIntervencion.objects.create(
@@ -53,7 +77,7 @@ class AcompanamientoService:
                 )
                 hito_objeto = hitos_existente
             else:
-                nuevo_hito = Hitos.objects.create(comedor=intervenciones.comedor)
+                nuevo_hito = Hitos.objects.create(acompanamiento=acompanamiento)
                 AcompanamientoService._actualizar_hitos(nuevo_hito, hitos_a_actualizar)
                 hito_objeto = nuevo_hito
 
@@ -62,7 +86,9 @@ class AcompanamientoService:
                 == "Asistencia a Capacitación Formando Capital Humano"
             ):
                 AcompanamientoService._verificar_hito_capacitacion_fch(
-                    hito_objeto, intervenciones.comedor
+                    hito_objeto,
+                    intervenciones.comedor,
+                    admision_id=admision_id,
                 )
         except Exception:
             logger.exception(
@@ -99,16 +125,17 @@ class AcompanamientoService:
             raise
 
     @staticmethod
-    def _verificar_hito_capacitacion_fch(hitos_objeto, comedor):
+    def _verificar_hito_capacitacion_fch(hitos_objeto, comedor, admision_id=None):
         """Marca el hito FCH como completado cuando todos los subtipos están registrados.
 
         El hito 'Capacitación Formando Capital Humano Realizada' se completa únicamente
         cuando se han registrado los 8 subtipos de intervención correspondientes al tipo
-        'Asistencia a Capacitación Formando Capital Humano' para el comedor dado.
+        'Asistencia a Capacitación Formando Capital Humano' para la admisión dada.
 
         Args:
             hitos_objeto (Hitos): Instancia a modificar.
-            comedor: Comedor al cual pertenecen las intervenciones.
+            comedor: Comedor al cual pertenecen las intervenciones (fallback si no hay admision_id).
+            admision_id: ID de la admisión para filtrar intervenciones con precisión.
 
         Returns:
             None
@@ -125,14 +152,16 @@ class AcompanamientoService:
             "Seguridad en la Cocina - Alimentar Comunidad",
         }
         try:
+            qs = Intervencion.objects.filter(
+                tipo_intervencion__nombre=tipo_fch,
+                subintervencion__nombre__in=subtipos_fch,
+            )
+            if admision_id:
+                qs = qs.filter(comedor=comedor, admision_id=admision_id)
+            else:
+                qs = qs.filter(comedor=comedor)
             subtipos_registrados = set(
-                Intervencion.objects.filter(
-                    comedor=comedor,
-                    tipo_intervencion__nombre=tipo_fch,
-                    subintervencion__nombre__in=subtipos_fch,
-                )
-                .values_list("subintervencion__nombre", flat=True)
-                .distinct()
+                qs.values_list("subintervencion__nombre", flat=True).distinct()
             )
             if subtipos_registrados >= subtipos_fch:
                 hitos_objeto.capacitacion_fch_realizada = True
@@ -145,22 +174,61 @@ class AcompanamientoService:
             raise
 
     @staticmethod
-    def obtener_hitos(comedor):
+    def obtener_hitos(comedor, admision_id=None):
         """Obtener los hitos correspondientes a un comedor.
+
+        Si se provee admision_id, busca únicamente los Hitos vinculados al
+        Acompanamiento de esa admisión dentro del mismo comedor. Si no se
+        provee, devuelve los hitos del acompañamiento más reciente.
 
         Args:
             comedor: Comedor para el cual se solicitan los hitos.
+            admision_id: ID opcional de la admisión para filtrar por acompañamiento.
 
         Returns:
             Hitos | None
         """
         try:
+            if admision_id:
+                return Hitos.objects.filter(
+                    acompanamiento__admision__comedor=comedor,
+                    acompanamiento__admision_id=admision_id,
+                ).first()
             return (
-                Hitos.objects.select_related("comedor").filter(comedor=comedor).first()
+                Hitos.objects.filter(acompanamiento__admision__comedor=comedor)
+                .order_by("-acompanamiento__admision__id")
+                .first()
             )
         except Exception:
             logger.exception(
                 f"Error en AcompanamientoService.obtener_hitos para comedor: {comedor.pk}"
+            )
+            raise
+
+    @staticmethod
+    def obtener_admisiones_para_selector(comedor):
+        """Trae todas las admisiones con Acompanamiento creado para el selector del legajo.
+
+        Args:
+            comedor: Comedor del cual obtener las admisiones.
+
+        Returns:
+            QuerySet de Admision ordenado por id descendente.
+        """
+        try:
+            return (
+                Admision.objects.filter(
+                    comedor=comedor,
+                    enviado_acompaniamiento=True,
+                    acompanamiento__isnull=False,
+                )
+                .select_related("acompanamiento")
+                .order_by("-id")
+            )
+        except Exception:
+            logger.exception(
+                f"Error en AcompanamientoService.obtener_admisiones_para_selector "
+                f"para comedor: {comedor.pk}"
             )
             raise
 
@@ -191,23 +259,29 @@ class AcompanamientoService:
             return s[:10] if len(s) >= 10 else s
 
     @staticmethod
-    def obtener_fechas_hitos(comedor):
+    def obtener_fechas_hitos(comedor, admision_id=None):
         """Obtener las fechas de las intervenciones que completaron cada hito.
 
         Args:
             comedor: Comedor para el cual se solicitan las fechas de hitos.
+            admision_id: ID de la admisión para filtrar con precisión (None = fallback por comedor).
 
         Returns:
             dict: Diccionario con las fechas de cada hito completado en formato 'dd/mm/YYYY'.
         """
         try:
             fechas_hitos = {}
-
-            intervenciones = (
-                Intervencion.objects.filter(comedor=comedor)
-                .select_related("tipo_intervencion", "subintervencion")
-                .order_by("fecha")
-            )
+            if admision_id:
+                intervenciones = Intervencion.objects.filter(
+                    comedor=comedor,
+                    admision_id=admision_id,
+                )
+            else:
+                intervenciones = Intervencion.objects.filter(comedor=comedor)
+            intervenciones = intervenciones.select_related(
+                "tipo_intervencion",
+                "subintervencion",
+            ).order_by("fecha")
 
             # Prepara un mapeo verbose_name -> field_name para Hitos para evitar loop anidado
             verbose_to_field = {
@@ -248,48 +322,75 @@ class AcompanamientoService:
             return {}
 
     @staticmethod
-    def importar_datos_desde_admision(comedor):
-        """Copiar información relevante desde la admisión vinculada.
+    def importar_datos_desde_admision(admision):
+        """Crear el Acompanamiento y copiar la información relevante desde la admisión dada.
 
         Args:
-            comedor: Comedor cuya admisión será consultada.
+            admision: Admision desde la cual importar los datos.
 
         Returns:
-            None
+            Acompanamiento: instancia creada o existente.
         """
         try:
-            try:
-                admision = Admision.objects.get(comedor=comedor)
-            except Admision.DoesNotExist as exc:
-                raise ValueError(
-                    "No se encontró una admisión para este comedor."
-                ) from exc
-
-            InformacionRelevante.objects.update_or_create(
-                comedor=comedor,
-                defaults={
-                    "numero_expediente": admision.numero_expediente,
-                    "numero_resolucion": admision.numero_resolucion,
-                    "vencimiento_mandato": admision.vencimiento_mandato,
-                    "if_relevamiento": admision.if_relevamiento,
-                },
+            nro = admision.numero_convenio or (
+                str(admision.convenio_numero) if admision.convenio_numero else ""
+            )
+            acompanamiento, _ = Acompanamiento.objects.get_or_create(
+                admision=admision,
+                defaults={"nro_convenio": nro},
             )
 
-            prestaciones_admision = admision.prestaciones.all()
-            with transaction.atomic():
-                Prestacion.objects.filter(comedor=comedor).delete()
-                for prestacion in prestaciones_admision:
-                    Prestacion.objects.create(
-                        comedor=comedor,
-                        dia=prestacion.dia,
-                        desayuno=prestacion.desayuno,
-                        almuerzo=prestacion.almuerzo,
-                        merienda=prestacion.merienda,
-                        cena=prestacion.cena,
+            try:
+                informe_tecnico = (
+                    InformeTecnico.objects.filter(admision=admision)
+                    .order_by("-id")
+                    .first()
+                )
+                fecha_vencimiento = (
+                    informe_tecnico.fecha_vencimiento_mandatos
+                    if informe_tecnico
+                    else None
+                )
+                if informe_tecnico and fecha_vencimiento is not None:
+                    InformacionRelevante.objects.update_or_create(
+                        acompanamiento=acompanamiento,
+                        defaults={
+                            "numero_expediente": admision.num_expediente or "",
+                            "numero_resolucion": admision.numero_disposicion or "",
+                            "vencimiento_mandato": fecha_vencimiento,
+                            "if_relevamiento": informe_tecnico.if_relevamiento or "",
+                        },
                     )
+            except Exception:
+                logger.exception(
+                    f"Error al importar InformacionRelevante para admision: {admision.pk}"
+                )
+
+            try:
+                prestaciones_admision = admision.prestaciones.all()
+                with transaction.atomic():
+                    Prestacion.objects.filter(acompanamiento=acompanamiento).delete()
+                    for prestacion in prestaciones_admision:
+                        Prestacion.objects.create(
+                            acompanamiento=acompanamiento,
+                            dia=prestacion.dia,
+                            desayuno=prestacion.desayuno,
+                            almuerzo=prestacion.almuerzo,
+                            merienda=prestacion.merienda,
+                            cena=prestacion.cena,
+                        )
+            except Exception:
+                logger.exception(
+                    f"Error al importar Prestaciones para admision: {admision.pk}"
+                )
+
+            Hitos.objects.get_or_create(acompanamiento=acompanamiento)
+
+            return acompanamiento
         except Exception:
             logger.exception(
-                f"Error en AcompanamientoService.importar_datos_desde_admision para comedor: {comedor.pk}",
+                f"Error en AcompanamientoService.importar_datos_desde_admision "
+                f"para admision: {admision.pk}",
             )
             raise
 
@@ -299,18 +400,25 @@ class AcompanamientoService:
 
         Args:
             comedor: Comedor del cual obtener los datos de admisión.
+            admision_id: ID opcional para recuperar una admisión histórica del
+                mismo comedor aunque ya no esté activa.
 
         Returns:
             dict: Diccionario con datos de admisión, info relevante, anexo, etc.
         """
         try:
-            admision_qs = Admision.objects.filter(
-                comedor=comedor,
-                enviado_acompaniamiento=True,
-                activa=True,
-            ).order_by("-id")
             if admision_id:
-                admision_qs = admision_qs.filter(id=admision_id)
+                admision_qs = Admision.objects.filter(
+                    comedor=comedor,
+                    enviado_acompaniamiento=True,
+                    id=admision_id,
+                ).order_by("-id")
+            else:
+                admision_qs = Admision.objects.filter(
+                    comedor=comedor,
+                    enviado_acompaniamiento=True,
+                    activa=True,
+                ).order_by("-id")
             admision = admision_qs.first()
 
             info_relevante = None

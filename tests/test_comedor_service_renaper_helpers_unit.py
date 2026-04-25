@@ -5,7 +5,9 @@ from datetime import date, datetime
 from types import SimpleNamespace
 
 import pytest
+from django.db import IntegrityError
 
+from ciudadanos.models import Ciudadano
 from comedores.services import comedor_service as module
 from comedores.views import comedor as comedor_views_module
 
@@ -64,6 +66,18 @@ class _NominaQS:
     def __init__(self, resumen):
         self.resumen = resumen
         self.calls = []
+
+    def filter(self, *args, **kwargs):
+        self.calls.append(("filter", args, kwargs))
+        return self
+
+    def order_by(self, *args):
+        self.calls.append(("order_by", args))
+        return self
+
+    def values(self, *args):
+        self.calls.append(("values", args))
+        return self
 
     def select_related(self, *args):
         self.calls.append(("select_related", args))
@@ -278,16 +292,27 @@ def test_obtener_datos_ciudadano_desde_renaper_and_crear(mocker):
     assert ok["success"] is True
 
     existing = SimpleNamespace(pk=1)
+
+    def _filter_existente(**kwargs):
+        if "documento_unico_key" in kwargs:
+            return SimpleNamespace(first=lambda: existing)
+        return SimpleNamespace(
+            first=lambda: None,
+        )
+
     mocker.patch(
         "comedores.services.comedor_service.impl.Ciudadano.objects.filter",
-        return_value=SimpleNamespace(first=lambda: existing),
+        side_effect=_filter_existente,
     )
     ex = module.ComedorService.crear_ciudadano_desde_renaper("12345678")
     assert ex["created"] is False
 
+    def _filter_sin_existente(**kwargs):
+        return SimpleNamespace(first=lambda: None)
+
     mocker.patch(
         "comedores.services.comedor_service.impl.Ciudadano.objects.filter",
-        return_value=SimpleNamespace(first=lambda: None),
+        side_effect=_filter_sin_existente,
     )
     mocker.patch.object(
         module.ComedorService,
@@ -308,7 +333,7 @@ def test_obtener_datos_ciudadano_desde_renaper_and_crear(mocker):
 def test_agregar_nomina_and_crear_y_agregar(mocker):
     mocker.patch(
         "comedores.services.comedor_service.impl.get_object_or_404",
-        return_value=SimpleNamespace(pk=1),
+        return_value=SimpleNamespace(pk=1, requiere_revision_manual=False),
     )
     mocker.patch(
         "comedores.services.comedor_service.impl.Nomina.objects.filter",
@@ -346,6 +371,55 @@ def test_agregar_nomina_and_crear_y_agregar(mocker):
     )
     assert ok3 is False
     assert c.delete.called
+
+
+def test_crear_ciudadano_y_agregar_a_nomina_puebla_documento_unico_key(db, mocker):
+    mocker.patch.object(
+        module.ComedorService,
+        "agregar_ciudadano_a_nomina",
+        return_value=(True, "ok"),
+    )
+
+    ok, msg = module.ComedorService.crear_ciudadano_y_agregar_a_nomina.__wrapped__(
+        ciudadano_data={
+            "nombre": "Ana",
+            "apellido": "Perez",
+            "fecha_nacimiento": date(1990, 1, 1),
+            "tipo_documento": Ciudadano.DOCUMENTO_DNI,
+            "documento": 30111226,
+        },
+        user=SimpleNamespace(id=1),
+        estado=None,
+        observaciones=None,
+    )
+
+    ciudadano = Ciudadano.objects.get(documento=30111226)
+    assert ok is True
+    assert msg == "ok"
+    assert ciudadano.documento_unico_key == "DNI_30111226"
+
+
+def test_crear_ciudadano_y_agregar_a_nomina_dup_estandar_devuelve_error(db, mocker):
+    mocker.patch(
+        "comedores.services.comedor_service.impl.Ciudadano.objects.create",
+        side_effect=IntegrityError("duplicate"),
+    )
+
+    ok, msg = module.ComedorService.crear_ciudadano_y_agregar_a_nomina.__wrapped__(
+        ciudadano_data={
+            "nombre": "Ana",
+            "apellido": "Perez",
+            "fecha_nacimiento": date(1990, 1, 1),
+            "tipo_documento": Ciudadano.DOCUMENTO_DNI,
+            "documento": 30111227,
+        },
+        user=SimpleNamespace(id=1),
+        estado=None,
+        observaciones=None,
+    )
+
+    assert ok is False
+    assert "Ya existe un ciudadano estandar" in msg
 
 
 def test_timeline_context_helpers_cover_both_states():
@@ -676,17 +750,8 @@ def test_crear_admision_desde_comedor_flows(mocker):
         "comedores.services.comedor_service.impl.Admision.objects.create",
         return_value=adm,
     )
-    mocker.patch(
-        "comedores.services.comedor_service.impl.Hitos.objects.filter",
-        return_value=SimpleNamespace(exists=lambda: False),
-    )
-    hitos_create = mocker.patch(
-        "comedores.services.comedor_service.impl.Hitos.objects.create"
-    )
-
     out_ok = module.ComedorService.crear_admision_desde_comedor(request, comedor)
     assert out_ok[0][0] == "comedor_detalle"
-    assert hitos_create.called
     assert success.call_count >= 1
 
 
@@ -822,17 +887,18 @@ def test_get_nomina_detail_calcula_resumen_y_porcentajes(mocker):
         "cantidad_nomina_x": 1,
         "espera": 2,
         "cantidad_total": 10,
+        "cantidad_activos": 8,
         "rango_ninos": 2,
         "rango_adolescentes": 1,
-        "rango_adultos": 3,
+        "rango_adultos": 2,
         "rango_adultos_mayores": 2,
         "rango_adulto_mayor_avanzado": 1,
-        "rango_total_activos": 9,
+        "rango_total_activos": 8,
     }
     nomina_qs = _NominaQS(resumen)
     mocker.patch(
-        "comedores.services.comedor_service.impl.Nomina.objects",
-        SimpleNamespace(filter=lambda **_kwargs: nomina_qs),
+        "comedores.services.comedor_service.impl._build_nomina_qs_and_age_qs",
+        return_value=(nomina_qs, nomina_qs),
     )
     page_obj = SimpleNamespace(number=1)
     paginator_mock = mocker.patch(
@@ -845,12 +911,13 @@ def test_get_nomina_detail_calcula_resumen_y_porcentajes(mocker):
     assert out[0] is page_obj
     assert out[1:6] == (3, 4, 1, 2, 10)
     rangos = out[6]
-    assert rangos["total_activos"] == 9
-    assert rangos["pct_ninos"] == 22
-    assert rangos["pct_adolescentes"] == 11
-    assert rangos["pct_adultos"] == 33
-    assert rangos["pct_adultos_mayores"] == 22
-    assert rangos["pct_adulto_mayor_avanzado"] == 11
+    assert rangos["cantidad_activos"] == 8
+    assert rangos["total_activos"] == 8
+    assert rangos["pct_ninos"] == 25
+    assert rangos["pct_adolescentes"] == 12
+    assert rangos["pct_adultos"] == 25
+    assert rangos["pct_adultos_mayores"] == 25
+    assert rangos["pct_adulto_mayor_avanzado"] == 12
     assert any(call[0] == "aggregate" for call in nomina_qs.calls)
     paginator_mock.assert_called_once()
 

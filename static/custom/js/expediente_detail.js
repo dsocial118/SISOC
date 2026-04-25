@@ -10,6 +10,8 @@
  */
 
 /* ===== Helpers básicos ===== */
+const EXPEDIENTE_SUCCESS_ALERT_DURATION_MS = 120000;
+
 function getCookie(name) {
   const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
   return m ? m[2] : null;
@@ -27,6 +29,69 @@ function ensureAlertsZone() {
   }
   return zone;
 }
+function getExpedienteAlertStorage() {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage;
+    }
+  } catch (_err) {
+    // Sigue con sessionStorage como fallback.
+  }
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      return window.sessionStorage;
+    }
+  } catch (_err) {
+    // Sin storage disponible.
+  }
+  return null;
+}
+function getExpedienteTimedAlertKey() {
+  const expedienteId = document.querySelector('meta[name="expediente-id"]')?.content || 'default';
+  return `expediente-detail-timed-alert:${expedienteId}`;
+}
+function queueTimedAlert(kind, message, durationMs = EXPEDIENTE_SUCCESS_ALERT_DURATION_MS) {
+  const storage = getExpedienteAlertStorage();
+  if (!storage) return;
+  try {
+    storage.setItem(
+      getExpedienteTimedAlertKey(),
+      JSON.stringify({
+        kind,
+        message,
+        expiresAt: Date.now() + durationMs,
+      })
+    );
+  } catch (_err) {
+    // Si el storage no esta disponible, no interrumpe el flujo.
+  }
+}
+function getTimedAlert() {
+  const storage = getExpedienteAlertStorage();
+  if (!storage) return null;
+  try {
+    const key = getExpedienteTimedAlertKey();
+    const raw = storage.getItem(key);
+    if (!raw) return null;
+    const alertData = JSON.parse(raw);
+    if (!alertData?.expiresAt || alertData.expiresAt <= Date.now()) {
+      storage.removeItem(key);
+      return null;
+    }
+    return alertData;
+  } catch (_err) {
+    return null;
+  }
+}
+function clearTimedAlert() {
+  const storage = getExpedienteAlertStorage();
+  if (!storage) return;
+  try {
+    storage.removeItem(getExpedienteTimedAlertKey());
+  } catch (_err) {
+    // Ignorar errores de storage.
+  }
+}
 function showAlert(kind, ...parts) {
   const zone = ensureAlertsZone();
   const msg = parts.map((p) => escapeHtml(String(p))).join('');
@@ -37,11 +102,25 @@ function showAlert(kind, ...parts) {
       </div>`;
 }
 
+if (typeof window !== 'undefined') {
+  window.queueExpedienteTimedAlert = queueTimedAlert;
+}
+
 if (typeof module !== 'undefined') {
   module.exports = { showAlert };
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  const timedAlert = getTimedAlert();
+  if (timedAlert?.kind && timedAlert?.message) {
+    showAlert(timedAlert.kind, timedAlert.message);
+    const remainingMs = Math.max(0, timedAlert.expiresAt - Date.now());
+    setTimeout(() => {
+      clearTimedAlert();
+      ensureAlertsZone().innerHTML = '';
+    }, remainingMs);
+  }
+
   const editarLegajoMeta = document.querySelector('meta[name="editar-legajo-url-template"]');
   const editarLegajoUrlTemplate = (window.EDITAR_LEGAJO_URL_TEMPLATE ||
     editarLegajoMeta?.getAttribute('content')?.replace('/0/', '/{id}/')) || null;
@@ -253,10 +332,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setTimeout(() => {
           const baseMsg =
+            data.alerta_resumen ||
             data.message ||
             `Se crearon ${data.creados ?? '-'} legajos y el expediente pasó a EN ESPERA.`;
           const errorExtra = data.errores ? ` ${data.errores} errores.` : '';
           const alertType = data.errores > 0 ? 'warning' : 'success';
+          if (alertType === 'success' && Number(data.creados ?? 0) > 0) {
+            queueTimedAlert('success', baseMsg, EXPEDIENTE_SUCCESS_ALERT_DURATION_MS);
+          }
           showAlert(alertType, '¡Listo! ', baseMsg, errorExtra);
 
           setTimeout(() => window.location.reload(), 1000);
@@ -496,6 +579,93 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
+  /* ===== MODAL RECHAZAR (técnico) ===== */
+  const modalRechazar = document.getElementById('modalRechazar');
+  if (modalRechazar) {
+    modalRechazar.addEventListener('show.bs.modal', function (event) {
+      const trigger = event.relatedTarget;
+      const legajoId = trigger?.getAttribute('data-legajo-id') || '';
+      modalRechazar.querySelector('#rechazar-legajo-id').value = legajoId;
+      const ta = modalRechazar.querySelector('#rechazar-motivo');
+      if (ta) ta.value = '';
+    });
+
+    const formRechazar = document.getElementById('form-rechazar');
+    formRechazar.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const legajoId = modalRechazar.querySelector('#rechazar-legajo-id').value;
+      const motivo = (modalRechazar.querySelector('#rechazar-motivo').value || '').trim();
+      const btn = document.getElementById('btn-confirm-rechazar');
+      const original = btn.innerHTML;
+
+      if (!legajoId) {
+        showAlert('danger', 'No se pudo identificar el legajo.');
+        return;
+      }
+      if (!motivo) {
+        showAlert('warning', 'Indicá el motivo del rechazo.');
+        return;
+      }
+
+      if (!window.REVISAR_URL_TEMPLATE) {
+        showAlert('danger', 'No se configuró la URL de revisión de legajos.');
+        return;
+      }
+      const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
+
+      try {
+        const fd = new FormData();
+        fd.append('accion', 'RECHAZAR');
+        fd.append('motivo', motivo);
+
+        const resp = await fetch(url, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const ct = resp.headers.get('Content-Type') || '';
+        let data = {};
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+          data = { success: true, message: text, estado: 'RECHAZADO' };
+        }
+
+        if (!resp.ok || data.success === false) {
+          const msg = data.error || data.message || `HTTP ${resp.status}`;
+          throw new Error(msg);
+        }
+
+        showAlert('success', data.message || `Legajo ${legajoId}: quedó rechazado.`);
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(modalRechazar);
+          modal.hide();
+          window.location.reload();
+        }, 800);
+
+      } catch (err) {
+        console.error('Rechazar legajo:', err);
+        showAlert('danger', 'No se pudo registrar el rechazo. ', err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    });
+  }
+
+
   /* ===== CRUCE CUIT (Nuevo/Reprocesar) ===== */
   const modalCruce = document.getElementById('modalCruceCuit');
   if (modalCruce) {
@@ -649,16 +819,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function toggleActive(btnAprobar, btnRechazar, estado) {
-      [btnAprobar, btnRechazar].forEach(b => {
-        if (!b) return;
-        b.classList.remove('active');
-        b.classList.remove('btn-success', 'btn-danger');
-        b.classList.add('btn-outline-success');
-        if (b && b.dataset.accion === 'RECHAZAR') {
-          b.classList.remove('btn-outline-success');
-          b.classList.add('btn-outline-danger');
-        }
-      });
+      if (btnAprobar) {
+        btnAprobar.classList.remove('active', 'btn-success', 'btn-danger', 'btn-outline-danger');
+        btnAprobar.classList.add('btn-outline-success');
+      }
+      if (btnRechazar) {
+        btnRechazar.classList.remove('active', 'btn-success', 'btn-danger', 'btn-outline-success');
+        btnRechazar.classList.add('btn-outline-danger');
+      }
 
       if (estado === 'APROBADO' && btnAprobar) {
         btnAprobar.classList.add('active');
@@ -689,7 +857,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const container = btn.closest('.legajo-item') || document;
         const btnAprobar = container.querySelector(`.btn-revision[data-legajo-id="${legajoId}"][data-accion="APROBAR"]`);
-        const btnRechazar = container.querySelector(`.btn-revision[data-legajo-id="${legajoId}"][data-accion="RECHAZAR"]`);
+        const btnRechazar = container.querySelector(`.btn-rechazar[data-legajo-id="${legajoId}"]`);
 
         setLoading(btn, true);
 
@@ -1317,7 +1485,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // para evitar conflictos y mantener la consistencia de datos
 
 
-});
 
   /* ===== CONFIRMAR SUBSANACIÓN INDIVIDUAL ===== */
   const botonesConfirmarSubsanacion = document.querySelectorAll('.btn-confirmar-subsanacion-individual');
@@ -1428,54 +1595,75 @@ document.addEventListener('DOMContentLoaded', () => {
   if (modalEditarLegajo) {
     const selectMunicipio = document.getElementById('editar-municipio');
     const selectLocalidad = document.getElementById('editar-localidad');
+    const selectNacionalidad = document.getElementById('editar-nacionalidad');
+    const formEditarLegajo = document.getElementById('form-editar-legajo');
+    const refreshSelect2 = (target) => {
+      if (target && window.refreshSelect2Element) {
+        window.refreshSelect2Element(target);
+      }
+    };
     
-    if (selectMunicipio && selectLocalidad) {
-      const filtrarLocalidadesPorMunicipio = (municipioId) => {
-        const opciones = selectLocalidad.querySelectorAll('option');
-        
-        opciones.forEach(option => {
-          if (option.value === '') {
-            option.style.display = '';
-            return;
-          }
-          
-          const optionMunicipioId = option.getAttribute('data-municipio');
-          if (!municipioId || optionMunicipioId === municipioId) {
-            option.style.display = '';
-          } else {
-            option.style.display = 'none';
-          }
-        });
-        
-        // Si la localidad actual no pertenece al municipio seleccionado, limpiar
-        const localidadActual = selectLocalidad.value;
-        if (localidadActual) {
-          const optionActual = selectLocalidad.querySelector(`option[value="${localidadActual}"]`);
-          if (optionActual && optionActual.style.display === 'none') {
-            selectLocalidad.value = '';
-          }
-        }
-      };
+    // localidadOptions y renderLocalidadesDisponibles se declaran aqui para
+    // que sean accesibles tanto desde el listener show.bs.modal como desde
+    // los event listeners de cambio de municipio/localidad.
+    const localidadOptions = selectLocalidad
+      ? Array.from(selectLocalidad.querySelectorAll('option')).map(option => ({
+          value: option.value,
+          text: option.textContent,
+          municipioId: option.dataset.municipio || ''
+        }))
+      : [];
 
-      const sincronizarMunicipioDesdeLocalidad = () => {
-        const optionSeleccionada = selectLocalidad.selectedOptions[0];
-        const municipioId = optionSeleccionada?.dataset?.municipio || '';
-        if (!municipioId) {
+    const renderLocalidadesDisponibles = (municipioId, localidadSeleccionada = '') => {
+      if (!selectLocalidad) return;
+      const localidadId = localidadSeleccionada ? String(localidadSeleccionada) : '';
+      let localidadVisible = false;
+
+      selectLocalidad.innerHTML = '';
+
+      localidadOptions.forEach(optionData => {
+        if (optionData.value && municipioId && optionData.municipioId !== String(municipioId)) {
           return;
         }
 
-        if (selectMunicipio.value !== municipioId) {
-          selectMunicipio.value = municipioId;
+        const option = document.createElement('option');
+        option.value = optionData.value;
+        option.textContent = optionData.text;
+
+        if (optionData.municipioId) {
+          option.dataset.municipio = optionData.municipioId;
         }
 
-        filtrarLocalidadesPorMunicipio(municipioId);
-      };
+        if (localidadId && String(optionData.value) === localidadId) {
+          option.selected = true;
+          localidadVisible = true;
+        }
 
-      selectMunicipio.addEventListener('change', function() {
-        filtrarLocalidadesPorMunicipio(this.value);
+        selectLocalidad.appendChild(option);
       });
 
-      selectLocalidad.addEventListener('change', sincronizarMunicipioDesdeLocalidad);
+      if (!localidadVisible) {
+        selectLocalidad.value = '';
+      }
+
+      refreshSelect2(selectLocalidad);
+    };
+
+    if (selectMunicipio && selectLocalidad) {
+      selectMunicipio.addEventListener('change', function() {
+        renderLocalidadesDisponibles(this.value, selectLocalidad.value);
+      });
+
+      selectLocalidad.addEventListener('change', function() {
+        const optionSeleccionada = selectLocalidad.selectedOptions[0];
+        const municipioId = optionSeleccionada?.dataset?.municipio || '';
+        if (!municipioId) return;
+        if (selectMunicipio.value !== municipioId) {
+          selectMunicipio.value = municipioId;
+          refreshSelect2(selectMunicipio);
+        }
+        renderLocalidadesDisponibles(municipioId, selectLocalidad.value);
+      });
     }
     
     modalEditarLegajo.addEventListener('show.bs.modal', async function(event) {
@@ -1490,8 +1678,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       try {
         // Cargar datos actuales del legajo
-        const editarLegajoMeta = document.querySelector('meta[name="editar-legajo-url-template"]');
-        const editarLegajoUrlTemplate = editarLegajoMeta?.getAttribute('content')?.replace('/0/', '/{id}/');
+        const editarLegajoUrlTemplate = window.EDITAR_LEGAJO_URL_TEMPLATE;
         if (!editarLegajoUrlTemplate) {
           showAlert('danger', 'URL de edición no configurada.');
           return;
@@ -1508,6 +1695,15 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
         
+        if (!response.ok) {
+          let errMsg = 'Error al cargar los datos del legajo.';
+          try {
+            const errData = await response.json();
+            errMsg = errData.error || errMsg;
+          } catch (_) {}
+          showAlert('danger', errMsg);
+          return;
+        }
         const data = await response.json();
         
         if (data.success) {
@@ -1520,30 +1716,31 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('editar-fecha-nacimiento').value = legajo.fecha_nacimiento;
           document.getElementById('editar-sexo').value = legajo.sexo || '';
           document.getElementById('editar-nacionalidad').value = legajo.nacionalidad || '';
-          document.getElementById('editar-telefono').value = legajo.telefono;
-          document.getElementById('editar-email').value = legajo.email;
-          document.getElementById('editar-calle').value = legajo.calle;
-          document.getElementById('editar-altura').value = legajo.altura;
-          document.getElementById('editar-codigo-postal').value = legajo.codigo_postal;
+          if (selectNacionalidad && window.refreshSelect2Element) {
+            window.refreshSelect2Element(selectNacionalidad);
+          }
+          document.getElementById('editar-telefono').value = legajo.telefono || '';
+          document.getElementById('editar-email').value = legajo.email || '';
+          document.getElementById('editar-calle').value = legajo.calle || '';
+          document.getElementById('editar-altura').value = legajo.altura || '';
+          document.getElementById('editar-codigo-postal').value = legajo.codigo_postal || '';
           
-          // Primero establecer municipio
-          if (legajo.municipio) {
-            document.getElementById('editar-municipio').value = legajo.municipio;
-            // Disparar el evento change para filtrar localidades
-            selectMunicipio.dispatchEvent(new Event('change'));
+          // Establecer municipio y filtrar localidades
+          if (selectMunicipio && selectLocalidad) {
+            const municipioId = String(legajo.municipio || '');
+            selectMunicipio.value = municipioId;
+            refreshSelect2(selectMunicipio);
+            renderLocalidadesDisponibles(municipioId, legajo.localidad || '');
           }
           
-          // Luego establecer localidad (después del filtrado)
-          setTimeout(() => {
-            if (legajo.localidad) {
-              document.getElementById('editar-localidad').value = legajo.localidad;
-              selectLocalidad.dispatchEvent(new Event('change'));
-            }
-          }, 100);
-          
           // Configurar la acción del formulario
-          const form = document.getElementById('form-editar-legajo');
-          form.setAttribute('action', editarUrl);
+          if (formEditarLegajo) {
+            formEditarLegajo.setAttribute('action', editarUrl);
+            formEditarLegajo.dataset.actionUrl = editarUrl;
+            formEditarLegajo.dataset.legajoId = legajoId;
+          }
+          modalEditarLegajo.dataset.actionUrl = editarUrl;
+          modalEditarLegajo.dataset.legajoId = legajoId;
         } else {
           showAlert('danger', 'Error al cargar los datos: ' + data.error);
         }
@@ -1554,7 +1751,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Manejar envío del formulario
-    const formEditarLegajo = document.getElementById('form-editar-legajo');
+    modalEditarLegajo.addEventListener('shown.bs.modal', function() {
+      if (selectMunicipio && selectLocalidad && window.refreshSelect2Element) {
+        window.refreshSelect2Element(selectMunicipio);
+        window.refreshSelect2Element(selectLocalidad);
+      }
+      if (selectNacionalidad && window.refreshSelect2Element) {
+        window.refreshSelect2Element(selectNacionalidad);
+      }
+    });
+
     if (formEditarLegajo) {
       formEditarLegajo.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -1562,14 +1768,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
         const alertasDiv = document.getElementById('modal-alertas-editar');
+        let actionUrl = this.getAttribute('action') || this.dataset.actionUrl || modalEditarLegajo.dataset.actionUrl;
+        const legajoId = this.dataset.legajoId || modalEditarLegajo.dataset.legajoId;
+        if ((!actionUrl || actionUrl === 'null') && window.EDITAR_LEGAJO_URL_TEMPLATE && legajoId) {
+          actionUrl = window.EDITAR_LEGAJO_URL_TEMPLATE.replace('{id}', legajoId);
+          this.setAttribute('action', actionUrl);
+          this.dataset.actionUrl = actionUrl;
+          modalEditarLegajo.dataset.actionUrl = actionUrl;
+        }
         
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando...';
         alertasDiv.innerHTML = '';
         
         try {
+          if (!actionUrl || actionUrl === 'null') {
+            throw new Error('La URL de edición del legajo no está configurada.');
+          }
+
           const formData = new FormData(this);
-          const response = await fetch(this.getAttribute('action'), {
+          const response = await fetch(actionUrl, {
             method: 'POST',
             body: formData,
             credentials: 'same-origin',
@@ -1580,7 +1798,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           });
           
-          const data = await response.json();
+          const ct = response.headers.get('Content-Type') || '';
+          let data = {};
+          if (ct.includes('application/json')) {
+            data = await response.json();
+          } else {
+            const text = await response.text();
+            throw new Error(text || `HTTP ${response.status}`);
+          }
           
           if (data.success) {
             showAlert('success', data.message);
@@ -1590,7 +1815,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } else {
             alertasDiv.innerHTML = `
               <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                ${data.error}
+                ${escapeHtml(data.error || 'Error al guardar los cambios.')}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
               </div>
             `;
@@ -1599,7 +1824,7 @@ document.addEventListener('DOMContentLoaded', () => {
           console.error('Error guardando cambios:', error);
           alertasDiv.innerHTML = `
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-              Error al guardar los cambios.
+              ${escapeHtml(error.message || 'Error al guardar los cambios.')}
               <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
           `;
@@ -1704,6 +1929,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+
+});
 
 // Buscador de legajos
 document.addEventListener('DOMContentLoaded', function() {

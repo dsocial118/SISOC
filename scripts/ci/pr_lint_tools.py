@@ -6,6 +6,9 @@ import argparse
 import json
 import os
 import subprocess
+import sys
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 
@@ -92,16 +95,139 @@ def get_diff_range() -> tuple[str, str]:
     raise RuntimeError(f"Evento no soportado: {event_name}")
 
 
+def run_git_command(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
+    """Ejecuta un comando git dentro del repo compartiendo defaults de texto."""
+
+    return subprocess.run(
+        ["git", *args],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        check=check,
+    )
+
+
+def parse_git_paths(output: str) -> list[Path]:
+    """Normaliza una salida de git con rutas separadas por linea."""
+
+    return [Path(item.strip()) for item in output.splitlines() if item.strip()]
+
+
+def git_revision_exists(revision: str) -> bool:
+    """Indica si una revision esta disponible en el checkout actual."""
+
+    return (
+        run_git_command(
+            "rev-parse",
+            "--verify",
+            f"{revision}^{{commit}}",
+            check=False,
+        ).returncode
+        == 0
+    )
+
+
+def get_fallback_changed_files() -> list[Path]:
+    """Obtiene archivos relevantes aun cuando el rango base/head no esta disponible."""
+
+    fallback_commands = (
+        ("show", "--pretty=", "--name-only", "HEAD"),
+        ("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD"),
+        ("ls-files",),
+    )
+    for command in fallback_commands:
+        result = run_git_command(*command, check=False)
+        files = parse_git_paths(result.stdout)
+        if result.returncode == 0 and files:
+            print(
+                (
+                    "Usando fallback para detectar archivos del PR "
+                    f"con `git {' '.join(command)}`."
+                ),
+                file=sys.stderr,
+            )
+            return files
+    return []
+
+
+def _fetch_github_json(url: str) -> list[dict]:
+    """Consulta la API de GitHub usando el token del workflow cuando esta disponible."""
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+    }
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    request = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def get_pull_request_changed_files_from_api() -> list[Path]:
+    """Obtiene archivos del PR via API para checkouts shallow del merge commit."""
+
+    if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
+        return []
+
+    payload = read_event_payload()
+    pull_request = payload.get("pull_request") or {}
+    files_url = pull_request.get("url")
+    if not files_url:
+        return []
+
+    changed_files: list[Path] = []
+    page = 1
+    while True:
+        try:
+            items = _fetch_github_json(f"{files_url}/files?per_page=100&page={page}")
+        except (OSError, urllib.error.URLError, urllib.error.HTTPError):
+            return []
+
+        if not items:
+            break
+
+        changed_files.extend(
+            Path(item["filename"]) for item in items if item.get("filename")
+        )
+        if len(items) < 100:
+            break
+        page += 1
+
+    if changed_files:
+        print(
+            "Usando la API de GitHub para detectar archivos del PR.",
+            file=sys.stderr,
+        )
+    return changed_files
+
+
 def get_changed_files() -> list[Path]:
     """Lista archivos cambiados dentro del rango del evento."""
 
     base_sha, head_sha = get_diff_range()
-    output = subprocess.check_output(
-        ["git", "diff", "--name-only", base_sha, head_sha],
-        cwd=REPO_ROOT,
-        text=True,
+    if git_revision_exists(base_sha) and git_revision_exists(head_sha):
+        result = run_git_command("diff", "--name-only", base_sha, head_sha)
+        return parse_git_paths(result.stdout)
+
+    print(
+        (
+            "No se encontro el rango git completo del evento "
+            f"({base_sha}..{head_sha}); se usa una estrategia fallback."
+        ),
+        file=sys.stderr,
     )
-    return [Path(item.strip()) for item in output.splitlines() if item.strip()]
+    api_files = get_pull_request_changed_files_from_api()
+    if api_files:
+        return api_files
+    fallback_files = get_fallback_changed_files()
+    if fallback_files:
+        return fallback_files
+
+    raise RuntimeError(
+        "No fue posible detectar archivos modificados para el evento actual."
+    )
 
 
 def is_excluded(path: Path) -> bool:
@@ -207,7 +333,9 @@ def check_encoding() -> int:
             print(finding)
         return 1
 
-    print("No se detectaron problemas de encoding corregibles en los archivos cambiados.")
+    print(
+        "No se detectaron problemas de encoding corregibles en los archivos cambiados."
+    )
     return 0
 
 

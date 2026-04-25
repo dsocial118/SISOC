@@ -269,8 +269,6 @@ class VoucherSerializer(serializers.ModelSerializer):
     dias_para_vencimiento = serializers.SerializerMethodField()
 
     def get_dias_para_vencimiento(self, obj):
-        from datetime import date
-
         delta = obj.fecha_vencimiento - date.today()
         return delta.days
 
@@ -1188,23 +1186,64 @@ def _completar_documento_postulante(datos_postulante, documento_principal):
     return datos_postulante_normalizado
 
 
-def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario=None):
+def _raise_datos_postulante_error(detail):
+    raise serializers.ValidationError({"datos_postulante": detail})
+
+
+def _completar_documento_postulante(datos_postulante, documento_principal):
     if not isinstance(datos_postulante, dict):
-        raise serializers.ValidationError(
-            {"datos_postulante": "Debe enviar un objeto con los datos del postulante."}
-        )
-    nombre = (datos_postulante.get("nombre") or "").strip()
-    apellido = (datos_postulante.get("apellido") or "").strip()
+        return datos_postulante
+
+    documento_principal = str(documento_principal or "").strip()
+    if not documento_principal:
+        return datos_postulante
+
+    if str(datos_postulante.get("documento") or "").strip():
+        return datos_postulante
+
+    datos_postulante_normalizado = dict(datos_postulante)
+    datos_postulante_normalizado["documento"] = documento_principal
+    return datos_postulante_normalizado
+
+
+def _normalizar_documento_postulante(datos_postulante):
     documento_explicitado = str(datos_postulante.get("documento") or "").strip()
     cuil = str(datos_postulante.get("cuil") or "").strip()
     usa_cuil_como_documento = not documento_explicitado and bool(cuil)
     documento = documento_explicitado or cuil
     if usa_cuil_como_documento:
         documento = "".join(caracter for caracter in documento if caracter.isdigit())
+    return documento, usa_cuil_como_documento
+
+
+def _resolver_tipo_documento_postulante(datos_postulante):
     tipo_documento = (
         datos_postulante.get("tipo_documento") or Ciudadano.DOCUMENTO_DNI
     ).strip()
+    tipos_validos = {valor for valor, _ in Ciudadano.DOCUMENTO_CHOICES}
+    if tipo_documento in tipos_validos:
+        return tipo_documento
+    return Ciudadano.DOCUMENTO_DNI
 
+
+def _resolver_identidad_postulante(datos_postulante):
+    nombre = (datos_postulante.get("nombre") or "").strip()
+    apellido = (datos_postulante.get("apellido") or "").strip()
+    documento, usa_cuil_como_documento = _normalizar_documento_postulante(
+        datos_postulante
+    )
+    _validar_datos_postulante(nombre, apellido, documento)
+
+    return {
+        "nombre": nombre,
+        "apellido": apellido,
+        "documento": documento,
+        "tipo_documento": _resolver_tipo_documento_postulante(datos_postulante),
+        "usa_cuil_como_documento": usa_cuil_como_documento,
+    }
+
+
+def _validar_datos_postulante(nombre, apellido, documento):
     errores = {}
     if not nombre:
         errores["nombre"] = "Debe informar el nombre del postulante."
@@ -1215,38 +1254,50 @@ def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario
     elif not documento.isdigit():
         errores["documento"] = "El documento del postulante debe ser numérico."
 
-    tipos_validos = {valor for valor, _ in Ciudadano.DOCUMENTO_CHOICES}
-    if tipo_documento not in tipos_validos:
-        tipo_documento = Ciudadano.DOCUMENTO_DNI
-
     if errores:
-        raise serializers.ValidationError({"datos_postulante": errores})
+        _raise_datos_postulante_error(errores)
 
-    documento_int = int(documento)
+
+def _resolver_fecha_nacimiento_postulante(datos_postulante):
+    fecha_nacimiento_raw = datos_postulante.get("fecha_nacimiento")
+    if not fecha_nacimiento_raw:
+        return (
+            date(1900, 1, 1),
+            [
+                "Fecha de nacimiento no informada; se asignó 1900-01-01 para "
+                "habilitar la inscripción operativa."
+            ],
+        )
+
+    try:
+        fecha_nacimiento = serializers.DateField().run_validation(fecha_nacimiento_raw)
+    except serializers.ValidationError as exc:
+        _raise_datos_postulante_error({"fecha_nacimiento": exc.detail})
+
+    return fecha_nacimiento, []
+
+
+def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario=None):
+    if not isinstance(datos_postulante, dict):
+        _raise_datos_postulante_error(
+            "Debe enviar un objeto con los datos del postulante."
+        )
+
+    identidad = _resolver_identidad_postulante(datos_postulante)
+    documento_int = int(identidad["documento"])
     ciudadano_existente = Ciudadano.objects.filter(
-        tipo_documento=tipo_documento,
+        tipo_documento=identidad["tipo_documento"],
         documento=documento_int,
     ).first()
     if ciudadano_existente:
         return ciudadano_existente
 
-    fecha_nacimiento_raw = datos_postulante.get("fecha_nacimiento")
-    fecha_nacimiento = date(1900, 1, 1)
+    fecha_nacimiento, observaciones_adicionales = _resolver_fecha_nacimiento_postulante(
+        datos_postulante
+    )
     observaciones = ["Ciudadano creado automáticamente desde inscripción libre web."]
-    if fecha_nacimiento_raw:
-        try:
-            fecha_nacimiento = serializers.DateField().run_validation(
-                fecha_nacimiento_raw
-            )
-        except serializers.ValidationError as exc:
-            raise serializers.ValidationError(
-                {"datos_postulante": {"fecha_nacimiento": exc.detail}}
-            ) from exc
-    else:
-        observaciones.append(
-            "Fecha de nacimiento no informada; se asignó 1900-01-01 para habilitar la inscripción operativa."
-        )
-    if usa_cuil_como_documento:
+    observaciones.extend(observaciones_adicionales)
+    if identidad["usa_cuil_como_documento"]:
         observaciones.append(
             "Se tomó el CUIL informado como documento para el alta automática."
         )
@@ -1254,10 +1305,10 @@ def _resolver_o_crear_ciudadano_desde_datos_postulante(datos_postulante, usuario
     usuario_auditoria = usuario if getattr(usuario, "is_authenticated", False) else None
 
     return Ciudadano.objects.create(
-        apellido=apellido,
-        nombre=nombre,
+        apellido=identidad["apellido"],
+        nombre=identidad["nombre"],
         fecha_nacimiento=fecha_nacimiento,
-        tipo_documento=tipo_documento,
+        tipo_documento=identidad["tipo_documento"],
         documento=documento_int,
         telefono=(datos_postulante.get("telefono") or "").strip() or None,
         email=(datos_postulante.get("email") or "").strip() or None,

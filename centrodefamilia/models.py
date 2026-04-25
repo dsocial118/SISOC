@@ -9,6 +9,9 @@ from organizaciones.models import Organizacion
 
 
 class Centro(SoftDeleteModelMixin, models.Model):
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"activo": False}
+    SOFT_RESTORE_OPERATIONAL_UPDATES = {"activo": True}
+
     TIPO_CHOICES = [
         ("faro", "faro"),
         ("adherido", "Adherido"),
@@ -80,6 +83,10 @@ class Centro(SoftDeleteModelMixin, models.Model):
         indexes = [
             GinIndex(
                 fields=["nombre"], name="centro_nombre_trgm", opclasses=["gin_trgm_ops"]
+            ),
+            models.Index(
+                fields=["referente", "id"],
+                name="cdf_centro_ref_id_idx",
             ),
         ]
 

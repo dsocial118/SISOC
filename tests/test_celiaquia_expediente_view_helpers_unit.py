@@ -1,6 +1,9 @@
 """Tests for test celiaquia expediente view helpers unit."""
 
+import json
+from contextlib import nullcontext
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 from django.http import JsonResponse
 
@@ -72,6 +75,81 @@ def test_resolver_provincia_registro_erroneo_fallback_a_usuario_expediente():
     assert provincia_id == 33
 
 
+def test_actualizar_alerta_importacion_persistente_recalcula_resumen():
+    payload = {
+        "resumen": "Importacion procesada. Se crearon 0 legajos y el expediente paso a EN ESPERA.\nErrores detectados: 1.",
+        "excluidos": "No se crearon 3 legajos porque ya existen en otro expediente activo.",
+        "excluidos_detalle": [
+            {
+                "documento": "111",
+                "apellido": "Perez",
+                "nombre": "Ana",
+                "estado_expediente_origen": "EN_ESPERA",
+                "expediente_origen_id": 22,
+            }
+        ],
+        "tiene_errores": True,
+        "creados_total": 0,
+        "errores_actuales": 1,
+    }
+    historial_actual = SimpleNamespace(
+        observaciones=json.dumps(payload),
+        save=Mock(),
+    )
+
+    historial_qs = SimpleNamespace(
+        exclude=lambda **kwargs: historial_qs,
+        order_by=lambda *args, **kwargs: historial_qs,
+        first=lambda: historial_actual,
+    )
+    expediente = SimpleNamespace(
+        estado="EN_ESPERA",
+        historial=SimpleNamespace(filter=lambda **kwargs: historial_qs),
+    )
+
+    module._actualizar_alerta_importacion_persistente(
+        expediente,
+        creados_incremento=1,
+        errores_actuales=0,
+        excluidos_nuevos=[
+            {
+                "documento": "222",
+                "apellido": "Gomez",
+                "nombre": "Luis",
+                "estado_expediente_origen": "EN_ESPERA",
+                "expediente_origen_id": 44,
+            }
+        ],
+    )
+
+    actualizado = json.loads(historial_actual.observaciones)
+    assert "Se crearon 1 legajos" in actualizado["resumen"]
+    assert "Errores detectados" not in actualizado["resumen"]
+    assert "No se crearon 2 legajos" in actualizado["excluidos"]
+    assert len(actualizado["excluidos_detalle"]) == 2
+    assert actualizado["tiene_errores"] is False
+    assert actualizado["creados_total"] == 1
+    assert actualizado["errores_actuales"] == 0
+    historial_actual.save.assert_called_once_with(update_fields=["observaciones"])
+
+
+def test_formatear_observaciones_historial_muestra_texto_visible_de_payload():
+    payload = {
+        "resumen": "Importacion procesada. Se crearon 0 legajos.",
+        "excluidos": "No se crearon 2 legajos porque ya existen.",
+        "excluidos_detalle": [{"documento": "123"}],
+    }
+
+    assert module._formatear_observaciones_historial(json.dumps(payload)) == (
+        "Importacion procesada. Se crearon 0 legajos.\n"
+        "No se crearon 2 legajos porque ya existen."
+    )
+    assert module._formatear_observaciones_historial("Observacion manual") == (
+        "Observacion manual"
+    )
+    assert module._formatear_observaciones_historial("") == ""
+
+
 def test_registro_erroneo_responsable_requerido_depende_de_edad():
     assert (
         module._registro_erroneo_responsable_requerido(
@@ -93,10 +171,9 @@ def test_registro_erroneo_responsable_requerido_depende_de_edad():
     )
 
 
-def test_aplicar_defaults_registro_erroneo_fuerza_argentina_y_municipio_por_localidad(
+def test_aplicar_defaults_registro_erroneo_solo_autocompleta_municipio_por_localidad(
     mocker,
 ):
-    mocker.patch.object(module, "_get_nacionalidad_argentina_id", return_value=1)
     mocker.patch.object(
         module,
         "_resolver_municipio_id_desde_localidad",
@@ -107,7 +184,7 @@ def test_aplicar_defaults_registro_erroneo_fuerza_argentina_y_municipio_por_loca
         {"nacionalidad": "9", "municipio": "", "localidad": "55"}
     )
 
-    assert datos["nacionalidad"] == "1"
+    assert datos["nacionalidad"] == "9"
     assert datos["municipio"] == "77"
     assert datos["localidad"] == "55"
 
@@ -407,7 +484,15 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
         POST={"accion": "SUBSANAR", "motivo": "faltan docs"},
     )
     resp_sub = revisar.post(req_subs, pk=1, legajo_id=3)
-    assert resp_sub.status_code == 200
+    assert resp_sub.status_code == 400
+
+    leg.revision_tecnico = "APROBADO"
+    resp_ap_bloqueado = revisar.post(req_aprobar, pk=1, legajo_id=3)
+    assert resp_ap_bloqueado.status_code == 400
+
+    leg.revision_tecnico = "SUBSANADO"
+    resp_subsanado = revisar.post(req_subs, pk=1, legajo_id=3)
+    assert resp_subsanado.status_code == 200
 
 
 def test_expediente_import_view_success_and_errors(mocker):
@@ -599,14 +684,24 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
     no_motivo = view.post(no_motivo_req, pk=1, legajo_id=3)
     assert no_motivo.status_code == 400
 
+    no_motivo_rechazo_req = SimpleNamespace(
+        user=_user_stub(user_id=1, tec=True), POST={"accion": "RECHAZAR", "motivo": ""}
+    )
+    no_motivo_rechazo = view.post(no_motivo_rechazo_req, pk=1, legajo_id=3)
+    assert no_motivo_rechazo.status_code == 400
+
     liberar = mocker.patch("celiaquia.views.expediente.CupoService.liberar_slot")
-    mocker.patch("celiaquia.views.expediente.HistorialValidacionTecnica.objects.create")
+    historial_create = mocker.patch(
+        "celiaquia.views.expediente.HistorialValidacionTecnica.objects.create"
+    )
     rechazar_req = SimpleNamespace(
-        user=_user_stub(user_id=1, tec=True), POST={"accion": "RECHAZAR"}
+        user=_user_stub(user_id=1, tec=True),
+        POST={"accion": "RECHAZAR", "motivo": "Documento ilegible"},
     )
     rechazar = view.post(rechazar_req, pk=1, legajo_id=3)
     assert rechazar.status_code == 200
     assert liberar.called
+    assert historial_create.call_args.kwargs["motivo"] == "Documento ilegible"
 
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
     eliminar_req = SimpleNamespace(
@@ -866,6 +961,17 @@ def test_actualizar_registro_erroneo_view_paths(mocker):
 
 def test_reprocesar_registros_erroneos_early_branches(mocker):
     view = module.ReprocesarRegistrosErroneosView()
+
+    class _RegistrosQS:
+        def __init__(self, exists_result):
+            self._exists_result = exists_result
+
+        def exists(self):
+            return self._exists_result
+
+        def __iter__(self):
+            return iter([])
+
     expediente = SimpleNamespace(
         registros_erroneos=SimpleNamespace(filter=mocker.Mock())
     )
@@ -888,9 +994,7 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
     )
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
     mocker.patch("celiaquia.views.expediente._is_provincial", return_value=True)
-    expediente.registros_erroneos.filter.return_value = SimpleNamespace(
-        exists=lambda: False
-    )
+    expediente.registros_erroneos.filter.return_value = _RegistrosQS(False)
     no_records = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
         view, req_ok, pk=1
     )
@@ -900,12 +1004,14 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
     req_no_prov = SimpleNamespace(
         user=SimpleNamespace(profile=SimpleNamespace(provincia_id=None))
     )
-    expediente.registros_erroneos.filter.return_value = SimpleNamespace(
-        exists=lambda: True
-    )
+    expediente.registros_erroneos.filter.return_value = _RegistrosQS(True)
     mocker.patch(
         "celiaquia.views.expediente.EstadoLegajo.objects.get",
         return_value=SimpleNamespace(),
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._precargar_conflictos_y_existentes_importacion",
+        return_value=(set(), {}, {}),
     )
     mocker.patch(
         "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
@@ -915,6 +1021,105 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
         view, req_no_prov, pk=1
     )
     assert no_prov.status_code == 400
+
+
+def test_reprocesar_registros_erroneos_convierte_conflicto_en_excluido(mocker):
+    view = module.ReprocesarRegistrosErroneosView()
+
+    class _RegistrosQS:
+        def __init__(self, registros):
+            self._registros = registros
+
+        def exists(self):
+            return True
+
+        def __iter__(self):
+            return iter(self._registros)
+
+    registro = SimpleNamespace(
+        pk=5,
+        fila_excel=7,
+        datos_raw={"documento": "123"},
+        mensaje_error="error previo",
+        save=mocker.Mock(),
+    )
+    registros_manager = SimpleNamespace(
+        filter=mocker.Mock(
+            side_effect=[
+                _RegistrosQS([registro]),
+                SimpleNamespace(count=lambda: 0),
+            ]
+        )
+    )
+    expediente = SimpleNamespace(registros_erroneos=registros_manager)
+
+    mocker.patch(
+        "celiaquia.views.expediente.get_object_or_404", return_value=expediente
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._can_manage_registros_erroneos", return_value=True
+    )
+    mocker.patch(
+        "celiaquia.views.expediente.EstadoLegajo.objects.get",
+        return_value=SimpleNamespace(),
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        return_value=1,
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._precargar_conflictos_y_existentes_importacion",
+        return_value=(set(), {}, {99: {"expediente_id": 221}}),
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._validar_datos_registro_erroneo",
+        return_value=({"documento": "123"}, None, False),
+    )
+    ciudadano = SimpleNamespace(pk=99, documento="123", apellido="Perez", nombre="Ana")
+    mocker.patch.object(
+        module.CiudadanoService,
+        "get_or_create_ciudadano",
+        return_value=ciudadano,
+    )
+    excluido_mock = mocker.patch(
+        "celiaquia.views.expediente._beneficiario_tiene_conflicto_importacion",
+        side_effect=lambda **kwargs: kwargs["excluidos"].append(
+            {
+                "documento": "123",
+                "apellido": "Perez",
+                "nombre": "Ana",
+                "estado_expediente_origen": "EN_ESPERA",
+                "expediente_origen_id": 221,
+            }
+        )
+        or True,
+    )
+    actualizar_mock = mocker.patch(
+        "celiaquia.views.expediente._actualizar_alerta_importacion_persistente",
+        return_value={
+            "resumen": "Importacion procesada. Se crearon 0 legajos y el expediente paso a EN ESPERA."
+        },
+    )
+    mocker.patch(
+        "celiaquia.views.expediente.transaction.atomic",
+        side_effect=lambda: nullcontext(),
+    )
+    mocker.patch("celiaquia.views.expediente.timezone.now", return_value="ahora")
+
+    request = SimpleNamespace(user=SimpleNamespace())
+    response = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
+        view, request, pk=1
+    )
+
+    payload = json.loads(response.content)
+    assert response.status_code == 200
+    assert payload["creados"] == 0
+    assert payload["errores"] == 0
+    assert payload["excluidos"] == 1
+    assert payload["registros_restantes"] == 0
+    assert excluido_mock.called
+    assert actualizar_mock.call_args.kwargs["excluidos_nuevos"][0]["documento"] == "123"
+    registro.save.assert_called_once()
 
 
 def test_eliminar_registro_erroneo_view_paths(mocker):

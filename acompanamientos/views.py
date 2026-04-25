@@ -1,3 +1,5 @@
+from urllib.parse import parse_qs, urlparse
+
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -12,21 +14,56 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 
 from acompanamientos.acompanamiento_service import AcompanamientoService
-from acompanamientos.models.hitos import Hitos
 from comedores.models import Comedor
 from core.services.column_preferences import build_columns_context_for_custom_cells
 from core.security import safe_redirect
 from iam.services import user_has_permission_code
 
 
+def _parse_admision_id(raw_admision_id):
+    if raw_admision_id and raw_admision_id.isdigit():
+        return int(raw_admision_id)
+    return None
+
+
+def _extract_admision_id_from_referer(request):
+    referer = request.META.get("HTTP_REFERER")
+    if not referer:
+        return None
+    admision_ids = parse_qs(urlparse(referer).query).get("admision_id", [None])
+    return _parse_admision_id(admision_ids[0])
+
+
+def _build_detalle_acompanamiento_url(comedor_id, admision_id=None):
+    url = reverse("detalle_acompanamiento", kwargs={"comedor_id": comedor_id})
+    if admision_id:
+        return f"{url}?admision_id={admision_id}"
+    return url
+
+
 @login_required
 @require_POST
 def restaurar_hito(request, comedor_id):
     campo = request.POST.get("campo")
-    hito = get_object_or_404(Hitos, comedor_id=comedor_id)
+    admision_id = _parse_admision_id(
+        request.POST.get("admision_id") or request.GET.get("admision_id")
+    ) or _extract_admision_id_from_referer(request)
+    comedor = get_object_or_404(Comedor, pk=comedor_id)
+    hito = AcompanamientoService.obtener_hitos(comedor, admision_id=admision_id)
+
+    if not hito:
+        messages.error(
+            request,
+            "No se encontraron hitos para el convenio seleccionado.",
+        )
+        return safe_redirect(
+            request,
+            default=_build_detalle_acompanamiento_url(comedor_id, admision_id),
+            target=request.META.get("HTTP_REFERER"),
+        )
 
     # Verifica si el campo existe en el modelo
-    if hasattr(hito, campo) and campo not in ["id", "comedor", "fecha"]:
+    if hasattr(hito, campo) and campo not in ["id", "acompanamiento", "fecha"]:
         setattr(hito, campo, False)  # Cambia el valor del campo a False (0)
         hito.save()
         messages.success(
@@ -38,7 +75,7 @@ def restaurar_hito(request, comedor_id):
     # Redirige a la página anterior
     return safe_redirect(
         request,
-        default=reverse("detalle_acompanamiento", kwargs={"comedor_id": comedor_id}),
+        default=_build_detalle_acompanamiento_url(comedor_id, admision_id),
         target=request.META.get("HTTP_REFERER"),
     )
 
@@ -52,15 +89,20 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = self.object
-        admision_id = self.request.GET.get("admision_id")
+        admision_id = _parse_admision_id(self.request.GET.get("admision_id"))
 
         context["es_tecnico_comedor"] = (
             self.request.user.is_superuser
             or user_has_permission_code(self.request.user, "auth.role_tecnico_comedor")
         )
 
-        context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
-        context["fechas_hitos"] = AcompanamientoService.obtener_fechas_hitos(comedor)
+        admisiones_disponibles = list(
+            AcompanamientoService.obtener_admisiones_para_selector(comedor)
+        )
+        context["admisiones_disponibles"] = admisiones_disponibles
+
+        activas = [a for a in admisiones_disponibles if a.activa]
+        context["tiene_multiples_activos"] = len(activas) > 1
 
         # Configuración de todos los hitos para evitar repetición en el template
         context["hitos_config"] = [
@@ -140,14 +182,40 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
         datos_admision = AcompanamientoService.obtener_datos_admision(
             comedor, admision_id=admision_id
         )
+        if (
+            not datos_admision.get("admision")
+            and not admision_id
+            and admisiones_disponibles
+        ):
+            admision_id = admisiones_disponibles[0].id
+            datos_admision = AcompanamientoService.obtener_datos_admision(
+                comedor, admision_id=admision_id
+            )
 
         admision = datos_admision.get("admision")
         info_relevante = datos_admision.get("info_relevante")
+        hitos_admision_id = admision.id if admision else admision_id
+        admision_id_activa = admision.id if admision else None
+
+        context["admision_id_activa"] = admision_id_activa
+        context["hitos"] = AcompanamientoService.obtener_hitos(
+            comedor, admision_id=hitos_admision_id
+        )
+        context["fechas_hitos"] = AcompanamientoService.obtener_fechas_hitos(
+            comedor, admision_id=admision_id_activa
+        )
 
         context["admision"] = admision
         context["info_relevante"] = info_relevante
         context["numero_if"] = datos_admision.get("numero_if")
         context["numero_disposicion"] = datos_admision.get("numero_disposicion")
+
+        acompanamiento_obj = (
+            getattr(admision, "acompanamiento", None) if admision else None
+        )
+        context["nro_convenio"] = (
+            acompanamiento_obj.nro_convenio if acompanamiento_obj else ""
+        )
 
         prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(
             info_relevante

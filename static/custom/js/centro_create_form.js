@@ -145,12 +145,21 @@ document.addEventListener("DOMContentLoaded", function () {
         return option;
     }
 
+    function refreshSelect2(targetSelect) {
+        if (!targetSelect || !window.refreshSelect2Element) {
+            return;
+        }
+
+        window.refreshSelect2Element(targetSelect);
+    }
+
     function loadOptions(url, targetSelect, emptyLabel, mapValue) {
         if (!targetSelect) {
             return;
         }
         targetSelect.innerHTML = "";
         targetSelect.appendChild(buildEmptyOption(emptyLabel));
+        refreshSelect2(targetSelect);
 
         fetch(url)
             .then(function (response) {
@@ -166,6 +175,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                     targetSelect.appendChild(option);
                 });
+                refreshSelect2(targetSelect);
             });
     }
 
@@ -176,6 +186,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 municipioSelect.appendChild(buildEmptyOption("Seleccionar municipio..."));
                 localidadSelect.innerHTML = "";
                 localidadSelect.appendChild(buildEmptyOption("Seleccionar localidad..."));
+                refreshSelect2(municipioSelect);
+                refreshSelect2(localidadSelect);
                 return;
             }
             loadOptions(
@@ -192,6 +204,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!this.value) {
                 localidadSelect.innerHTML = "";
                 localidadSelect.appendChild(buildEmptyOption("Seleccionar localidad..."));
+                refreshSelect2(localidadSelect);
                 return;
             }
             loadOptions(

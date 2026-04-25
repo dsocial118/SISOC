@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import traceback
 
 from django.views import View
@@ -19,7 +20,7 @@ from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoes
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
-from django.db.models import Q, Count
+from django.db.models import Q, Count, OuterRef, Subquery
 from django.core.paginator import Paginator
 from iam.services import user_has_permission_code
 
@@ -42,7 +43,12 @@ from celiaquia.services.importacion_service import (
     ImportacionService,
     IMPORTACION_EDITABLE_FIELDS,
     IMPORTACION_RESPONSABLE_FIELDS,
+    _beneficiario_tiene_conflicto_importacion,
     _beneficiario_requiere_responsable_importacion,
+    _cargar_nacionalidades_cache,
+    _cargar_paises_a_nacionalidad_importacion,
+    _precargar_conflictos_y_existentes_importacion,
+    _resolver_nacionalidad_payload_importacion,
     validar_y_normalizar_payloads_importacion,
 )
 from celiaquia.services.cruce_service import CruceService
@@ -132,6 +138,33 @@ def _resolver_localidad_registro_erroneo(localidad_value):
     return localidades.filter(nombre__iexact=localidad_str).first()
 
 
+def _resolver_nacionalidad_registro_erroneo(nacionalidad_value):
+    if nacionalidad_value in (None, ""):
+        return None
+
+    payload = {"nacionalidad": nacionalidad_value}
+    try:
+        _resolver_nacionalidad_payload_importacion(
+            payload,
+            nacionalidades_cache=_cargar_nacionalidades_cache(),
+            paises_a_nacionalidad=_cargar_paises_a_nacionalidad_importacion(),
+        )
+    except ValidationError:
+        return None
+
+    nacionalidad_id = payload.get("nacionalidad")
+    if not nacionalidad_id:
+        return None
+    return Nacionalidad.objects.filter(pk=nacionalidad_id).first()
+
+
+def _resolver_nacionalidad_id_registro_erroneo(nacionalidad_value):
+    nacionalidad = _resolver_nacionalidad_registro_erroneo(nacionalidad_value)
+    if not nacionalidad:
+        return ""
+    return str(nacionalidad.pk)
+
+
 def _resolver_municipio_id_desde_localidad(localidad_value):
     localidad = _resolver_localidad_registro_erroneo(localidad_value)
     if not localidad or not localidad.municipio_id:
@@ -139,12 +172,97 @@ def _resolver_municipio_id_desde_localidad(localidad_value):
     return str(localidad.municipio_id)
 
 
+def _normalizar_mensaje_error_invalid_fields(message):
+    if isinstance(message, ValidationError):
+        mensajes = getattr(message, "messages", None) or [str(message)]
+        msg = " ".join(str(item) for item in mensajes if item)
+    else:
+        msg = str(message or "")
+
+    msg = msg.strip()
+    if msg.startswith("[") and msg.endswith("]"):
+        msg = msg[1:-1].strip()
+    msg = msg.strip("'\" ")
+
+    prefijo_reproceso = "error al reprocesar:"
+    if msg.lower().startswith(prefijo_reproceso):
+        msg = msg[len(prefijo_reproceso) :].strip()
+
+    return msg
+
+
+def _campos_invalidos_desde_mensaje_error(message):
+    if not message:
+        return []
+
+    msg = _normalizar_mensaje_error_invalid_fields(message)
+    msg_lower = msg.lower()
+    campos = []
+
+    faltantes_match = re.search(
+        r"faltan campos obligatorios:\s*(?P<faltantes>.+)$",
+        msg,
+        flags=re.IGNORECASE,
+    )
+    if faltantes_match:
+        faltantes = faltantes_match.group("faltantes")
+        return [
+            campo.strip()
+            for campo in faltantes.split(",")
+            if campo and campo.strip() in IMPORTACION_EDITABLE_FIELDS
+        ]
+
+    patrones = [
+        (
+            r"\bfecha_nacimiento_responsable\b|fecha de nacimiento responsable",
+            "fecha_nacimiento_responsable",
+        ),
+        (r"\bdocumento_responsable\b|documento responsable", "documento_responsable"),
+        (r"\bapellido_responsable\b|apellido responsable", "apellido_responsable"),
+        (r"\bnombre_responsable\b|nombre responsable", "nombre_responsable"),
+        (r"\bsexo_responsable\b|sexo responsable", "sexo_responsable"),
+        (r"\bdomicilio_responsable\b|domicilio responsable", "domicilio_responsable"),
+        (r"\blocalidad_responsable\b|localidad responsable", "localidad_responsable"),
+        (
+            r"\btelefono_responsable\b|telefono responsable",
+            "telefono_responsable",
+        ),
+        (r"\bemail_responsable\b|email responsable", "email_responsable"),
+        (r"\bcontacto_responsable\b|contacto responsable", "contacto_responsable"),
+        (r"\bfecha_nacimiento\b|fecha de nacimiento", "fecha_nacimiento"),
+        (r"\bdocumento\b", "documento"),
+        (r"\bsexo\b", "sexo"),
+        (r"\bnacionalidad\b", "nacionalidad"),
+        (r"\bmunicipio\b", "municipio"),
+        (r"\blocalidad\b", "localidad"),
+        (r"\bcodigo_postal\b|codigo postal", "codigo_postal"),
+        (r"\bcalle\b", "calle"),
+        (r"\baltura\b", "altura"),
+        (r"\btelefono\b", "telefono"),
+        (r"\bemail\b", "email"),
+    ]
+    for patron, campo in patrones:
+        if re.search(patron, msg_lower) and campo in IMPORTACION_EDITABLE_FIELDS:
+            campos.append(campo)
+
+    if "debe tener un responsable" in msg_lower:
+        campos.extend(
+            [
+                "apellido_responsable",
+                "nombre_responsable",
+                "documento_responsable",
+                "fecha_nacimiento_responsable",
+                "sexo_responsable",
+                "domicilio_responsable",
+                "localidad_responsable",
+            ]
+        )
+
+    return list(dict.fromkeys(campos))
+
+
 def _aplicar_defaults_registro_erroneo(datos):
     datos_con_defaults = dict(datos)
-
-    nacionalidad_argentina_id = _get_nacionalidad_argentina_id()
-    if nacionalidad_argentina_id:
-        datos_con_defaults["nacionalidad"] = str(nacionalidad_argentina_id)
 
     municipio_id = _resolver_municipio_id_desde_localidad(
         datos_con_defaults.get("localidad")
@@ -208,6 +326,143 @@ def _resolver_provincia_id_registro_erroneo(user, expediente):
         if provincia_id is not None:
             return provincia_id
     return provincia
+
+
+def _deduplicar_excluidos_alerta(excluidos):
+    vistos = set()
+    resultado = []
+    for item in excluidos or []:
+        if isinstance(item, dict):
+            key = (
+                item.get("ciudadano_id"),
+                item.get("documento"),
+                item.get("expediente_origen_id"),
+                item.get("estado_programa"),
+                item.get("estado_legajo_origen"),
+                item.get("motivo"),
+            )
+        else:
+            key = ("raw", str(item))
+        if key in vistos:
+            continue
+        vistos.add(key)
+        resultado.append(item)
+    return resultado
+
+
+def _build_excluidos_importacion_alerta(excluidos):
+    excluidos_lineas = []
+    if excluidos:
+        cantidad = len(excluidos)
+        sujeto = (
+            "No se creó 1 legajo"
+            if cantidad == 1
+            else f"No se crearon {cantidad} legajos"
+        )
+        predicado = (
+            "porque pertenece a otro expediente."
+            if cantidad == 1
+            else "porque pertenecen a otro expediente."
+        )
+        excluidos_lineas.append(f"{sujeto} {predicado}")
+        for item in excluidos[:10]:
+            if not isinstance(item, dict):
+                excluidos_lineas.append(str(item))
+                continue
+            documento = item.get("documento", "-")
+            apellido = item.get("apellido", "-")
+            nombre = item.get("nombre", "-")
+            estado = (
+                item.get("estado_programa")
+                or item.get("estado_legajo_origen")
+                or item.get("motivo")
+                or "-"
+            )
+            expediente_origen = item.get("expediente_origen_id", "-")
+            excluidos_lineas.append(
+                f"- Documento {documento} - {apellido}, {nombre} - Estado legajo: {estado} - Exp #{expediente_origen}"
+            )
+        restantes = len(excluidos) - 10
+        if restantes > 0:
+            excluidos_lineas.append(f"... y {restantes} mas.")
+    return "\n".join(excluidos_lineas)
+
+
+def _actualizar_alerta_importacion_persistente(
+    expediente, *, creados_incremento=0, errores_actuales=None, excluidos_nuevos=None
+):
+    historial_qs = (
+        expediente.historial.filter(estado_nuevo=expediente.estado)
+        .exclude(observaciones__isnull=True)
+        .exclude(observaciones="")
+        .order_by("-fecha")
+    )
+    historial_actual = historial_qs.first()
+    if not historial_actual:
+        return
+
+    try:
+        payload = json.loads(historial_actual.observaciones)
+    except (TypeError, ValueError):
+        return
+
+    if not isinstance(payload, dict):
+        return
+
+    creados_total = int(payload.get("creados_total") or 0) + int(
+        creados_incremento or 0
+    )
+    errores_vigentes = (
+        int(errores_actuales)
+        if errores_actuales is not None
+        else int(payload.get("errores_actuales") or 0)
+    )
+
+    payload["resumen"] = _build_resumen_importacion_alerta(
+        creados_total=creados_total,
+        errores_actuales=errores_vigentes,
+    )
+    excluidos_detalle = _deduplicar_excluidos_alerta(
+        (payload.get("excluidos_detalle") or []) + (excluidos_nuevos or [])
+    )
+    payload["excluidos_detalle"] = excluidos_detalle
+    payload["excluidos"] = _build_excluidos_importacion_alerta(excluidos_detalle)
+    payload["tiene_errores"] = bool(errores_vigentes)
+    payload["creados_total"] = creados_total
+    payload["errores_actuales"] = errores_vigentes
+
+    historial_actual.observaciones = json.dumps(payload)
+    historial_actual.save(update_fields=["observaciones"])
+    return payload
+
+
+def _build_resumen_importacion_alerta(*, creados_total=0, errores_actuales=0):
+    resumen_lineas = [
+        f"Importacion procesada. Se crearon {creados_total} legajos y el expediente paso a EN ESPERA."
+    ]
+    if errores_actuales:
+        resumen_lineas.append(f"Errores detectados: {errores_actuales}.")
+    return "\n".join(resumen_lineas)
+
+
+def _formatear_observaciones_historial(observaciones):
+    if not observaciones:
+        return ""
+
+    try:
+        payload = json.loads(observaciones)
+    except (TypeError, ValueError):
+        return observaciones
+
+    if not isinstance(payload, dict):
+        return observaciones
+
+    partes = [
+        str(payload.get(clave)).strip()
+        for clave in ("resumen", "excluidos")
+        if payload.get(clave)
+    ]
+    return "\n".join(partes) or observaciones
 
 
 def _validar_datos_registro_erroneo(payload, provincia_id, fila_excel=0):
@@ -427,6 +682,10 @@ class ProcesarExpedienteView(View):
                         "errores": result.get("errores", 0),
                         "excluidos": result.get("excluidos", 0),
                         "excluidos_detalle": result.get("excluidos_detalle", []),
+                        "alerta_resumen": _build_resumen_importacion_alerta(
+                            creados_total=result.get("creados", 0),
+                            errores_actuales=result.get("errores", 0),
+                        ),
                     }
                 )
 
@@ -443,9 +702,16 @@ class ProcesarExpedienteView(View):
                     doc = d.get("documento", "")
                     ape = d.get("apellido", "")
                     nom = d.get("nombre", "")
-                    estado = d.get("estado_programa") or d.get("motivo") or "-"
+                    estado = (
+                        d.get("estado_programa")
+                        or d.get("estado_legajo_origen")
+                        or d.get("motivo")
+                        or "-"
+                    )
                     expid = d.get("expediente_origen_id", "-")
-                    preview.append(f"• {doc} — {ape}, {nom} ({estado}) — Exp #{expid}")
+                    preview.append(
+                        f"• {doc} — {ape}, {nom} (Estado legajo: {estado}) — Exp #{expid}"
+                    )
 
                 extra = ""
                 if len(det) > 10:
@@ -454,10 +720,12 @@ class ProcesarExpedienteView(View):
                 # Escapar contenido para prevenir XSS
                 preview_escaped = [escape(p) for p in preview]
                 extra_escaped = escape(extra) if extra else ""
-                html = (
-                    f"Se excluyeron {excluidos_count} registros porque ya están en otro expediente:"
-                    f"<br>{'<br>'.join(preview_escaped)}{extra_escaped}"
+                encabezado = (
+                    "Se excluyó 1 registro porque pertenece a otro expediente:"
+                    if excluidos_count == 1
+                    else f"Se excluyeron {excluidos_count} registros porque pertenecen a otro expediente:"
                 )
+                html = f"{encabezado}<br>{'<br>'.join(preview_escaped)}{extra_escaped}"
                 messages.warning(request, html)
 
             return redirect("expediente_detail", pk=pk)
@@ -660,6 +928,21 @@ class ExpedienteDetailView(DetailView):
 
         legajos_enriquecidos = []
         legajos_list = list(q.all())
+        ultimo_historial_tecnico_con_motivo = (
+            HistorialValidacionTecnica.objects.filter(legajo_id=OuterRef("legajo_id"))
+            .exclude(Q(motivo__isnull=True) | Q(motivo=""))
+            .order_by("-creado_en", "-pk")
+            .values("pk")[:1]
+        )
+        historial_tecnico = HistorialValidacionTecnica.objects.filter(
+            legajo_id__in=[legajo.pk for legajo in legajos_list],
+            pk=Subquery(ultimo_historial_tecnico_con_motivo),
+        )
+        observaciones_tecnicas_por_legajo = {}
+        for historial_item in historial_tecnico:
+            observaciones_tecnicas_por_legajo.setdefault(
+                historial_item.legajo_id, historial_item
+            )
         legajos_por_ciudadano = {}
         ciudadanos_ids = [leg.ciudadano_id for leg in legajos_list]
         responsables_ids = set()
@@ -720,6 +1003,19 @@ class ExpedienteDetailView(DetailView):
                     legajo, responsables_ids
                 )
             )
+            legajo.observacion_tecnica_titulo = None
+            legajo.observacion_tecnica_texto = None
+
+            observacion_tecnica = observaciones_tecnicas_por_legajo.get(legajo.pk)
+            if observacion_tecnica:
+                if observacion_tecnica.estado_nuevo == RevisionTecnico.RECHAZADO:
+                    legajo.observacion_tecnica_titulo = "Motivo del Rechazo"
+                else:
+                    legajo.observacion_tecnica_titulo = "Observación (subsanación)"
+                legajo.observacion_tecnica_texto = observacion_tecnica.motivo
+            elif legajo.subsanacion_motivo:
+                legajo.observacion_tecnica_titulo = "Observación (subsanación)"
+                legajo.observacion_tecnica_texto = legajo.subsanacion_motivo
 
             if (
                 legajo.es_responsable
@@ -827,9 +1123,7 @@ class ExpedienteDetailView(DetailView):
         ):
             tecnicos = _tecnicos_queryset().order_by("last_name", "first_name")
 
-        faltan_archivos = expediente.expediente_ciudadanos.filter(
-            Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
-        ).exists()
+        faltan_archivos = bool(faltantes_list)
 
         # Cupo: usar propiedad expediente.provincia (puede ser None)
         cupo = None
@@ -853,9 +1147,79 @@ class ExpedienteDetailView(DetailView):
         historial = expediente.historial.select_related(
             "estado_anterior", "estado_nuevo", "usuario"
         )
-        ctx["historial_page_obj"] = Paginator(historial, 5).get_page(
+        historial_estado_actual = (
+            historial.filter(
+                estado_nuevo=expediente.estado,
+                observaciones__isnull=False,
+            )
+            .exclude(observaciones="")
+            .order_by("-fecha")
+        )
+        alerta_importacion_persistente = historial_estado_actual.values_list(
+            "observaciones", flat=True
+        ).first()
+        ctx["alerta_importacion_persistente"] = alerta_importacion_persistente
+        ctx["alerta_importacion_resumen"] = ""
+        ctx["alerta_importacion_resumen_style"] = ""
+        ctx["alerta_importacion_excluidos"] = ""
+        ctx["alerta_importacion_excluidos_style"] = ""
+        ctx["alerta_importacion_warning"] = ""
+        ctx["alerta_importacion_warning_secundario"] = ""
+        ctx["alerta_importacion_success"] = ""
+        if alerta_importacion_persistente:
+            try:
+                alerta_payload = json.loads(alerta_importacion_persistente)
+            except (TypeError, ValueError):
+                alerta_payload = None
+
+            if isinstance(alerta_payload, dict):
+                resumen_alerta = alerta_payload.get("resumen", "")
+                excluidos_alerta = alerta_payload.get("excluidos", "")
+                creados_total = int(alerta_payload.get("creados_total") or 0)
+                tiene_errores = bool(alerta_payload.get("tiene_errores"))
+                resumen_bloque = ""
+                resumen_bloque_style = ""
+                excluidos_bloque = ""
+                excluidos_bloque_style = ""
+
+                # Al volver a entrar al expediente solo se recuperan advertencias
+                # persistentes del estado EN_ESPERA; los mensajes success se
+                # muestran en el flujo inmediato post-importacion / post-subsanacion.
+                if tiene_errores:
+                    resumen_bloque = resumen_alerta
+                    resumen_bloque_style = "warning"
+                    excluidos_bloque = excluidos_alerta
+                    excluidos_bloque_style = "warning" if excluidos_alerta else ""
+                elif creados_total == 0 and excluidos_alerta:
+                    resumen_bloque = "\n".join(
+                        part for part in [resumen_alerta, excluidos_alerta] if part
+                    )
+                    resumen_bloque_style = "warning"
+                elif excluidos_alerta:
+                    excluidos_bloque = excluidos_alerta
+                    excluidos_bloque_style = "warning"
+
+                ctx["alerta_importacion_resumen"] = resumen_bloque
+                ctx["alerta_importacion_resumen_style"] = resumen_bloque_style
+                ctx["alerta_importacion_excluidos"] = excluidos_bloque
+                ctx["alerta_importacion_excluidos_style"] = excluidos_bloque_style
+                ctx["alerta_importacion_warning"] = (
+                    resumen_bloque if resumen_bloque_style == "warning" else ""
+                )
+                ctx["alerta_importacion_warning_secundario"] = (
+                    excluidos_bloque if excluidos_bloque_style == "warning" else ""
+                )
+                ctx["alerta_importacion_success"] = (
+                    resumen_bloque if resumen_bloque_style == "success" else ""
+                )
+        historial_page_obj = Paginator(historial, 5).get_page(
             self.request.GET.get("historial_page")
         )
+        for item in historial_page_obj.object_list:
+            item.observaciones_visibles = _formatear_observaciones_historial(
+                item.observaciones
+            )
+        ctx["historial_page_obj"] = historial_page_obj
 
         # Obtener registros erróneos
         registros_erroneos = list(
@@ -888,11 +1252,17 @@ class ExpedienteDetailView(DetailView):
             datos_render = _aplicar_defaults_registro_erroneo(
                 _normalizar_datos_registro_erroneo(registro.datos_raw or {})
             )
+            registro.datos_render = datos_render
+            registro.invalid_fields = _campos_invalidos_desde_mensaje_error(
+                registro.mensaje_error
+            )
             registro.responsable_requerido = _registro_erroneo_responsable_requerido(
                 datos_render
             )
-            registro.nacionalidad_default_id = datos_render.get(
-                "nacionalidad", nacionalidad_argentina_id
+            registro.nacionalidad_autocomplete_id = (
+                _resolver_nacionalidad_id_registro_erroneo(
+                    datos_render.get("nacionalidad")
+                )
             )
             registro.municipio_autocomplete_id = datos_render.get("municipio", "")
 
@@ -1297,6 +1667,37 @@ class RevisarLegajoView(View):
                 {"success": False, "error": "Acción inválida."}, status=400
             )
 
+        estado_actual = leg.revision_tecnico
+        if accion in ("APROBAR", "RECHAZAR", "SUBSANAR"):
+            if estado_actual in (
+                RevisionTecnico.APROBADO,
+                RevisionTecnico.RECHAZADO,
+            ):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": f"No se puede modificar un legajo en estado {estado_actual}.",
+                    },
+                    status=400,
+                )
+
+            transiciones_permitidas = {
+                RevisionTecnico.PENDIENTE: {"APROBAR", "RECHAZAR", "SUBSANAR"},
+                RevisionTecnico.SUBSANADO: {"APROBAR", "RECHAZAR", "SUBSANAR"},
+            }
+            acciones_permitidas = transiciones_permitidas.get(estado_actual, set())
+            if accion not in acciones_permitidas:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": (
+                            "La acción solicitada no es válida para el estado actual "
+                            f"del legajo ({estado_actual})."
+                        ),
+                    },
+                    status=400,
+                )
+
         # Validar RENAPER automáticamente antes de cualquier acción (excepto ELIMINAR)
         if accion in ("APROBAR", "RECHAZAR", "SUBSANAR"):
             estado_validacion_renaper = getattr(leg, "estado_validacion_renaper", 0)
@@ -1352,7 +1753,15 @@ class RevisarLegajoView(View):
                 }
             )
 
+        motivo = (request.POST.get("motivo") or "").strip()
+
         if accion == "RECHAZAR":
+            if not motivo:
+                return JsonResponse(
+                    {"success": False, "error": "Debe indicar un motivo de rechazo."},
+                    status=400,
+                )
+
             estado_anterior = leg.revision_tecnico
             leg.revision_tecnico = "RECHAZADO"
             # Marcar RENAPER como rechazado también
@@ -1373,7 +1782,7 @@ class RevisarLegajoView(View):
                 estado_anterior=estado_anterior,
                 estado_nuevo="RECHAZADO",
                 usuario=user,
-                motivo=None,
+                motivo=motivo[:500],
             )
 
             return JsonResponse(
@@ -1448,7 +1857,6 @@ class RevisarLegajoView(View):
                 )
 
         # SUBSANAR
-        motivo = (request.POST.get("motivo") or "").strip()
         tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
         if not motivo:
             return JsonResponse(
@@ -1548,6 +1956,7 @@ class ActualizarRegistroErroneoView(View):
                     "success": False,
                     "saved_partial": True,
                     "error": str(exc),
+                    "invalid_fields": _campos_invalidos_desde_mensaje_error(exc),
                 },
                 status=400,
             )
@@ -1587,9 +1996,13 @@ class ReprocesarRegistrosErroneosView(View):
         creados = 0
         errores = 0
         errores_detalle = []
+        excluidos_detalle = []
         relaciones_crear = []
 
         estado_inicial = EstadoLegajo.objects.get(nombre="DOCUMENTO_PENDIENTE")
+        existentes_ids, en_programa, abiertos = (
+            _precargar_conflictos_y_existentes_importacion(expediente)
+        )
 
         provincia_id = _resolver_provincia_id_registro_erroneo(user, expediente)
         if not provincia_id:
@@ -1624,6 +2037,26 @@ class ReprocesarRegistrosErroneosView(View):
                     )
 
                     if ciudadano and ciudadano.pk:
+                        if _beneficiario_tiene_conflicto_importacion(
+                            ciudadano=ciudadano,
+                            offset=registro.fila_excel,
+                            existentes_ids=existentes_ids,
+                            en_programa=en_programa,
+                            abiertos=abiertos,
+                            excluidos=excluidos_detalle,
+                        ):
+                            registro.procesado = True
+                            registro.procesado_en = timezone.now()
+                            registro.mensaje_error = ""
+                            registro.save(
+                                update_fields=[
+                                    "procesado",
+                                    "procesado_en",
+                                    "mensaje_error",
+                                ]
+                            )
+                            continue
+
                         rol_beneficiario = (
                             ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
                             if es_mismo_documento
@@ -1644,6 +2077,7 @@ class ReprocesarRegistrosErroneosView(View):
 
                         if created:
                             creados += 1
+                            existentes_ids.add(ciudadano.pk)
 
                         if datos_responsable and not es_mismo_documento:
                             responsable = CiudadanoService.get_or_create_ciudadano(
@@ -1710,13 +2144,14 @@ class ReprocesarRegistrosErroneosView(View):
                     )
 
                 errores_detalle.append(f"Fila {registro.fila_excel}: {error_msg}")
-                logger.error(
-                    "Error reprocesando registro %s: %s - Datos: %s",
-                    registro.pk,
-                    e,
-                    datos,
-                    exc_info=True,
-                )
+                if not isinstance(e, ValidationError):
+                    logger.error(
+                        "Error reprocesando registro %s: %s - Datos: %s",
+                        registro.pk,
+                        e,
+                        datos,
+                        exc_info=True,
+                    )
                 registro.mensaje_error = f"Error al reprocesar: {error_msg}"
                 registro.save(update_fields=["mensaje_error"])
 
@@ -1753,6 +2188,12 @@ class ReprocesarRegistrosErroneosView(View):
         registros_restantes = expediente.registros_erroneos.filter(
             procesado=False
         ).count()
+        alerta_actualizada = _actualizar_alerta_importacion_persistente(
+            expediente,
+            creados_incremento=creados,
+            errores_actuales=registros_restantes,
+            excluidos_nuevos=excluidos_detalle,
+        )
 
         return JsonResponse(
             {
@@ -1760,7 +2201,10 @@ class ReprocesarRegistrosErroneosView(View):
                 "creados": creados,
                 "errores": errores,
                 "errores_detalle": errores_detalle,
+                "excluidos": len(excluidos_detalle),
+                "excluidos_detalle": excluidos_detalle,
                 "registros_restantes": registros_restantes,
+                "alerta_resumen": (alerta_actualizada or {}).get("resumen", ""),
             }
         )
 

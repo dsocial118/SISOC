@@ -21,15 +21,36 @@ function Get-CodexEnvExamplePath {
     return Join-Path $RepoRoot ".env.example"
 }
 
+function Get-CodexComposeOverridePath {
+    param(
+        [string]$RepoRoot
+    )
+
+    return Join-Path $RepoRoot "docker-compose.codex.yml"
+}
+
+function Get-CodexComposeFileArgs {
+    param(
+        [string]$RepoRoot,
+        [switch]$ExposePorts
+    )
+
+    $args = @("-f", "docker-compose.yml")
+    $overridePath = Get-CodexComposeOverridePath -RepoRoot $RepoRoot
+
+    if (-not $ExposePorts -and (Test-Path $overridePath)) {
+        $args += @("-f", "docker-compose.codex.yml")
+    }
+
+    return $args
+}
+
 function Get-CodexRequiredEnvDefaults {
     param(
         [string]$RepoRoot
     )
 
-    $repoName = Split-Path $RepoRoot -Leaf
-    $worktreeName = Split-Path (Split-Path $RepoRoot -Parent) -Leaf
-    $projectName = "{0}-{1}" -f $repoName.ToLowerInvariant(), $worktreeName.ToLowerInvariant()
-    $projectName = $projectName -replace "[^a-z0-9_-]", "-"
+    $projectName = Get-CodexComposeProjectName -RepoRoot $RepoRoot
 
     return [ordered]@{
         "DATABASE_PASSWORD" = "root1-password2"
@@ -44,6 +65,38 @@ function Get-CodexRequiredEnvDefaults {
         "RUN_GID" = "0"
         "COMPOSE_PROJECT_NAME" = $projectName
     }
+}
+
+function Get-CodexComposeProjectName {
+    param(
+        [string]$RepoRoot
+    )
+
+    $repoLeaf = Split-Path $RepoRoot -Leaf
+    $repoParent = Split-Path $RepoRoot -Parent
+    $parentLeaf = Split-Path $repoParent -Leaf
+    $suffix = if ($repoLeaf -ieq "SISOC") {
+        "main"
+    }
+    elseif ($parentLeaf -ieq "worktrees") {
+        $repoLeaf
+    }
+    else {
+        $repoLeaf
+    }
+
+    $projectName = "sisoc-{0}" -f $suffix.ToLowerInvariant()
+    return ($projectName -replace "[^a-z0-9_-]", "-")
+}
+
+function Set-CodexUtf8NoBomContent {
+    param(
+        [string]$Path,
+        [string[]]$Value
+    )
+
+    $encoding = [System.Text.UTF8Encoding]::new($false)
+    [System.IO.File]::WriteAllLines($Path, $Value, $encoding)
 }
 
 function Test-CodexTcpPortAvailable {
@@ -166,7 +219,7 @@ function Ensure-CodexEnvFile {
     }
 
     if ($created -or $updatedKeys.Count -gt 0) {
-        Set-Content -Path $envPath -Value $lines -Encoding UTF8
+        Set-CodexUtf8NoBomContent -Path $envPath -Value ([string[]]$lines)
     }
 
     return [pscustomobject]@{
@@ -191,12 +244,15 @@ function Test-CodexDockerAvailable {
 function Invoke-CodexCompose {
     param(
         [string]$RepoRoot,
-        [string[]]$Arguments
+        [string[]]$Arguments,
+        [switch]$ExposePorts
     )
 
     Push-Location $RepoRoot
     try {
-        & docker compose @Arguments
+        $composeFileArgs = Get-CodexComposeFileArgs -RepoRoot $RepoRoot -ExposePorts:$ExposePorts
+        $allArgs = @() + $composeFileArgs + $Arguments
+        & docker compose @allArgs
     }
     finally {
         Pop-Location

@@ -55,24 +55,48 @@
                                 <th>Apellido</th>
                                 <th>Nombre</th>
                                 <th>DNI</th>
+                                <th>Estado identidad</th>
                                 <th>Acción</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for c in ciudadanos %}
                                 <tr>
-                                    <td>{{ c.apellido }}</td>
-                                    <td>{{ c.nombre }}</td>
-                                    <td>{{ c.documento }}</td>
+                                    <td>{{ c.apellido|default:"-" }}</td>
+                                    <td>{{ c.nombre|default:"-" }}</td>
+                                    <td>{{ c.documento|default:"-" }}</td>
                                     <td>
-                                        <button type="button"
-                                                class="btn btn-sm btn-success btn-agregar"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalNomina"
-                                                data-ciudadano-id="{{ c.id }}"
-                                                data-ciudadano-nombre="{{ c.apellido }}, {{ c.nombre }}">
-                                            Agregar
-                                        </button>
+                                        {% if c.tipo_registro_identidad == "SIN_DNI" %}
+                                            <span class="badge bg-warning text-dark">Sin DNI</span>
+                                        {% elif c.tipo_registro_identidad == "DNI_NO_VALIDADO_RENAPER" %}
+                                            <span class="badge bg-danger">RENAPER no validado</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Estándar</span>
+                                        {% endif %}
+                                        {% if c.requiere_revision_manual %}
+                                            <span class="badge bg-secondary ms-1">
+                                                <i class="fas fa-exclamation-triangle"></i> Revisión
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if c.requiere_revision_manual %}
+                                            <button type="button"
+                                                    class="btn btn-sm btn-secondary"
+                                                    disabled
+                                                    title="Debe validarse la identidad antes de ingresar a nómina">
+                                                Revisión pendiente
+                                            </button>
+                                        {% else %}
+                                            <button type="button"
+                                                    class="btn btn-sm btn-success btn-agregar"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalNomina"
+                                                    data-ciudadano-id="{{ c.id }}"
+                                                    data-ciudadano-nombre="{{ c.apellido|default:'-' }}, {{ c.nombre|default:'-' }}">
+                                                Agregar
+                                            </button>
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}

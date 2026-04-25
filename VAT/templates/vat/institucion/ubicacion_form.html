@@ -150,14 +150,22 @@
     const ajaxUrl = '{% url "vat_ajax_localidades_por_centro" %}';
     const localidadActual = "{{ form.instance.localidad_id|default:'' }}";
 
+    function refreshLocalidadSelect() {
+        if (window.refreshSelect2Element) {
+            window.refreshSelect2Element(localidadSelect);
+        }
+    }
+
     function cargarLocalidades(centroId, seleccionarId) {
         if (!centroId) {
             localidadSelect.innerHTML = '<option value="">---------</option>';
             localidadSelect.disabled = true;
+            refreshLocalidadSelect();
             return;
         }
         localidadSelect.disabled = true;
         localidadSelect.innerHTML = '<option value="">Cargando...</option>';
+        refreshLocalidadSelect();
         fetch(ajaxUrl + '?centro_id=' + centroId)
             .then(r => r.json())
             .then(data => {
@@ -170,6 +178,7 @@
                     localidadSelect.appendChild(opt);
                 });
                 localidadSelect.disabled = false;
+                refreshLocalidadSelect();
             });
     }
 
@@ -183,6 +192,7 @@
         cargarLocalidades(centroInicial, localidadActual);
     } else {
         localidadSelect.disabled = true;
+        refreshLocalidadSelect();
     }
 })();
     </script>

@@ -24,7 +24,7 @@
 {% block content %}
     <div class="row">
         <div class="col-auto">
-            <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
+            <a href="{% url 'comedor_intervencion_ver' comedor.id %}{% if admision_id_activa %}?admision_id={{ admision_id_activa }}{% endif %}"
                class="btn btn-primary mb-3">
                 <i class="fas fa-plus me-2"></i>Intervenciones
             </a>
@@ -38,6 +38,35 @@
             </a>
         </div>
     </div>
+    {% if admisiones_disponibles %}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card card-outline card-secondary">
+                    <div class="card-header d-flex align-items-center gap-3">
+                        <span class="fw-bold">
+                            <i class="fas fa-file-contract me-1"></i>Convenio:
+                        </span>
+                        {% for adm in admisiones_disponibles %}
+                            <a href="?admision_id={{ adm.id }}"
+                               class="btn btn-sm {% if adm.id == admision_id_activa %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                                {% if adm.acompanamiento.nro_convenio %}
+                                    {{ adm.acompanamiento.nro_convenio }}
+                                {% else %}
+                                    Admisión #{{ adm.id }}
+                                {% endif %}
+                                {% if not adm.activa %}<span class="badge bg-secondary ms-1">Cerrada</span>{% endif %}
+                            </a>
+                        {% endfor %}
+                        {% if tiene_multiples_activos %}
+                            <span class="badge bg-warning text-dark ms-2">
+                                <i class="fas fa-exclamation-triangle me-1"></i>Múltiples convenios activos
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <div class="row">
         <div class="col-12">
             <div class="card card-primary card-outline">
@@ -49,6 +78,12 @@
                 <div class="hitos-body" style="padding: 2rem">
                     {% if info_relevante %}
                         <div class="info-grid" style="display: grid; gap: 1.5rem">
+                            {% if nro_convenio %}
+                                <div class="info-item">
+                                    <div class="info-label">Número de Convenio</div>
+                                    <div class="info-value">{{ nro_convenio }}</div>
+                                </div>
+                            {% endif %}
                             <div class="info-item">
                                 <div class="info-label">Número de Expediente</div>
                                 <div class="info-value">{{ info_relevante.expediente_nro |default:"-" }}</div>
@@ -1025,6 +1060,22 @@
     if (completadosEl) completadosEl.textContent = completados;
     if (pendientesEl) pendientesEl.textContent = pendientes;
     if (totalEl) totalEl.textContent = total;
+
+    const admisionIdActiva = "{{ admision_id_activa|default:'' }}";
+    if (admisionIdActiva) {
+      document
+        .querySelectorAll('form[action*="restaurar-hito"]')
+        .forEach(function (form) {
+          if (form.querySelector('input[name="admision_id"]')) {
+            return;
+          }
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = "admision_id";
+          input.value = admisionIdActiva;
+          form.appendChild(input);
+        });
+    }
   });
     </script>
 {% endblock %}

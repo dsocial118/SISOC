@@ -38,10 +38,12 @@ from comedores.services.capacitaciones_certificados_service import (
 )
 from comedores.services.filter_config import get_filters_ui_config
 from comedores.utils import comedor_usa_admision_para_nomina
+from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from core.utils import convert_string_to_int
+from acompanamientos.acompanamiento_service import AcompanamientoService
 from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm, build_programa_aliases
 
@@ -246,12 +248,19 @@ def _build_intervencion_creator_map(intervencion_ids):
     return creator_map
 
 
-def _build_intervenciones_table_context(comedor_obj, request):
-    intervenciones_qs = (
-        Intervencion.objects.filter(comedor=comedor_obj)
-        .select_related("tipo_intervencion", "subintervencion", "destinatario")
-        .order_by("-fecha")
-    )
+def _build_intervenciones_table_context(comedor_obj, request, admision_id=None):
+    if admision_id:
+        intervenciones_qs = Intervencion.objects.filter(
+            comedor=comedor_obj,
+            admision_id=admision_id,
+        )
+    else:
+        intervenciones_qs = Intervencion.objects.filter(comedor=comedor_obj)
+    intervenciones_qs = intervenciones_qs.select_related(
+        "tipo_intervencion",
+        "subintervencion",
+        "destinatario",
+    ).order_by("-fecha")
     intervenciones_paginator = Paginator(intervenciones_qs, 10)
     intervenciones_page_number = request.GET.get("intervenciones_page", 1)
     intervenciones_page_obj = intervenciones_paginator.get_page(
@@ -795,6 +804,12 @@ class ComedorListView(LoginRequiredMixin, ListView):
             self.request, user=self.request.user
         )
 
+    def paginate_queryset(self, queryset, page_size):
+        paginator = NoCountPaginator(queryset, page_size)
+        page_obj = paginator.get_page(self.request.GET.get(self.page_kwarg))
+        object_list = page_obj.object_list
+        return paginator, page_obj, object_list, page_obj.has_other_pages()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -890,6 +905,10 @@ class ComedorListView(LoginRequiredMixin, ListView):
             }
         )
         context.update(columns_context)
+
+        page_obj = context.get("page_obj")
+        if page_obj and getattr(page_obj.paginator, "count", None) is None:
+            context["page_range"] = build_no_count_page_range(page_obj)
 
         return context
 
@@ -1040,9 +1059,30 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         }
 
     def _build_relaciones_table_contexts(self, admisiones_qs):
+        raw_admision_id = self.request.GET.get("admision_id")
+        admision_id = (
+            int(raw_admision_id)
+            if raw_admision_id and raw_admision_id.isdigit()
+            else None
+        )
+        admisiones_disponibles = list(
+            AcompanamientoService.obtener_admisiones_para_selector(self.object)
+        )
+        admisiones_ids_disponibles = {
+            admision.id for admision in admisiones_disponibles
+        }
+        if admision_id not in admisiones_ids_disponibles:
+            admision_id = None
+        if admision_id is None and admisiones_disponibles:
+            active = next(
+                (a for a in admisiones_disponibles if getattr(a, "activa", False)),
+                None,
+            )
+            admision_id = (active or admisiones_disponibles[0]).id
         intervenciones_context = _build_intervenciones_table_context(
             comedor_obj=self.object,
             request=self.request,
+            admision_id=admision_id,
         )
         observaciones_context = _build_observaciones_table_context(
             comedor_obj=self.object,
@@ -1064,6 +1104,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             **interacciones_context,
             **admisiones_context,
             **validaciones_context,
+            "intervenciones_admision_id": admision_id,
+            "intervenciones_admisiones_disponibles": admisiones_disponibles,
         }
 
     def _redirect_to_detail(self):

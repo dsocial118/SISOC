@@ -15,6 +15,9 @@ User = get_user_model()
 class Ciudadano(SoftDeleteModelMixin, models.Model):
     """Datos básicos del ciudadano/a."""
 
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"activo": False}
+    SOFT_RESTORE_OPERATIONAL_UPDATES = {"activo": True}
+
     DOCUMENTO_DNI = "DNI"
     DOCUMENTO_CUIT = "CUIT"
     DOCUMENTO_PASAPORTE = "PASAPORTE"
@@ -26,9 +29,91 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         (DOCUMENTO_LE, "Libreta de enrolamiento"),
     ]
 
+    # --- Tipo de registro de identidad ---
+    TIPO_REGISTRO_ESTANDAR = "ESTANDAR"
+    TIPO_REGISTRO_SIN_DNI = "SIN_DNI"
+    TIPO_REGISTRO_DNI_NO_VALIDADO = "DNI_NO_VALIDADO_RENAPER"
+    TIPO_REGISTRO_CHOICES = [
+        (TIPO_REGISTRO_ESTANDAR, "Estándar"),
+        (TIPO_REGISTRO_SIN_DNI, "Sin DNI"),
+        (TIPO_REGISTRO_DNI_NO_VALIDADO, "DNI no validado por RENAPER"),
+    ]
+
+    # --- Estado de validación RENAPER ---
+    RENAPER_NO_CONSULTADO = "NO_CONSULTADO"
+    RENAPER_VALIDADO = "VALIDADO"
+    RENAPER_NO_VALIDADO = "NO_VALIDADO"
+    ESTADO_VALIDACION_RENAPER_CHOICES = [
+        (RENAPER_NO_CONSULTADO, "No consultado"),
+        (RENAPER_VALIDADO, "Validado"),
+        (RENAPER_NO_VALIDADO, "No validado"),
+    ]
+
+    # --- Motivos sin DNI ---
+    MOTIVO_SIN_DNI_NO_REGISTRADO_NACER = "NO_REGISTRADO_NACER"
+    MOTIVO_SIN_DNI_MENOR_SIN_DOCUMENTO = "MENOR_SIN_DOCUMENTO"
+    MOTIVO_SIN_DNI_EXTRANJERO = "EXTRANJERO_SIN_DNI"
+    MOTIVO_SIN_DNI_EXTRAVIADO = "DOCUMENTO_EXTRAVIADO"
+    MOTIVO_SIN_DNI_VULNERABILIDAD = "VULNERABILIDAD_EXTREMA"
+    MOTIVO_SIN_DNI_OTRO = "OTRO"
+    MOTIVO_SIN_DNI_CHOICES = [
+        (MOTIVO_SIN_DNI_NO_REGISTRADO_NACER, "No fue registrado al nacer"),
+        (MOTIVO_SIN_DNI_MENOR_SIN_DOCUMENTO, "Menor de edad sin documento tramitado"),
+        (MOTIVO_SIN_DNI_EXTRANJERO, "Extranjero sin DNI argentino"),
+        (MOTIVO_SIN_DNI_EXTRAVIADO, "Documento extraviado o en trámite"),
+        (
+            MOTIVO_SIN_DNI_VULNERABILIDAD,
+            "Víctima de violencia / vulnerabilidad extrema",
+        ),
+        (MOTIVO_SIN_DNI_OTRO, "Otro"),
+    ]
+
+    # --- Motivos DNI no validado por RENAPER ---
+    MOTIVO_NO_VALIDADO_TRANSCRIPCION = "ERROR_TRANSCRIPCION"
+    MOTIVO_NO_VALIDADO_RENAPER_DESACTUALIZADO = "RENAPER_DESACTUALIZADO"
+    MOTIVO_NO_VALIDADO_DOC_NO_ACTUALIZADA = "DOC_NO_ACTUALIZADA"
+    MOTIVO_NO_VALIDADO_TIPOGRAFICO = "ERROR_TIPOGRAFICO"
+    MOTIVO_NO_VALIDADO_MULTIPLES_IDENTIDADES = "MULTIPLES_IDENTIDADES"
+    MOTIVO_NO_VALIDADO_CAMBIO_NOMBRE = "CAMBIO_NOMBRE_LEGAL"
+    MOTIVO_NO_VALIDADO_FORMATO_NOMBRE = "DIFERENCIA_FORMATO_NOMBRE"
+    MOTIVO_NO_VALIDADO_DISCREPANCIA_FECHA = "DISCREPANCIA_FECHA_NACIMIENTO"
+    MOTIVO_NO_VALIDADO_OTRO = "OTRO"
+    MOTIVO_NO_VALIDADO_CHOICES = [
+        (
+            MOTIVO_NO_VALIDADO_TRANSCRIPCION,
+            "Errores en la transcripción de datos manuales",
+        ),
+        (
+            MOTIVO_NO_VALIDADO_RENAPER_DESACTUALIZADO,
+            "Cambios recientes en RENAPER aún no reflejados",
+        ),
+        (
+            MOTIVO_NO_VALIDADO_DOC_NO_ACTUALIZADA,
+            "Documentación del usuario no actualizada",
+        ),
+        (MOTIVO_NO_VALIDADO_TIPOGRAFICO, "Errores tipográficos en el ingreso de datos"),
+        (
+            MOTIVO_NO_VALIDADO_MULTIPLES_IDENTIDADES,
+            "Personas con múltiples identidades o nombres",
+        ),
+        (
+            MOTIVO_NO_VALIDADO_CAMBIO_NOMBRE,
+            "Cambios de nombre legal no registrados en RENAPER",
+        ),
+        (
+            MOTIVO_NO_VALIDADO_FORMATO_NOMBRE,
+            "Diferencias en el formato o tipo de nombre",
+        ),
+        (
+            MOTIVO_NO_VALIDADO_DISCREPANCIA_FECHA,
+            "Discrepancias en fechas de nacimiento o partidas",
+        ),
+        (MOTIVO_NO_VALIDADO_OTRO, "Otro"),
+    ]
+
     apellido = models.CharField(max_length=255)
     nombre = models.CharField(max_length=255)
-    fecha_nacimiento = models.DateField()
+    fecha_nacimiento = models.DateField(null=True, blank=True)
     tipo_documento = models.CharField(
         max_length=20, choices=DOCUMENTO_CHOICES, default=DOCUMENTO_DNI
     )
@@ -110,12 +195,78 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     modificado = models.DateTimeField(auto_now=True)
     activo = models.BooleanField(default=True)
 
+    # --- Identidad (Fase 1) ---
+    tipo_registro_identidad = models.CharField(
+        max_length=30,
+        choices=TIPO_REGISTRO_CHOICES,
+        default=TIPO_REGISTRO_ESTANDAR,
+        db_index=True,
+    )
+    estado_validacion_renaper = models.CharField(
+        max_length=20,
+        choices=ESTADO_VALIDACION_RENAPER_CHOICES,
+        default=RENAPER_NO_CONSULTADO,
+        db_index=True,
+    )
+    fecha_validacion_renaper = models.DateTimeField(null=True, blank=True)
+    datos_renaper = models.JSONField(null=True, blank=True)
+    motivo_sin_dni = models.CharField(
+        max_length=30,
+        choices=MOTIVO_SIN_DNI_CHOICES,
+        null=True,
+        blank=True,
+    )
+    motivo_sin_dni_descripcion = models.TextField(null=True, blank=True)
+    motivo_no_validacion_renaper = models.CharField(
+        max_length=30,
+        choices=MOTIVO_NO_VALIDADO_CHOICES,
+        null=True,
+        blank=True,
+    )
+    motivo_no_validacion_descripcion = models.TextField(null=True, blank=True)
+    requiere_revision_manual = models.BooleanField(default=False, db_index=True)
+    # null=True es intencional: unique + nullable permite múltiples NULLs en
+    # MySQL (NULL != NULL), lo que es necesario para ciudadanos sin identificador
+    # asignado aún. Sin null=True, el unique constraint rechazaría el segundo
+    # registro sin valor. No aplica la convención S6553 para este caso.
+    identificador_interno = models.CharField(  # noqa: S6553
+        max_length=50,
+        null=True,
+        blank=True,
+        unique=True,
+    )
+    # Reemplaza unique_together("tipo_documento", "documento").
+    # Se completa solo en registros ESTANDAR con DNI único verificado.
+    # NULL en SIN_DNI y DNI_NO_VALIDADO_RENAPER para permitir duplicados
+    # sin romper integridad global. Ver decisión 2026-04-10-identidad-ciudadano.md
+    # null=True es intencional por la misma razón que identificador_interno.
+    documento_unico_key = models.CharField(  # noqa: S6553
+        max_length=60,
+        null=True,
+        blank=True,
+        unique=True,
+    )
+
     class Meta:
         ordering = ["apellido", "nombre"]
-        unique_together = ("tipo_documento", "documento")
         indexes = [
             models.Index(fields=["apellido", "nombre"]),
             models.Index(fields=["documento"]),
+            models.Index(fields=["deleted_at", "id"], name="ciud_delid_idx"),
+            models.Index(
+                fields=["deleted_at", "provincia", "id"],
+                name="ciud_delprov_id_idx",
+            ),
+            models.Index(
+                fields=["deleted_at", "documento"],
+                name="ciud_deldoc_idx",
+            ),
+        ]
+        permissions = [
+            (
+                "revision_identidad",
+                "Puede revisar y cerrar casos de identidad pendientes",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -124,6 +275,82 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     @property
     def nombre_completo(self) -> str:
         return f"{self.nombre} {self.apellido}".strip()
+
+    def _set_identity_field(self, field_name, value):
+        if getattr(self, field_name) == value:
+            return set()
+        setattr(self, field_name, value)
+        return {field_name}
+
+    def build_documento_unico_key(self):
+        if (
+            self.tipo_registro_identidad == self.TIPO_REGISTRO_ESTANDAR
+            and self.documento
+        ):
+            return f"{self.tipo_documento}_{self.documento}"
+        return None
+
+    def _debe_requerir_revision_manual(self, tipo, update_fields=None):
+        if tipo == self.TIPO_REGISTRO_ESTANDAR:
+            return False
+        if update_fields is not None and "requiere_revision_manual" in update_fields:
+            return self.requiere_revision_manual
+        if self.pk is None:
+            return True
+
+        tipo_previo = (
+            self.__class__.all_objects.filter(pk=self.pk)
+            .values_list("tipo_registro_identidad", flat=True)
+            .first()
+        )
+        if tipo_previo != tipo:
+            return True
+        return self.requiere_revision_manual
+
+    def normalizar_identidad(self, update_fields=None):
+        changed_fields = set()
+        tipo = self.tipo_registro_identidad or self.TIPO_REGISTRO_ESTANDAR
+
+        if tipo == self.TIPO_REGISTRO_SIN_DNI:
+            changed_fields |= self._set_identity_field("documento", None)
+            changed_fields |= self._set_identity_field(
+                "motivo_no_validacion_renaper", None
+            )
+            changed_fields |= self._set_identity_field(
+                "motivo_no_validacion_descripcion", None
+            )
+        elif tipo == self.TIPO_REGISTRO_DNI_NO_VALIDADO:
+            changed_fields |= self._set_identity_field("motivo_sin_dni", None)
+            changed_fields |= self._set_identity_field(
+                "motivo_sin_dni_descripcion", None
+            )
+        else:
+            changed_fields |= self._set_identity_field("motivo_sin_dni", None)
+            changed_fields |= self._set_identity_field(
+                "motivo_sin_dni_descripcion", None
+            )
+            changed_fields |= self._set_identity_field(
+                "motivo_no_validacion_renaper", None
+            )
+            changed_fields |= self._set_identity_field(
+                "motivo_no_validacion_descripcion", None
+            )
+
+        changed_fields |= self._set_identity_field(
+            "documento_unico_key", self.build_documento_unico_key()
+        )
+        changed_fields |= self._set_identity_field(
+            "requiere_revision_manual",
+            self._debe_requerir_revision_manual(tipo, update_fields=update_fields),
+        )
+        return changed_fields
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        changed_fields = self.normalizar_identidad(update_fields=update_fields)
+        if update_fields is not None and changed_fields:
+            kwargs["update_fields"] = set(update_fields) | changed_fields
+        return super().save(*args, **kwargs)
 
     @staticmethod
     def documento_prefix_filter(cleaned, field_name="documento"):
@@ -156,9 +383,14 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         qs = cls.objects.filter(cls.documento_prefix_filter(cleaned))
         if exclude_id:
             qs = qs.exclude(pk=exclude_id)
-        return qs.only("id", "nombre", "apellido", "documento").order_by("documento")[
-            :max_results
-        ]
+        return qs.only(
+            "id",
+            "nombre",
+            "apellido",
+            "documento",
+            "tipo_registro_identidad",
+            "requiere_revision_manual",
+        ).order_by("documento")[:max_results]
 
     @property
     def edad(self) -> int:

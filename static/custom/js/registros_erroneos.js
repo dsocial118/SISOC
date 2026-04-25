@@ -1,6 +1,73 @@
 // Manejo de registros erróneos
+function buildReprocesarRegistrosFeedback(data) {
+    const creados = Number(data?.creados || 0);
+    const errores = Number(data?.errores || 0);
+    const excluidos = Number(data?.excluidos || 0);
+    const partes = [];
+
+    if (creados > 0) {
+        const legajos = creados === 1 ? 'legajo' : 'legajos';
+        const verbo = creados === 1 ? 'creó' : 'crearon';
+        partes.push(`Se ${verbo} ${creados} ${legajos} correctamente.`);
+    } else {
+        partes.push('No se crearon legajos nuevos.');
+    }
+
+    if (excluidos > 0) {
+        const legajos = excluidos === 1 ? 'legajo' : 'legajos';
+        const verbo = excluidos === 1 ? 'no se creó' : 'no se crearon';
+        const existe = excluidos === 1 ? 'existe' : 'existen';
+        partes.push(
+            `${excluidos} ${legajos} ${verbo} porque ya ${existe} en otro expediente activo.`
+        );
+    }
+
+    if (errores > 0) {
+        const registros = errores === 1 ? 'registro' : 'registros';
+        partes.push(`${errores} ${registros} aún tienen errores.`);
+    }
+
+    const kind = errores > 0 || creados === 0 ? 'warning' : 'success';
+    const shouldQueueSuccess =
+        kind === 'success' && creados > 0 && Boolean(data?.alerta_resumen);
+
+    return {
+        kind,
+        message: partes.join(' '),
+        shouldQueueSuccess,
+    };
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = { buildReprocesarRegistrosFeedback };
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    function obtenerCamposInvalidos(form) {
+        return (form.dataset.invalidFields || '')
+            .split(',')
+            .map(item => item.trim())
+            .filter(Boolean);
+    }
+
+    function limpiarResaltadoCampos(form) {
+        form.querySelectorAll('.field-error-soft').forEach(field => {
+            field.classList.remove('field-error-soft');
+            field.removeAttribute('aria-invalid');
+        });
+    }
+
+    function aplicarResaltadoCampos(form, invalidFields = []) {
+        limpiarResaltadoCampos(form);
+        invalidFields.forEach(fieldName => {
+            const field = form.querySelector(`[name="${fieldName}"]`);
+            if (!field) return;
+            field.classList.add('field-error-soft');
+            field.setAttribute('aria-invalid', 'true');
+        });
+    }
     
     // Filtrar y sincronizar localidades/municipios
     document.querySelectorAll('.select-municipio').forEach(selectMunicipio => {
@@ -103,11 +170,15 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    let mensaje = `Se crearon ${data.creados} legajos correctamente.`;
-                    if (data.errores > 0) {
-                        mensaje += ` ${data.errores} registros aún tienen errores.`;
+                    const feedback = buildReprocesarRegistrosFeedback(data);
+
+                    if (
+                        feedback.shouldQueueSuccess &&
+                        typeof window.queueExpedienteTimedAlert === 'function'
+                    ) {
+                        window.queueExpedienteTimedAlert('success', data.alerta_resumen, 120000);
                     }
-                    
+
                     if (data.registros_restantes === 0) {
                         const btnConfirm = document.getElementById('btn-confirm');
                         if (btnConfirm) {
@@ -118,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                     
-                    showAlert('success', mensaje);
+                    showAlert(feedback.kind, feedback.message);
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     showAlert('danger', 'Error: ' + (data.error || 'Error desconocido'));
@@ -142,6 +213,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const registroId = form.dataset.registroId;
         const inputs = form.querySelectorAll('input, select, textarea');
 
+        aplicarResaltadoCampos(form, obtenerCamposInvalidos(form));
+
         function programarGuardado() {
             registrosConCambios.add(registroId);
             clearTimeout(saveTimers[registroId]);
@@ -151,8 +224,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         inputs.forEach(input => {
-            input.addEventListener('change', programarGuardado);
-            input.addEventListener('input', programarGuardado);
+            const limpiarCampo = () => {
+                input.classList.remove('field-error-soft');
+                input.removeAttribute('aria-invalid');
+            };
+
+            input.addEventListener('change', () => {
+                limpiarCampo();
+                programarGuardado();
+            });
+            input.addEventListener('input', () => {
+                limpiarCampo();
+                programarGuardado();
+            });
         });
     });
     
@@ -213,6 +297,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 limpiarErrorValidacion(form);
+                form.dataset.invalidFields = '';
+                limpiarResaltadoCampos(form);
                 registrosConCambios.delete(String(registroId));
                 const row = document.querySelector(`.registro-erroneo-row[data-registro-id="${registroId}"]`);
                 if (row) {
@@ -224,6 +310,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return true;
             }
             if (data.saved_partial) {
+                form.dataset.invalidFields = (data.invalid_fields || []).join(',');
+                aplicarResaltadoCampos(form, data.invalid_fields || []);
                 registrosConCambios.delete(String(registroId));
                 if (mostrarErrores) {
                     mostrarErrorValidacion(
@@ -233,6 +321,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 return true;
             } else {
+                form.dataset.invalidFields = (data.invalid_fields || []).join(',');
+                aplicarResaltadoCampos(form, data.invalid_fields || []);
                 if (mostrarErrores) {
                     showAlert('danger', 'Error: ' + (data.error || 'Error desconocido'));
                 }
