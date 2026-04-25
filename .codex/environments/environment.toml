@@ -10,6 +10,11 @@ icon = "play"
 command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_bootstrap.ps1"
 
 [[actions]]
+name = "Levantar App Local"
+icon = "globe"
+command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 up --expose-ports"
+
+[[actions]]
 name = "Diagnosticar Entorno"
 icon = "terminal"
 command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_doctor.ps1"
