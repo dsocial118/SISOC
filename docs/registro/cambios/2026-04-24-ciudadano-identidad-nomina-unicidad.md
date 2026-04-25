@@ -17,6 +17,8 @@ un `ESTANDAR` con `documento_unico_key=NULL`.
   `documento_unico_key="<tipo_documento>_<documento>"`.
 - Los registros `SIN_DNI` y `DNI_NO_VALIDADO_RENAPER` mantienen
   `documento_unico_key=NULL`, por lo que siguen admitiendo DNIs repetidos.
+- La normalizacion no reabre revisiones manuales ya cerradas en registros
+  no estandar.
 - El alta desde nomina convierte el `IntegrityError` por DNI estandar duplicado
   en un mensaje de negocio controlado.
 
