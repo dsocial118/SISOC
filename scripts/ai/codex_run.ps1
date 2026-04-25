@@ -26,13 +26,30 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Get-CodexRepoRoot
 
-function Invoke-DjangoCommand {
+function Invoke-CodexBootstrap {
+    param(
+        [switch]$NoStart,
+        [switch]$ExposePorts
+    )
+
+    $bootstrapParams = @{}
+    if ($NoStart) {
+        $bootstrapParams["NoStart"] = $true
+    }
+    if ($ExposePorts) {
+        $bootstrapParams["ExposePorts"] = $true
+    }
+
+    & (Join-Path $PSScriptRoot "codex_bootstrap.ps1") @bootstrapParams
+}
+
+function Invoke-DjangoOneOffCommand {
     param(
         [string[]]$CommandArgs
     )
 
-    & (Join-Path $PSScriptRoot "codex_bootstrap.ps1")
-    Invoke-CodexCompose -RepoRoot $repoRoot -Arguments @("exec", "-T", "django") + $CommandArgs
+    Invoke-CodexBootstrap -NoStart
+    Invoke-CodexCompose -RepoRoot $repoRoot -Arguments (@("run", "--rm", "--no-deps", "django") + $CommandArgs)
 }
 
 switch ($Action) {
@@ -44,6 +61,9 @@ switch ($Action) {
         if ($Args -contains "-PreferLocalFallback" -or $Args -contains "--prefer-local-fallback") {
             $bootstrapParams["PreferLocalFallback"] = $true
         }
+        if ($Args -contains "-ExposePorts" -or $Args -contains "--expose-ports") {
+            $bootstrapParams["ExposePorts"] = $true
+        }
         & (Join-Path $PSScriptRoot "codex_bootstrap.ps1") @bootstrapParams
         break
     }
@@ -52,55 +72,56 @@ switch ($Action) {
         break
     }
     "up" {
-        & (Join-Path $PSScriptRoot "codex_bootstrap.ps1")
+        Invoke-CodexBootstrap -ExposePorts:($Args -contains "-ExposePorts" -or $Args -contains "--expose-ports")
         break
     }
     "shell" {
-        & (Join-Path $PSScriptRoot "codex_bootstrap.ps1")
-        Invoke-CodexCompose -RepoRoot $repoRoot -Arguments @("exec", "django", "bash")
+        $exposePorts = $Args -contains "-ExposePorts" -or $Args -contains "--expose-ports"
+        Invoke-CodexBootstrap -ExposePorts:$exposePorts
+        Invoke-CodexCompose -RepoRoot $repoRoot -Arguments @("exec", "django", "bash") -ExposePorts:$exposePorts
         break
     }
     "test" {
         $targetArgs = if ($Args) { $Args } else { @("-n", "auto") }
-        Invoke-DjangoCommand -CommandArgs (@("pytest") + $targetArgs)
+        Invoke-DjangoOneOffCommand -CommandArgs (@("pytest") + $targetArgs)
         break
     }
     "smoke" {
-        Invoke-DjangoCommand -CommandArgs @("pytest", "-m", "smoke")
+        Invoke-DjangoOneOffCommand -CommandArgs @("pytest", "-m", "smoke")
         break
     }
     "black-check" {
         $targetArgs = if ($Args) { $Args } else { @(".", "--config", "pyproject.toml") }
-        Invoke-DjangoCommand -CommandArgs (@("black", "--check") + $targetArgs)
+        Invoke-DjangoOneOffCommand -CommandArgs (@("black", "--check") + $targetArgs)
         break
     }
     "black-format" {
         $targetArgs = if ($Args) { $Args } else { @(".", "--config", "pyproject.toml") }
-        Invoke-DjangoCommand -CommandArgs (@("black") + $targetArgs)
+        Invoke-DjangoOneOffCommand -CommandArgs (@("black") + $targetArgs)
         break
     }
     "djlint-check" {
         $targetArgs = if ($Args) { $Args } else { @(".", "--configuration=.djlintrc") }
-        Invoke-DjangoCommand -CommandArgs (@("djlint") + $targetArgs + @("--check"))
+        Invoke-DjangoOneOffCommand -CommandArgs (@("djlint") + $targetArgs + @("--check"))
         break
     }
     "djlint-format" {
         $targetArgs = if ($Args) { $Args } else { @(".", "--configuration=.djlintrc") }
-        Invoke-DjangoCommand -CommandArgs (@("djlint") + $targetArgs + @("--reformat"))
+        Invoke-DjangoOneOffCommand -CommandArgs (@("djlint") + $targetArgs + @("--reformat"))
         break
     }
     "pylint" {
         if (-not $Args) {
             throw "pylint requiere al menos una ruta de archivo."
         }
-        Invoke-DjangoCommand -CommandArgs (@("pylint") + $Args + @("--rcfile=.pylintrc"))
+        Invoke-DjangoOneOffCommand -CommandArgs (@("pylint") + $Args + @("--rcfile=.pylintrc"))
         break
     }
     "manage" {
         if (-not $Args) {
             throw "manage requiere argumentos para manage.py."
         }
-        Invoke-DjangoCommand -CommandArgs (@("python", "manage.py") + $Args)
+        Invoke-DjangoOneOffCommand -CommandArgs (@("python", "manage.py") + $Args)
         break
     }
 }
