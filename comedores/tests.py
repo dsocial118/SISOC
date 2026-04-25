@@ -1306,6 +1306,55 @@ def test_agregar_ciudadano_revisado_manualmente_ingresa_a_nomina(
 
 
 @pytest.mark.django_db
+def test_nomina_muestra_estandar_y_no_validado_revisado_con_mismo_dni(
+    admision_fixture,
+):
+    """La nómina debe conservar registros distintos aunque compartan DNI."""
+    from datetime import date
+
+    documento = 30111230
+    estandar = Ciudadano.objects.create(
+        nombre="Ana",
+        apellido="Estandar",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+    )
+    no_validado = Ciudadano.objects.create(
+        nombre="Beto",
+        apellido="NoValidado",
+        fecha_nacimiento=date(1991, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+        tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+        motivo_no_validacion_renaper=Ciudadano.MOTIVO_NO_VALIDADO_OTRO,
+    )
+    no_validado.requiere_revision_manual = False
+    no_validado.save(update_fields=["requiere_revision_manual"])
+
+    Nomina.objects.create(
+        admision=admision_fixture,
+        ciudadano=estandar,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+        admision_id=admision_fixture.pk,
+        ciudadano_id=no_validado.pk,
+        user=mock.Mock(),
+        estado=Nomina.ESTADO_ESPERA,
+    )
+
+    page_obj, *_ = ComedorService.get_nomina_detail(
+        admision_fixture.pk, dni_query=str(documento)
+    )
+    ciudadano_ids = {nomina.ciudadano_id for nomina in page_obj.object_list}
+
+    assert ok is True, msg
+    assert ciudadano_ids == {estandar.pk, no_validado.pk}
+
+
+@pytest.mark.django_db
 def test_importar_nomina_ultimo_convenio_caso_feliz(ciudadano_fixture):
     """Copia los registros de nómina de la admisión anterior a la actual."""
     comedor = Comedor.objects.create(nombre="Comedor Importar")
