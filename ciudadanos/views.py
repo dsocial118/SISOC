@@ -511,18 +511,21 @@ class CiudadanosCreateView(LoginRequiredMixin, CreateView):
                 None,
             )
             if estandar:
-                messages.info(
-                    request, "El ciudadano ya existe. Puede editar su legajo."
+                messages.warning(
+                    request,
+                    "Ya existe un ciudadano estandar con ese DNI. "
+                    "Si corresponde cargar un registro no estandar, continue "
+                    "con este formulario; el legajo estandar no se modificara.",
                 )
-                return redirect("ciudadanos_editar", pk=estandar.pk)
 
-            # Hay duplicados no-estándar: avisar y mostrar el formulario sin redirigir
-            messages.warning(
-                request,
-                f"Se encontraron {len(coincidencias)} registro(s) con ese DNI "
-                "pero ninguno está validado como estándar. "
-                "Revisá la cola de revisión o creá un nuevo registro.",
-            )
+            else:
+                # Hay duplicados no-estándar: avisar y mostrar el formulario sin redirigir
+                messages.warning(
+                    request,
+                    f"Se encontraron {len(coincidencias)} registro(s) con ese DNI "
+                    "pero ninguno está validado como estándar. "
+                    "Revisá la cola de revisión o creá un nuevo registro.",
+                )
         sexo = (request.GET.get("sexo") or "M").upper()
         if sexo not in {"M", "F", "X"}:
             sexo = None
