@@ -19,6 +19,9 @@ un `ESTANDAR` con `documento_unico_key=NULL`.
   `documento_unico_key=NULL`, por lo que siguen admitiendo DNIs repetidos.
 - La normalizacion no reabre revisiones manuales ya cerradas en registros
   no estandar.
+- El alta general en `/ciudadanos/crear` ya no redirige automaticamente a
+  editar el legajo `ESTANDAR` cuando se busca un DNI existente. Permite crear
+  un registro no estandar con el mismo DNI sin modificar el original.
 - El alta desde nomina convierte el `IntegrityError` por DNI estandar duplicado
   en un mensaje de negocio controlado.
 
