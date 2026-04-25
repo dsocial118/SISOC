@@ -26,4 +26,3 @@
 
 ## Límites / entorno
 - La corrida local de `celiaquia/tests/test_expediente_detail.py` queda bloqueada en este entorno Windows por una dependencia nativa faltante de `weasyprint` (`libgobject-2.0-0`) al cargar el árbol completo de URLs de Django.
-

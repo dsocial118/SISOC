@@ -18,7 +18,7 @@ from django.db.models import (
     Func,
     Subquery,
 )
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.core.paginator import Paginator
 from django.core.files.storage import default_storage
 from django.contrib import messages
@@ -245,6 +245,16 @@ def _nomina_ya_contiene_ciudadano(ciudadano, admision_id=None, comedor_id=None):
     return Nomina.objects.filter(
         ciudadano=ciudadano, comedor_id=comedor_id, admision__isnull=True
     ).exists()
+
+
+MENSAJE_IDENTIDAD_PENDIENTE_NOMINA = (
+    "La identidad de esta persona está pendiente de revisión. "
+    "No puede agregarse a la nómina hasta que sea validada."
+)
+
+
+def _ciudadano_puede_ingresar_a_nomina(ciudadano):
+    return not ciudadano.requiere_revision_manual
 
 
 def _crear_nomina_registro(
@@ -1391,6 +1401,9 @@ class ComedorService:
     ):
         ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
 
+        if not _ciudadano_puede_ingresar_a_nomina(ciudadano):
+            return False, MENSAJE_IDENTIDAD_PENDIENTE_NOMINA
+
         if comedor_id is not None and admision_id is None:
             comedor = get_object_or_404(Comedor, pk=comedor_id)
             if comedor_usa_admision_para_nomina(comedor):
@@ -1409,6 +1422,8 @@ class ComedorService:
                 ciudadano = get_object_or_404(
                     Ciudadano.objects.select_for_update(), pk=ciudadano_id
                 )
+                if not _ciudadano_puede_ingresar_a_nomina(ciudadano):
+                    return False, MENSAJE_IDENTIDAD_PENDIENTE_NOMINA
                 if _nomina_ya_contiene_ciudadano(
                     ciudadano, admision_id=admision_id, comedor_id=comedor_id
                 ):
@@ -1439,19 +1454,26 @@ class ComedorService:
         Crea un ciudadano nuevo y lo agrega a la nómina con estado y observaciones.
         ciudadano_data: dict con datos para crear ciudadano (ej: datos validados del form).
         """
-        ciudadano = Ciudadano.objects.create(**ciudadano_data)
+        try:
+            with transaction.atomic():
+                ciudadano = Ciudadano.objects.create(**ciudadano_data)
 
-        ok, msg = ComedorService.agregar_ciudadano_a_nomina(
-            ciudadano_id=ciudadano.id,
-            user=user,
-            estado=estado,
-            observaciones=observaciones,
-            admision_id=admision_id,
-            comedor_id=comedor_id,
-        )
-        if not ok:
-            ciudadano.delete()
-        return ok, msg
+                ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+                    ciudadano_id=ciudadano.id,
+                    user=user,
+                    estado=estado,
+                    observaciones=observaciones,
+                    admision_id=admision_id,
+                    comedor_id=comedor_id,
+                )
+                if not ok:
+                    ciudadano.delete()
+                return ok, msg
+        except IntegrityError:
+            return (
+                False,
+                "Ya existe un ciudadano estandar con este tipo y numero de documento.",
+            )
 
     @staticmethod
     def importar_nomina_ultimo_convenio(admision_id, comedor_id):

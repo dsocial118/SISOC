@@ -199,6 +199,43 @@ def test_ciudadanos_create_busqueda_paths(mocker):
     assert redir.called
 
 
+def test_ciudadanos_create_busqueda_con_existente_no_estandar_precarga_renaper(mocker):
+    view = module.CiudadanosCreateView()
+    request = SimpleNamespace(GET={"sexo": "F"}, session=_Session(), headers={})
+
+    super_get = mocker.patch(
+        "django.views.generic.edit.BaseCreateView.get",
+        return_value="super-get",
+    )
+    mocker.patch("ciudadanos.views.messages.warning")
+    msg_success = mocker.patch("ciudadanos.views.messages.success")
+
+    existente_no_estandar = SimpleNamespace(
+        pk=7,
+        tipo_registro_identidad=module.Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+    )
+    mocker.patch(
+        "ciudadanos.views.Ciudadano.objects.filter",
+        return_value=_OrderableResult([existente_no_estandar]),
+    )
+    renaper = mocker.patch(
+        "ciudadanos.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        return_value={
+            "success": True,
+            "data": {"documento": 12345678, "nombre": "Ana"},
+        },
+    )
+
+    response = view._handle_ciudadano_busqueda(request, "12345678", None)
+
+    assert response == "super-get"
+    renaper.assert_called_once_with("12345678", sexo="F")
+    assert request.session["ciudadano_prefill"]["nombre"] == "Ana"
+    assert request.session.modified is True
+    assert msg_success.called
+    assert super_get.called
+
+
 def test_ciudadanos_create_get_form_and_safe_int(mocker):
     view = module.CiudadanosCreateView()
     view._prefill_ciudadano = {"provincia": "1", "municipio": "2", "localidad": "3"}
@@ -476,6 +513,15 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
         save=mocker.Mock(),
         get_absolute_url=lambda: "/ciudadano/1/",
     )
+
+    def _normalizar_estandar():
+        ciudadano.documento_unico_key = "{}_{}".format(
+            module.Ciudadano.DOCUMENTO_DNI, "12345678"
+        )
+        ciudadano.requiere_revision_manual = False
+        return {"documento_unico_key", "requiere_revision_manual"}
+
+    ciudadano.normalizar_identidad = _normalizar_estandar
     form = SimpleNamespace(save=lambda commit=False: ciudadano, save_m2m=mocker.Mock())
     create_view.request = SimpleNamespace(user=SimpleNamespace(id=2))
     mocker.patch("ciudadanos.views.transaction.atomic", return_value=nullcontext())
@@ -507,6 +553,22 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
         save=mocker.Mock(),
         get_absolute_url=lambda: "/c/2/",
     )
+
+    def _normalizar_sin_dni():
+        ciudadano2.documento = None
+        ciudadano2.documento_unico_key = None
+        ciudadano2.requiere_revision_manual = True
+        ciudadano2.motivo_no_validacion_renaper = None
+        ciudadano2.motivo_no_validacion_descripcion = None
+        return {
+            "documento",
+            "documento_unico_key",
+            "requiere_revision_manual",
+            "motivo_no_validacion_renaper",
+            "motivo_no_validacion_descripcion",
+        }
+
+    ciudadano2.normalizar_identidad = _normalizar_sin_dni
     form2 = SimpleNamespace(
         save=lambda commit=False: ciudadano2, save_m2m=mocker.Mock()
     )

@@ -1247,6 +1247,65 @@ def test_agregar_ciudadano_ya_en_nomina(admision_fixture, ciudadano_fixture):
 
 
 @pytest.mark.django_db
+def test_agregar_ciudadano_en_revision_no_ingresa_a_nomina(
+    admision_fixture, ciudadano_fixture
+):
+    """No permite sumar a nómina ciudadanos pendientes de revisión de identidad."""
+    ciudadano_fixture.tipo_registro_identidad = Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO
+    ciudadano_fixture.requiere_revision_manual = True
+    ciudadano_fixture.documento = 30111222
+    ciudadano_fixture.save(
+        update_fields=[
+            "tipo_registro_identidad",
+            "requiere_revision_manual",
+            "documento",
+        ]
+    )
+
+    ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+        admision_id=admision_fixture.pk,
+        ciudadano_id=ciudadano_fixture.pk,
+        user=mock.Mock(),
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    assert ok is False
+    assert "pendiente de revisión" in msg
+    assert not Nomina.objects.filter(
+        admision=admision_fixture, ciudadano=ciudadano_fixture
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_agregar_ciudadano_revisado_manualmente_ingresa_a_nomina(
+    admision_fixture, ciudadano_fixture
+):
+    """Permite sumar a nómina ciudadanos cuya revisión manual ya fue cerrada."""
+    ciudadano_fixture.tipo_registro_identidad = Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO
+    ciudadano_fixture.requiere_revision_manual = False
+    ciudadano_fixture.documento = 30111223
+    ciudadano_fixture.save(
+        update_fields=[
+            "tipo_registro_identidad",
+            "requiere_revision_manual",
+            "documento",
+        ]
+    )
+
+    ok, _msg = ComedorService.agregar_ciudadano_a_nomina(
+        admision_id=admision_fixture.pk,
+        ciudadano_id=ciudadano_fixture.pk,
+        user=mock.Mock(),
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    assert ok is True
+    assert Nomina.objects.filter(
+        admision=admision_fixture, ciudadano=ciudadano_fixture
+    ).exists()
+
+
+@pytest.mark.django_db
 def test_importar_nomina_ultimo_convenio_caso_feliz(ciudadano_fixture):
     """Copia los registros de nómina de la admisión anterior a la actual."""
     comedor = Comedor.objects.create(nombre="Comedor Importar")
@@ -1389,6 +1448,35 @@ def test_nomina_detail_view_responde_ok(client_nomina_fixture, admision_fixture)
     assert response.status_code == 200
     for key in ["nomina", "cantidad_nomina", "object", "admision_pk"]:
         assert key in response.context
+
+
+@pytest.mark.django_db
+def test_nomina_create_view_muestra_ciudadano_en_revision_sin_accion_agregar(
+    client_nomina_fixture, admision_fixture, ciudadano_fixture
+):
+    """La búsqueda muestra el caso en revisión, pero no ofrece agregarlo."""
+    ciudadano_fixture.tipo_registro_identidad = Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO
+    ciudadano_fixture.requiere_revision_manual = True
+    ciudadano_fixture.documento = 30111224
+    ciudadano_fixture.save(
+        update_fields=[
+            "tipo_registro_identidad",
+            "requiere_revision_manual",
+            "documento",
+        ]
+    )
+    comedor = admision_fixture.comedor
+    url = reverse(
+        "nomina_crear",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_fixture.pk},
+    )
+
+    response = client_nomina_fixture.get(url, {"query": "30111224"})
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Revisión pendiente" in content
+    assert f'data-ciudadano-id="{ciudadano_fixture.pk}"' not in content
 
 
 @pytest.mark.django_db
