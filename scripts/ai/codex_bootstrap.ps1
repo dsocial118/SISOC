@@ -1,6 +1,7 @@
 param(
     [switch]$NoStart,
-    [switch]$PreferLocalFallback
+    [switch]$PreferLocalFallback,
+    [switch]$ExposePorts
 )
 
 Set-StrictMode -Version Latest
@@ -22,9 +23,9 @@ if ($envResult.UpdatedKeys.Count -gt 0) {
 
 if (-not $PreferLocalFallback -and (Test-CodexDockerAvailable)) {
     Write-Host "Modo principal: Docker"
-    Invoke-CodexCompose -RepoRoot $repoRoot -Arguments @("config", "-q")
+    Invoke-CodexCompose -RepoRoot $repoRoot -Arguments @("config", "-q") -ExposePorts:$ExposePorts
     if (-not $NoStart) {
-        Invoke-CodexCompose -RepoRoot $repoRoot -Arguments @("up", "-d", "mysql", "django")
+        Invoke-CodexCompose -RepoRoot $repoRoot -Arguments @("up", "-d", "mysql", "django") -ExposePorts:$ExposePorts
     }
     exit 0
 }
