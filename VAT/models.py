@@ -9,6 +9,9 @@ from core.soft_delete import SoftDeleteModelMixin
 
 
 class Centro(SoftDeleteModelMixin, models.Model):
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"activo": False}
+    SOFT_RESTORE_OPERATIONAL_UPDATES = {"activo": True}
+
     nombre = models.CharField(max_length=200)
     referente = models.ForeignKey(
         User,
@@ -179,6 +182,9 @@ class Subsector(SoftDeleteModelMixin, models.Model):
 
 
 class TituloReferencia(SoftDeleteModelMixin, models.Model):
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"activo": False}
+    SOFT_RESTORE_OPERATIONAL_UPDATES = {"activo": True}
+
     codigo_referencia = models.CharField(
         max_length=50, blank=True, null=True, verbose_name="Código de Referencia"
     )
@@ -225,6 +231,9 @@ class ModalidadCursada(models.Model):
 
 
 class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"activo": False}
+    SOFT_RESTORE_OPERATIONAL_UPDATES = {"activo": True}
+
     provincia = models.ForeignKey(
         Provincia,
         on_delete=models.PROTECT,
@@ -903,6 +912,8 @@ class Curso(SoftDeleteModelMixin, models.Model):
         ("finalizado", "Finalizado"),
         ("cancelado", "Cancelado"),
     ]
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"estado": "cancelado"}
+    SOFT_RESTORE_OPERATIONAL_UPDATES = {"estado": "planificado"}
 
     centro = models.ForeignKey(
         Centro,
@@ -1075,6 +1086,8 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
         ("cerrada", "Cerrada"),
         ("suspendida", "Suspendida"),
     ]
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"estado": "cerrada"}
+    SOFT_RESTORE_OPERATIONAL_UPDATES = {"estado": "planificada"}
 
     curso = models.ForeignKey(
         Curso,
@@ -1211,6 +1224,8 @@ class OfertaInstitucional(SoftDeleteModelMixin, models.Model):
         ("cerrada", "Cerrada"),
         ("cancelada", "Cancelada"),
     ]
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"estado": "cancelada"}
+    SOFT_RESTORE_OPERATIONAL_UPDATES = {"estado": "planificada"}
 
     centro = models.ForeignKey(
         Centro,
@@ -1313,6 +1328,8 @@ class Comision(SoftDeleteModelMixin, models.Model):
         ("cerrada", "Cerrada"),
         ("suspendida", "Suspendida"),
     ]
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"estado": "cerrada"}
+    SOFT_RESTORE_OPERATIONAL_UPDATES = {"estado": "planificada"}
 
     oferta = models.ForeignKey(
         OfertaInstitucional,

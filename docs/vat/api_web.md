@@ -83,6 +83,10 @@ Filtros:
 
 Crea una inscripción VAT y, si la oferta usa voucher, descuenta el costo configurado.
 
+Cuando la inscripción pública crea un ciudadano en forma automática, `datos_postulante.telefono`
+admite formatos internacionales y cadenas de hasta 50 caracteres, por ejemplo con prefijo `+54`,
+separadores o interno.
+
 ### `POST /inscripciones/prevalidar/`
 
 Prevalida si una persona puede inscribirse antes de confirmar el alta.

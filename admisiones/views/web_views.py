@@ -43,7 +43,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from expedientespagos.services import ExpedientesPagosService
-from iam.services import user_has_any_permission_codes
+from iam.services import user_has_any_permission_codes, user_has_permission_code
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from rendicioncuentasfinal.models import RendicionCuentasFinal
 from rendicioncuentasfinal.rendicion_cuentas_final_service import (
@@ -357,12 +357,14 @@ def _build_admision_detail_dupla_context(comedor):
     }
 
 
-def _build_admision_detail_acompanamiento_context(comedor):
+def _build_admision_detail_acompanamiento_context(comedor, admision_id=None):
     acompanamiento_data = (
-        AcompanamientoService.obtener_datos_admision(comedor) if comedor else {}
+        AcompanamientoService.obtener_datos_admision(comedor, admision_id=admision_id)
+        if comedor
+        else {}
     )
     prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(
-        acompanamiento_data.get("anexo")
+        acompanamiento_data.get("info_relevante")
     )
 
     return {
@@ -484,6 +486,23 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
                 },
                 status=403,
             )
+    error_modificacion = AdmisionService._validar_modificacion_documental_por_tecnico(
+        request.user, admision
+    )
+    if error_modificacion:
+        return JsonResponse({"success": False, "error": error_modificacion}, status=400)
+
+    if AdmisionService.bloquea_eliminacion_documental(admision):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": (
+                    "No se pueden eliminar documentos cuando el informe tecnico "
+                    "esta finalizado o en etapas posteriores."
+                ),
+            },
+            status=400,
+        )
 
     archivo = (
         ArchivoAdmision.objects.filter(
@@ -498,7 +517,25 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
     )
 
     estado_actual = (archivo.estado or "").strip().lower()
-    if estado_actual in {"aceptado", "a validar abogado"}:
+    user_groups = getattr(request.user, "groups", None)
+    groups_filter = getattr(user_groups, "filter", None)
+    tecnico_comedor_group = (
+        groups_filter(name="Tecnico Comedor").exists()
+        if callable(groups_filter)
+        else False
+    )
+    es_tecnico_dupla = (
+        not request.user.is_superuser
+        and admision.comedor
+        and AdmisionService._verificar_permiso_dupla(request.user, admision.comedor)
+        and (
+            user_has_permission_code(request.user, "auth.role_tecnico_comedor")
+            or tecnico_comedor_group
+        )
+    )
+    if estado_actual in {"aceptado", "a validar abogado"} and not (
+        es_tecnico_dupla or request.user.is_superuser
+    ):
         return JsonResponse(
             {
                 "success": False,
@@ -833,7 +870,10 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             admision
         )
 
-        acompanamiento_context = _build_admision_detail_acompanamiento_context(comedor)
+        acompanamiento_context = _build_admision_detail_acompanamiento_context(
+            comedor,
+            admision_id=getattr(admision, "id", None),
+        )
         rendiciones_context = _build_admision_detail_rendiciones_context(comedor)
         historial_context = _build_admision_detail_historial_context(
             admision, self.request

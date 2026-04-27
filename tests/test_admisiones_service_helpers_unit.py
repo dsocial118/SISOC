@@ -3,7 +3,9 @@
 from datetime import datetime
 from types import SimpleNamespace
 from io import BytesIO
+from contextlib import nullcontext
 
+import pytest
 from django.utils import timezone
 
 from admisiones.services import admisiones_service as module
@@ -11,6 +13,9 @@ from admisiones.services import admisiones_service as module
 
 class _ListChain(list):
     """Minimal queryset-like list for service unit tests."""
+
+    def prefetch_related(self, *_args, **_kwargs):
+        return self
 
     def select_related(self, *_args, **_kwargs):
         return self
@@ -265,6 +270,7 @@ def test_post_update_router_and_update_convenio(mocker):
 def test_post_update_router_cubre_ramas_restantes(mocker):
     adm = SimpleNamespace(
         pk=2,
+        estado_admision="documentacion_aprobada",
         refresh_from_db=mocker.Mock(),
     )
     user = SimpleNamespace()
@@ -279,9 +285,17 @@ def test_post_update_router_cubre_ramas_restantes(mocker):
     upd_estado = mocker.patch.object(
         module.AdmisionService, "actualizar_estado_admision"
     )
+    importar_mock = mocker.patch(
+        "admisiones.services.admisiones_service.AcompanamientoService.importar_datos_desde_admision"
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.transaction.atomic",
+        return_value=nullcontext(),
+    )
     ok, msg = module.AdmisionService.procesar_post_update(req_acomp, adm)
     assert (ok, msg) == (True, "Se envió a Acompañamiento correctamente.")
     upd_estado.assert_called_with(adm, "enviar_a_acompaniamiento")
+    importar_mock.assert_called_once_with(adm)
 
     # rectificar documentación
     req_rect = SimpleNamespace(POST={"btnRectificarDocumentacion": "1"}, user=user)
@@ -293,7 +307,24 @@ def test_post_update_router_cubre_ramas_restantes(mocker):
     ok_rect, msg_rect = module.AdmisionService.procesar_post_update(req_rect, adm)
     assert (ok_rect, msg_rect) == (True, "Se rectificó la documentación.")
 
+    # finalizar carga documentación
+    req_finalizar = SimpleNamespace(
+        POST={"btnFinalizarCargaDocumentacion": "1"}, user=user
+    )
+    upd_estado_finalizar = mocker.patch.object(
+        module.AdmisionService, "actualizar_estado_admision", return_value=True
+    )
+    ok_finalizar, msg_finalizar = module.AdmisionService.procesar_post_update(
+        req_finalizar, adm
+    )
+    assert (ok_finalizar, msg_finalizar) == (
+        True,
+        "Carga de documentación finalizada correctamente.",
+    )
+    upd_estado_finalizar.assert_called_with(adm, "finalizar_carga_documentacion")
+
     # caratulación válida
+    adm.estado_admision = "documentacion_carga_finalizada"
     req_carat = SimpleNamespace(POST={"btnCaratulacion": "1"}, user=user)
     form_ok = SimpleNamespace(is_valid=lambda: True, save=mocker.Mock())
     mocker.patch(
@@ -322,11 +353,50 @@ def test_post_update_router_cubre_ramas_restantes(mocker):
     )
     assert (ok_carat_bad, msg_carat_bad) == (False, "Error al guardar la caratulación.")
 
+    # caratulación bloqueada si no finalizó la carga documental
+    adm.estado_admision = "documentacion_aprobada"
+    req_carat_bloq = SimpleNamespace(POST={"btnCaratulacion": "1"}, user=user)
+    ok_carat_bloq, msg_carat_bloq = module.AdmisionService.procesar_post_update(
+        req_carat_bloq, adm
+    )
+    assert (ok_carat_bloq, msg_carat_bloq) == (
+        False,
+        "Debe finalizar la carga de documentación antes de caratular.",
+    )
+
     # tipo convenio
     req_tipo = SimpleNamespace(POST={"tipo_convenio": "7"}, user=user)
     mocker.patch.object(module.AdmisionService, "update_convenio", return_value=True)
     ok_tipo, msg_tipo = module.AdmisionService.procesar_post_update(req_tipo, adm)
     assert (ok_tipo, msg_tipo) == (True, "Tipo de convenio actualizado correctamente.")
+
+
+def test_procesar_post_disponibilizar_acomp_no_persiste_estado_parcial_si_importar_falla(
+    mocker,
+):
+    adm = SimpleNamespace(pk=3)
+    user = SimpleNamespace()
+    importar_mock = mocker.patch(
+        "admisiones.services.admisiones_service.AcompanamientoService.importar_datos_desde_admision",
+        side_effect=RuntimeError("boom"),
+    )
+    marcar_envio = mocker.patch.object(
+        module.AdmisionService, "marcar_como_enviado_a_acompaniamiento"
+    )
+    actualizar_estado = mocker.patch.object(
+        module.AdmisionService, "actualizar_estado_admision"
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.transaction.atomic",
+        return_value=nullcontext(),
+    )
+
+    with pytest.raises(RuntimeError, match="boom"):
+        module.AdmisionService._procesar_post_disponibilizar_acomp(adm, user)
+
+    importar_mock.assert_called_once_with(adm)
+    marcar_envio.assert_not_called()
+    actualizar_estado.assert_not_called()
 
 
 def test_handle_upload_personalizado_and_delete_file(mocker):
@@ -401,8 +471,10 @@ def test_handle_upload_personalizado_and_delete_file(mocker):
     assert archivo_obj.delete.called
 
 
-def test_actualizar_estado_ajax_and_update_estado_archivo(mocker):
-    """AJAX state update should validate payload, permissions and observation rules."""
+def test_actualizar_estado_ajax_filtra_documento_por_admision_y_actualiza_estado(
+    mocker,
+):
+    """AJAX state update should scope the document lookup to the admision payload."""
     req_bad = SimpleNamespace(POST={}, user=SimpleNamespace(is_superuser=True))
     out_bad = module.AdmisionService.actualizar_estado_ajax(req_bad)
     assert out_bad["success"] is False
@@ -419,7 +491,7 @@ def test_actualizar_estado_ajax_and_update_estado_archivo(mocker):
         },
         user=SimpleNamespace(is_superuser=False),
     )
-    mocker.patch(
+    get_object_or_404 = mocker.patch(
         "admisiones.services.admisiones_service.get_object_or_404",
         side_effect=[adm, archivo],
     )
@@ -437,6 +509,12 @@ def test_actualizar_estado_ajax_and_update_estado_archivo(mocker):
     out = module.AdmisionService.actualizar_estado_ajax(req)
     assert out["success"] is True
     assert upd_mock.called
+    archivo_queryset = get_object_or_404.call_args_list[1].args[0]
+    assert archivo_queryset is not module.ArchivoAdmision
+    assert get_object_or_404.call_args_list[1].kwargs == {
+        "id": "2",
+        "admision_id": "1",
+    }
 
 
 def test_update_estado_archivo_none_returns_false():
@@ -623,32 +701,44 @@ def test_transiciones_estado_y_helpers_obligatorios(mocker):
         is True
     )
     assert adm.estado_admision == "documentacion_en_proceso"
+    adm.estado_admision = "documentacion_aprobada"
+    assert (
+        module.AdmisionService.actualizar_estado_admision(
+            adm, "finalizar_carga_documentacion"
+        )
+        is True
+    )
+    assert adm.estado_admision == "documentacion_carga_finalizada"
     assert (
         module.AdmisionService.actualizar_estado_admision(adm, "accion_inexistente")
         is False
     )
 
-    docs = [SimpleNamespace(pk=1), SimpleNamespace(pk=2)]
-    mocker.patch(
-        "admisiones.services.admisiones_service.Documentacion.objects.filter",
-        return_value=docs,
+    docs_prefetch = _ListChain(
+        [
+            SimpleNamespace(
+                pk=1,
+                archivos_prefetch_para_admision=[SimpleNamespace(estado="Aceptado")],
+            ),
+            SimpleNamespace(pk=2, archivos_prefetch_para_admision=[]),
+        ]
     )
     mocker.patch(
-        "admisiones.services.admisiones_service.ArchivoAdmision.objects.filter",
-        side_effect=[
-            SimpleNamespace(first=lambda: SimpleNamespace()),
-            SimpleNamespace(first=lambda: None),
-        ],
+        "admisiones.services.admisiones_service.Documentacion.objects.filter",
+        return_value=docs_prefetch,
     )
     assert module.AdmisionService._todos_obligatorios_aceptados(adm) is False
 
     mocker.patch(
         "admisiones.services.admisiones_service.Documentacion.objects.filter",
-        return_value=[SimpleNamespace(pk=1)],
-    )
-    mocker.patch(
-        "admisiones.services.admisiones_service.ArchivoAdmision.objects.filter",
-        return_value=SimpleNamespace(first=lambda: SimpleNamespace(archivo="x")),
+        return_value=_ListChain(
+            [
+                SimpleNamespace(
+                    pk=1,
+                    archivos_prefetch_para_admision=[SimpleNamespace(archivo="x")],
+                )
+            ]
+        ),
     )
     assert module.AdmisionService._todos_obligatorios_tienen_archivos(adm) is True
 
@@ -681,6 +771,85 @@ def test_actualizar_estados_por_cambio_documento(mocker):
     )
     module.AdmisionService._actualizar_estados_por_cambio_documento(adm2, "Aceptado")
     assert adm2.estado_admision == "documentacion_aprobada"
+
+
+def test_limpiar_if_gde_recalcula_estado_documental_si_falta_aprobacion(mocker):
+    adm = SimpleNamespace(
+        estado_admision="documentacion_carga_finalizada",
+        numero_if_tecnico="IF-1",
+        archivo_informe_tecnico_GDE="if.pdf",
+        save=mocker.Mock(),
+    )
+    mocker.patch.object(
+        module.AdmisionService, "_todos_obligatorios_tienen_archivos", return_value=True
+    )
+    mocker.patch.object(
+        module.AdmisionService, "_todos_obligatorios_aceptados", return_value=False
+    )
+
+    module.AdmisionService._limpiar_if_gde_admision_por_cambio_documental(adm)
+
+    assert adm.numero_if_tecnico is None
+    assert adm.archivo_informe_tecnico_GDE is None
+    assert adm.estado_admision == "documentacion_finalizada"
+
+
+def test_limpiar_if_gde_recalcula_estado_documental_si_falta_obligatorio(mocker):
+    adm = SimpleNamespace(
+        estado_admision="documentacion_aprobada",
+        numero_if_tecnico=None,
+        archivo_informe_tecnico_GDE=None,
+        save=mocker.Mock(),
+    )
+    mocker.patch.object(
+        module.AdmisionService,
+        "_todos_obligatorios_tienen_archivos",
+        return_value=False,
+    )
+    mocker.patch.object(
+        module.AdmisionService, "_todos_obligatorios_aceptados", return_value=False
+    )
+
+    module.AdmisionService._limpiar_if_gde_admision_por_cambio_documental(adm)
+
+    assert adm.estado_admision == "documentacion_en_proceso"
+
+
+def test_bloquea_eliminacion_documental_solo_desde_informe_finalizado():
+    for estado in module.AdmisionService.ESTADOS_BLOQUEO_ELIMINACION_DOCUMENTAL:
+        assert module.AdmisionService.bloquea_eliminacion_documental(
+            SimpleNamespace(estado_admision=estado)
+        )
+
+    for estado in (
+        None,
+        "documentacion_aprobada",
+        "expediente_cargado",
+        "informe_tecnico_en_proceso",
+        "documentacion_en_proceso",
+    ):
+        assert not module.AdmisionService.bloquea_eliminacion_documental(
+            SimpleNamespace(estado_admision=estado)
+        )
+
+
+def test_obtener_ultimo_informe_tecnico_filtra_tipo_base(mocker):
+    informe = SimpleNamespace(estado="Iniciado", estado_formulario="borrador")
+    qs = mocker.Mock()
+    qs.order_by.return_value = qs
+    qs.only.return_value = qs
+    qs.first.return_value = informe
+    filter_mock = mocker.patch(
+        "admisiones.services.admisiones_service.InformeTecnico.objects.filter",
+        return_value=qs,
+    )
+
+    resultado = module.AdmisionService._obtener_ultimo_informe_tecnico(
+        SimpleNamespace(id=99)
+    )
+
+    filter_mock.assert_called_once_with(admision=SimpleNamespace(id=99), tipo="base")
+    assert resultado is informe
 
 
 def test_verificar_estado_admision_actualiza_solo_cuando_corresponde(mocker):

@@ -15,6 +15,9 @@ User = get_user_model()
 class Ciudadano(SoftDeleteModelMixin, models.Model):
     """Datos básicos del ciudadano/a."""
 
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"activo": False}
+    SOFT_RESTORE_OPERATIONAL_UPDATES = {"activo": True}
+
     DOCUMENTO_DNI = "DNI"
     DOCUMENTO_CUIT = "CUIT"
     DOCUMENTO_PASAPORTE = "PASAPORTE"
@@ -140,8 +143,8 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         max_digits=9, decimal_places=6, null=True, blank=True
     )
 
-    telefono = models.CharField(max_length=30, null=True, blank=True)
-    telefono_alternativo = models.CharField(max_length=30, null=True, blank=True)
+    telefono = models.CharField(max_length=50, null=True, blank=True)
+    telefono_alternativo = models.CharField(max_length=50, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
 
     ESTADO_CIVIL_CHOICES = [
@@ -272,6 +275,82 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     @property
     def nombre_completo(self) -> str:
         return f"{self.nombre} {self.apellido}".strip()
+
+    def _set_identity_field(self, field_name, value):
+        if getattr(self, field_name) == value:
+            return set()
+        setattr(self, field_name, value)
+        return {field_name}
+
+    def build_documento_unico_key(self):
+        if (
+            self.tipo_registro_identidad == self.TIPO_REGISTRO_ESTANDAR
+            and self.documento
+        ):
+            return f"{self.tipo_documento}_{self.documento}"
+        return None
+
+    def _debe_requerir_revision_manual(self, tipo, update_fields=None):
+        if tipo == self.TIPO_REGISTRO_ESTANDAR:
+            return False
+        if update_fields is not None and "requiere_revision_manual" in update_fields:
+            return self.requiere_revision_manual
+        if self.pk is None:
+            return True
+
+        tipo_previo = (
+            self.__class__.all_objects.filter(pk=self.pk)
+            .values_list("tipo_registro_identidad", flat=True)
+            .first()
+        )
+        if tipo_previo != tipo:
+            return True
+        return self.requiere_revision_manual
+
+    def normalizar_identidad(self, update_fields=None):
+        changed_fields = set()
+        tipo = self.tipo_registro_identidad or self.TIPO_REGISTRO_ESTANDAR
+
+        if tipo == self.TIPO_REGISTRO_SIN_DNI:
+            changed_fields |= self._set_identity_field("documento", None)
+            changed_fields |= self._set_identity_field(
+                "motivo_no_validacion_renaper", None
+            )
+            changed_fields |= self._set_identity_field(
+                "motivo_no_validacion_descripcion", None
+            )
+        elif tipo == self.TIPO_REGISTRO_DNI_NO_VALIDADO:
+            changed_fields |= self._set_identity_field("motivo_sin_dni", None)
+            changed_fields |= self._set_identity_field(
+                "motivo_sin_dni_descripcion", None
+            )
+        else:
+            changed_fields |= self._set_identity_field("motivo_sin_dni", None)
+            changed_fields |= self._set_identity_field(
+                "motivo_sin_dni_descripcion", None
+            )
+            changed_fields |= self._set_identity_field(
+                "motivo_no_validacion_renaper", None
+            )
+            changed_fields |= self._set_identity_field(
+                "motivo_no_validacion_descripcion", None
+            )
+
+        changed_fields |= self._set_identity_field(
+            "documento_unico_key", self.build_documento_unico_key()
+        )
+        changed_fields |= self._set_identity_field(
+            "requiere_revision_manual",
+            self._debe_requerir_revision_manual(tipo, update_fields=update_fields),
+        )
+        return changed_fields
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        changed_fields = self.normalizar_identidad(update_fields=update_fields)
+        if update_fields is not None and changed_fields:
+            kwargs["update_fields"] = set(update_fields) | changed_fields
+        return super().save(*args, **kwargs)
 
     @staticmethod
     def documento_prefix_filter(cleaned, field_name="documento"):

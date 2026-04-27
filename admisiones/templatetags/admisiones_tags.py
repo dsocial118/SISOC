@@ -150,6 +150,11 @@ def render_boton_tecnicos(boton, admision=None, informe_tecnico=None):
             "modal": "#modalRectificarDocumetacion",
             "clase": "btn-warning",
         },
+        "finalizar_carga_documentacion": {
+            "texto": "Finalizar carga documentación",
+            "modal": "#modalFinalizarCargaDocumentacion",
+            "clase": "btn-primary",
+        },
         "caratular_expediente": {
             "texto": "Caratular expediente",
             "modal": "#caratularExpediente",

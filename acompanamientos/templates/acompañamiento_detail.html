@@ -24,7 +24,7 @@
 {% block content %}
     <div class="row">
         <div class="col-auto">
-            <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
+            <a href="{% url 'comedor_intervencion_ver' comedor.id %}{% if admision_id_activa %}?admision_id={{ admision_id_activa }}{% endif %}"
                class="btn btn-primary mb-3">
                 <i class="fas fa-plus me-2"></i>Intervenciones
             </a>

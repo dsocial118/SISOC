@@ -97,14 +97,14 @@ def registrar_comentarios_automaticos(sender, instance, **_):
 def resolver_conflictos_ciudadanos_tras_restauracion(sender, instance, user, **kwargs):
     """
     Al restaurar un Expediente, re-elimina lógicamente los legajos cuyo ciudadano
-    ya está activo en otro expediente abierto o dentro del programa.
+    ya tiene otro legajo en un estado que no permite duplicación o está dentro del programa.
 
     Evita que un ciudadano quede vivo en dos expedientes simultáneamente cuando
     el Expediente fue eliminado y restaurado después de que ese ciudadano fue
     importado en otro expediente.
     """
     from celiaquia.services.importacion_service.impl import (
-        ESTADOS_PRE_CUPO,
+        REVISIONES_BLOQUEAN_NUEVO_EXPEDIENTE,
     )  # pylint: disable=import-outside-toplevel
 
     legajos_restaurados = ExpedienteCiudadano.objects.filter(expediente=instance)
@@ -117,7 +117,7 @@ def resolver_conflictos_ciudadanos_tras_restauracion(sender, instance, user, **k
         .exclude(expediente=instance)
         .filter(
             Q(estado_cupo=EstadoCupo.DENTRO)
-            | Q(expediente__estado__nombre__in=ESTADOS_PRE_CUPO)
+            | Q(revision_tecnico__in=REVISIONES_BLOQUEAN_NUEVO_EXPEDIENTE)
         )
         .values_list("ciudadano_id", flat=True)
     )
