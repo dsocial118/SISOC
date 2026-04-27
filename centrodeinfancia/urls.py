@@ -12,6 +12,7 @@ from centrodeinfancia.views import (
     IntervencionCentroInfanciaDetailView,
     IntervencionCentroInfanciaUpdateView,
     NominaCentroInfanciaCreateView,
+    NominaCentroInfanciaEditView,
     NominaCentroInfanciaDeleteView,
     NominaCentroInfanciaDetailView,
     ObservacionCentroInfanciaCreateView,
@@ -104,6 +105,13 @@ urlpatterns = [
             TrabajadorCentroInfanciaCreateView.as_view()
         ),
         name="centrodeinfancia_trabajador_crear",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/nomina/<int:nomina_id>/editar/",
+        permissions_any_required(["centrodeinfancia.change_nominacentroinfancia"])(
+            NominaCentroInfanciaEditView.as_view()
+        ),
+        name="centrodeinfancia_nomina_editar",
     ),
     path(
         "centrodeinfancia/<int:pk>/trabajadores/<int:trabajador_id>/editar/",

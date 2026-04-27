@@ -1,0 +1,27 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+{% csrf_token %}
+{{ form|crispy }}
+
+{% block title %}Editar a Nómina{% endblock %}
+{% block titulo-pagina %}Editar a Nómina{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-end mb-3">
+        <div class="d-flex gap-2">
+            <div>
+                {% if centro %}
+                    <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}"
+                       class="btn btn-secondary">Volver</a>
+                {% else %}
+                    <a href="{% url 'centrodeinfancia' %}" class="btn btn-secondary">Volver</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+    </form>
+{% endblock %}

@@ -44,6 +44,7 @@ from centrodeinfancia.access import (
 from centrodeinfancia.forms import (
     CentroDeInfanciaForm,
     IntervencionCentroInfanciaForm,
+    NominaCentroInfanciaFormEdit,
     NominaCentroInfanciaCreateForm,
     NominaCentroInfanciaForm,
     ObservacionCentroInfanciaForm,
@@ -1006,7 +1007,23 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
         context["plazo_ejecucion"] = "-"
         return context
 
+class NominaCentroInfanciaEditView(LoginRequiredMixin, UpdateView):
+    model = NominaCentroInfancia
+    form_class = NominaCentroInfanciaFormEdit
+    template_name = "centrodeinfancia/nomina_form_edit.html"
+    pk_url_kwarg = "nomina_id"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["object"] = NominaCentroInfancia.objects.select_related("centro").filter(
+            pk=self.kwargs["nomina_id"], centro_id=self.kwargs["pk"]
+        ).first()
+        context["centro"] = CentroDeInfancia.objects.filter(pk=self.kwargs["pk"]).first()
+        return context
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
+    
 class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     model = NominaCentroInfancia
     form_class = NominaCentroInfanciaCreateForm
