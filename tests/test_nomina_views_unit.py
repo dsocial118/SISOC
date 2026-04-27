@@ -150,6 +150,12 @@ def test_nomina_create_post_ciudadano_existente(mocker):
         "comedores.views.nomina._get_admision_del_comedor_or_404",
         return_value=SimpleNamespace(pk=88),
     )
+    # Mock de la validación de identidad agregada en Fix_dni
+    _ciudadano_validado = SimpleNamespace(requiere_revision_manual=False)
+    mocker.patch(
+        "comedores.views.nomina.Ciudadano.objects.only",
+        return_value=SimpleNamespace(get=lambda **kw: _ciudadano_validado),
+    )
 
     form = SimpleNamespace(
         is_valid=lambda: True, cleaned_data={"estado": "A", "observaciones": "o"}
