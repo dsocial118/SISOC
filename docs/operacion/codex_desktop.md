@@ -34,6 +34,8 @@ Ese comando:
 - prepara `.env` con `COMPOSE_PROJECT_NAME` unico para ese worktree,
 - valida Compose sin levantar servicios persistentes.
 
+Si el repo ya esta abierto desde una worktree interna de Codex, por ejemplo `C:/Users/Juanito/.codex/worktrees/<id>/SISOC`, los helpers siguen reutilizando el ancestro `worktrees/`: no anidan un `worktrees` nuevo y generan un `COMPOSE_PROJECT_NAME` distinto para ese wrapper.
+
 Desde la raiz del worktree:
 
 ```powershell
@@ -109,6 +111,7 @@ El repo expone `.codex/environments/environment.toml` para que Codex Desktop ten
 
 - El camino principal es Docker-first porque el repo ya usa Docker Compose como entorno real.
 - El fallback local con `.venv` es degradado: sirve para salir del paso cuando Docker no esta disponible, pero no reemplaza el entorno oficial del proyecto.
+- Si Docker CLI existe pero el engine no responde, `doctor` y los wrappers deben reportarlo como entorno no disponible; ese caso ya no cuenta como validacion exitosa.
 - Si un worktree nuevo no tiene `.env`, el bootstrap lo resuelve sin depender del checkout principal.
 - Para validacion automatica, preferir el modo sin puertos publicados. Para prueba manual de UI, usar `--expose-ports`.
 - No crear worktrees nuevos dentro de `SISOC/.worktrees`; ese layout queda obsoleto.
