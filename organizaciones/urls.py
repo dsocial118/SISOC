@@ -15,6 +15,7 @@ from organizaciones.views import (
     AvalDeleteView,
     sub_tipo_entidad_ajax,
     organizaciones_ajax,
+    cuil_check_ajax,
 )
 from organizaciones.views_export import OrganizacionExportView
 
@@ -117,5 +118,12 @@ urlpatterns = [
             organizaciones_ajax
         ),
         name="organizaciones_ajax",
+    ),
+    path(
+        "organizaciones/cuil-check/ajax/",
+        permissions_any_required(["organizaciones.view_organizacion"])(
+            cuil_check_ajax
+        ),
+        name="organizacion_cuil_check_ajax",
     ),
 ]
