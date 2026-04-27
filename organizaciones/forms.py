@@ -9,6 +9,11 @@ from core.models import Municipio, Provincia, Localidad
 
 
 class OrganizacionForm(forms.ModelForm):
+    cuil_duplicado_confirmado = forms.BooleanField(
+        required=False,
+        widget=forms.HiddenInput,
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -56,6 +61,26 @@ class OrganizacionForm(forms.ModelForm):
 
         if localidad:
             self.fields["localidad"].initial = localidad
+
+    def clean(self):
+        cleaned_data = super().clean()
+        cuit = cleaned_data.get("cuit")
+        confirmado = cleaned_data.get("cuil_duplicado_confirmado")
+
+        if cuit is not None:
+            exclude_pk = self.instance.pk if self.instance and self.instance.pk else None
+            qs = Organizacion.objects.filter(cuit=cuit)
+            if exclude_pk:
+                qs = qs.exclude(pk=exclude_pk)
+
+            if qs.exists() and not confirmado:
+                raise forms.ValidationError(
+                    "El CUIL ingresado ya está registrado en otra organización. "
+                    "Revisá la advertencia y confirmá para continuar.",
+                    code="cuil_duplicado_sin_confirmar",
+                )
+
+        return cleaned_data
 
     class Meta:
         model = Organizacion
