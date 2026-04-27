@@ -422,6 +422,37 @@ def test_crear_ciudadano_y_agregar_a_nomina_dup_estandar_devuelve_error(db, mock
     assert "Ya existe un ciudadano estandar" in msg
 
 
+def test_crear_ciudadano_y_agregar_a_nomina_no_maquilla_integrity_error_ajeno(
+    db, mocker
+):
+    ciudadano = SimpleNamespace(id=99, delete=mocker.Mock())
+    mocker.patch(
+        "comedores.services.comedor_service.impl.Ciudadano.objects.create",
+        return_value=ciudadano,
+    )
+    mocker.patch.object(
+        module.ComedorService,
+        "agregar_ciudadano_a_nomina",
+        side_effect=IntegrityError("nomina exploded"),
+    )
+
+    ok, msg = module.ComedorService.crear_ciudadano_y_agregar_a_nomina.__wrapped__(
+        ciudadano_data={
+            "nombre": "Ana",
+            "apellido": "Perez",
+            "fecha_nacimiento": date(1990, 1, 1),
+            "tipo_documento": Ciudadano.DOCUMENTO_DNI,
+            "documento": 30111231,
+        },
+        user=SimpleNamespace(id=1),
+        estado=None,
+        observaciones=None,
+    )
+
+    assert ok is False
+    assert msg == "Ocurrió un error al agregar a la nómina: nomina exploded"
+
+
 def test_timeline_context_helpers_cover_both_states():
     admision_enviada = SimpleNamespace(
         enviado_acompaniamiento=True, creado="2024-01-01"

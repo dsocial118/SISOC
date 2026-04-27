@@ -1456,7 +1456,13 @@ class ComedorService:
         """
         try:
             with transaction.atomic():
-                ciudadano = Ciudadano.objects.create(**ciudadano_data)
+                try:
+                    ciudadano = Ciudadano.objects.create(**ciudadano_data)
+                except IntegrityError:
+                    return (
+                        False,
+                        "Ya existe un ciudadano estandar con este tipo y numero de documento.",
+                    )
 
                 ok, msg = ComedorService.agregar_ciudadano_a_nomina(
                     ciudadano_id=ciudadano.id,
@@ -1469,11 +1475,8 @@ class ComedorService:
                 if not ok:
                     ciudadano.delete()
                 return ok, msg
-        except IntegrityError:
-            return (
-                False,
-                "Ya existe un ciudadano estandar con este tipo y numero de documento.",
-            )
+        except IntegrityError as exc:
+            return False, f"Ocurrió un error al agregar a la nómina: {exc}"
 
     @staticmethod
     def importar_nomina_ultimo_convenio(admision_id, comedor_id):
