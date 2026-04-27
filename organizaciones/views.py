@@ -284,6 +284,8 @@ class OrganizacionCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["cuil_check_ajax_url"] = reverse("organizacion_cuil_check_ajax")
+        context["organizacion_pk"] = None
         return context
 
     def form_valid(self, form):
@@ -435,6 +437,8 @@ class OrganizacionUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["cuil_check_ajax_url"] = reverse("organizacion_cuil_check_ajax")
+        context["organizacion_pk"] = self.object.pk
         return context
 
     def form_valid(self, form):
@@ -579,6 +583,44 @@ def sub_tipo_entidad_ajax(request):
 
     data = [{"id": subtipo.id, "text": subtipo.nombre} for subtipo in subtipo_entidades]
     return JsonResponse(data, safe=False)
+
+
+@login_required
+def cuil_check_ajax(request):
+    """
+    Devuelve las organizaciones activas que ya tienen el CUIL ingresado.
+    Parámetro opcional `exclude` para ignorar la org que se está editando.
+    """
+    cuil_raw = request.GET.get("cuil", "").strip()
+    exclude_pk = request.GET.get("exclude", "").strip()
+
+    if not cuil_raw or not cuil_raw.isdigit():
+        return JsonResponse({"organizaciones": []})
+
+    cuil = int(cuil_raw)
+    qs = Organizacion.objects.filter(cuit=cuil).select_related(
+        "tipo_entidad", "subtipo_entidad", "provincia", "municipio", "localidad"
+    )
+    if exclude_pk and exclude_pk.isdigit():
+        qs = qs.exclude(pk=int(exclude_pk))
+
+    data = [
+        {
+            "id": org.pk,
+            "nombre": org.nombre,
+            "cuit": org.cuit,
+            "telefono": str(org.telefono) if org.telefono is not None else "",
+            "email": org.email or "",
+            "tipo_entidad": org.tipo_entidad.nombre if org.tipo_entidad else "",
+            "subtipo_entidad": org.subtipo_entidad.nombre if org.subtipo_entidad else "",
+            "domicilio": org.domicilio or "",
+            "provincia": str(org.provincia) if org.provincia else "",
+            "municipio": str(org.municipio) if org.municipio else "",
+            "localidad": str(org.localidad) if org.localidad else "",
+        }
+        for org in qs
+    ]
+    return JsonResponse({"organizaciones": data})
 
 
 @login_required
