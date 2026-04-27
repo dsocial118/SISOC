@@ -49,10 +49,7 @@ def nomina(centro, ciudadano):
 
 @pytest.fixture
 def usuario_con_permisos():
-    user = User.objects.create_user(
-        username="testuser",
-        password="test1234"
-    )
+    user = User.objects.create_user(username="testuser", password="test1234")
     profile, _ = Profile.objects.get_or_create(user=user)
     # Agregar permiso requerido
     try:
@@ -72,7 +69,7 @@ class TestNominaCentroInfanciaEditView:
         client = Client()
         url = reverse(
             "centrodeinfancia_nomina_editar",
-            kwargs={"pk": centro.pk, "nomina_id": nomina.pk}
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
         response = client.get(url)
         # Puede ser 302 (redirect) o 403 (forbidden) dependiendo de config
@@ -85,7 +82,7 @@ class TestNominaCentroInfanciaEditView:
 
         url = reverse(
             "centrodeinfancia_nomina_editar",
-            kwargs={"pk": centro.pk, "nomina_id": nomina.pk}
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
         response = client.get(url)
 
@@ -103,7 +100,7 @@ class TestNominaCentroInfanciaEditView:
 
         url = reverse(
             "centrodeinfancia_nomina_editar",
-            kwargs={"pk": centro.pk, "nomina_id": nomina.pk}
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
         response = client.get(url)
 
@@ -121,7 +118,7 @@ class TestNominaCentroInfanciaEditView:
 
         url = reverse(
             "centrodeinfancia_nomina_editar",
-            kwargs={"pk": centro.pk, "nomina_id": nomina.pk}
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
         response = client.get(url)
 
@@ -140,7 +137,7 @@ class TestNominaCentroInfanciaEditView:
 
         url = reverse(
             "centrodeinfancia_nomina_editar",
-            kwargs={"pk": centro.pk, "nomina_id": nomina.pk}
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
 
         data = {
@@ -170,7 +167,7 @@ class TestNominaCentroInfanciaEditView:
 
         url = reverse(
             "centrodeinfancia_nomina_editar",
-            kwargs={"pk": centro.pk, "nomina_id": nomina.pk}
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
 
         data = {
@@ -182,10 +179,7 @@ class TestNominaCentroInfanciaEditView:
         }
 
         response = client.post(url, data)
-        expected_url = reverse(
-            "centrodeinfancia_nomina_ver",
-            kwargs={"pk": centro.pk}
-        )
+        expected_url = reverse("centrodeinfancia_nomina_ver", kwargs={"pk": centro.pk})
 
         assert response.status_code == 302
         assert expected_url in response.url
@@ -213,7 +207,7 @@ class TestNominaCentroInfanciaEditView:
         # Intenta acceder a la nómina del otro centro con pk del primer centro
         url = reverse(
             "centrodeinfancia_nomina_editar",
-            kwargs={"pk": centro.pk, "nomina_id": nomina_otro.pk}
+            kwargs={"pk": centro.pk, "nomina_id": nomina_otro.pk},
         )
         response = client.get(url)
 
@@ -230,7 +224,7 @@ class TestNominaCentroInfanciaEditView:
 
         url = reverse(
             "centrodeinfancia_nomina_editar",
-            kwargs={"pk": centro.pk, "nomina_id": nomina.pk}
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
         response = client.get(url)
 
@@ -248,7 +242,7 @@ class TestNominaCentroInfanciaEditView:
 
         url = reverse(
             "centrodeinfancia_nomina_editar",
-            kwargs={"pk": centro.pk, "nomina_id": nomina.pk}
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
 
         # Datos inválidos: fecha_nacimiento muy reciente
@@ -267,9 +261,7 @@ class TestNominaCentroInfanciaEditView:
         # Si no, puede redirigir (302)
         assert response.status_code in [200, 302]
 
-    def test_actualiza_sexo_desde_opciones(
-        self, usuario_con_permisos, centro, nomina
-    ):
+    def test_actualiza_sexo_desde_opciones(self, usuario_con_permisos, centro, nomina):
         """Verifica que se puede actualizar el sexo."""
         sexo = Sexo.objects.create(sexo="Masculino")
 
@@ -278,7 +270,7 @@ class TestNominaCentroInfanciaEditView:
 
         url = reverse(
             "centrodeinfancia_nomina_editar",
-            kwargs={"pk": centro.pk, "nomina_id": nomina.pk}
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
 
         data = {
@@ -296,9 +288,7 @@ class TestNominaCentroInfanciaEditView:
         nomina.refresh_from_db()
         assert nomina.sexo == sexo.sexo
 
-    def test_actualiza_multiples_campos(
-        self, usuario_con_permisos, centro, ciudadano
-    ):
+    def test_actualiza_multiples_campos(self, usuario_con_permisos, centro, ciudadano):
         """Verifica que se pueden actualizar múltiples campos correctamente."""
         nomina = NominaCentroInfancia.objects.create(
             centro=centro,
@@ -315,7 +305,7 @@ class TestNominaCentroInfanciaEditView:
 
         url = reverse(
             "centrodeinfancia_nomina_editar",
-            kwargs={"pk": centro.pk, "nomina_id": nomina.pk}
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
 
         # Cambiar estado, nombre y agregar nacionalidad
@@ -348,7 +338,7 @@ class TestNominaCentroInfanciaEditView:
 
         url = reverse(
             "centrodeinfancia_nomina_editar",
-            kwargs={"pk": centro.pk, "nomina_id": nomina.pk}
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
         response = client.get(url)
 
@@ -378,7 +368,7 @@ class TestNominaCentroInfanciaEditView:
 
         url = reverse(
             "centrodeinfancia_nomina_editar",
-            kwargs={"pk": centro.pk, "nomina_id": nomina.pk}
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
         response = client.get(url)
 

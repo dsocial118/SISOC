@@ -81,7 +81,7 @@ class OfertaServicio(models.Model):
 
 
 class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
-    nombre = models.CharField(max_length=255,verbose_name="Nombre del CDI")
+    nombre = models.CharField(max_length=255, verbose_name="Nombre del CDI")
     codigo_cdi = models.CharField(
         max_length=32,
         unique=True,

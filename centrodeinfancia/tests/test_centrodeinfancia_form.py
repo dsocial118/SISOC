@@ -216,9 +216,10 @@ def test_form_guarda_oferta_servicios_multiple():
     assert form.is_valid(), form.errors
 
     centro = form.save()
-    assert list(
-        centro.oferta_servicios.values_list("codigo", flat=True)
-    ) == ["lactantes", "multiedad"]
+    assert list(centro.oferta_servicios.values_list("codigo", flat=True)) == [
+        "lactantes",
+        "multiedad",
+    ]
 
 
 @pytest.mark.django_db

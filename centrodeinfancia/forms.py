@@ -431,6 +431,7 @@ class NullableBooleanChoiceField(forms.TypedChoiceField):
         kwargs.setdefault("empty_value", None)
         super().__init__(*args, **kwargs)
 
+
 class NominaCentroInfanciaFormEdit(forms.ModelForm):
     class Meta:
         model = NominaCentroInfancia
@@ -531,7 +532,8 @@ class NominaCentroInfanciaFormEdit(forms.ModelForm):
         widgets = {
             "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
         }
-        
+
+
 class NominaCentroInfanciaBaseForm(forms.ModelForm):
     edad_calculada = forms.IntegerField(
         label="Edad",
