@@ -440,7 +440,6 @@ class NominaCentroInfanciaFormEdit(forms.ModelForm):
             "apellido",
             "nombre",
             "fecha_nacimiento",
-            "edad",
             "sexo",
             "nacionalidad",
             "sala",
