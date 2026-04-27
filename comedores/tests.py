@@ -909,6 +909,76 @@ def test_relevamiento_create_edit_ajax_crear(
 
 
 @pytest.mark.django_db
+def test_relevamiento_create_edit_ajax_crear_exige_territorial(
+    client_logged_fixture, comedor_fixture
+):
+    url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
+    response = client_logged_fixture.post(
+        url,
+        {
+            "tipo_relevamiento": "relevamiento_inicial",
+            "territorial": "",
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    assert response.status_code == 400
+    assert "territorial" in response.json()["error"].lower()
+
+
+@pytest.mark.django_db
+def test_relevamiento_create_edit_ajax_crea_primer_seguimiento(
+    client_logged_fixture, comedor_fixture, monkeypatch
+):
+    relevamiento_mock = mock.Mock()
+    relevamiento_mock.pk = 1001
+    relevamiento_mock.comedor = mock.Mock()
+    relevamiento_mock.comedor.pk = comedor_fixture.pk
+    seguimiento_mock = mock.Mock()
+    seguimiento_mock.id_relevamiento = relevamiento_mock
+    create_mock = mock.Mock(return_value=seguimiento_mock)
+
+    monkeypatch.setattr(
+        "comedores.views.relevamientos.PrimerSeguimientoService.create_asignado",
+        create_mock,
+    )
+
+    url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
+    response = client_logged_fixture.post(
+        url,
+        {
+            "tipo_relevamiento": "primer_seguimiento",
+            "territorial": '{"gestionar_uid":"uid-1","nombre":"Territorial Norte"}',
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["url"] == (
+        f"/comedores/{comedor_fixture.pk}/relevamiento/{relevamiento_mock.pk}"
+    )
+    create_mock.assert_called_once()
+
+
+@pytest.mark.django_db
+def test_relevamiento_create_edit_ajax_rechaza_segundo_seguimiento(
+    client_logged_fixture, comedor_fixture
+):
+    url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
+    response = client_logged_fixture.post(
+        url,
+        {
+            "tipo_relevamiento": "segundo_seguimiento",
+            "territorial": '{"gestionar_uid":"uid-1","nombre":"Territorial Norte"}',
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    assert response.status_code == 400
+    assert "Segundo seguimiento" in response.json()["error"]
+
+
+@pytest.mark.django_db
 def test_relevamiento_create_edit_ajax_editar(
     client_logged_fixture, comedor_fixture, monkeypatch
 ):

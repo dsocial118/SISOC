@@ -1,34 +1,65 @@
-# Flujo: Relevamiento (creación, validación y sincronización con GESTIONAR)
+# Flujo: Relevamiento y primer seguimiento
 
 ## Objetivo
-Registrar relevamientos de comedores, validar que no existan duplicados activos y sincronizar con GESTIONAR.
 
-## Entrada / Salida
-- Entrada: creación/edición de `relevamientos.models.Relevamiento` (vía UI o import). Evidencia: relevamientos/models.py:986-1084.
-- Salida: payload HTTP a GESTIONAR para crear/borrar relevamientos; opcionalmente URL `docPDF` actualizada en modelo. Evidencia: relevamientos/tasks.py:23-91,116-141.
+Registrar el relevamiento inicial de comedores y crear el primer seguimiento asociado al ultimo relevamiento activo del comedor sin romper el contrato vigente con GESTIONAR.
 
-## Pasos
-1. `Relevamiento.save()` valida duplicados activos y setea responsable si corresponde. Evidencia: relevamientos/models.py:1036-1064.
-2. Post-save signal clasifica comedor (ClasificacionComedorService). Evidencia: comedores/signals.py:91-93.
-3. Tareas asíncronas:
-   - Crear: `AsyncSendRelevamientoToGestionar` arma payload (`build_relevamiento_payload`) y hace POST a `GESTIONAR_API_CREAR_RELEVAMIENTO`; guarda `docPDF` si viene en la respuesta. Evidencia: relevamientos/tasks.py:23-91.
-   - Borrar: `AsyncRemoveRelevamientoToGestionar` envía Action Delete a `GESTIONAR_API_BORRAR_RELEVAMIENTO`. Evidencia: relevamientos/tasks.py:107-141.
-4. Concurrencia controlada con `ThreadPoolExecutor` y `MAX_WORKERS` por env vars. Evidencia: relevamientos/tasks.py:16-21.
+## Entrada / salida
+
+- Entrada de relevamiento inicial: creacion/edicion de `relevamientos.models.Relevamiento` via UI o API.
+- Entrada de primer seguimiento: creacion desde el modal de relevamientos con `tipo_relevamiento=primer_seguimiento`, o actualizacion externa por `PATCH /api/relevamiento/primer-seguimiento`.
+- Salida de relevamiento inicial: payload HTTP a GESTIONAR para crear/borrar relevamientos; si GESTIONAR devuelve `docPDF`, se actualiza el modelo.
+- Salida de primer seguimiento: payload HTTP especifico a GESTIONAR para crear/borrar primeros seguimientos.
+
+## Relevamiento inicial
+
+1. `Relevamiento.save()` valida duplicados activos y asigna el referente como responsable cuando corresponde.
+2. El signal `send_relevamiento_to_gestionar` envia el alta con `AsyncSendRelevamientoToGestionar`.
+3. La baja usa `AsyncRemoveRelevamientoToGestionar`.
+4. La concurrencia se controla con `ThreadPoolExecutor` y `GESTIONAR_RELEVAMIENTOS_WORKERS` / `GESTIONAR_WORKERS`.
+
+## Primer seguimiento
+
+1. `PrimerSeguimientoService` valida el territorial usando el mismo parser del relevamiento inicial.
+2. Busca el ultimo `Relevamiento` del comedor que no este eliminado y cuyo estado no sea `Finalizado` ni `Finalizado/Excepciones`.
+3. Si no existe ancla activa, crea un `Relevamiento` local con `_skip_gestionar_sync=True`. Ese ancla no envia un relevamiento inicial a GESTIONAR.
+4. Crea `PrimerSeguimiento` en estado `Asignado`, guarda el tecnico externo en `tecnico` y lo vincula por `id_relevamiento`.
+5. Envia el alta con `AsyncSendPrimerSeguimientoToGestionar` usando `GESTIONAR_API_CREAR_PRIMER_SEGUIMIENTO`.
+6. La baja usa `AsyncRemovePrimerSeguimientoToGestionar` y `GESTIONAR_API_BORRAR_PRIMER_SEGUIMIENTO`.
+
+## API externa
+
+`PATCH /api/relevamiento/primer-seguimiento` usa `HasAPIKeyOrToken`.
+
+Requisitos:
+
+- `sisoc_id`: id SISOC del `PrimerSeguimiento`.
+- `id_relevamiento`: id SISOC del `Relevamiento` ancla.
+
+Respuestas esperadas:
+
+- `400` si falta alguno de los dos ids.
+- `400` si `id_relevamiento` no corresponde al seguimiento informado.
+- `404` si no existe el `PrimerSeguimiento`.
+- `200` si el payload actualiza bloques relacionados y guarda el seguimiento.
 
 ## Validaciones y reglas
-- No más de un relevamiento con estado “Pendiente” o “Visita pendiente” por comedor; si existe, `save` lanza ValidationError. Evidencia: relevamientos/models.py:1050-1064.
-- `unique_together` en (comedor, fecha_visita). Evidencia: relevamientos/models.py:1065-1071.
-- Si `responsable_es_referente` y el comedor tiene referente, lo asigna como responsable. Evidencia: relevamientos/models.py:1042-1049.
 
-## Side effects
-- Clasificación automática del comedor tras guardar relevamiento. Evidencia: comedores/signals.py:91-93.
-- Sincronización asíncrona con GESTIONAR (create/delete). Evidencia: relevamientos/tasks.py:23-91,107-141.
-- Logs en tareas (`logger.exception/info`). Evidencia: relevamientos/tasks.py:80-91,133-140.
+- No mas de un relevamiento con estado `Pendiente` o `Visita pendiente` por comedor.
+- No mas de un `PrimerSeguimiento` para el mismo `Relevamiento`, reforzado por `OneToOneField`.
+- El modal exige territorial para crear relevamiento inicial o primer seguimiento.
+- `Segundo seguimiento` queda rechazado hasta implementar la fase 2.
+- Los choices no confirmados se guardan como `CharField`; las escalas usan validadores 1..4 o 1..11.
+- Las firmas recibidas desde GESTIONAR se guardan como URL/string, no como `FileField`.
 
 ## Errores comunes y debug
-- ValidationError por relevamiento activo duplicado: revisar estados y registros existentes. Evidencia: relevamientos/models.py:1050-1064.
-- Fallas HTTP a GESTIONAR: revisar logs de errores y variables `GESTIONAR_API_*`/`GESTIONAR_API_KEY`. Evidencia: relevamientos/tasks.py:70-91,129-140.
-- `docPDF` no actualizado: chequear respuesta `Rows[0].docPDF` y logs de tarea. Evidencia: relevamientos/tasks.py:82-91.
 
-## Tests existentes
-- No se identificaron tests específicos de relevamientos en el repo actual. Evidencia: DESCONOCIDO (no se hallaron en tests/).
+- ValidationError por relevamiento activo duplicado: revisar estados pendientes del comedor.
+- ValidationError por primer seguimiento duplicado: revisar si el ancla ya tiene `primer_seguimiento`.
+- Si se creo ancla local y aparece un alta de relevamiento inicial en GESTIONAR, revisar que el signal respete `_skip_gestionar_sync`.
+- Fallas HTTP a GESTIONAR: revisar `GESTIONAR_API_KEY`, `GESTIONAR_API_CREAR_RELEVAMIENTO`, `GESTIONAR_API_BORRAR_RELEVAMIENTO`, `GESTIONAR_API_CREAR_PRIMER_SEGUIMIENTO` y `GESTIONAR_API_BORRAR_PRIMER_SEGUIMIENTO`.
+
+## Tests
+
+- `tests/test_primer_seguimiento_relevamientos.py`: modelos, servicio, payload y API de primer seguimiento.
+- `comedores/tests.py`: endpoint AJAX usado por el modal de relevamientos.

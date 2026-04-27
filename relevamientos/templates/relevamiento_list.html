@@ -86,12 +86,26 @@
                         </div>
                         <div class="modal-body">
                             <div class="mb-2">
-                                <label for="new_territorial_select" class="form-label">Territorial asignado</label>
-                                <select id="new_territorial_select" name="territorial" class="form-select">
-                                    <option value="">Sin territorial</option>
+                                <label for="tipo_relevamiento_select" class="form-label">Tipo</label>
+                                <select id="tipo_relevamiento_select"
+                                        name="tipo_relevamiento"
+                                        class="form-select"
+                                        required>
+                                    <option value="relevamiento_inicial" selected>Relevamiento inicial</option>
+                                    <option value="primer_seguimiento">Primer seguimiento</option>
+                                    <option value="segundo_seguimiento" disabled>Segundo seguimiento</option>
                                 </select>
                             </div>
-                            <small class="text-muted">Si no selecciona territorial, se crea en estado Pendiente.</small>
+                            <div class="mb-2">
+                                <label for="new_territorial_select" class="form-label">Territorial asignado</label>
+                                <select id="new_territorial_select"
+                                        name="territorial"
+                                        class="form-select"
+                                        required>
+                                    <option value="" selected disabled>Seleccionar territorial</option>
+                                </select>
+                            </div>
+                            <small class="text-muted">El relevamiento se crea asignado al territorial seleccionado.</small>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>

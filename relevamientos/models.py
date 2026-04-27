@@ -10,6 +10,30 @@ from comedores.models import CategoriaComedor, Comedor, Referente, TipoDeComedor
 from core.soft_delete import SoftDeleteModelMixin
 
 
+def _nullable_char(max_length=255, **kwargs):
+    return models.CharField(max_length=max_length, blank=True, null=True, **kwargs)
+
+
+def _nullable_text(**kwargs):
+    return models.TextField(blank=True, null=True, **kwargs)
+
+
+def _nullable_bool(**kwargs):
+    return models.BooleanField(blank=True, null=True, **kwargs)
+
+
+def _nullable_positive_int(**kwargs):
+    return models.PositiveIntegerField(blank=True, null=True, **kwargs)
+
+
+def _scale_field(max_value):
+    return models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(1), MaxValueValidator(max_value)],
+    )
+
+
 class TipoInsumos(models.Model):
     """
     Opciones de tipos de insumos recibidos por un Comedor/Merendero
@@ -1094,6 +1118,594 @@ class Relevamiento(SoftDeleteModelMixin, models.Model):
             fecha.strftime("%Y-%m-%d") if hasattr(fecha, "strftime") else "sin fecha"
         )
         return f"Relevamiento {fecha_text} - {comedor}"
+
+
+class FuncionamientoSeguimiento(models.Model):
+    ABIERTO_FUNCIONANDO = "Abierto en funcionamiento"
+    ABIERTO_SIN_FUNCIONAR = "Abierto sin funcionamiento"
+    CERRADO = "Cerrado"
+    FUNCIONAMIENTO_CHOICES = [
+        (ABIERTO_FUNCIONANDO, ABIERTO_FUNCIONANDO),
+        (ABIERTO_SIN_FUNCIONAR, ABIERTO_SIN_FUNCIONAR),
+        (CERRADO, CERRADO),
+    ]
+
+    funcionamiento = _nullable_char(choices=FUNCIONAMIENTO_CHOICES)
+
+    class Meta:
+        verbose_name = "Funcionamiento de primer seguimiento"
+        verbose_name_plural = "Funcionamientos de primer seguimiento"
+
+    def __str__(self):
+        return self.funcionamiento or "Sin funcionamiento"
+
+
+class ServiciosBasicosSeguimiento(models.Model):
+    agua_potable = _nullable_bool()
+    gas_red = _scale_field(4)
+    gas_envasado = _scale_field(4)
+    electricidad = _scale_field(4)
+    lenia_carbon = _scale_field(4)
+    otros_cocina = _nullable_char()
+    banio = _nullable_char()
+    recipiente = _nullable_char()
+    otro_recipiente = _nullable_char()
+    observan_animales = _nullable_bool()
+    elementos_guardados = _nullable_bool()
+
+    class Meta:
+        verbose_name = "Servicios basicos de primer seguimiento"
+        verbose_name_plural = "Servicios basicos de primer seguimiento"
+
+    def __str__(self):
+        return f"Servicios basicos seguimiento #{self.pk or 'sin id'}"
+
+
+class AlmacenamientoAlimentosSeguimiento(models.Model):
+    alimentos_secos_cerrados = _scale_field(4)
+    alimentos_secos_cerrados_adecuados = _scale_field(4)
+    alimentos_secos_desparramados = _scale_field(4)
+    alimentos_secos_noseobservan = _scale_field(4)
+    otros_alimentos_secos = _nullable_char()
+    heladera_existe = _nullable_bool()
+    freezer_existe = _nullable_bool()
+    almacenado_cerrados_heladera = _scale_field(11)
+    almacenado_cerrados_freezer = _scale_field(11)
+    almacenado_cerradoscondiciones_heladera = _scale_field(11)
+    almacenado_cerradoscondiciones_freezer = _scale_field(11)
+    almacenado_desparramados_heladera = _scale_field(11)
+    almacenado_desparramados_freezer = _scale_field(11)
+    almacenado_etiquetados_heladera = _scale_field(11)
+    almacenado_etiquetados_freezer = _scale_field(11)
+    almacenado_noseobservan_heladera = _scale_field(11)
+    almacenado_noseobservan_freezer = _scale_field(11)
+    almacenado_otro = _nullable_char()
+
+    class Meta:
+        verbose_name = "Almacenamiento de alimentos de primer seguimiento"
+        verbose_name_plural = "Almacenamientos de alimentos de primer seguimiento"
+
+    def __str__(self):
+        return f"Almacenamiento seguimiento #{self.pk or 'sin id'}"
+
+
+class CondicionesHigieneSeguimiento(models.Model):
+    ADECUADA = "Adecuada"
+    MEDIANAMENTE_ADECUADA = "Medianamente adecuada"
+    INADECUADA = "Inadecuada"
+    HIGIENE_CHOICES = [
+        (ADECUADA, ADECUADA),
+        (MEDIANAMENTE_ADECUADA, MEDIANAMENTE_ADECUADA),
+        (INADECUADA, INADECUADA),
+    ]
+
+    condiciones_piso_limpieza = _nullable_char(choices=HIGIENE_CHOICES)
+    condiciones_piso_orden = _nullable_char(choices=HIGIENE_CHOICES)
+    condiciones_mesada_limpieza = _nullable_char(choices=HIGIENE_CHOICES)
+    condiciones_mesada_orden = _nullable_char(choices=HIGIENE_CHOICES)
+    condiciones_mesas_limpieza = _nullable_char(choices=HIGIENE_CHOICES)
+    condiciones_mesas_orden = _nullable_char(choices=HIGIENE_CHOICES)
+    condiciones_bacha_limpieza = _nullable_char(choices=HIGIENE_CHOICES)
+    condiciones_bachas_orden = _nullable_char(choices=HIGIENE_CHOICES)
+    condiciones_equipamiento_limpieza = _nullable_char(choices=HIGIENE_CHOICES)
+    condiciones_equipamiento_orden = _nullable_char(choices=HIGIENE_CHOICES)
+    condiciones_utensillos_limpieza = _nullable_char(choices=HIGIENE_CHOICES)
+    condiciones_utensillos_orden = _nullable_char(choices=HIGIENE_CHOICES)
+    entregan_viandas = _nullable_char(choices=HIGIENE_CHOICES)
+
+    class Meta:
+        verbose_name = "Condiciones de higiene de primer seguimiento"
+        verbose_name_plural = "Condiciones de higiene de primer seguimiento"
+
+    def __str__(self):
+        return f"Higiene seguimiento #{self.pk or 'sin id'}"
+
+
+class TareasComedorSeguimiento(models.Model):
+    tareas_comedor_cant_personas = models.ForeignKey(
+        to=CantidadColaboradores,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+    tareas_capacitacion = _nullable_char()
+    tareas_capacitacion_especificar = _nullable_char()
+
+    class Meta:
+        verbose_name = "Tareas de comedor de primer seguimiento"
+        verbose_name_plural = "Tareas de comedor de primer seguimiento"
+
+    def __str__(self):
+        return f"Tareas seguimiento #{self.pk or 'sin id'}"
+
+
+class RecursosSeguimiento(models.Model):
+    fuente_recursos = models.OneToOneField(
+        to=FuenteRecursos,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+    recursos_comedor_estado_nacional = _nullable_bool()
+    recursos_comedor_estado_nacional_frecuencia = _nullable_char()
+    recursos_comedor_estado_nacional_recibe = _nullable_char()
+    recursos_comedor_estado_provincial = _nullable_bool()
+    recursos_comedor_estado_provincial_frecuencia = _nullable_char()
+    recursos_comedor_estado_provincial_recibe = _nullable_char()
+    recursos_comedor_estado_municipal = _nullable_bool()
+    recursos_comedor_estado_municipal_frecuencia = _nullable_char()
+    recursos_comedor_estado_municipal_recibe = _nullable_char()
+    recursos_comedor_donaciones = _nullable_bool()
+    recursos_comedor_donaciones_frecuencia = _nullable_char()
+    recursos_comedor_donaciones_recibe = _nullable_char()
+    financiamiento_principal = _nullable_char()
+    financiamiento_principal_otros = _nullable_char()
+    financiaminento_otras_necesidades = _nullable_bool()
+    financiaminento_otras_necesidades_paraque = _nullable_char()
+    financiaminento_otras_necesidades_frecuencia = _nullable_char()
+
+    class Meta:
+        verbose_name = "Recursos de primer seguimiento"
+        verbose_name_plural = "Recursos de primer seguimiento"
+
+    def __str__(self):
+        return f"Recursos seguimiento #{self.pk or 'sin id'}"
+
+
+class ComprasSeguimiento(models.Model):
+    fuente_compras = models.OneToOneField(
+        to=FuenteCompras,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+    lugares_compra = _nullable_char()
+    lugares_compra_otros = _nullable_char()
+    frecuencia_compras = _nullable_char()
+    otra_frecuencia_compras = _nullable_char()
+    quien_realiza_compras = _nullable_char()
+    quien_realiza_compras_otro = _nullable_char()
+    elije_alimentos_compra = _nullable_char(
+        choices=[("Siempre", "Siempre"), ("A veces", "A veces"), ("Nunca", "Nunca")]
+    )
+
+    class Meta:
+        verbose_name = "Compras de primer seguimiento"
+        verbose_name_plural = "Compras de primer seguimiento"
+
+    def __str__(self):
+        return f"Compras seguimiento #{self.pk or 'sin id'}"
+
+
+class FrecuenciaCompraAlimentosSeguimiento(models.Model):
+    frecuencia_compra_hortalizas_frutas = _nullable_char()
+    frecuencia_compra_leche_yogur_queso = _nullable_char()
+    frecuencia_compra_carnes = _nullable_char()
+    frecuencia_compra_legumbres = _nullable_char()
+    frecuencia_compra_alimentos_secos = _nullable_char()
+    frecuencia_compra_pan = _nullable_char()
+    frecuencia_compra_huevos = _nullable_char()
+    frecuencia_compra_otros = _nullable_char()
+
+    class Meta:
+        verbose_name = "Frecuencia de compra de alimentos de primer seguimiento"
+        verbose_name_plural = "Frecuencias de compra de alimentos de primer seguimiento"
+
+    def __str__(self):
+        return f"Frecuencia compra seguimiento #{self.pk or 'sin id'}"
+
+
+class MenuSeguimiento(models.Model):
+    id_menu = _nullable_char(unique=True)
+    tipo_prestacion = _nullable_char()
+    cantidad_personas_menu = _nullable_positive_int()
+    cambios_menu = _nullable_bool()
+    cambios_cuales = _nullable_char()
+    cambios_porque = _nullable_char()
+    menu_semana_pasada_lunes = _nullable_char()
+    menu_semana_pasada_martes = _nullable_char()
+    menu_semana_pasada_miercoles = _nullable_char()
+    menu_semana_pasada_jueves = _nullable_char()
+    menu_semana_pasada_viernes = _nullable_char()
+    menu_semana_pasada_sabado = _nullable_char()
+    menu_semana_pasada_domingo = _nullable_char()
+    menu_preestablecido = _nullable_bool()
+    menu_preestablecido_porquien = _nullable_char()
+    frecuencia_menu_preestablecido = _nullable_char()
+    menu_preestablecido_porque = _nullable_char()
+    modalidad_prestacion_del_dia = models.ForeignKey(
+        to=TipoModalidadPrestacion,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+    considera_menu_variado = _nullable_bool()
+    considera_menu_saludable = _nullable_bool()
+    considera_menu_porque = _nullable_char()
+    considera_menu_tamanio_porciones = _nullable_bool()
+    considera_personas_conformes = _nullable_bool()
+    considera_personas_conformes_porque = _nullable_char()
+    mejora_alimentacion_ofrecida = _nullable_bool()
+
+    class Meta:
+        verbose_name = "Menu de primer seguimiento"
+        verbose_name_plural = "Menus de primer seguimiento"
+
+    def __str__(self):
+        return self.id_menu or f"Menu seguimiento #{self.pk or 'sin id'}"
+
+
+class RegistroAsistenciaSeguimiento(models.Model):
+    registro_asistencia = _nullable_bool()
+    registro_asistencia_quien = _nullable_char()
+    registro_asistencia_metodo = _nullable_char()
+    asisten_personas_calle = _nullable_bool()
+    asisten_personas_calle_cantidad = _nullable_positive_int()
+    cantidad_asistencia_total = _nullable_positive_int()
+
+    class Meta:
+        verbose_name = "Registro de asistencia de primer seguimiento"
+        verbose_name_plural = "Registros de asistencia de primer seguimiento"
+
+    def __str__(self):
+        return f"Registro asistencia seguimiento #{self.pk or 'sin id'}"
+
+
+class FrecuenciaAlimentosSeguimiento(models.Model):
+    frecuencia_alimentos_alm_cena_frutas = _nullable_char()
+    frecuencia_alimentos_alm_cena_verduras = _nullable_char()
+    frecuencia_alimentos_alm_cena_carne = _nullable_char()
+    frecuencia_alimentos_alm_cena_pollo = _nullable_char()
+    frecuencia_alimentos_alm_cena_pescado = _nullable_char()
+    frecuencia_alimentos_alm_cena_fideos = _nullable_char()
+    frecuencia_alimentos_alm_cena_legumbres = _nullable_char()
+    frecuencia_alimentos_alm_cena_ultraprocesados = _nullable_char()
+    frecuencia_alimentos_alm_cena_huevos = _nullable_char()
+    frecuencia_alimentos_des_merienda_leche = _nullable_char()
+    frecuencia_alimentos_des_merienda_te = _nullable_char()
+    frecuencia_alimentos_des_merienda_mate_cocido = _nullable_char()
+    frecuencia_alimentos_des_merienda_yogurt = _nullable_char()
+    frecuencia_alimentos_des_merienda_queso = _nullable_char()
+    frecuencia_alimentos_des_merienda_fruta = _nullable_char()
+    frecuencia_alimentos_des_merienda_pan = _nullable_char()
+    frecuencia_alimentos_des_merienda_galletitas = _nullable_char()
+    frecuencia_alimentos_des_merienda_mermelada_dulce = _nullable_char()
+
+    class Meta:
+        verbose_name = "Frecuencia de alimentos de primer seguimiento"
+        verbose_name_plural = "Frecuencias de alimentos de primer seguimiento"
+
+    def __str__(self):
+        return f"Frecuencia alimentos seguimiento #{self.pk or 'sin id'}"
+
+
+class ActividadesExtrasSeguimiento(models.Model):
+    id_actividad = _nullable_char(unique=True)
+    talleres_recreativos = _nullable_bool()
+    talleres_recreativos_donde = _nullable_char()
+    talleres_recreativos_frecuencia = _nullable_char()
+    apoyo_educativo = _nullable_bool()
+    apoyo_educativo_donde = _nullable_char()
+    apoyo_educativo_frecuencia = _nullable_char()
+    grupos_contencion = _nullable_bool()
+    grupos_contencion_donde = _nullable_char()
+    grupos_contencion_frecuencia = _nullable_char()
+    actividades_deportivas = _nullable_bool()
+    actividades_deportivas_donde = _nullable_char()
+    actividades_deportivas_frecuencia = _nullable_char()
+    talleres_oficio = _nullable_bool()
+    talleres_oficio_donde = _nullable_char()
+    talleres_oficio_frecuencia = _nullable_char()
+    huerta = _nullable_bool()
+    huerta_donde = _nullable_char()
+    huerta_frecuencia = _nullable_char()
+    actividades_culturales = _nullable_bool()
+    actividades_culturales_donde = _nullable_char()
+    actividades_culturales_frecuencia = _nullable_char()
+    actividades_religiosas = _nullable_bool()
+    actividades_religiosas_donde = _nullable_char()
+    actividades_religiosas_frecuencia = _nullable_char()
+    actividades_discapacidad = _nullable_bool()
+    actividades_discapacidad_donde = _nullable_char()
+    actividades_discapacidad_frecuencia = _nullable_char()
+    ayuda_tramites = _nullable_bool()
+    ayuda_tramites_donde = _nullable_char()
+    ayuda_tramites_frecuencia = _nullable_char()
+    servicios_legales = _nullable_bool()
+    servicios_legales_donde = _nullable_char()
+    servicios_legales_frecuencia = _nullable_char()
+    terminalidad_educativa = _nullable_bool()
+    terminalidad_educativa_donde = _nullable_char()
+    terminalidad_educativa_frecuencia = _nullable_char()
+    emprendimientos_productivos = _nullable_bool()
+    emprendimientos_productivos_donde = _nullable_char()
+    emprendimientos_productivos_frecuencia = _nullable_char()
+    promocion_salud = _nullable_bool()
+    promocion_salud_donde = _nullable_char()
+    promocion_salud_frecuencia = _nullable_char()
+    otro = _nullable_bool()
+    otro_donde = _nullable_char()
+    otro_frecuencia = _nullable_char()
+
+    class Meta:
+        verbose_name = "Actividades extras de primer seguimiento"
+        verbose_name_plural = "Actividades extras de primer seguimiento"
+
+    def __str__(self):
+        return self.id_actividad or f"Actividad seguimiento #{self.pk or 'sin id'}"
+
+
+class TarjetaSeguimiento(models.Model):
+    id_tarjeta = _nullable_char(unique=True)
+    persona_responsable = _nullable_bool()
+    llegada_tarjeta = _nullable_bool()
+    mes_notificado = _nullable_bool()
+    conforme_tarjeta = _nullable_bool()
+    conforme_porque = _nullable_char()
+
+    class Meta:
+        verbose_name = "Tarjeta de primer seguimiento"
+        verbose_name_plural = "Tarjetas de primer seguimiento"
+
+    def __str__(self):
+        return self.id_tarjeta or f"Tarjeta seguimiento #{self.pk or 'sin id'}"
+
+
+class RendicionCuentasSeguimiento(models.Model):
+    id_rendicion = _nullable_char(unique=True)
+    persona_encargada = _nullable_bool()
+    recibio_capacitacion = _nullable_bool()
+    norecibio_porque = _nullable_bool()
+    sencilla_plataforma = _nullable_bool()
+    nosencilla_porque = _nullable_bool()
+    inconvenientes_carga = _nullable_bool()
+    incovenientes_porque = _nullable_char()
+
+    class Meta:
+        verbose_name = "Rendicion de cuentas de primer seguimiento"
+        verbose_name_plural = "Rendiciones de cuentas de primer seguimiento"
+
+    def __str__(self):
+        return self.id_rendicion or f"Rendicion seguimiento #{self.pk or 'sin id'}"
+
+
+class AsistenciaTecnicaSeguimiento(models.Model):
+    id_asistencia = _nullable_char(unique=True)
+    socio_organizativo = _scale_field(4)
+    alimentario_nutricion = _scale_field(4)
+    seguridad_higiene = _scale_field(4)
+    administrativo_rendicion = _scale_field(4)
+    otro = _nullable_char()
+
+    class Meta:
+        verbose_name = "Asistencia tecnica de primer seguimiento"
+        verbose_name_plural = "Asistencias tecnicas de primer seguimiento"
+
+    def __str__(self):
+        return self.id_asistencia or f"Asistencia seguimiento #{self.pk or 'sin id'}"
+
+
+class CierreSeguimiento(models.Model):
+    COMPLETA = "Completa"
+    PARCIAL = "Parcial"
+    NO_CORRESPONDE = "No corresponde"
+    REALIZO_FORMA_CHOICES = [
+        (COMPLETA, COMPLETA),
+        (PARCIAL, PARCIAL),
+        (NO_CORRESPONDE, NO_CORRESPONDE),
+    ]
+
+    info_adicional = _nullable_char()
+    realizo_forma = _nullable_char(choices=REALIZO_FORMA_CHOICES)
+    comentarios_finales = _nullable_text()
+    firma_entrevistado = _nullable_char(max_length=600)
+    firma_tecnico = _nullable_char(max_length=600)
+
+    class Meta:
+        verbose_name = "Cierre de primer seguimiento"
+        verbose_name_plural = "Cierres de primer seguimiento"
+
+    def __str__(self):
+        return f"Cierre seguimiento #{self.pk or 'sin id'}"
+
+
+class PrimerSeguimiento(models.Model):
+    ESTADO_ASIGNADO = "Asignado"
+    ESTADO_EN_PROCESO = "En Proceso"
+    ESTADO_COMPLETO = "Completo"
+    ESTADO_CHOICES = [
+        (ESTADO_ASIGNADO, ESTADO_ASIGNADO),
+        (ESTADO_EN_PROCESO, ESTADO_EN_PROCESO),
+        (ESTADO_COMPLETO, ESTADO_COMPLETO),
+    ]
+
+    fecha_hora = models.DateTimeField(null=True, blank=True)
+    id_relevamiento = models.OneToOneField(
+        to=Relevamiento,
+        on_delete=models.PROTECT,
+        related_name="primer_seguimiento",
+    )
+    tecnico = _nullable_char()
+    referente = models.ForeignKey(
+        to=Referente,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    estado = _nullable_char(choices=ESTADO_CHOICES)
+    funcionamiento = models.OneToOneField(
+        to=FuncionamientoSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    servicios_basicos = models.OneToOneField(
+        to=ServiciosBasicosSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    almacenamiento_alimentos = models.OneToOneField(
+        to=AlmacenamientoAlimentosSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    condiciones_higiene = models.OneToOneField(
+        to=CondicionesHigieneSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    tareas_comedor = models.OneToOneField(
+        to=TareasComedorSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    recursos = models.OneToOneField(
+        to=RecursosSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    compras = models.OneToOneField(
+        to=ComprasSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    frecuencia_compra_alimentos = models.OneToOneField(
+        to=FrecuenciaCompraAlimentosSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    menu = models.OneToOneField(
+        to=MenuSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    registro_asistencia = models.OneToOneField(
+        to=RegistroAsistenciaSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    frecuencia_alimentos = models.OneToOneField(
+        to=FrecuenciaAlimentosSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    actividades_extras = models.OneToOneField(
+        to=ActividadesExtrasSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    tarjeta = models.OneToOneField(
+        to=TarjetaSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    rendicion_cuentas = models.OneToOneField(
+        to=RendicionCuentasSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    asistencia_tecnica = models.OneToOneField(
+        to=AsistenciaTecnicaSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    cierre = models.OneToOneField(
+        to=CierreSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+
+    @property
+    def cod_pnud(self):
+        return getattr(self.id_relevamiento.comedor, "codigo_de_proyecto", None)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["estado"]),
+        ]
+        verbose_name = "Primer seguimiento de relevamiento"
+        verbose_name_plural = "Primeros seguimientos de relevamiento"
+
+    def __str__(self):
+        return f"Primer seguimiento #{self.pk or 'sin id'}"
+
+
+class PrestacionSeguimiento(models.Model):
+    seguimiento = models.ForeignKey(
+        to=PrimerSeguimiento,
+        on_delete=models.CASCADE,
+        related_name="prestaciones",
+    )
+    id_prestacion_seg = _nullable_char(unique=True)
+    dias_prestacion = _nullable_char()
+    tipo_prestacion = _nullable_char()
+    ap_presencial = _nullable_positive_int()
+    ap_vianda = _nullable_positive_int()
+    de_presencial = _nullable_positive_int()
+    de_vianda = _nullable_positive_int()
+
+    class Meta:
+        verbose_name = "Prestacion de primer seguimiento"
+        verbose_name_plural = "Prestaciones de primer seguimiento"
+
+    def __str__(self):
+        return (
+            self.id_prestacion_seg or f"Prestacion seguimiento #{self.pk or 'sin id'}"
+        )
+
+
+class ItemRecetaSeguimiento(models.Model):
+    menu = models.ForeignKey(
+        to=MenuSeguimiento,
+        on_delete=models.CASCADE,
+        related_name="receta_items",
+    )
+    id_item_receta = _nullable_char(unique=True)
+    ingrediente = _nullable_char()
+    unidad_medida = _nullable_char()
+    cantidad_medida = _nullable_char()
+
+    class Meta:
+        verbose_name = "Item de receta de primer seguimiento"
+        verbose_name_plural = "Items de receta de primer seguimiento"
+
+    def __str__(self):
+        return self.id_item_receta or f"Item receta seguimiento #{self.pk or 'sin id'}"
 
 
 class ClasificacionComedor(models.Model):

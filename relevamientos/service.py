@@ -700,13 +700,12 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         try:
             comedor = get_object_or_404(Comedor, id=comedor_id)
             relevamiento = Relevamiento(comedor=comedor, estado="Pendiente")
-            territorial_data = request.POST.get("territorial")
-
-            if territorial_data:
-                territorial_data = json.loads(territorial_data)
-                relevamiento.territorial_uid = territorial_data.get("gestionar_uid")
-                relevamiento.territorial_nombre = territorial_data.get("nombre")
-                relevamiento.estado = "Visita pendiente"
+            territorial_uid, territorial_nombre = _parse_territorial_payload(
+                request.POST.get("territorial")
+            )
+            relevamiento.territorial_uid = territorial_uid
+            relevamiento.territorial_nombre = territorial_nombre
+            relevamiento.estado = "Visita pendiente"
 
             relevamiento.save()
 

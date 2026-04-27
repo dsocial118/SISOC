@@ -1,10 +1,11 @@
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
-from relevamientos.models import Relevamiento
+from relevamientos.models import PrimerSeguimiento, Relevamiento
 from relevamientos.tasks import (
     AsyncSendRelevamientoToGestionar,
     AsyncRemoveRelevamientoToGestionar,
+    AsyncRemovePrimerSeguimientoToGestionar,
     build_relevamiento_payload,
 )
 from core.soft_delete.signals import post_soft_delete
@@ -13,6 +14,8 @@ from core.soft_delete.signals import post_soft_delete
 @receiver(post_save, sender=Relevamiento)
 def send_relevamiento_to_gestionar(sender, instance, created, **kwargs):
     if created:
+        if getattr(instance, "_skip_gestionar_sync", False):
+            return
         payload = build_relevamiento_payload(instance)
         AsyncSendRelevamientoToGestionar(instance.id, payload).start()
 
@@ -36,3 +39,8 @@ def update_comedor_geolocalizacion(sender, instance, created, **kwargs):
 @receiver(post_soft_delete, sender=Relevamiento)
 def remove_relevamiento_to_gestionar(sender, instance, **kwargs):
     AsyncRemoveRelevamientoToGestionar(instance.id).start()
+
+
+@receiver(pre_delete, sender=PrimerSeguimiento)
+def remove_primer_seguimiento_to_gestionar(sender, instance, **kwargs):
+    AsyncRemovePrimerSeguimientoToGestionar(instance.id).start()

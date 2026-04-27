@@ -132,6 +132,40 @@
             "description": "Updates a specific Relevamiento. Uses Custom Header or Token auth."
           },
           "response": []
+        },
+        {
+          "name": "Update Primer Seguimiento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"sisoc_id\": \"1\",\n    \"id_relevamiento\": \"25\",\n    \"fecha_hora\": \"2026-04-27T10:30:00-03:00\",\n    \"estado\": \"Completo\",\n    \"funcionamiento\": \"Abierto en funcionamiento\",\n    \"agua_potable\": \"Y\",\n    \"gas_red\": \"4\",\n    \"observan_animales\": \"N\",\n    \"prestaciones_seguimientos\": {\n        \"id_prestacion_seg\": \"prest-1\",\n        \"dias_prestacion\": \"Lunes\",\n        \"tipo_prestacion\": \"Almuerzo\",\n        \"ap_presencial\": \"10\",\n        \"ap_vianda\": \"2\",\n        \"de_presencial\": \"3\",\n        \"de_vianda\": \"4\"\n    },\n    \"info_adicional\": \"Sin novedades\",\n    \"realizo_forma\": \"Completa\",\n    \"comentarios_finales\": \"Formulario completo\",\n    \"firma_entrevistado\": \"https://gestionar.example/firma-entrevistado.png\",\n    \"firma_tecnico\": \"https://gestionar.example/firma-tecnico.png\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/relevamiento/primer-seguimiento",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "relevamiento",
+                "primer-seguimiento"
+              ]
+            },
+            "description": "Updates a PrimerSeguimiento. Requires sisoc_id and id_relevamiento."
+          },
+          "response": []
         }
       ]
     },
