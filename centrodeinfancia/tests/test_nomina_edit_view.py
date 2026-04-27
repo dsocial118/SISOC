@@ -112,6 +112,27 @@ class TestNominaCentroInfanciaEditView:
             t.name for t in response.templates
         ]
 
+    def test_get_incluye_autocompletado_geografico(
+        self, usuario_con_permisos, centro, nomina
+    ):
+        """Verifica que el template de edición incluye el JS de carga dependiente."""
+        client = Client()
+        client.force_login(usuario_con_permisos)
+
+        url = reverse(
+            "centrodeinfancia_nomina_editar",
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk}
+        )
+        response = client.get(url)
+
+        content = response.content.decode("utf-8")
+        assert response.status_code == 200
+        assert "ajaxLoadMunicipiosUrl" in content
+        assert "ajaxLoadLocalidadesUrl" in content
+        assert 'id="id_provincia_domicilio"' in content
+        assert 'id="id_municipio_domicilio"' in content
+        assert 'id="id_localidad_domicilio"' in content
+
     def test_post_actualiza_nomina(self, usuario_con_permisos, centro, nomina):
         """Verifica que POST actualiza correctamente la nómina."""
         client = Client()

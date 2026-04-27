@@ -25,3 +25,121 @@
         <button type="submit" class="btn btn-primary">Guardar Cambios</button>
     </form>
 {% endblock %}
+
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("DOMContentLoaded", function() {
+            const provinciaSelect = document.getElementById("id_provincia_domicilio");
+            const municipioSelect = document.getElementById("id_municipio_domicilio");
+            const localidadSelect = document.getElementById("id_localidad_domicilio");
+            const initialMunicipioValue = municipioSelect ? municipioSelect.value : "";
+            const initialLocalidadValue = localidadSelect ? localidadSelect.value : "";
+
+            function buildEmptyOption(label) {
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = label;
+                return option;
+            }
+
+            function resetSelect(selectElement, label) {
+                if (!selectElement) {
+                    return;
+                }
+                selectElement.innerHTML = "";
+                selectElement.appendChild(buildEmptyOption(label));
+            }
+
+            async function loadOptions(url, selectElement, emptyLabel) {
+                if (!selectElement || !url) {
+                    return;
+                }
+
+                const response = await fetch(url, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    credentials: "same-origin",
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                resetSelect(selectElement, emptyLabel);
+                data.forEach(function(item) {
+                    const option = document.createElement("option");
+                    option.value = item.id;
+                    option.textContent = item.nombre || item.nombre_region || "";
+                    selectElement.appendChild(option);
+                });
+            }
+
+            if (provinciaSelect && municipioSelect) {
+                provinciaSelect.addEventListener("change", async function() {
+                    try {
+                        resetSelect(municipioSelect, "Seleccionar municipio...");
+                        resetSelect(localidadSelect, "Seleccionar localidad...");
+                        if (!this.value) {
+                            return;
+                        }
+                        await loadOptions(
+                            `${ajaxLoadMunicipiosUrl}?provincia_id=${this.value}`,
+                            municipioSelect,
+                            "Seleccionar municipio..."
+                        );
+                    } catch (error) {
+                        console.error("Error al cargar municipios:", error);
+                    }
+                });
+            }
+
+            if (municipioSelect && localidadSelect) {
+                municipioSelect.addEventListener("change", async function() {
+                    try {
+                        resetSelect(localidadSelect, "Seleccionar localidad...");
+                        if (!this.value) {
+                            return;
+                        }
+                        await loadOptions(
+                            `${ajaxLoadLocalidadesUrl}?municipio_id=${this.value}`,
+                            localidadSelect,
+                            "Seleccionar localidad..."
+                        );
+                    } catch (error) {
+                        console.error("Error al cargar localidades:", error);
+                    }
+                });
+            }
+
+            if (provinciaSelect && provinciaSelect.value) {
+                loadOptions(
+                    `${ajaxLoadMunicipiosUrl}?provincia_id=${provinciaSelect.value}`,
+                    municipioSelect,
+                    "Seleccionar municipio..."
+                ).then(function() {
+                    if (initialMunicipioValue) {
+                        municipioSelect.value = initialMunicipioValue;
+                    }
+                    if (municipioSelect.value && localidadSelect) {
+                        return loadOptions(
+                            `${ajaxLoadLocalidadesUrl}?municipio_id=${municipioSelect.value}`,
+                            localidadSelect,
+                            "Seleccionar localidad..."
+                        ).then(function() {
+                            if (initialLocalidadValue) {
+                                localidadSelect.value = initialLocalidadValue;
+                            }
+                            return null;
+                        });
+                    }
+                    return null;
+                }).catch(function(error) {
+                    console.error("Error al precargar ubicacion:", error);
+                });
+            }
+        });
+    </script>
+{% endblock %}
