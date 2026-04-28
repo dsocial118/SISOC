@@ -1083,6 +1083,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         nomina.clean()
         nomina.save()
         return True
+
         def get_queryset(self):
             return _nomina_cdi_queryset_scoped(self.request.user).filter(
                 centro_id=self.kwargs["pk"]
