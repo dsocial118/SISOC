@@ -38,7 +38,7 @@ class PrimerSeguimientoService:
     @classmethod
     def _crear_ancla_local(cls, comedor):
         relevamiento = Relevamiento(comedor=comedor, estado="Pendiente")
-        relevamiento._skip_gestionar_sync = True
+        relevamiento._skip_gestionar_sync = True  # pylint: disable=protected-access
         relevamiento.save()
         return relevamiento
 

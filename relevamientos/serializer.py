@@ -832,9 +832,11 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
         self._upsert_child(
             ItemRecetaSeguimiento,
             data,
-            parent_field="menu",
-            parent=menu,
-            lookup_field="id_item_receta",
+            {
+                "parent_field": "menu",
+                "parent": menu,
+                "lookup_field": "id_item_receta",
+            },
         )
 
     def _process_prestaciones(self):
@@ -867,15 +869,20 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
             self._upsert_child(
                 PrestacionSeguimiento,
                 data,
-                parent_field="seguimiento",
-                parent=self.instance,
-                lookup_field="id_prestacion_seg",
+                {
+                    "parent_field": "seguimiento",
+                    "parent": self.instance,
+                    "lookup_field": "id_prestacion_seg",
+                },
             )
 
-    def _upsert_child(self, model, data, parent_field, parent, lookup_field):
+    def _upsert_child(self, model, data, relation):
         if not self._has_values(data):
             return None
         normalized = self._normalize_block_data(model, data)
+        parent_field = relation["parent_field"]
+        parent = relation["parent"]
+        lookup_field = relation["lookup_field"]
         normalized[parent_field] = parent
         lookup_value = normalized.get(lookup_field)
         instance = None
