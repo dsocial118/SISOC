@@ -328,13 +328,11 @@ class CiudadanoFiltroForm(forms.Form):
         self._filters_mode = self.FILTERS_MODE_UI
         self._estado_revision_explicito = False
         if not self.is_bound:
-            self.initial.setdefault(
-                "estado_revision", self.ESTADO_REVISION_FINALIZADA
-            )
+            self.initial.setdefault("estado_revision", self.ESTADO_REVISION_FINALIZADA)
         else:
             self._filters_mode = (
-                (self.data.get("filters_mode") or "").strip() or self.FILTERS_MODE_API
-            )
+                self.data.get("filters_mode") or ""
+            ).strip() or self.FILTERS_MODE_API
             self._estado_revision_explicito = bool(
                 (self.data.get("estado_revision") or "").strip()
             )

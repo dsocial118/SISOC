@@ -169,7 +169,10 @@ def test_apply_ciudadanos_filters_si_aplica_revision_finalizada(mocker):
 def test_ciudadano_filtro_form_ui_mantiene_finalizada_por_defecto():
     form = module.CiudadanoFiltroForm({"q": "12345678", "filters_mode": "ui"})
 
-    assert form["estado_revision"].value() == module.CiudadanoFiltroForm.ESTADO_REVISION_FINALIZADA
+    assert (
+        form["estado_revision"].value()
+        == module.CiudadanoFiltroForm.ESTADO_REVISION_FINALIZADA
+    )
     assert form.estado_revision_fue_seleccionado_explicitamente is False
 
 
