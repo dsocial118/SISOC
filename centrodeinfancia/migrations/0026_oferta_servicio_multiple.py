@@ -23,9 +23,9 @@ def forwards_migrate_oferta_servicios(apps, schema_editor):
         )
         ofertas_por_codigo[codigo] = oferta
 
-    for centro in CentroDeInfancia.objects.exclude(oferta_servicios__isnull=True).exclude(
-        oferta_servicios=""
-    ):
+    for centro in CentroDeInfancia.objects.exclude(
+        oferta_servicios__isnull=True
+    ).exclude(oferta_servicios=""):
         codigo = centro.oferta_servicios
         oferta = ofertas_por_codigo.get(codigo)
         if oferta:
