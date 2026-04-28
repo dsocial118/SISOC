@@ -52,6 +52,7 @@ def apply_ciudadanos_filters(queryset, cleaned_data):
     term = (cleaned_data.get("q") or "").strip()
     provincia = cleaned_data.get("provincia")
     tipo_registro = cleaned_data.get("tipo_registro")
+    estado_revision = cleaned_data.get("estado_revision")
 
     if term:
         if term.isdigit():
@@ -70,6 +71,17 @@ def apply_ciudadanos_filters(queryset, cleaned_data):
 
     if tipo_registro:
         queryset = queryset.filter(tipo_registro_identidad=tipo_registro)
+
+    permite_filtrar_revision = tipo_registro in (
+        "",
+        Ciudadano.TIPO_REGISTRO_SIN_DNI,
+        Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+    )
+    if permite_filtrar_revision:
+        if estado_revision == CiudadanoFiltroForm.ESTADO_REVISION_PENDIENTE:
+            queryset = queryset.filter(requiere_revision_manual=True)
+        elif estado_revision == CiudadanoFiltroForm.ESTADO_REVISION_FINALIZADA:
+            queryset = queryset.filter(requiere_revision_manual=False)
 
     return queryset
 

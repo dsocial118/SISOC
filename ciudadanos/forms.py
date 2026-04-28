@@ -2,8 +2,8 @@ from django import forms
 from django.core.cache import cache
 from django.db.models import Q
 
-from core.models import Localidad, Municipio, Provincia
 from ciudadanos.models import Ciudadano, GrupoFamiliar
+from core.models import Localidad, Municipio, Provincia
 
 PROVINCIA_FILTER_CHOICES_CACHE_KEY = "ciudadanos:filtro:provincias:v1"
 PROVINCIA_FILTER_CHOICES_CACHE_TTL = 60 * 60
@@ -101,7 +101,7 @@ class CiudadanoForm(forms.ModelForm):
                 }
             )
 
-        # Los campos de identidad/nombre/doc son opcionales a nivel form —
+        # Los campos de identidad/nombre/doc son opcionales a nivel form;
         # la obligatoriedad se valida condicionalmente en clean() según
         # tipo_registro_identidad.
         for field_name in (
@@ -281,6 +281,12 @@ class GrupoFamiliarForm(forms.ModelForm):
 
 
 class CiudadanoFiltroForm(forms.Form):
+    ESTADO_REVISION_FINALIZADA = "FINALIZADA"
+    ESTADO_REVISION_PENDIENTE = "PENDIENTE"
+    ESTADO_REVISION_TODOS = "TODOS"
+    FILTERS_MODE_UI = "ui"
+    FILTERS_MODE_API = "api"
+
     q = forms.CharField(
         label="Buscar",
         required=False,
@@ -293,7 +299,7 @@ class CiudadanoFiltroForm(forms.Form):
         choices=(),
     )
     tipo_registro = forms.ChoiceField(
-        label="Tipo de registro",
+        label="Estado identidad",
         required=False,
         choices=[("", "Todos")]
         + [
@@ -302,6 +308,16 @@ class CiudadanoFiltroForm(forms.Form):
             (Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO, "DNI no validado RENAPER"),
         ],
     )
+    estado_revision = forms.ChoiceField(
+        label="Estado de Revisión",
+        required=False,
+        choices=[
+            (ESTADO_REVISION_FINALIZADA, "Finalizada"),
+            (ESTADO_REVISION_PENDIENTE, "Pendiente"),
+            (ESTADO_REVISION_TODOS, "Todos"),
+        ],
+        initial=ESTADO_REVISION_FINALIZADA,
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -309,6 +325,33 @@ class CiudadanoFiltroForm(forms.Form):
             ("", "Todas"),
             *get_cached_provincia_filter_choices(),
         ]
+        self._filters_mode = self.FILTERS_MODE_UI
+        self._estado_revision_explicito = False
+        if not self.is_bound:
+            self.initial.setdefault(
+                "estado_revision", self.ESTADO_REVISION_FINALIZADA
+            )
+        else:
+            self._filters_mode = (
+                (self.data.get("filters_mode") or "").strip() or self.FILTERS_MODE_API
+            )
+            self._estado_revision_explicito = bool(
+                (self.data.get("estado_revision") or "").strip()
+            )
+            if not self._estado_revision_explicito:
+                mutable_data = self.data.copy()
+                mutable_data["estado_revision"] = (
+                    self.ESTADO_REVISION_FINALIZADA
+                    if self._filters_mode == self.FILTERS_MODE_UI
+                    else self.ESTADO_REVISION_TODOS
+                )
+                self.data = mutable_data
+
+    @property
+    def estado_revision_fue_seleccionado_explicitamente(self):
+        if not self.is_bound:
+            return False
+        return self._estado_revision_explicito
 
     def clean_provincia(self):
         provincia_id = self.cleaned_data.get("provincia")
@@ -321,3 +364,18 @@ class CiudadanoFiltroForm(forms.Form):
         if provincia is None:
             raise forms.ValidationError("Provincia inválida.")
         return provincia
+
+    def clean_estado_revision(self):
+        estado_revision = self.cleaned_data.get("estado_revision")
+        if not estado_revision:
+            if self._filters_mode == self.FILTERS_MODE_UI:
+                return self.ESTADO_REVISION_FINALIZADA
+            return None
+        return estado_revision
+
+    def clean(self):
+        cleaned_data = super().clean()
+        cleaned_data["estado_revision_explicito"] = (
+            self.estado_revision_fue_seleccionado_explicitamente
+        )
+        return cleaned_data
