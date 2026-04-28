@@ -209,11 +209,22 @@ class TestNominaCentroInfanciaEditView:
             "centrodeinfancia_nomina_editar",
             kwargs={"pk": centro.pk, "nomina_id": nomina_otro.pk},
         )
-        response = client.get(url)
+        response_get = client.get(url)
+        response_post = client.post(
+            url,
+            {
+                "estado": NominaCentroInfancia.ESTADO_BAJA,
+                "dni": nomina_otro.dni,
+                "apellido": nomina_otro.apellido,
+                "nombre": nomina_otro.nombre,
+                "fecha_nacimiento": nomina_otro.fecha_nacimiento.isoformat(),
+            },
+        )
 
-        # La vista retorna None en get_context_data si la nómina no pertenece al centro
-        # Esto puede resultar en diferentes respuestas dependiendo del template
-        assert response.status_code in [404, 200]
+        assert response_get.status_code in (404, 403)
+        assert response_post.status_code in (404, 403)
+        nomina_otro.refresh_from_db()
+        assert nomina_otro.estado != NominaCentroInfancia.ESTADO_BAJA
 
     def test_contexto_contiene_objeto_y_centro(
         self, usuario_con_permisos, centro, nomina
@@ -236,30 +247,39 @@ class TestNominaCentroInfanciaEditView:
     def test_post_con_datos_invalidos_no_guarda(
         self, usuario_con_permisos, centro, nomina
     ):
-        """Verifica que POST con datos inválidos no guarda."""
+        """Verifica que POST con datos inválidos no guarda ni redirige."""
         client = Client()
         client.force_login(usuario_con_permisos)
+
+        estado_original = nomina.estado
+        nombre_original = nomina.nombre
+        apellido_original = nomina.apellido
+        fecha_nacimiento_original = nomina.fecha_nacimiento
 
         url = reverse(
             "centrodeinfancia_nomina_editar",
             kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
 
-        # Datos inválidos: fecha_nacimiento muy reciente
+        # Datos inválidos: fecha imposible de parsear
         data = {
             "estado": NominaCentroInfancia.ESTADO_ACTIVO,
             "dni": nomina.dni,
             "apellido": nomina.apellido,
             "nombre": nomina.nombre,
-            "fecha_nacimiento": date.today().isoformat(),  # Hoy
+            "fecha_nacimiento": "2026-99-99",
         }
 
         response = client.post(url, data)
 
-        # Debería mostrar errores de validación
-        # Si el formulario tiene validaciones, volverá con status 200
-        # Si no, puede redirigir (302)
-        assert response.status_code in [200, 302]
+        assert response.status_code == 200
+        assert "fecha_nacimiento" in response.context["form"].errors
+
+        nomina.refresh_from_db()
+        assert nomina.estado == estado_original
+        assert nomina.nombre == nombre_original
+        assert nomina.apellido == apellido_original
+        assert nomina.fecha_nacimiento == fecha_nacimiento_original
 
     def test_actualiza_sexo_desde_opciones(self, usuario_con_permisos, centro, nomina):
         """Verifica que se puede actualizar el sexo."""

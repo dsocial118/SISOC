@@ -1,10 +1,8 @@
 {% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
-{% csrf_token %}
-{{ form|crispy }}
 
-{% block title %}Editar a Nómina{% endblock %}
-{% block titulo-pagina %}Editar a Nómina{% endblock %}
+{% block title %}Editar nómina{% endblock %}
+{% block titulo-pagina %}Editar nómina{% endblock %}
 
 {% block content %}
     <div class="d-flex justify-content-end mb-3">

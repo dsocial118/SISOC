@@ -1025,6 +1025,11 @@ class NominaCentroInfanciaEditView(LoginRequiredMixin, UpdateView):
     template_name = "centrodeinfancia/nomina_form_edit.html"
     pk_url_kwarg = "nomina_id"
 
+    def get_queryset(self):
+        return _nomina_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["object"] = (
@@ -1078,6 +1083,10 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         nomina.clean()
         nomina.save()
         return True
+        def get_queryset(self):
+            return _nomina_cdi_queryset_scoped(self.request.user).filter(
+                centro_id=self.kwargs["pk"]
+            )
 
     def get_success_url(self):
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
