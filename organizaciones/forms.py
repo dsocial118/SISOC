@@ -68,7 +68,9 @@ class OrganizacionForm(forms.ModelForm):
         confirmado = cleaned_data.get("cuil_duplicado_confirmado")
 
         if cuit is not None:
-            exclude_pk = self.instance.pk if self.instance and self.instance.pk else None
+            exclude_pk = (
+                self.instance.pk if self.instance and self.instance.pk else None
+            )
             qs = Organizacion.objects.filter(cuit=cuit)
             if exclude_pk:
                 qs = qs.exclude(pk=exclude_pk)

@@ -121,9 +121,7 @@ urlpatterns = [
     ),
     path(
         "organizaciones/cuil-check/ajax/",
-        permissions_any_required(["organizaciones.view_organizacion"])(
-            cuil_check_ajax
-        ),
+        permissions_any_required(["organizaciones.view_organizacion"])(cuil_check_ajax),
         name="organizacion_cuil_check_ajax",
     ),
 ]

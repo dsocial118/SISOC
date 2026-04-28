@@ -83,10 +83,15 @@ class CuilDuplicadoFormTests(TestCase):
     def test_cuil_duplicado_sin_confirmacion_es_invalido(self):
         form = OrganizacionForm(data=self._form_data())
         self.assertFalse(form.is_valid())
-        self.assertIn("cuil_duplicado_sin_confirmar", [e.code for e in form.non_field_errors().as_data()])
+        self.assertIn(
+            "cuil_duplicado_sin_confirmar",
+            [e.code for e in form.non_field_errors().as_data()],
+        )
 
     def test_cuil_duplicado_con_confirmacion_es_valido(self):
-        form = OrganizacionForm(data=self._form_data({"cuil_duplicado_confirmado": "true"}))
+        form = OrganizacionForm(
+            data=self._form_data({"cuil_duplicado_confirmado": "true"})
+        )
         self.assertTrue(form.is_valid(), form.errors)
 
     def test_cuil_unico_no_requiere_confirmacion(self):
@@ -131,7 +136,9 @@ class CuilCheckAjaxTests(TestCase):
         self.assertEqual(data["organizaciones"], [])
 
     def test_exclude_excluye_la_org_en_edicion(self):
-        response = self.client.get(self.url, {"cuil": str(self.CUIL), "exclude": str(self.org.pk)})
+        response = self.client.get(
+            self.url, {"cuil": str(self.CUIL), "exclude": str(self.org.pk)}
+        )
         data = json.loads(response.content)
         self.assertEqual(data["organizaciones"], [])
 

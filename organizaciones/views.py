@@ -612,7 +612,9 @@ def cuil_check_ajax(request):
             "telefono": str(org.telefono) if org.telefono is not None else "",
             "email": org.email or "",
             "tipo_entidad": org.tipo_entidad.nombre if org.tipo_entidad else "",
-            "subtipo_entidad": org.subtipo_entidad.nombre if org.subtipo_entidad else "",
+            "subtipo_entidad": (
+                org.subtipo_entidad.nombre if org.subtipo_entidad else ""
+            ),
             "domicilio": org.domicilio or "",
             "provincia": str(org.provincia) if org.provincia else "",
             "municipio": str(org.municipio) if org.municipio else "",
