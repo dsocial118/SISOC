@@ -491,6 +491,14 @@
                                                 <!-- Col 2: Observaciones -->
                                                 <div class="col-lg-4 col-md-7">
                                                     {% if is_prov %}
+                                                        {% if leg.observacion_tecnica_texto %}
+                                                            <div class="small muted">{{ leg.observacion_tecnica_titulo|default:"ObservaciÃ³n tÃ©cnica" }}:</div>
+                                                            <div class="mt-1">
+                                                                <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08)">
+                                                                    <span class="d-block text-break">{{ leg.observacion_tecnica_texto }}</span>
+                                                                </div>
+                                                            </div>
+                                                        {% else %}
                                                         {% comment %}
                                                         <div class="small muted">Observación (subsanación):</div>
                                                         <div class="mt-1">
@@ -503,6 +511,7 @@
                                                             {% endif %}
                                                         </div>
                                                         {% endcomment %}
+                                                        {% endif %}
                                                         {% if leg.subsanacion_renaper_comentario %}
                                                             <div class="small muted mt-2">Respuesta provincia:</div>
                                                             <div class="mt-1">
@@ -514,18 +523,29 @@
                                                             </div>
                                                         {% endif %}
                                                     {% else %}
-                                                        <div class="small muted">Comentario enviado a provincia:</div>
-                                                        <div class="mt-1">
-                                                            {% if leg.subsanacion_motivo %}
+                                                        {% if leg.observacion_tecnica_texto %}
+                                                            <div class="small muted">{{ leg.observacion_tecnica_titulo|default:"ObservaciÃ³n tÃ©cnica" }}:</div>
+                                                            <div class="mt-1">
                                                                 <div class="p-2 rounded"
                                                                      style="background:rgba(255,255,255,.04);
                                                                             border:1px solid rgba(255,255,255,.08)">
-                                                                    <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                                    <span class="d-block text-break">{{ leg.observacion_tecnica_texto }}</span>
                                                                 </div>
-                                                            {% else %}
-                                                                <span class="muted">-</span>
-                                                            {% endif %}
-                                                        </div>
+                                                            </div>
+                                                        {% else %}
+                                                            <div class="small muted">Comentario enviado a provincia:</div>
+                                                            <div class="mt-1">
+                                                                {% if leg.subsanacion_motivo %}
+                                                                    <div class="p-2 rounded"
+                                                                         style="background:rgba(255,255,255,.04);
+                                                                                border:1px solid rgba(255,255,255,.08)">
+                                                                        <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                                    </div>
+                                                                {% else %}
+                                                                    <span class="muted">-</span>
+                                                                {% endif %}
+                                                            </div>
+                                                        {% endif %}
                                                         {% if leg.subsanacion_renaper_comentario %}
                                                             <div class="small muted mt-2">Respuesta de provincia:</div>
                                                             <div class="mt-1">
@@ -717,18 +737,14 @@
                                             </div>
                                         {% endif %}
                                     {% else %}
-                                        {% comment %}
-                                        <div class="small muted">Comentario enviado a provincia:</div>
-                                        <div class="mt-1">
-                                            {% if leg.subsanacion_motivo %}
+                                        {% if leg.observacion_tecnica_texto %}
+                                            <div class="small muted">{{ leg.observacion_tecnica_titulo|default:"ObservaciÃ³n tÃ©cnica" }}:</div>
+                                            <div class="mt-1">
                                                 <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08)">
-                                                    <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                    <span class="d-block text-break">{{ leg.observacion_tecnica_texto }}</span>
                                                 </div>
-                                            {% else %}
-                                                <span class="muted">-</span>
-                                            {% endif %}
-                                        </div>
-                                        {% endcomment %}
+                                            </div>
+                                        {% endif %}
                                         {% if leg.subsanacion_renaper_comentario %}
                                             <div class="small muted mt-2">Respuesta de provincia:</div>
                                             <div class="mt-1">

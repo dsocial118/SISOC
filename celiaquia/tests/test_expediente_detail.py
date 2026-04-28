@@ -185,3 +185,49 @@ def test_expediente_detail_expone_motivo_rechazo_para_provincia(client):
     assert legajo_ctx.observacion_tecnica_texto == "Documento ilegible"
     assert "Motivo del Rechazo" in response.content.decode()
     assert "Documento ilegible" in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_expediente_detail_expone_motivo_rechazo_para_tecnico(client):
+    user = User.objects.create_user(username="tecnico_rechazo", password="pass")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    estado_expediente = EstadoExpediente.objects.create(nombre="EN_ESPERA_TEC")
+    estado_legajo = EstadoLegajo.objects.create(nombre="DOCUMENTO_PENDIENTE_TEC")
+    expediente = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Gomez",
+        nombre="Mario",
+        fecha_nacimiento=date(1992, 7, 10),
+        documento=30111222,
+    )
+    legajo = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.RECHAZADO,
+    )
+    HistorialValidacionTecnica.objects.create(
+        legajo=legajo,
+        estado_anterior=RevisionTecnico.PENDIENTE,
+        estado_nuevo=RevisionTecnico.RECHAZADO,
+        usuario=user,
+        motivo="Falta certificado",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    legajo_ctx = response.context["legajos_enriquecidos"][0]
+    assert legajo_ctx.observacion_tecnica_titulo == "Motivo del Rechazo"
+    assert legajo_ctx.observacion_tecnica_texto == "Falta certificado"
+    assert "Motivo del Rechazo" in response.content.decode()
+    assert "Falta certificado" in response.content.decode()
