@@ -80,14 +80,23 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <button type="button"
-                                                class="btn btn-sm btn-success btn-agregar"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalNomina"
-                                                data-ciudadano-id="{{ c.id }}"
-                                                data-ciudadano-nombre="{{ c.apellido|default:'-' }}, {{ c.nombre|default:'-' }}">
-                                            Agregar
-                                        </button>
+                                        {% if c.requiere_revision_manual %}
+                                            <button type="button"
+                                                    class="btn btn-sm btn-secondary"
+                                                    disabled
+                                                    title="Debe validarse la identidad antes de ingresar a nómina">
+                                                Revisión pendiente
+                                            </button>
+                                        {% else %}
+                                            <button type="button"
+                                                    class="btn btn-sm btn-success btn-agregar"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalNomina"
+                                                    data-ciudadano-id="{{ c.id }}"
+                                                    data-ciudadano-nombre="{{ c.apellido|default:'-' }}, {{ c.nombre|default:'-' }}">
+                                                Agregar
+                                            </button>
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}

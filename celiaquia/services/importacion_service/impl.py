@@ -14,7 +14,12 @@ from django.db.models import Q
 
 from ciudadanos.models import Ciudadano
 from core.models import Provincia, Municipio, Localidad, Sexo
-from celiaquia.models import EstadoCupo, EstadoLegajo, ExpedienteCiudadano
+from celiaquia.models import (
+    EstadoCupo,
+    EstadoLegajo,
+    ExpedienteCiudadano,
+    RevisionTecnico,
+)
 from celiaquia.services.validacion_edad_service import ValidacionEdadService
 
 logger = logging.getLogger("django")
@@ -51,16 +56,14 @@ def _get_tipo_documento(doc_str):
     return Ciudadano.DOCUMENTO_DNI
 
 
-# Estados de expediente considerados "abiertos / pre-cupo" para evitar duplicados inter-expedientes
-ESTADOS_PRE_CUPO = [
-    "CREADO",
-    "PROCESADO",
-    "EN_ESPERA",
-    "CONFIRMACION_DE_ENVIO",
-    "RECEPCIONADO",
-    "ASIGNADO",
-    "PROCESO_DE_CRUCE",
-]
+# Estados de revisión técnica que bloquean la creación del mismo legajo
+# en otro expediente.
+REVISIONES_BLOQUEAN_NUEVO_EXPEDIENTE = {
+    RevisionTecnico.PENDIENTE,
+    RevisionTecnico.APROBADO,
+    RevisionTecnico.SUBSANAR,
+    RevisionTecnico.SUBSANADO,
+}
 
 IMPORTACION_COLUMN_MAP = {
     "apellido": "apellido",
@@ -433,7 +436,7 @@ def _persistir_legajos_importacion(
     legajos_crear, batch_size, relaciones_familiares, warnings
 ):
     if not legajos_crear:
-        logger.warning("No hay legajos para crear - lista vacía")
+        logger.info("No hay legajos para crear - lista vacia")
         return
 
     try:
@@ -1355,7 +1358,9 @@ def _agregar_exclusion_beneficiario_existente_importacion(
 def _agregar_exclusion_beneficiario_en_programa_importacion(
     *, excluidos, offset, ciudadano, ciudadano_id, programa_data
 ):
-    estado_text = "ACEPTADO" if programa_data["es_titular_activo"] else "SUSPENDIDO"
+    estado_text = programa_data.get("revision_tecnico") or (
+        "ACEPTADO" if programa_data["es_titular_activo"] else "SUSPENDIDO"
+    )
     _agregar_exclusion_beneficiario_importacion(
         excluidos=excluidos,
         offset=offset,
@@ -1375,9 +1380,9 @@ def _agregar_exclusion_beneficiario_expediente_abierto_importacion(
         offset=offset,
         ciudadano=ciudadano,
         ciudadano_id=ciudadano_id,
-        motivo="Duplicado en otro expediente abierto",
+        motivo="Duplicado por estado de legajo no duplicable",
         expediente_origen_id=conflicto_data["expediente_id"],
-        estado_expediente_origen=conflicto_data["expediente__estado__nombre"],
+        estado_legajo_origen=conflicto_data["revision_tecnico"],
     )
 
 
@@ -1442,7 +1447,7 @@ def _marcar_legajo_existente_como_doble_rol_importacion(
                 "estado_cupo": EstadoCupo.NO_EVAL,
                 "es_titular_activo": False,
                 "expediente_id": expediente.id,
-                "expediente__estado__nombre": expediente.estado.nombre,
+                "revision_tecnico": RevisionTecnico.PENDIENTE,
             }
             return True
 
@@ -1463,7 +1468,7 @@ def _marcar_legajo_existente_como_doble_rol_importacion(
         "estado_cupo": EstadoCupo.NO_EVAL,
         "es_titular_activo": False,
         "expediente_id": expediente.id,
-        "expediente__estado__nombre": expediente.estado.nombre,
+        "revision_tecnico": RevisionTecnico.PENDIENTE,
     }
     return True
 
@@ -1498,7 +1503,7 @@ def _registrar_legajo_beneficiario_importacion(
         "estado_cupo": EstadoCupo.NO_EVAL,
         "es_titular_activo": False,
         "expediente_id": expediente.id,
-        "expediente__estado__nombre": expediente.estado.nombre,
+        "revision_tecnico": RevisionTecnico.PENDIENTE,
     }
     return cid
 
@@ -1838,18 +1843,18 @@ def _precargar_conflictos_y_existentes_importacion(expediente):
     )
 
     conflictos_qs = (
-        ExpedienteCiudadano.objects.select_related("expediente", "expediente__estado")
+        ExpedienteCiudadano.objects.select_related("expediente")
         .exclude(expediente_id=expediente_id)
         .filter(
             Q(estado_cupo=EstadoCupo.DENTRO)
-            | Q(expediente__estado__nombre__in=ESTADOS_PRE_CUPO)
+            | Q(revision_tecnico__in=REVISIONES_BLOQUEAN_NUEVO_EXPEDIENTE)
         )
         .values(
             "ciudadano_id",
             "estado_cupo",
             "es_titular_activo",
             "expediente_id",
-            "expediente__estado__nombre",
+            "revision_tecnico",
         )
     )
 

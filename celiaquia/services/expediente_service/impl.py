@@ -1,9 +1,10 @@
 import logging
+import json
 from functools import lru_cache
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
-from celiaquia.models import EstadoExpediente, Expediente
+from celiaquia.models import EstadoExpediente, Expediente, ExpedienteEstadoHistorial
 from celiaquia.services.importacion_service import ImportacionService
 from celiaquia.services.legajo_service import LegajoService
 
@@ -16,7 +17,9 @@ def _estado_id(nombre: str) -> int:
     return EstadoExpediente.objects.get_or_create(nombre=nombre)[0].pk
 
 
-def _set_estado(expediente: Expediente, nombre: str, usuario=None) -> None:
+def _set_estado(
+    expediente: Expediente, nombre: str, usuario=None, observaciones=None
+) -> None:
     """Actualiza el estado del expediente y el usuario modificador."""
 
     expediente.estado_id = _estado_id(nombre)
@@ -25,6 +28,127 @@ def _set_estado(expediente: Expediente, nombre: str, usuario=None) -> None:
         expediente.usuario_modificador = usuario
         update_fields.append("usuario_modificador")
     expediente.save(update_fields=update_fields)
+
+    if observaciones and getattr(expediente, "pk", None):
+        historial_actual = (
+            ExpedienteEstadoHistorial.objects.filter(
+                expediente=expediente,
+                estado_nuevo_id=expediente.estado_id,
+            )
+            .order_by("-fecha")
+            .first()
+        )
+        if historial_actual:
+            historial_actual.observaciones = observaciones
+            historial_actual.save(update_fields=["observaciones"])
+
+
+def _build_resumen_importacion_alerta(*, creados_total=0, errores_actuales=0):
+    resumen_lineas = [
+        f"Importacion procesada. Se crearon {creados_total} legajos y el expediente paso a EN ESPERA."
+    ]
+    if errores_actuales:
+        resumen_lineas.append(f"Errores detectados: {errores_actuales}.")
+    return "\n".join(resumen_lineas)
+
+
+def _build_excluidos_importacion_alerta(excluidos):
+    excluidos_lineas = []
+    if excluidos:
+        cantidad = len(excluidos)
+        sujeto = (
+            "No se creó 1 legajo"
+            if cantidad == 1
+            else f"No se crearon {cantidad} legajos"
+        )
+        predicado = (
+            "porque pertenece a otro expediente."
+            if cantidad == 1
+            else "porque pertenecen a otro expediente."
+        )
+        excluidos_lineas.append(f"{sujeto} {predicado}")
+        for item in excluidos[:10]:
+            if not isinstance(item, dict):
+                excluidos_lineas.append(str(item))
+                continue
+            documento = item.get("documento", "-")
+            apellido = item.get("apellido", "-")
+            nombre = item.get("nombre", "-")
+            estado = (
+                item.get("estado_programa")
+                or item.get("estado_legajo_origen")
+                or item.get("motivo")
+                or "-"
+            )
+            expediente_origen = item.get("expediente_origen_id", "-")
+            excluidos_lineas.append(
+                f"- Documento {documento} - {apellido}, {nombre} - Estado legajo: {estado} - Exp #{expediente_origen}"
+            )
+        restantes = len(excluidos) - 10
+        if restantes > 0:
+            excluidos_lineas.append(f"... y {restantes} mas.")
+    return "\n".join(excluidos_lineas)
+
+
+def _build_observaciones_importacion(result: dict) -> str:
+    creados = result.get("validos", 0)
+    errores = result.get("errores", 0)
+    excluidos = result.get("excluidos") or []
+
+    resumen_lineas = [
+        f"Importacion procesada. Se crearon {creados} legajos y el expediente paso a EN ESPERA."
+    ]
+    if errores:
+        resumen_lineas.append(f"Errores detectados: {errores}.")
+
+    excluidos_lineas = []
+    if excluidos:
+        cantidad = len(excluidos)
+        sujeto = (
+            "No se creó 1 legajo"
+            if cantidad == 1
+            else f"No se crearon {cantidad} legajos"
+        )
+        predicado = (
+            "porque pertenece a otro expediente."
+            if cantidad == 1
+            else "porque pertenecen a otro expediente."
+        )
+        excluidos_lineas.append(f"{sujeto} {predicado}")
+        for item in excluidos[:10]:
+            if not isinstance(item, dict):
+                excluidos_lineas.append(str(item))
+                continue
+            documento = item.get("documento", "-")
+            apellido = item.get("apellido", "-")
+            nombre = item.get("nombre", "-")
+            estado = (
+                item.get("estado_programa")
+                or item.get("estado_legajo_origen")
+                or item.get("motivo")
+                or "-"
+            )
+            expediente_origen = item.get("expediente_origen_id", "-")
+            excluidos_lineas.append(
+                f"- Documento {documento} - {apellido}, {nombre} - Estado legajo: {estado} - Exp #{expediente_origen}"
+            )
+        restantes = len(excluidos) - 10
+        if restantes > 0:
+            excluidos_lineas.append(f"... y {restantes} mas.")
+
+    return json.dumps(
+        {
+            "resumen": _build_resumen_importacion_alerta(
+                creados_total=creados,
+                errores_actuales=errores,
+            ),
+            "excluidos": _build_excluidos_importacion_alerta(excluidos),
+            "excluidos_detalle": excluidos,
+            "tiene_errores": bool(errores),
+            "creados_total": creados,
+            "errores_actuales": errores,
+        }
+    )
 
 
 class ExpedienteService:
@@ -72,7 +196,12 @@ class ExpedienteService:
             result.get("excluidos_count", 0),
         )
 
-        _set_estado(expediente, "EN_ESPERA", usuario)
+        _set_estado(
+            expediente,
+            "EN_ESPERA",
+            usuario,
+            observaciones=_build_observaciones_importacion(result),
+        )
         logger.info("Expediente %s pasó a estado EN_ESPERA", expediente.pk)
 
         return {

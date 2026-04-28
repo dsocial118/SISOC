@@ -21,6 +21,7 @@
 
 ### 3. Seguridad
 - `docs/seguridad/security_baseline.md`: baseline de seguridad general del proyecto.
+- `docs/seguridad/iam_infraestructura.md`: matriz de accesos operativos a servidores, bases de datos y storage de backups provista por Infraestructura.
 - `docs/seguridad/security_baseline_pwa.md`: baseline de seguridad para capacidades PWA.
 
 ### 4. Guías funcionales e implementaciones

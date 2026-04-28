@@ -2,7 +2,11 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 from intervenciones.constants import PROGRAMA_ALIASES_COMEDORES
-from intervenciones.models.intervenciones import Intervencion, TipoIntervencion
+from intervenciones.models.intervenciones import (
+    Intervencion,
+    SubIntervencion,
+    TipoIntervencion,
+)
 
 
 def _normalize_programa_aliases(aliases):
@@ -26,15 +30,33 @@ def build_programa_aliases(programa_nombre=None):
     return _normalize_programa_aliases((*PROGRAMA_ALIASES_COMEDORES, programa_nombre))
 
 
+def _to_int_or_none(value):
+    if value in (None, ""):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 class IntervencionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         programa_aliases = kwargs.pop("programa_aliases", None)
         super().__init__(*args, **kwargs)
-        selected_tipo_id = getattr(self.instance, "tipo_intervencion_id", None)
+        selected_tipo_id = _to_int_or_none(
+            self.data.get("tipo_intervencion")
+        ) or getattr(self.instance, "tipo_intervencion_id", None)
+        selected_subintervencion_id = getattr(self.instance, "subintervencion_id", None)
         normalized_aliases = _normalize_programa_aliases(programa_aliases)
         self.fields["tipo_intervencion"].queryset = TipoIntervencion.para_programas(
             *normalized_aliases,
             include_ids=[selected_tipo_id] if selected_tipo_id else None,
+        )
+        self.fields["subintervencion"].queryset = SubIntervencion.para_tipo(
+            selected_tipo_id,
+            include_ids=(
+                [selected_subintervencion_id] if selected_subintervencion_id else None
+            ),
         )
 
     class Meta:
@@ -87,3 +109,27 @@ class IntervencionForm(forms.ModelForm):
                 )
 
         return fecha
+
+    def clean(self):
+        cleaned_data = super().clean()
+        tipo_intervencion = cleaned_data.get("tipo_intervencion")
+        subintervencion = cleaned_data.get("subintervencion")
+
+        if not tipo_intervencion:
+            return cleaned_data
+
+        if not tipo_intervencion.subintervenciones.exists():
+            cleaned_data["subintervencion"] = None
+            return cleaned_data
+
+        if not subintervencion:
+            self.add_error("subintervencion", "Debe seleccionar una subintervencion.")
+            return cleaned_data
+
+        if subintervencion.tipo_intervencion_id != tipo_intervencion.id:
+            self.add_error(
+                "subintervencion",
+                "La subintervencion seleccionada no corresponde al tipo de intervencion.",
+            )
+
+        return cleaned_data

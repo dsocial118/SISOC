@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
@@ -30,6 +30,7 @@ from comedores.services.validacion_service import ValidacionService
 from comedores.views import ComedorDetailView, NominaImportarView
 from core.models import Sexo
 from organizaciones.models import Aval, Firmante, Organizacion, RolFirmante
+from relevamientos.models import Relevamiento
 
 
 def _build_schema_editor(constraint_names):
@@ -952,6 +953,151 @@ def test_relevamiento_create_edit_ajax_editar(
 
 
 @pytest.mark.django_db
+def test_relevamiento_create_edit_ajax_editar_rechaza_payload_vacio(
+    client_logged_fixture, comedor_fixture, monkeypatch
+):
+    monkeypatch.setattr(
+        "relevamientos.tasks.AsyncSendRelevamientoToGestionar.start", lambda self: None
+    )
+    relevamiento = Relevamiento.objects.create(
+        comedor=comedor_fixture,
+        estado="Pendiente",
+    )
+    user_model = get_user_model()
+    user_instance = user_model.objects.get(
+        pk=client_logged_fixture.session["_auth_user_id"]
+    )
+    user_instance.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="relevamientos",
+            codename="change_relevamiento",
+        )
+    )
+    url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
+
+    response = client_logged_fixture.post(
+        url,
+        {"territorial_editar": "", "relevamiento_id": str(relevamiento.pk)},
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    relevamiento.refresh_from_db()
+
+    assert response.status_code == 400
+    assert "error" in response.json()
+    assert relevamiento.estado == "Pendiente"
+    assert relevamiento.territorial_uid is None
+    assert relevamiento.territorial_nombre is None
+
+
+@pytest.mark.django_db
+def test_relevamiento_create_edit_ajax_editar_sin_permiso_devuelve_403(
+    comedor_fixture, monkeypatch
+):
+    monkeypatch.setattr(
+        "relevamientos.tasks.AsyncSendRelevamientoToGestionar.start", lambda self: None
+    )
+    relevamiento = Relevamiento.objects.create(
+        comedor=comedor_fixture,
+        estado="Pendiente",
+    )
+    user_model = get_user_model()
+    user_instance = user_model.objects.create_user(
+        username="sin_permiso_editar_relevamiento",
+        password="testpass",
+    )
+    for group_name in [
+        "Comedores Ver",
+        "Comedores Relevamiento Ver",
+        "Comedores Relevamiento Crear",
+        "Comedores Relevamiento Detalle",
+    ]:
+        group, _ = Group.objects.get_or_create(name=group_name)
+        user_instance.groups.add(group)
+    user_instance.save()
+    client = Client()
+    client.login(username=user_instance.username, password="testpass")
+
+    url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
+    territorial_json = '{"gestionar_uid":"uid-1","nombre":"Territorial Norte"}'
+    response = client.post(
+        url,
+        {
+            "territorial_editar": territorial_json,
+            "relevamiento_id": str(relevamiento.pk),
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    relevamiento.refresh_from_db()
+
+    assert response.status_code == 403
+    assert "error" in response.json()
+    assert relevamiento.estado == "Pendiente"
+    assert relevamiento.territorial_uid is None
+    assert relevamiento.territorial_nombre is None
+
+
+@pytest.mark.django_db
+def test_relevamiento_create_edit_ajax_editar_rechaza_estado_no_pendiente(
+    client_logged_fixture, comedor_fixture, monkeypatch
+):
+    monkeypatch.setattr(
+        "relevamientos.tasks.AsyncSendRelevamientoToGestionar.start", lambda self: None
+    )
+    relevamiento = Relevamiento.objects.create(
+        comedor=comedor_fixture,
+        estado="Finalizado",
+    )
+    url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
+
+    response = client_logged_fixture.post(
+        url,
+        {
+            "territorial_editar": '{"gestionar_uid":"uid-1","nombre":"Territorial Norte"}',
+            "relevamiento_id": str(relevamiento.pk),
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    relevamiento.refresh_from_db()
+
+    assert response.status_code == 400
+    assert "error" in response.json()
+    assert relevamiento.estado == "Finalizado"
+    assert relevamiento.territorial_uid is None
+    assert relevamiento.territorial_nombre is None
+
+
+@pytest.mark.django_db
+def test_relevamiento_create_edit_ajax_editar_rechaza_json_no_objeto(
+    client_logged_fixture, comedor_fixture, monkeypatch
+):
+    monkeypatch.setattr(
+        "relevamientos.tasks.AsyncSendRelevamientoToGestionar.start", lambda self: None
+    )
+    relevamiento = Relevamiento.objects.create(
+        comedor=comedor_fixture,
+        estado="Pendiente",
+    )
+    url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
+
+    response = client_logged_fixture.post(
+        url,
+        {"territorial_editar": "[]", "relevamiento_id": str(relevamiento.pk)},
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    relevamiento.refresh_from_db()
+
+    assert response.status_code == 400
+    assert "error" in response.json()
+    assert relevamiento.estado == "Pendiente"
+    assert relevamiento.territorial_uid is None
+    assert relevamiento.territorial_nombre is None
+
+
+@pytest.mark.django_db
 def test_relevamiento_create_edit_ajax_accion_invalida(
     client_logged_fixture, comedor_fixture
 ):
@@ -1101,6 +1247,114 @@ def test_agregar_ciudadano_ya_en_nomina(admision_fixture, ciudadano_fixture):
 
 
 @pytest.mark.django_db
+def test_agregar_ciudadano_en_revision_no_ingresa_a_nomina(
+    admision_fixture, ciudadano_fixture
+):
+    """No permite sumar a nómina ciudadanos pendientes de revisión de identidad."""
+    ciudadano_fixture.tipo_registro_identidad = Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO
+    ciudadano_fixture.requiere_revision_manual = True
+    ciudadano_fixture.documento = 30111222
+    ciudadano_fixture.save(
+        update_fields=[
+            "tipo_registro_identidad",
+            "requiere_revision_manual",
+            "documento",
+        ]
+    )
+
+    ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+        admision_id=admision_fixture.pk,
+        ciudadano_id=ciudadano_fixture.pk,
+        user=mock.Mock(),
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    assert ok is False
+    assert "pendiente de revisión" in msg
+    assert not Nomina.objects.filter(
+        admision=admision_fixture, ciudadano=ciudadano_fixture
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_agregar_ciudadano_revisado_manualmente_ingresa_a_nomina(
+    admision_fixture, ciudadano_fixture
+):
+    """Permite sumar a nómina ciudadanos cuya revisión manual ya fue cerrada."""
+    ciudadano_fixture.tipo_registro_identidad = Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO
+    ciudadano_fixture.requiere_revision_manual = False
+    ciudadano_fixture.documento = 30111223
+    ciudadano_fixture.save(
+        update_fields=[
+            "tipo_registro_identidad",
+            "requiere_revision_manual",
+            "documento",
+        ]
+    )
+
+    ok, _msg = ComedorService.agregar_ciudadano_a_nomina(
+        admision_id=admision_fixture.pk,
+        ciudadano_id=ciudadano_fixture.pk,
+        user=mock.Mock(),
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    assert ok is True
+    assert Nomina.objects.filter(
+        admision=admision_fixture, ciudadano=ciudadano_fixture
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_nomina_muestra_estandar_y_no_validado_revisado_con_mismo_dni(
+    admision_fixture,
+):
+    """La nómina debe conservar registros distintos aunque compartan DNI."""
+    from datetime import date
+
+    documento = 30111230
+    estandar = Ciudadano.objects.create(
+        nombre="Ana",
+        apellido="Estandar",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+    )
+    no_validado = Ciudadano.objects.create(
+        nombre="Beto",
+        apellido="NoValidado",
+        fecha_nacimiento=date(1991, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+        tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+        motivo_no_validacion_renaper=Ciudadano.MOTIVO_NO_VALIDADO_OTRO,
+    )
+    no_validado.requiere_revision_manual = False
+    no_validado.save(update_fields=["requiere_revision_manual"])
+
+    Nomina.objects.create(
+        admision=admision_fixture,
+        ciudadano=estandar,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+        admision_id=admision_fixture.pk,
+        ciudadano_id=no_validado.pk,
+        user=mock.Mock(),
+        estado=Nomina.ESTADO_ESPERA,
+    )
+
+    page_obj, *_ = ComedorService.get_nomina_detail(
+        admision_fixture.pk, dni_query=str(documento)
+    )
+    ciudadano_ids = {nomina.ciudadano_id for nomina in page_obj.object_list}
+
+    assert ok is True, msg
+    assert ciudadano_ids == {estandar.pk, no_validado.pk}
+
+
+@pytest.mark.django_db
 def test_importar_nomina_ultimo_convenio_caso_feliz(ciudadano_fixture):
     """Copia los registros de nómina de la admisión anterior a la actual."""
     comedor = Comedor.objects.create(nombre="Comedor Importar")
@@ -1246,37 +1500,32 @@ def test_nomina_detail_view_responde_ok(client_nomina_fixture, admision_fixture)
 
 
 @pytest.mark.django_db
-def test_nomina_detail_view_colapsa_registros_duplicados_por_ciudadano(
-    client_nomina_fixture,
-    admision_fixture,
+def test_nomina_create_view_muestra_ciudadano_en_revision_sin_accion_agregar(
+    client_nomina_fixture, admision_fixture, ciudadano_fixture
 ):
-    """La nómina visible debe mostrar una sola fila por ciudadano dentro de la admisión."""
-    ciudadano = Ciudadano.objects.create(
-        nombre="Ana",
-        apellido="Duplicada",
-        documento=32165498,
+    """La búsqueda muestra el caso en revisión, pero no ofrece agregarlo."""
+    ciudadano_fixture.tipo_registro_identidad = Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO
+    ciudadano_fixture.requiere_revision_manual = True
+    ciudadano_fixture.documento = 30111224
+    ciudadano_fixture.save(
+        update_fields=[
+            "tipo_registro_identidad",
+            "requiere_revision_manual",
+            "documento",
+        ]
     )
-    Nomina.objects.create(
-        admision=admision_fixture,
-        ciudadano=ciudadano,
-        estado=Nomina.ESTADO_ESPERA,
-    )
-    nomina_actual = Nomina.objects.create(
-        admision=admision_fixture,
-        ciudadano=ciudadano,
-        estado=Nomina.ESTADO_ACTIVO,
-    )
-
     comedor = admision_fixture.comedor
     url = reverse(
-        "nomina_ver",
+        "nomina_crear",
         kwargs={"pk": comedor.pk, "admision_pk": admision_fixture.pk},
     )
-    response = client_nomina_fixture.get(url)
+
+    response = client_nomina_fixture.get(url, {"query": "30111224"})
 
     assert response.status_code == 200
-    assert response.context["cantidad_nomina"] == 1
-    assert list(response.context["nomina"].object_list) == [nomina_actual]
+    content = response.content.decode()
+    assert "Revisión pendiente" in content
+    assert f'data-ciudadano-id="{ciudadano_fixture.pk}"' not in content
 
 
 @pytest.mark.django_db
@@ -1362,6 +1611,84 @@ def test_get_nomina_detail_desempata_por_id_para_paginacion_estable(
 
     assert page_1_ids == orden_esperado[:100]
     assert page_2_ids == orden_esperado[100:]
+
+
+@pytest.mark.django_db
+def test_nomina_detail_view_prioriza_bajas_al_final(
+    client_nomina_fixture,
+    admision_fixture,
+):
+    """La nómina debe mostrar las bajas al final, aunque sean más nuevas."""
+    from datetime import date, timedelta
+
+    fecha_base = timezone.now().replace(microsecond=0)
+    registros = []
+    for nombre, apellido, documento, estado, offset in (
+        ("Ana", "Activa", 40111222, Nomina.ESTADO_ACTIVO, -2),
+        ("Beto", "Espera", 40111223, Nomina.ESTADO_ESPERA, -1),
+        ("Carla", "Baja", 40111224, Nomina.ESTADO_BAJA, 0),
+    ):
+        ciudadano = Ciudadano.objects.create(
+            nombre=nombre,
+            apellido=apellido,
+            documento=documento,
+            fecha_nacimiento=date(1990, 1, 1),
+        )
+        nomina = Nomina.objects.create(
+            admision=admision_fixture,
+            ciudadano=ciudadano,
+            estado=estado,
+        )
+        Nomina.objects.filter(pk=nomina.pk).update(
+            fecha=fecha_base + timedelta(days=offset)
+        )
+        nomina.refresh_from_db()
+        registros.append(nomina)
+
+    comedor = admision_fixture.comedor
+    url = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_fixture.pk},
+    )
+    response = client_nomina_fixture.get(url)
+
+    assert response.status_code == 200
+    assert list(response.context["nomina"].object_list) == registros
+
+
+@pytest.mark.django_db
+def test_nomina_detail_view_cantidad_nomina_cuenta_solo_activos(
+    client_nomina_fixture,
+    admision_fixture,
+):
+    """La tarjeta de asistentes debe contar solo los registros activos."""
+    from datetime import date
+
+    for idx, estado in enumerate(
+        [Nomina.ESTADO_ACTIVO, Nomina.ESTADO_ESPERA, Nomina.ESTADO_BAJA]
+    ):
+        ciudadano = Ciudadano.objects.create(
+            nombre=f"Persona{idx}",
+            apellido=f"Apellido{idx}",
+            documento=40111300 + idx,
+            fecha_nacimiento=date(1990, 1, 1),
+        )
+        Nomina.objects.create(
+            admision=admision_fixture,
+            ciudadano=ciudadano,
+            estado=estado,
+        )
+
+    comedor = admision_fixture.comedor
+    url = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_fixture.pk},
+    )
+    response = client_nomina_fixture.get(url)
+
+    assert response.status_code == 200
+    assert response.context["cantidad_nomina"] == 1
+    assert response.context["nomina"].paginator.count == 3
 
 
 @pytest.mark.django_db

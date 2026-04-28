@@ -135,6 +135,7 @@ def construir_resumenes_formularios(formularios):
         items.append(
             {
                 "id": formulario.id,
+                "id_codigo_cdi": formulario.codigo_cdi or "-",
                 "fecha_relevamiento": formulario.fecha_relevamiento,
                 "nombre_completo_respondente": formulario.nombre_completo_respondente
                 or "-",

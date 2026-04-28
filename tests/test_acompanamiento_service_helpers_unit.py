@@ -236,6 +236,26 @@ def test_obtener_hitos_con_admision_id_restringe_por_comedor(mocker):
     )
 
 
+def test_crear_hitos_con_admision_id_restringe_acompanamiento_por_comedor(mocker):
+    acompanamiento_filter = mocker.patch(
+        "acompanamientos.acompanamiento_service.Acompanamiento.objects.filter",
+        return_value=SimpleNamespace(first=lambda: None),
+    )
+    intervencion = SimpleNamespace(
+        comedor=SimpleNamespace(id=4),
+        admision_id=18,
+        subintervencion_id=1,
+        tipo_intervencion=SimpleNamespace(nombre="Intervencion 1"),
+    )
+
+    AcompanamientoService.crear_hitos(intervencion)
+
+    acompanamiento_filter.assert_called_once_with(
+        admision_id=18,
+        admision__comedor=intervencion.comedor,
+    )
+
+
 def test_crear_hitos_crea_subintervencion_y_nuevo_hito(mocker):
     mocker.patch(
         "acompanamientos.acompanamiento_service.Hitos._meta.fields",
@@ -357,6 +377,14 @@ def test_importar_datos_desde_admision_ok(mocker):
         "acompanamientos.acompanamiento_service.Acompanamiento.objects.get_or_create",
         return_value=(acompanamiento, True),
     )
+    informe_tecnico = SimpleNamespace(
+        fecha_vencimiento_mandatos=date(2026, 1, 1),
+        if_relevamiento="IF-1",
+    )
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.InformeTecnico.objects.filter",
+        return_value=_QS(first_value=informe_tecnico),
+    )
     update_or_create = mocker.patch(
         "acompanamientos.acompanamiento_service.InformacionRelevante.objects.update_or_create"
     )
@@ -381,10 +409,8 @@ def test_importar_datos_desde_admision_ok(mocker):
         numero_convenio="CONV-1",
         convenio_numero=None,
         comedor=SimpleNamespace(pk=10),
-        numero_expediente="EX-1",
-        numero_resolucion="RES-1",
-        vencimiento_mandato=date(2026, 1, 1),
-        if_relevamiento="IF-1",
+        num_expediente="EX-1",
+        numero_disposicion="DISP-1",
         prestaciones=SimpleNamespace(
             all=lambda: [
                 SimpleNamespace(
@@ -400,7 +426,15 @@ def test_importar_datos_desde_admision_ok(mocker):
     resultado = AcompanamientoService.importar_datos_desde_admision(admision)
 
     assert resultado is acompanamiento
-    update_or_create.assert_called_once()
+    update_or_create.assert_called_once_with(
+        acompanamiento=acompanamiento,
+        defaults={
+            "numero_expediente": "EX-1",
+            "numero_resolucion": "DISP-1",
+            "vencimiento_mandato": date(2026, 1, 1),
+            "if_relevamiento": "IF-1",
+        },
+    )
     delete_qs.delete.assert_called_once()
     assert crear_prestacion.call_count == 2
     hitos_get_or_create.assert_called_once_with(acompanamiento=acompanamiento)

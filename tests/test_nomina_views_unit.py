@@ -47,7 +47,15 @@ def test_nomina_detail_context_data(mocker):
     )
     get_nomina_detail_mock = mocker.patch(
         "comedores.views.nomina.ComedorService.get_nomina_detail",
-        return_value=("page_obj", 1, 2, 3, 4, 10, {"ninos": 2, "adolescentes": 3}),
+        return_value=(
+            "page_obj",
+            1,
+            2,
+            3,
+            4,
+            10,
+            {"ninos": 2, "adolescentes": 3, "cantidad_activos": 6},
+        ),
     )
     mocker.patch(
         "comedores.views.nomina._get_admision_del_comedor_or_404",
@@ -62,7 +70,7 @@ def test_nomina_detail_context_data(mocker):
 
     ctx = view.get_context_data()
     assert ctx["object"] == "comedor"
-    assert ctx["cantidad_nomina"] == 10
+    assert ctx["cantidad_nomina"] == 6
     assert ctx["menores"] == 5
     assert ctx["dni_query"] == "1234"
     get_nomina_detail_mock.assert_called_once_with(77, 2, dni_query="1234")

@@ -94,34 +94,8 @@ def hydrate_ciudadanos_page(page_ids):
     return [ciudadanos_by_id[pk] for pk in page_ids if pk in ciudadanos_by_id]
 
 
-def _documento_unico_key(ciudadano):
-    if (
-        ciudadano.tipo_registro_identidad == Ciudadano.TIPO_REGISTRO_ESTANDAR
-        and ciudadano.documento
-    ):
-        return f"{ciudadano.tipo_documento}_{ciudadano.documento}"
-    return None
-
-
 def _normalizar_identidad_ciudadano(ciudadano):
-    tipo = ciudadano.tipo_registro_identidad
-    if tipo == Ciudadano.TIPO_REGISTRO_SIN_DNI:
-        ciudadano.documento = None
-        ciudadano.motivo_no_validacion_renaper = None
-        ciudadano.motivo_no_validacion_descripcion = None
-    elif tipo == Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO:
-        ciudadano.motivo_sin_dni = None
-        ciudadano.motivo_sin_dni_descripcion = None
-    else:
-        ciudadano.motivo_sin_dni = None
-        ciudadano.motivo_sin_dni_descripcion = None
-        ciudadano.motivo_no_validacion_renaper = None
-        ciudadano.motivo_no_validacion_descripcion = None
-    ciudadano.documento_unico_key = _documento_unico_key(ciudadano)
-    ciudadano.requiere_revision_manual = tipo in (
-        Ciudadano.TIPO_REGISTRO_SIN_DNI,
-        Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
-    )
+    return ciudadano.normalizar_identidad()
 
 
 def _asegurar_identificador_interno(ciudadano):
@@ -537,20 +511,21 @@ class CiudadanosCreateView(LoginRequiredMixin, CreateView):
                 None,
             )
             if estandar:
-                messages.info(
-                    request, "El ciudadano ya existe. Puede editar su legajo."
+                messages.warning(
+                    request,
+                    "Ya existe un ciudadano estandar con ese DNI. "
+                    "Si corresponde cargar un registro no estandar, continue "
+                    "con este formulario; el legajo estandar no se modificara.",
                 )
-                return redirect("ciudadanos_editar", pk=estandar.pk)
 
-            # Hay duplicados no-estándar: avisar y mostrar el formulario sin redirigir
-            messages.warning(
-                request,
-                f"Se encontraron {len(coincidencias)} registro(s) con ese DNI "
-                "pero ninguno está validado como estándar. "
-                "Revisá la cola de revisión o creá un nuevo registro.",
-            )
-            return super().get(request, *args, **kwargs)
-
+            else:
+                # Hay duplicados no-estándar: avisar y mostrar el formulario sin redirigir
+                messages.warning(
+                    request,
+                    f"Se encontraron {len(coincidencias)} registro(s) con ese DNI "
+                    "pero ninguno está validado como estándar. "
+                    "Revisá la cola de revisión o creá un nuevo registro.",
+                )
         sexo = (request.GET.get("sexo") or "M").upper()
         if sexo not in {"M", "F", "X"}:
             sexo = None

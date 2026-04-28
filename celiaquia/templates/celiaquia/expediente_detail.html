@@ -107,6 +107,14 @@
             </div>
         {% endif %}
         <div id="expediente-alerts"></div>
+        {% if alerta_importacion_resumen %}
+            <div class="alert alert-{{ alerta_importacion_resumen_style }} mb-4"
+                 role="alert">{{ alerta_importacion_resumen|linebreaksbr }}</div>
+        {% endif %}
+        {% if alerta_importacion_excluidos %}
+            <div class="alert alert-{{ alerta_importacion_excluidos_style }} mb-4"
+                 role="alert">{{ alerta_importacion_excluidos|linebreaksbr }}</div>
+        {% endif %}
         <div class="p-3 rounded shadow mb-4"
              style="background-color: #1c2a3a;
                     color: #e0e0e0">
@@ -1132,7 +1140,8 @@
                                             </h6>
                                             <div class="row g-2">
                                                 <div class="col-md-4">
-                                                    <label class="form-label">
+                                                    <label class="form-label"
+                                                           data-field-label="Apellido Responsable{% if registro.responsable_requerido %} *{% endif %}">
                                                         Apellido Responsable
                                                         {% if registro.responsable_requerido %}*{% endif %}
                                                     </label>
@@ -1663,7 +1672,7 @@
                                             -
                                         {% endif %}
                                     </td>
-                                    <td>{{ h.observaciones|default:"-" }}</td>
+                                    <td>{{ h.observaciones_visibles|default:"-"|linebreaksbr }}</td>
                                 </tr>
                             {% empty %}
                                 <tr>
@@ -1958,10 +1967,10 @@
     <meta name="editar-legajo-url-template"
           content="{% url 'legajo_editar' expediente.pk 0 %}" />
     <meta name="expediente-id" content="{{ expediente.pk }}" />
-    <script src="{% static 'custom/js/expediente_detail_config.js' %}"></script>
+    <script src="{% static 'custom/js/expediente_detail_config.js' %}?v=20260425b-editar-legajo"></script>
     <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20260326-guardado-parcial-siempre"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
-    <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
+    <script src="{% static 'custom/js/expediente_detail.js' %}?v=20260425b-editar-legajo"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
     <script src="{% static 'custom/js/legajo_comentarios.js' %}"></script>
