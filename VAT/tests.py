@@ -3512,6 +3512,151 @@ def test_api_vat_web_mi_argentina_flujo_completo_prevalidar_e_inscribir(
     assert voucher.cantidad_disponible == 4
 
 
+def _crear_ciudadano_voucher_estado(documento):
+    sexo = Sexo.objects.create(sexo=f"Sexo {documento}")
+    return Ciudadano.objects.create(
+        apellido="Voucher",
+        nombre="Estado",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+        sexo=sexo,
+    )
+
+
+def _crear_voucher_estado(ciudadano):
+    usuario = User.objects.create_user(
+        username=f"voucher-estado-{ciudadano.documento}",
+        password="test1234",
+    )
+    programa = Programa.objects.create(nombre=f"Programa Voucher {ciudadano.documento}")
+    parametria = VoucherParametria.objects.create(
+        nombre=f"Parametria Voucher {ciudadano.documento}",
+        programa=programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2099, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    return Voucher.objects.create(
+        parametria=parametria,
+        ciudadano=ciudadano,
+        programa=programa,
+        cantidad_inicial=5,
+        cantidad_usada=0,
+        cantidad_disponible=5,
+        fecha_vencimiento=date(2099, 12, 31),
+        estado="activo",
+        asignado_por=usuario,
+    )
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_disponible_con_voucher_sin_inscripcion(
+    vat_api_client,
+):
+    ciudadano = _crear_ciudadano_voucher_estado(40111001)
+    _crear_voucher_estado(ciudadano)
+
+    response = vat_api_client.get(
+        f"/api/vat/web/ciudadanos/voucher-estado/?documento={ciudadano.documento}"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": str(ciudadano.documento),
+        "estado": "Disponible",
+        "tiene_voucher": True,
+        "esta_inscripto": False,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_en_uso_con_voucher_e_inscripcion_activa(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    ciudadano = _crear_ciudadano_voucher_estado(40111002)
+    voucher = _crear_voucher_estado(ciudadano)
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Voucher Estado",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="VCH-EST-01",
+        nombre="Comision Voucher Estado",
+        cupo_total=10,
+        fecha_inicio=date(2026, 5, 10),
+        fecha_fin=date(2026, 6, 10),
+        estado="activa",
+    )
+    Inscripcion.objects.create(
+        ciudadano=ciudadano,
+        comision_curso=comision,
+        programa=voucher.programa,
+        estado="en_espera",
+        origen_canal="api",
+    )
+
+    response = vat_api_client.get(
+        f"/api/vat/web/ciudadanos/voucher-estado/?documento={ciudadano.documento}"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": str(ciudadano.documento),
+        "estado": "En uso",
+        "tiene_voucher": True,
+        "esta_inscripto": True,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_no_disponible_sin_voucher(vat_api_client):
+    ciudadano = _crear_ciudadano_voucher_estado(40111003)
+
+    response = vat_api_client.get(
+        f"/api/vat/web/ciudadanos/voucher-estado/?documento={ciudadano.documento}"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": str(ciudadano.documento),
+        "estado": "No disponible",
+        "tiene_voucher": False,
+        "esta_inscripto": False,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_no_disponible_con_dni_inexistente(vat_api_client):
+    response = vat_api_client.get(
+        "/api/vat/web/ciudadanos/voucher-estado/?documento=40111999"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": "40111999",
+        "estado": "No disponible",
+        "tiene_voucher": False,
+        "esta_inscripto": False,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_rechaza_documento_no_numerico(vat_api_client):
+    response = vat_api_client.get(
+        "/api/vat/web/ciudadanos/voucher-estado/?documento=40A11001"
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"documento": ["El documento debe ser numerico."]}
+
+
 @pytest.mark.django_db
 def test_api_vat_web_inscripcion_libre_crea_inscripcion_operativa_sin_ciudadano(
     vat_api_client, vat_curso_base
