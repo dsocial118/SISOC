@@ -1698,14 +1698,6 @@ class RevisarLegajoView(View):
                     status=400,
                 )
 
-        # Validar RENAPER automáticamente antes de cualquier acción (excepto ELIMINAR)
-        if accion in ("APROBAR", "RECHAZAR", "SUBSANAR"):
-            estado_validacion_renaper = getattr(leg, "estado_validacion_renaper", 0)
-            # Si no tiene validación RENAPER, marcar como aprobado automáticamente
-            if estado_validacion_renaper == 0:
-                leg.estado_validacion_renaper = 1
-                leg.save(update_fields=["estado_validacion_renaper", "modificado_en"])
-
         # Si RECHAZAR / SUBSANAR y estaba dentro de cupo -> liberar
         if accion in ("RECHAZAR", "SUBSANAR") and leg.estado_cupo == "DENTRO":
             try:
