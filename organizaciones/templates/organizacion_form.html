@@ -32,6 +32,7 @@
                   enctype="multipart/form-data">
                 {% csrf_token %}
                 {{ form.cuil_duplicado_confirmado }}
+                {{ form.cuil_duplicado_confirmado_valor }}
 
                 <!-- Indicador de progreso global -->
                 <div class="progress-indicator">
@@ -271,8 +272,10 @@
         var tbody = document.getElementById("cuil-duplicados-tbody");
         var confirmarCheck = document.getElementById("cuil-confirmar-check");
         var hiddenConfirmado = document.getElementById("id_cuil_duplicado_confirmado");
+        var hiddenConfirmadoValor = document.getElementById("id_cuil_duplicado_confirmado_valor");
         var submitBtn = document.querySelector('#organizacionForm button[type="submit"]');
         var debounceTimer = null;
+        var requestSeq = 0;
 
         function escapeHtml(str) {
             var div = document.createElement("div");
@@ -280,12 +283,17 @@
             return div.innerHTML;
         }
 
+        function clearConfirmation(disableSubmit) {
+            confirmarCheck.checked = false;
+            hiddenConfirmado.value = "";
+            hiddenConfirmadoValor.value = "";
+            if (submitBtn) submitBtn.disabled = Boolean(disableSubmit);
+        }
+
         function resetWarning() {
             warningBox.classList.add("d-none");
             tbody.innerHTML = "";
-            confirmarCheck.checked = false;
-            hiddenConfirmado.value = "";
-            if (submitBtn) submitBtn.disabled = false;
+            clearConfirmation(false);
         }
 
         function showWarning(orgs) {
@@ -303,29 +311,30 @@
                     "</tr>";
             }).join("");
             warningBox.classList.remove("d-none");
-            confirmarCheck.checked = false;
-            hiddenConfirmado.value = "";
-            if (submitBtn) submitBtn.disabled = true;
+            clearConfirmation(true);
         }
 
         confirmarCheck.addEventListener("change", function () {
             if (confirmarCheck.checked) {
                 hiddenConfirmado.value = "true";
+                hiddenConfirmadoValor.value = cuitInput ? cuitInput.value.trim() : "";
                 if (submitBtn) submitBtn.disabled = false;
             } else {
-                hiddenConfirmado.value = "";
-                if (submitBtn) submitBtn.disabled = true;
+                clearConfirmation(true);
             }
         });
 
         if (cuitInput) {
             cuitInput.addEventListener("input", function () {
                 clearTimeout(debounceTimer);
+                requestSeq += 1;
                 var val = cuitInput.value.trim();
+                clearConfirmation(!warningBox.classList.contains("d-none"));
                 if (!val || isNaN(val)) {
                     resetWarning();
                     return;
                 }
+                var currentSeq = requestSeq;
                 debounceTimer = setTimeout(function () {
                     var url = cuilCheckAjaxUrl + "?cuil=" + encodeURIComponent(val);
                     if (organizacionPk) {
@@ -334,13 +343,20 @@
                     fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
                         .then(function (r) { return r.json(); })
                         .then(function (data) {
+                            if (currentSeq !== requestSeq || cuitInput.value.trim() !== val) {
+                                return;
+                            }
                             if (data.organizaciones && data.organizaciones.length > 0) {
                                 showWarning(data.organizaciones);
                             } else {
                                 resetWarning();
                             }
                         })
-                        .catch(function () { resetWarning(); });
+                        .catch(function () {
+                            if (currentSeq === requestSeq && cuitInput.value.trim() === val) {
+                                resetWarning();
+                            }
+                        });
                 }, 400);
             });
         }

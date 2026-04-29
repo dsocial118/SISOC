@@ -13,6 +13,7 @@ class Migration(migrations.Migration):
             name="cuit",
             field=models.BigIntegerField(
                 blank=True,
+                db_index=True,
                 null=True,
                 validators=[MinValueValidator(0), MaxValueValidator(99999999999)],
             ),

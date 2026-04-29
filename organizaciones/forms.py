@@ -13,6 +13,10 @@ class OrganizacionForm(forms.ModelForm):
         required=False,
         widget=forms.HiddenInput,
     )
+    cuil_duplicado_confirmado_valor = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput,
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -66,6 +70,7 @@ class OrganizacionForm(forms.ModelForm):
         cleaned_data = super().clean()
         cuit = cleaned_data.get("cuit")
         confirmado = cleaned_data.get("cuil_duplicado_confirmado")
+        cuit_confirmado = cleaned_data.get("cuil_duplicado_confirmado_valor")
 
         if cuit is not None:
             exclude_pk = (
@@ -75,11 +80,14 @@ class OrganizacionForm(forms.ModelForm):
             if exclude_pk:
                 qs = qs.exclude(pk=exclude_pk)
 
-            if qs.exists() and not confirmado:
-                raise forms.ValidationError(
-                    "El CUIL ingresado ya está registrado en otra organización. "
-                    "Revisá la advertencia y confirmá para continuar.",
-                    code="cuil_duplicado_sin_confirmar",
+            if qs.exists() and (not confirmado or cuit_confirmado != str(cuit)):
+                self.add_error(
+                    "cuit",
+                    forms.ValidationError(
+                        "El CUIL ingresado ya está registrado en otra organización. "
+                        "Revisá la advertencia y confirmá para continuar.",
+                        code="cuil_duplicado_sin_confirmar",
+                    ),
                 )
 
         return cleaned_data

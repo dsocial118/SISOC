@@ -83,16 +83,38 @@ class CuilDuplicadoFormTests(TestCase):
     def test_cuil_duplicado_sin_confirmacion_es_invalido(self):
         form = OrganizacionForm(data=self._form_data())
         self.assertFalse(form.is_valid())
+        self.assertIn("cuit", form.errors)
         self.assertIn(
             "cuil_duplicado_sin_confirmar",
-            [e.code for e in form.non_field_errors().as_data()],
+            [e.code for e in form.errors.as_data()["cuit"]],
         )
 
     def test_cuil_duplicado_con_confirmacion_es_valido(self):
         form = OrganizacionForm(
-            data=self._form_data({"cuil_duplicado_confirmado": "true"})
+            data=self._form_data(
+                {
+                    "cuil_duplicado_confirmado": "true",
+                    "cuil_duplicado_confirmado_valor": str(self.CUIL),
+                }
+            )
         )
         self.assertTrue(form.is_valid(), form.errors)
+
+    def test_cuil_duplicado_rechaza_confirmacion_de_otro_cuil(self):
+        form = OrganizacionForm(
+            data=self._form_data(
+                {
+                    "cuil_duplicado_confirmado": "true",
+                    "cuil_duplicado_confirmado_valor": "20999999990",
+                }
+            )
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("cuit", form.errors)
+        self.assertIn(
+            "cuil_duplicado_sin_confirmar",
+            [e.code for e in form.errors.as_data()["cuit"]],
+        )
 
     def test_cuil_unico_no_requiere_confirmacion(self):
         form = OrganizacionForm(data=self._form_data({"cuit": 20999999990}))
@@ -107,6 +129,15 @@ class CuilDuplicadoFormTests(TestCase):
         """Verificar que la DB permite CUILs repetidos sin error de integridad."""
         Organizacion.objects.create(nombre="Org Duplicada", cuit=self.CUIL)
         self.assertEqual(Organizacion.objects.filter(cuit=self.CUIL).count(), 2)
+
+
+class OrganizacionModelTests(TestCase):
+    """Tests del contrato de persistencia de Organizacion."""
+
+    def test_cuit_conserva_indice_no_unico_para_busquedas(self):
+        field = Organizacion._meta.get_field("cuit")
+        self.assertFalse(field.unique)
+        self.assertTrue(field.db_index)
 
 
 class CuilCheckAjaxTests(TestCase):

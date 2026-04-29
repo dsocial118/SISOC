@@ -114,6 +114,7 @@ class Organizacion(SoftDeleteModelMixin, models.Model):
     cuit = models.BigIntegerField(
         blank=True,
         null=True,
+        db_index=True,
         validators=[MinValueValidator(0), MaxValueValidator(99999999999)],
     )
     telefono = models.BigIntegerField(blank=True, null=True)
