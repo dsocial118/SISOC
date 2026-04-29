@@ -31,6 +31,8 @@
                   class="w-100"
                   enctype="multipart/form-data">
                 {% csrf_token %}
+                {{ form.cuil_duplicado_confirmado }}
+                {{ form.cuil_duplicado_confirmado_valor }}
 
                 <!-- Indicador de progreso global -->
                 <div class="progress-indicator">
@@ -78,6 +80,39 @@
                                     <i class="fas fa-info-circle"></i>
                                     <span class="tooltip-text">CUIT de 11 dígitos</span>
                                 </span>
+
+                                <!-- Advertencia de CUIL duplicado -->
+                                <div id="cuil-warning"
+                                     class="alert alert-warning d-none mt-2"
+                                     role="alert">
+                                    <strong><i class="fas fa-exclamation-triangle mr-1"></i>Atención:</strong>
+                                    Este CUIL ya está registrado en las siguientes organizaciones:
+                                    <div class="table-responsive mt-2">
+                                        <table class="table table-sm table-bordered mb-2" id="cuil-duplicados-tabla">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th>Nombre</th>
+                                                    <th>Tipo de entidad</th>
+                                                    <th>Subtipo</th>
+                                                    <th>Teléfono</th>
+                                                    <th>Email</th>
+                                                    <th>Domicilio</th>
+                                                    <th>Provincia</th>
+                                                    <th>Municipio</th>
+                                                    <th>Localidad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cuil-duplicados-tbody">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="form-check mt-1">
+                                        <input class="form-check-input" type="checkbox" id="cuil-confirmar-check" />
+                                        <label class="form-check-label font-weight-bold" for="cuil-confirmar-check">
+                                            Revisé la información y confirmo la creación del nuevo registro
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="form-group row">
@@ -222,9 +257,109 @@
     <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+        var cuilCheckAjaxUrl = "{{ cuil_check_ajax_url }}";
+        var organizacionPk = "{{ organizacion_pk|default:'' }}";
     </script>
 
     <!-- Scripts externos -->
     <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
     <script src="{% static 'custom/js/organizacionesform.js' %}"></script>
+
+    <script nonce="{{ request.csp_nonce }}">
+    (function () {
+        var cuitInput = document.getElementById("id_cuit");
+        var warningBox = document.getElementById("cuil-warning");
+        var tbody = document.getElementById("cuil-duplicados-tbody");
+        var confirmarCheck = document.getElementById("cuil-confirmar-check");
+        var hiddenConfirmado = document.getElementById("id_cuil_duplicado_confirmado");
+        var hiddenConfirmadoValor = document.getElementById("id_cuil_duplicado_confirmado_valor");
+        var submitBtn = document.querySelector('#organizacionForm button[type="submit"]');
+        var debounceTimer = null;
+        var requestSeq = 0;
+
+        function escapeHtml(str) {
+            var div = document.createElement("div");
+            div.appendChild(document.createTextNode(str || ""));
+            return div.innerHTML;
+        }
+
+        function clearConfirmation(disableSubmit) {
+            confirmarCheck.checked = false;
+            hiddenConfirmado.value = "";
+            hiddenConfirmadoValor.value = "";
+            if (submitBtn) submitBtn.disabled = Boolean(disableSubmit);
+        }
+
+        function resetWarning() {
+            warningBox.classList.add("d-none");
+            tbody.innerHTML = "";
+            clearConfirmation(false);
+        }
+
+        function showWarning(orgs) {
+            tbody.innerHTML = orgs.map(function (o) {
+                return "<tr>" +
+                    "<td>" + escapeHtml(o.nombre) + "</td>" +
+                    "<td>" + escapeHtml(o.tipo_entidad) + "</td>" +
+                    "<td>" + escapeHtml(o.subtipo_entidad) + "</td>" +
+                    "<td>" + escapeHtml(o.telefono) + "</td>" +
+                    "<td>" + escapeHtml(o.email) + "</td>" +
+                    "<td>" + escapeHtml(o.domicilio) + "</td>" +
+                    "<td>" + escapeHtml(o.provincia) + "</td>" +
+                    "<td>" + escapeHtml(o.municipio) + "</td>" +
+                    "<td>" + escapeHtml(o.localidad) + "</td>" +
+                    "</tr>";
+            }).join("");
+            warningBox.classList.remove("d-none");
+            clearConfirmation(true);
+        }
+
+        confirmarCheck.addEventListener("change", function () {
+            if (confirmarCheck.checked) {
+                hiddenConfirmado.value = "true";
+                hiddenConfirmadoValor.value = cuitInput ? cuitInput.value.trim() : "";
+                if (submitBtn) submitBtn.disabled = false;
+            } else {
+                clearConfirmation(true);
+            }
+        });
+
+        if (cuitInput) {
+            cuitInput.addEventListener("input", function () {
+                clearTimeout(debounceTimer);
+                requestSeq += 1;
+                var val = cuitInput.value.trim();
+                clearConfirmation(!warningBox.classList.contains("d-none"));
+                if (!val || isNaN(val)) {
+                    resetWarning();
+                    return;
+                }
+                var currentSeq = requestSeq;
+                debounceTimer = setTimeout(function () {
+                    var url = cuilCheckAjaxUrl + "?cuil=" + encodeURIComponent(val);
+                    if (organizacionPk) {
+                        url += "&exclude=" + encodeURIComponent(organizacionPk);
+                    }
+                    fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            if (currentSeq !== requestSeq || cuitInput.value.trim() !== val) {
+                                return;
+                            }
+                            if (data.organizaciones && data.organizaciones.length > 0) {
+                                showWarning(data.organizaciones);
+                            } else {
+                                resetWarning();
+                            }
+                        })
+                        .catch(function () {
+                            if (currentSeq === requestSeq && cuitInput.value.trim() === val) {
+                                resetWarning();
+                            }
+                        });
+                }, 400);
+            });
+        }
+    })();
+    </script>
 {% endblock %}
