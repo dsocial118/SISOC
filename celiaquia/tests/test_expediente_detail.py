@@ -153,6 +153,113 @@ def test_expediente_detail_ordena_grupo_familiar_independiente_del_orden_de_carg
 
 
 @pytest.mark.django_db
+def test_expediente_detail_ignora_responsable_fuera_del_expediente(client):
+    user = User.objects.create_user(username="prov_resp_externo", password="pass")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    estado_expediente = EstadoExpediente.objects.create(nombre="CREADO_RESP_EXTERNO")
+    estado_legajo = EstadoLegajo.objects.create(nombre="DOCUMENTO_RESP_EXTERNO")
+    expediente = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+    )
+
+    responsable_externo = Ciudadano.objects.create(
+        apellido="Fuera",
+        nombre="Responsable",
+        fecha_nacimiento=date(1980, 1, 1),
+        documento=40111222,
+    )
+    hijo = Ciudadano.objects.create(
+        apellido="Dentro",
+        nombre="Beneficiario",
+        fecha_nacimiento=date(2014, 1, 1),
+        documento=40111223,
+    )
+    legajo_hijo = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=hijo,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
+    )
+    GrupoFamiliar.objects.create(
+        ciudadano_1=responsable_externo,
+        ciudadano_2=hijo,
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+        conviven=True,
+        cuidador_principal=True,
+        estado_relacion=GrupoFamiliar.ESTADO_BUENO,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    legajo_render = response.context["legajos_enriquecidos"][0]
+    assert legajo_render.pk == legajo_hijo.pk
+    assert legajo_render.responsable_id is None
+    assert legajo_render.es_responsable is False
+
+
+@pytest.mark.django_db
+def test_expediente_detail_ignora_hijos_fuera_del_expediente(client):
+    user = User.objects.create_user(username="prov_hijo_externo", password="pass")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    estado_expediente = EstadoExpediente.objects.create(nombre="CREADO_HIJO_EXTERNO")
+    estado_legajo = EstadoLegajo.objects.create(nombre="DOCUMENTO_HIJO_EXTERNO")
+    expediente = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+    )
+
+    beneficiario = Ciudadano.objects.create(
+        apellido="Dentro",
+        nombre="Beneficiario",
+        fecha_nacimiento=date(1990, 1, 1),
+        documento=40111224,
+    )
+    hijo_externo = Ciudadano.objects.create(
+        apellido="Fuera",
+        nombre="Hijo",
+        fecha_nacimiento=date(2016, 1, 1),
+        documento=40111225,
+    )
+    legajo = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=beneficiario,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
+    )
+    GrupoFamiliar.objects.create(
+        ciudadano_1=beneficiario,
+        ciudadano_2=hijo_externo,
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+        conviven=True,
+        cuidador_principal=True,
+        estado_relacion=GrupoFamiliar.ESTADO_BUENO,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    legajo_render = response.context["legajos_enriquecidos"][0]
+    assert legajo_render.pk == legajo.pk
+    assert legajo_render.es_responsable is False
+    assert legajo_render.hijos_a_cargo == []
+    assert legajo_render.tipo_legajo == "Beneficiario"
+
+
+@pytest.mark.django_db
 def test_expediente_detail_expone_motivo_rechazo_para_provincia(client):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_user(username="prov_rechazo", password="pass")
