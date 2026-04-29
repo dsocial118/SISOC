@@ -106,3 +106,45 @@ def build_no_count_page_range(page_obj, window=2):
         page_range.append("...")
 
     return page_range
+
+
+def build_compact_page_range(page_obj, window=4):
+    """Construye una ventana de paginas sin iterar todo paginator.page_range."""
+
+    if not page_obj:
+        return []
+
+    paginator = getattr(page_obj, "paginator", None)
+    num_pages = getattr(paginator, "num_pages", None)
+
+    if num_pages is None:
+        return build_no_count_page_range(page_obj)
+
+    try:
+        current = int(getattr(page_obj, "number", 1))
+        total_pages = int(num_pages)
+    except (TypeError, ValueError):
+        return []
+
+    if total_pages <= 0:
+        return []
+
+    current = min(max(current, 1), total_pages)
+    start = max(1, current - window)
+    end = min(total_pages, current + window)
+
+    page_range = []
+
+    if start > 1:
+        page_range.append(1)
+        if start > 2:
+            page_range.append("...")
+
+    page_range.extend(range(start, end + 1))
+
+    if end < total_pages:
+        if end < total_pages - 1:
+            page_range.append("...")
+        page_range.append(total_pages)
+
+    return page_range

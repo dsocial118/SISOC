@@ -1,5 +1,7 @@
 # pylint: disable=too-many-lines
 
+from datetime import date
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
@@ -61,8 +63,25 @@ def validar_opciones_multiples(field_name, value):
         raise ValidationError({field_name: "Seleccione opciones válidas."})
 
 
+class OfertaServicio(models.Model):
+    codigo = models.CharField(
+        max_length=32,
+        choices=CAMPOS_OPCIONES["oferta_servicios"],
+        unique=True,
+    )
+    orden = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["orden", "codigo"]
+        verbose_name = "Oferta de servicio del CDI"
+        verbose_name_plural = "Ofertas de servicio del CDI"
+
+    def __str__(self):
+        return self.get_codigo_display()
+
+
 class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
-    nombre = models.CharField(max_length=255)
+    nombre = models.CharField(max_length=255, verbose_name="Nombre del CDI")
     codigo_cdi = models.CharField(
         max_length=32,
         unique=True,
@@ -74,7 +93,7 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         max_length=1000,
         null=True,
         blank=True,
-        verbose_name="Denominación del organismo u organización que gestiona",
+        verbose_name="Denominación del organismo u organización que gestiona el CDI",
     )
     cuit_organizacion_gestiona = models.CharField(
         max_length=11,
@@ -151,11 +170,10 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
     )
     tipo_jornada_otra = models.CharField(max_length=255, blank=True, null=True)
-    oferta_servicios = models.CharField(
-        max_length=64,
-        choices=CAMPOS_OPCIONES["oferta_servicios"],
+    oferta_servicios = models.ManyToManyField(
+        "OfertaServicio",
         blank=True,
-        null=True,
+        related_name="centros",
     )
     modalidad_gestion = models.CharField(
         max_length=64,
@@ -164,7 +182,12 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
     )
     modalidad_gestion_otra = models.CharField(max_length=255, blank=True, null=True)
-    fecha_inicio = models.DateField(blank=True, null=True)
+    fecha_inicio = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Año de inicio de actividades del CDI",
+        validators=[MinValueValidator(date(1990, 1, 1))],
+    )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -174,6 +197,9 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
 
     def __str__(self):
         return str(self.nombre)
+
+    def get_oferta_servicios_display(self):
+        return ", ".join(str(oferta) for oferta in self.oferta_servicios.all())
 
     def clean(self):
         super().clean()

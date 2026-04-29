@@ -285,7 +285,9 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
             "dias_funcionamiento": centro.dias_funcionamiento,
             "tipo_jornada": centro.tipo_jornada,
             "tipo_jornada_otra": centro.tipo_jornada_otra,
-            "oferta_servicios": centro.oferta_servicios,
+            "oferta_servicios": centro.oferta_servicios.values_list(
+                "codigo", flat=True
+            ).first(),
             "modalidad_gestion": centro.modalidad_gestion,
             "modalidad_gestion_otra": centro.modalidad_gestion_otra,
             "nombre_organizacion_gestora": centro.organizacion,
