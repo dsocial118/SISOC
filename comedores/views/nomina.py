@@ -169,11 +169,14 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         renaper_precarga = bool(renaper_data) or (
             self.request.POST.get("origen_dato") == "renaper"
         )
+        no_resultados = bool(query) and not ciudadanos
+        mostrar_form_ciudadano = bool(query) and (no_resultados or bool(renaper_data))
 
         context.update(
             {
                 "ciudadanos": ciudadanos,
-                "no_resultados": bool(query) and not ciudadanos,
+                "no_resultados": no_resultados,
+                "mostrar_form_ciudadano": mostrar_form_ciudadano,
                 "form_ciudadano": form_ciudadano,
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
                 or NominaExtraForm(),
@@ -458,11 +461,14 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
         renaper_precarga = bool(renaper_data) or (
             self.request.POST.get("origen_dato") == "renaper"
         )
+        no_resultados = bool(query) and not ciudadanos
+        mostrar_form_ciudadano = bool(query) and (no_resultados or bool(renaper_data))
 
         context.update(
             {
                 "ciudadanos": ciudadanos,
-                "no_resultados": bool(query) and not ciudadanos,
+                "no_resultados": no_resultados,
+                "mostrar_form_ciudadano": mostrar_form_ciudadano,
                 "form_ciudadano": form_ciudadano,
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
                 or NominaExtraForm(),
