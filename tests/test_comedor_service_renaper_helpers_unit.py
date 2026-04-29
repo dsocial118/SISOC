@@ -392,9 +392,7 @@ def test_agregar_ciudadano_a_nomina_integrity_error_no_expone_detalle(mocker):
     )
     log_mock = mocker.patch("comedores.services.comedor_service.impl.logger.exception")
 
-    ok, msg = module.ComedorService.agregar_ciudadano_a_nomina(
-        ciudadano_id=1, user="u"
-    )
+    ok, msg = module.ComedorService.agregar_ciudadano_a_nomina(ciudadano_id=1, user="u")
 
     assert ok is False
     assert msg == module.MENSAJE_ERROR_AGREGAR_NOMINA
