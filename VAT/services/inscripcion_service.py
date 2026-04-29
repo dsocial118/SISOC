@@ -256,8 +256,34 @@ class InscripcionService:
         return True, ""
 
     @staticmethod
+    def _resolver_ciudadano_por_documento_estandar(documento: str):
+        documento_int = int(documento)
+        documento_unico_key = f"{Ciudadano.DOCUMENTO_DNI}_{documento_int}"
+
+        ciudadano = Ciudadano.objects.filter(
+            documento_unico_key=documento_unico_key
+        ).first()
+        if ciudadano:
+            return ciudadano
+
+        ciudadano = Ciudadano.objects.filter(
+            tipo_documento=Ciudadano.DOCUMENTO_DNI,
+            documento=documento_int,
+            tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR,
+        ).first()
+        if ciudadano:
+            return ciudadano
+
+        return Ciudadano.objects.filter(
+            tipo_documento=Ciudadano.DOCUMENTO_DNI,
+            documento=documento_int,
+        ).first()
+
+    @staticmethod
     def consultar_estado_voucher_por_documento(documento: str) -> dict:
-        ciudadano = Ciudadano.objects.filter(documento=int(documento)).first()
+        ciudadano = InscripcionService._resolver_ciudadano_por_documento_estandar(
+            documento
+        )
         tiene_voucher = False
         esta_inscripto = False
 

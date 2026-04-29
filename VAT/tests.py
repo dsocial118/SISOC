@@ -3572,6 +3572,37 @@ def test_api_vat_web_voucher_estado_disponible_con_voucher_sin_inscripcion(
 
 
 @pytest.mark.django_db
+def test_api_vat_web_voucher_estado_prioriza_ciudadano_estandar_con_dni_duplicado(
+    vat_api_client,
+):
+    documento = 40111004
+    sexo = Sexo.objects.create(sexo="Sexo duplicado voucher estado")
+    Ciudadano.objects.create(
+        apellido="Duplicado",
+        nombre="No validado",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+        sexo=sexo,
+        tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+    )
+    ciudadano_estandar = _crear_ciudadano_voucher_estado(documento)
+    _crear_voucher_estado(ciudadano_estandar)
+
+    response = vat_api_client.get(
+        f"/api/vat/web/ciudadanos/voucher-estado/?documento={documento}"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": str(documento),
+        "estado": "Disponible",
+        "tiene_voucher": True,
+        "esta_inscripto": False,
+    }
+
+
+@pytest.mark.django_db
 def test_api_vat_web_voucher_estado_en_uso_con_voucher_e_inscripcion_activa(
     vat_api_client, vat_curso_base
 ):
