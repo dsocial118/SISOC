@@ -53,6 +53,9 @@ def apply_ciudadanos_filters(queryset, cleaned_data):
     provincia = cleaned_data.get("provincia")
     tipo_registro = cleaned_data.get("tipo_registro")
     estado_revision = cleaned_data.get("estado_revision")
+    estado_revision_explicito = cleaned_data.get("estado_revision_explicito")
+    if estado_revision_explicito is None:
+        estado_revision_explicito = bool(estado_revision)
 
     if term:
         if term.isdigit():
@@ -77,7 +80,7 @@ def apply_ciudadanos_filters(queryset, cleaned_data):
         Ciudadano.TIPO_REGISTRO_SIN_DNI,
         Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
     )
-    if permite_filtrar_revision:
+    if permite_filtrar_revision and (not term or estado_revision_explicito):
         if estado_revision == CiudadanoFiltroForm.ESTADO_REVISION_PENDIENTE:
             queryset = queryset.filter(requiere_revision_manual=True)
         elif estado_revision == CiudadanoFiltroForm.ESTADO_REVISION_FINALIZADA:
@@ -129,9 +132,16 @@ class CiudadanosListView(LoginRequiredMixin, ListView):
     context_object_name = "ciudadanos"
     paginate_by = 25
 
+    def get_filter_form_data(self):
+        data = self.request.GET
+        if not data or set(data.keys()) <= {self.page_kwarg}:
+            data = data.copy()
+            data["filters_mode"] = CiudadanoFiltroForm.FILTERS_MODE_UI
+        return data
+
     def get_queryset(self):
         queryset = Ciudadano.objects.order_by("pk")
-        form = CiudadanoFiltroForm(self.request.GET or None)
+        form = CiudadanoFiltroForm(self.get_filter_form_data())
         if form.is_valid():
             queryset = apply_ciudadanos_filters(queryset, form.cleaned_data)
         return queryset
@@ -145,7 +155,7 @@ class CiudadanosListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["filter_form"] = CiudadanoFiltroForm(self.request.GET or None)
+        ctx["filter_form"] = CiudadanoFiltroForm(self.get_filter_form_data())
         page_obj = ctx.get("page_obj")
         if page_obj and getattr(page_obj.paginator, "count", None) is None:
             ctx["page_range"] = build_no_count_page_range(page_obj)

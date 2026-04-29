@@ -46,6 +46,50 @@ def test_ciudadanos_list_view_get_queryset_filtra(mocker):
     assert qs.filter.called
 
 
+def test_ciudadanos_list_view_get_queryset_aplica_revision_finalizada_por_defecto(
+    mocker,
+):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+    mocker.patch("ciudadanos.views.Ciudadano.objects.order_by", return_value=qs)
+    mocker.patch(
+        "ciudadanos.forms.get_cached_provincia_filter_choices",
+        return_value=[],
+    )
+
+    view = module.CiudadanosListView()
+    view.request = SimpleNamespace(GET={})
+
+    result = view.get_queryset()
+
+    assert result == qs
+    qs.filter.assert_called_once_with(requiere_revision_manual=False)
+
+
+def test_ciudadanos_list_view_busqueda_simple_no_aplica_revision_implicita(mocker):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+    prefix_filter = object()
+    mocker.patch("ciudadanos.views.Ciudadano.objects.order_by", return_value=qs)
+    mocker.patch(
+        "ciudadanos.forms.get_cached_provincia_filter_choices",
+        return_value=[],
+    )
+    prefix_mock = mocker.patch(
+        "ciudadanos.views.Ciudadano.documento_prefix_filter",
+        return_value=prefix_filter,
+    )
+
+    view = module.CiudadanosListView()
+    view.request = SimpleNamespace(GET={"q": "12345678", "filters_mode": "ui"})
+
+    result = view.get_queryset()
+
+    assert result == qs
+    prefix_mock.assert_called_once_with("12345678")
+    qs.filter.assert_called_once_with(prefix_filter)
+
+
 def test_apply_ciudadanos_filters_usa_documento_prefix_para_q_numerico(mocker):
     qs = mocker.Mock()
     qs.filter.return_value = qs
