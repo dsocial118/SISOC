@@ -251,6 +251,10 @@ MENSAJE_IDENTIDAD_PENDIENTE_NOMINA = (
     "La identidad de esta persona está pendiente de revisión. "
     "No puede agregarse a la nómina hasta que sea validada."
 )
+MENSAJE_ERROR_AGREGAR_NOMINA = (
+    "Ocurrió un error al agregar a la nómina. "
+    "Verificá los datos e intentá nuevamente."
+)
 
 
 def _ciudadano_puede_ingresar_a_nomina(ciudadano):
@@ -1437,6 +1441,9 @@ class ComedorService:
                 )
 
             return True, "Persona añadida correctamente a la nómina."
+        except IntegrityError:
+            logger.exception("Error de integridad al agregar ciudadano a la nómina.")
+            return False, MENSAJE_ERROR_AGREGAR_NOMINA
         except Exception as e:
             return False, f"Ocurrió un error al agregar a la nómina: {e}"
 
@@ -1475,8 +1482,11 @@ class ComedorService:
                 if not ok:
                     ciudadano.delete()
                 return ok, msg
-        except IntegrityError as exc:
-            return False, f"Ocurrió un error al agregar a la nómina: {exc}"
+        except IntegrityError:
+            logger.exception(
+                "Error de integridad al crear ciudadano y agregarlo a la nómina."
+            )
+            return False, MENSAJE_ERROR_AGREGAR_NOMINA
 
     @staticmethod
     def importar_nomina_ultimo_convenio(admision_id, comedor_id):

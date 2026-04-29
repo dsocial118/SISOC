@@ -373,6 +373,35 @@ def test_agregar_nomina_and_crear_y_agregar(mocker):
     assert c.delete.called
 
 
+def test_agregar_ciudadano_a_nomina_integrity_error_no_expone_detalle(mocker):
+    mocker.patch(
+        "comedores.services.comedor_service.impl.get_object_or_404",
+        return_value=SimpleNamespace(pk=1, requiere_revision_manual=False),
+    )
+    mocker.patch(
+        "comedores.services.comedor_service.impl.Nomina.objects.filter",
+        return_value=SimpleNamespace(exists=lambda: False),
+    )
+    mocker.patch(
+        "comedores.services.comedor_service.impl.transaction.atomic",
+        return_value=nullcontext(),
+    )
+    mocker.patch(
+        "comedores.services.comedor_service.impl._crear_nomina_registro",
+        side_effect=IntegrityError("nomina exploded"),
+    )
+    log_mock = mocker.patch("comedores.services.comedor_service.impl.logger.exception")
+
+    ok, msg = module.ComedorService.agregar_ciudadano_a_nomina(
+        ciudadano_id=1, user="u"
+    )
+
+    assert ok is False
+    assert msg == module.MENSAJE_ERROR_AGREGAR_NOMINA
+    assert "nomina exploded" not in msg
+    log_mock.assert_called_once()
+
+
 def test_crear_ciudadano_y_agregar_a_nomina_puebla_documento_unico_key(db, mocker):
     mocker.patch.object(
         module.ComedorService,
@@ -435,6 +464,7 @@ def test_crear_ciudadano_y_agregar_a_nomina_no_maquilla_integrity_error_ajeno(
         "agregar_ciudadano_a_nomina",
         side_effect=IntegrityError("nomina exploded"),
     )
+    log_mock = mocker.patch("comedores.services.comedor_service.impl.logger.exception")
 
     ok, msg = module.ComedorService.crear_ciudadano_y_agregar_a_nomina.__wrapped__(
         ciudadano_data={
@@ -450,7 +480,9 @@ def test_crear_ciudadano_y_agregar_a_nomina_no_maquilla_integrity_error_ajeno(
     )
 
     assert ok is False
-    assert msg == "Ocurrió un error al agregar a la nómina: nomina exploded"
+    assert msg == module.MENSAJE_ERROR_AGREGAR_NOMINA
+    assert "nomina exploded" not in msg
+    log_mock.assert_called_once()
 
 
 def test_timeline_context_helpers_cover_both_states():
