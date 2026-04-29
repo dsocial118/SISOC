@@ -210,7 +210,12 @@ def test_apply_ciudadanos_filters_si_aplica_revision_finalizada(mocker):
     assert qs.filter.call_args_list[-1].kwargs == {"requiere_revision_manual": False}
 
 
-def test_ciudadano_filtro_form_ui_mantiene_finalizada_por_defecto():
+def test_ciudadano_filtro_form_ui_mantiene_finalizada_por_defecto(mocker):
+    mocker.patch(
+        "ciudadanos.forms.get_cached_provincia_filter_choices",
+        return_value=[],
+    )
+
     form = module.CiudadanoFiltroForm({"q": "12345678", "filters_mode": "ui"})
 
     assert (
@@ -220,7 +225,12 @@ def test_ciudadano_filtro_form_ui_mantiene_finalizada_por_defecto():
     assert form.estado_revision_fue_seleccionado_explicitamente is False
 
 
-def test_ciudadano_filtro_form_api_muestra_todos_si_revision_no_fue_explicito():
+def test_ciudadano_filtro_form_api_muestra_todos_si_revision_no_fue_explicito(mocker):
+    mocker.patch(
+        "ciudadanos.forms.get_cached_provincia_filter_choices",
+        return_value=[],
+    )
+
     form = module.CiudadanoFiltroForm({"q": "12345678", "filters_mode": "api"})
 
     assert (
