@@ -432,6 +432,108 @@ class NullableBooleanChoiceField(forms.TypedChoiceField):
         super().__init__(*args, **kwargs)
 
 
+class NominaCentroInfanciaFormEdit(forms.ModelForm):
+    class Meta:
+        model = NominaCentroInfancia
+        fields = [
+            "estado",
+            "dni",
+            "apellido",
+            "nombre",
+            "fecha_nacimiento",
+            "sexo",
+            "nacionalidad",
+            "sala",
+            "pertenece_pueblo_originario",
+            "pueblo_originario_cual",
+            "habla_lengua_originaria_hogar",
+            "talla",
+            "peso",
+            "calendario_vacunacion_al_dia",
+            "tiene_discapacidad",
+            "discapacidad_tipo",
+            "recibe_apoyo_discapacidad",
+            "posee_cud",
+            "posee_obra_social",
+            "calle_domicilio",
+            "altura_domicilio",
+            "piso_domicilio",
+            "departamento_domicilio",
+            "provincia_domicilio",
+            "municipio_domicilio",
+            "localidad_domicilio",
+            "responsable_legal_1_apellido",
+            "responsable_legal_1_nombre",
+            "responsable_legal_1_dni",
+            "responsable_legal_1_telefono",
+            "responsable_legal_1_percibe_auh",
+            "responsable_legal_1_percibe_alimenta",
+            "responsable_legal_2_apellido",
+            "responsable_legal_2_nombre",
+            "responsable_legal_2_dni",
+            "responsable_legal_2_telefono",
+            "responsable_legal_2_percibe_auh",
+            "responsable_legal_2_percibe_alimenta",
+            "adulto_responsable_apellido",
+            "adulto_responsable_nombre",
+            "adulto_responsable_dni",
+            "adulto_responsable_telefono",
+            "adulto_responsable_parentesco",
+            "observaciones",
+        ]
+        labels = {
+            "estado": "Estado",
+            "dni": "DNI",
+            "apellido": "Apellido",
+            "nombre": "Nombre",
+            "fecha_nacimiento": "Fecha de nacimiento",
+            "sexo": "Sexo",
+            "nacionalidad": "Nacionalidad",
+            "sala": "Sala",
+            "pertenece_pueblo_originario": (
+                "¿El niño pertenece o se reconoce como parte de un pueblo indígena u originario?"
+            ),
+            "pueblo_originario_cual": "¿Cuál?",
+            "habla_lengua_originaria_hogar": (
+                "¿En el hogar del niño se habla habitualmente alguna lengua indígena u originaria?"
+            ),
+            "talla": "Talla",
+            "peso": "Peso",
+            "tiene_discapacidad": (
+                "¿El niño tiene alguna discapacidad y/o requiere apoyos específicos?"
+            ),
+            "discapacidad_tipo": "En caso de responder Sí, indicar cuál",
+            "calle_domicilio": "Calle",
+            "altura_domicilio": "Altura",
+            "piso_domicilio": "Piso",
+            "departamento_domicilio": "Departamento",
+            "provincia_domicilio": "Provincia",
+            "municipio_domicilio": "Municipio",
+            "localidad_domicilio": "Localidad",
+            "responsable_legal_1_apellido": "Apellido",
+            "responsable_legal_1_nombre": "Nombre",
+            "responsable_legal_1_dni": "DNI",
+            "responsable_legal_1_telefono": "Teléfono",
+            "responsable_legal_1_percibe_auh": "Percibe AUH",
+            "responsable_legal_1_percibe_alimenta": "Percibe Alimenta",
+            "responsable_legal_2_apellido": "Apellido",
+            "responsable_legal_2_nombre": "Nombre",
+            "responsable_legal_2_dni": "DNI",
+            "responsable_legal_2_telefono": "Teléfono",
+            "responsable_legal_2_percibe_auh": "Percibe AUH",
+            "responsable_legal_2_percibe_alimenta": "Percibe Alimenta",
+            "adulto_responsable_apellido": "Apellido",
+            "adulto_responsable_nombre": "Nombre",
+            "adulto_responsable_dni": "DNI",
+            "adulto_responsable_telefono": "Teléfono",
+            "adulto_responsable_parentesco": "Relación de parentesco",
+            "observaciones": "Observaciones",
+        }
+        widgets = {
+            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
 class NominaCentroInfanciaBaseForm(forms.ModelForm):
     edad_calculada = forms.IntegerField(
         label="Edad",
