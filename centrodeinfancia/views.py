@@ -44,6 +44,7 @@ from centrodeinfancia.access import (
 from centrodeinfancia.forms import (
     CentroDeInfanciaForm,
     IntervencionCentroInfanciaForm,
+    NominaCentroInfanciaFormEdit,
     NominaCentroInfanciaCreateForm,
     NominaCentroInfanciaForm,
     ObservacionCentroInfanciaForm,
@@ -594,11 +595,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
                 else "-"
             ),
             "tipo_jornada_otra": self.object.tipo_jornada_otra or "",
-            "oferta_servicios": (
-                self.object.get_oferta_servicios_display()
-                if self.object.oferta_servicios
-                else "-"
-            ),
+            "oferta_servicios": self.object.get_oferta_servicios_display() or "-",
             "modalidad_gestion": (
                 self.object.get_modalidad_gestion_display()
                 if self.object.modalidad_gestion
@@ -1022,6 +1019,33 @@ class NominaCentroInfanciaFormularioDetailView(LoginRequiredMixin, DetailView):
         )
 
 
+class NominaCentroInfanciaEditView(LoginRequiredMixin, UpdateView):
+    model = NominaCentroInfancia
+    form_class = NominaCentroInfanciaFormEdit
+    template_name = "centrodeinfancia/nomina_form_edit.html"
+    pk_url_kwarg = "nomina_id"
+
+    def get_queryset(self):
+        return _nomina_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["object"] = (
+            NominaCentroInfancia.objects.select_related("centro")
+            .filter(pk=self.kwargs["nomina_id"], centro_id=self.kwargs["pk"])
+            .first()
+        )
+        context["centro"] = CentroDeInfancia.objects.filter(
+            pk=self.kwargs["pk"]
+        ).first()
+        return context
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
+
+
 class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     model = NominaCentroInfancia
     form_class = NominaCentroInfanciaCreateForm
@@ -1059,6 +1083,11 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         nomina.clean()
         nomina.save()
         return True
+
+        def get_queryset(self):
+            return _nomina_cdi_queryset_scoped(self.request.user).filter(
+                centro_id=self.kwargs["pk"]
+            )
 
     def get_success_url(self):
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
