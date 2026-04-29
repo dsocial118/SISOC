@@ -432,7 +432,12 @@
                                     </div>
                                 </td>
                                 <td>
-                                    {% if leg.subsanacion_motivo %}
+                                    {% if leg.observacion_tecnica_texto %}
+                                        {% if leg.observacion_tecnica_titulo %}
+                                            <small class="d-block text-muted">{{ leg.observacion_tecnica_titulo }}</small>
+                                        {% endif %}
+                                        <small class="text-break">{{ leg.observacion_tecnica_texto|truncatechars:80 }}</small>
+                                    {% elif leg.subsanacion_motivo %}
                                         <small class="text-break">{{ leg.subsanacion_motivo|truncatechars:80 }}</small>
                                     {% else %}
                                         <span class="text-muted"></span>

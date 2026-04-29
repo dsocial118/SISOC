@@ -1,5 +1,6 @@
 """Tests de regresión para detalle de expedientes en Celiaquía."""
 
+import re
 from datetime import date
 
 import pytest
@@ -17,6 +18,21 @@ from celiaquia.models import (
 from core.models import Provincia
 from ciudadanos.models import Ciudadano, GrupoFamiliar
 from users.models import Profile
+
+
+def _legajo_row_html(response, legajo_id):
+    html = response.content.decode()
+    pattern = (
+        rf'<tr class="legajo-row"(?:(?!</tr>).)*data-search="{legajo_id} [^"]*"'
+        r"(?:(?!</tr>).)*</tr>"
+    )
+    match = re.search(
+        pattern,
+        html,
+        flags=re.DOTALL,
+    )
+    assert match is not None
+    return match.group(0)
 
 
 @pytest.mark.django_db
@@ -183,6 +199,9 @@ def test_expediente_detail_expone_motivo_rechazo_para_provincia(client):
     legajo_ctx = response.context["legajos_enriquecidos"][0]
     assert legajo_ctx.observacion_tecnica_titulo == "Motivo del Rechazo"
     assert legajo_ctx.observacion_tecnica_texto == "Documento ilegible"
+    row_html = _legajo_row_html(response, legajo.pk)
+    assert "Motivo del Rechazo" in row_html
+    assert "Documento ilegible" in row_html
     assert "Motivo del Rechazo" in response.content.decode()
     assert "Documento ilegible" in response.content.decode()
 
@@ -229,5 +248,8 @@ def test_expediente_detail_expone_motivo_rechazo_para_tecnico(client):
     legajo_ctx = response.context["legajos_enriquecidos"][0]
     assert legajo_ctx.observacion_tecnica_titulo == "Motivo del Rechazo"
     assert legajo_ctx.observacion_tecnica_texto == "Falta certificado"
+    row_html = _legajo_row_html(response, legajo.pk)
+    assert "Motivo del Rechazo" in row_html
+    assert "Falta certificado" in row_html
     assert "Motivo del Rechazo" in response.content.decode()
     assert "Falta certificado" in response.content.decode()
