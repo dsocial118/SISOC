@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.db import transaction
 
+from ciudadanos.models import Ciudadano
 from VAT.models import Inscripcion, InscripcionOferta, Voucher, VoucherUso
 from VAT.services.voucher_service import VoucherService
 
@@ -253,6 +254,62 @@ class InscripcionService:
             )
 
         return True, ""
+
+    @staticmethod
+    def _resolver_ciudadano_por_documento_estandar(documento: str):
+        documento_int = int(documento)
+        documento_unico_key = f"{Ciudadano.DOCUMENTO_DNI}_{documento_int}"
+
+        ciudadano = Ciudadano.objects.filter(
+            documento_unico_key=documento_unico_key
+        ).first()
+        if ciudadano:
+            return ciudadano
+
+        ciudadano = Ciudadano.objects.filter(
+            tipo_documento=Ciudadano.DOCUMENTO_DNI,
+            documento=documento_int,
+            tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR,
+        ).first()
+        if ciudadano:
+            return ciudadano
+
+        return Ciudadano.objects.filter(
+            tipo_documento=Ciudadano.DOCUMENTO_DNI,
+            documento=documento_int,
+        ).first()
+
+    @staticmethod
+    def consultar_estado_voucher_por_documento(documento: str) -> dict:
+        ciudadano = InscripcionService._resolver_ciudadano_por_documento_estandar(
+            documento
+        )
+        tiene_voucher = False
+        esta_inscripto = False
+
+        if ciudadano:
+            tiene_voucher = Voucher.objects.filter(
+                ciudadano=ciudadano,
+                estado="activo",
+                cantidad_disponible__gt=0,
+                fecha_vencimiento__gte=timezone.localdate(),
+            ).exists()
+            if tiene_voucher:
+                esta_inscripto = Inscripcion.objects.filter(
+                    ciudadano=ciudadano,
+                    estado__in=ESTADOS_INSCRIPCION_ACTIVA,
+                ).exists()
+
+        estado = "No disponible"
+        if tiene_voucher:
+            estado = "En uso" if esta_inscripto else "Disponible"
+
+        return {
+            "documento": str(documento),
+            "estado": estado,
+            "tiene_voucher": tiene_voucher,
+            "esta_inscripto": esta_inscripto,
+        }
 
     @staticmethod
     def prevalidar_inscripcion(*, ciudadano, comision, programa=None) -> dict:

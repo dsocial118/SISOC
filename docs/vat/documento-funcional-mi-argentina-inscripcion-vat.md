@@ -51,7 +51,34 @@ Uso:
 - informar programa, costo, cupo y cupos disponibles,
 - capturar `comision_curso_id`.
 
-### 3. Prevalidar inscripción
+### 3. Consultar estado general de voucher
+
+- `GET /api/vat/web/ciudadanos/voucher-estado/?documento=<dni>`
+
+Uso:
+
+- mostrar si el voucher esta `Disponible`, `En uso` o `No disponible`,
+- resolver un diagnostico rapido por DNI antes de elegir una comision,
+- evitar que el frontend reconstruya reglas de voucher e inscripcion.
+
+Respuesta esperable:
+
+```json
+{
+  "documento": "32123456",
+  "estado": "Disponible",
+  "tiene_voucher": true,
+  "esta_inscripto": false
+}
+```
+
+Estados:
+
+- `Disponible`: tiene voucher usable y no tiene inscripciones VAT activas.
+- `En uso`: tiene voucher usable y tiene alguna inscripcion VAT activa.
+- `No disponible`: no existe ciudadano para el DNI o no tiene voucher usable.
+
+### 4. Prevalidar inscripción
 
 - `POST /api/vat/web/inscripciones/prevalidar/`
 
@@ -117,7 +144,7 @@ Respuesta esperable:
 }
 ```
 
-### 4. Confirmar inscripción
+### 5. Confirmar inscripción
 
 - `POST /api/vat/web/inscripciones/`
 
@@ -138,7 +165,7 @@ Resultado:
 - si usa voucher se debitan créditos,
 - se devuelve la inscripción con el detalle del curso/comisión.
 
-### 5. Consultar inscripción generada
+### 6. Consultar inscripción generada
 
 - `GET /api/vat/web/inscripciones/?documento=<dni>`
 
