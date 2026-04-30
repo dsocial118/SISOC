@@ -123,6 +123,29 @@ def test_form_nomina_resuelve_geografia_inicial_desde_texto():
 
 
 @pytest.mark.django_db
+def test_build_nomina_initial_from_renaper_acepta_fecha_nacimiento_en_fechaNacimiento():
+    initial = NominaCentroInfanciaCreateView._build_nomina_initial_from_renaper(
+        {
+            "data": {
+                "documento": 30111222,
+                "apellido": "Lopez",
+                "nombre": "Ana",
+                "sexo": "Femenino",
+            },
+            "result": {
+                "fechaNacimiento": "2018-05-10",
+            },
+            "datos_api": {},
+        }
+    )
+
+    assert initial["dni"] == 30111222
+    assert initial["apellido"] == "Lopez"
+    assert initial["nombre"] == "Ana"
+    assert initial["fecha_nacimiento"] == date(2018, 5, 10)
+
+
+@pytest.mark.django_db
 def test_create_view_crea_ficha_cdi_para_ciudadano_existente(client):
     user = User.objects.create_superuser(
         username="super-cdi-nomina",

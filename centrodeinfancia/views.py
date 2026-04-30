@@ -425,7 +425,10 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
                 intervencion.fecha.strftime("%d/%m/%Y") if intervencion.fecha else None
             )
 
-            actor = creator_map.get(intervencion.pk)
+            actor = intervencion.creado_por or creator_map.get(intervencion.pk)
+            logger.info(
+                f"Intervención {intervencion.pk} - Actor creador: {actor}"
+            )
             usuario_creador = "-"
             if actor:
                 full_name = actor.get_full_name()
@@ -1219,12 +1222,18 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     @staticmethod
     def _build_nomina_initial_from_renaper(renaper_result):
         renaper_data = dict(renaper_result.get("data") or {})
+        renaper_result_data = dict(renaper_result.get("result") or {})
         datos_api = renaper_result.get("datos_api") or {}
         if not renaper_data:
             return renaper_data
 
-        fecha_raw = renaper_data.get("fecha_nacimiento") or datos_api.get(
-            "fechaNacimiento"
+        fecha_raw = (
+            renaper_data.get("fecha_nacimiento")
+            or renaper_data.get("fechaNacimiento")
+            or renaper_result_data.get("fechaNacimiento")
+            or renaper_result_data.get("fecha_nacimiento")
+            or datos_api.get("fechaNacimiento")
+            or datos_api.get("fecha_nacimiento")
         )
         fecha_nacimiento = NominaCentroInfanciaCreateView._parse_fecha_renaper(
             fecha_raw
