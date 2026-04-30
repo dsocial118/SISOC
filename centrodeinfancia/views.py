@@ -426,9 +426,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             )
 
             actor = intervencion.creado_por or creator_map.get(intervencion.pk)
-            logger.info(
-                f"Intervención {intervencion.pk} - Actor creador: {actor}"
-            )
+            logger.info(f"Intervención {intervencion.pk} - Actor creador: {actor}")
             usuario_creador = "-"
             if actor:
                 full_name = actor.get_full_name()
