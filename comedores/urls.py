@@ -6,6 +6,7 @@ from comedores.views import (
     ColaboradorEspacioDeleteView,
     ColaboradorEspacioUpdateView,
     ComedorCreateView,
+    ComedorDatosConvenioPnudUpdateView,
     ComedorDeleteView,
     ComedorDetailView,
     ComedorListView,
@@ -316,6 +317,13 @@ urlpatterns = [
         "comedores/<int:pk>/validar/",
         login_required(validar_comedor),
         name="validar_comedor",
+    ),
+    path(
+        "comedores/<int:pk>/convenio-pnud/",
+        permissions_any_required(["comedores.change_comedor"])(
+            ComedorDatosConvenioPnudUpdateView.as_view()
+        ),
+        name="comedor_convenio_pnud",
     ),
     path(
         "comedores/<int:pk>/capacitaciones/<int:certificado_id>/estado/",

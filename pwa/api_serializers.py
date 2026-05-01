@@ -2,6 +2,7 @@ import re
 from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.utils import OperationalError, ProgrammingError
 from rest_framework import serializers
 
 from comunicados.models import Comunicado, ComunicadoAdjunto, SubtipoComunicado
@@ -559,6 +560,7 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
     asistencia_mes_actual = serializers.SerializerMethodField()
     historial_asistencias = serializers.SerializerMethodField()
     observaciones = serializers.CharField(read_only=True, allow_null=True)
+    observaciones_historial = serializers.SerializerMethodField()
 
     class Meta:
         model = Nomina
@@ -578,6 +580,7 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
             "asistencia_mes_actual",
             "historial_asistencias",
             "observaciones",
+            "observaciones_historial",
         )
 
     def _get_ciudadano(self, obj):
@@ -706,6 +709,27 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
         if registros is None:
             return []
         return [self._serialize_registro_asistencia(registro) for registro in registros]
+
+    def get_observaciones_historial(self, obj):
+        observaciones = getattr(obj, "observaciones_pwa", None)
+        if observaciones is None:
+            return []
+        if hasattr(observaciones, "all"):
+            try:
+                observaciones = observaciones.all()
+            except (OperationalError, ProgrammingError):
+                return []
+        return [
+            {
+                "id": observacion.id,
+                "texto": observacion.texto,
+                "fecha_creacion": observacion.fecha_creacion,
+                "creada_por": (
+                    observacion.creada_por.username if observacion.creada_por else None
+                ),
+            }
+            for observacion in observaciones
+        ]
 
 
 class RegistroAsistenciaNominaPWAListSerializer(serializers.ModelSerializer):
