@@ -1,0 +1,50 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Datos del Convenio{% endblock %}
+{% block titulo-pagina %}Datos del Convenio{% endblock %}
+{% block content %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Cargar datos del Convenio</h5>
+            <a href="{% url 'comedor_detalle' comedor.id %}"
+               class="btn btn-secondary btn-sm">Volver</a>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <p class="mb-1">
+                    <strong>Organización solicitante:</strong> {{ prefill_data.organizacion_solicitante }}
+                </p>
+                <p class="mb-1">
+                    <strong>Código del proyecto:</strong> {{ prefill_data.codigo_proyecto }}
+                </p>
+                <p class="mb-1">
+                    <strong>Estado general:</strong> {{ prefill_data.estado_general }}
+                </p>
+                <p class="mb-1">
+                    <strong>Subestado:</strong> {{ prefill_data.subestado }}
+                </p>
+                <p class="mb-1">
+                    <strong>Nombre del espacio comunitario:</strong> {{ prefill_data.nombre_espacio }}
+                </p>
+                <p class="mb-1">
+                    <strong>ID externo:</strong> {{ prefill_data.id_externo }}
+                </p>
+                <p class="mb-1">
+                    <strong>Domicilio completo del espacio:</strong> {{ prefill_data.domicilio_completo }}
+                </p>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">{{ form.monto_total_conveniado|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.nro_convenio|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.monto_total_convenio_por_espacio|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.prestaciones_financiadas_mensuales|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.personas_conveniadas|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.cantidad_modulos|as_crispy_field }}</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

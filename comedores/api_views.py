@@ -211,7 +211,7 @@ class ComedorDetailViewSet(
                 "dupla__tecnico",
                 Prefetch(
                     "imagenes",
-                    queryset=ImagenComedor.objects.only("id", "imagen"),
+                    queryset=ImagenComedor.objects.only("id", "imagen", "origen"),
                     to_attr="imagenes_optimized",
                 ),
                 Prefetch(
@@ -476,7 +476,7 @@ class ComedorDetailViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        creado = ComedorService.create_imagenes(imagen, comedor.pk)
+        creado = ComedorService.create_imagenes(imagen, comedor.pk, origen="mobile")
         if isinstance(creado, dict):
             return Response(creado, status=status.HTTP_400_BAD_REQUEST)
 
