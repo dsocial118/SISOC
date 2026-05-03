@@ -803,9 +803,9 @@ class ComedorService:
         return referente_instance
 
     @staticmethod
-    def create_imagenes(imagen, comedor_pk):
+    def create_imagenes(imagen, comedor_pk, origen="web"):
         imagen_comedor = ImagenComedorForm(
-            {"comedor": comedor_pk},
+            {"comedor": comedor_pk, "origen": origen},
             {"imagen": imagen},
         )
         if imagen_comedor.is_valid():
