@@ -716,9 +716,11 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
             return []
         if hasattr(observaciones, "all"):
             try:
-                observaciones = observaciones.all()
+                observaciones = list(observaciones.all())
             except (OperationalError, ProgrammingError):
                 return []
+        else:
+            observaciones = list(observaciones)
         return [
             {
                 "id": observacion.id,

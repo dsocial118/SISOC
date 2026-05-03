@@ -1,4 +1,4 @@
-﻿# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines
 
 import calendar
 from datetime import date, time

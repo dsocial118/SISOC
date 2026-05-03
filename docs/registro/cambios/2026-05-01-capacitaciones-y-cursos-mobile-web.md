@@ -9,9 +9,12 @@ Corregir inconsistencias funcionales en Web y Mobile: evitar cambios de estado i
 ## Alcance
 Se incluyeron ajustes en backend/plantilla web de capacitaciones y en módulos de hub/ruteo/vistas mobile para Cursos y textos con acentos en formulario de beneficiarios.
 
-## Archivos tocados
+## Archivos versionados tocados
 - comedores/services/capacitaciones_certificados_service.py
 - comedores/templates/comedor/comedor_detail.html
+
+## Referencias operativas fuera del diff versionado
+La carpeta `mobile/` está ignorada por git en este repositorio. Estos archivos documentan el cierre funcional de la rama `SiSOC-Mobile-29-04`, pero no se entregan como archivos versionados dentro de este PR a `main`:
 - mobile/src/features/home/SpaceHubPage.tsx
 - mobile/src/features/home/SpaceCursosPage.tsx
 - mobile/src/app/router.tsx

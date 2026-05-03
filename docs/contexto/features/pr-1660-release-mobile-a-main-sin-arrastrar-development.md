@@ -55,7 +55,7 @@
 - `docs/registro/cambios/2026-05-01-capacitaciones-y-cursos-mobile-web.md`
 - `docs/registro/cambios/2026-05-01-pwa-mobile-beneficiarios-actividades-y-nomina-por-programa.md`
 - `docs/registro/cambios/2026-05-01-pwa-mobile-versionado-fecha-settings.md`
-- ... y 9 archivo(s) adicional(es) relacionados.
+- ... y 8 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
