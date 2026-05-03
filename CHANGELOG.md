@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-05-06 -->
+# Versión SISOC 06.05.2026
+
+## Actualizaciones
+
+- [sin-area] Cambios pedidos por Lepe, mas cambios para la App Mobil, mas mas mas.…. (PR #1659)
+<!-- AUTO-GENERATED RELEASE END: 2026-05-06 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-04-24 -->
 # Versión SISOC 24.04.2026
 
