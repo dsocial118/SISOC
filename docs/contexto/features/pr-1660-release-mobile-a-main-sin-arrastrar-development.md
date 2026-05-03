@@ -35,6 +35,7 @@
 
 - Empezar por `docs/registro/prs/PR-1660.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
 - `comedores/api_serializers.py`
 - `comedores/api_views.py`
 - `comedores/forms/convenio_pnud_form.py`
@@ -50,20 +51,22 @@
 - `comedores/views/comedor.py`
 - `config/settings.py`
 - `config/urls.py`
+- `docs/contexto/features/pr-1660-release-mobile-a-main-sin-arrastrar-development.md`
 - `docs/registro/cambios/2026-05-01-capacitaciones-y-cursos-mobile-web.md`
 - `docs/registro/cambios/2026-05-01-pwa-mobile-beneficiarios-actividades-y-nomina-por-programa.md`
 - `docs/registro/cambios/2026-05-01-pwa-mobile-versionado-fecha-settings.md`
-- `pwa/api_serializers.py`
-- `pwa/api_views.py`
-- ... y 5 archivo(s) adicional(es) relacionados.
+- ... y 9 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-1660-release-mobile-a-main-sin-arrastrar-development.md`
 - `docs/registro/cambios/2026-05-01-capacitaciones-y-cursos-mobile-web.md`
 - `docs/registro/cambios/2026-05-01-pwa-mobile-beneficiarios-actividades-y-nomina-por-programa.md`
 - `docs/registro/cambios/2026-05-01-pwa-mobile-versionado-fecha-settings.md`
+- `docs/registro/prs/PR-1660.md`
+- `docs/registro/releases/pending/2026-05-06-pr-1660.md`
 
 ## Trazabilidad
 
