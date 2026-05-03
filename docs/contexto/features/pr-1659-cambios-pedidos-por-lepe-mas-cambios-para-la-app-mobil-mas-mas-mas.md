@@ -29,41 +29,49 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: comedores/templates/comedor/comedor_convenio_pnud_form.html, comedores/templates/comedor/comedor_detail.html
+- Archivos visuales relevantes: celiaquia/templates/celiaquia/expediente_detail.html, centrodeinfancia/templates/centrodeinfancia/nomina_detail.html, centrodeinfancia/templates/centrodeinfancia/nomina_form_edit.html, comedores/templates/comedor/comedor_convenio_pnud_form.html, comedores/templates/comedor/comedor_detail.html, comedores/templates/comedor/nomina_form.html, organizaciones/templates/organizacion_form.html, static/custom/js/nomina_detail.js
 
 ## Memoria operativa para agentes
 
 - Empezar por `docs/registro/prs/PR-1659.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
-- `comedores/api_serializers.py`
-- `comedores/api_views.py`
-- `comedores/forms/convenio_pnud_form.py`
-- `comedores/migrations/0037_imagencomedor_origen.py`
-- `comedores/migrations/0038_comedordatosconveniopnud.py`
-- `comedores/models.py`
-- `comedores/services/capacitaciones_certificados_service.py`
-- `comedores/services/comedor_service/impl.py`
-- `comedores/templates/comedor/comedor_convenio_pnud_form.html`
-- `comedores/templates/comedor/comedor_detail.html`
-- `comedores/urls.py`
-- `comedores/views/__init__.py`
-- `comedores/views/comedor.py`
-- `config/settings.py`
-- `config/urls.py`
-- `docs/registro/cambios/2026-05-01-capacitaciones-y-cursos-mobile-web.md`
-- `docs/registro/cambios/2026-05-01-pwa-mobile-beneficiarios-actividades-y-nomina-por-programa.md`
-- `docs/registro/cambios/2026-05-01-pwa-mobile-versionado-fecha-settings.md`
-- `pwa/api_serializers.py`
-- `pwa/api_views.py`
-- ... y 5 archivo(s) adicional(es) relacionados.
+- `CHANGELOG.md`
+- `VAT/api_urls.py`
+- `VAT/api_web_views.py`
+- `VAT/serializers.py`
+- `VAT/services/inscripcion_service.py`
+- `VAT/tests.py`
+- `celiaquia/admin.py`
+- `celiaquia/services/familia_service/impl.py`
+- `celiaquia/services/legajo_service/impl.py`
+- `celiaquia/templates/celiaquia/expediente_detail.html`
+- `celiaquia/tests/test_admin.py`
+- `celiaquia/tests/test_expediente_detail.py`
+- `celiaquia/views/expediente.py`
+- `centrodeinfancia/forms.py`
+- `centrodeinfancia/formulario_cdi_schema.py`
+- `centrodeinfancia/migrations/0024_alter_centrodeinfancia_nombre.py`
+- `centrodeinfancia/migrations/0025_alter_centrodeinfancia_fecha_inicio_and_more.py`
+- `centrodeinfancia/migrations/0026_oferta_servicio_multiple.py`
+- `centrodeinfancia/migrations/0027_merge_20260427_1431.py`
+- `centrodeinfancia/migrations/0028_alter_formulariocdi_condiciones_almacenamiento_leche_humana.py`
+- ... y 67 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-1659-cambios-pedidos-por-lepe-mas-cambios-para-la-app-mobil-mas-mas-mas.md`
+- `docs/operacion/codex_desktop.md`
+- `docs/registro/cambios/2026-04-20-centrodeinfancia-oferta-servicios-multiples.md`
+- `docs/registro/cambios/2026-04-28-celiaquia-relaciones-familiares-expediente.md`
 - `docs/registro/cambios/2026-05-01-capacitaciones-y-cursos-mobile-web.md`
 - `docs/registro/cambios/2026-05-01-pwa-mobile-beneficiarios-actividades-y-nomina-por-programa.md`
 - `docs/registro/cambios/2026-05-01-pwa-mobile-versionado-fecha-settings.md`
+- `docs/registro/prs/PR-1659.md`
+- `docs/registro/releases/pending/2026-05-06-pr-1659.md`
+- `docs/vat/api_web.md`
+- `docs/vat/documento-funcional-mi-argentina-inscripcion-vat.md`
 
 ## Trazabilidad
 
