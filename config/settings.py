@@ -612,14 +612,18 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Herramientas debug/perf en desarrollo (desactivadas en tests para estabilidad y velocidad)
+ENABLE_SILK = os.getenv("ENABLE_SILK", "0") == "1"
+
 if DEBUG and not RUNNING_TESTS:
-    INSTALLED_APPS += ["debug_toolbar", "silk"]
-    MIDDLEWARE.insert(
-        3, "debug_toolbar.middleware.DebugToolbarMiddleware"
-    )  # index tras Cors/Common
-    MIDDLEWARE += ["silk.middleware.SilkyMiddleware"]
+    INSTALLED_APPS += ["debug_toolbar"]
+    MIDDLEWARE.insert(3, "debug_toolbar.middleware.DebugToolbarMiddleware")
     DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: True}
-    SILKY_PYTHON_PROFILER = True
+
+    if ENABLE_SILK:
+        INSTALLED_APPS += ["silk"]
+        MIDDLEWARE += ["silk.middleware.SilkyMiddleware"]
+        SILKY_PYTHON_PROFILER = False
+
 
 # Seguridad por entorno
 if IS_PRODUCTION_LIKE_ENVIRONMENT:

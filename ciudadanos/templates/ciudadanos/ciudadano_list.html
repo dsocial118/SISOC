@@ -16,6 +16,10 @@
            id="hidden-q-input"
            form="simple-search-form"
            value="{{ filter_form.q.value|default:'' }}" />
+    <input type="hidden"
+           name="filters_mode"
+           form="simple-search-form"
+           value="ui" />
     <div class="row mt-5 max-width-100">
         <div class="col-12">
             <div class="card">
@@ -24,21 +28,28 @@
                 </div>
                 <div class="card-body">
                     <form method="get"
-                          class="row g-3 align-items-end mb-4"
+                          class="row g-2 align-items-end mb-4"
                           id="province-filter-form">
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-lg-3">
                             {{ filter_form.provincia.label_tag }}
                             {{ filter_form.provincia }}
                         </div>
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-lg-3">
                             {{ filter_form.tipo_registro.label_tag }}
                             {{ filter_form.tipo_registro }}
+                        </div>
+                        <div class="col-12 col-lg-3"
+                             id="estado-revision-group"
+                             data-enabled-values=",SIN_DNI,DNI_NO_VALIDADO_RENAPER">
+                            {{ filter_form.estado_revision.label_tag }}
+                            {{ filter_form.estado_revision }}
                         </div>
                         <input type="hidden"
                                name="q"
                                id="province-hidden-q"
                                value="{{ filter_form.q.value|default:'' }}" />
-                        <div class="col-12 col-md-4">
+                        <input type="hidden" name="filters_mode" value="ui" />
+                        <div class="col-12 col-lg-3">
                             <button type="submit" class="btn btn-outline-secondary w-100">Aplicar</button>
                         </div>
                     </form>
@@ -132,6 +143,9 @@
             const provinceHiddenQ = document.getElementById("province-hidden-q");
             const searchForm = document.getElementById("simple-search-form");
             const provinceForm = document.getElementById("province-filter-form");
+            const tipoRegistroSelect = document.getElementById("id_tipo_registro");
+            const estadoRevisionGroup = document.getElementById("estado-revision-group");
+            const estadoRevisionSelect = document.getElementById("id_estado_revision");
 
             function syncHiddenFields() {
                 if (searchInput) {
@@ -139,6 +153,17 @@
                     if (hiddenQInput) hiddenQInput.value = value;
                     if (provinceHiddenQ) provinceHiddenQ.value = value;
                 }
+            }
+
+            function shouldShowEstadoRevision(tipoRegistro) {
+                return ["", "SIN_DNI", "DNI_NO_VALIDADO_RENAPER"].includes(tipoRegistro || "");
+            }
+
+            function syncEstadoRevisionVisibility() {
+                if (!estadoRevisionGroup || !estadoRevisionSelect) return;
+                const visible = shouldShowEstadoRevision(tipoRegistroSelect ? tipoRegistroSelect.value : "");
+                estadoRevisionGroup.classList.toggle("invisible", !visible);
+                estadoRevisionSelect.disabled = !visible;
             }
 
             if (searchForm) {
@@ -151,8 +176,14 @@
                 });
             }
 
+            if (tipoRegistroSelect) {
+                tipoRegistroSelect.addEventListener("change", syncEstadoRevisionVisibility);
+                tipoRegistroSelect.addEventListener("input", syncEstadoRevisionVisibility);
+            }
+
             // Inicializar valores al cargar
             syncHiddenFields();
+            syncEstadoRevisionVisibility();
         });
     </script>
 {% endblock %}
