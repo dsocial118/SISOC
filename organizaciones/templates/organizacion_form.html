@@ -324,6 +324,30 @@
             }
         });
 
+        function fetchCuilCheck(val, seq) {
+            var url = cuilCheckAjaxUrl + "?cuil=" + encodeURIComponent(val);
+            if (organizacionPk) {
+                url += "&exclude=" + encodeURIComponent(organizacionPk);
+            }
+            fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (seq !== undefined && (seq !== requestSeq || cuitInput.value.trim() !== val)) {
+                        return;
+                    }
+                    if (data.organizaciones && data.organizaciones.length > 0) {
+                        showWarning(data.organizaciones);
+                    } else {
+                        resetWarning();
+                    }
+                })
+                .catch(function () {
+                    if (seq === undefined || (seq === requestSeq && cuitInput.value.trim() === val)) {
+                        resetWarning();
+                    }
+                });
+        }
+
         if (cuitInput) {
             cuitInput.addEventListener("input", function () {
                 clearTimeout(debounceTimer);
@@ -336,29 +360,15 @@
                 }
                 var currentSeq = requestSeq;
                 debounceTimer = setTimeout(function () {
-                    var url = cuilCheckAjaxUrl + "?cuil=" + encodeURIComponent(val);
-                    if (organizacionPk) {
-                        url += "&exclude=" + encodeURIComponent(organizacionPk);
-                    }
-                    fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
-                        .then(function (r) { return r.json(); })
-                        .then(function (data) {
-                            if (currentSeq !== requestSeq || cuitInput.value.trim() !== val) {
-                                return;
-                            }
-                            if (data.organizaciones && data.organizaciones.length > 0) {
-                                showWarning(data.organizaciones);
-                            } else {
-                                resetWarning();
-                            }
-                        })
-                        .catch(function () {
-                            if (currentSeq === requestSeq && cuitInput.value.trim() === val) {
-                                resetWarning();
-                            }
-                        });
+                    fetchCuilCheck(val, currentSeq);
                 }, 400);
             });
+
+            // En edición, el CUIL ya viene pre-cargado: verificar duplicados al cargar la página
+            var initialVal = cuitInput.value.trim();
+            if (initialVal && !isNaN(initialVal)) {
+                fetchCuilCheck(initialVal);
+            }
         }
     })();
     </script>
