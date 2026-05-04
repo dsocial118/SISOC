@@ -45,6 +45,7 @@ def registrar_cambio_estado(
             estado_general=estado_general,
             usuario=usuario,
         )
+        manager = getattr(type(comedor), "all_objects", type(comedor).objects)
+        manager.filter(pk=comedor.pk).update(ultimo_estado=historial)
         comedor.ultimo_estado = historial
-        comedor.save(update_fields=["ultimo_estado"])
         return historial
