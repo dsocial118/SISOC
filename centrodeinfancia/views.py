@@ -323,7 +323,10 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             "ciudadano__sexo",
         ).order_by("-fecha")
         intervenciones_qs = self.object.intervenciones.select_related(
-            "tipo_intervencion", "subintervencion", "destinatario"
+            "tipo_intervencion",
+            "subintervencion",
+            "destinatario",
+            "creado_por",
         ).order_by("-fecha")
 
         today = timezone.now().date()
@@ -426,7 +429,6 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             )
 
             actor = intervencion.creado_por or creator_map.get(intervencion.pk)
-            logger.info(f"Intervención {intervencion.pk} - Actor creador: {actor}")
             usuario_creador = "-"
             if actor:
                 full_name = actor.get_full_name()
@@ -1085,10 +1087,10 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         nomina.save()
         return True
 
-        def get_queryset(self):
-            return _nomina_cdi_queryset_scoped(self.request.user).filter(
-                centro_id=self.kwargs["pk"]
-            )
+    def get_queryset(self):
+        return _nomina_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
 
     def get_success_url(self):
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
