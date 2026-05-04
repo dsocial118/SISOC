@@ -262,6 +262,9 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
 
     def get_initial(self):
         centro = self.get_centro()
+        ofertas_servicios = list(
+            centro.oferta_servicios.values_list("codigo", flat=True)[:2]
+        )
         initial = {
             "nombre_cdi": centro.nombre,
             "codigo_cdi": centro.codigo_cdi,
@@ -285,7 +288,9 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
             "dias_funcionamiento": centro.dias_funcionamiento,
             "tipo_jornada": centro.tipo_jornada,
             "tipo_jornada_otra": centro.tipo_jornada_otra,
-            "oferta_servicios": centro.oferta_servicios,
+            "oferta_servicios": (
+                ofertas_servicios[0] if len(ofertas_servicios) == 1 else None
+            ),
             "modalidad_gestion": centro.modalidad_gestion,
             "modalidad_gestion_otra": centro.modalidad_gestion_otra,
             "nombre_organizacion_gestora": centro.organizacion,

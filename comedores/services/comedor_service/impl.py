@@ -251,6 +251,10 @@ MENSAJE_IDENTIDAD_PENDIENTE_NOMINA = (
     "La identidad de esta persona está pendiente de revisión. "
     "No puede agregarse a la nómina hasta que sea validada."
 )
+MENSAJE_ERROR_AGREGAR_NOMINA = (
+    "Ocurrió un error al agregar a la nómina. "
+    "Verificá los datos e intentá nuevamente."
+)
 
 
 def _ciudadano_puede_ingresar_a_nomina(ciudadano):
@@ -803,9 +807,9 @@ class ComedorService:
         return referente_instance
 
     @staticmethod
-    def create_imagenes(imagen, comedor_pk):
+    def create_imagenes(imagen, comedor_pk, origen="web"):
         imagen_comedor = ImagenComedorForm(
-            {"comedor": comedor_pk},
+            {"comedor": comedor_pk, "origen": origen},
             {"imagen": imagen},
         )
         if imagen_comedor.is_valid():
@@ -1176,25 +1180,19 @@ class ComedorService:
 
     @staticmethod
     def _buscar_ciudadano_existente_por_dni_renaper(dni_str):
-        # Buscar primero por documento_unico_key para encontrar solo registros
-        # ESTANDAR verificados. Esto evita retornar un duplicado ambiguo cuando
-        # hay múltiples ciudadanos con el mismo DNI (DNI_NO_VALIDADO_RENAPER).
+        # Buscar primero por documento_unico_key (solo registros ESTANDAR verificados).
         doc_key = f"DNI_{dni_str}"
         ciudadano = Ciudadano.objects.filter(documento_unico_key=doc_key).first()
         if ciudadano:
             return ciudadano
-        # Fallback: si el backfill aún no corrió o el registro es previo a Fase 1,
-        # buscar por documento directo prefiriendo ESTANDAR.
-        ciudadano = Ciudadano.objects.filter(
-            tipo_documento=Ciudadano.DOCUMENTO_DNI,
-            documento=int(dni_str),
-            tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR,
-        ).first()
-        if ciudadano:
-            return ciudadano
+        # Fallback para registros previos al backfill: busca explícitamente ESTANDAR.
+        # No se retorna ningún ciudadano DNI_NO_VALIDADO_RENAPER ni SIN_DNI: si el
+        # único registro con ese DNI está en revisión, se devuelve None para que
+        # RENAPER pueda consultarse al cargar un nuevo ciudadano.
         return Ciudadano.objects.filter(
             tipo_documento=Ciudadano.DOCUMENTO_DNI,
             documento=int(dni_str),
+            tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR,
         ).first()
 
     @staticmethod
@@ -1437,6 +1435,9 @@ class ComedorService:
                 )
 
             return True, "Persona añadida correctamente a la nómina."
+        except IntegrityError:
+            logger.exception("Error de integridad al agregar ciudadano a la nómina.")
+            return False, MENSAJE_ERROR_AGREGAR_NOMINA
         except Exception as e:
             return False, f"Ocurrió un error al agregar a la nómina: {e}"
 
@@ -1456,7 +1457,13 @@ class ComedorService:
         """
         try:
             with transaction.atomic():
-                ciudadano = Ciudadano.objects.create(**ciudadano_data)
+                try:
+                    ciudadano = Ciudadano.objects.create(**ciudadano_data)
+                except IntegrityError:
+                    return (
+                        False,
+                        "Ya existe un ciudadano estandar con este tipo y numero de documento.",
+                    )
 
                 ok, msg = ComedorService.agregar_ciudadano_a_nomina(
                     ciudadano_id=ciudadano.id,
@@ -1470,10 +1477,10 @@ class ComedorService:
                     ciudadano.delete()
                 return ok, msg
         except IntegrityError:
-            return (
-                False,
-                "Ya existe un ciudadano estandar con este tipo y numero de documento.",
+            logger.exception(
+                "Error de integridad al crear ciudadano y agregarlo a la nómina."
             )
+            return False, MENSAJE_ERROR_AGREGAR_NOMINA
 
     @staticmethod
     def importar_nomina_ultimo_convenio(admision_id, comedor_id):

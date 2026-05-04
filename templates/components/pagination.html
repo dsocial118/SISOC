@@ -1,5 +1,5 @@
 <!-- Componente Pagination -->
-<!-- Uso: include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj page_range=page_range query=query page_param='page' prev_text='Anterior' next_text='Siguiente' -->
+{% load pagination_tags %}
 {% with page_param_name=page_param|default:'page' %}
     <div class="mt-2">
         {% if is_paginated %}
@@ -30,25 +30,15 @@
                         {% endif %}
                     {% endfor %}
                 {% else %}
-                    {% for i in page_obj.paginator.page_range %}
-                        {% if page_obj.number == i %}
-                            <li class="page-item active">
-                                <a href="?{% if query %}busqueda={{ query|urlencode }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
-                                   class="page-link">{{ i }}</a>
-                            </li>
-                        {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
-                            <li class="page-item">
-                                <a href="?{% if query %}busqueda={{ query|urlencode }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
-                                   class="page-link">{{ i }}</a>
-                            </li>
-                        {% elif i == 1 or i == page_obj.paginator.num_pages %}
-                            <li class="page-item">
-                                <a href="?{% if query %}busqueda={{ query|urlencode }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
-                                   class="page-link">{{ i }}</a>
-                            </li>
-                        {% elif i == page_obj.number|add:'-6' or i == page_obj.number|add:'6' %}
+                    {% for i in page_obj|compact_page_range %}
+                        {% if i == '...' or i == '…' %}
                             <li class="page-item disabled">
                                 <a href="#" class="page-link">...</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                                <a href="?{% if query %}busqueda={{ query|urlencode }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
+                                   class="page-link">{{ i }}</a>
                             </li>
                         {% endif %}
                     {% endfor %}

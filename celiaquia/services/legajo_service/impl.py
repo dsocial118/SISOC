@@ -86,7 +86,10 @@ class LegajoService:
             return set()
 
         try:
-            return FamiliaService.obtener_ids_responsables(ciudadanos_ids)
+            ciudadanos_ids_set = set(ciudadanos_ids)
+            return FamiliaService.obtener_ids_responsables(
+                ciudadanos_ids_set, hijos_ids=ciudadanos_ids_set
+            )
         except Exception as exc:
             logger.warning(
                 "No se pudo determinar responsables en expediente %s: %s",

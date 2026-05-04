@@ -79,6 +79,35 @@ Filtros:
 - `documento`
 - `estado`
 
+### `GET /ciudadanos/voucher-estado/`
+
+Consulta el estado general del voucher de un ciudadano por DNI, sin requerir una comision concreta.
+
+Query:
+
+- `documento`: DNI numerico del ciudadano.
+
+Respuesta funcional:
+
+- `Disponible`: tiene voucher usable y no tiene inscripciones VAT activas.
+- `En uso`: tiene voucher usable y tiene alguna inscripcion VAT activa.
+- `No disponible`: no existe ciudadano para el DNI o no tiene voucher usable.
+
+Se considera voucher usable a un voucher `activo`, no vencido y con saldo disponible.
+Se consideran inscripciones activas los estados `pre_inscripta`, `en_espera`, `inscripta`
+y `validada_presencial`.
+
+Ejemplo:
+
+```json
+{
+  "documento": "30111222",
+  "estado": "Disponible",
+  "tiene_voucher": true,
+  "esta_inscripto": false
+}
+```
+
 ### `POST /inscripciones/`
 
 Crea una inscripción VAT y, si la oferta usa voucher, descuenta el costo configurado.
@@ -133,6 +162,7 @@ Payloads admitidos:
 Los endpoints quedan documentados en `/api/docs/` bajo los tags:
 
 - `VAT Web - Centros`
+- `VAT Web - Ciudadanos`
 - `VAT Web - Títulos`
 - `VAT Web - Cursos`
 - `VAT Web - Inscripciones`
