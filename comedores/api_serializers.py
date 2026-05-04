@@ -975,7 +975,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
         }
 
     @staticmethod
-    def _get_domicilio_completo_mobile(obj):
+    def _build_domicilio_convenio(obj):
         domicilio_partes = []
         if obj.calle:
             calle_numero = obj.calle
@@ -993,7 +993,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
         return ", ".join(domicilio_partes) if domicilio_partes else None
 
     @staticmethod
-    def _get_estado_general_mobile(obj):
+    def _build_estado_convenio(obj):
         ultimo_estado = getattr(obj, "ultimo_estado", None)
         if not ultimo_estado or not ultimo_estado.estado_general:
             return None, None
@@ -1006,12 +1006,12 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             estado_proceso.estado if estado_proceso else None,
         )
 
-    def _get_datos_convenio_pnud_mobile(self, obj):
+    def _get_datos_convenio_pnud(self, obj):
         datos_pnud = getattr(obj, "datos_convenio_pnud", None)
         if datos_pnud is None:
             datos_pnud = ComedorDatosConvenioPnud.objects.filter(comedor=obj).first()
 
-        estado_general, subestado = self._get_estado_general_mobile(obj)
+        estado_general, subestado = self._build_estado_convenio(obj)
         return {
             "tipo": "pnud",
             "organizacion_solicitante": (
@@ -1026,7 +1026,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             "subestado": subestado,
             "nombre_espacio_comunitario": obj.nombre,
             "id_externo": obj.id_externo,
-            "domicilio_completo_espacio": self._get_domicilio_completo_mobile(obj),
+            "domicilio_completo_espacio": self._build_domicilio_convenio(obj),
             "monto_total_convenio_por_espacio": (
                 datos_pnud.monto_total_convenio_por_espacio if datos_pnud else None
             ),
@@ -1040,16 +1040,13 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
         }
 
     @staticmethod
-    def _get_datos_convenio_alimentar_mobile(obj):
+    def _get_datos_convenio_alimentar(obj):
         presupuestos = ComedorService.get_presupuestos(obj.id)
-        count_beneficiarios = presupuestos[0]
-        monto_prestacion_mensual = presupuestos[5]
-
         return {
             "tipo": "alimentar_comunidad",
             "vigencia_convenio_meses": 6,
-            "prestaciones_gescom_total_mensual": count_beneficiarios,
-            "monto_total_convenio": monto_prestacion_mensual,
+            "prestaciones_gescom_total_mensual": presupuestos[0],
+            "monto_total_convenio": presupuestos[5],
         }
 
     def get_datos_convenio_mobile(self, obj):
@@ -1057,12 +1054,14 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             getattr(getattr(obj, "programa", None), "nombre", "") or ""
         ).strip()
         programa_nombre_lc = programa_nombre.lower()
+        is_pnud = obj.programa_id in (3, 4) or "pnud" in programa_nombre_lc
+        is_alimentar = programa_nombre_lc == "alimentar comunidad"
 
-        if obj.programa_id in (3, 4) or "pnud" in programa_nombre_lc:
-            return self._get_datos_convenio_pnud_mobile(obj)
+        if is_pnud:
+            return self._get_datos_convenio_pnud(obj)
 
-        if programa_nombre_lc == "alimentar comunidad":
-            return self._get_datos_convenio_alimentar_mobile(obj)
+        if is_alimentar:
+            return self._get_datos_convenio_alimentar(obj)
 
         return {"tipo": "otro"}
 

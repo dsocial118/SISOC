@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.test import RequestFactory
 from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
@@ -120,6 +121,49 @@ def test_form_nomina_resuelve_geografia_inicial_desde_texto():
     assert form.fields["provincia_domicilio"].initial == provincia
     assert form.fields["municipio_domicilio"].initial == municipio
     assert form.fields["localidad_domicilio"].initial == localidad
+
+
+@pytest.mark.django_db
+def test_create_view_precarga_fecha_renaper_desde_contrato_servicio(mocker):
+    user = User.objects.create_superuser(
+        username="super-cdi-renaper",
+        email="super-cdi-renaper@example.com",
+        password="test1234",
+    )
+    centro = CentroDeInfancia.objects.create(nombre="CDI RENAPER")
+    request = RequestFactory().get(
+        reverse("centrodeinfancia_nomina_crear", kwargs={"pk": centro.pk}),
+        {"query": "30111222"},
+    )
+    request.user = user
+    mock_obtener = mocker.patch(
+        "centrodeinfancia.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        return_value={
+            "success": True,
+            "data": {
+                "documento": 30111222,
+                "apellido": "Lopez",
+                "nombre": "Ana",
+                "sexo": "Femenino",
+            },
+            "datos_api": {
+                "fechaNacimiento": "2018-05-10",
+            },
+        },
+    )
+
+    view = NominaCentroInfanciaCreateView()
+    view.setup(request, pk=centro.pk)
+    view.object = None
+    context = view.get_context_data()
+    initial = context["form"].initial
+
+    assert initial["dni"] == 30111222
+    assert initial["apellido"] == "Lopez"
+    assert initial["nombre"] == "Ana"
+    assert initial["fecha_nacimiento"] == date(2018, 5, 10)
+    assert context["renaper_precarga"] is True
+    mock_obtener.assert_called_once_with("30111222")
 
 
 @pytest.mark.django_db

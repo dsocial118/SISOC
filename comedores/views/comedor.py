@@ -803,21 +803,21 @@ def _build_domicilio_completo(comedor: Comedor) -> str:
     partes = []
     calle = getattr(comedor, "calle", None)
     numero = getattr(comedor, "numero", None)
-    barrio = getattr(comedor, "barrio", None)
-    localidad = getattr(comedor, "localidad", None)
-    municipio = getattr(comedor, "municipio", None)
-    provincia = getattr(comedor, "provincia", None)
     if calle:
         calle_numero = calle
         if numero:
             calle_numero = f"{calle_numero} {numero}"
         partes.append(calle_numero)
+    barrio = getattr(comedor, "barrio", None)
     if barrio:
         partes.append(barrio)
+    localidad = getattr(comedor, "localidad", None)
     if localidad:
         partes.append(localidad.nombre)
+    municipio = getattr(comedor, "municipio", None)
     if municipio:
         partes.append(municipio.nombre)
+    provincia = getattr(comedor, "provincia", None)
     if provincia:
         partes.append(provincia.nombre)
     return ", ".join(partes) if partes else "Sin información"
