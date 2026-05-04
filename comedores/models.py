@@ -464,6 +464,41 @@ class AuditComedorPrograma(models.Model):
         return f"{self.comedor.nombre}: {from_programa} -> {to_programa}"
 
 
+class ComedorDatosConvenioPnud(models.Model):
+    comedor = models.OneToOneField(
+        Comedor,
+        on_delete=models.CASCADE,
+        related_name="datos_convenio_pnud",
+    )
+    monto_total_conveniado = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    nro_convenio = models.CharField(max_length=120, null=True, blank=True)
+    monto_total_convenio_por_espacio = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    prestaciones_financiadas_mensuales = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
+    personas_conveniadas = models.PositiveIntegerField(null=True, blank=True)
+    cantidad_modulos = models.PositiveIntegerField(null=True, blank=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Datos del Convenio PNUD"
+        verbose_name_plural = "Datos del Convenio PNUD"
+
+    def __str__(self):
+        return f"Convenio PNUD - {self.comedor.nombre}"
+
+
 class Nomina(SoftDeleteModelMixin, models.Model):
     ESTADO_ACTIVO = "activo"
     ESTADO_ESPERA = "espera"
@@ -833,10 +868,22 @@ class AuditColaboradorEspacio(models.Model):
 
 
 class ImagenComedor(models.Model):
+    ORIGEN_WEB = "web"
+    ORIGEN_MOBILE = "mobile"
+    ORIGEN_CHOICES = (
+        (ORIGEN_WEB, "Web"),
+        (ORIGEN_MOBILE, "Mobile"),
+    )
+
     comedor = models.ForeignKey(
         Comedor, on_delete=models.CASCADE, related_name="imagenes"
     )
     imagen = models.ImageField(upload_to="comedor/")
+    origen = models.CharField(
+        max_length=10,
+        choices=ORIGEN_CHOICES,
+        default=ORIGEN_WEB,
+    )
 
     def __str__(self):
         return f"Imagen de {self.comedor.nombre}"
