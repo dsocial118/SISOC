@@ -3,6 +3,8 @@ from django.core.exceptions import ValidationError
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch, Q
+from django.db import connection
+from django.db.utils import OperationalError, ProgrammingError
 from django.http import Http404
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
@@ -35,6 +37,7 @@ from pwa.models import (
     ActividadEspacioPWA,
     CatalogoActividadPWA,
     InscriptoActividadEspacioPWA,
+    NominaObservacionPWA,
     RegistroAsistenciaNominaPWA,
 )
 from pwa.services.actividades_service import (
@@ -598,10 +601,19 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         except ObjectDoesNotExist:
             return None
 
+    def _has_nomina_observaciones_table(self) -> bool:
+        try:
+            return (
+                NominaObservacionPWA._meta.db_table
+                in connection.introspection.table_names()
+            )
+        except (OperationalError, ProgrammingError):
+            return False
+
     def _base_queryset(self):
         comedor_id = self.kwargs["comedor_id"]
         periodo_actual = get_periodo_mensual_actual()
-        return (
+        queryset = (
             Nomina.objects.filter(
                 Q(admision__comedor_id=comedor_id)
                 | Q(comedor_id=comedor_id, admision__isnull=True),
@@ -626,10 +638,23 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
                     .select_related("tomado_por")
                     .order_by("-fecha_toma_asistencia", "-id"),
                     to_attr="asistencia_mes_actual_pwa",
-                )
+                ),
             )
             .order_by("ciudadano__apellido", "ciudadano__nombre", "id")
         )
+        if self._has_nomina_observaciones_table():
+            queryset = queryset.prefetch_related(
+                Prefetch(
+                    "observaciones_pwa",
+                    queryset=NominaObservacionPWA.objects.select_related(
+                        "creada_por"
+                    ).order_by(
+                        "-fecha_creacion",
+                        "-id",
+                    ),
+                )
+            )
+        return queryset
 
     def _detail_queryset(self):
         return self._base_queryset().prefetch_related(
