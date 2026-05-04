@@ -250,6 +250,74 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Crear primer seguimiento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "applicationAccessKey",
+                "value": "{{gestionarApiKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"Action\": \"Add\",\n    \"Properties\": {\n        \"Locale\": \"es-ES\"\n    },\n    \"Rows\": [\n        {\n            \"ID_Seguimiento1\": \"1\",\n            \"Id_SISOC\": \"1\",\n            \"Id_Relevamiento\": \"25\",\n            \"CodPNUD\": \"PNUD-001\",\n            \"tecnico\": \"uid-territorial\",\n            \"ESTADO\": \"Asignado\"\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{gestionarPrimerSeguimientoAction}}",
+              "host": [
+                "{{gestionarPrimerSeguimientoAction}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar primer seguimiento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "applicationAccessKey",
+                "value": "{{gestionarApiKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"Action\": \"Delete\",\n    \"Properties\": {\n        \"Locale\": \"es-ES\"\n    },\n    \"Rows\": [\n        {\n            \"ID_Seguimiento1\": \"1\"\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{gestionarPrimerSeguimientoAction}}",
+              "host": [
+                "{{gestionarPrimerSeguimientoAction}}"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },

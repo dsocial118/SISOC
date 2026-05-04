@@ -7,7 +7,7 @@ from django.conf import settings
 from django.db import close_old_connections
 from django.utils import timezone
 
-from relevamientos.models import Relevamiento
+from relevamientos.models import PrimerSeguimiento, Relevamiento
 
 
 logger = logging.getLogger("django")
@@ -57,6 +57,23 @@ def build_relevamiento_payload(relevamiento):
                 ),
                 "Fecha de visita": fecha,
                 "Id_Comedor": f"{relevamiento.comedor_id}",
+            }
+        ],
+    }
+
+
+def build_primer_seguimiento_payload(seguimiento):
+    return {
+        "Action": "Add",
+        "Properties": {"Locale": "es-ES"},
+        "Rows": [
+            {
+                "ID_Seguimiento1": f"{seguimiento.id}",
+                "Id_SISOC": f"{seguimiento.id}",
+                "Id_Relevamiento": f"{seguimiento.id_relevamiento_id}",
+                "CodPNUD": seguimiento.cod_pnud or "",
+                "tecnico": seguimiento.tecnico or "",
+                "ESTADO": seguimiento.estado or PrimerSeguimiento.ESTADO_ASIGNADO,
             }
         ],
     }
@@ -176,6 +193,117 @@ class AsyncRemoveRelevamientoToGestionar(threading.Thread):
             logger.exception(
                 "Error al sincronizar RELEVAMIENTO con GESTIONAR",
                 extra={"relevamiento_pk": self.relevamiento_id, "body": data},
+            )
+        finally:
+            close_old_connections()
+
+
+class AsyncSendPrimerSeguimientoToGestionar(threading.Thread):
+    """Hilo para enviar primer seguimiento a GESTIONAR asincronamente"""
+
+    def __init__(self, seguimiento_id, payload=None):
+        super().__init__()
+        self.seguimiento_id = seguimiento_id
+        self.payload = payload
+
+    def start(self):  # type: ignore[override]
+        if not _is_gestionar_integration_enabled():
+            logger.info(
+                "Integracion con GESTIONAR deshabilitada: "
+                "se omite sync de primer seguimiento"
+            )
+            return None
+        if _run_async_threads():
+            _EXECUTOR.submit(self.run)
+            return None
+        self.run()
+        return None
+
+    def run(self):
+        if not _is_gestionar_integration_enabled():
+            return
+        close_old_connections()
+        data = self.payload
+        try:
+            if data is None:
+                seguimiento = PrimerSeguimiento.objects.select_related(
+                    "id_relevamiento__comedor"
+                ).get(id=self.seguimiento_id)
+                data = build_primer_seguimiento_payload(seguimiento)
+
+            headers = {
+                "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+            }
+
+            response = requests.post(
+                os.getenv("GESTIONAR_API_CREAR_PRIMER_SEGUIMIENTO"),
+                json=data,
+                headers=headers,
+                timeout=TIMEOUT,
+            )
+            response.raise_for_status()
+            logger.info(
+                "PRIMER SEGUIMIENTO %s sincronizado con GESTIONAR con exito",
+                self.seguimiento_id,
+            )
+        except Exception:
+            logger.exception(
+                "Error al sincronizar PRIMER SEGUIMIENTO con GESTIONAR",
+                extra={"primer_seguimiento_pk": self.seguimiento_id, "body": data},
+            )
+        finally:
+            close_old_connections()
+
+
+class AsyncRemovePrimerSeguimientoToGestionar(threading.Thread):
+    """Hilo para eliminar primer seguimiento de GESTIONAR asincronamente"""
+
+    def __init__(self, seguimiento_id):
+        super().__init__()
+        self.seguimiento_id = seguimiento_id
+
+    def start(self):  # type: ignore[override]
+        if not _is_gestionar_integration_enabled():
+            logger.info(
+                "Integracion con GESTIONAR deshabilitada: "
+                "se omite baja de primer seguimiento"
+            )
+            return None
+        if _run_async_threads():
+            _EXECUTOR.submit(self.run)
+            return None
+        self.run()
+        return None
+
+    def run(self):
+        if not _is_gestionar_integration_enabled():
+            return
+        close_old_connections()
+        data = {
+            "Action": "Delete",
+            "Properties": {"Locale": "es-ES"},
+            "Rows": [{"ID_Seguimiento1": f"{self.seguimiento_id}"}],
+        }
+        headers = {
+            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+        }
+
+        try:
+            response = requests.post(
+                os.getenv("GESTIONAR_API_BORRAR_PRIMER_SEGUIMIENTO"),
+                json=data,
+                headers=headers,
+                timeout=TIMEOUT,
+            )
+            response.raise_for_status()
+            logger.info(
+                "PRIMER SEGUIMIENTO %s eliminado en GESTIONAR con exito",
+                self.seguimiento_id,
+            )
+        except Exception:
+            logger.exception(
+                "Error al eliminar PRIMER SEGUIMIENTO en GESTIONAR",
+                extra={"primer_seguimiento_pk": self.seguimiento_id, "body": data},
             )
         finally:
             close_old_connections()
