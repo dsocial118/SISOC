@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 from django import forms
 from datetime import datetime, date
 from django.utils.text import slugify

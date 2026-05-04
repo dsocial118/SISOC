@@ -28,8 +28,15 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from admisiones.models.admisiones import Admision, EstadoAdmision, InformeTecnico
 from comedores.forms.comedor_form import ComedorForm, ReferenteForm
+from comedores.forms.convenio_pnud_form import ComedorDatosConvenioPnudForm
 from comedores.forms.observacion_form import ObservacionForm
-from comedores.models import Comedor, HistorialValidacion, ImagenComedor, Observacion
+from comedores.models import (
+    Comedor,
+    ComedorDatosConvenioPnud,
+    HistorialValidacion,
+    ImagenComedor,
+    Observacion,
+)
 from comedores.services.comedor_service import ComedorService
 from comedores.services.capacitaciones_certificados_service import (
     is_alimentar_comunidad_program,
@@ -792,6 +799,30 @@ def _build_selected_admision_context(relaciones_data, request_get):
     }
 
 
+def _build_domicilio_completo(comedor: Comedor) -> str:
+    partes = []
+    calle = getattr(comedor, "calle", None)
+    numero = getattr(comedor, "numero", None)
+    if calle:
+        calle_numero = calle
+        if numero:
+            calle_numero = f"{calle_numero} {numero}"
+        partes.append(calle_numero)
+    barrio = getattr(comedor, "barrio", None)
+    if barrio:
+        partes.append(barrio)
+    localidad = getattr(comedor, "localidad", None)
+    if localidad:
+        partes.append(localidad.nombre)
+    municipio = getattr(comedor, "municipio", None)
+    if municipio:
+        partes.append(municipio.nombre)
+    provincia = getattr(comedor, "provincia", None)
+    if provincia:
+        partes.append(provincia.nombre)
+    return ", ".join(partes) if partes else "Sin información"
+
+
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class ComedorListView(LoginRequiredMixin, ListView):
     model = Comedor
@@ -1292,6 +1323,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     if is_alimentar_comunidad_program(self.object)
                     else []
                 ),
+                "es_programa_pnud": getattr(self.object, "programa_id", None) in (3, 4),
+                "datos_convenio_pnud": getattr(
+                    self.object, "datos_convenio_pnud", None
+                ),
+                "domicilio_completo_comedor": _build_domicilio_completo(self.object),
                 **responsables_context,
             }
         )
@@ -1299,6 +1335,53 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             selected_admision
         )
         context.update(timeline_selected)
+        return context
+
+
+class ComedorDatosConvenioPnudUpdateView(LoginRequiredMixin, UpdateView):
+    model = ComedorDatosConvenioPnud
+    form_class = ComedorDatosConvenioPnudForm
+    template_name = "comedor/comedor_convenio_pnud_form.html"
+    context_object_name = "datos_convenio_pnud"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.comedor = ComedorService.get_comedor_detail_object(
+            self.kwargs["pk"], user=request.user
+        )
+        if self.comedor.programa_id not in (3, 4):
+            messages.error(request, "Esta opción solo aplica para comedores PNUD.")
+            return redirect("comedor_detalle", pk=self.comedor.pk)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self, queryset=None):
+        obj, _ = ComedorDatosConvenioPnud.objects.get_or_create(comedor=self.comedor)
+        return obj
+
+    def get_success_url(self):
+        return reverse("comedor_detalle", kwargs={"pk": self.comedor.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comedor"] = self.comedor
+        context["prefill_data"] = {
+            "organizacion_solicitante": getattr(
+                getattr(self.comedor, "organizacion", None), "nombre", None
+            )
+            or "Sin información",
+            "codigo_proyecto": self.comedor.codigo_de_proyecto or "Sin información",
+            "estado_general": self.comedor.get_estado_general_display()
+            or "Sin información",
+            "subestado": (
+                self.comedor.ultimo_estado.estado_general.estado_proceso.estado
+                if self.comedor.ultimo_estado
+                and self.comedor.ultimo_estado.estado_general
+                and self.comedor.ultimo_estado.estado_general.estado_proceso
+                else "Sin información"
+            ),
+            "nombre_espacio": self.comedor.nombre or "Sin información",
+            "id_externo": self.comedor.id_externo or "Sin información",
+            "domicilio_completo": _build_domicilio_completo(self.comedor),
+        }
         return context
 
 
