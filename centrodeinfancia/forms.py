@@ -40,6 +40,7 @@ __all__ = [
     "NominaCentroInfanciaCreateForm",
     "IntervencionCentroInfanciaForm",
     "TrabajadorForm",
+    "ObservacionCentroInfanciaForm",
     "FormularioCDIForm",
     "construir_filas_iniciales_fijas",
     "construir_clase_formset_articulacion",
