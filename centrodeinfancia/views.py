@@ -1084,10 +1084,10 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         nomina.save()
         return True
 
-        def get_queryset(self):
-            return _nomina_cdi_queryset_scoped(self.request.user).filter(
-                centro_id=self.kwargs["pk"]
-            )
+    def get_queryset(self):
+        return _nomina_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
 
     def get_success_url(self):
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})

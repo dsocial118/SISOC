@@ -3,12 +3,15 @@
 from contextlib import nullcontext
 from datetime import date
 from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.http import QueryDict
 from django.urls import reverse
 
 from ciudadanos import views as module
+from ciudadanos import views_export as export_module
 
 
 class _ExpedientesList(list):
@@ -88,6 +91,26 @@ def test_ciudadanos_list_view_busqueda_simple_no_aplica_revision_implicita(mocke
     assert result == qs
     prefix_mock.assert_called_once_with("12345678")
     qs.filter.assert_called_once_with(prefix_filter)
+
+
+def test_ciudadanos_export_view_respeta_default_ui_con_ordenamiento():
+    qs = Mock()
+    qs.filter.return_value = qs
+    qs.order_by.return_value = qs
+    view = export_module.CiudadanosExportView()
+    view.request = SimpleNamespace(GET=QueryDict("sort=apellido&direction=desc"))
+
+    with (
+        patch("ciudadanos.forms.get_cached_provincia_filter_choices", return_value=[]),
+        patch(
+            "ciudadanos.views_export.Ciudadano.objects.select_related", return_value=qs
+        ),
+    ):
+        result = view.get_queryset()
+
+    assert result == qs
+    qs.filter.assert_called_once_with(requiere_revision_manual=False)
+    qs.order_by.assert_called_once_with("-apellido")
 
 
 def test_apply_ciudadanos_filters_usa_documento_prefix_para_q_numerico(mocker):
