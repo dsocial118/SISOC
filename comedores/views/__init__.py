@@ -1,5 +1,6 @@
 from .comedor import (
     ComedorCreateView,
+    ComedorDatosConvenioPnudUpdateView,
     ComedorDeleteView,
     ComedorDetailView,
     ComedorListView,
@@ -38,6 +39,7 @@ __all__ = [
     "ColaboradorEspacioDeleteView",
     "ColaboradorEspacioUpdateView",
     "ComedorCreateView",
+    "ComedorDatosConvenioPnudUpdateView",
     "ComedorDeleteView",
     "ComedorDetailView",
     "ComedorListView",
