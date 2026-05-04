@@ -4,6 +4,7 @@
 ## Actualizaciones
 
 - [sin-area] Release mobile a main sin arrastrar development. (PR #1660)
+- [sin-area] Update api_serializers.py. (PR #1669)
 <!-- AUTO-GENERATED RELEASE END: 2026-05-06 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-04-24 -->
