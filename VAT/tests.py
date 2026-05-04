@@ -1548,6 +1548,118 @@ def test_institucion_ubicacion_update_renderiza_con_volver_al_detalle_del_centro
 
 @pytest.mark.django_db
 @override_settings(ROOT_URLCONF="config.urls")
+def test_centro_detail_modal_ubicacion_expone_localidades_habilitadas(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-ubicacion-modal",
+        email="admin-ubicacion-modal@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="Centro Ubicaciones Modal",
+        codigo="CFP-UBI-MODAL",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8 N° 456",
+        telefono="221-4100000",
+        celular="221-5100000",
+        correo="centro-ubicaciones-modal@vat.test",
+        nombre_referente="Luisa",
+        apellido_referente="Martinez",
+        telefono_referente="221-6100000",
+        correo_referente="luisa-modal@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+
+    soup = BeautifulSoup(response.content, "html.parser")
+    modal_form = soup.find("form", {"id": "formUbicacion"})
+    centro_select = modal_form.find("select", {"name": "centro"})
+    localidad_select = modal_form.find("select", {"name": "localidad"})
+
+    assert response.status_code == 200
+    assert centro_select["id"] == "id_centro_ubicacion"
+    assert localidad_select["id"] == "id_localidad_ubicacion"
+    assert "disabled" not in localidad_select.attrs
+    assert localidad_select["data-dropdown-parent"] == "#modalUbicacion .modal-body"
+    assert localidad_select.find("option", value=str(localidad.pk)) is not None
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_centro_detail_modal_ubicacion_fallback_a_provincia_sin_localidades_municipio(
+    client,
+):
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    municipio_sin_localidades = Municipio.objects.create(
+        nombre="Municipio sin localidades", provincia=provincia
+    )
+    municipio_con_localidad = Municipio.objects.create(
+        nombre="Municipio con localidad", provincia=provincia
+    )
+    localidad_provincial = Localidad.objects.create(
+        nombre="Localidad provincial", municipio=municipio_con_localidad
+    )
+    user = User.objects.create_superuser(
+        username="admin-ubicacion-modal-fallback",
+        email="admin-ubicacion-modal-fallback@vat.test",
+        password="test1234",
+    )
+    centro = Centro.objects.create(
+        nombre="Centro Ubicaciones Fallback",
+        codigo="CFP-UBI-FALLBACK",
+        provincia=provincia,
+        municipio=municipio_sin_localidades,
+        localidad=localidad_provincial,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8 N° 456",
+        telefono="221-4100000",
+        celular="221-5100000",
+        correo="centro-ubicaciones-fallback@vat.test",
+        nombre_referente="Luisa",
+        apellido_referente="Martinez",
+        telefono_referente="221-6100000",
+        correo_referente="luisa-fallback@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+    ajax_response = client.get(
+        reverse("vat_ajax_localidades_por_centro"), {"centro_id": str(centro.pk)}
+    )
+
+    soup = BeautifulSoup(response.content, "html.parser")
+    modal_form = soup.find("form", {"id": "formUbicacion"})
+    localidad_select = modal_form.find("select", {"name": "localidad"})
+
+    assert response.status_code == 200
+    assert localidad_select.find("option", value=str(localidad_provincial.pk))
+    assert ajax_response.json()["localidades"] == [
+        {"id": localidad_provincial.pk, "nombre": localidad_provincial.nombre}
+    ]
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
 def test_institucion_ubicacion_update_redirige_al_detalle_del_centro(
     client, vat_geo_data
 ):
