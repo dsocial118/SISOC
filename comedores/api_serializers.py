@@ -974,6 +974,87 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             "sections": self._build_relevamiento_mobile_sections(relevamiento, items),
         }
 
+    @staticmethod
+    def _build_domicilio_convenio(obj):
+        domicilio_partes = []
+        if obj.calle:
+            calle_numero = obj.calle
+            if obj.numero:
+                calle_numero = f"{calle_numero} {obj.numero}"
+            domicilio_partes.append(calle_numero)
+        if obj.barrio:
+            domicilio_partes.append(obj.barrio)
+        if obj.localidad:
+            domicilio_partes.append(obj.localidad.nombre)
+        if obj.municipio:
+            domicilio_partes.append(obj.municipio.nombre)
+        if obj.provincia:
+            domicilio_partes.append(obj.provincia.nombre)
+        return ", ".join(domicilio_partes) if domicilio_partes else None
+
+    @staticmethod
+    def _build_estado_convenio(obj):
+        ultimo_estado = getattr(obj, "ultimo_estado", None)
+        if not ultimo_estado or not ultimo_estado.estado_general:
+            return None, None
+
+        estado_general = ultimo_estado.estado_general
+        estado_actividad = estado_general.estado_actividad
+        estado_proceso = estado_general.estado_proceso
+        return (
+            estado_actividad.estado if estado_actividad else None,
+            estado_proceso.estado if estado_proceso else None,
+        )
+
+    def _get_datos_convenio_pnud(self, obj):
+        datos_pnud = getattr(obj, "datos_convenio_pnud", None)
+        if datos_pnud is None:
+            datos_pnud = ComedorDatosConvenioPnud.objects.filter(comedor=obj).first()
+
+        estado_general, subestado = self._build_estado_convenio(obj)
+        return {
+            "tipo": "pnud",
+            "organizacion_solicitante": (
+                obj.organizacion.nombre if obj.organizacion_id else None
+            ),
+            "codigo_proyecto": obj.codigo_de_proyecto,
+            "monto_total_conveniado": (
+                datos_pnud.monto_total_conveniado if datos_pnud else None
+            ),
+            "nro_convenio": datos_pnud.nro_convenio if datos_pnud else None,
+            "estado_general": estado_general,
+            "subestado": subestado,
+            "nombre_espacio_comunitario": obj.nombre,
+            "id_externo": obj.id_externo,
+            "domicilio_completo_espacio": self._build_domicilio_convenio(obj),
+            "monto_total_convenio_por_espacio": (
+                datos_pnud.monto_total_convenio_por_espacio if datos_pnud else None
+            ),
+            "prestaciones_financiadas_mensuales": (
+                datos_pnud.prestaciones_financiadas_mensuales if datos_pnud else None
+            ),
+            "personas_conveniadas": (
+                datos_pnud.personas_conveniadas if datos_pnud else None
+            ),
+            "cantidad_modulos": datos_pnud.cantidad_modulos if datos_pnud else None,
+        }
+
+    @staticmethod
+    def _get_datos_convenio_alimentar(obj):
+        presupuestos = ComedorService.get_presupuestos(obj.id)
+        prestaciones_mensuales = presupuestos[0]
+        monto_prestacion_mensual = presupuestos[5]
+        return {
+            "tipo": "alimentar_comunidad",
+            "vigencia_convenio_meses": 6,
+            # Campos legados (compatibilidad mobile existente)
+            "prestaciones_gescom_total_mensual": prestaciones_mensuales,
+            "monto_total_convenio": monto_prestacion_mensual,
+            # Campos explícitos alineados con web (acordeón Prestaciones)
+            "prestaciones_mensuales": prestaciones_mensuales,
+            "monto_prestacion_mensual": monto_prestacion_mensual,
+        }
+
     def get_datos_convenio_mobile(self, obj):
         programa_nombre = (
             getattr(getattr(obj, "programa", None), "nombre", "") or ""
@@ -983,89 +1064,10 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
         is_alimentar = programa_nombre_lc == "alimentar comunidad"
 
         if is_pnud:
-            datos_pnud = getattr(obj, "datos_convenio_pnud", None)
-            if datos_pnud is None:
-                datos_pnud = ComedorDatosConvenioPnud.objects.filter(
-                    comedor=obj
-                ).first()
-
-            domicilio_partes = []
-            if obj.calle:
-                calle_numero = obj.calle
-                if obj.numero:
-                    calle_numero = f"{calle_numero} {obj.numero}"
-                domicilio_partes.append(calle_numero)
-            if obj.barrio:
-                domicilio_partes.append(obj.barrio)
-            if obj.localidad:
-                domicilio_partes.append(obj.localidad.nombre)
-            if obj.municipio:
-                domicilio_partes.append(obj.municipio.nombre)
-            if obj.provincia:
-                domicilio_partes.append(obj.provincia.nombre)
-
-            ultimo_estado = getattr(obj, "ultimo_estado", None)
-            estado_general = None
-            subestado = None
-            if ultimo_estado and ultimo_estado.estado_general:
-                estado_general = (
-                    ultimo_estado.estado_general.estado_actividad.estado
-                    if ultimo_estado.estado_general.estado_actividad
-                    else None
-                )
-                subestado = (
-                    ultimo_estado.estado_general.estado_proceso.estado
-                    if ultimo_estado.estado_general.estado_proceso
-                    else None
-                )
-
-            return {
-                "tipo": "pnud",
-                "organizacion_solicitante": (
-                    obj.organizacion.nombre if obj.organizacion_id else None
-                ),
-                "codigo_proyecto": obj.codigo_de_proyecto,
-                "monto_total_conveniado": (
-                    datos_pnud.monto_total_conveniado if datos_pnud else None
-                ),
-                "nro_convenio": datos_pnud.nro_convenio if datos_pnud else None,
-                "estado_general": estado_general,
-                "subestado": subestado,
-                "nombre_espacio_comunitario": obj.nombre,
-                "id_externo": obj.id_externo,
-                "domicilio_completo_espacio": (
-                    ", ".join(domicilio_partes) if domicilio_partes else None
-                ),
-                "monto_total_convenio_por_espacio": (
-                    datos_pnud.monto_total_convenio_por_espacio if datos_pnud else None
-                ),
-                "prestaciones_financiadas_mensuales": (
-                    datos_pnud.prestaciones_financiadas_mensuales
-                    if datos_pnud
-                    else None
-                ),
-                "personas_conveniadas": (
-                    datos_pnud.personas_conveniadas if datos_pnud else None
-                ),
-                "cantidad_modulos": datos_pnud.cantidad_modulos if datos_pnud else None,
-            }
+            return self._get_datos_convenio_pnud(obj)
 
         if is_alimentar:
-            (
-                count_beneficiarios,
-                _valor_cena,
-                _valor_desayuno,
-                _valor_almuerzo,
-                _valor_merienda,
-                monto_prestacion_mensual,
-            ) = ComedorService.get_presupuestos(obj.id)
-
-            return {
-                "tipo": "alimentar_comunidad",
-                "vigencia_convenio_meses": 6,
-                "prestaciones_gescom_total_mensual": count_beneficiarios,
-                "monto_total_convenio": monto_prestacion_mensual,
-            }
+            return self._get_datos_convenio_alimentar(obj)
 
         return {"tipo": "otro"}
 
