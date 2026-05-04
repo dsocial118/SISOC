@@ -802,9 +802,9 @@ def _build_selected_admision_context(relaciones_data, request_get):
 def _build_domicilio_completo(comedor: Comedor) -> str:
     partes = []
     calle = getattr(comedor, "calle", None)
+    numero = getattr(comedor, "numero", None)
     if calle:
         calle_numero = calle
-        numero = getattr(comedor, "numero", None)
         if numero:
             calle_numero = f"{calle_numero} {numero}"
         partes.append(calle_numero)
