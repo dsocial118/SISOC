@@ -6,12 +6,14 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Tuple
 
+# pylint: disable=too-many-locals,too-many-branches,too-many-arguments
+
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from openpyxl import load_workbook
 
 from comedores.models import Comedor, EstadoActividad, EstadoDetalle, EstadoProceso
-from comedores.services.estado_manager import registrar_cambio_estado
+from comedores.services.estado_manager.impl import registrar_cambio_estado
 from importarexpediente.models import ArchivosImportados, RegistroImportado
 
 # Formatos de fecha aceptados
