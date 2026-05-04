@@ -409,7 +409,9 @@ def test_import_xlsx_persists_mes_convenio_and_updates_present_state(
     )
     batch = ArchivosImportados.objects.latest("id")
 
-    resp = client_logged.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+    resp = client_logged.post(
+        reverse("importar_datos", kwargs={"id_archivo": batch.id})
+    )
 
     assert resp.status_code in (302, 200)
     batch.refresh_from_db()
@@ -504,7 +506,9 @@ def test_import_keeps_inactive_absent_program2_as_no_renovacion(
 ):
     estados = _estado_catalog()
     programa = _programa_alimentar()
-    present = Comedor.objects.create(nombre="Comedor Presente Inactivo", programa=programa)
+    present = Comedor.objects.create(
+        nombre="Comedor Presente Inactivo", programa=programa
+    )
     inactive_absent = Comedor.objects.create(
         nombre="Comedor Inactivo Ausente", programa=programa
     )

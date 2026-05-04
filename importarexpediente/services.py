@@ -146,7 +146,9 @@ def parse_import_file(data, filename, delimiter=",", has_header=True):
         raise EmptyImportFileError("El archivo est\u00e1 vac\u00edo.") from exc
 
     if not has_header:
-        raise HeaderlessImportFileError("Archivo sin cabecera no soportado por defecto.")
+        raise HeaderlessImportFileError(
+            "Archivo sin cabecera no soportado por defecto."
+        )
 
     headers = [normalize_header(cell) for cell in first_row]
     mapped_headers = [HEADER_MAP.get(header) for header in headers]
@@ -214,10 +216,7 @@ def parse_int(value):
 
 
 def _column_warning(label, warning):
-    return (
-        f'Error en validaci\u00f3n columna "{label}": '
-        f'Advertencia "{warning}"'
-    )
+    return f'Error en validaci\u00f3n columna "{label}": ' f'Advertencia "{warning}"'
 
 
 def _field_warning(field, warning):
@@ -381,7 +380,9 @@ def _ausencias_consecutivas(comedor_id, previous_batch_ids, presence_by_batch):
     return count
 
 
-def _registrar_estado(comedor, catalogo, actividad_key, proceso_key, detalle_key, usuario):
+def _registrar_estado(
+    comedor, catalogo, actividad_key, proceso_key, detalle_key, usuario
+):
     detalle = catalogo[detalle_key] if detalle_key else None
     registrar_cambio_estado(
         comedor=comedor,
