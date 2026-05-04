@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 from django import forms
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
