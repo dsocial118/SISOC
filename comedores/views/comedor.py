@@ -801,19 +801,25 @@ def _build_selected_admision_context(relaciones_data, request_get):
 
 def _build_domicilio_completo(comedor: Comedor) -> str:
     partes = []
-    if comedor.calle:
-        calle_numero = comedor.calle
-        if comedor.numero:
-            calle_numero = f"{calle_numero} {comedor.numero}"
+    calle = getattr(comedor, "calle", None)
+    numero = getattr(comedor, "numero", None)
+    barrio = getattr(comedor, "barrio", None)
+    localidad = getattr(comedor, "localidad", None)
+    municipio = getattr(comedor, "municipio", None)
+    provincia = getattr(comedor, "provincia", None)
+    if calle:
+        calle_numero = calle
+        if numero:
+            calle_numero = f"{calle_numero} {numero}"
         partes.append(calle_numero)
-    if comedor.barrio:
-        partes.append(comedor.barrio)
-    if comedor.localidad:
-        partes.append(comedor.localidad.nombre)
-    if comedor.municipio:
-        partes.append(comedor.municipio.nombre)
-    if comedor.provincia:
-        partes.append(comedor.provincia.nombre)
+    if barrio:
+        partes.append(barrio)
+    if localidad:
+        partes.append(localidad.nombre)
+    if municipio:
+        partes.append(municipio.nombre)
+    if provincia:
+        partes.append(provincia.nombre)
     return ", ".join(partes) if partes else "Sin información"
 
 
@@ -1317,7 +1323,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     if is_alimentar_comunidad_program(self.object)
                     else []
                 ),
-                "es_programa_pnud": self.object.programa_id in (3, 4),
+                "es_programa_pnud": getattr(self.object, "programa_id", None) in (3, 4),
                 "datos_convenio_pnud": getattr(
                     self.object, "datos_convenio_pnud", None
                 ),
