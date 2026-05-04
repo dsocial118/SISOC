@@ -1,7 +1,8 @@
 # pylint: disable=too-many-lines
 
-from django import forms
 from datetime import datetime, date
+
+from django import forms
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator, RegexValidator
@@ -322,13 +323,13 @@ class CentroDeInfanciaForm(forms.ModelForm):
             raw = raw.strip()
             try:
                 return datetime.strptime(raw, "%d/%m/%Y").date()
-            except Exception:
+            except Exception as exc1:
                 try:
                     return datetime.strptime(raw, "%Y-%m-%d").date()
-                except Exception:
+                except Exception as exc2:
                     raise forms.ValidationError(
                         "Formato inválido para Fecha de inicio. Use dd/mm/aaaa."
-                    )
+                    ) from exc2
         raise forms.ValidationError("Formato inválido para Fecha de inicio.")
 
     def clean_telefono(self):
