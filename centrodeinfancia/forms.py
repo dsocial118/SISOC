@@ -323,10 +323,10 @@ class CentroDeInfanciaForm(forms.ModelForm):
             raw = raw.strip()
             try:
                 return datetime.strptime(raw, "%d/%m/%Y").date()
-            except Exception as exc1:
+            except ValueError:
                 try:
                     return datetime.strptime(raw, "%Y-%m-%d").date()
-                except Exception as exc2:
+                except ValueError as exc2:
                     raise forms.ValidationError(
                         "Formato inválido para Fecha de inicio. Use dd/mm/aaaa."
                     ) from exc2
