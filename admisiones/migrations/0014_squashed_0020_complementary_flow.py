@@ -8,15 +8,6 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    replaces = [
-        ("admisiones", "0014_alter_admision_estado_legales"),
-        ("admisiones", "0015_admision_complementario_solicitado"),
-        ("admisiones", "0016_alter_admision_estado_legales"),
-        ("admisiones", "0017_informecomplementario_estado_and_more"),
-        ("admisiones", "0018_alter_admision_estado_legales_and_more"),
-        ("admisiones", "0019_informetecnico_solicitudes_almuerzo_domingo_and_more"),
-        ("admisiones", "0020_remove_informetecnico_prestaciones_almuerzo_letras_and_more"),
-    ]
 
     dependencies = [
         ("admisiones", "0013_alter_admision_comedor"),
