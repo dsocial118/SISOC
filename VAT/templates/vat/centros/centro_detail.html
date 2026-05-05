@@ -2243,6 +2243,22 @@
         setupModalForm('formIdentificador', 'modalIdentificador');
         setupModalForm('formUbicacion', 'modalUbicacion');
 
+        function setupUbicacionModalSelect2() {
+            var modal = document.getElementById('modalUbicacion');
+            if (!modal || modal.dataset.ubicacionSelect2Bound === '1') return;
+            modal.dataset.ubicacionSelect2Bound = '1';
+            modal.addEventListener('shown.bs.modal', function() {
+                modal.querySelectorAll('select.select2').forEach(function(select) {
+                    if (window.refreshSelect2Element) {
+                        window.refreshSelect2Element(select);
+                    } else if (window.initSelect2Elements) {
+                        window.initSelect2Elements(select);
+                    }
+                });
+            });
+        }
+        setupUbicacionModalSelect2();
+
         var modalComisionCurso = document.getElementById('modalComisionCurso');
         if (modalComisionCurso) {
             var formComisionCurso = document.getElementById('formComisionCurso');

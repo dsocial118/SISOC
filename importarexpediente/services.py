@@ -6,6 +6,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Tuple
 
+# pylint: disable=too-many-locals,too-many-branches,too-many-arguments
+
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from openpyxl import load_workbook
@@ -136,7 +138,9 @@ def _read_xlsx(data):
     return worksheet.iter_rows(values_only=True)
 
 
-def parse_import_file(data, filename, delimiter=",", has_header=True):
+def parse_import_file(  # pylint: disable=too-many-locals
+    data, filename, delimiter=",", has_header=True
+):
     extension = _file_extension(filename)
     file_format = "xlsx" if extension == ".xlsx" else "csv"
 
@@ -229,7 +233,7 @@ def _field_warning(field, warning):
     return _column_warning(FIELD_LABELS.get(field, field), warning)
 
 
-def expediente_pago_from_row(parsed_file, row):
+def expediente_pago_from_row(parsed_file, row):  # pylint: disable=too-many-branches
     kwargs = {}
     specific_errors = []
     for col_idx, cell in enumerate(row):
@@ -423,7 +427,7 @@ def _ausencias_consecutivas(comedor_id, previous_batch_ids, presence_by_batch):
     return count
 
 
-def _registrar_estado(
+def _registrar_estado(  # pylint: disable=too-many-arguments
     comedor, catalogo, actividad_key, proceso_key, detalle_key, usuario
 ):
     detalle = catalogo[detalle_key] if detalle_key else None
@@ -436,7 +440,7 @@ def _registrar_estado(
     )
 
 
-def aplicar_estados_por_lote(batch, usuario=None):
+def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-locals
     registros_actuales = list(
         RegistroImportado.objects.filter(
             exito_importacion__archivo_importado=batch,

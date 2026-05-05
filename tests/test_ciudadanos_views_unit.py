@@ -3,12 +3,15 @@
 from contextlib import nullcontext
 from datetime import date
 from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.http import QueryDict
 from django.urls import reverse
 
 from ciudadanos import views as module
+from ciudadanos import views_export as export_module
 
 
 class _ExpedientesList(list):
@@ -44,6 +47,70 @@ def test_ciudadanos_list_view_get_queryset_filtra(mocker):
     assert result == qs
     order_by_mock.assert_called_once_with("pk")
     assert qs.filter.called
+
+
+def test_ciudadanos_list_view_get_queryset_aplica_revision_finalizada_por_defecto(
+    mocker,
+):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+    mocker.patch("ciudadanos.views.Ciudadano.objects.order_by", return_value=qs)
+    mocker.patch(
+        "ciudadanos.forms.get_cached_provincia_filter_choices",
+        return_value=[],
+    )
+
+    view = module.CiudadanosListView()
+    view.request = SimpleNamespace(GET={})
+
+    result = view.get_queryset()
+
+    assert result == qs
+    qs.filter.assert_called_once_with(requiere_revision_manual=False)
+
+
+def test_ciudadanos_list_view_busqueda_simple_no_aplica_revision_implicita(mocker):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+    prefix_filter = object()
+    mocker.patch("ciudadanos.views.Ciudadano.objects.order_by", return_value=qs)
+    mocker.patch(
+        "ciudadanos.forms.get_cached_provincia_filter_choices",
+        return_value=[],
+    )
+    prefix_mock = mocker.patch(
+        "ciudadanos.views.Ciudadano.documento_prefix_filter",
+        return_value=prefix_filter,
+    )
+
+    view = module.CiudadanosListView()
+    view.request = SimpleNamespace(GET={"q": "12345678", "filters_mode": "ui"})
+
+    result = view.get_queryset()
+
+    assert result == qs
+    prefix_mock.assert_called_once_with("12345678")
+    qs.filter.assert_called_once_with(prefix_filter)
+
+
+def test_ciudadanos_export_view_respeta_default_ui_con_ordenamiento():
+    qs = Mock()
+    qs.filter.return_value = qs
+    qs.order_by.return_value = qs
+    view = export_module.CiudadanosExportView()
+    view.request = SimpleNamespace(GET=QueryDict("sort=apellido&direction=desc"))
+
+    with (
+        patch("ciudadanos.forms.get_cached_provincia_filter_choices", return_value=[]),
+        patch(
+            "ciudadanos.views_export.Ciudadano.objects.select_related", return_value=qs
+        ),
+    ):
+        result = view.get_queryset()
+
+    assert result == qs
+    qs.filter.assert_called_once_with(requiere_revision_manual=False)
+    qs.order_by.assert_called_once_with("-apellido")
 
 
 def test_apply_ciudadanos_filters_usa_documento_prefix_para_q_numerico(mocker):
@@ -82,6 +149,118 @@ def test_apply_ciudadanos_filters_textual_no_toca_documento(mocker):
     assert qs.filter.call_args_list[-1].kwargs == {
         "tipo_registro_identidad": module.Ciudadano.TIPO_REGISTRO_SIN_DNI
     }
+
+
+def test_apply_ciudadanos_filters_estado_revision_pendiente_para_sin_dni(mocker):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+
+    result = module.apply_ciudadanos_filters(
+        qs,
+        {
+            "q": "",
+            "provincia": None,
+            "tipo_registro": module.Ciudadano.TIPO_REGISTRO_SIN_DNI,
+            "estado_revision": module.CiudadanoFiltroForm.ESTADO_REVISION_PENDIENTE,
+        },
+    )
+
+    assert result == qs
+    assert qs.filter.call_args_list[-1].kwargs == {"requiere_revision_manual": True}
+
+
+def test_apply_ciudadanos_filters_estado_revision_se_ignora_fuera_de_tipos_habilitados(
+    mocker,
+):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+
+    result = module.apply_ciudadanos_filters(
+        qs,
+        {
+            "q": "",
+            "provincia": None,
+            "tipo_registro": module.Ciudadano.TIPO_REGISTRO_ESTANDAR,
+            "estado_revision": module.CiudadanoFiltroForm.ESTADO_REVISION_PENDIENTE,
+        },
+    )
+
+    assert result == qs
+    assert qs.filter.call_count == 1
+    assert qs.filter.call_args_list[0].kwargs == {
+        "tipo_registro_identidad": module.Ciudadano.TIPO_REGISTRO_ESTANDAR
+    }
+
+
+def test_apply_ciudadanos_filters_sin_estado_revision_no_filtra(mocker):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+
+    result = module.apply_ciudadanos_filters(
+        qs,
+        {
+            "q": "12345678",
+            "provincia": None,
+            "tipo_registro": "",
+            "estado_revision": None,
+        },
+    )
+
+    assert result == qs
+    assert qs.filter.call_count == 1
+
+
+def test_apply_ciudadanos_filters_si_aplica_revision_finalizada(mocker):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+    prefix_filter = object()
+    mocker.patch(
+        "ciudadanos.views.Ciudadano.documento_prefix_filter",
+        return_value=prefix_filter,
+    )
+
+    result = module.apply_ciudadanos_filters(
+        qs,
+        {
+            "q": "12345678",
+            "provincia": None,
+            "tipo_registro": "",
+            "estado_revision": module.CiudadanoFiltroForm.ESTADO_REVISION_FINALIZADA,
+        },
+    )
+
+    assert result == qs
+    assert qs.filter.call_args_list[-1].kwargs == {"requiere_revision_manual": False}
+
+
+def test_ciudadano_filtro_form_ui_mantiene_finalizada_por_defecto(mocker):
+    mocker.patch(
+        "ciudadanos.forms.get_cached_provincia_filter_choices",
+        return_value=[],
+    )
+
+    form = module.CiudadanoFiltroForm({"q": "12345678", "filters_mode": "ui"})
+
+    assert (
+        form["estado_revision"].value()
+        == module.CiudadanoFiltroForm.ESTADO_REVISION_FINALIZADA
+    )
+    assert form.estado_revision_fue_seleccionado_explicitamente is False
+
+
+def test_ciudadano_filtro_form_api_muestra_todos_si_revision_no_fue_explicito(mocker):
+    mocker.patch(
+        "ciudadanos.forms.get_cached_provincia_filter_choices",
+        return_value=[],
+    )
+
+    form = module.CiudadanoFiltroForm({"q": "12345678", "filters_mode": "api"})
+
+    assert (
+        form["estado_revision"].value()
+        == module.CiudadanoFiltroForm.ESTADO_REVISION_TODOS
+    )
+    assert form.estado_revision_fue_seleccionado_explicitamente is False
 
 
 def test_hydrate_ciudadanos_page_preserva_orden(mocker):
