@@ -91,7 +91,7 @@ class ExpedientePagoForm(forms.ModelForm):
     class Meta:
         model = ExpedientePago
         fields = "__all__"
-        exclude = ["comedor"]
+        exclude = ["comedor", "mes_convenio"]
         widgets = {
             "usuario": forms.Select(attrs={"class": "form-control"}),
             "fecha_pago_al_banco": forms.DateInput(

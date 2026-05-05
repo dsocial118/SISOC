@@ -1548,6 +1548,118 @@ def test_institucion_ubicacion_update_renderiza_con_volver_al_detalle_del_centro
 
 @pytest.mark.django_db
 @override_settings(ROOT_URLCONF="config.urls")
+def test_centro_detail_modal_ubicacion_expone_localidades_habilitadas(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-ubicacion-modal",
+        email="admin-ubicacion-modal@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="Centro Ubicaciones Modal",
+        codigo="CFP-UBI-MODAL",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8 N° 456",
+        telefono="221-4100000",
+        celular="221-5100000",
+        correo="centro-ubicaciones-modal@vat.test",
+        nombre_referente="Luisa",
+        apellido_referente="Martinez",
+        telefono_referente="221-6100000",
+        correo_referente="luisa-modal@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+
+    soup = BeautifulSoup(response.content, "html.parser")
+    modal_form = soup.find("form", {"id": "formUbicacion"})
+    centro_select = modal_form.find("select", {"name": "centro"})
+    localidad_select = modal_form.find("select", {"name": "localidad"})
+
+    assert response.status_code == 200
+    assert centro_select["id"] == "id_centro_ubicacion"
+    assert localidad_select["id"] == "id_localidad_ubicacion"
+    assert "disabled" not in localidad_select.attrs
+    assert localidad_select["data-dropdown-parent"] == "#modalUbicacion .modal-body"
+    assert localidad_select.find("option", value=str(localidad.pk)) is not None
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_centro_detail_modal_ubicacion_fallback_a_provincia_sin_localidades_municipio(
+    client,
+):
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    municipio_sin_localidades = Municipio.objects.create(
+        nombre="Municipio sin localidades", provincia=provincia
+    )
+    municipio_con_localidad = Municipio.objects.create(
+        nombre="Municipio con localidad", provincia=provincia
+    )
+    localidad_provincial = Localidad.objects.create(
+        nombre="Localidad provincial", municipio=municipio_con_localidad
+    )
+    user = User.objects.create_superuser(
+        username="admin-ubicacion-modal-fallback",
+        email="admin-ubicacion-modal-fallback@vat.test",
+        password="test1234",
+    )
+    centro = Centro.objects.create(
+        nombre="Centro Ubicaciones Fallback",
+        codigo="CFP-UBI-FALLBACK",
+        provincia=provincia,
+        municipio=municipio_sin_localidades,
+        localidad=localidad_provincial,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8 N° 456",
+        telefono="221-4100000",
+        celular="221-5100000",
+        correo="centro-ubicaciones-fallback@vat.test",
+        nombre_referente="Luisa",
+        apellido_referente="Martinez",
+        telefono_referente="221-6100000",
+        correo_referente="luisa-fallback@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+    ajax_response = client.get(
+        reverse("vat_ajax_localidades_por_centro"), {"centro_id": str(centro.pk)}
+    )
+
+    soup = BeautifulSoup(response.content, "html.parser")
+    modal_form = soup.find("form", {"id": "formUbicacion"})
+    localidad_select = modal_form.find("select", {"name": "localidad"})
+
+    assert response.status_code == 200
+    assert localidad_select.find("option", value=str(localidad_provincial.pk))
+    assert ajax_response.json()["localidades"] == [
+        {"id": localidad_provincial.pk, "nombre": localidad_provincial.nombre}
+    ]
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
 def test_institucion_ubicacion_update_redirige_al_detalle_del_centro(
     client, vat_geo_data
 ):
@@ -3510,6 +3622,182 @@ def test_api_vat_web_mi_argentina_flujo_completo_prevalidar_e_inscribir(
 
     voucher.refresh_from_db()
     assert voucher.cantidad_disponible == 4
+
+
+def _crear_ciudadano_voucher_estado(documento):
+    sexo = Sexo.objects.create(sexo=f"Sexo {documento}")
+    return Ciudadano.objects.create(
+        apellido="Voucher",
+        nombre="Estado",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+        sexo=sexo,
+    )
+
+
+def _crear_voucher_estado(ciudadano):
+    usuario = User.objects.create_user(
+        username=f"voucher-estado-{ciudadano.documento}",
+        password="test1234",
+    )
+    programa = Programa.objects.create(nombre=f"Programa Voucher {ciudadano.documento}")
+    parametria = VoucherParametria.objects.create(
+        nombre=f"Parametria Voucher {ciudadano.documento}",
+        programa=programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2099, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    return Voucher.objects.create(
+        parametria=parametria,
+        ciudadano=ciudadano,
+        programa=programa,
+        cantidad_inicial=5,
+        cantidad_usada=0,
+        cantidad_disponible=5,
+        fecha_vencimiento=date(2099, 12, 31),
+        estado="activo",
+        asignado_por=usuario,
+    )
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_disponible_con_voucher_sin_inscripcion(
+    vat_api_client,
+):
+    ciudadano = _crear_ciudadano_voucher_estado(40111001)
+    _crear_voucher_estado(ciudadano)
+
+    response = vat_api_client.get(
+        f"/api/vat/web/ciudadanos/voucher-estado/?documento={ciudadano.documento}"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": str(ciudadano.documento),
+        "estado": "Disponible",
+        "tiene_voucher": True,
+        "esta_inscripto": False,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_prioriza_ciudadano_estandar_con_dni_duplicado(
+    vat_api_client,
+):
+    documento = 40111004
+    sexo = Sexo.objects.create(sexo="Sexo duplicado voucher estado")
+    Ciudadano.objects.create(
+        apellido="Duplicado",
+        nombre="No validado",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+        sexo=sexo,
+        tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+    )
+    ciudadano_estandar = _crear_ciudadano_voucher_estado(documento)
+    _crear_voucher_estado(ciudadano_estandar)
+
+    response = vat_api_client.get(
+        f"/api/vat/web/ciudadanos/voucher-estado/?documento={documento}"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": str(documento),
+        "estado": "Disponible",
+        "tiene_voucher": True,
+        "esta_inscripto": False,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_en_uso_con_voucher_e_inscripcion_activa(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    ciudadano = _crear_ciudadano_voucher_estado(40111002)
+    voucher = _crear_voucher_estado(ciudadano)
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Voucher Estado",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="VCH-EST-01",
+        nombre="Comision Voucher Estado",
+        cupo_total=10,
+        fecha_inicio=date(2026, 5, 10),
+        fecha_fin=date(2026, 6, 10),
+        estado="activa",
+    )
+    Inscripcion.objects.create(
+        ciudadano=ciudadano,
+        comision_curso=comision,
+        programa=voucher.programa,
+        estado="en_espera",
+        origen_canal="api",
+    )
+
+    response = vat_api_client.get(
+        f"/api/vat/web/ciudadanos/voucher-estado/?documento={ciudadano.documento}"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": str(ciudadano.documento),
+        "estado": "En uso",
+        "tiene_voucher": True,
+        "esta_inscripto": True,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_no_disponible_sin_voucher(vat_api_client):
+    ciudadano = _crear_ciudadano_voucher_estado(40111003)
+
+    response = vat_api_client.get(
+        f"/api/vat/web/ciudadanos/voucher-estado/?documento={ciudadano.documento}"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": str(ciudadano.documento),
+        "estado": "No disponible",
+        "tiene_voucher": False,
+        "esta_inscripto": False,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_no_disponible_con_dni_inexistente(vat_api_client):
+    response = vat_api_client.get(
+        "/api/vat/web/ciudadanos/voucher-estado/?documento=40111999"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": "40111999",
+        "estado": "No disponible",
+        "tiene_voucher": False,
+        "esta_inscripto": False,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_rechaza_documento_no_numerico(vat_api_client):
+    response = vat_api_client.get(
+        "/api/vat/web/ciudadanos/voucher-estado/?documento=40A11001"
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"documento": ["El documento debe ser numerico."]}
 
 
 @pytest.mark.django_db

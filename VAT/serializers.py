@@ -1373,6 +1373,13 @@ class VatPlainSerializer(serializers.Serializer):
         return instance
 
 
+class VatWebVoucherEstadoSerializer(VatPlainSerializer):
+    documento = serializers.CharField()
+    estado = serializers.CharField()
+    tiene_voucher = serializers.BooleanField()
+    esta_inscripto = serializers.BooleanField()
+
+
 class VatWebInscripcionBaseSerializer(VatPlainSerializer):
     ciudadano_id = serializers.IntegerField(required=False)
     documento = serializers.CharField(required=False)

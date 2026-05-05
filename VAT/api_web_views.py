@@ -24,6 +24,7 @@ from VAT.serializers import (
     VatWebInscripcionSerializer,
     VatWebSolicitudInscripcionPublicaSerializer,
     VatWebTituloSerializer,
+    VatWebVoucherEstadoSerializer,
 )
 from VAT.services.inscripcion_service import (
     ESTADOS_INSCRIPCION_OCUPAN_CUPO,
@@ -127,6 +128,76 @@ class VatWebCentroViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(localidad_id=localidad_id)
 
         return queryset
+
+
+@extend_schema(
+    tags=["VAT Web - Ciudadanos"],
+    description="Consultas de estado de ciudadanos para consumo de integraciones web.",
+)
+class VatWebCiudadanoViewSet(viewsets.ViewSet):
+    permission_classes = [HasAPIKeyOrToken]
+
+    @extend_schema(
+        summary="Consultar estado de voucher por DNI",
+        description=(
+            "Devuelve un estado calculado a partir del voucher usable del ciudadano "
+            "y sus inscripciones VAT activas."
+        ),
+        parameters=[
+            OpenApiParameter(
+                "documento",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                required=True,
+                description="DNI numerico del ciudadano.",
+            ),
+        ],
+        responses={200: VatWebVoucherEstadoSerializer},
+        examples=[
+            OpenApiExample(
+                "Voucher disponible",
+                value={
+                    "documento": "30111222",
+                    "estado": "Disponible",
+                    "tiene_voucher": True,
+                    "esta_inscripto": False,
+                },
+                response_only=True,
+            ),
+            OpenApiExample(
+                "Voucher en uso",
+                value={
+                    "documento": "30111222",
+                    "estado": "En uso",
+                    "tiene_voucher": True,
+                    "esta_inscripto": True,
+                },
+                response_only=True,
+            ),
+            OpenApiExample(
+                "Sin voucher usable",
+                value={
+                    "documento": "30111222",
+                    "estado": "No disponible",
+                    "tiene_voucher": False,
+                    "esta_inscripto": False,
+                },
+                response_only=True,
+            ),
+        ],
+    )
+    @action(detail=False, methods=["get"], url_path="voucher-estado")
+    def voucher_estado(self, request, *args, **kwargs):
+        documento = str(request.query_params.get("documento") or "").strip()
+        if not documento:
+            raise ValidationError({"documento": ["Este parametro es requerido."]})
+        if not documento.isdigit():
+            raise ValidationError({"documento": ["El documento debe ser numerico."]})
+
+        return Response(
+            InscripcionService.consultar_estado_voucher_por_documento(documento),
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema(

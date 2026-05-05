@@ -945,11 +945,12 @@ class ExpedienteDetailView(DetailView):
             )
         legajos_por_ciudadano = {}
         ciudadanos_ids = [leg.ciudadano_id for leg in legajos_list]
+        ciudadanos_ids_set = set(ciudadanos_ids)
         responsables_ids = set()
         if ciudadanos_ids:
             try:
                 responsables_ids = FamiliaService.obtener_ids_responsables(
-                    ciudadanos_ids
+                    ciudadanos_ids_set, hijos_ids=ciudadanos_ids_set
                 )
             except Exception as exc:
                 logger.warning(
@@ -968,7 +969,7 @@ class ExpedienteDetailView(DetailView):
                 legajo.ciudadano, responsables_ids
             )
             legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
-                legajo.ciudadano.id
+                legajo.ciudadano.id, responsables_ids=ciudadanos_ids_set
             )
             hijos_list = []
             # Buscar hijos si es responsable O si el rol es beneficiario_y_responsable
@@ -1697,14 +1698,6 @@ class RevisarLegajoView(View):
                     },
                     status=400,
                 )
-
-        # Validar RENAPER automáticamente antes de cualquier acción (excepto ELIMINAR)
-        if accion in ("APROBAR", "RECHAZAR", "SUBSANAR"):
-            estado_validacion_renaper = getattr(leg, "estado_validacion_renaper", 0)
-            # Si no tiene validación RENAPER, marcar como aprobado automáticamente
-            if estado_validacion_renaper == 0:
-                leg.estado_validacion_renaper = 1
-                leg.save(update_fields=["estado_validacion_renaper", "modificado_en"])
 
         # Si RECHAZAR / SUBSANAR y estaba dentro de cupo -> liberar
         if accion in ("RECHAZAR", "SUBSANAR") and leg.estado_cupo == "DENTRO":
