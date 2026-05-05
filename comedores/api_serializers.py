@@ -1042,11 +1042,17 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
     @staticmethod
     def _get_datos_convenio_alimentar(obj):
         presupuestos = ComedorService.get_presupuestos(obj.id)
+        prestaciones_mensuales = presupuestos[0]
+        monto_prestacion_mensual = presupuestos[5]
         return {
             "tipo": "alimentar_comunidad",
             "vigencia_convenio_meses": 6,
-            "prestaciones_gescom_total_mensual": presupuestos[0],
-            "monto_total_convenio": presupuestos[5],
+            # Campos legados (compatibilidad mobile existente)
+            "prestaciones_gescom_total_mensual": prestaciones_mensuales,
+            "monto_total_convenio": monto_prestacion_mensual,
+            # Campos explícitos alineados con web (acordeón Prestaciones)
+            "prestaciones_mensuales": prestaciones_mensuales,
+            "monto_prestacion_mensual": monto_prestacion_mensual,
         }
 
     def get_datos_convenio_mobile(self, obj):
