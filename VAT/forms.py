@@ -149,6 +149,17 @@ def build_ubicacion_queryset_for_centros(centro_ids, include_ubicacion_ids=None)
     )
 
 
+def build_localidad_queryset_for_centro(centro):
+    queryset = Localidad.objects.order_by("nombre")
+    if centro.municipio_id:
+        municipio_queryset = queryset.filter(municipio_id=centro.municipio_id)
+        if municipio_queryset.exists():
+            return municipio_queryset
+    if centro.provincia_id:
+        return queryset.filter(municipio__provincia_id=centro.provincia_id)
+    return queryset
+
+
 class ReferenteModelChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         full_name = f"{obj.first_name} {obj.last_name}".strip()
@@ -1372,6 +1383,22 @@ class InstitucionUbicacionForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        modal_dropdown_parent = "#modalUbicacion .modal-body"
+        self.fields["centro"].widget.attrs.update(
+            {
+                "id": "id_centro_ubicacion",
+                "data-dropdown-parent": modal_dropdown_parent,
+            }
+        )
+        self.fields["localidad"].widget.attrs.update(
+            {
+                "id": "id_localidad_ubicacion",
+                "data-dropdown-parent": modal_dropdown_parent,
+            }
+        )
 
     class Meta:
         model = InstitucionUbicacion

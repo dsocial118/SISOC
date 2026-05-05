@@ -26,10 +26,10 @@ from centrodeinfancia.models import (
     DepartamentoIpi,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
-    ObservacionCentroInfancia,
     Trabajador,
     normalizar_cuit,
 )
+from centrodeinfancia.forms_observacion import ObservacionCentroInfanciaForm
 from centrodeinfancia.forms_formulario_cdi import (
     FormularioCDIForm,
     construir_filas_iniciales_fijas,
@@ -44,6 +44,7 @@ __all__ = [
     "NominaCentroInfanciaCreateForm",
     "IntervencionCentroInfanciaForm",
     "TrabajadorForm",
+    "ObservacionCentroInfanciaForm",
     "FormularioCDIForm",
     "construir_filas_iniciales_fijas",
     "construir_clase_formset_articulacion",
@@ -1009,19 +1010,3 @@ class IntervencionCentroInfanciaForm(forms.ModelForm):
             cleaned_data["subintervencion"] = None
 
         return cleaned_data
-
-
-class ObservacionCentroInfanciaForm(forms.ModelForm):
-    class Meta:
-        model = ObservacionCentroInfancia
-        fields = ["observacion"]
-        labels = {"observacion": "Observación"}
-        widgets = {
-            "observacion": forms.Textarea(
-                attrs={
-                    "class": "form-control",
-                    "rows": 4,
-                    "placeholder": "Describa la observación",
-                }
-            )
-        }

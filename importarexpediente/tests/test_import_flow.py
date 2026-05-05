@@ -453,6 +453,21 @@ def test_import_updates_present_mes_1_to_active_execution(client_logged, tmp_med
     assert estados["en_ejecucion"].estado == EN_EJECUCION
 
 
+def test_import_estado_update_does_not_sync_comedor_payload(
+    client_logged, tmp_media, db, mocker
+):
+    _estado_catalog()
+    programa = _programa_alimentar()
+    comedor = Comedor.objects.create(
+        nombre="Comedor Estado Sin Sync", programa=programa
+    )
+    build_comedor_payload = mocker.patch("comedores.signals.build_comedor_payload")
+
+    _upload_csv_and_import(client_logged, comedor, 1, "EX-2025-ESTADO-SIN-SYNC")
+
+    build_comedor_payload.assert_not_called()
+
+
 def test_import_updates_present_mes_6_to_active_execution_en_plazo(
     client_logged, tmp_media, db
 ):
