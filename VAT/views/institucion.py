@@ -13,7 +13,6 @@ from django.db.models import Q
 from django.http import JsonResponse
 
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
-from core.models import Localidad
 from VAT.models import (
     Centro,
     InstitucionContacto,
@@ -24,6 +23,7 @@ from VAT.forms import (
     InstitucionContactoForm,
     InstitucionIdentificadorHistForm,
     InstitucionUbicacionForm,
+    build_localidad_queryset_for_centro,
 )
 
 logger = logging.getLogger("django")
@@ -274,11 +274,9 @@ def localidades_por_centro(request):
     except Centro.DoesNotExist:
         return JsonResponse({"localidades": []})
 
-    qs = Localidad.objects.select_related("municipio__provincia").order_by("nombre")
-    if centro.municipio_id:
-        qs = qs.filter(municipio_id=centro.municipio_id)
-    elif centro.provincia_id:
-        qs = qs.filter(municipio__provincia_id=centro.provincia_id)
+    qs = build_localidad_queryset_for_centro(centro).select_related(
+        "municipio__provincia"
+    )
 
     data = [{"id": loc.id, "nombre": loc.nombre} for loc in qs]
     return JsonResponse({"localidades": data})
