@@ -487,6 +487,19 @@ def test_form_muestra_decil_ipi_del_departamento_seleccionado():
 
 
 @pytest.mark.django_db
+def test_form_precarga_fecha_inicio_en_input_date():
+    centro = CentroDeInfancia(
+        nombre="CDI Fecha",
+        fecha_inicio=date(2024, 5, 4),
+    )
+
+    form = CentroDeInfanciaForm(instance=centro)
+
+    assert form.fields["fecha_inicio"].widget.input_type == "date"
+    assert 'value="2024-05-04"' in str(form["fecha_inicio"])
+
+
+@pytest.mark.django_db
 def test_form_bound_muestra_decil_ipi_del_departamento_en_post():
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     departamento = DepartamentoIpi.objects.create(

@@ -44,6 +44,7 @@ from VAT.forms import (
     CursoForm,
     ComisionCursoForm,
     build_curso_queryset_for_centros,
+    build_localidad_queryset_for_centro,
     build_plan_estudio_queryset_for_centro,
     build_ubicacion_queryset_for_centros,
     build_voucher_parametria_queryset,
@@ -56,7 +57,6 @@ from VAT.services.access_scope import (
     filter_centros_queryset_for_user,
     is_vat_referente,
 )
-from core.models import Localidad
 from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
@@ -122,15 +122,6 @@ def _get_centro_detail_queryset():
     )
 
 
-def _get_localidades_queryset_for_centro(centro):
-    queryset = Localidad.objects.order_by("nombre")
-    if centro.municipio_id:
-        return queryset.filter(municipio_id=centro.municipio_id)
-    if centro.provincia_id:
-        return queryset.filter(municipio__provincia_id=centro.provincia_id)
-    return queryset
-
-
 def _scope_centro_field_to_current_centro(form, centro):
     centro_field = form.fields.get("centro")
     if centro_field is None:
@@ -187,7 +178,7 @@ def _build_identificador_form(centro):
 
 def _build_ubicacion_form(centro):
     form = InstitucionUbicacionForm(initial={"centro": centro})
-    form.fields["localidad"].queryset = _get_localidades_queryset_for_centro(centro)
+    form.fields["localidad"].queryset = build_localidad_queryset_for_centro(centro)
     return _scope_centro_field_to_current_centro(form, centro)
 
 

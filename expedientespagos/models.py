@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MaxValueValidator, MinValueValidator
 from comedores.models import Comedor
 from core.soft_delete import SoftDeleteModelMixin
 
@@ -52,6 +53,12 @@ class ExpedientePago(SoftDeleteModelMixin, models.Model):
     )
     mes_pago = models.CharField(
         max_length=20, verbose_name="Mes de Pago", blank=True, null=True
+    )
+    mes_convenio = models.PositiveSmallIntegerField(
+        verbose_name="Mes de Convenio",
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(1), MaxValueValidator(6)],
     )
     ano = models.CharField(
         max_length=4,
