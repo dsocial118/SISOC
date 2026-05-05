@@ -501,6 +501,30 @@ def test_import_updates_absent_active_program2_by_consecutive_batches(
     assert _estado_tuple(absent) == (INACTIVO, BAJA, NO_RENOVACION_COMEDOR)
 
 
+def test_import_absent_reactivated_active_starts_first_absence(
+    client_logged, tmp_media, db
+):
+    estados = _estado_catalog()
+    programa = _programa_alimentar()
+    present = Comedor.objects.create(nombre="Comedor Presente", programa=programa)
+    reactivated = Comedor.objects.create(nombre="Comedor Reactivado", programa=programa)
+    _set_estado(
+        reactivated,
+        estados["inactivo"],
+        estados["baja"],
+        estados["no_renovacion"],
+    )
+
+    _upload_csv_and_import(client_logged, present, 1, "EX-2025-PREV-1")
+    _upload_csv_and_import(client_logged, present, 1, "EX-2025-PREV-2")
+    _upload_csv_and_import(client_logged, present, 1, "EX-2025-PREV-3")
+    _set_estado(reactivated, estados["activo"], estados["en_ejecucion"])
+
+    _upload_csv_and_import(client_logged, present, 1, "EX-2025-FIRST-MISSING")
+
+    assert _estado_tuple(reactivated) == (ACTIVO, EN_PROCESO_RENOVACION, None)
+
+
 def test_import_keeps_inactive_absent_program2_as_no_renovacion(
     client_logged, tmp_media, db
 ):
