@@ -385,6 +385,14 @@ def _puede_editar_convenio_numero_admision_detail(user, comedor):
     )
 
 
+def _puede_editar_num_expediente_admision_detail(user, admision):
+    if admision.enviado_legales:
+        return False
+    return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
+        user, admision.comedor
+    )
+
+
 def _get_informes_complementarios_admision_detail(admision):
     informes_complementarios_queryset = (
         InformeComplementario.objects.filter(admision=admision)
@@ -397,10 +405,12 @@ def _get_informes_complementarios_admision_detail(admision):
 def _build_admision_detail_context_payload(
     *,
     comedor,
+    admision,
     dupla_context,
     admision_context,
     informes_complementarios,
     puede_editar_convenio_numero,
+    puede_editar_num_expediente,
     acompanamiento_context,
     rendiciones_context,
     historial_context,
@@ -416,6 +426,12 @@ def _build_admision_detail_context_payload(
         "informe_tecnico_pdf": admision_context.get("pdf"),
         "informes_complementarios": informes_complementarios,
         "puede_editar_convenio_numero": puede_editar_convenio_numero,
+        "puede_editar_num_expediente": puede_editar_num_expediente,
+        "num_expediente_edit_locked_reason": (
+            "No se puede editar el expediente una vez enviado a legales."
+            if admision.enviado_legales
+            else ""
+        ),
         **acompanamiento_context,
         **rendiciones_context,
         **historial_context,
@@ -648,6 +664,24 @@ def actualizar_convenio_numero(request):
 
 @login_required
 @require_POST
+def actualizar_num_expediente(request):
+    resultado = AdmisionService.actualizar_num_expediente_ajax(request)
+
+    response_data = {
+        "success": resultado.get("success"),
+        "num_expediente": resultado.get("num_expediente"),
+        "valor_anterior": resultado.get("valor_anterior"),
+    }
+
+    if not resultado.get("success"):
+        response_data["error"] = resultado.get("error", "Error desconocido")
+        return JsonResponse(response_data, status=400)
+
+    return JsonResponse(response_data)
+
+
+@login_required
+@require_POST
 def crear_documento_personalizado(request, admision_id):
     archivo = request.FILES.get("archivo")
     nombre = request.POST.get("nombre", "")
@@ -866,6 +900,9 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         puede_editar_convenio_numero = _puede_editar_convenio_numero_admision_detail(
             self.request.user, comedor
         )
+        puede_editar_num_expediente = _puede_editar_num_expediente_admision_detail(
+            self.request.user, admision
+        )
         informes_complementarios = _get_informes_complementarios_admision_detail(
             admision
         )
@@ -882,10 +919,12 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         context.update(
             _build_admision_detail_context_payload(
                 comedor=comedor,
+                admision=admision,
                 dupla_context=dupla_context,
                 admision_context=admision_context,
                 informes_complementarios=informes_complementarios,
                 puede_editar_convenio_numero=puede_editar_convenio_numero,
+                puede_editar_num_expediente=puede_editar_num_expediente,
                 acompanamiento_context=acompanamiento_context,
                 rendiciones_context=rendiciones_context,
                 historial_context=historial_context,

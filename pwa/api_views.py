@@ -21,6 +21,7 @@ from pwa.api_serializers import (
     ColaboradorEspacioPWACreateUpdateSerializer,
     ColaboradorEspacioPWAListSerializer,
     ColaboradorGeneroPWAListSerializer,
+    CursoAppMobilePWASerializer,
     DiaSerializer,
     InscriptoActividadPWAListSerializer,
     MensajeEspacioPWASerializer,
@@ -74,7 +75,12 @@ from pwa.view_helpers import (
 )
 from users.api_permissions import IsPWAAuthenticatedToken
 from users.api_permissions import IsPWARepresentativeForComedor
-from comedores.models import ActividadColaboradorEspacio, ColaboradorEspacio, Nomina
+from comedores.models import (
+    ActividadColaboradorEspacio,
+    ColaboradorEspacio,
+    CursoAppMobile,
+    Nomina,
+)
 from comedores.services.colaborador_espacio_service import ColaboradorEspacioService
 from comedores.services.comedor_service.impl import ComedorService
 from ciudadanos.models import Ciudadano
@@ -201,6 +207,63 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
             },
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["PWA Formacion"])
+class CursoAppMobilePWAViewSet(viewsets.ViewSet):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsPWARepresentativeForComedor]
+
+    @staticmethod
+    def _is_pnud_space(comedor):
+        programa_nombre = str(
+            getattr(getattr(comedor, "programa", None), "nombre", "") or ""
+        )
+        normalized = " ".join(programa_nombre.lower().split())
+        return comedor.programa_id in (3, 4) or "pnud" in normalized
+
+    @staticmethod
+    def _is_alimentar_comunidad_space(comedor):
+        programa_nombre = str(
+            getattr(getattr(comedor, "programa", None), "nombre", "") or ""
+        )
+        normalized = " ".join(programa_nombre.lower().split())
+        return normalized == "alimentar comunidad"
+
+    def list(self, request, comedor_id=None):
+        comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, request.user)
+
+        # Regla vigente: en mobile solo para espacios PNUD.
+        if not self._is_pnud_space(comedor):
+            return Response({"results": []}, status=status.HTTP_200_OK)
+
+        queryset = CursoAppMobile.objects.filter(
+            activo=True,
+        ).order_by("orden", "nombre", "id")
+
+        if self._is_pnud_space(comedor):
+            queryset = queryset.filter(
+                programa_objetivo__in=(
+                    CursoAppMobile.PROGRAMA_PNUD,
+                    CursoAppMobile.PROGRAMA_AMBOS,
+                )
+            )
+        elif self._is_alimentar_comunidad_space(comedor):
+            queryset = queryset.filter(
+                programa_objetivo__in=(
+                    CursoAppMobile.PROGRAMA_ALIMENTAR,
+                    CursoAppMobile.PROGRAMA_AMBOS,
+                )
+            )
+        else:
+            queryset = queryset.none()
+
+        serializer = CursoAppMobilePWASerializer(
+            queryset,
+            many=True,
+            context={"request": request},
+        )
+        return Response({"results": serializer.data}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["PWA Push"])
