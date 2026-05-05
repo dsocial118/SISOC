@@ -554,7 +554,10 @@ class NominaCentroInfanciaFormEdit(forms.ModelForm):
             "observaciones": "Observaciones",
         }
         widgets = {
-            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
+            "fecha_nacimiento": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={"type": "date"},
+            ),
         }
 
 
@@ -615,7 +618,10 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             "observaciones",
         ]
         widgets = {
-            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
+            "fecha_nacimiento": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={"type": "date"},
+            ),
             "observaciones": forms.Textarea(attrs={"rows": 3}),
         }
 
