@@ -1,5 +1,7 @@
 # pylint: disable=too-many-lines
 
+from datetime import datetime, date
+
 from django import forms
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
@@ -312,6 +314,25 @@ class CentroDeInfanciaForm(forms.ModelForm):
             raise forms.ValidationError(exc.messages) from exc
         return mail
 
+    def clean_fecha_inicio(self):
+        raw = self.cleaned_data.get("fecha_inicio")
+        if raw in (None, ""):
+            return None
+        if isinstance(raw, date):
+            return raw
+        if isinstance(raw, str):
+            raw = raw.strip()
+            try:
+                return datetime.strptime(raw, "%d/%m/%Y").date()
+            except ValueError:
+                try:
+                    return datetime.strptime(raw, "%Y-%m-%d").date()
+                except ValueError as exc2:
+                    raise forms.ValidationError(
+                        "Formato inválido para Fecha de inicio. Use dd/mm/aaaa."
+                    ) from exc2
+        raise forms.ValidationError("Formato inválido para Fecha de inicio.")
+
     def clean_telefono(self):
         value = (self.cleaned_data.get("telefono") or "").strip()
         if not value:
@@ -411,7 +432,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
             "fecha_inicio",
         ]
         widgets = {
-            "fecha_inicio": forms.DateInput(attrs={"type": "date"}),
+            "fecha_inicio": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
             "meses_funcionamiento": forms.CheckboxSelectMultiple(),
             "dias_funcionamiento": forms.CheckboxSelectMultiple(),
         }
