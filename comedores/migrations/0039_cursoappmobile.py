@@ -13,12 +13,33 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="CursoAppMobile",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("deleted_at", models.DateTimeField(blank=True, db_index=True, editable=False, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(
+                        blank=True, db_index=True, editable=False, null=True
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255)),
                 ("link", models.URLField(max_length=500)),
-                ("imagen", models.ImageField(blank=True, null=True, upload_to="comedores/cursos_app_mobile/")),
-                ("descripcion", models.CharField(blank=True, max_length=300, null=True)),
+                (
+                    "imagen",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="comedores/cursos_app_mobile/"
+                    ),
+                ),
+                (
+                    "descripcion",
+                    models.CharField(blank=True, max_length=300, null=True),
+                ),
                 (
                     "programa_objetivo",
                     models.CharField(
@@ -64,10 +85,15 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="cursoappmobile",
-            index=models.Index(fields=["programa_objetivo", "activo"], name="comedores_c_program_1d6a38_idx"),
+            index=models.Index(
+                fields=["programa_objetivo", "activo"],
+                name="comedores_c_program_1d6a38_idx",
+            ),
         ),
         migrations.AddIndex(
             model_name="cursoappmobile",
-            index=models.Index(fields=["orden", "nombre"], name="comedores_c_orden_7ff31f_idx"),
+            index=models.Index(
+                fields=["orden", "nombre"], name="comedores_c_orden_7ff31f_idx"
+            ),
         ),
     ]

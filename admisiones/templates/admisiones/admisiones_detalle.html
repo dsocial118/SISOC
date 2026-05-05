@@ -286,7 +286,7 @@
                         <tr>
                             <th>Documento</th>
                             <th>Archivo</th>
-                            <th>NÃºmero de GDE</th>
+                            <th>Número de GDE</th>
                         </tr>
                     </thead>
                     <tbody id="tablaArchivosAdicionalesBody">
@@ -427,13 +427,13 @@
             <hr class="my-4" />
             {% if admision.numero_if_tecnico or admision.archivo_informe_tecnico_GDE %}
                 <div class="mt-2">
-                    <span class="fw-bold">Informe TÃ©cnico GDE:</span>
+                    <span class="fw-bold">Informe Técnico GDE:</span>
                     <span>{{ admision.numero_if_tecnico|default:"-" }}</span>
                     {% if admision.archivo_informe_tecnico_GDE %}
                         <a href="{{ admision.archivo_informe_tecnico_GDE.url }}"
                            class="btn btn-success btn-sm me-2 ms-3"
                            target="_blank"
-                           rel="noopener">Descargar Informe TÃ©cnico GDE</a>
+                           rel="noopener">Descargar Informe Técnico GDE</a>
                     {% endif %}
                 </div>
             {% endif %}
@@ -773,7 +773,7 @@
                 <form method="post">
                     {% csrf_token %}
                     <div class="modal-header">
-                        <h5 class="modal-title" id="forzarCierreModalLabel">Forzar Cierre de AdmisiÃ³n</h5>
+                        <h5 class="modal-title" id="forzarCierreModalLabel">Forzar Cierre de Admisión</h5>
                         <button type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
@@ -782,7 +782,7 @@
                     <div class="modal-body">
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>AtenciÃ³n:</strong> Esta acciÃ³n marcarÃ¡ la admisiÃ³n como inactiva y no se podrÃ¡ revertir.
+                            <strong>Atención:</strong> Esta acción marcará la admisión como inactiva y no se podrá revertir.
                         </div>
                         <div class="mb-3">
                             <label for="motivo_forzar_cierre" class="form-label">
@@ -793,7 +793,7 @@
                                       name="motivo_forzar_cierre"
                                       rows="4"
                                       required
-                                      placeholder="Ingrese el motivo por el cual se fuerza el cierre de esta admisiÃ³n..."></textarea>
+                                      placeholder="Ingrese el motivo por el cual se fuerza el cierre de esta admisión..."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -936,7 +936,7 @@
 
                     xhr.addEventListener('load', function() {
                         if (xhr.status === 200) {
-                            // Recargar la pÃ¡gina para mostrar el nuevo archivo
+                            // Recargar la página para mostrar el nuevo archivo
                             location.reload();
                         } else {
                             alert('Error al subir el archivo');
@@ -949,7 +949,7 @@
                         progressContainer.style.display = 'none';
                     });
 
-                    // Enviar la peticiÃ³n a la misma URL de la pÃ¡gina
+                    // Enviar la petición a la misma URL de la página
                     xhr.open('POST', window.location.href);
                     xhr.send(formData);
                 });
