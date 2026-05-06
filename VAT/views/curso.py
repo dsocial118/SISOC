@@ -35,8 +35,8 @@ from VAT.models import (
     InstitucionUbicacion,
 )
 from VAT.services.access_scope import (
-    can_user_access_centro,
-    filter_centros_queryset_for_user,
+    can_user_edit_centro,
+    filter_centros_queryset_for_management,
 )
 from VAT.services.inscripcion_service import (
     ESTADOS_INSCRIPCION_OCUPAN_CUPO,
@@ -50,9 +50,9 @@ from VAT.services.sesion_comision_service.impl import SesionComisionService
 
 
 def _scoped_centros_ids(user):
-    return filter_centros_queryset_for_user(Centro.objects.all(), user).values_list(
-        "id", flat=True
-    )
+    return filter_centros_queryset_for_management(
+        Centro.objects.all(), user
+    ).values_list("id", flat=True)
 
 
 def _scoped_comisiones_curso_queryset(user):
@@ -133,7 +133,7 @@ class CursoCreateView(LoginRequiredMixin, CreateView):
         except Centro.DoesNotExist as exc:
             raise PermissionDenied from exc
 
-        if not can_user_access_centro(request.user, centro):
+        if not can_user_edit_centro(request.user, centro):
             raise PermissionDenied
 
         self.centro = centro
@@ -262,7 +262,7 @@ class ComisionCursoCreateView(LoginRequiredMixin, CreateView):
                 curso = Curso.objects.select_related("centro").get(pk=curso_id)
             except Curso.DoesNotExist as exc:
                 raise PermissionDenied from exc
-            if not can_user_access_centro(request.user, curso.centro):
+            if not can_user_edit_centro(request.user, curso.centro):
                 raise PermissionDenied
             self.curso = curso
         else:
@@ -277,7 +277,7 @@ class ComisionCursoCreateView(LoginRequiredMixin, CreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        scoped_centros = filter_centros_queryset_for_user(
+        scoped_centros = filter_centros_queryset_for_management(
             Centro.objects.all(), self.request.user
         )
         scoped_centros_ids = list(scoped_centros.values_list("id", flat=True))
@@ -329,7 +329,7 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         comision = self.object
         cancel_url = _centro_cursos_tab_url(comision.curso.centro_id)
         comision_form = ComisionCursoForm(instance=comision)
-        scoped_centros = filter_centros_queryset_for_user(
+        scoped_centros = filter_centros_queryset_for_management(
             Centro.objects.all(), self.request.user
         )
         scoped_centros_ids = list(scoped_centros.values_list("id", flat=True))
@@ -775,7 +775,7 @@ class ComisionCursoUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        scoped_centros = filter_centros_queryset_for_user(
+        scoped_centros = filter_centros_queryset_for_management(
             Centro.objects.all(), self.request.user
         )
         scoped_centros_ids = list(scoped_centros.values_list("id", flat=True))

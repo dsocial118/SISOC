@@ -134,6 +134,7 @@ LEGACY_ALIAS_TO_PERMISSION_CODES: dict[str, tuple[str, ...]] = {
         "VAT.add_asistenciasesion",
         "VAT.change_asistenciasesion",
     ),
+    "CFPRevisor": ("VAT.view_centro",),
     "Provincia VAT": (
         "VAT.view_centro",
         "VAT.add_centro",

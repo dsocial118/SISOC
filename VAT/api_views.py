@@ -106,9 +106,13 @@ class VATReadOnlyModelViewSet(viewsets.ReadOnlyModelViewSet):
 
 @extend_schema(tags=["VAT - Centros"])
 class CentroViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
-    queryset = Centro.objects.select_related(
-        "referente", "provincia", "municipio", "localidad"
-    ).order_by("id")
+    queryset = (
+        Centro.objects.select_related(
+            "referente", "provincia", "municipio", "localidad"
+        )
+        .prefetch_related("referentes")
+        .order_by("id")
+    )
     serializer_class = CentroSerializer
     permission_classes = [HasAPIKey]
 

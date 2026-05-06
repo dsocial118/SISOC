@@ -99,7 +99,8 @@ Entidad principal del módulo. Representa un CFP habilitado.
 **Campos principales:**
 - **Nombre** *(obligatorio)*
 - **Código** *(obligatorio, único)*: código identificador del centro
-- **Referente** *(obligatorio)*: usuario del sistema responsable
+- **Referente/s** *(obligatorio)*: usuarios del sistema responsables de gestionar el centro
+- **Usuario Revisor** *(opcional)*: usuarios CFPRevisor que pueden visualizar el centro sin gestionarlo
 - **Modalidad institucional**
 - **Domicilio de actividad** *(obligatorio)*
 - **Teléfono / Celular / Correo** *(obligatorios)*

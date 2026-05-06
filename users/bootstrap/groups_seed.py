@@ -279,6 +279,13 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        "CFPRevisor",
+        (
+            "auth.role_revisorcentrovat",
+            "VAT.view_centro",
+        ),
+    ),
+    BootstrapGroupSeed(
         "CFPINET",
         (
             "auth.role_vat_sse",

@@ -702,12 +702,12 @@
                 </div>
             </div>
 
-            <!-- Referente del Centro -->
+            <!-- Referente/s del Centro -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-light referente-header">
                     <h6 class="mb-0 text-white">
                         <i class="fas fa-user me-2"></i>
-                        Referente del Centro
+                        Referente/s del Centro
                     </h6>
                 </div>
                 <div class="card-body">
@@ -726,9 +726,15 @@
                         </article>
                         <article class="details-item">
                             <div class="details-label text-muted">
-                                <i class="fas fa-user-cog"></i>Usuario del Sistema
+                                <i class="fas fa-user-cog"></i>Usuario/s del Sistema
                             </div>
-                            <p class="details-value">{{ centro.referente.get_full_name|default:centro.referente.username }}</p>
+                            <div class="details-value">
+                                {% for referente_usuario in referentes_centro %}
+                                    <div>{{ referente_usuario.get_full_name|default:referente_usuario.username }}</div>
+                                {% empty %}
+                                    -
+                                {% endfor %}
+                            </div>
                         </article>
                         <article class="details-item">
                             <div class="details-label text-muted">
