@@ -263,6 +263,114 @@ def test_ciudadano_filtro_form_api_muestra_todos_si_revision_no_fue_explicito(mo
     assert form.estado_revision_fue_seleccionado_explicitamente is False
 
 
+def _ciudadano_revision_manual(nombre, estado_revision, requiere_revision_manual):
+    ciudadano = module.Ciudadano.objects.create(
+        apellido="Revision",
+        nombre=nombre,
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=module.Ciudadano.DOCUMENTO_DNI,
+        documento=30111000 + len(nombre),
+        tipo_registro_identidad=module.Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+        motivo_no_validacion_renaper=module.Ciudadano.MOTIVO_NO_VALIDADO_OTRO,
+    )
+    ciudadano.requiere_revision_manual = requiere_revision_manual
+    ciudadano.estado_revision_manual = estado_revision
+    ciudadano.save(update_fields=["requiere_revision_manual", "estado_revision_manual"])
+    return ciudadano
+
+
+@pytest.mark.django_db
+def test_cola_revision_filtra_por_estado(client, superuser):
+    pendiente = _ciudadano_revision_manual(
+        "CasoUno",
+        module.Ciudadano.REVISION_IDENTIDAD_PENDIENTE,
+        True,
+    )
+    aprobada = _ciudadano_revision_manual(
+        "CasoDos",
+        module.Ciudadano.REVISION_IDENTIDAD_APROBADA,
+        False,
+    )
+    descartada = _ciudadano_revision_manual(
+        "CasoTres",
+        module.Ciudadano.REVISION_IDENTIDAD_DESCARTADA,
+        False,
+    )
+    client.force_login(superuser)
+    url = reverse("ciudadanos_cola_revision")
+
+    response = client.get(url)
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert pendiente.nombre in content
+    assert aprobada.nombre not in content
+    assert descartada.nombre not in content
+
+    response = client.get(url, {"estado": "aprobada"})
+    content = response.content.decode()
+
+    assert aprobada.nombre in content
+    assert pendiente.nombre not in content
+    assert descartada.nombre not in content
+
+    response = client.get(url, {"estado": "descartada"})
+    content = response.content.decode()
+
+    assert descartada.nombre in content
+    assert pendiente.nombre not in content
+    assert aprobada.nombre not in content
+
+
+@pytest.mark.django_db
+def test_marcar_revisado_persiste_estado_aprobado(client, superuser):
+    ciudadano = _ciudadano_revision_manual(
+        "ParaAprobar",
+        module.Ciudadano.REVISION_IDENTIDAD_PENDIENTE,
+        True,
+    )
+    next_url = reverse("ciudadanos_cola_revision")
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse("ciudadanos_marcar_revisado", args=[ciudadano.pk]),
+        {"next": next_url},
+    )
+
+    ciudadano.refresh_from_db()
+    assert response.status_code == 302
+    assert response.url == next_url
+    assert ciudadano.requiere_revision_manual is False
+    assert (
+        ciudadano.estado_revision_manual == module.Ciudadano.REVISION_IDENTIDAD_APROBADA
+    )
+
+
+@pytest.mark.django_db
+def test_descartar_revision_persiste_estado_descartado(client, superuser):
+    ciudadano = _ciudadano_revision_manual(
+        "ParaDescartar",
+        module.Ciudadano.REVISION_IDENTIDAD_PENDIENTE,
+        True,
+    )
+    next_url = reverse("ciudadanos_cola_revision")
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse("ciudadanos_descartar_revision", args=[ciudadano.pk]),
+        {"next": next_url},
+    )
+
+    ciudadano.refresh_from_db()
+    assert response.status_code == 302
+    assert response.url == next_url
+    assert ciudadano.requiere_revision_manual is False
+    assert (
+        ciudadano.estado_revision_manual
+        == module.Ciudadano.REVISION_IDENTIDAD_DESCARTADA
+    )
+
+
 def test_hydrate_ciudadanos_page_preserva_orden(mocker):
     ciudadano_2 = SimpleNamespace(pk=2)
     ciudadano_5 = SimpleNamespace(pk=5)
