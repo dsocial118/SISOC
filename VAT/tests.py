@@ -1803,10 +1803,41 @@ def test_usuario_mixto_no_gestiona_centro_asignado_solo_como_revisor(
     client, vat_geo_data
 ):
     provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial solo revisor", activo=True
+    )
     user = User.objects.create_user(username="mixto-sin-gestion", password="test1234")
+    permisos_gestion = Permission.objects.filter(
+        content_type__app_label="VAT",
+        codename__in=[
+            "view_centro",
+            "delete_centro",
+            "add_institucioncontacto",
+            "change_institucioncontacto",
+            "delete_institucioncontacto",
+            "add_institucionubicacion",
+            "change_institucionubicacion",
+            "delete_institucionubicacion",
+            "add_institucionidentificadorhist",
+            "change_institucionidentificadorhist",
+            "delete_institucionidentificadorhist",
+            "add_curso",
+            "change_curso",
+            "delete_curso",
+            "view_comisioncurso",
+            "add_comisioncurso",
+            "change_comisioncurso",
+            "delete_comisioncurso",
+            "add_comisionhorario",
+            "change_comisionhorario",
+            "delete_comisionhorario",
+            "add_inscripcion",
+            "change_inscripcion",
+        ],
+    )
     _grant_vat_referente_access(
         user,
-        Permission.objects.get(content_type__app_label="VAT", codename="add_curso"),
+        *permisos_gestion,
     )
     _grant_vat_revisor_access(user)
     centro = _create_vat_centro(
@@ -1816,11 +1847,76 @@ def test_usuario_mixto_no_gestiona_centro_asignado_solo_como_revisor(
         localidad=localidad,
     )
     centro.revisores.add(user)
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle Revisor 123",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso solo lectura",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="REV-CUR-001",
+        nombre="Comision solo lectura",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
 
     client.force_login(user)
-    response = client.get(reverse("vat_curso_create"), {"centro": centro.pk})
+    detail_response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+    panel_response = client.get(
+        reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}),
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+    create_response = client.get(reverse("vat_curso_create"), {"centro": centro.pk})
+    update_response = client.get(reverse("vat_curso_update", kwargs={"pk": curso.pk}))
+    delete_response = client.get(reverse("vat_curso_delete", kwargs={"pk": curso.pk}))
+    comision_create_response = client.get(
+        reverse("vat_comision_curso_create"), {"curso": curso.pk}
+    )
+    comision_update_response = client.get(
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+    )
+    comision_delete_response = client.get(
+        reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk})
+    )
 
-    assert response.status_code == 403
+    detail_content = detail_response.content.decode("utf-8")
+    panel_content = panel_response.content.decode("utf-8")
+
+    assert detail_response.status_code == 200
+    assert panel_response.status_code == 200
+    assert reverse("vat_centro_delete", kwargs={"pk": centro.pk}) not in detail_content
+    assert "Agregar Contacto" not in detail_content
+    assert "Agregar Identificador" not in detail_content
+    assert "Agregar Ubicacion" not in detail_content
+    assert reverse("vat_curso_create") not in panel_content
+    assert reverse("vat_curso_update", kwargs={"pk": curso.pk}) not in panel_content
+    assert reverse("vat_curso_delete", kwargs={"pk": curso.pk}) not in panel_content
+    assert reverse("vat_comision_curso_create") not in panel_content
+    assert (
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+        not in panel_content
+    )
+    assert (
+        reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk})
+        not in panel_content
+    )
+    assert create_response.status_code == 403
+    assert update_response.status_code == 404
+    assert delete_response.status_code == 404
+    assert comision_create_response.status_code == 403
+    assert comision_update_response.status_code == 404
+    assert comision_delete_response.status_code == 404
 
 
 @pytest.mark.django_db

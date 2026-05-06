@@ -358,6 +358,7 @@ def _get_plan_estudio_label(plan_estudio):
 
 
 def _build_cursos_panel_context(request, centro):
+    can_manage_centro = can_user_edit_centro(getattr(request, "user", None), centro)
     cursos = list(
         Curso.objects.filter(centro=centro)
         .select_related("modalidad", "plan_estudio")
@@ -417,6 +418,7 @@ def _build_cursos_panel_context(request, centro):
         "comisiones_curso": comisiones_curso,
         "curso_form": curso_form,
         "comision_curso_form": comision_curso_form,
+        "can_manage_centro": can_manage_centro,
     }
 
 
