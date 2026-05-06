@@ -1,0 +1,87 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Cursos App Mobile{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'cursos_app_mobile_list' %}">Cursos App Mobile</a>
+        </li>
+        <li class="breadcrumb-item active">Listar</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <div class="action-bar mb-3">
+        <a href="{% url 'cursos_app_mobile_crear' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Agregar
+        </a>
+    </div>
+    <div class="row mt-3 max-width-100">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Programa objetivo</th>
+                                <th>Link</th>
+                                <th>Orden</th>
+                                <th>Recomendado</th>
+                                <th>Estado</th>
+                                <th>Imagen</th>
+                                <th style="width: 18%">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for curso in cursos %}
+                                <tr>
+                                    <td>{{ curso.nombre }}</td>
+                                    <td>{{ curso.get_programa_objetivo_display }}</td>
+                                    <td>
+                                        <a href="{{ curso.link }}" target="_blank" rel="noreferrer">{{ curso.link }}</a>
+                                    </td>
+                                    <td>{{ curso.orden }}</td>
+                                    <td>
+                                        {% if curso.es_recomendado %}
+                                            Sí
+                                        {% else %}
+                                            No
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if curso.activo %}
+                                            Activo
+                                        {% else %}
+                                            Inactivo
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if curso.imagen %}
+                                            Sí
+                                        {% else %}
+                                            No
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'cursos_app_mobile_editar' curso.pk %}"
+                                           class="btn btn-sm btn-warning">Editar</a>
+                                        <a href="{% url 'cursos_app_mobile_eliminar' curso.pk %}"
+                                           class="btn btn-sm btn-danger">Eliminar</a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center">No hay cursos cargados.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="pagination-container">
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    </div>
+{% endblock %}

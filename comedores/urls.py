@@ -11,6 +11,10 @@ from comedores.views import (
     ComedorDetailView,
     ComedorListView,
     ComedorUpdateView,
+    CursoAppMobileCreateView,
+    CursoAppMobileDeleteView,
+    CursoAppMobileListView,
+    CursoAppMobileUpdateView,
     ObservacionCreateView,
     ObservacionDeleteView,
     ObservacionDetailView,
@@ -183,6 +187,32 @@ urlpatterns = [
             AsignarDuplaListView.as_view()
         ),
         name="dupla_asignar",
+    ),
+    path(
+        "comedores/configuracion/cursos-app-mobile/",
+        permissions_any_required(["auth.role_admin"])(CursoAppMobileListView.as_view()),
+        name="cursos_app_mobile_list",
+    ),
+    path(
+        "comedores/configuracion/cursos-app-mobile/crear/",
+        permissions_any_required(["auth.role_admin"])(
+            CursoAppMobileCreateView.as_view()
+        ),
+        name="cursos_app_mobile_crear",
+    ),
+    path(
+        "comedores/configuracion/cursos-app-mobile/<int:pk>/editar/",
+        permissions_any_required(["auth.role_admin"])(
+            CursoAppMobileUpdateView.as_view()
+        ),
+        name="cursos_app_mobile_editar",
+    ),
+    path(
+        "comedores/configuracion/cursos-app-mobile/<int:pk>/eliminar/",
+        permissions_any_required(["auth.role_admin"])(
+            CursoAppMobileDeleteView.as_view()
+        ),
+        name="cursos_app_mobile_eliminar",
     ),
     path(
         "comedores/ajax/load-subestadosintervenciones/",

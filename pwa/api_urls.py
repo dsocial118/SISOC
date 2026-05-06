@@ -5,6 +5,7 @@ from pwa.api_views import (
     ActividadEspacioPWAViewSet,
     CatalogoActividadPWAViewSet,
     ColaboradorEspacioPWAViewSet,
+    CursoAppMobilePWAViewSet,
     MensajeEspacioPWAViewSet,
     NominaEspacioPWAViewSet,
     PwaHealthViewSet,
@@ -126,6 +127,15 @@ urlpatterns = [
             }
         ),
         name="pwa-actividades-inscriptos",
+    ),
+    path(
+        "espacios/<int:comedor_id>/formacion/cursos/",
+        CursoAppMobilePWAViewSet.as_view(
+            {
+                "get": "list",
+            }
+        ),
+        name="pwa-formacion-cursos-list",
     ),
     path(
         "espacios/<int:comedor_id>/mensajes/",

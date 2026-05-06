@@ -946,12 +946,22 @@ class ExpedienteDetailView(DetailView):
         legajos_por_ciudadano = {}
         ciudadanos_ids = [leg.ciudadano_id for leg in legajos_list]
         ciudadanos_ids_set = set(ciudadanos_ids)
+        roles_responsables = {
+            ExpedienteCiudadano.ROLE_RESPONSABLE,
+            ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE,
+        }
+        responsables_por_rol_ids = {
+            leg.ciudadano_id
+            for leg in legajos_list
+            if (getattr(leg, "rol", "") or "").strip().lower() in roles_responsables
+        }
         responsables_ids = set()
-        if ciudadanos_ids:
+        if responsables_por_rol_ids:
             try:
                 responsables_ids = FamiliaService.obtener_ids_responsables(
-                    ciudadanos_ids_set, hijos_ids=ciudadanos_ids_set
+                    responsables_por_rol_ids, hijos_ids=ciudadanos_ids_set
                 )
+                responsables_ids.update(responsables_por_rol_ids)
             except Exception as exc:
                 logger.warning(
                     "No se pudo resolver responsables para expediente %s: %s",
@@ -965,11 +975,10 @@ class ExpedienteDetailView(DetailView):
         hijos_sin_responsable = []
 
         for legajo in legajos_list:
-            legajo.es_responsable = LegajoService._es_responsable(
-                legajo.ciudadano, responsables_ids
-            )
+            rol_normalizado = (getattr(legajo, "rol", "") or "").strip().lower()
+            legajo.es_responsable = rol_normalizado in roles_responsables
             legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
-                legajo.ciudadano.id, responsables_ids=ciudadanos_ids_set
+                legajo.ciudadano.id, responsables_ids=responsables_ids
             )
             hijos_list = []
             # Buscar hijos si es responsable O si el rol es beneficiario_y_responsable
@@ -981,15 +990,9 @@ class ExpedienteDetailView(DetailView):
                     legajo.ciudadano.id, expediente
                 )
 
-            rol_normalizado = (getattr(legajo, "rol", "") or "").strip().lower()
             legajo.es_doble_rol = (
-                (rol_normalizado == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE)
-                or (legajo.es_responsable and legajo.responsable_id is not None)
-                or (
-                    rol_normalizado == ExpedienteCiudadano.ROLE_BENEFICIARIO
-                    and bool(hijos_list)
-                )
-            )
+                rol_normalizado == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+            ) or (legajo.es_responsable and legajo.responsable_id is not None)
 
             # Determinar tipo de legajo segun roles efectivos.
             if legajo.es_doble_rol:

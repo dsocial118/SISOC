@@ -7,6 +7,20 @@ from ciudadanos.models import GrupoFamiliar
 
 logger = logging.getLogger("django")
 
+ROLES_RESPONSABLE_EXPEDIENTE = {
+    "responsable",
+    "beneficiario_y_responsable",
+}
+
+
+def _normalizar_rol_legajo(legajo):
+    return (getattr(legajo, "rol", "") or "").strip().lower()
+
+
+def _legajo_tiene_rol_responsable(legajo):
+    rol = _normalizar_rol_legajo(legajo)
+    return not rol or rol in ROLES_RESPONSABLE_EXPEDIENTE
+
 
 class FamiliaService:
     """Servicios auxiliares para gestionar relaciones familiares."""
@@ -215,10 +229,17 @@ class FamiliaService:
             legajos = list(expediente.expediente_ciudadanos.select_related("ciudadano"))
             ciudadanos_ids = [legajo.ciudadano_id for legajo in legajos]
             ciudadanos_ids_set = set(ciudadanos_ids)
+            responsables_por_rol_ids = {
+                legajo.ciudadano_id
+                for legajo in legajos
+                if _legajo_tiene_rol_responsable(legajo)
+            }
 
-            responsables_ids = FamiliaService.obtener_ids_responsables(
-                ciudadanos_ids_set, hijos_ids=ciudadanos_ids_set
-            )
+            responsables_ids = set()
+            if responsables_por_rol_ids:
+                responsables_ids = FamiliaService.obtener_ids_responsables(
+                    responsables_por_rol_ids, hijos_ids=ciudadanos_ids_set
+                )
 
             estructura = {
                 "responsables": {},
@@ -240,7 +261,7 @@ class FamiliaService:
                     }
                 else:
                     responsables = FamiliaService.obtener_responsables(
-                        ciudadano.id, responsables_ids=ciudadanos_ids_set
+                        ciudadano.id, responsables_ids=responsables_por_rol_ids
                     )
                     responsables_en_expediente = [
                         resp
