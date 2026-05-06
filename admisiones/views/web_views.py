@@ -386,7 +386,7 @@ def _puede_editar_convenio_numero_admision_detail(user, comedor):
 
 
 def _puede_editar_num_expediente_admision_detail(user, admision):
-    if admision.enviado_legales:
+    if getattr(admision, "enviado_legales", False):
         return False
     return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
         user, admision.comedor
@@ -429,7 +429,7 @@ def _build_admision_detail_context_payload(
         "puede_editar_num_expediente": puede_editar_num_expediente,
         "num_expediente_edit_locked_reason": (
             "No se puede editar el expediente una vez enviado a legales."
-            if admision.enviado_legales
+            if getattr(admision, "enviado_legales", False)
             else ""
         ),
         **acompanamiento_context,

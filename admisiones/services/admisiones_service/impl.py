@@ -505,7 +505,7 @@ class AdmisionService:
 
     @staticmethod
     def _puede_editar_num_expediente_update_context(user, admision):
-        if not user or not admision or admision.enviado_legales:
+        if not user or not admision or getattr(admision, "enviado_legales", False):
             return False
         return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
             user, admision.comedor
