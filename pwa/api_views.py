@@ -230,33 +230,31 @@ class CursoAppMobilePWAViewSet(viewsets.ViewSet):
         normalized = " ".join(programa_nombre.lower().split())
         return normalized == "alimentar comunidad"
 
+    @staticmethod
+    def _programas_objetivo_para_comedor(comedor):
+        if CursoAppMobilePWAViewSet._is_pnud_space(comedor):
+            return (
+                CursoAppMobile.PROGRAMA_PNUD,
+                CursoAppMobile.PROGRAMA_AMBOS,
+            )
+        if CursoAppMobilePWAViewSet._is_alimentar_comunidad_space(comedor):
+            return (
+                CursoAppMobile.PROGRAMA_ALIMENTAR,
+                CursoAppMobile.PROGRAMA_AMBOS,
+            )
+        return ()
+
     def list(self, request, comedor_id=None):
         comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, request.user)
 
-        # Regla vigente: en mobile solo para espacios PNUD.
-        if not self._is_pnud_space(comedor):
+        programas_objetivo = self._programas_objetivo_para_comedor(comedor)
+        if not programas_objetivo:
             return Response({"results": []}, status=status.HTTP_200_OK)
 
         queryset = CursoAppMobile.objects.filter(
             activo=True,
+            programa_objetivo__in=programas_objetivo,
         ).order_by("orden", "nombre", "id")
-
-        if self._is_pnud_space(comedor):
-            queryset = queryset.filter(
-                programa_objetivo__in=(
-                    CursoAppMobile.PROGRAMA_PNUD,
-                    CursoAppMobile.PROGRAMA_AMBOS,
-                )
-            )
-        elif self._is_alimentar_comunidad_space(comedor):
-            queryset = queryset.filter(
-                programa_objetivo__in=(
-                    CursoAppMobile.PROGRAMA_ALIMENTAR,
-                    CursoAppMobile.PROGRAMA_AMBOS,
-                )
-            )
-        else:
-            queryset = queryset.none()
 
         serializer = CursoAppMobilePWASerializer(
             queryset,

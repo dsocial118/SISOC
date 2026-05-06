@@ -1907,6 +1907,11 @@ class AdmisionService:
                     "ID de admisión requerido."
                 )
 
+            if not numero_raw:
+                return AdmisionService._build_error_response_actualizar_num_expediente(
+                    "El número de expediente es obligatorio."
+                )
+
             admision = get_object_or_404(Admision, id=admision_id)
 
             if not AdmisionService._puede_editar_num_expediente(request.user, admision):

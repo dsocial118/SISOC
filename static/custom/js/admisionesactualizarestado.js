@@ -692,9 +692,54 @@ function prefillModalNumExpediente() {
     input.value = raw === "-" || raw === "Sin información" ? "" : raw;
 }
 
+function mostrarErrorNumExpediente(message) {
+    const toastEl = document.getElementById("toastNumExpedienteError");
+    const msgEl = document.getElementById("toastNumExpedienteErrorMsg");
+    if (msgEl) {
+        msgEl.textContent = message || "No se pudo actualizar el número de expediente.";
+    }
+    if (toastEl) {
+        new bootstrap.Toast(toastEl).show();
+    } else {
+        alert(message || "No se pudo actualizar el número de expediente.");
+    }
+}
+
+function actualizarVistaNumExpediente(numero) {
+    const value = (numero || "").trim();
+    const hasValue = Boolean(value);
+    const displaySpan = document.getElementById("num-expediente-display");
+    const statusIcon = document.getElementById("num-expediente-status-icon");
+    const editButton = document.getElementById("btn-editar-num-expediente");
+    const infoIcon = document.getElementById("num-expediente-info-icon");
+
+    if (displaySpan) {
+        displaySpan.textContent = hasValue ? value : "Sin información";
+    }
+    if (statusIcon) {
+        statusIcon.classList.toggle("bi-check-circle-fill", hasValue);
+        statusIcon.classList.toggle("text-success", hasValue);
+        statusIcon.classList.toggle("bi-x-circle-fill", !hasValue);
+        statusIcon.classList.toggle("text-danger", !hasValue);
+    }
+    if (editButton) {
+        editButton.classList.toggle("d-none", !hasValue);
+    }
+    if (infoIcon) {
+        infoIcon.classList.toggle("d-none", !hasValue);
+    }
+}
+
 function guardarNumExpedienteDesdeModal() {
     const input = document.getElementById("num-expediente-input");
     const value = input ? input.value.trim() : "";
+    if (!value) {
+        mostrarErrorNumExpediente("El número de expediente es obligatorio.");
+        if (input) {
+            input.focus();
+        }
+        return;
+    }
     actualizarNumExpediente(value);
 }
 
@@ -734,23 +779,11 @@ function actualizarNumExpediente(numero) {
         .then((response) => response.json())
         .then((data) => {
             if (!data.success) {
-                const toastEl = document.getElementById("toastNumExpedienteError");
-                const msgEl = document.getElementById("toastNumExpedienteErrorMsg");
-                if (msgEl) {
-                    msgEl.textContent = data.error || "No se pudo actualizar el número de expediente.";
-                }
-                if (toastEl) {
-                    new bootstrap.Toast(toastEl).show();
-                } else {
-                    alert("Error: " + (data.error || "No se pudo actualizar el número de expediente."));
-                }
+                mostrarErrorNumExpediente(data.error || "No se pudo actualizar el número de expediente.");
                 return;
             }
 
-            const displaySpan = document.getElementById("num-expediente-display");
-            if (displaySpan) {
-                displaySpan.textContent = data.num_expediente || "-";
-            }
+            actualizarVistaNumExpediente(data.num_expediente || "");
             if (input) {
                 input.value = data.num_expediente || "";
             }
@@ -770,16 +803,7 @@ function actualizarNumExpediente(numero) {
         })
         .catch((error) => {
             console.error("Error al actualizar número de expediente:", error);
-            const toastEl = document.getElementById("toastNumExpedienteError");
-            const msgEl = document.getElementById("toastNumExpedienteErrorMsg");
-            if (msgEl) {
-                msgEl.textContent = "Ocurrió un error al actualizar el número de expediente.";
-            }
-            if (toastEl) {
-                new bootstrap.Toast(toastEl).show();
-            } else {
-                alert("Ocurrió un error al actualizar el número de expediente.");
-            }
+            mostrarErrorNumExpediente("Ocurrió un error al actualizar el número de expediente.");
         });
 }
 

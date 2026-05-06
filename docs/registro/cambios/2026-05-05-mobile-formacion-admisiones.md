@@ -56,13 +56,14 @@ Implementar la sección Formación dinámica en mobile con ABM en web, y ajustar
 - En Técnicos, botón Editar y tooltip se muestran solo si ya existe número de expediente.
 
 ## Supuestos
-- El endpoint de formación mantiene regla vigente: visibilidad efectiva para espacios PNUD.
+- El endpoint de formación segmenta cursos por programa del espacio: PNUD, Alimentar Comunidad o ambos.
 - La migración `0041` se aplicará en el entorno para habilitar `es_recomendado`.
 
 ## Validaciones ejecutadas
 - Revisión de consistencia con búsquedas (`rg`) para confirmar que el bloque de edición de expediente quedó solo en Técnicos.
 - Revisión de consistencia de presencia de `es_recomendado` en modelo, form, serializer y mobile.
 - Revisión de formato de diff (`git diff --check`) y limpieza de línea en EOF en template afectado.
+- Tests focalizados del endpoint PWA de formación para PNUD, Alimentar Comunidad y programas no soportados.
 
 ## Pendientes / riesgos
 - Aplicar migraciones en el entorno (`0039`, `0040`, `0041`) donde corresponda.

@@ -211,23 +211,33 @@
                         <li class="nav-item">
                             <div class="comment-text">
                                 Número de Expediente:
-                                <span id="num-expediente-display" class="fw-bold">{{ admision.num_expediente |default_if_none:"Sin informaci&oacute;n" }}</span>
+                                <span id="num-expediente-display" class="fw-bold">
+                                    {% if admision.num_expediente %}
+                                        {{ admision.num_expediente }}
+                                    {% else %}
+                                        Sin información
+                                    {% endif %}
+                                </span>
                                 {% if admision.num_expediente %}
-                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                    <i id="num-expediente-status-icon"
+                                       class="bi bi-check-circle-fill text-success"></i>
                                 {% else %}
-                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                    <i id="num-expediente-status-icon"
+                                       class="bi bi-x-circle-fill text-danger"></i>
                                 {% endif %}
                                 {% if admision.num_expediente and puede_editar_num_expediente %}
                                     <button type="button"
+                                            id="btn-editar-num-expediente"
                                             class="btn btn-outline-primary btn-sm ms-2"
                                             data-bs-toggle="modal"
                                             data-bs-target="#editarExpedienteModal"
                                             data-call-click="prefillModalNumExpediente">Editar</button>
                                 {% elif admision.enviado_legales %}
-                                    <small class="text-muted ms-1">No editable despu?s de enviar a legales.</small>
+                                    <small class="text-muted ms-1">No editable después de enviar a legales.</small>
                                 {% endif %}
                                 {% if admision.num_expediente %}
-                                    <i class="fas fa-info-circle ms-1"
+                                    <i id="num-expediente-info-icon"
+                                       class="fas fa-info-circle ms-1"
                                        data-bs-toggle="tooltip"
                                        data-bs-placement="top"
                                        title="Ten&eacute; en cuenta que, si modific&aacute;s el n&uacute;mero de expediente, este cambio no se reflejar&aacute; en el informe t&eacute;cnico en caso de que ya est&eacute; finalizado."></i>
@@ -755,7 +765,7 @@
                                     {% else %}
                                         <button class="btn btn-secondary" disabled>📄 DOCX no disponible</button>
                                     {% endif %}
- 
+
                                     <button type="button"
                                             class="btn btn-warning"
                                             data-bs-toggle="modal"
@@ -905,6 +915,7 @@
                                        id="num-expediente-input"
                                        class="form-control"
                                        value="{{ admision.num_expediente|default_if_none:'' }}"
+                                       required
                                        maxlength="255" />
                                 <small class="text-muted">
                                     Ten&eacute; en cuenta que, si modific&aacute;s el n&uacute;mero de expediente, este cambio no se reflejar&aacute; en el informe t&eacute;cnico en caso de que ya est&eacute; finalizado.
@@ -978,7 +989,7 @@
                                         document.addEventListener('DOMContentLoaded', function() {
                                             var modal = new bootstrap.Modal(document.getElementById('seleccionModal'));
                                             modal.show();
-                                            
+
                                             document.getElementById('tipoConvenio').addEventListener('change', function() {
                                                 document.getElementById('confirmarSeleccion').disabled = !this.value;
                                             });
