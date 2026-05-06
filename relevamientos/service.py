@@ -330,15 +330,28 @@ def _aplicar_relaciones_nested_espacio_data(espacio_data, espacio_instance=None)
         espacio_data["prestacion"] = prestacion_instance
 
 
+_GESTIONAR_TIPO_ESPACIO_ALIASES = {
+    "alquilado": "Espacio alquilado",
+}
+
+
 def _resolver_tipo_espacio_fisico_espacio_data(espacio_data):
     if "tipo_espacio_fisico" not in espacio_data:
         return
 
-    espacio_data["tipo_espacio_fisico"] = (
-        TipoEspacio.objects.get(nombre__iexact=espacio_data["tipo_espacio_fisico"])
-        if espacio_data["tipo_espacio_fisico"] != ""
-        else None
-    )
+    nombre = espacio_data["tipo_espacio_fisico"]
+    if not nombre:
+        espacio_data["tipo_espacio_fisico"] = None
+        return
+
+    nombre_normalizado = _GESTIONAR_TIPO_ESPACIO_ALIASES.get(nombre.lower(), nombre)
+    resultado = get_object_or_none(TipoEspacio, "nombre__iexact", nombre_normalizado)
+    if resultado is None:
+        logger.warning(
+            "TipoEspacio no encontrado para valor de GESTIONAR",
+            extra={"valor_recibido": nombre, "valor_normalizado": nombre_normalizado},
+        )
+    espacio_data["tipo_espacio_fisico"] = resultado
 
 
 def _extraer_combustibles_queryset_cocina(cocina_data):
