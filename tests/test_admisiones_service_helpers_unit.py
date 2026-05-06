@@ -168,6 +168,24 @@ def test_get_table_data_and_date_formatting(mocker):
     assert rows[0]["cells"][0]["content"] == "3"
 
 
+def test_actualizar_num_expediente_rechaza_valor_vacio(mocker):
+    get_object_or_404 = mocker.patch(
+        "admisiones.services.admisiones_service.get_object_or_404"
+    )
+    request = SimpleNamespace(
+        POST={"admision_id": "1", "num_expediente": "   "},
+        user=SimpleNamespace(is_superuser=True),
+    )
+
+    resultado = module.AdmisionService.actualizar_num_expediente_ajax(request)
+
+    assert resultado == {
+        "success": False,
+        "error": "El número de expediente es obligatorio.",
+    }
+    get_object_or_404.assert_not_called()
+
+
 def test_get_admisiones_tecnicos_queryset_superuser_and_query_modes(mocker):
     class Qs:
         def __init__(self):

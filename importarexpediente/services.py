@@ -385,9 +385,7 @@ def _batch_ids_since(previous_batches, since):
     if since is None:
         return [batch_id for batch_id, _fecha_subida in previous_batches]
     return [
-        batch_id
-        for batch_id, fecha_subida in previous_batches
-        if fecha_subida >= since
+        batch_id for batch_id, fecha_subida in previous_batches if fecha_subida >= since
     ]
 
 

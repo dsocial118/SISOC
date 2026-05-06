@@ -1,0 +1,25 @@
+{% extends "includes/main.html" %}
+{% block title %}Eliminar curso{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card card-danger">
+                <div class="card-header">
+                    <h3 class="card-title">Eliminar curso</h3>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <p>
+                            ¿Desea eliminar el curso <strong>{{ object.nombre }}</strong>?
+                        </p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

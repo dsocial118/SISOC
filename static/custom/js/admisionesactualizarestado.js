@@ -682,6 +682,133 @@ function volverAModoVistaConvenioNumero() {
     }
 }
 
+function prefillModalNumExpediente() {
+    const displaySpan = document.getElementById("num-expediente-display");
+    const input = document.getElementById("num-expediente-input");
+    if (!input) {
+        return;
+    }
+    const raw = (displaySpan?.textContent || "").trim();
+    input.value = raw === "-" || raw === "Sin información" ? "" : raw;
+}
+
+function mostrarErrorNumExpediente(message) {
+    const toastEl = document.getElementById("toastNumExpedienteError");
+    const msgEl = document.getElementById("toastNumExpedienteErrorMsg");
+    if (msgEl) {
+        msgEl.textContent = message || "No se pudo actualizar el número de expediente.";
+    }
+    if (toastEl) {
+        new bootstrap.Toast(toastEl).show();
+    } else {
+        alert(message || "No se pudo actualizar el número de expediente.");
+    }
+}
+
+function actualizarVistaNumExpediente(numero) {
+    const value = (numero || "").trim();
+    const hasValue = Boolean(value);
+    const displaySpan = document.getElementById("num-expediente-display");
+    const statusIcon = document.getElementById("num-expediente-status-icon");
+    const editButton = document.getElementById("btn-editar-num-expediente");
+    const infoIcon = document.getElementById("num-expediente-info-icon");
+
+    if (displaySpan) {
+        displaySpan.textContent = hasValue ? value : "Sin información";
+    }
+    if (statusIcon) {
+        statusIcon.classList.toggle("bi-check-circle-fill", hasValue);
+        statusIcon.classList.toggle("text-success", hasValue);
+        statusIcon.classList.toggle("bi-x-circle-fill", !hasValue);
+        statusIcon.classList.toggle("text-danger", !hasValue);
+    }
+    if (editButton) {
+        editButton.classList.toggle("d-none", !hasValue);
+    }
+    if (infoIcon) {
+        infoIcon.classList.toggle("d-none", !hasValue);
+    }
+}
+
+function guardarNumExpedienteDesdeModal() {
+    const input = document.getElementById("num-expediente-input");
+    const value = input ? input.value.trim() : "";
+    if (!value) {
+        mostrarErrorNumExpediente("El número de expediente es obligatorio.");
+        if (input) {
+            input.focus();
+        }
+        return;
+    }
+    actualizarNumExpediente(value);
+}
+
+function actualizarNumExpediente(numero) {
+    const input = document.getElementById("num-expediente-input");
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfInput) {
+        alert("No se encontro el token CSRF.");
+        return;
+    }
+
+    const urlActualizarNumExpediente = getAdmisionesTecnicosConfigValue(
+        "urlActualizarNumExpediente",
+        window.URL_ACTUALIZAR_NUM_EXPEDIENTE
+    );
+    const admisionId = getAdmisionesTecnicosConfigValue(
+        "admisionId",
+        window.ADMISION_ID
+    );
+
+    if (!urlActualizarNumExpediente || !admisionId) {
+        alert("No se pudo actualizar el número de expediente.");
+        return;
+    }
+
+    fetch(urlActualizarNumExpediente, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrfInput.value,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+            admision_id: admisionId,
+            num_expediente: numero,
+        }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.success) {
+                mostrarErrorNumExpediente(data.error || "No se pudo actualizar el número de expediente.");
+                return;
+            }
+
+            actualizarVistaNumExpediente(data.num_expediente || "");
+            if (input) {
+                input.value = data.num_expediente || "";
+            }
+
+            const toastEl = document.getElementById("toastNumExpedienteExito");
+            if (toastEl) {
+                new bootstrap.Toast(toastEl).show();
+            }
+
+            const modalElement = document.getElementById("editarExpedienteModal");
+            if (modalElement) {
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }
+        })
+        .catch((error) => {
+            console.error("Error al actualizar número de expediente:", error);
+            mostrarErrorNumExpediente("Ocurrió un error al actualizar el número de expediente.");
+        });
+}
+
 window.activarEdicionConvenioNumero = activarEdicionConvenioNumero;
 window.cancelarEdicionConvenioNumero = cancelarEdicionConvenioNumero;
 window.guardarConvenioNumero = guardarConvenioNumero;
+window.prefillModalNumExpediente = prefillModalNumExpediente;
+window.guardarNumExpedienteDesdeModal = guardarNumExpedienteDesdeModal;
