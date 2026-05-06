@@ -146,6 +146,7 @@ Todo lo demás es solo backoffice.
 | CFPINET | `auth.role_vat_sse` | Ve todos los centros, puede crear centros y actividades |
 | CFPJuridicccion | `auth.role_provincia_vat` | Crea y edita centros dentro de su jurisdicción, y administra planes curriculares provinciales |
 | CFP | `auth.role_referentecentrovat` | Ve solo sus centros asignados y gestiona cursos, comisiones, horarios, asistencia e inscripciones dentro de esos centros |
+| CFPRevisor | `auth.role_revisorcentrovat` | Ve solo los centros donde fue asignado como revisor, sin permisos de gestion |
 
 ### 4.2 Roles pendientes de definición
 
@@ -166,8 +167,11 @@ Todo lo demás es solo backoffice.
 
 **Centros**
 - Un centro puede estar activo o inactivo.
-- Solo el referente asignado, superuser o rol CFPINET pueden editar/eliminar un centro.
-- Referente solo ve sus centros; SSE ve todos.
+- Un centro puede tener multiples `referentes` CFP y multiples `revisores` CFPRevisor.
+- Solo referentes asignados, superuser o roles SSE/provinciales con permisos vigentes pueden gestionar el centro.
+- Revisor solo ve sus centros asignados y no puede editar, borrar ni gestionar cursos, comisiones, horarios, asistencia o inscripciones.
+- Usuarios con grupos CFP y CFPRevisor unen el alcance de lectura, pero gestionan solo los centros donde estan como referentes.
+- CFPINET mantiene el comportamiento existente y ve todos los centros.
 
 **Actividades (ActividadCentro)**
 - Estados: planificada → en_curso → finalizada.
@@ -670,7 +674,9 @@ El modelo `VAT.models.Centro` ya existe y tiene CRUD completo, vistas, API, perm
 **Lo que tiene:**
 - ✅ nombre, codigo (unique), activo, foto
 - ✅ FK a Organizacion (organizacion_asociada)
-- ✅ FK a User (referente) con limit_choices_to grupo
+- ✅ FK legacy a User (`referente`) sincronizada con el primer referente
+- ✅ M2M a User (`referentes`) filtrada por grupo CFP
+- ✅ M2M a User (`revisores`) filtrada por grupo CFPRevisor
 - ✅ Ubicación: provincia, municipio, localidad, calle, numero, domicilio_actividad
 - ✅ Contacto: telefono, celular, correo, sitio_web, link_redes
 - ✅ Referente: nombre_referente, apellido_referente, telefono_referente, correo_referente
