@@ -75,6 +75,8 @@ def test_create_groups_creates_cfpinet_with_vat_permissions():
         "view_centro",
         "add_centro",
         "change_centro",
+        "view_comision",
+        "view_comisioncurso",
         "view_planversioncurricular",
         "add_planversioncurricular",
         "change_planversioncurricular",
