@@ -17,6 +17,7 @@ from celiaquia.views.expediente import (
     ExpedienteDetailView,
     ExpedienteUpdateView,
     ExpedienteDeleteView,
+    ExpedienteExcelMasivoDownloadView,
     ExpedientePreviewExcelView,
     ExpedientePlantillaExcelView,
     ExpedienteImportView,
@@ -131,6 +132,13 @@ urlpatterns = [
             ExpedienteUpdateView.as_view()
         ),
         name="expediente_update",
+    ),
+    path(
+        "expedientes/<int:pk>/excel-masivo/descargar/",
+        permissions_any_required(["celiaquia.view_expediente"])(
+            ExpedienteExcelMasivoDownloadView.as_view()
+        ),
+        name="expediente_excel_masivo_descargar",
     ),
     path(
         "expedientes/<int:pk>/eliminar/",
