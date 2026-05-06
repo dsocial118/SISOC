@@ -37,9 +37,13 @@ from VAT.services.inscripcion_service import (
     InscripcionService,
 )
 from VAT.services.access_scope import (
+    filter_centros_queryset_for_management,
     filter_centros_queryset_for_user,
+    filter_comisiones_queryset_for_management,
     filter_comisiones_queryset_for_user,
+    filter_ofertas_queryset_for_management,
     filter_ofertas_queryset_for_user,
+    filter_sesiones_queryset_for_management,
     filter_sesiones_queryset_for_user,
 )
 
@@ -97,7 +101,7 @@ class OfertaInstitucionalCreateView(LoginRequiredMixin, CreateView):
         centro_id = self.request.GET.get("centro")
         if (
             centro_id
-            and filter_centros_queryset_for_user(
+            and filter_centros_queryset_for_management(
                 Centro.objects.filter(pk=centro_id), self.request.user
             ).exists()
         ):
@@ -106,7 +110,7 @@ class OfertaInstitucionalCreateView(LoginRequiredMixin, CreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields["centro"].queryset = filter_centros_queryset_for_user(
+        form.fields["centro"].queryset = filter_centros_queryset_for_management(
             Centro.objects.all(), self.request.user
         ).order_by("nombre")
         return form
@@ -146,11 +150,11 @@ class OfertaInstitucionalUpdateView(LoginRequiredMixin, UpdateView):
         queryset = OfertaInstitucional.objects.select_related(
             "centro", "plan_curricular", "programa"
         )
-        return filter_ofertas_queryset_for_user(queryset, self.request.user)
+        return filter_ofertas_queryset_for_management(queryset, self.request.user)
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields["centro"].queryset = filter_centros_queryset_for_user(
+        form.fields["centro"].queryset = filter_centros_queryset_for_management(
             Centro.objects.all(), self.request.user
         ).order_by("nombre")
         return form
@@ -175,7 +179,7 @@ class OfertaInstitucionalDeleteView(
 
     def get_queryset(self):
         queryset = OfertaInstitucional.objects.select_related("centro")
-        return filter_ofertas_queryset_for_user(queryset, self.request.user)
+        return filter_ofertas_queryset_for_management(queryset, self.request.user)
 
 
 # ============================================================================
@@ -230,7 +234,7 @@ class ComisionCreateView(LoginRequiredMixin, CreateView):
         oferta_id = self.request.GET.get("oferta")
         if (
             oferta_id
-            and filter_ofertas_queryset_for_user(
+            and filter_ofertas_queryset_for_management(
                 OfertaInstitucional.objects.filter(pk=oferta_id), self.request.user
             ).exists()
         ):
@@ -239,7 +243,7 @@ class ComisionCreateView(LoginRequiredMixin, CreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        scoped_ofertas = filter_ofertas_queryset_for_user(
+        scoped_ofertas = filter_ofertas_queryset_for_management(
             OfertaInstitucional.objects.select_related("centro"), self.request.user
         ).order_by("-ciclo_lectivo")
         scoped_centros_ids = scoped_ofertas.values_list(
@@ -351,7 +355,7 @@ class InscripcionCambiarEstadoView(LoginRequiredMixin, View):
     """Cambia el estado de una Inscripcion. POST: {estado: <nuevo_estado>}."""
 
     def post(self, request, pk):
-        scoped_inscripciones = filter_comisiones_queryset_for_user(
+        scoped_inscripciones = filter_comisiones_queryset_for_management(
             Comision.objects.all(), request.user
         ).values_list("id", flat=True)
         inscripcion = get_object_or_404(
@@ -390,7 +394,7 @@ class AsistenciaSesionView(LoginRequiredMixin, TemplateView):
     template_name = "vat/oferta_institucional/asistencia_sesion.html"
 
     def get_sesion(self, sesion_pk):
-        scoped_qs = filter_sesiones_queryset_for_user(
+        scoped_qs = filter_sesiones_queryset_for_management(
             SesionComision.objects.select_related(
                 "comision__oferta__centro",
                 "horario__dia_semana",
@@ -471,11 +475,11 @@ class ComisionUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         queryset = Comision.objects.select_related("oferta__centro")
-        return filter_comisiones_queryset_for_user(queryset, self.request.user)
+        return filter_comisiones_queryset_for_management(queryset, self.request.user)
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        scoped_ofertas = filter_ofertas_queryset_for_user(
+        scoped_ofertas = filter_ofertas_queryset_for_management(
             OfertaInstitucional.objects.select_related("centro"), self.request.user
         ).order_by("-ciclo_lectivo")
         scoped_centros_ids = scoped_ofertas.values_list(
@@ -505,7 +509,7 @@ class ComisionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteVi
 
     def get_queryset(self):
         queryset = Comision.objects.select_related("oferta__centro")
-        return filter_comisiones_queryset_for_user(queryset, self.request.user)
+        return filter_comisiones_queryset_for_management(queryset, self.request.user)
 
 
 # ============================================================================
@@ -550,7 +554,7 @@ class ComisionHorarioCreateView(LoginRequiredMixin, CreateView):
         comision_id = self.request.GET.get("comision")
         if (
             comision_id
-            and filter_comisiones_queryset_for_user(
+            and filter_comisiones_queryset_for_management(
                 Comision.objects.filter(pk=comision_id), self.request.user
             ).exists()
         ):
@@ -559,7 +563,7 @@ class ComisionHorarioCreateView(LoginRequiredMixin, CreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields["comision"].queryset = filter_comisiones_queryset_for_user(
+        form.fields["comision"].queryset = filter_comisiones_queryset_for_management(
             Comision.objects.select_related("oferta__centro"), self.request.user
         ).order_by("codigo_comision")
         return form
@@ -601,7 +605,7 @@ class ComisionHorarioUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "vat/oferta_institucional/horario_form.html"
 
     def get_queryset(self):
-        scoped_comisiones = filter_comisiones_queryset_for_user(
+        scoped_comisiones = filter_comisiones_queryset_for_management(
             Comision.objects.all(), self.request.user
         )
         return ComisionHorario.objects.select_related("comision", "dia_semana").filter(
@@ -610,7 +614,7 @@ class ComisionHorarioUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields["comision"].queryset = filter_comisiones_queryset_for_user(
+        form.fields["comision"].queryset = filter_comisiones_queryset_for_management(
             Comision.objects.select_related("oferta__centro"), self.request.user
         ).order_by("codigo_comision")
         return form
@@ -635,7 +639,7 @@ class ComisionHorarioDeleteView(LoginRequiredMixin, DeleteView):
     context_object_name = "horario"
 
     def get_queryset(self):
-        scoped_comisiones = filter_comisiones_queryset_for_user(
+        scoped_comisiones = filter_comisiones_queryset_for_management(
             Comision.objects.all(), self.request.user
         )
         return ComisionHorario.objects.select_related("comision", "dia_semana").filter(

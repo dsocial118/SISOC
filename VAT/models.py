@@ -21,6 +21,18 @@ class Centro(SoftDeleteModelMixin, models.Model):
         null=True,
         blank=False,
     )
+    referentes = models.ManyToManyField(
+        User,
+        limit_choices_to={"groups__name": "CFP"},
+        related_name="vat_centros_referente",
+        blank=True,
+    )
+    revisores = models.ManyToManyField(
+        User,
+        limit_choices_to={"groups__name": "CFPRevisor"},
+        related_name="vat_centros_revisor",
+        blank=True,
+    )
     codigo = models.CharField(max_length=20, unique=True)
     activo = models.BooleanField(default=True)
     provincia = models.ForeignKey(
