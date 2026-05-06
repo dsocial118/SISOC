@@ -21,7 +21,6 @@ from pwa.api_serializers import (
     ColaboradorEspacioPWACreateUpdateSerializer,
     ColaboradorEspacioPWAListSerializer,
     ColaboradorGeneroPWAListSerializer,
-    CursoAppMobilePWASerializer,
     DiaSerializer,
     InscriptoActividadPWAListSerializer,
     MensajeEspacioPWASerializer,
@@ -34,6 +33,7 @@ from pwa.api_serializers import (
     RegistroAsistenciaNominaPWAListSerializer,
     SexoSerializer,
 )
+from pwa.curso_app_mobile_serializers import CursoAppMobilePWASerializer
 from pwa.models import (
     ActividadEspacioPWA,
     CatalogoActividadPWA,
