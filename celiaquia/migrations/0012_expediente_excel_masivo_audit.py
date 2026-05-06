@@ -5,9 +5,7 @@ import django.db.models.deletion
 
 def backfill_excel_masivo_audit(apps, _schema_editor):
     Expediente = apps.get_model("celiaquia", "Expediente")
-    ExpedienteEstadoHistorial = apps.get_model(
-        "celiaquia", "ExpedienteEstadoHistorial"
-    )
+    ExpedienteEstadoHistorial = apps.get_model("celiaquia", "ExpedienteEstadoHistorial")
 
     expedientes = (
         Expediente.objects.exclude(excel_masivo="")
@@ -17,9 +15,7 @@ def backfill_excel_masivo_audit(apps, _schema_editor):
     for expediente in expedientes.iterator():
         update_data = {}
         if expediente.usuario_provincia_id:
-            update_data["excel_masivo_cargado_por_id"] = (
-                expediente.usuario_provincia_id
-            )
+            update_data["excel_masivo_cargado_por_id"] = expediente.usuario_provincia_id
         if expediente.fecha_creacion:
             update_data["excel_masivo_cargado_en"] = expediente.fecha_creacion
 
