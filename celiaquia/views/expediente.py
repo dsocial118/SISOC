@@ -8,6 +8,7 @@ from django.views.generic import ListView, CreateView, DetailView, UpdateView
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
 from django.http import (
+    FileResponse,
     JsonResponse,
     HttpResponse,
     HttpResponseBadRequest,
@@ -111,6 +112,13 @@ def _can_manage_registros_erroneos(user) -> bool:
     return bool(
         _is_admin(user)
         or _is_provincial(user)
+        or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+    )
+
+
+def _can_manage_excel_masivo_audit(user) -> bool:
+    return bool(
+        _is_admin(user)
         or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
     )
 
@@ -583,6 +591,8 @@ class ExpedienteListView(ListView):
             Expediente.objects.select_related(
                 "estado",
                 "usuario_provincia__profile__provincia",
+                "excel_masivo_cargado_por",
+                "excel_masivo_procesado_por",
             )
             .prefetch_related("asignaciones_tecnicos__tecnico")
             .annotate(
@@ -601,6 +611,17 @@ class ExpedienteListView(ListView):
                 "usuario_provincia__profile__provincia__id",
                 "usuario_provincia__profile__provincia__nombre",
                 "numero_expediente",
+                "excel_masivo",
+                "excel_masivo_cargado_por_id",
+                "excel_masivo_cargado_por__first_name",
+                "excel_masivo_cargado_por__last_name",
+                "excel_masivo_cargado_por__username",
+                "excel_masivo_cargado_en",
+                "excel_masivo_procesado_por_id",
+                "excel_masivo_procesado_por__first_name",
+                "excel_masivo_procesado_por__last_name",
+                "excel_masivo_procesado_por__username",
+                "excel_masivo_procesado_en",
             )
         )
         if _is_admin(user) or _user_has_permission(
@@ -650,6 +671,7 @@ class ExpedienteListView(ListView):
         ctx["is_tecnico_celiaquia"] = is_tecnico
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
+        ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
         ctx["show_tecnico_column_celiaquia"] = is_admin or is_coord or is_tecnico
 
         if is_admin or is_coord:
@@ -800,6 +822,26 @@ class ExpedientePlantillaExcelView(View):
         return response
 
 
+class ExpedienteExcelMasivoDownloadView(View):
+    """Descarga la copia del Excel masivo vigente del expediente."""
+
+    def get(self, request, pk):
+        if not _can_manage_excel_masivo_audit(request.user):
+            raise PermissionDenied("No tiene permisos para descargar el Excel masivo.")
+
+        expediente = get_object_or_404(Expediente, pk=pk)
+        if not expediente.excel_masivo:
+            messages.error(request, "El expediente no tiene Excel masivo cargado.")
+            return redirect("expediente_detail", pk=expediente.pk)
+
+        filename = expediente.excel_masivo.name.rsplit("/", 1)[-1]
+        return FileResponse(
+            expediente.excel_masivo.open("rb"),
+            as_attachment=True,
+            filename=filename,
+        )
+
+
 @method_decorator(csrf_protect, name="dispatch")
 class ExpedientePreviewExcelView(View):
     def post(self, request, *args, **kwargs):
@@ -863,7 +905,11 @@ class ExpedienteDetailView(DetailView):
     def get_queryset(self):
         user = self.request.user
         base = Expediente.objects.select_related(
-            "estado", "usuario_modificador", "usuario_provincia"
+            "estado",
+            "usuario_modificador",
+            "usuario_provincia",
+            "excel_masivo_cargado_por",
+            "excel_masivo_procesado_por",
         ).prefetch_related(
             "expediente_ciudadanos__ciudadano",
             "expediente_ciudadanos__estado",
@@ -891,10 +937,12 @@ class ExpedienteDetailView(DetailView):
         is_tecnico = _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
         can_manage_registros_erroneos = _can_manage_registros_erroneos(user)
         ctx["is_tecnico_celiaquia"] = is_tecnico
+        ctx["is_admin_celiaquia"] = is_admin
         ctx["is_coord_celiaquia"] = is_coord
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
         ctx["can_manage_registros_erroneos"] = can_manage_registros_erroneos
+        ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
 
         preview = preview_error = None
         preview_limit_actual = None
@@ -1411,6 +1459,23 @@ class ExpedienteUpdateView(UpdateView):
     model = Expediente
     form_class = ExpedienteForm
     template_name = "celiaquia/expediente_form.html"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.request.FILES.get("excel_masivo"):
+            self.object.excel_masivo_cargado_por = self.request.user
+            self.object.excel_masivo_cargado_en = timezone.now()
+            self.object.excel_masivo_procesado_por = None
+            self.object.excel_masivo_procesado_en = None
+            self.object.save(
+                update_fields=[
+                    "excel_masivo_cargado_por",
+                    "excel_masivo_cargado_en",
+                    "excel_masivo_procesado_por",
+                    "excel_masivo_procesado_en",
+                ]
+            )
+        return response
 
     def get_success_url(self):
         return reverse_lazy("expediente_detail", args=[self.object.pk])
