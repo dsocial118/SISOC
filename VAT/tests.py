@@ -10,6 +10,7 @@ from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
 from openpyxl import load_workbook
@@ -1917,6 +1918,141 @@ def test_usuario_mixto_no_gestiona_centro_asignado_solo_como_revisor(
     assert comision_create_response.status_code == 403
     assert comision_update_response.status_code == 404
     assert comision_delete_response.status_code == 404
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_cfpinet_visualiza_detalle_comision_curso_desde_panel(client, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    call_command("create_groups", verbosity=0)
+    cfpinet = Group.objects.get(name="CFPINET")
+    user = User.objects.create_user(
+        username="cfpinet-comision-curso", password="test1234"
+    )
+    user.groups.add(cfpinet)
+    centro = _create_vat_centro(
+        codigo="INET-CUR-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle INET 100",
+        es_principal=True,
+    )
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial INET", activo=True)
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso visible INET",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="INET-CUR-COM-001",
+        nombre="Comision curso visible INET",
+        cupo_total=20,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        estado="activa",
+    )
+
+    client.force_login(user)
+    panel_response = client.get(
+        reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk})
+    )
+    detail_response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+    )
+
+    panel_content = panel_response.content.decode("utf-8")
+    detail_content = detail_response.content.decode("utf-8")
+    assert panel_response.status_code == 200
+    assert (
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+        in panel_content
+    )
+    assert 'class="fas fa-eye"' in panel_content
+    assert detail_response.status_code == 200
+    assert "Comision curso visible INET" in detail_content
+    assert (
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+        not in detail_content
+    )
+    assert (
+        reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk})
+        not in detail_content
+    )
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_cfpinet_visualiza_listado_y_detalle_comision_institucional(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    call_command("create_groups", verbosity=0)
+    cfpinet = Group.objects.get(name="CFPINET")
+    user = User.objects.create_user(username="cfpinet-comision", password="test1234")
+    user.groups.add(cfpinet)
+    centro = _create_vat_centro(
+        codigo="INET-COM-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    sector = Sector.objects.create(nombre="Sector INET")
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial Comision INET", activo=True
+    )
+    plan = PlanVersionCurricular.objects.create(
+        nombre="Plan Comision INET",
+        provincia=provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    programa = Programa.objects.create(nombre="Programa Comision INET")
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta visible INET",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    comision = Comision.objects.create(
+        oferta=oferta,
+        codigo_comision="INET-COM-001",
+        nombre="Comision visible INET",
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        cupo=20,
+        estado="activa",
+    )
+
+    client.force_login(user)
+    list_response = client.get(reverse("vat_comision_list"))
+    detail_response = client.get(
+        reverse("vat_comision_detail", kwargs={"pk": comision.pk})
+    )
+
+    list_content = list_response.content.decode("utf-8")
+    detail_content = detail_response.content.decode("utf-8")
+    assert list_response.status_code == 200
+    assert reverse("vat_comision_detail", kwargs={"pk": comision.pk}) in list_content
+    assert detail_response.status_code == 200
+    assert "Comision visible INET" in detail_content
+    assert (
+        reverse("vat_comision_update", kwargs={"pk": comision.pk}) not in detail_content
+    )
+    assert (
+        reverse("vat_comision_delete", kwargs={"pk": comision.pk}) not in detail_content
+    )
 
 
 @pytest.mark.django_db
