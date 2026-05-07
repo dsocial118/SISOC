@@ -55,7 +55,6 @@ from VAT.services.access_scope import (
     can_user_create_centro,
     can_user_edit_centro,
     filter_centros_queryset_for_user,
-    is_vat_referente,
 )
 from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.advanced_filters import AdvancedFilterEngine
@@ -119,7 +118,7 @@ def _get_centro_detail_queryset():
         "provincia",
         "municipio",
         "localidad",
-    )
+    ).prefetch_related("referentes", "revisores")
 
 
 def _scope_centro_field_to_current_centro(form, centro):
@@ -359,6 +358,7 @@ def _get_plan_estudio_label(plan_estudio):
 
 
 def _build_cursos_panel_context(request, centro):
+    can_manage_centro = can_user_edit_centro(getattr(request, "user", None), centro)
     cursos = list(
         Curso.objects.filter(centro=centro)
         .select_related("modalidad", "plan_estudio")
@@ -418,6 +418,7 @@ def _build_cursos_panel_context(request, centro):
         "comisiones_curso": comisiones_curso,
         "curso_form": curso_form,
         "comision_curso_form": comision_curso_form,
+        "can_manage_centro": can_manage_centro,
     }
 
 
@@ -588,6 +589,10 @@ class CentroDetailView(CentroAccessMixin, LoginRequiredMixin, DetailView):
             )
         )
         ctx["ubicaciones"] = list(centro.ubicaciones.select_related("localidad").all())
+        referentes_centro = list(centro.referentes.all())
+        if not referentes_centro and centro.referente_id:
+            referentes_centro = [centro.referente]
+        ctx["referentes_centro"] = referentes_centro
         ctx["count_ofertas"] = centro.ofertas_institucionales.count()
         ctx["count_comisiones"] = Comision.objects.filter(
             oferta__centro_id=centro.pk
@@ -915,10 +920,7 @@ class CentroDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
         centro = self.get_object()
         if not (
             can_user_add_vat_entities(request.user)
-            or (
-                is_vat_referente(request.user)
-                and centro.referente_id == request.user.id
-            )
+            or can_user_edit_centro(request.user, centro)
         ):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)

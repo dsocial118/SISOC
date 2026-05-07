@@ -20,6 +20,7 @@ from centrodefamilia.services.beneficiarios_service import (
     get_filtered_responsables,
     get_responsable_detail_context,
     get_beneficiario_detail_queryset,
+    hydrate_responsables_page,
 )
 from centrodefamilia.services.beneficiarios_filter_config import (
     get_filters_ui_config as get_beneficiarios_filters_ui_config,
@@ -27,6 +28,7 @@ from centrodefamilia.services.beneficiarios_filter_config import (
 from centrodefamilia.services.responsables_filter_config import (
     get_filters_ui_config as get_responsables_filters_ui_config,
 )
+from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 
 
@@ -85,10 +87,20 @@ class ResponsableListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return get_filtered_responsables(self.request)
 
+    def paginate_queryset(self, queryset, page_size):
+        paginator = NoCountPaginator(queryset.values_list("pk", flat=True), page_size)
+        page_obj = paginator.get_page(self.request.GET.get(self.page_kwarg))
+        object_list = hydrate_responsables_page(page_obj.object_list)
+        page_obj.object_list = object_list
+        return paginator, page_obj, object_list, page_obj.has_other_pages()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(get_responsables_list_context(self.request))
         prepare_responsables_for_display(context["responsables"])
+        page_obj = context.get("page_obj")
+        if page_obj and getattr(page_obj.paginator, "count", None) is None:
+            context["page_range"] = build_no_count_page_range(page_obj)
         context.update(
             {
                 "breadcrumb_items": [

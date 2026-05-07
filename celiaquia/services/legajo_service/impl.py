@@ -18,6 +18,11 @@ from celiaquia.services.familia_service import (
 
 logger = logging.getLogger("django")
 
+ROLES_RESPONSABLE = {
+    ExpedienteCiudadano.ROLE_RESPONSABLE,
+    ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE,
+}
+
 
 def _iter_legajos(qs):
     if hasattr(qs, "iterator"):
@@ -63,33 +68,66 @@ def _normalizar_fecha_nacimiento(valor):
     return None
 
 
+def _normalizar_rol_legajo(legajo):
+    return (getattr(legajo, "rol", "") or "").strip().lower()
+
+
+def _rol_indica_responsable(rol):
+    return rol in ROLES_RESPONSABLE
+
+
+def _rol_desconocido_o_responsable(rol):
+    return not rol or _rol_indica_responsable(rol)
+
+
+def _iter_ciudadano_roles_legajos(qs):
+    if hasattr(qs, "values_list"):
+        try:
+            for item in qs.values_list("ciudadano_id", "rol"):
+                if isinstance(item, (tuple, list)):
+                    ciudadano_id = item[0] if item else None
+                    rol = item[1] if len(item) > 1 else ""
+                else:
+                    ciudadano_id = item
+                    rol = ""
+                if ciudadano_id is not None:
+                    yield ciudadano_id, (rol or "").strip().lower()
+            return
+        except Exception:
+            pass
+
+    if hasattr(qs, "iterator") or hasattr(qs, "all"):
+        for legajo in _iter_legajos(qs):
+            ciudadano_id = getattr(legajo, "ciudadano_id", None)
+            if ciudadano_id is not None:
+                yield ciudadano_id, _normalizar_rol_legajo(legajo)
+
+
 class LegajoService:
     @staticmethod
     def obtener_ids_responsables_expediente(expediente, qs=None):
         if qs is None:
             qs = expediente.expediente_ciudadanos
 
-        ciudadanos_ids = []
-        if hasattr(qs, "values_list"):
-            try:
-                ciudadanos_ids = list(qs.values_list("ciudadano_id", flat=True))
-            except Exception:
-                ciudadanos_ids = []
-        if not ciudadanos_ids and (hasattr(qs, "iterator") or hasattr(qs, "all")):
-            ciudadanos_ids = [
-                getattr(legajo, "ciudadano_id", None)
-                for legajo in _iter_legajos(qs)
-                if getattr(legajo, "ciudadano_id", None) is not None
-            ]
+        ciudadano_roles = list(_iter_ciudadano_roles_legajos(qs))
+        ciudadanos_ids = [ciudadano_id for ciudadano_id, _rol in ciudadano_roles]
 
         if not ciudadanos_ids:
             return set()
 
         try:
             ciudadanos_ids_set = set(ciudadanos_ids)
-            return FamiliaService.obtener_ids_responsables(
-                ciudadanos_ids_set, hijos_ids=ciudadanos_ids_set
+            responsables_por_rol = {
+                ciudadano_id
+                for ciudadano_id, rol in ciudadano_roles
+                if _rol_desconocido_o_responsable(rol)
+            }
+            if not responsables_por_rol:
+                return set()
+            responsables_con_hijos = FamiliaService.obtener_ids_responsables(
+                responsables_por_rol, hijos_ids=ciudadanos_ids_set
             )
+            return responsables_por_rol | responsables_con_hijos
         except Exception as exc:
             logger.warning(
                 "No se pudo determinar responsables en expediente %s: %s",
@@ -322,8 +360,12 @@ class LegajoService:
             miss = LegajoService.campos_archivos_faltantes(leg, responsables_ids)
 
             if miss:
-                es_responsable = LegajoService._es_responsable(
-                    leg.ciudadano, responsables_ids
+                rol_legajo = _normalizar_rol_legajo(leg)
+                es_responsable = _rol_indica_responsable(
+                    rol_legajo
+                ) or LegajoService._es_responsable(
+                    leg.ciudadano,
+                    responsables_ids,
                 )
                 archivos_requeridos = LegajoService.get_archivos_requeridos_por_legajo(
                     leg, responsables_ids
@@ -367,15 +409,15 @@ class LegajoService:
     def get_archivos_requeridos_por_legajo(legajo, responsables_ids=None):
         """Retorna los archivos requeridos segun el tipo de legajo y edad."""
 
-        rol_legajo = (getattr(legajo, "rol", "") or "").strip().lower()
+        rol_legajo = _normalizar_rol_legajo(legajo)
         es_doble_rol = bool(getattr(legajo, "es_doble_rol", False)) or (
             rol_legajo == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
         )
 
         ciudadano = getattr(legajo, "ciudadano", getattr(legajo, "ciudadano_id", None))
-        es_responsable = (
+        es_responsable = _rol_indica_responsable(rol_legajo) or (
             LegajoService._es_responsable(ciudadano, responsables_ids)
-            if ciudadano is not None
+            if ciudadano is not None and not rol_legajo
             else False
         )
 

@@ -551,6 +551,16 @@ class Command(BaseCommand):
                 if not dry_run:
                     centro.save()
 
+                    if should_update_field(
+                        created=created,
+                        header_mapping=header_mapping,
+                        field_name="referente_id",
+                    ):
+                        if referente is None:
+                            centro.referentes.clear()
+                        else:
+                            centro.referentes.set([referente])
+
                     if (
                         should_update_field(
                             created=created,

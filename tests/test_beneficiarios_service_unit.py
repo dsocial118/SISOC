@@ -1,6 +1,7 @@
 """Unit tests for centrodefamilia beneficiarios service helpers."""
 
 import contextlib
+import json
 
 from types import SimpleNamespace
 
@@ -285,6 +286,38 @@ def test_filtered_wrappers_delegan_a_motor_avanzado(mocker):
     r_filter.assert_called_once_with(r_qs, rq)
 
 
+def test_get_filtered_responsables_anota_solo_si_filtro_usa_cantidad(mocker):
+    """Agrega conteo global solo cuando el filtro lo necesita."""
+    filters_payload = json.dumps(
+        {
+            "logic": "AND",
+            "items": [
+                {
+                    "field": "cantidad_beneficiarios",
+                    "op": "gt",
+                    "value": "2",
+                }
+            ],
+        }
+    )
+    rq = QueryDict(mutable=True)
+    rq["filters"] = filters_payload
+    get_queryset = mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.get_responsables_queryset",
+        return_value="QS",
+    )
+    filter_queryset = mocker.patch.object(
+        service.RESPONSABLE_ADVANCED_FILTER,
+        "filter_queryset",
+        return_value="RQ",
+    )
+
+    assert service.get_filtered_responsables(rq) == "RQ"
+
+    get_queryset.assert_called_once_with(include_beneficiarios_count=True)
+    filter_queryset.assert_called_once_with("QS", rq)
+
+
 def test_get_beneficiarios_queryset_encadena_select_related_order(mocker):
     """Construye queryset optimizada para beneficiarios."""
     order_qs = object()
@@ -302,22 +335,62 @@ def test_get_beneficiarios_queryset_encadena_select_related_order(mocker):
     select_related.assert_called_once_with("responsable", "provincia", "municipio")
 
 
-def test_get_responsables_queryset_encadena_annotate_select_related_order(mocker):
-    """Construye queryset optimizada para responsables con conteo."""
+def test_get_responsables_queryset_sin_conteo_evita_annotate_global(mocker):
+    """Construye queryset base sin count global para el listado."""
     order_qs = object()
     order_by = mocker.Mock(return_value=order_qs)
     select_related = mocker.Mock(return_value=SimpleNamespace(order_by=order_by))
-    annotate = mocker.Mock(return_value=SimpleNamespace(select_related=select_related))
+    annotate = mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.Responsable.objects.annotate"
+    )
     mocker.patch(
-        "centrodefamilia.services.beneficiarios_service.Responsable.objects.annotate",
-        annotate,
+        "centrodefamilia.services.beneficiarios_service.Responsable.objects.select_related",
+        select_related,
     )
 
     out = service.get_responsables_queryset()
 
     assert out is order_qs
+    annotate.assert_not_called()
     select_related.assert_called_once_with("provincia", "municipio")
-    order_by.assert_called_once_with("-id", "apellido", "nombre")
+    order_by.assert_called_once_with("-id")
+
+
+def test_get_responsables_queryset_con_conteo_anota_beneficiarios(mocker):
+    """Mantiene la anotacion cuando el flujo necesita cantidad de beneficiarios."""
+    order_qs = object()
+    order_by = mocker.Mock(return_value=order_qs)
+    annotate = mocker.Mock(return_value=SimpleNamespace(order_by=order_by))
+    select_related = mocker.Mock(return_value=SimpleNamespace(annotate=annotate))
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.Responsable.objects.select_related",
+        select_related,
+    )
+
+    out = service.get_responsables_queryset(include_beneficiarios_count=True)
+
+    assert out is order_qs
+    assert "cantidad_beneficiarios" in annotate.call_args.kwargs
+    select_related.assert_called_once_with("provincia", "municipio")
+    order_by.assert_called_once_with("-id")
+
+
+def test_hydrate_responsables_page_preserva_orden_y_conteo(mocker):
+    """Hidrata solo los IDs visibles preservando el orden de la pagina."""
+    responsable_1 = SimpleNamespace(pk=1)
+    responsable_2 = SimpleNamespace(pk=2)
+    filtered_qs = [responsable_2, responsable_1]
+    base_qs = SimpleNamespace(filter=mocker.Mock(return_value=filtered_qs))
+    get_queryset = mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.get_responsables_queryset",
+        return_value=base_qs,
+    )
+
+    out = service.hydrate_responsables_page([1, 2])
+
+    assert out == [responsable_1, responsable_2]
+    get_queryset.assert_called_once_with(include_beneficiarios_count=True)
+    base_qs.filter.assert_called_once_with(pk__in=[1, 2])
 
 
 def test_get_responsable_detail_context_filtra_y_select_related(mocker):

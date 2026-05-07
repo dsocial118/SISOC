@@ -260,6 +260,94 @@ def test_expediente_detail_ignora_hijos_fuera_del_expediente(client):
 
 
 @pytest.mark.django_db
+def test_expediente_detail_no_promueve_beneficiario_por_relacion_de_expediente_eliminado(
+    client,
+):
+    user = User.objects.create_user(username="prov_rel_eliminada", password="pass")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    estado_expediente = EstadoExpediente.objects.create(nombre="CREADO_REL_ELIM")
+    estado_legajo = EstadoLegajo.objects.create(nombre="DOCUMENTO_REL_ELIM")
+
+    responsable_anterior = Ciudadano.objects.create(
+        apellido="Anterior",
+        nombre="Responsable",
+        fecha_nacimiento=date(1980, 1, 1),
+        documento=40111226,
+    )
+    hijo_anterior = Ciudadano.objects.create(
+        apellido="Anterior",
+        nombre="Hijo",
+        fecha_nacimiento=date(2015, 1, 1),
+        documento=40111227,
+    )
+
+    expediente_eliminado = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente_eliminado,
+        ciudadano=responsable_anterior,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente_eliminado,
+        ciudadano=hijo_anterior,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
+    )
+    GrupoFamiliar.objects.create(
+        ciudadano_1=responsable_anterior,
+        ciudadano_2=hijo_anterior,
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+        conviven=True,
+        cuidador_principal=True,
+        estado_relacion=GrupoFamiliar.ESTADO_BUENO,
+    )
+    expediente_eliminado.delete(user=user, cascade=True)
+
+    expediente_nuevo = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+    )
+    legajo_responsable_anterior = ExpedienteCiudadano.objects.create(
+        expediente=expediente_nuevo,
+        ciudadano=responsable_anterior,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente_nuevo,
+        ciudadano=hijo_anterior,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente_nuevo.pk]))
+
+    assert response.status_code == 200
+    legajos_por_ciudadano = {
+        legajo.ciudadano_id: legajo
+        for legajo in response.context["legajos_enriquecidos"]
+    }
+    legajo_render = legajos_por_ciudadano[responsable_anterior.pk]
+    legajo_responsable_anterior.refresh_from_db()
+    assert legajo_responsable_anterior.rol == ExpedienteCiudadano.ROLE_BENEFICIARIO
+    assert legajo_render.es_responsable is False
+    assert legajo_render.es_doble_rol is False
+    assert legajo_render.hijos_a_cargo == []
+    assert legajo_render.tipo_legajo == "Beneficiario"
+    assert response.context["estructura_familiar"]["responsables"] == {}
+
+
+@pytest.mark.django_db
 def test_expediente_detail_expone_motivo_rechazo_para_provincia(client):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_user(username="prov_rechazo", password="pass")

@@ -1,9 +1,27 @@
 <!-- AUTO-GENERATED RELEASE START: 2026-05-06 -->
 # Versión SISOC 06.05.2026
 
+## Nuevas Funcionalidades
+
+- [VAT] Centros VAT soportan múltiples referentes CFP y revisores CFPRevisor, con migración del referente legacy y scopes diferenciados para lectura y gestión.
+- [PWA/Comedores] La sección Formación mobile pasa a cursos dinámicos administrables desde web, con segmentación por programa, imágenes normalizadas y cursos recomendados.
+- [CDI] Centros de Infancia incorporan oferta de servicios múltiple y edición integral de registros de nómina desde la superficie existente.
+- [Celiaquia] Expedientes incorporan auditoría del Excel masivo vigente, con usuario/fecha de carga, usuario/fecha de procesamiento y descarga para roles habilitados.
+
 ## Actualizaciones
 
 - [sin-area] Release mobile a main sin arrastrar development. (PR #1660)
+- [Admisiones] La edición de número de expediente queda acotada al flujo de Técnicos, con condiciones de visibilidad y UX contextual.
+- [VAT Web/API] Se agregan consulta de estado de voucher por DNI, ajustes de inscripción web y fallback de localidades para ubicaciones adicionales de centros.
+- [Importación de expedientes] Se incorpora `Mes de Convenio` y automatización de estados de comedores para lotes de Alimentar Comunidad.
+- [Ciudadanos/Comedores] Listados, búsquedas y nóminas respetan el estado de revisión de identidad para evitar altas con ciudadanos pendientes.
+
+## Corrección de Errores
+
+- [Celiaquia] El detalle de expediente acota relaciones familiares a legajos activos del expediente y no hereda roles desde expedientes eliminados.
+- [CDF] El listado de responsables evita el conteo global caro con joins y reduce el riesgo de timeouts en `/beneficiarios/responsables/`.
+- [Importar expediente] Los cambios de estado actualizan `Comedor.ultimo_estado` sin disparar la sincronización completa de comedor hacia GESTIONAR.
+- [Core/UI] Se estabiliza la paginación compartida y filtros asociados en listados pesados.
 <!-- AUTO-GENERATED RELEASE END: 2026-05-06 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-04-24 -->
