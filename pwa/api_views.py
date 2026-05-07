@@ -211,6 +211,7 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
 
 @extend_schema(tags=["PWA Formacion"])
 class CursoAppMobilePWAViewSet(viewsets.ViewSet):
+    serializer_class = CursoAppMobilePWASerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsPWARepresentativeForComedor]
 
