@@ -247,6 +247,7 @@ class DispositivoForm(forms.ModelForm):
             "actividades_certificacion_oficial",
             "registra_informacion_personas",
             "modo_registro",
+            "modo_registro_otro",
             "tipo_informacion_registrada",
             "tipo_informacion_registrada_otro",
             "infraestructura_disponible",
@@ -388,6 +389,22 @@ class DispositivoForm(forms.ModelForm):
             self.add_error(
                 "tipo_dispositivo_otro",
                 "Este campo es obligatorio cuando el tipo de dispositivo es 'Otro'.",
+            )
+
+        if cleaned_data.get("tiempo_permanencia_promedio") == Dispositivo.TiempoPermanenciaPromedio.OTRO and not (
+            cleaned_data.get("tiempo_permanencia_otro") or ""
+        ).strip():
+            self.add_error(
+                "tiempo_permanencia_otro",
+                "Este campo es obligatorio cuando el tiempo de permanencia es 'Otro'.",
+            )
+
+        if cleaned_data.get("modo_registro") == Dispositivo.ModoRegistro.OTRO and not (
+            cleaned_data.get("modo_registro_otro") or ""
+        ).strip():
+            self.add_error(
+                "modo_registro_otro",
+                "Complete el detalle cuando el modo de registro es 'Otro'.",
             )
 
         return cleaned_data

@@ -4,10 +4,7 @@
 
 {% block content %}
 	<div class="container-fluid">
-		<div class="d-flex justify-content-between align-items-center mb-3">
-			<h2 class="mb-0">Dispositivos</h2>
-			<a class="btn btn-primary" href="{% url 'dispositivos_crear' %}">Nuevo dispositivo</a>
-		</div>
+		{% include 'components/search_bar.html' with titulo=titulo reset_url=reset_url add_url_full=add_url filters_mode=filters_mode filters_config=filters_config filters_action=filters_action seccion_filtros_favoritos=seccion_filtros_favoritos show_add_button=True add_text='Agregar dispositivo' %}
 
 		<div class="card">
 			<div class="card-body p-0">

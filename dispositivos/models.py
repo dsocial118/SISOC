@@ -42,6 +42,22 @@ class Dispositivo(models.Model):
         ALGUNAS = "algunas", "Algunas sí y otras no"
         NO_SABE = "no_sabe", "No sabe"
 
+    class TiempoPermanenciaPromedio(models.TextChoices):
+        HASTA_24_HS = "hasta_24_hs", "Hasta 24 hs"
+        DE_1_A_3_DIAS = "1_3_dias", "1 a 3 días"
+        DE_4_A_7_DIAS = "4_7_dias", "4 a 7 días"
+        DE_1_A_3_MESES = "1_3_meses", "1 a 3 meses"
+        DE_3_A_6_MESES = "3_6_meses", "3 a 6 meses"
+        MAS_DE_6_MESES = "mas_6_meses", "Más de 6 meses"
+        OTRO = "otro", "Otro"
+
+    class ModoRegistro(models.TextChoices):
+        SISTEMA_PROPIO = "sistema_propio", "Sistema digital propio"
+        PLANILLAS_EXCEL = "planillas_excel", "Planillas Excel"
+        SISTEMA_PROV_MUN = "sistema_prov_mun", "Sistema provincial o municipal"
+        REGISTRO_PAPEL = "registro_papel", "Registros en papel"
+        OTRO = "otro", "Otro"
+
     nombre_institucion = models.CharField(max_length=255)
     tipo_gestion = models.CharField(max_length=32, choices=TipoGestion.choices)
     tipo_gestion_otra = models.CharField(max_length=255, blank=True, null=True)
@@ -87,7 +103,12 @@ class Dispositivo(models.Model):
     poblacion_destinataria = models.JSONField(default=list, blank=True)
     poblacion_destinataria_otro = models.CharField(max_length=255, blank=True, null=True)
     franja_etaria_destinataria = models.JSONField(default=list, blank=True)
-    tiempo_permanencia_promedio = models.CharField(max_length=32, blank=True, null=True)
+    tiempo_permanencia_promedio = models.CharField(
+        max_length=32,
+        choices=TiempoPermanenciaPromedio.choices,
+        blank=True,
+        null=True,
+    )
     tiempo_permanencia_otro = models.CharField(max_length=255, blank=True, null=True)
 
     modalidad_ingreso = models.JSONField(default=list, blank=True)
@@ -124,7 +145,13 @@ class Dispositivo(models.Model):
         blank=True,
         null=True,
     )
-    modo_registro = models.CharField(max_length=50, blank=True, null=True)
+    modo_registro = models.CharField(
+        max_length=50,
+        choices=ModoRegistro.choices,
+        blank=True,
+        null=True,
+    )
+    modo_registro_otro = models.CharField(max_length=255, blank=True, null=True)
     tipo_informacion_registrada = models.JSONField(default=list, blank=True)
     tipo_informacion_registrada_otro = models.CharField(
         max_length=255,
