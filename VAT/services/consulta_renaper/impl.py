@@ -97,6 +97,40 @@ def normalizar(texto):
     )
 
 
+_RENAPER_INT_PLACEHOLDERS = {
+    "",
+    "0",
+    "-",
+    "n/a",
+    "na",
+    "n/d",
+    "nd",
+    "s/d",
+    "sd",
+    "s/n",
+    "sn",
+    "sinnumero",
+    "sinnro",
+}
+
+
+def _safe_int_renaper(value, dni):
+    if value is None:
+        return None
+
+    value_text = str(value).strip()
+    value_key = normalizar(value_text).replace(" ", "")
+    if value_key in _RENAPER_INT_PLACEHOLDERS:
+        return None
+
+    try:
+        parsed_value = int(value_text)
+        return parsed_value or None
+    except (ValueError, TypeError):
+        logger.error(f"Error safe_int RENAPER DNI {dni}: {value}")
+        return None
+
+
 def consultar_datos_renaper(dni, sexo):
     try:
         client = APIClient()
@@ -122,15 +156,7 @@ def consultar_datos_renaper(dni, sexo):
             sexo_pk = sexo_obj.pk if sexo_obj else None
 
         def safe_int(value):
-            try:
-                return (
-                    int(value)
-                    if value and str(value).strip() not in ["0", ""]
-                    else None
-                )
-            except (ValueError, TypeError):
-                logger.error(f"Error safe_int RENAPER DNI {dni}: {value}")
-                return None
+            return _safe_int_renaper(value, dni)
 
         datos_mapeados = {
             "cuil": safe_int(datos.get("cuil")),
