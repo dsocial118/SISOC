@@ -478,7 +478,7 @@
                     <div class="ci-panel ci-panel-inscriptos">
                         <div class="ci-sec-head">
                             <span class="ci-sec-title"><i class="bi bi-people me-2"></i>Inscriptos</span>
-                            {% if perms.VAT.add_inscripcion %}
+                            {% if puede_agregar_inscripcion %}
                                 <button type="button"
                                         class="btn btn-sm btn-primary rounded-3"
                                         data-bs-toggle="modal"
@@ -513,7 +513,7 @@
                                                      color:var(--bs-secondary-color);
                                                      white-space:nowrap">{{ insc.fecha_inscripcion|date:"d/m/Y" }}</span>
                                         <span class="ci-pill {% if insc.estado == 'inscripta' %}ci-pill-green{% elif insc.estado == 'pre_inscripta' %}ci-pill-yellow{% elif insc.estado == 'validada_presencial' %}ci-pill-blue{% elif insc.estado == 'completada' %}ci-pill-teal{% elif insc.estado == 'abandonada' %}ci-pill-gray{% elif insc.estado == 'rechazada' %}ci-pill-red{% else %}ci-pill-gray{% endif %}">{{ insc.get_estado_display }}</span>
-                                        {% if perms.VAT.change_inscripcion and insc.estado == 'pre_inscripta' %}
+                                        {% if puede_cambiar_inscripcion and insc.estado == 'pre_inscripta' %}
                                             <form method="post"
                                                   action="{% url inscripcion_estado_url_name insc.pk %}"
                                                   class="d-inline">
@@ -541,7 +541,7 @@
                                                 </button>
                                             </form>
                                         {% endif %}
-                                        {% if perms.VAT.change_inscripcion %}
+                                        {% if puede_cambiar_inscripcion %}
                                             <div class="dropdown">
                                                 <button class="ci-dots dropdown-toggle"
                                                         data-bs-toggle="dropdown"
@@ -622,7 +622,7 @@
                                                          color:var(--bs-secondary-color);
                                                          white-space:nowrap">{{ insc.fecha_inscripcion|date:"d/m/Y" }}</span>
                                             <span class="ci-pill ci-pill-yellow">{{ insc.get_estado_display }}</span>
-                                            {% if perms.VAT.change_inscripcion %}
+                                            {% if puede_cambiar_inscripcion %}
                                                 <form method="post"
                                                       action="{% url inscripcion_estado_url_name insc.pk %}"
                                                       class="d-inline">
@@ -690,8 +690,10 @@
                                     </div>
                                     <div class="d-flex align-items-center gap-2 flex-shrink-0">
                                         <span class="ci-pill {% if sesion.estado == 'realizada' %}ci-pill-green{% elif sesion.estado == 'cancelada' %}ci-pill-red{% else %}ci-pill-blue{% endif %}">{{ sesion.get_estado_display }}</span>
-                                        <a href="{% url asistencia_url_name sesion.pk %}"
-                                           class="ci-asist {% if sesion.estado == 'realizada' %}ci-asist-done{% endif %}"><i class="bi bi-check2-square"></i>Asistencia</a>
+                                        {% if puede_gestionar_asistencia %}
+                                            <a href="{% url asistencia_url_name sesion.pk %}"
+                                               class="ci-asist {% if sesion.estado == 'realizada' %}ci-asist-done{% endif %}"><i class="bi bi-check2-square"></i>Asistencia</a>
+                                        {% endif %}
                                     </div>
                                 </div>
                             {% endfor %}
@@ -710,7 +712,7 @@
                     <div class="ci-panel">
                         <div class="ci-sec-head">
                             <span class="ci-sec-title"><i class="bi bi-clock me-2"></i>Horarios</span>
-                            {% if perms.VAT.add_comisionhorario %}
+                            {% if puede_agregar_comision_horario %}
                                 <button type="button"
                                         class="btn btn-sm btn-primary rounded-3"
                                         data-bs-toggle="modal"
@@ -742,7 +744,7 @@
                                                 Inactivo
                                             {% endif %}
                                         </span>
-                                        {% if perms.VAT.change_comisionhorario %}
+                                        {% if puede_editar_comision_horario %}
                                             <button type="button"
                                                     class="ci-iconbtn"
                                                     data-bs-toggle="modal"
@@ -759,7 +761,7 @@
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                         {% endif %}
-                                        {% if perms.VAT.delete_comisionhorario %}
+                                        {% if puede_eliminar_comision_horario %}
                                             <button type="button"
                                                     class="ci-iconbtn ci-iconbtn-danger"
                                                     data-bs-toggle="modal"
@@ -811,7 +813,7 @@
                                 <i class="bi bi-pencil me-2"></i>Editar comisión
                             </button>
                         {% endif %}
-                        {% if perms.VAT.add_inscripcion %}
+                        {% if puede_agregar_inscripcion %}
                             <button type="button"
                                     class="btn btn-outline-primary rounded-3"
                                     data-bs-toggle="modal"
@@ -819,7 +821,7 @@
                                 <i class="bi bi-person-plus me-2"></i>Inscribir ciudadano
                             </button>
                         {% endif %}
-                        {% if perms.VAT.add_comisionhorario %}
+                        {% if puede_agregar_comision_horario %}
                             <button type="button"
                                     class="btn btn-outline-secondary rounded-3"
                                     data-bs-toggle="modal"
@@ -895,7 +897,7 @@
 
     </div>
 
-    {% if perms.VAT.add_inscripcion %}
+    {% if puede_agregar_inscripcion %}
         <div class="modal fade ci-modal"
              id="modalInscripcionRapida"
              tabindex="-1"
@@ -1057,7 +1059,7 @@
         </div>
     {% endif %}
 
-    {% if perms.VAT.add_comisionhorario or perms.VAT.change_comisionhorario %}
+    {% if puede_agregar_comision_horario or puede_editar_comision_horario %}
         <div class="modal fade ci-modal"
              id="modalComisionHorario"
              tabindex="-1"
@@ -1074,7 +1076,7 @@
                     </div>
                     <form id="formComisionHorario"
                           method="post"
-                          action="{% if perms.VAT.add_comisionhorario %}{% url horario_create_url_name %}?{{ horario_create_query_param }}={{ comision.id }}{% endif %}">
+                          action="{% if puede_agregar_comision_horario %}{% url horario_create_url_name %}?{{ horario_create_query_param }}={{ comision.id }}{% endif %}">
                         {% csrf_token %}
                         <div class="modal-body">
                             <div id="comisionHorarioAlert" class="alert d-none" role="alert"></div>
@@ -1089,7 +1091,7 @@
             </div>
         </div>
     {% endif %}
-    {% if perms.VAT.delete_comisionhorario %}
+    {% if puede_eliminar_comision_horario %}
         <div class="modal fade ci-modal"
              id="modalEliminarComisionHorario"
              tabindex="-1"
@@ -1119,7 +1121,7 @@
             </div>
         </div>
     {% endif %}
-    {% if perms.VAT.add_comisionhorario or perms.VAT.change_comisionhorario %}
+    {% if puede_agregar_comision_horario or puede_editar_comision_horario %}
         <script nonce="{{ request.csp_nonce }}">
     (function() {
         var form = document.getElementById('formComisionHorario');
@@ -1299,7 +1301,7 @@
     })();
         </script>
     {% endif %}
-    {% if perms.VAT.delete_comisionhorario %}
+    {% if puede_eliminar_comision_horario %}
         <script nonce="{{ request.csp_nonce }}">
     (function() {
         var deleteModalEl = document.getElementById('modalEliminarComisionHorario');
@@ -1487,7 +1489,7 @@
         </script>
     {% endif %}
 
-    {% if perms.VAT.add_inscripcion %}
+    {% if puede_agregar_inscripcion %}
         <script nonce="{{ request.csp_nonce }}">
     (function() {
         var form = document.getElementById('formInscripcionRapida');

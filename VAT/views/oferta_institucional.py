@@ -37,6 +37,7 @@ from VAT.services.inscripcion_service import (
     InscripcionService,
 )
 from VAT.services.access_scope import (
+    can_user_edit_centro,
     filter_centros_queryset_for_management,
     filter_centros_queryset_for_user,
     filter_comisiones_queryset_for_management,
@@ -277,6 +278,9 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comision = self.object
+        puede_gestionar_comision = can_user_edit_centro(
+            self.request.user, comision.oferta.centro
+        )
         context["comision_tipo_titulo"] = "Comisión"
         context["comision_back_url"] = reverse(
             "vat_centro_detail", kwargs={"pk": comision.oferta.centro_id}
@@ -287,11 +291,38 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
         context["comision_delete_url"] = reverse(
             "vat_comision_delete", kwargs={"pk": comision.pk}
         )
-        context["puede_editar_comision"] = self.request.user.has_perm(
-            "VAT.change_comision"
+        context["puede_gestionar_comision"] = puede_gestionar_comision
+        context["puede_editar_comision"] = (
+            puede_gestionar_comision
+            and self.request.user.has_perm("VAT.change_comision")
         )
-        context["puede_eliminar_comision"] = self.request.user.has_perm(
-            "VAT.delete_comision"
+        context["puede_eliminar_comision"] = (
+            puede_gestionar_comision
+            and self.request.user.has_perm("VAT.delete_comision")
+        )
+        context["puede_agregar_inscripcion"] = (
+            puede_gestionar_comision
+            and self.request.user.has_perm("VAT.add_inscripcion")
+        )
+        context["puede_cambiar_inscripcion"] = (
+            puede_gestionar_comision
+            and self.request.user.has_perm("VAT.change_inscripcion")
+        )
+        context["puede_gestionar_asistencia"] = (
+            puede_gestionar_comision
+            and self.request.user.has_perm("VAT.change_inscripcion")
+        )
+        context["puede_agregar_comision_horario"] = (
+            puede_gestionar_comision
+            and self.request.user.has_perm("VAT.add_comisionhorario")
+        )
+        context["puede_editar_comision_horario"] = (
+            puede_gestionar_comision
+            and self.request.user.has_perm("VAT.change_comisionhorario")
+        )
+        context["puede_eliminar_comision_horario"] = (
+            puede_gestionar_comision
+            and self.request.user.has_perm("VAT.delete_comisionhorario")
         )
         context["comision_subtitle"] = str(comision.oferta)
         context["unidad_label"] = "Oferta"
