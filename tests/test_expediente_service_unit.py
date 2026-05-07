@@ -136,7 +136,7 @@ def test_procesar_expediente_validations_and_success(mocker):
             SimpleNamespace(excel_masivo=None), usuario="u"
         )
 
-    exp = SimpleNamespace(pk=8, excel_masivo="file")
+    exp = SimpleNamespace(pk=8, excel_masivo="file", save=mocker.Mock())
     mocker.patch(
         "celiaquia.services.expediente_service.ImportacionService.importar_legajos_desde_excel",
         return_value={
