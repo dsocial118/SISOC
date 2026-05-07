@@ -276,6 +276,7 @@ CAMPOS_OPCIONES = {
         "heladera_exclusiva_identificada_sin_fecha",
         "heladera_compartida_sector_exclusivo_identificada_sin_fecha",
         "sin_espacio_exclusivo_ni_identificacion",
+        "no_aplica_o_no_se_realiza_conservación_de_leche_humana",
     ),
     "acciones_sensibilizacion_lactancia": _construir_opciones(
         "dos_o_mas_anuales_todas_familias",
@@ -569,8 +570,8 @@ ETIQUETAS_CAMPOS = {
     "acciones_sensibilizacion_lactancia": "Acciones de informacion y sensibilizacion de lactancia",
     "tiene_registro_lista_espera": "Existe registro de lista de espera",
     "tiene_instrumento_priorizacion_ingreso": "Existe instrumento de priorización de ingreso de los niños/as",
-    "cantidad_ninos_discapacidad": "Cantidad de niños con discapacidad",
-    "cantidad_ninos_etnia_especifica": "Cantidad de niños de alguna etnia en particular",
+    "cantidad_ninos_discapacidad": "Cantidad de niños con discapacidad que asisten al CDI",
+    "cantidad_ninos_etnia_especifica": "Cantidad de niños de alguna etnia en particular que asisten al CDI",
     "tiene_personal_entrada_salida": "Personal encargado para entrada y salida",
     "frecuencia_comunicacion_familias": "Comunicacion con las familias",
     "frecuencia_talleres_crianza": "Talleres de crianza / charlas con profesionales",
@@ -659,7 +660,7 @@ SECCIONES_FORMULARIO_CDI = [
     },
     {
         "id": "participacion_pfpi",
-        "title": "CDI que participan del PFPI",
+        "title": "Datos del organismo u organización del que depende el CDI",
         "fields": [
             "modalidad_gestion",
             "modalidad_gestion_otra",

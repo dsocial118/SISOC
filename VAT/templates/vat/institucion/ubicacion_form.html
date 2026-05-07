@@ -150,6 +150,8 @@
     const ajaxUrl = '{% url "vat_ajax_localidades_por_centro" %}';
     const localidadActual = "{{ form.instance.localidad_id|default:'' }}";
 
+    if (!centroSelect || !localidadSelect) return;
+
     function refreshLocalidadSelect() {
         if (window.refreshSelect2Element) {
             window.refreshSelect2Element(localidadSelect);

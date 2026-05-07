@@ -47,22 +47,6 @@ INTERVENCION_FIELD_MAPPING = {
 }
 
 
-def _validar_subintervencion_requerida(form):
-    tipo_intervencion = form.cleaned_data.get("tipo_intervencion")
-    if not tipo_intervencion:
-        return True
-
-    if not tipo_intervencion.subintervenciones.exists():
-        form.cleaned_data["subintervencion"] = None
-        return True
-
-    if form.cleaned_data.get("subintervencion"):
-        return True
-
-    form.add_error("subintervencion", "Debe seleccionar una subintervencion.")
-    return False
-
-
 def _asignar_campo_intervencion(instance, field, model, value):
     if isinstance(model, type) and not isinstance(value, model):
         value = model.objects.get(id=value)
@@ -183,9 +167,6 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
             return self.form_invalid(form)
         if admision is not None:
             form.instance.admision = admision
-
-        if not _validar_subintervencion_requerida(form):
-            return self.form_invalid(form)
 
         _aplicar_campos_intervencion(form)
 

@@ -45,6 +45,34 @@ function Get-CodexComposeFileArgs {
     return $args
 }
 
+function Get-CodexWorktreeContext {
+    param(
+        [string]$RepoRoot
+    )
+
+    $currentPath = (Resolve-Path -LiteralPath $RepoRoot).Path
+    while ($true) {
+        $parentPath = Split-Path $currentPath -Parent
+        if (-not $parentPath -or $parentPath -eq $currentPath) {
+            break
+        }
+
+        if ((Split-Path $parentPath -Leaf) -ieq "worktrees") {
+            return [pscustomobject]@{
+                Root = $parentPath
+                Slug = Split-Path $currentPath -Leaf
+            }
+        }
+
+        $currentPath = $parentPath
+    }
+
+    return [pscustomobject]@{
+        Root = $null
+        Slug = $null
+    }
+}
+
 function Get-CodexRequiredEnvDefaults {
     param(
         [string]$RepoRoot
@@ -73,13 +101,12 @@ function Get-CodexComposeProjectName {
     )
 
     $repoLeaf = Split-Path $RepoRoot -Leaf
-    $repoParent = Split-Path $RepoRoot -Parent
-    $parentLeaf = Split-Path $repoParent -Leaf
-    $suffix = if ($repoLeaf -ieq "SISOC") {
-        "main"
+    $worktreeContext = Get-CodexWorktreeContext -RepoRoot $RepoRoot
+    $suffix = if (-not [string]::IsNullOrWhiteSpace($worktreeContext.Slug)) {
+        $worktreeContext.Slug
     }
-    elseif ($parentLeaf -ieq "worktrees") {
-        $repoLeaf
+    elseif ($repoLeaf -ieq "SISOC") {
+        "main"
     }
     else {
         $repoLeaf
@@ -232,9 +259,13 @@ function Ensure-CodexEnvFile {
 
 function Test-CodexDockerAvailable {
     try {
-        docker version | Out-Null
-        docker compose version | Out-Null
-        return $true
+        & docker version *> $null
+        if ($LASTEXITCODE -ne 0) {
+            return $false
+        }
+
+        & docker compose version *> $null
+        return ($LASTEXITCODE -eq 0)
     }
     catch {
         return $false
@@ -253,6 +284,9 @@ function Invoke-CodexCompose {
         $composeFileArgs = Get-CodexComposeFileArgs -RepoRoot $RepoRoot -ExposePorts:$ExposePorts
         $allArgs = @() + $composeFileArgs + $Arguments
         & docker compose @allArgs
+        if ($LASTEXITCODE -ne 0) {
+            throw ("docker compose fallo con exit code {0}." -f $LASTEXITCODE)
+        }
     }
     finally {
         Pop-Location

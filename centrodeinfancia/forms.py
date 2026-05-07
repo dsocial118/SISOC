@@ -1,3 +1,7 @@
+# pylint: disable=too-many-lines
+
+from datetime import datetime, date
+
 from django import forms
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
@@ -22,10 +26,10 @@ from centrodeinfancia.models import (
     DepartamentoIpi,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
-    ObservacionCentroInfancia,
     Trabajador,
     normalizar_cuit,
 )
+from centrodeinfancia.forms_observacion import ObservacionCentroInfanciaForm
 from centrodeinfancia.forms_formulario_cdi import (
     FormularioCDIForm,
     construir_filas_iniciales_fijas,
@@ -40,6 +44,7 @@ __all__ = [
     "NominaCentroInfanciaCreateForm",
     "IntervencionCentroInfanciaForm",
     "TrabajadorForm",
+    "ObservacionCentroInfanciaForm",
     "FormularioCDIForm",
     "construir_filas_iniciales_fijas",
     "construir_clase_formset_articulacion",
@@ -309,6 +314,25 @@ class CentroDeInfanciaForm(forms.ModelForm):
             raise forms.ValidationError(exc.messages) from exc
         return mail
 
+    def clean_fecha_inicio(self):
+        raw = self.cleaned_data.get("fecha_inicio")
+        if raw in (None, ""):
+            return None
+        if isinstance(raw, date):
+            return raw
+        if isinstance(raw, str):
+            raw = raw.strip()
+            try:
+                return datetime.strptime(raw, "%d/%m/%Y").date()
+            except ValueError:
+                try:
+                    return datetime.strptime(raw, "%Y-%m-%d").date()
+                except ValueError as exc2:
+                    raise forms.ValidationError(
+                        "Formato inválido para Fecha de inicio. Use dd/mm/aaaa."
+                    ) from exc2
+        raise forms.ValidationError("Formato inválido para Fecha de inicio.")
+
     def clean_telefono(self):
         value = (self.cleaned_data.get("telefono") or "").strip()
         if not value:
@@ -408,7 +432,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
             "fecha_inicio",
         ]
         widgets = {
-            "fecha_inicio": forms.DateInput(attrs={"type": "date"}),
+            "fecha_inicio": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
             "meses_funcionamiento": forms.CheckboxSelectMultiple(),
             "dias_funcionamiento": forms.CheckboxSelectMultiple(),
         }
@@ -430,6 +454,111 @@ class NullableBooleanChoiceField(forms.TypedChoiceField):
         )
         kwargs.setdefault("empty_value", None)
         super().__init__(*args, **kwargs)
+
+
+class NominaCentroInfanciaFormEdit(forms.ModelForm):
+    class Meta:
+        model = NominaCentroInfancia
+        fields = [
+            "estado",
+            "dni",
+            "apellido",
+            "nombre",
+            "fecha_nacimiento",
+            "sexo",
+            "nacionalidad",
+            "sala",
+            "pertenece_pueblo_originario",
+            "pueblo_originario_cual",
+            "habla_lengua_originaria_hogar",
+            "talla",
+            "peso",
+            "calendario_vacunacion_al_dia",
+            "tiene_discapacidad",
+            "discapacidad_tipo",
+            "recibe_apoyo_discapacidad",
+            "posee_cud",
+            "posee_obra_social",
+            "calle_domicilio",
+            "altura_domicilio",
+            "piso_domicilio",
+            "departamento_domicilio",
+            "provincia_domicilio",
+            "municipio_domicilio",
+            "localidad_domicilio",
+            "responsable_legal_1_apellido",
+            "responsable_legal_1_nombre",
+            "responsable_legal_1_dni",
+            "responsable_legal_1_telefono",
+            "responsable_legal_1_percibe_auh",
+            "responsable_legal_1_percibe_alimenta",
+            "responsable_legal_2_apellido",
+            "responsable_legal_2_nombre",
+            "responsable_legal_2_dni",
+            "responsable_legal_2_telefono",
+            "responsable_legal_2_percibe_auh",
+            "responsable_legal_2_percibe_alimenta",
+            "adulto_responsable_apellido",
+            "adulto_responsable_nombre",
+            "adulto_responsable_dni",
+            "adulto_responsable_telefono",
+            "adulto_responsable_parentesco",
+            "observaciones",
+        ]
+        labels = {
+            "estado": "Estado",
+            "dni": "DNI",
+            "apellido": "Apellido",
+            "nombre": "Nombre",
+            "fecha_nacimiento": "Fecha de nacimiento",
+            "sexo": "Sexo",
+            "nacionalidad": "Nacionalidad",
+            "sala": "Sala",
+            "pertenece_pueblo_originario": (
+                "¿El niño pertenece o se reconoce como parte de un pueblo indígena u originario?"
+            ),
+            "pueblo_originario_cual": "¿Cuál?",
+            "habla_lengua_originaria_hogar": (
+                "¿En el hogar del niño se habla habitualmente alguna lengua indígena u originaria?"
+            ),
+            "talla": "Talla",
+            "peso": "Peso",
+            "tiene_discapacidad": (
+                "¿El niño tiene alguna discapacidad y/o requiere apoyos específicos?"
+            ),
+            "discapacidad_tipo": "En caso de responder Sí, indicar cuál",
+            "calle_domicilio": "Calle",
+            "altura_domicilio": "Altura",
+            "piso_domicilio": "Piso",
+            "departamento_domicilio": "Departamento",
+            "provincia_domicilio": "Provincia",
+            "municipio_domicilio": "Municipio",
+            "localidad_domicilio": "Localidad",
+            "responsable_legal_1_apellido": "Apellido",
+            "responsable_legal_1_nombre": "Nombre",
+            "responsable_legal_1_dni": "DNI",
+            "responsable_legal_1_telefono": "Teléfono",
+            "responsable_legal_1_percibe_auh": "Percibe AUH",
+            "responsable_legal_1_percibe_alimenta": "Percibe Alimenta",
+            "responsable_legal_2_apellido": "Apellido",
+            "responsable_legal_2_nombre": "Nombre",
+            "responsable_legal_2_dni": "DNI",
+            "responsable_legal_2_telefono": "Teléfono",
+            "responsable_legal_2_percibe_auh": "Percibe AUH",
+            "responsable_legal_2_percibe_alimenta": "Percibe Alimenta",
+            "adulto_responsable_apellido": "Apellido",
+            "adulto_responsable_nombre": "Nombre",
+            "adulto_responsable_dni": "DNI",
+            "adulto_responsable_telefono": "Teléfono",
+            "adulto_responsable_parentesco": "Relación de parentesco",
+            "observaciones": "Observaciones",
+        }
+        widgets = {
+            "fecha_nacimiento": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={"type": "date"},
+            ),
+        }
 
 
 class NominaCentroInfanciaBaseForm(forms.ModelForm):
@@ -489,7 +618,10 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             "observaciones",
         ]
         widgets = {
-            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
+            "fecha_nacimiento": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={"type": "date"},
+            ),
             "observaciones": forms.Textarea(attrs={"rows": 3}),
         }
 
@@ -884,19 +1016,3 @@ class IntervencionCentroInfanciaForm(forms.ModelForm):
             cleaned_data["subintervencion"] = None
 
         return cleaned_data
-
-
-class ObservacionCentroInfanciaForm(forms.ModelForm):
-    class Meta:
-        model = ObservacionCentroInfancia
-        fields = ["observacion"]
-        labels = {"observacion": "Observación"}
-        widgets = {
-            "observacion": forms.Textarea(
-                attrs={
-                    "class": "form-control",
-                    "rows": 4,
-                    "placeholder": "Describa la observación",
-                }
-            )
-        }

@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function() {
     modalBody.appendChild(div);
   }
 
-  document.querySelectorAll(".editar-nomina").forEach(function(btn) {
+/*  document.querySelectorAll(".editar-nomina").forEach(function(btn) {
     btn.addEventListener("click", function(e) {
       e.preventDefault();
       const id = this.dataset.id;
@@ -79,6 +79,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
   });
+*/
 
   // Dropdown inline de estado por fila
   document.querySelectorAll(".nomina-estado-opcion").forEach(function(item) {

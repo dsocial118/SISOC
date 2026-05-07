@@ -88,6 +88,7 @@ def test_import_vat_centros_excel_creates_centro_relations_and_contact(tmp_path)
 
     assert centro.nombre == "Escuela Municipal De Formación Profesional Nº 1"
     assert centro.referente_id == referente.pk
+    assert list(centro.referentes.values_list("pk", flat=True)) == [referente.pk]
     assert centro.tipo_gestion == "Estatal"
     assert centro.nombre_referente == "Maria Gomez"
     assert contacto.es_principal is True

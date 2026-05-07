@@ -459,6 +459,7 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
         revision_tecnico="PENDIENTE",
         estado_cupo="NO_EVAL",
         es_titular_activo=True,
+        estado_validacion_renaper=0,
         save=mocker.Mock(),
         delete=mocker.Mock(),
     )
@@ -478,6 +479,7 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     )
     resp_ap = revisar.post(req_aprobar, pk=1, legajo_id=3)
     assert resp_ap.status_code == 200
+    assert leg.estado_validacion_renaper == 1
 
     req_subs = SimpleNamespace(
         user=_user_stub(user_id=1, tec=True),
@@ -490,9 +492,21 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     resp_ap_bloqueado = revisar.post(req_aprobar, pk=1, legajo_id=3)
     assert resp_ap_bloqueado.status_code == 400
 
+    req_rechazar = SimpleNamespace(
+        user=_user_stub(user_id=1, tec=True),
+        POST={"accion": "RECHAZAR", "motivo": "dato invalido"},
+    )
+    leg.revision_tecnico = "PENDIENTE"
+    leg.estado_validacion_renaper = 0
+    resp_rechazado = revisar.post(req_rechazar, pk=1, legajo_id=3)
+    assert resp_rechazado.status_code == 200
+    assert leg.estado_validacion_renaper == 2
+
     leg.revision_tecnico = "SUBSANADO"
+    leg.estado_validacion_renaper = 0
     resp_subsanado = revisar.post(req_subs, pk=1, legajo_id=3)
     assert resp_subsanado.status_code == 200
+    assert leg.estado_validacion_renaper == 3
 
 
 def test_expediente_import_view_success_and_errors(mocker):

@@ -33,11 +33,12 @@ function Get-CodexDefaultWorktreesRoot {
         [string]$RepoRoot
     )
 
-    $repoParent = Split-Path $RepoRoot -Parent
-    if ((Split-Path $repoParent -Leaf) -eq "worktrees") {
-        return $repoParent
+    $worktreeContext = Get-CodexWorktreeContext -RepoRoot $RepoRoot
+    if ($worktreeContext.Root) {
+        return $worktreeContext.Root
     }
 
+    $repoParent = Split-Path $RepoRoot -Parent
     return Join-Path $repoParent "worktrees"
 }
 
