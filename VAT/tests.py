@@ -1890,12 +1890,17 @@ def test_usuario_mixto_no_gestiona_centro_asignado_solo_como_revisor(
     comision_delete_response = client.get(
         reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk})
     )
+    comision_detail_response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+    )
 
     detail_content = detail_response.content.decode("utf-8")
     panel_content = panel_response.content.decode("utf-8")
+    comision_detail_content = comision_detail_response.content.decode("utf-8")
 
     assert detail_response.status_code == 200
     assert panel_response.status_code == 200
+    assert comision_detail_response.status_code == 200
     assert reverse("vat_centro_delete", kwargs={"pk": centro.pk}) not in detail_content
     assert "Agregar Contacto" not in detail_content
     assert "Agregar Identificador" not in detail_content
@@ -1918,6 +1923,19 @@ def test_usuario_mixto_no_gestiona_centro_asignado_solo_como_revisor(
     assert comision_create_response.status_code == 403
     assert comision_update_response.status_code == 404
     assert comision_delete_response.status_code == 404
+    assert "Comision solo lectura" in comision_detail_content
+    assert (
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+        not in comision_detail_content
+    )
+    assert (
+        reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk})
+        not in comision_detail_content
+    )
+    assert reverse("vat_comision_curso_horario_create") not in comision_detail_content
+    assert (
+        reverse("vat_inscripcion_rapida_comision_curso") not in comision_detail_content
+    )
 
 
 @pytest.mark.django_db
