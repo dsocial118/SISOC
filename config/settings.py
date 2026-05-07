@@ -183,6 +183,7 @@ INSTALLED_APPS = [
     "importarexpediente",
     "comunicados",
     "centrodeinfancia",
+    "dispositivos",
     "pwa",
 ]
 

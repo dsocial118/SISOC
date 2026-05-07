@@ -403,6 +403,27 @@
                         </ul>
                     </li>
                 {% endif %}
+                <!-- SITUACION DE CALLE -->
+                {% if request.user|has_perm_code:"situacioncalle.view_dispositivo" %}
+                    <li class="nav-item {% if 'situacion-calle' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'situacion-calle' in pagina_actual %}active{% endif %}">
+                            <p>
+                                Situación de Calle
+                                <i class="nav-arrow bi bi-chevron-right"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{% url 'dispositivos_listar' %}"
+                                   class="nav-link ms-4 {% if 'situacion-calle/listar' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Ver Dispositivos</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% endif %}
                 <!-- CENTRO DE FAMILIA -->
                 {% if request.user|has_perm_code:"centrodefamilia.view_centro" %}
                     <li class="nav-item {% if 'centros' in pagina_actual %}menu-open{% endif %}">
