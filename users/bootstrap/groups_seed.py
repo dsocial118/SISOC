@@ -283,6 +283,7 @@ LISTADO_DEFINED_GROUPS = (
         (
             "auth.role_revisorcentrovat",
             "VAT.view_centro",
+            "VAT.view_comisioncurso",
         ),
     ),
     BootstrapGroupSeed(

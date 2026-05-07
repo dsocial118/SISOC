@@ -146,7 +146,7 @@ Todo lo demás es solo backoffice.
 | CFPINET | `auth.role_vat_sse` | Ve todos los centros, puede crear centros y actividades |
 | CFPJuridicccion | `auth.role_provincia_vat` | Crea y edita centros dentro de su jurisdicción, y administra planes curriculares provinciales |
 | CFP | `auth.role_referentecentrovat` | Ve solo sus centros asignados y gestiona cursos, comisiones, horarios, asistencia e inscripciones dentro de esos centros |
-| CFPRevisor | `auth.role_revisorcentrovat` | Ve solo los centros donde fue asignado como revisor, sin permisos de gestion |
+| CFPRevisor | `auth.role_revisorcentrovat` | Ve solo los centros donde fue asignado como revisor y puede consultar comisiones de curso para descargar nominas, sin permisos de gestion |
 
 ### 4.2 Roles pendientes de definición
 
@@ -169,7 +169,7 @@ Todo lo demás es solo backoffice.
 - Un centro puede estar activo o inactivo.
 - Un centro puede tener multiples `referentes` CFP y multiples `revisores` CFPRevisor.
 - Solo referentes asignados, superuser o roles SSE/provinciales con permisos vigentes pueden gestionar el centro.
-- Revisor solo ve sus centros asignados y no puede editar, borrar ni gestionar cursos, comisiones, horarios, asistencia o inscripciones.
+- Revisor solo ve sus centros asignados, puede descargar nominas de comisiones de curso como lectura y no puede editar, borrar ni gestionar cursos, comisiones, horarios, asistencia o inscripciones.
 - Usuarios con grupos CFP y CFPRevisor unen el alcance de lectura, pero gestionan solo los centros donde estan como referentes.
 - CFPINET mantiene el comportamiento existente y ve todos los centros.
 

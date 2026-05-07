@@ -6053,6 +6053,65 @@ def test_comision_curso_exporta_nomina_preinscriptos_en_excel(client, vat_geo_da
 
 @pytest.mark.django_db
 @override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
+def test_revisor_asignado_descarga_nominas_comision_curso_sin_acciones_rapidas(
+    client, vat_geo_data
+):
+    call_command("create_groups", verbosity=0)
+    _, comision = _build_comision_curso_nomina_export_context(vat_geo_data, "REV")
+    revisor = User.objects.create_user(
+        username="revisor-export-comision-curso", password="test1234"
+    )
+    revisor.groups.add(Group.objects.get(name="CFPRevisor"))
+    comision.curso.centro.revisores.add(revisor)
+
+    client.force_login(revisor)
+    detail_response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+    )
+    preinscriptos_response = client.get(
+        reverse(
+            "vat_comision_curso_export_preinscriptos",
+            kwargs={"pk": comision.pk},
+        )
+    )
+    inscriptos_response = client.get(
+        reverse(
+            "vat_comision_curso_export_inscriptos",
+            kwargs={"pk": comision.pk},
+        )
+    )
+    detail_content = detail_response.content.decode("utf-8")
+
+    assert detail_response.status_code == 200
+    assert "Acciones r" not in detail_content
+    assert (
+        reverse(
+            "vat_comision_curso_export_preinscriptos",
+            kwargs={"pk": comision.pk},
+        )
+        in detail_content
+    )
+    assert (
+        reverse(
+            "vat_comision_curso_export_inscriptos",
+            kwargs={"pk": comision.pk},
+        )
+        in detail_content
+    )
+    assert preinscriptos_response.status_code == 200
+    assert inscriptos_response.status_code == 200
+    assert "nomina_preinscriptos" in preinscriptos_response["Content-Disposition"]
+    assert "nomina_inscriptos" in inscriptos_response["Content-Disposition"]
+
+    preinscriptos_sheet = load_workbook(BytesIO(preinscriptos_response.content)).active
+    inscriptos_sheet = load_workbook(BytesIO(inscriptos_response.content)).active
+
+    assert len(list(preinscriptos_sheet.iter_rows(min_row=2, values_only=True))) == 2
+    assert len(list(inscriptos_sheet.iter_rows(min_row=2, values_only=True))) == 1
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
 def test_comision_curso_exporta_nomina_inscriptos_solo_estado_inscripta(
     client, vat_geo_data
 ):
