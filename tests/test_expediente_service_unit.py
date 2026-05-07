@@ -157,6 +157,12 @@ def test_procesar_expediente_validations_and_success(mocker):
     }
     assert set_estado.call_count == 2
     assert set_estado.call_args_list[1].kwargs["observaciones"]
+    exp.save.assert_called_once_with(
+        update_fields=[
+            "excel_masivo_procesado_por",
+            "excel_masivo_procesado_en",
+        ]
+    )
 
 
 class _LegajosQS:

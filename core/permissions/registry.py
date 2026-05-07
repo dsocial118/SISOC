@@ -134,7 +134,7 @@ LEGACY_ALIAS_TO_PERMISSION_CODES: dict[str, tuple[str, ...]] = {
         "VAT.add_asistenciasesion",
         "VAT.change_asistenciasesion",
     ),
-    "CFPRevisor": ("VAT.view_centro",),
+    "CFPRevisor": ("VAT.view_centro", "VAT.view_comisioncurso"),
     "Provincia VAT": (
         "VAT.view_centro",
         "VAT.add_centro",
@@ -150,7 +150,13 @@ LEGACY_ALIAS_TO_PERMISSION_CODES: dict[str, tuple[str, ...]] = {
         "VAT.add_planversioncurricular",
     ),
     "VAT SSE": ("VAT.view_centro", "VAT.add_centro", "VAT.change_centro"),
-    "CFPINET": ("VAT.view_centro", "VAT.add_centro", "VAT.change_centro"),
+    "CFPINET": (
+        "VAT.view_centro",
+        "VAT.add_centro",
+        "VAT.change_centro",
+        "VAT.view_comision",
+        "VAT.view_comisioncurso",
+    ),
     "Dashboard Centrodefamilia": ("dashboard.view_dashboard",),
     "Dashboard Comedor": ("dashboard.view_dashboard",),
     # Centro de Infancia

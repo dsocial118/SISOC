@@ -10,6 +10,7 @@ from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
 from openpyxl import load_workbook
@@ -1803,10 +1804,41 @@ def test_usuario_mixto_no_gestiona_centro_asignado_solo_como_revisor(
     client, vat_geo_data
 ):
     provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial solo revisor", activo=True
+    )
     user = User.objects.create_user(username="mixto-sin-gestion", password="test1234")
+    permisos_gestion = Permission.objects.filter(
+        content_type__app_label="VAT",
+        codename__in=[
+            "view_centro",
+            "delete_centro",
+            "add_institucioncontacto",
+            "change_institucioncontacto",
+            "delete_institucioncontacto",
+            "add_institucionubicacion",
+            "change_institucionubicacion",
+            "delete_institucionubicacion",
+            "add_institucionidentificadorhist",
+            "change_institucionidentificadorhist",
+            "delete_institucionidentificadorhist",
+            "add_curso",
+            "change_curso",
+            "delete_curso",
+            "view_comisioncurso",
+            "add_comisioncurso",
+            "change_comisioncurso",
+            "delete_comisioncurso",
+            "add_comisionhorario",
+            "change_comisionhorario",
+            "delete_comisionhorario",
+            "add_inscripcion",
+            "change_inscripcion",
+        ],
+    )
     _grant_vat_referente_access(
         user,
-        Permission.objects.get(content_type__app_label="VAT", codename="add_curso"),
+        *permisos_gestion,
     )
     _grant_vat_revisor_access(user)
     centro = _create_vat_centro(
@@ -1816,11 +1848,229 @@ def test_usuario_mixto_no_gestiona_centro_asignado_solo_como_revisor(
         localidad=localidad,
     )
     centro.revisores.add(user)
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle Revisor 123",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso solo lectura",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="REV-CUR-001",
+        nombre="Comision solo lectura",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
 
     client.force_login(user)
-    response = client.get(reverse("vat_curso_create"), {"centro": centro.pk})
+    detail_response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+    panel_response = client.get(
+        reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}),
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+    create_response = client.get(reverse("vat_curso_create"), {"centro": centro.pk})
+    update_response = client.get(reverse("vat_curso_update", kwargs={"pk": curso.pk}))
+    delete_response = client.get(reverse("vat_curso_delete", kwargs={"pk": curso.pk}))
+    comision_create_response = client.get(
+        reverse("vat_comision_curso_create"), {"curso": curso.pk}
+    )
+    comision_update_response = client.get(
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+    )
+    comision_delete_response = client.get(
+        reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk})
+    )
+    comision_detail_response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+    )
 
-    assert response.status_code == 403
+    detail_content = detail_response.content.decode("utf-8")
+    panel_content = panel_response.content.decode("utf-8")
+    comision_detail_content = comision_detail_response.content.decode("utf-8")
+
+    assert detail_response.status_code == 200
+    assert panel_response.status_code == 200
+    assert comision_detail_response.status_code == 200
+    assert reverse("vat_centro_delete", kwargs={"pk": centro.pk}) not in detail_content
+    assert "Agregar Contacto" not in detail_content
+    assert "Agregar Identificador" not in detail_content
+    assert "Agregar Ubicacion" not in detail_content
+    assert reverse("vat_curso_create") not in panel_content
+    assert reverse("vat_curso_update", kwargs={"pk": curso.pk}) not in panel_content
+    assert reverse("vat_curso_delete", kwargs={"pk": curso.pk}) not in panel_content
+    assert reverse("vat_comision_curso_create") not in panel_content
+    assert (
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+        not in panel_content
+    )
+    assert (
+        reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk})
+        not in panel_content
+    )
+    assert create_response.status_code == 403
+    assert update_response.status_code == 404
+    assert delete_response.status_code == 404
+    assert comision_create_response.status_code == 403
+    assert comision_update_response.status_code == 404
+    assert comision_delete_response.status_code == 404
+    assert "Comision solo lectura" in comision_detail_content
+    assert (
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+        not in comision_detail_content
+    )
+    assert (
+        reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk})
+        not in comision_detail_content
+    )
+    assert reverse("vat_comision_curso_horario_create") not in comision_detail_content
+    assert (
+        reverse("vat_inscripcion_rapida_comision_curso") not in comision_detail_content
+    )
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_cfpinet_visualiza_detalle_comision_curso_desde_panel(client, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    call_command("create_groups", verbosity=0)
+    cfpinet = Group.objects.get(name="CFPINET")
+    user = User.objects.create_user(
+        username="cfpinet-comision-curso", password="test1234"
+    )
+    user.groups.add(cfpinet)
+    centro = _create_vat_centro(
+        codigo="INET-CUR-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle INET 100",
+        es_principal=True,
+    )
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial INET", activo=True)
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso visible INET",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="INET-CUR-COM-001",
+        nombre="Comision curso visible INET",
+        cupo_total=20,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        estado="activa",
+    )
+
+    client.force_login(user)
+    panel_response = client.get(
+        reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk})
+    )
+    detail_response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+    )
+
+    panel_content = panel_response.content.decode("utf-8")
+    detail_content = detail_response.content.decode("utf-8")
+    assert panel_response.status_code == 200
+    assert (
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+        in panel_content
+    )
+    assert 'class="fas fa-eye"' in panel_content
+    assert detail_response.status_code == 200
+    assert "Comision curso visible INET" in detail_content
+    assert (
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+        not in detail_content
+    )
+    assert (
+        reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk})
+        not in detail_content
+    )
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_cfpinet_visualiza_listado_y_detalle_comision_institucional(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    call_command("create_groups", verbosity=0)
+    cfpinet = Group.objects.get(name="CFPINET")
+    user = User.objects.create_user(username="cfpinet-comision", password="test1234")
+    user.groups.add(cfpinet)
+    centro = _create_vat_centro(
+        codigo="INET-COM-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    sector = Sector.objects.create(nombre="Sector INET")
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial Comision INET", activo=True
+    )
+    plan = PlanVersionCurricular.objects.create(
+        nombre="Plan Comision INET",
+        provincia=provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    programa = Programa.objects.create(nombre="Programa Comision INET")
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta visible INET",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    comision = Comision.objects.create(
+        oferta=oferta,
+        codigo_comision="INET-COM-001",
+        nombre="Comision visible INET",
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        cupo=20,
+        estado="activa",
+    )
+
+    client.force_login(user)
+    list_response = client.get(reverse("vat_comision_list"))
+    detail_response = client.get(
+        reverse("vat_comision_detail", kwargs={"pk": comision.pk})
+    )
+
+    list_content = list_response.content.decode("utf-8")
+    detail_content = detail_response.content.decode("utf-8")
+    assert list_response.status_code == 200
+    assert reverse("vat_comision_detail", kwargs={"pk": comision.pk}) in list_content
+    assert detail_response.status_code == 200
+    assert "Comision visible INET" in detail_content
+    assert (
+        reverse("vat_comision_update", kwargs={"pk": comision.pk}) not in detail_content
+    )
+    assert (
+        reverse("vat_comision_delete", kwargs={"pk": comision.pk}) not in detail_content
+    )
 
 
 @pytest.mark.django_db
@@ -5799,6 +6049,65 @@ def test_comision_curso_exporta_nomina_preinscriptos_en_excel(client, vat_geo_da
     assert rows_by_name["Juan"]["Canal de Inscripci\u00f3n"] == "Front P\u00fablico"
     assert rows_by_name["Ana"]["Fecha de Inscripci\u00f3n"]
     assert rows_by_name["Juan"]["Fecha de Inscripci\u00f3n"]
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
+def test_revisor_asignado_descarga_nominas_comision_curso_sin_acciones_rapidas(
+    client, vat_geo_data
+):
+    call_command("create_groups", verbosity=0)
+    _, comision = _build_comision_curso_nomina_export_context(vat_geo_data, "REV")
+    revisor = User.objects.create_user(
+        username="revisor-export-comision-curso", password="test1234"
+    )
+    revisor.groups.add(Group.objects.get(name="CFPRevisor"))
+    comision.curso.centro.revisores.add(revisor)
+
+    client.force_login(revisor)
+    detail_response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+    )
+    preinscriptos_response = client.get(
+        reverse(
+            "vat_comision_curso_export_preinscriptos",
+            kwargs={"pk": comision.pk},
+        )
+    )
+    inscriptos_response = client.get(
+        reverse(
+            "vat_comision_curso_export_inscriptos",
+            kwargs={"pk": comision.pk},
+        )
+    )
+    detail_content = detail_response.content.decode("utf-8")
+
+    assert detail_response.status_code == 200
+    assert "Acciones r" not in detail_content
+    assert (
+        reverse(
+            "vat_comision_curso_export_preinscriptos",
+            kwargs={"pk": comision.pk},
+        )
+        in detail_content
+    )
+    assert (
+        reverse(
+            "vat_comision_curso_export_inscriptos",
+            kwargs={"pk": comision.pk},
+        )
+        in detail_content
+    )
+    assert preinscriptos_response.status_code == 200
+    assert inscriptos_response.status_code == 200
+    assert "nomina_preinscriptos" in preinscriptos_response["Content-Disposition"]
+    assert "nomina_inscriptos" in inscriptos_response["Content-Disposition"]
+
+    preinscriptos_sheet = load_workbook(BytesIO(preinscriptos_response.content)).active
+    inscriptos_sheet = load_workbook(BytesIO(inscriptos_response.content)).active
+
+    assert len(list(preinscriptos_sheet.iter_rows(min_row=2, values_only=True))) == 2
+    assert len(list(inscriptos_sheet.iter_rows(min_row=2, values_only=True))) == 1
 
 
 @pytest.mark.django_db

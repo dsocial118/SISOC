@@ -542,7 +542,7 @@
                         <i class="bi bi-pencil me-1"></i>Editar
                     </a>
                 {% endif %}
-                {% if perms.VAT.delete_centro %}
+                {% if can_edit_centro and perms.VAT.delete_centro %}
                     <a href="{% url 'vat_centro_delete' centro.id %}" class="ci-edit-btn">
                         <i class="bi bi-trash me-1"></i>Eliminar
                     </a>
@@ -766,7 +766,7 @@
                         <i class="fas fa-phone me-2"></i>
                         Contactos Adicionales
                     </h6>
-                    {% if perms.VAT.add_institucioncontacto %}
+                    {% if can_edit_centro and perms.VAT.add_institucioncontacto %}
                         <button type="button"
                                 class="btn btn-sm btn-primary"
                                 data-bs-toggle="modal"
@@ -827,14 +827,14 @@
                                             </td>
                                             <td class="text-center">
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    {% if perms.VAT.change_institucioncontacto %}
+                                                    {% if can_edit_centro and perms.VAT.change_institucioncontacto %}
                                                         <button class="btn btn-outline-warning"
                                                                 onclick="editContacto({{ c.id }})"
                                                                 title="Editar">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
                                                     {% endif %}
-                                                    {% if perms.VAT.delete_institucioncontacto %}
+                                                    {% if can_edit_centro and perms.VAT.delete_institucioncontacto %}
                                                         <button class="btn btn-outline-danger"
                                                                 onclick="deleteContacto({{ c.id }})"
                                                                 title="Eliminar">
@@ -927,7 +927,7 @@
                         <i class="fas fa-map me-2"></i>
                         Ubicaciones Adicionales
                     </h6>
-                    {% if perms.VAT.add_institucionubicacion %}
+                    {% if can_edit_centro and perms.VAT.add_institucionubicacion %}
                         <button type="button"
                                 class="btn btn-sm btn-primary"
                                 data-bs-toggle="modal"
@@ -966,14 +966,14 @@
                                             </td>
                                             <td class="text-center">
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    {% if perms.VAT.change_institucionubicacion %}
+                                                    {% if can_edit_centro and perms.VAT.change_institucionubicacion %}
                                                         <button class="btn btn-outline-warning"
                                                                 onclick="editUbicacion({{ u.id }})"
                                                                 title="Editar">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
                                                     {% endif %}
-                                                    {% if perms.VAT.delete_institucionubicacion %}
+                                                    {% if can_edit_centro and perms.VAT.delete_institucionubicacion %}
                                                         <button class="btn btn-outline-danger"
                                                                 onclick="deleteUbicacion({{ u.id }})"
                                                                 title="Eliminar">
@@ -1003,7 +1003,7 @@
                         <i class="fas fa-id-card me-2"></i>
                         Identificadores
                     </h6>
-                    {% if perms.VAT.add_institucionidentificadorhist %}
+                    {% if can_edit_centro and perms.VAT.add_institucionidentificadorhist %}
                         <button type="button"
                                 class="btn btn-sm btn-primary"
                                 data-bs-toggle="modal"
@@ -1036,14 +1036,14 @@
                                             <td>{{ id.ubicacion|default:"\u2014" }}</td>
                                             <td class="text-center">
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    {% if perms.VAT.change_institucionidentificadorhist %}
+                                                    {% if can_edit_centro and perms.VAT.change_institucionidentificadorhist %}
                                                         <button class="btn btn-outline-warning"
                                                                 onclick="editIdentificador({{ id.id }})"
                                                                 title="Editar">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
                                                     {% endif %}
-                                                    {% if perms.VAT.delete_institucionidentificadorhist %}
+                                                    {% if can_edit_centro and perms.VAT.delete_institucionidentificadorhist %}
                                                         <button class="btn btn-outline-danger"
                                                                 onclick="deleteIdentificador({{ id.id }})"
                                                                 title="Eliminar">
@@ -1729,92 +1729,94 @@
 
     </div>
 
-    <!-- Modal Contacto -->
-    <div class="modal fade"
-         id="modalContacto"
-         tabindex="-1"
-         aria-labelledby="modalContactoLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalContactoLabel">Agregar Contacto</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-                <form id="formContacto"
-                      method="post"
-                      action="{% url 'vat_institucion_contacto_create' %}?centro={{ centro.id }}">
-                    {% csrf_token %}
-                    <div class="modal-body">{{ contacto_form.as_p }}</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
+    {% if can_edit_centro %}
+        <!-- Modal Contacto -->
+        <div class="modal fade"
+             id="modalContacto"
+             tabindex="-1"
+             aria-labelledby="modalContactoLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalContactoLabel">Agregar Contacto</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                     </div>
-                </form>
+                    <form id="formContacto"
+                          method="post"
+                          action="{% url 'vat_institucion_contacto_create' %}?centro={{ centro.id }}">
+                        {% csrf_token %}
+                        <div class="modal-body">{{ contacto_form.as_p }}</div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Modal Identificador -->
-    <div class="modal fade"
-         id="modalIdentificador"
-         tabindex="-1"
-         aria-labelledby="modalIdentificadorLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalIdentificadorLabel">Agregar Identificador</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-                <form id="formIdentificador"
-                      method="post"
-                      action="{% url 'vat_institucion_identificador_create' %}?centro={{ centro.id }}">
-                    {% csrf_token %}
-                    <div class="modal-body">{{ identificador_form.as_p }}</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
+        <!-- Modal Identificador -->
+        <div class="modal fade"
+             id="modalIdentificador"
+             tabindex="-1"
+             aria-labelledby="modalIdentificadorLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalIdentificadorLabel">Agregar Identificador</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                     </div>
-                </form>
+                    <form id="formIdentificador"
+                          method="post"
+                          action="{% url 'vat_institucion_identificador_create' %}?centro={{ centro.id }}">
+                        {% csrf_token %}
+                        <div class="modal-body">{{ identificador_form.as_p }}</div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Modal Ubicacion -->
-    <div class="modal fade"
-         id="modalUbicacion"
-         tabindex="-1"
-         aria-labelledby="modalUbicacionLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalUbicacionLabel">Agregar Ubicacion</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-                <form id="formUbicacion"
-                      method="post"
-                      action="{% url 'vat_institucion_ubicacion_create' %}?centro={{ centro.id }}">
-                    {% csrf_token %}
-                    <div class="modal-body">{{ ubicacion_form.as_p }}</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
+        <!-- Modal Ubicacion -->
+        <div class="modal fade"
+             id="modalUbicacion"
+             tabindex="-1"
+             aria-labelledby="modalUbicacionLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalUbicacionLabel">Agregar Ubicacion</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                     </div>
-                </form>
+                    <form id="formUbicacion"
+                          method="post"
+                          action="{% url 'vat_institucion_ubicacion_create' %}?centro={{ centro.id }}">
+                        {% csrf_token %}
+                        <div class="modal-body">{{ ubicacion_form.as_p }}</div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
+    {% endif %}
 
     {% comment %}
     <!-- Modal Oferta -->

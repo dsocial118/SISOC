@@ -37,6 +37,7 @@ from VAT.models import (
 from VAT.services.access_scope import (
     can_user_edit_centro,
     filter_centros_queryset_for_management,
+    filter_centros_queryset_for_user,
 )
 from VAT.services.inscripcion_service import (
     ESTADOS_INSCRIPCION_OCUPAN_CUPO,
@@ -55,6 +56,12 @@ def _scoped_centros_ids(user):
     ).values_list("id", flat=True)
 
 
+def _readable_centros_ids(user):
+    return filter_centros_queryset_for_user(Centro.objects.all(), user).values_list(
+        "id", flat=True
+    )
+
+
 def _scoped_comisiones_curso_queryset(user):
     return ComisionCurso.objects.select_related(
         "curso__centro",
@@ -62,6 +69,15 @@ def _scoped_comisiones_curso_queryset(user):
         "curso__plan_estudio",
         "ubicacion__localidad",
     ).filter(curso__centro_id__in=_scoped_centros_ids(user))
+
+
+def _readable_comisiones_curso_queryset(user):
+    return ComisionCurso.objects.select_related(
+        "curso__centro",
+        "curso__modalidad",
+        "curso__plan_estudio",
+        "ubicacion__localidad",
+    ).filter(curso__centro_id__in=_readable_centros_ids(user))
 
 
 def _centro_cursos_tab_url(centro_id, refresh=False):
@@ -320,13 +336,16 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "comision"
 
     def get_queryset(self):
-        return _scoped_comisiones_curso_queryset(self.request.user).prefetch_related(
+        return _readable_comisiones_curso_queryset(self.request.user).prefetch_related(
             "curso__voucher_parametrias"
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comision = self.object
+        puede_gestionar_comision = can_user_edit_centro(
+            self.request.user, comision.curso.centro
+        )
         cancel_url = _centro_cursos_tab_url(comision.curso.centro_id)
         comision_form = ComisionCursoForm(instance=comision)
         scoped_centros = filter_centros_queryset_for_management(
@@ -396,12 +415,23 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                 "comision_delete_url": reverse(
                     "vat_comision_curso_delete", kwargs={"pk": comision.pk}
                 ),
-                "puede_editar_comision": self.request.user.has_perm(
-                    "VAT.change_comisioncurso"
-                ),
-                "puede_eliminar_comision": self.request.user.has_perm(
-                    "VAT.delete_comisioncurso"
-                ),
+                "puede_gestionar_comision": puede_gestionar_comision,
+                "puede_editar_comision": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.change_comisioncurso"),
+                "puede_eliminar_comision": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.delete_comisioncurso"),
+                "puede_agregar_inscripcion": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.add_inscripcion"),
+                "puede_cambiar_inscripcion": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.change_inscripcion"),
+                "puede_gestionar_asistencia": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.change_inscripcion"),
+                "puede_agregar_comision_horario": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.add_comisionhorario"),
+                "puede_editar_comision_horario": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.change_comisionhorario"),
+                "puede_eliminar_comision_horario": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.delete_comisionhorario"),
                 "unidad_label": "Curso",
                 "unidad_valor": comision.curso.nombre,
                 "unidad_sidebar_title": "Curso asociado",
@@ -414,13 +444,21 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                 "horario_update_url_name": "vat_comision_curso_horario_update",
                 "horario_delete_url_name": "vat_comision_curso_horario_delete",
                 "inscripcion_rapida_url_name": "vat_inscripcion_rapida_comision_curso",
-                "export_preinscriptos_url": reverse(
-                    "vat_comision_curso_export_preinscriptos",
-                    kwargs={"pk": comision.pk},
+                "export_preinscriptos_url": (
+                    reverse(
+                        "vat_comision_curso_export_preinscriptos",
+                        kwargs={"pk": comision.pk},
+                    )
+                    if self.request.user.has_perm("VAT.view_comisioncurso")
+                    else None
                 ),
-                "export_inscriptos_url": reverse(
-                    "vat_comision_curso_export_inscriptos",
-                    kwargs={"pk": comision.pk},
+                "export_inscriptos_url": (
+                    reverse(
+                        "vat_comision_curso_export_inscriptos",
+                        kwargs={"pk": comision.pk},
+                    )
+                    if self.request.user.has_perm("VAT.view_comisioncurso")
+                    else None
                 ),
             }
         )
@@ -443,7 +481,7 @@ class _ComisionCursoNominaExportView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         comision = get_object_or_404(
-            _scoped_comisiones_curso_queryset(request.user),
+            _readable_comisiones_curso_queryset(request.user),
             pk=pk,
         )
         content = build_comision_curso_nomina_excel(

@@ -75,6 +75,8 @@ def test_create_groups_creates_cfpinet_with_vat_permissions():
         "view_centro",
         "add_centro",
         "change_centro",
+        "view_comision",
+        "view_comisioncurso",
         "view_planversioncurricular",
         "add_planversioncurricular",
         "change_planversioncurricular",
@@ -133,7 +135,9 @@ def test_create_groups_creates_cfp_revisor_readonly_group():
     cfp_revisor = Group.objects.get(name="CFPRevisor")
     group_codes = set(cfp_revisor.permissions.values_list("codename", flat=True))
 
-    assert {"role_revisorcentrovat", "view_centro"}.issubset(group_codes)
+    assert {"role_revisorcentrovat", "view_centro", "view_comisioncurso"}.issubset(
+        group_codes
+    )
     assert not any(
         code.startswith(("add_", "change_", "delete_")) for code in group_codes
     )

@@ -20,7 +20,7 @@ class CursoAppMobilePWASerializer(serializers.ModelSerializer):
             "imagen_url",
         )
 
-    def get_imagen_url(self, obj):
+    def get_imagen_url(self, obj) -> str | None:
         if not obj.imagen:
             return None
         request = self.context.get("request")
