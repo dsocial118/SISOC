@@ -793,54 +793,56 @@
         <div class="col-xl-4">
             <div style="position:sticky;top:1rem;">
 
-                <div class="ci-scard">
-                    <p class="ci-sc-title">Acciones rápidas</p>
-                    <div class="d-grid gap-2">
-                        {% if puede_editar_comision %}
-                            <button type="button"
-                                    class="btn btn-primary rounded-3"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalEditarComisionCurso"
-                                    data-edit-url="{{ comision_edit_url }}"
-                                    data-curso-id="{{ comision.curso_id }}"
-                                    data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
-                                    data-cupo-total="{{ comision.cupo_total|default:comision.cupo }}"
-                                    data-acepta-lista-espera="{{ comision.acepta_lista_espera|yesno:'1,0' }}"
-                                    data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
-                                    data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
-                                    data-estado="{{ comision.estado }}"
-                                    data-observaciones="{{ comision.observaciones|default:'' }}">
-                                <i class="bi bi-pencil me-2"></i>Editar comisión
-                            </button>
-                        {% endif %}
-                        {% if puede_agregar_inscripcion %}
-                            <button type="button"
-                                    class="btn btn-outline-primary rounded-3"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalInscripcionRapida">
-                                <i class="bi bi-person-plus me-2"></i>Inscribir ciudadano
-                            </button>
-                        {% endif %}
-                        {% if puede_agregar_comision_horario %}
-                            <button type="button"
-                                    class="btn btn-outline-secondary rounded-3"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalComisionHorario">
-                                <i class="bi bi-plus-circle me-2"></i>Agregar horario
-                            </button>
-                        {% endif %}
-                        {% if puede_eliminar_comision %}
-                            <button type="button"
-                                    class="btn btn-outline-danger rounded-3"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalEliminarComisionCurso"
-                                    data-delete-url="{{ comision_delete_url }}"
-                                    data-comision-resumen="{{ comision.codigo_comision }} - {{ comision.nombre|default:comision.codigo_comision }}">
-                                <i class="bi bi-trash me-2"></i>Eliminar
-                            </button>
-                        {% endif %}
+                {% if puede_editar_comision or puede_agregar_inscripcion or puede_agregar_comision_horario or puede_eliminar_comision %}
+                    <div class="ci-scard">
+                        <p class="ci-sc-title">Acciones rápidas</p>
+                        <div class="d-grid gap-2">
+                            {% if puede_editar_comision %}
+                                <button type="button"
+                                        class="btn btn-primary rounded-3"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalEditarComisionCurso"
+                                        data-edit-url="{{ comision_edit_url }}"
+                                        data-curso-id="{{ comision.curso_id }}"
+                                        data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
+                                        data-cupo-total="{{ comision.cupo_total|default:comision.cupo }}"
+                                        data-acepta-lista-espera="{{ comision.acepta_lista_espera|yesno:'1,0' }}"
+                                        data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
+                                        data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
+                                        data-estado="{{ comision.estado }}"
+                                        data-observaciones="{{ comision.observaciones|default:'' }}">
+                                    <i class="bi bi-pencil me-2"></i>Editar comisión
+                                </button>
+                            {% endif %}
+                            {% if puede_agregar_inscripcion %}
+                                <button type="button"
+                                        class="btn btn-outline-primary rounded-3"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalInscripcionRapida">
+                                    <i class="bi bi-person-plus me-2"></i>Inscribir ciudadano
+                                </button>
+                            {% endif %}
+                            {% if puede_agregar_comision_horario %}
+                                <button type="button"
+                                        class="btn btn-outline-secondary rounded-3"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalComisionHorario">
+                                    <i class="bi bi-plus-circle me-2"></i>Agregar horario
+                                </button>
+                            {% endif %}
+                            {% if puede_eliminar_comision %}
+                                <button type="button"
+                                        class="btn btn-outline-danger rounded-3"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalEliminarComisionCurso"
+                                        data-delete-url="{{ comision_delete_url }}"
+                                        data-comision-resumen="{{ comision.codigo_comision }} - {{ comision.nombre|default:comision.codigo_comision }}">
+                                    <i class="bi bi-trash me-2"></i>Eliminar
+                                </button>
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
+                {% endif %}
 
                 <div class="ci-scard">
                     <p class="ci-sc-title">Ocupación de cupo</p>

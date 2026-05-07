@@ -449,7 +449,7 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                         "vat_comision_curso_export_preinscriptos",
                         kwargs={"pk": comision.pk},
                     )
-                    if puede_gestionar_comision
+                    if self.request.user.has_perm("VAT.view_comisioncurso")
                     else None
                 ),
                 "export_inscriptos_url": (
@@ -457,7 +457,7 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                         "vat_comision_curso_export_inscriptos",
                         kwargs={"pk": comision.pk},
                     )
-                    if puede_gestionar_comision
+                    if self.request.user.has_perm("VAT.view_comisioncurso")
                     else None
                 ),
             }
@@ -481,7 +481,7 @@ class _ComisionCursoNominaExportView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         comision = get_object_or_404(
-            _scoped_comisiones_curso_queryset(request.user),
+            _readable_comisiones_curso_queryset(request.user),
             pk=pk,
         )
         content = build_comision_curso_nomina_excel(
