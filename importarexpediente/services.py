@@ -12,8 +12,14 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from openpyxl import load_workbook
 
-from comedores.models import Comedor, EstadoActividad, EstadoDetalle, EstadoProceso
-from comedores.services.estado_manager.impl import registrar_cambio_estado
+from comedores.models import (
+    Comedor,
+    EstadoActividad,
+    EstadoDetalle,
+    EstadoHistorial,
+    EstadoProceso,
+)
+from comedores.services.estado_manager import registrar_cambio_estado
 from importarexpediente.models import ArchivosImportados, RegistroImportado
 
 # Formatos de fecha aceptados
@@ -352,7 +358,7 @@ def _new_imported_batches_before(batch):
         .exclude(pk=batch.pk)
         .distinct()
         .order_by("-fecha_subida", "-id")
-        .values_list("id", flat=True)
+        .values_list("id", "fecha_subida")
     )
 
 
@@ -373,6 +379,41 @@ def _previous_presence_by_batch(batch_ids):
     for batch_id, comedor_id in rows:
         presence_by_batch.setdefault(batch_id, set()).add(comedor_id)
     return presence_by_batch
+
+
+def _batch_ids_since(previous_batches, since):
+    if since is None:
+        return [batch_id for batch_id, _fecha_subida in previous_batches]
+    return [
+        batch_id for batch_id, fecha_subida in previous_batches if fecha_subida >= since
+    ]
+
+
+def _latest_execution_state_by_comedor(comedor_ids):
+    latest_by_comedor = {}
+    rows = (
+        EstadoHistorial.objects.filter(
+            comedor_id__in=comedor_ids,
+            estado_general__estado_actividad__estado=ACTIVO,
+            estado_general__estado_proceso__estado=EN_EJECUCION,
+        )
+        .order_by("comedor_id", "-fecha_cambio", "-id")
+        .values_list("comedor_id", "fecha_cambio")
+    )
+    for comedor_id, fecha_cambio in rows:
+        latest_by_comedor.setdefault(comedor_id, fecha_cambio)
+    return latest_by_comedor
+
+
+def _inicio_conteo_ausencias(comedor, latest_execution_at):
+    fechas = []
+    if getattr(comedor, "fecha_creacion", None):
+        fechas.append(comedor.fecha_creacion)
+    if latest_execution_at:
+        fechas.append(latest_execution_at)
+    if not fechas:
+        return None
+    return max(fechas)
 
 
 def _ausencias_consecutivas(comedor_id, previous_batch_ids, presence_by_batch):
@@ -446,12 +487,16 @@ def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-l
             )
         updated_count += 1
 
-    previous_batch_ids = _new_imported_batches_before(batch)
+    previous_batches = _new_imported_batches_before(batch)
+    previous_batch_ids = [batch_id for batch_id, _fecha_subida in previous_batches]
     presence_by_batch = _previous_presence_by_batch(previous_batch_ids)
-    comedores_ausentes = (
+    comedores_ausentes = list(
         Comedor.objects.filter(programa_id=ALIMENTAR_COMUNIDAD_PROGRAMA_ID)
         .exclude(id__in=present_ids)
         .select_related("ultimo_estado__estado_general__estado_actividad")
+    )
+    latest_execution_by_comedor = _latest_execution_state_by_comedor(
+        [comedor.id for comedor in comedores_ausentes]
     )
     for comedor in comedores_ausentes:
         ultimo_estado = getattr(comedor, "ultimo_estado", None)
@@ -459,9 +504,17 @@ def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-l
         if ultimo_estado and ultimo_estado.estado_general_id:
             actividad_actual = ultimo_estado.estado_general.estado_actividad.estado
 
+        inicio_conteo = _inicio_conteo_ausencias(
+            comedor,
+            latest_execution_by_comedor.get(comedor.id),
+        )
+        previous_batch_ids_for_comedor = _batch_ids_since(
+            previous_batches,
+            inicio_conteo,
+        )
         ausencias = _ausencias_consecutivas(
             comedor.id,
-            previous_batch_ids,
+            previous_batch_ids_for_comedor,
             presence_by_batch,
         )
         if actividad_actual == INACTIVO or ausencias >= 3:

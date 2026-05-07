@@ -162,6 +162,9 @@ def test_create_view_precarga_fecha_renaper_desde_contrato_servicio(mocker):
     assert initial["apellido"] == "Lopez"
     assert initial["nombre"] == "Ana"
     assert initial["fecha_nacimiento"] == date(2018, 5, 10)
+    fecha_html = str(context["form"]["fecha_nacimiento"])
+    assert 'type="date"' in fecha_html
+    assert 'value="2018-05-10"' in fecha_html
     assert context["renaper_precarga"] is True
     mock_obtener.assert_called_once_with("30111222")
 

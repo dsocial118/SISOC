@@ -12,6 +12,7 @@ El flujo `/importarexpedientes/listar` acepta el modelo nuevo de expediente de p
 - Lotes sin `Mes de Convenio` conservan la compatibilidad historica y no disparan cambios de estado.
 - El valor de `Mes de Convenio` debe estar entre `1` y `6`.
 - El borrado de un lote importado elimina expedientes y registros del lote, pero no revierte estados ya generados.
+- Si un comedor fue creado o reactivado como `Activo / En ejecución` después de lotes previos, esos lotes previos no cuentan como ausencias para ese comedor.
 
 ## Estados aplicados
 

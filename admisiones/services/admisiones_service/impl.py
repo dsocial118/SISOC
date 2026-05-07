@@ -504,6 +504,14 @@ class AdmisionService:
         )
 
     @staticmethod
+    def _puede_editar_num_expediente_update_context(user, admision):
+        if not user or not admision or getattr(admision, "enviado_legales", False):
+            return False
+        return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
+            user, admision.comedor
+        )
+
+    @staticmethod
     def _build_objetos_update_context(admision):
         return {
             "comedor": admision.comedor,
@@ -530,6 +538,7 @@ class AdmisionService:
         informe_complementario_context,
         botones_disponibles,
         puede_editar_convenio_numero,
+        puede_editar_num_expediente,
     ):
         return {
             "documentos": documentos_context["documentos"],
@@ -556,6 +565,7 @@ class AdmisionService:
             "observaciones_informe_tecnico_complementario": admision.observaciones_informe_tecnico_complementario,
             "botones_disponibles": botones_disponibles,
             "puede_editar_convenio_numero": puede_editar_convenio_numero,
+            "puede_editar_num_expediente": puede_editar_num_expediente,
         }
 
     @staticmethod
@@ -594,6 +604,11 @@ class AdmisionService:
                     user, objetos_contexto["comedor"]
                 )
             )
+            puede_editar_num_expediente = (
+                AdmisionService._puede_editar_num_expediente_update_context(
+                    user, admision
+                )
+            )
 
             return AdmisionService._build_response_update_context(
                 admision=admision,
@@ -602,6 +617,7 @@ class AdmisionService:
                 informe_complementario_context=informe_complementario_context,
                 botones_disponibles=botones_disponibles,
                 puede_editar_convenio_numero=puede_editar_convenio_numero,
+                puede_editar_num_expediente=puede_editar_num_expediente,
             )
 
         except Exception:
@@ -1858,6 +1874,76 @@ class AdmisionService:
             logger.exception(
                 "Error en actualizar_convenio_numero_ajax",
                 extra={"admision_id": admision_id},
+            )
+            return {"success": False, "error": str(exc)}
+
+    @staticmethod
+    def _build_error_response_actualizar_num_expediente(message):
+        return {"success": False, "error": message}
+
+    @staticmethod
+    def _parse_actualizar_num_expediente_payload(request):
+        admision_id = request.POST.get("admision_id")
+        numero_raw = request.POST.get("num_expediente", "").strip()
+        return admision_id, numero_raw
+
+    @staticmethod
+    def _puede_editar_num_expediente(user, admision):
+        if admision.enviado_legales:
+            return False
+        return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
+            user, admision.comedor
+        )
+
+    @staticmethod
+    def actualizar_num_expediente_ajax(request):
+        try:
+            admision_id, numero_raw = (
+                AdmisionService._parse_actualizar_num_expediente_payload(request)
+            )
+
+            if not admision_id:
+                return AdmisionService._build_error_response_actualizar_num_expediente(
+                    "ID de admisión requerido."
+                )
+
+            if not numero_raw:
+                return AdmisionService._build_error_response_actualizar_num_expediente(
+                    "El número de expediente es obligatorio."
+                )
+
+            admision = get_object_or_404(Admision, id=admision_id)
+
+            if not AdmisionService._puede_editar_num_expediente(request.user, admision):
+                if admision.enviado_legales:
+                    return AdmisionService._build_error_response_actualizar_num_expediente(
+                        "No se puede editar el expediente una vez enviado a legales."
+                    )
+                return AdmisionService._build_error_response_actualizar_num_expediente(
+                    "No tiene permisos para editar esta admisión."
+                )
+
+            valor_anterior = admision.num_expediente
+            admision.num_expediente = numero_raw or None
+            admision.save(update_fields=["num_expediente"])
+
+            logger.info(
+                "Numero de expediente actualizado: admision_id=%s, valor_anterior=%s, valor_nuevo=%s",
+                admision_id,
+                valor_anterior,
+                admision.num_expediente,
+            )
+
+            return {
+                "success": True,
+                "num_expediente": admision.num_expediente,
+                "valor_anterior": valor_anterior,
+            }
+
+        except Exception as exc:
+            logger.exception(
+                "Error en actualizar_num_expediente_ajax",
+                extra={"admision_id": locals().get("admision_id")},
             )
             return {"success": False, "error": str(exc)}
 

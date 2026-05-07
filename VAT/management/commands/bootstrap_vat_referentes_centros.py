@@ -215,27 +215,26 @@ class Command(BaseCommand):
                     f"No se encontró el centro '{planned_center.codigo}' para la fila {planned_center.line_number}."
                 )
 
-            if center.referente_id and center.referente_id != user.id and not overwrite:
+            if not overwrite and center.referentes.filter(pk=user.pk).exists():
                 skipped_existing_count += 1
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"Centro {center.codigo} ya tiene referente asignado; se omite."
-                    )
-                )
                 continue
 
-            if center.referente_id == user.id:
-                continue
-
-            center.referente = user
-            center.save(update_fields=["referente"])
+            if overwrite:
+                center.referentes.set([user])
+                center.referente = user
+                center.save(update_fields=["referente"])
+            else:
+                center.referentes.add(user)
+                if not center.referente_id:
+                    center.referente = user
+                    center.save(update_fields=["referente"])
             assigned_count += 1
 
             if assigned_count % self.progress_step == 0:
                 self._write_status(
                     "Avance asignación referentes VAT: "
                     f"{assigned_count}/{len(planned_centers)} asignados, "
-                    f"{skipped_existing_count} omitidos por referente existente."
+                    f"{skipped_existing_count} omitidos por referente ya asociado."
                 )
 
         self._write_status(
@@ -244,6 +243,6 @@ class Command(BaseCommand):
                 f"Usuarios planificados: {len(planned_users)}, "
                 f"centros planificados: {len(planned_centers)}, "
                 f"referentes asignados: {assigned_count}, "
-                f"centros omitidos por referente existente: {skipped_existing_count}."
+                f"centros omitidos por referente ya asociado: {skipped_existing_count}."
             )
         )
