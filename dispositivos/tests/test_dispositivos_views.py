@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.auth.models import Permission, User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from core.models import Municipio, Provincia
@@ -39,6 +40,20 @@ def test_crud_dispositivo_con_permisos(client, user_con_permisos, provincia_muni
     provincia, municipio = provincia_municipio
     client.force_login(user_con_permisos)
 
+    documento_principal = SimpleUploadedFile("documento-principal.txt", b"contenido 1")
+    documento_adicional_1 = SimpleUploadedFile(
+        "documento-adicional-1.txt", b"contenido 2"
+    )
+    documento_adicional_2 = SimpleUploadedFile(
+        "documento-adicional-2.txt", b"contenido 3"
+    )
+    documento_adicional_3 = SimpleUploadedFile(
+        "documento-adicional-3.txt", b"contenido 4"
+    )
+    documento_adicional_4 = SimpleUploadedFile(
+        "documento-adicional-4.txt", b"contenido 5"
+    )
+
     create_url = reverse("dispositivos_crear")
     response_create = client.post(
         create_url,
@@ -58,6 +73,12 @@ def test_crud_dispositivo_con_permisos(client, user_con_permisos, provincia_muni
             "capacidad_total_plazas": "16_30",
             "dias_atencion": ["lunes", "martes"],
             "horarios_funcionamiento": ["manana"],
+            "observaciones_adicionales": "Observación de prueba",
+            "documentacion_dispositivo": documento_principal,
+            "documentacion_dispositivo_adicional_1": documento_adicional_1,
+            "documentacion_dispositivo_adicional_2": documento_adicional_2,
+            "documentacion_dispositivo_adicional_3": documento_adicional_3,
+            "documentacion_dispositivo_adicional_4": documento_adicional_4,
         },
     )
     assert response_create.status_code == 302
@@ -67,6 +88,10 @@ def test_crud_dispositivo_con_permisos(client, user_con_permisos, provincia_muni
     detail_url = reverse("dispositivos_detalle", kwargs={"pk": dispositivo.pk})
     response_detail = client.get(detail_url)
     assert response_detail.status_code == 200
+    contenido_detalle = response_detail.content.decode("utf-8")
+    assert "Observación de prueba" in contenido_detalle
+    assert "documento-principal.txt" in contenido_detalle
+    assert "documento-adicional-4.txt" in contenido_detalle
 
     edit_url = reverse("dispositivos_editar", kwargs={"pk": dispositivo.pk})
     response_edit = client.post(
@@ -120,7 +145,9 @@ def test_sin_permiso_view_dispositivo_devuelve_403(client, provincia_municipio):
     )
 
     client.force_login(user)
-    response = client.get(reverse("dispositivos_detalle", kwargs={"pk": dispositivo.pk}))
+    response = client.get(
+        reverse("dispositivos_detalle", kwargs={"pk": dispositivo.pk})
+    )
 
     assert response.status_code == 403
 

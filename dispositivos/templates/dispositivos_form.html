@@ -2,202 +2,457 @@
 {% load crispy_forms_tags %}
 
 {% block title %}
-	{% if form.instance.pk %}
-		Editar dispositivo
-	{% else %}
-		Crear dispositivo
-	{% endif %}
+	
+    {% if form.instance.pk %}
+        Editar dispositivo
+	
+    {% else %}
+        Crear dispositivo
+	
+    {% endif %}
 {% endblock %}
 
 {% block content %}
-	<div class="container-fluid">
-		<div class="d-flex justify-content-between align-items-center mb-3">
-			<h2 class="mb-0">
-				{% if form.instance.pk %}
-					Editar dispositivo
-				{% else %}
-					Nuevo dispositivo
-				{% endif %}
-			</h2>
-			<a href="{% url 'dispositivos_listar' %}" class="btn btn-secondary">Volver</a>
-		</div>
+	
+    <div class="container-fluid">
+	
+        <div class="d-flex justify-content-between align-items-center mb-3">
+	
+            <h2 class="mb-0">
+	
+                {% if form.instance.pk %}
+                    Editar dispositivo
+	
+                {% else %}
+                    Nuevo dispositivo
+	
+                {% endif %}
+	
+            </h2>
+            <a href="{% url 'dispositivos_listar' %}" class="btn btn-secondary">Volver</a>
+	
+        </div>
 
-		<form method="post" enctype="multipart/form-data" novalidate>
-			{% csrf_token %}
-			{% if form.errors %}
-				<div class="alert alert-danger">No se pudo guardar el formulario. Revisá los campos marcados.</div>
-			{% endif %}
+	
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+	
+            {% if form.errors %}
+	
+                <div class="alert alert-danger">No se pudo guardar el formulario. Revisá los campos marcados.</div>
+	
+            {% endif %}
 
-			<div class="accordion mb-3" id="dispositivo-secciones-accordion">
-				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading-section-1">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-section-1" aria-expanded="false" aria-controls="collapse-section-1">SECCIÓN 1 - Identificación del dispositivo</button>
-					</h2>
-					<div id="collapse-section-1" class="accordion-collapse collapse" aria-labelledby="heading-section-1" data-bs-parent="#dispositivo-secciones-accordion">
-						<div class="accordion-body">
-							<div class="row g-3">
-								<div class="col-md-6">{{ form.nombre_institucion|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.tipo_gestion|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.tipo_gestion_otra|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.razon_social|as_crispy_field }}</div>
-								<div class="col-md-4">{{ form.cuit_institucion|as_crispy_field }}</div>
-								<div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
-								<div class="col-md-4">{{ form.municipio|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.domicilio_institucion|as_crispy_field }}</div>
-								<div class="col-md-3">{{ form.telefono_contacto|as_crispy_field }}</div>
-								<div class="col-md-3">{{ form.correo_electronico|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.responsable_nombre_completo|as_crispy_field }}</div>
-								<div class="col-md-3">{{ form.responsable_dni|as_crispy_field }}</div>
-							</div>
-						</div>
-					</div>
-				</div>
+	
+            <div class="accordion mb-3" id="dispositivo-secciones-accordion">
+	
+                <div class="accordion-item">
+	
+                    <h2 class="accordion-header" id="heading-section-1">
+	
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapse-section-1"
+                                aria-expanded="false"
+                                aria-controls="collapse-section-1">SECCIÓN 1 - Identificación del dispositivo</button>
+	
+                    </h2>
+	
+                    <div id="collapse-section-1"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="heading-section-1"
+                         data-bs-parent="#dispositivo-secciones-accordion">
+	
+                        <div class="accordion-body">
+	
+                            <div class="row g-3">
+	
+                                <div class="col-md-6">{{ form.nombre_institucion|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.tipo_gestion|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.tipo_gestion_otra|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.razon_social|as_crispy_field }}</div>
+	
+                                <div class="col-md-4">{{ form.cuit_institucion|as_crispy_field }}</div>
+	
+                                <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
+	
+                                <div class="col-md-4">{{ form.municipio|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.domicilio_institucion|as_crispy_field }}</div>
+	
+                                <div class="col-md-3">{{ form.telefono_contacto|as_crispy_field }}</div>
+	
+                                <div class="col-md-3">{{ form.correo_electronico|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.responsable_nombre_completo|as_crispy_field }}</div>
+	
+                                <div class="col-md-3">{{ form.responsable_dni|as_crispy_field }}</div>
+	
+                            </div>
+	
+                        </div>
+	
+                    </div>
+	
+                </div>
 
-				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading-section-2">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-section-2" aria-expanded="false" aria-controls="collapse-section-2">SECCIÓN 2 - Características del dispositivo</button>
-					</h2>
-					<div id="collapse-section-2" class="accordion-collapse collapse" aria-labelledby="heading-section-2" data-bs-parent="#dispositivo-secciones-accordion">
-						<div class="accordion-body">
-							<div class="row g-3">
-								<div class="col-md-6">{{ form.tipo_dispositivo|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.tipo_dispositivo_otro|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.modalidad_funcionamiento|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.capacidad_total_plazas|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.dias_atencion|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.horarios_funcionamiento|as_crispy_field }}</div>
-							</div>
-						</div>
-					</div>
-				</div>
+	
+                <div class="accordion-item">
+	
+                    <h2 class="accordion-header" id="heading-section-2">
+	
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapse-section-2"
+                                aria-expanded="false"
+                                aria-controls="collapse-section-2">SECCIÓN 2 - Características del dispositivo</button>
+	
+                    </h2>
+	
+                    <div id="collapse-section-2"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="heading-section-2"
+                         data-bs-parent="#dispositivo-secciones-accordion">
+	
+                        <div class="accordion-body">
+	
+                            <div class="row g-3">
+	
+                                <div class="col-md-6">{{ form.tipo_dispositivo|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.tipo_dispositivo_otro|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.modalidad_funcionamiento|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.capacidad_total_plazas|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.dias_atencion|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.horarios_funcionamiento|as_crispy_field }}</div>
+	
+                            </div>
+	
+                        </div>
+	
+                    </div>
+	
+                </div>
 
-				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading-section-3">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-section-3" aria-expanded="false" aria-controls="collapse-section-3">SECCIÓN 3 - Población destinataria</button>
-					</h2>
-					<div id="collapse-section-3" class="accordion-collapse collapse" aria-labelledby="heading-section-3" data-bs-parent="#dispositivo-secciones-accordion">
-						<div class="accordion-body">
-							<div class="row g-3">
-								<div class="col-md-6">{{ form.poblacion_destinataria|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.poblacion_destinataria_otro|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.franja_etaria_destinataria|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.tiempo_permanencia_promedio|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.tiempo_permanencia_otro|as_crispy_field }}</div>
-							</div>
-						</div>
-					</div>
-				</div>
+	
+                <div class="accordion-item">
+	
+                    <h2 class="accordion-header" id="heading-section-3">
+	
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapse-section-3"
+                                aria-expanded="false"
+                                aria-controls="collapse-section-3">SECCIÓN 3 - Población destinataria</button>
+	
+                    </h2>
+	
+                    <div id="collapse-section-3"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="heading-section-3"
+                         data-bs-parent="#dispositivo-secciones-accordion">
+	
+                        <div class="accordion-body">
+	
+                            <div class="row g-3">
+	
+                                <div class="col-md-6">{{ form.poblacion_destinataria|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.poblacion_destinataria_otro|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.franja_etaria_destinataria|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.tiempo_permanencia_promedio|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.tiempo_permanencia_otro|as_crispy_field }}</div>
+	
+                            </div>
+	
+                        </div>
+	
+                    </div>
+	
+                </div>
 
-				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading-section-4">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-section-4" aria-expanded="false" aria-controls="collapse-section-4">SECCIÓN 4 - Modalidad de ingreso</button>
-					</h2>
-					<div id="collapse-section-4" class="accordion-collapse collapse" aria-labelledby="heading-section-4" data-bs-parent="#dispositivo-secciones-accordion">
-						<div class="accordion-body">
-							<div class="row g-3">
-								<div class="col-md-6">{{ form.modalidad_ingreso|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.modalidad_ingreso_otro|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.documentacion_ingreso|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.documentacion_ingreso_otro|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.requisitos_ingreso|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.requisitos_ingreso_otro|as_crispy_field }}</div>
-							</div>
-						</div>
-					</div>
-				</div>
+	
+                <div class="accordion-item">
+	
+                    <h2 class="accordion-header" id="heading-section-4">
+	
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapse-section-4"
+                                aria-expanded="false"
+                                aria-controls="collapse-section-4">SECCIÓN 4 - Modalidad de ingreso</button>
+	
+                    </h2>
+	
+                    <div id="collapse-section-4"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="heading-section-4"
+                         data-bs-parent="#dispositivo-secciones-accordion">
+	
+                        <div class="accordion-body">
+	
+                            <div class="row g-3">
+	
+                                <div class="col-md-6">{{ form.modalidad_ingreso|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.modalidad_ingreso_otro|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.documentacion_ingreso|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.documentacion_ingreso_otro|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.requisitos_ingreso|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.requisitos_ingreso_otro|as_crispy_field }}</div>
+	
+                            </div>
+	
+                        </div>
+	
+                    </div>
+	
+                </div>
 
-				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading-section-5">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-section-5" aria-expanded="false" aria-controls="collapse-section-5">SECCIÓN 5 - Servicios brindados</button>
-					</h2>
-					<div id="collapse-section-5" class="accordion-collapse collapse" aria-labelledby="heading-section-5" data-bs-parent="#dispositivo-secciones-accordion">
-						<div class="accordion-body">
-							<div class="row g-3">
-								<div class="col-md-6">{{ form.servicios_brindados|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.servicios_brindados_otro|as_crispy_field }}</div>
-								<div class="col-md-4">{{ form.ofrece_actividades_formativas|as_crispy_field }}</div>
-								<div class="col-md-8">{{ form.tipos_actividades_formativas|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.tipos_actividades_formativas_otro|as_crispy_field }}</div>
-								<div class="col-md-4">{{ form.actividades_certificacion_oficial|as_crispy_field }}</div>
-							</div>
-						</div>
-					</div>
-				</div>
+	
+                <div class="accordion-item">
+	
+                    <h2 class="accordion-header" id="heading-section-5">
+	
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapse-section-5"
+                                aria-expanded="false"
+                                aria-controls="collapse-section-5">SECCIÓN 5 - Servicios brindados</button>
+	
+                    </h2>
+	
+                    <div id="collapse-section-5"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="heading-section-5"
+                         data-bs-parent="#dispositivo-secciones-accordion">
+	
+                        <div class="accordion-body">
+	
+                            <div class="row g-3">
+	
+                                <div class="col-md-6">{{ form.servicios_brindados|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.servicios_brindados_otro|as_crispy_field }}</div>
+	
+                                <div class="col-md-4">{{ form.ofrece_actividades_formativas|as_crispy_field }}</div>
+	
+                                <div class="col-md-8">{{ form.tipos_actividades_formativas|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.tipos_actividades_formativas_otro|as_crispy_field }}</div>
+	
+                                <div class="col-md-4">{{ form.actividades_certificacion_oficial|as_crispy_field }}</div>
+	
+                            </div>
+	
+                        </div>
+	
+                    </div>
+	
+                </div>
 
-				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading-section-6">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-section-6" aria-expanded="false" aria-controls="collapse-section-6">SECCIÓN 6 - Sistema de registro de personas usuarias</button>
-					</h2>
-					<div id="collapse-section-6" class="accordion-collapse collapse" aria-labelledby="heading-section-6" data-bs-parent="#dispositivo-secciones-accordion">
-						<div class="accordion-body">
-							<div class="row g-3">
-								<div class="col-md-4">{{ form.registra_informacion_personas|as_crispy_field }}</div>
-								<div class="col-md-4">{{ form.modo_registro|as_crispy_field }}</div>
-								<div class="col-md-4">{{ form.modo_registro_otro|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.tipo_informacion_registrada|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.tipo_informacion_registrada_otro|as_crispy_field }}</div>
-							</div>
-						</div>
-					</div>
-				</div>
+	
+                <div class="accordion-item">
+	
+                    <h2 class="accordion-header" id="heading-section-6">
+	
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapse-section-6"
+                                aria-expanded="false"
+                                aria-controls="collapse-section-6">
+                            SECCIÓN 6 - Sistema de registro de personas usuarias
+                        </button>
+	
+                    </h2>
+	
+                    <div id="collapse-section-6"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="heading-section-6"
+                         data-bs-parent="#dispositivo-secciones-accordion">
+	
+                        <div class="accordion-body">
+	
+                            <div class="row g-3">
+	
+                                <div class="col-md-4">{{ form.registra_informacion_personas|as_crispy_field }}</div>
+	
+                                <div class="col-md-4">{{ form.modo_registro|as_crispy_field }}</div>
+	
+                                <div class="col-md-4">{{ form.modo_registro_otro|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.tipo_informacion_registrada|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.tipo_informacion_registrada_otro|as_crispy_field }}</div>
+	
+                            </div>
+	
+                        </div>
+	
+                    </div>
+	
+                </div>
 
-				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading-section-7">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-section-7" aria-expanded="false" aria-controls="collapse-section-7">SECCIÓN 7 - Infraestructura y necesidades</button>
-					</h2>
-					<div id="collapse-section-7" class="accordion-collapse collapse" aria-labelledby="heading-section-7" data-bs-parent="#dispositivo-secciones-accordion">
-						<div class="accordion-body">
-							<div class="row g-3">
-								<div class="col-md-6">{{ form.infraestructura_disponible|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.infraestructura_disponible_otro|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.infraestructura_accesibilidad|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.infraestructura_accesibilidad_otro|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.principales_limitaciones|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.necesidades_prioritarias|as_crispy_field }}</div>
-							</div>
-						</div>
-					</div>
-				</div>
+	
+                <div class="accordion-item">
+	
+                    <h2 class="accordion-header" id="heading-section-7">
+	
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapse-section-7"
+                                aria-expanded="false"
+                                aria-controls="collapse-section-7">SECCIÓN 7 - Infraestructura y necesidades</button>
+	
+                    </h2>
+	
+                    <div id="collapse-section-7"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="heading-section-7"
+                         data-bs-parent="#dispositivo-secciones-accordion">
+	
+                        <div class="accordion-body">
+	
+                            <div class="row g-3">
+	
+                                <div class="col-md-6">{{ form.infraestructura_disponible|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.infraestructura_disponible_otro|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.infraestructura_accesibilidad|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.infraestructura_accesibilidad_otro|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.principales_limitaciones|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.necesidades_prioritarias|as_crispy_field }}</div>
+	
+                            </div>
+	
+                        </div>
+	
+                    </div>
+	
+                </div>
 
-				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading-section-8">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-section-8" aria-expanded="false" aria-controls="collapse-section-8">SECCIÓN 8 - Articulaciones institucionales</button>
-					</h2>
-					<div id="collapse-section-8" class="accordion-collapse collapse" aria-labelledby="heading-section-8" data-bs-parent="#dispositivo-secciones-accordion">
-						<div class="accordion-body">
-							<div class="row g-3">
-								<div class="col-md-6">{{ form.articulaciones_institucionales|as_crispy_field }}</div>
-								<div class="col-md-6">{{ form.articulaciones_institucionales_otro|as_crispy_field }}</div>
-							</div>
-						</div>
-					</div>
-				</div>
+	
+                <div class="accordion-item">
+	
+                    <h2 class="accordion-header" id="heading-section-8">
+	
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapse-section-8"
+                                aria-expanded="false"
+                                aria-controls="collapse-section-8">SECCIÓN 8 - Articulaciones institucionales</button>
+	
+                    </h2>
+	
+                    <div id="collapse-section-8"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="heading-section-8"
+                         data-bs-parent="#dispositivo-secciones-accordion">
+	
+                        <div class="accordion-body">
+	
+                            <div class="row g-3">
+	
+                                <div class="col-md-6">{{ form.articulaciones_institucionales|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.articulaciones_institucionales_otro|as_crispy_field }}</div>
+	
+                            </div>
+	
+                        </div>
+	
+                    </div>
+	
+                </div>
 
-				<div class="accordion-item">
-					<h2 class="accordion-header" id="heading-section-final">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-section-final" aria-expanded="false" aria-controls="collapse-section-final">SECCIÓN FINAL - Observaciones y documentación del dispositivo</button>
-					</h2>
-					<div id="collapse-section-final" class="accordion-collapse collapse" aria-labelledby="heading-section-final" data-bs-parent="#dispositivo-secciones-accordion">
-						<div class="accordion-body">
-							<div class="row g-3">
-								<div class="col-md-12">{{ form.observaciones_adicionales|as_crispy_field }}</div>
-								<div class="col-md-12">{{ form.documentacion_dispositivo|as_crispy_field }}</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
+	
+                <div class="accordion-item">
+	
+                    <h2 class="accordion-header" id="heading-section-final">
+	
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapse-section-final"
+                                aria-expanded="false"
+                                aria-controls="collapse-section-final">
+                            SECCIÓN FINAL - Observaciones y documentación del dispositivo
+                        </button>
+	
+                    </h2>
+	
+                    <div id="collapse-section-final"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="heading-section-final"
+                         data-bs-parent="#dispositivo-secciones-accordion">
+	
+                        <div class="accordion-body">
+	
+                            <div class="row g-3">
+	
+                                <div class="col-md-12">{{ form.observaciones_adicionales|as_crispy_field }}</div>
+	
+                                <div class="col-md-12">{{ form.documentacion_dispositivo|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.documentacion_dispositivo_adicional_1|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.documentacion_dispositivo_adicional_2|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.documentacion_dispositivo_adicional_3|as_crispy_field }}</div>
+	
+                                <div class="col-md-6">{{ form.documentacion_dispositivo_adicional_4|as_crispy_field }}</div>
+	
+                            </div>
+	
+                        </div>
+	
+                    </div>
+	
+                </div>
+	
+            </div>
 
-			<div class="d-flex justify-content-end gap-2 mt-3">
-				<button type="submit" class="btn btn-primary">Guardar</button>
-				<a href="{% url 'dispositivos_listar' %}" class="btn btn-secondary">Cancelar</a>
-			</div>
-		</form>
-	</div>
+	
+            <div class="d-flex justify-content-end gap-2 mt-3">
+	
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a href="{% url 'dispositivos_listar' %}" class="btn btn-secondary">Cancelar</a>
+	
+            </div>
+	
+        </form>
+	
+    </div>
 {% endblock %}
 
 {% block customJS %}
-	<script nonce="{{ request.csp_nonce }}">
+    <script nonce="{{ request.csp_nonce }}">
 		(() => {
 			const provinciaSelect = document.getElementById("id_provincia");
 			const municipioSelect = document.getElementById("id_municipio");
@@ -232,5 +487,6 @@
 					});
 			});
 		})();
-	</script>
+	
+    </script>
 {% endblock %}

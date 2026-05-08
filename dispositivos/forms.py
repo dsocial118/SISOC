@@ -79,7 +79,10 @@ class DispositivoForm(forms.ModelForm):
         ("otro", "Otro"),
     ]
     TIPO_ACTIVIDADES_FORMATIVAS_CHOICES = [
-        ("habilidades_vida", "Talleres de habilidades o saberes para la vida cotidiana"),
+        (
+            "habilidades_vida",
+            "Talleres de habilidades o saberes para la vida cotidiana",
+        ),
         ("recreativos_culturales", "Talleres recreativos o culturales"),
         ("oficios", "Capacitación en oficios"),
         ("inclusion_laboral", "Programas de inclusión laboral"),
@@ -260,11 +263,28 @@ class DispositivoForm(forms.ModelForm):
             "articulaciones_institucionales_otro",
             "observaciones_adicionales",
             "documentacion_dispositivo",
+            "documentacion_dispositivo_adicional_1",
+            "documentacion_dispositivo_adicional_2",
+            "documentacion_dispositivo_adicional_3",
+            "documentacion_dispositivo_adicional_4",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._configure_geography_fields()
+        self.fields["documentacion_dispositivo"].label = "Documentación del dispositivo"
+        self.fields["documentacion_dispositivo_adicional_1"].label = (
+            "Documentación adicional 1"
+        )
+        self.fields["documentacion_dispositivo_adicional_2"].label = (
+            "Documentación adicional 2"
+        )
+        self.fields["documentacion_dispositivo_adicional_3"].label = (
+            "Documentación adicional 3"
+        )
+        self.fields["documentacion_dispositivo_adicional_4"].label = (
+            "Documentación adicional 4"
+        )
         self._apply_widgets()
 
     def _apply_widgets(self):
@@ -306,13 +326,21 @@ class DispositivoForm(forms.ModelForm):
             self.fields["municipio"].initial = municipio
 
     def clean_cuit_institucion(self):
-        cuit = "".join(ch for ch in (self.cleaned_data.get("cuit_institucion") or "") if ch.isdigit())
+        cuit = "".join(
+            ch
+            for ch in (self.cleaned_data.get("cuit_institucion") or "")
+            if ch.isdigit()
+        )
         if len(cuit) != 11:
             raise ValidationError("Ingrese un CUIT válido de 11 dígitos.")
         return cuit
 
     def clean_responsable_dni(self):
-        dni = "".join(ch for ch in (self.cleaned_data.get("responsable_dni") or "") if ch.isdigit())
+        dni = "".join(
+            ch
+            for ch in (self.cleaned_data.get("responsable_dni") or "")
+            if ch.isdigit()
+        )
         if len(dni) not in (7, 8):
             raise ValidationError("Ingrese un DNI válido (solo números).")
         return dni
@@ -320,7 +348,9 @@ class DispositivoForm(forms.ModelForm):
     def _validate_otro_required(self, list_field, other_field, cleaned_data):
         selected = cleaned_data.get(list_field) or []
         if "otro" in selected and not (cleaned_data.get(other_field) or "").strip():
-            self.add_error(other_field, "Este campo es obligatorio cuando selecciona 'Otro'.")
+            self.add_error(
+                other_field, "Este campo es obligatorio cuando selecciona 'Otro'."
+            )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -375,37 +405,41 @@ class DispositivoForm(forms.ModelForm):
             cleaned_data,
         )
 
-        if cleaned_data.get("tipo_gestion") == Dispositivo.TipoGestion.OTRA and not (
-            cleaned_data.get("tipo_gestion_otra") or ""
-        ).strip():
+        if (
+            cleaned_data.get("tipo_gestion") == Dispositivo.TipoGestion.OTRA
+            and not (cleaned_data.get("tipo_gestion_otra") or "").strip()
+        ):
             self.add_error(
                 "tipo_gestion_otra",
                 "Este campo es obligatorio cuando el tipo de gestión es 'Otra'.",
             )
 
-        if cleaned_data.get("tipo_dispositivo") == Dispositivo.TipoDispositivo.OTRO and not (
-            cleaned_data.get("tipo_dispositivo_otro") or ""
-        ).strip():
+        if (
+            cleaned_data.get("tipo_dispositivo") == Dispositivo.TipoDispositivo.OTRO
+            and not (cleaned_data.get("tipo_dispositivo_otro") or "").strip()
+        ):
             self.add_error(
                 "tipo_dispositivo_otro",
                 "Este campo es obligatorio cuando el tipo de dispositivo es 'Otro'.",
             )
 
-        if cleaned_data.get("tiempo_permanencia_promedio") == Dispositivo.TiempoPermanenciaPromedio.OTRO and not (
-            cleaned_data.get("tiempo_permanencia_otro") or ""
-        ).strip():
+        if (
+            cleaned_data.get("tiempo_permanencia_promedio")
+            == Dispositivo.TiempoPermanenciaPromedio.OTRO
+            and not (cleaned_data.get("tiempo_permanencia_otro") or "").strip()
+        ):
             self.add_error(
                 "tiempo_permanencia_otro",
                 "Este campo es obligatorio cuando el tiempo de permanencia es 'Otro'.",
             )
 
-        if cleaned_data.get("modo_registro") == Dispositivo.ModoRegistro.OTRO and not (
-            cleaned_data.get("modo_registro_otro") or ""
-        ).strip():
+        if (
+            cleaned_data.get("modo_registro") == Dispositivo.ModoRegistro.OTRO
+            and not (cleaned_data.get("modo_registro_otro") or "").strip()
+        ):
             self.add_error(
                 "modo_registro_otro",
                 "Complete el detalle cuando el modo de registro es 'Otro'.",
             )
 
         return cleaned_data
-

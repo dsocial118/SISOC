@@ -101,7 +101,9 @@ class Dispositivo(models.Model):
     )
 
     poblacion_destinataria = models.JSONField(default=list, blank=True)
-    poblacion_destinataria_otro = models.CharField(max_length=255, blank=True, null=True)
+    poblacion_destinataria_otro = models.CharField(
+        max_length=255, blank=True, null=True
+    )
     franja_etaria_destinataria = models.JSONField(default=list, blank=True)
     tiempo_permanencia_promedio = models.CharField(
         max_length=32,
@@ -187,6 +189,26 @@ class Dispositivo(models.Model):
         blank=True,
         null=True,
     )
+    documentacion_dispositivo_adicional_1 = models.FileField(
+        upload_to="dispositivos/documentacion/",
+        blank=True,
+        null=True,
+    )
+    documentacion_dispositivo_adicional_2 = models.FileField(
+        upload_to="dispositivos/documentacion/",
+        blank=True,
+        null=True,
+    )
+    documentacion_dispositivo_adicional_3 = models.FileField(
+        upload_to="dispositivos/documentacion/",
+        blank=True,
+        null=True,
+    )
+    documentacion_dispositivo_adicional_4 = models.FileField(
+        upload_to="dispositivos/documentacion/",
+        blank=True,
+        null=True,
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -197,18 +219,30 @@ class Dispositivo(models.Model):
     def clean(self):
         super().clean()
         errors = {}
-        if self.tipo_gestion == self.TipoGestion.OTRA and not (
-            self.tipo_gestion_otra or ""
-        ).strip():
-            errors["tipo_gestion_otra"] = "Este campo es obligatorio cuando el tipo es Otra."
+        if (
+            self.tipo_gestion == self.TipoGestion.OTRA
+            and not (self.tipo_gestion_otra or "").strip()
+        ):
+            errors["tipo_gestion_otra"] = (
+                "Este campo es obligatorio cuando el tipo es Otra."
+            )
 
-        if self.tipo_dispositivo == self.TipoDispositivo.OTRO and not (
-            self.tipo_dispositivo_otro or ""
-        ).strip():
-            errors["tipo_dispositivo_otro"] = "Este campo es obligatorio cuando el tipo es Otro."
+        if (
+            self.tipo_dispositivo == self.TipoDispositivo.OTRO
+            and not (self.tipo_dispositivo_otro or "").strip()
+        ):
+            errors["tipo_dispositivo_otro"] = (
+                "Este campo es obligatorio cuando el tipo es Otro."
+            )
 
-        if self.municipio_id and self.provincia_id and self.municipio.provincia_id != self.provincia_id:
-            errors["municipio"] = "El municipio no pertenece a la provincia seleccionada."
+        if (
+            self.municipio_id
+            and self.provincia_id
+            and self.municipio.provincia_id != self.provincia_id
+        ):
+            errors["municipio"] = (
+                "El municipio no pertenece a la provincia seleccionada."
+            )
 
         if errors:
             raise ValidationError(errors)
