@@ -14,7 +14,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Dispositivo",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre_institucion", models.CharField(max_length=255)),
                 (
                     "tipo_gestion",
@@ -29,8 +37,14 @@ class Migration(migrations.Migration):
                         max_length=32,
                     ),
                 ),
-                ("tipo_gestion_otra", models.CharField(blank=True, max_length=255, null=True)),
-                ("razon_social", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "tipo_gestion_otra",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "razon_social",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
                 (
                     "cuit_institucion",
                     models.CharField(
@@ -45,7 +59,10 @@ class Migration(migrations.Migration):
                 ),
                 ("domicilio_institucion", models.CharField(max_length=255)),
                 ("telefono_contacto", models.CharField(max_length=50)),
-                ("correo_electronico", models.EmailField(blank=True, max_length=254, null=True)),
+                (
+                    "correo_electronico",
+                    models.EmailField(blank=True, max_length=254, null=True),
+                ),
                 ("responsable_nombre_completo", models.CharField(max_length=255)),
                 (
                     "responsable_dni",
@@ -73,13 +90,19 @@ class Migration(migrations.Migration):
                         max_length=48,
                     ),
                 ),
-                ("tipo_dispositivo_otro", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "tipo_dispositivo_otro",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
                 (
                     "modalidad_funcionamiento",
                     models.CharField(
                         choices=[
                             ("permanente", "Permanente (todo el año)"),
-                            ("estacional", "Estacional (durante algunos meses del año)"),
+                            (
+                                "estacional",
+                                "Estacional (durante algunos meses del año)",
+                            ),
                         ],
                         max_length=20,
                     ),
@@ -100,18 +123,42 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("poblacion_destinataria", models.JSONField(blank=True, default=list)),
-                ("poblacion_destinataria_otro", models.CharField(blank=True, max_length=255, null=True)),
-                ("franja_etaria_destinataria", models.JSONField(blank=True, default=list)),
-                ("tiempo_permanencia_promedio", models.CharField(blank=True, max_length=32, null=True)),
-                ("tiempo_permanencia_otro", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "poblacion_destinataria_otro",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "franja_etaria_destinataria",
+                    models.JSONField(blank=True, default=list),
+                ),
+                (
+                    "tiempo_permanencia_promedio",
+                    models.CharField(blank=True, max_length=32, null=True),
+                ),
+                (
+                    "tiempo_permanencia_otro",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
                 ("modalidad_ingreso", models.JSONField(blank=True, default=list)),
-                ("modalidad_ingreso_otro", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "modalidad_ingreso_otro",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
                 ("documentacion_ingreso", models.JSONField(blank=True, default=list)),
-                ("documentacion_ingreso_otro", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "documentacion_ingreso_otro",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
                 ("requisitos_ingreso", models.JSONField(blank=True, default=list)),
-                ("requisitos_ingreso_otro", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "requisitos_ingreso_otro",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
                 ("servicios_brindados", models.JSONField(blank=True, default=list)),
-                ("servicios_brindados_otro", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "servicios_brindados_otro",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
                 (
                     "ofrece_actividades_formativas",
                     models.CharField(
@@ -121,8 +168,14 @@ class Migration(migrations.Migration):
                         null=True,
                     ),
                 ),
-                ("tipos_actividades_formativas", models.JSONField(blank=True, default=list)),
-                ("tipos_actividades_formativas_otro", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "tipos_actividades_formativas",
+                    models.JSONField(blank=True, default=list),
+                ),
+                (
+                    "tipos_actividades_formativas_otro",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
                 (
                     "actividades_certificacion_oficial",
                     models.CharField(
@@ -146,31 +199,64 @@ class Migration(migrations.Migration):
                         null=True,
                     ),
                 ),
-                ("modo_registro", models.CharField(blank=True, max_length=50, null=True)),
-                ("tipo_informacion_registrada", models.JSONField(blank=True, default=list)),
-                ("tipo_informacion_registrada_otro", models.CharField(blank=True, max_length=255, null=True)),
-                ("infraestructura_disponible", models.JSONField(blank=True, default=list)),
-                ("infraestructura_disponible_otro", models.CharField(blank=True, max_length=255, null=True)),
-                ("infraestructura_accesibilidad", models.JSONField(blank=True, default=list)),
-                ("infraestructura_accesibilidad_otro", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "modo_registro",
+                    models.CharField(blank=True, max_length=50, null=True),
+                ),
+                (
+                    "tipo_informacion_registrada",
+                    models.JSONField(blank=True, default=list),
+                ),
+                (
+                    "tipo_informacion_registrada_otro",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "infraestructura_disponible",
+                    models.JSONField(blank=True, default=list),
+                ),
+                (
+                    "infraestructura_disponible_otro",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "infraestructura_accesibilidad",
+                    models.JSONField(blank=True, default=list),
+                ),
+                (
+                    "infraestructura_accesibilidad_otro",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
                 ("principales_limitaciones", models.TextField(blank=True, null=True)),
                 ("necesidades_prioritarias", models.TextField(blank=True, null=True)),
-                ("articulaciones_institucionales", models.JSONField(blank=True, default=list)),
-                ("articulaciones_institucionales_otro", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "articulaciones_institucionales",
+                    models.JSONField(blank=True, default=list),
+                ),
+                (
+                    "articulaciones_institucionales_otro",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
                 ("observaciones_adicionales", models.TextField(blank=True, null=True)),
                 (
                     "documentacion_dispositivo",
-                    models.FileField(blank=True, null=True, upload_to="dispositivos/documentacion/"),
+                    models.FileField(
+                        blank=True, null=True, upload_to="dispositivos/documentacion/"
+                    ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 (
                     "municipio",
-                    models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to="core.municipio"),
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="core.municipio"
+                    ),
                 ),
                 (
                     "provincia",
-                    models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to="core.provincia"),
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="core.provincia"
+                    ),
                 ),
             ],
             options={
