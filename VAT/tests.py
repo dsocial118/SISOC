@@ -1400,6 +1400,44 @@ def test_is_vat_revisor_reconoce_permiso_cfp_revisor():
 
 
 @pytest.mark.django_db
+def test_cfpinet_tiene_scope_global_de_lectura_en_centros(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    otra_provincia = Provincia.objects.create(nombre="Otra provincia INET")
+    otro_municipio = Municipio.objects.create(
+        nombre="Otro municipio INET", provincia=otra_provincia
+    )
+    otra_localidad = Localidad.objects.create(
+        nombre="Otra localidad INET", municipio=otro_municipio
+    )
+    call_command("create_groups", verbosity=0)
+    user = User.objects.create_user(username="cfpinet-scope", password="test1234")
+    user.groups.add(Group.objects.get(name="CFPINET"))
+    centro_uno = _create_vat_centro(
+        codigo="INET-SCOPE-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    centro_dos = _create_vat_centro(
+        codigo="INET-SCOPE-002",
+        provincia=otra_provincia,
+        municipio=otro_municipio,
+        localidad=otra_localidad,
+    )
+
+    centros_visibles = set(
+        filter_centros_queryset_for_user(Centro.objects.all(), user).values_list(
+            "pk", flat=True
+        )
+    )
+
+    assert centros_visibles == {centro_uno.pk, centro_dos.pk}
+    assert can_user_access_centro(user, centro_uno) is True
+    assert can_user_access_centro(user, centro_dos) is True
+    assert can_user_edit_centro(user, centro_uno) is True
+
+
+@pytest.mark.django_db
 def test_scope_mixto_separa_gestion_de_revision(vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     user = User.objects.create_user(username="mixto-vat", password="test1234")

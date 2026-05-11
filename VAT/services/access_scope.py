@@ -11,6 +11,7 @@ ROLE_REFERENTE_CENTRO_PERMISSIONS = (
     "auth.role_centroreferentevat",
 )
 ROLE_REVISOR_CENTRO_PERMISSION = "auth.role_revisorcentrovat"
+CFPINET_GROUP_NAME = "CFPINET"
 VAT_VIEW_CENTRO_PERMISSION = "VAT.view_centro"
 VAT_ADD_CENTRO_PERMISSION = "VAT.add_centro"
 VAT_CHANGE_CENTRO_PERMISSION = "VAT.change_centro"
@@ -51,6 +52,15 @@ def is_vat_revisor(user) -> bool:
     if not user:
         return False
     return user_has_permission_code(user, ROLE_REVISOR_CENTRO_PERMISSION)
+
+
+def is_vat_cfpinet(user) -> bool:
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    groups = getattr(user, "groups", None)
+    if groups is None:
+        return False
+    return groups.filter(name=CFPINET_GROUP_NAME).exists()
 
 
 def is_vat_provincial(user) -> bool:
@@ -121,7 +131,7 @@ def _user_is_revisor_for_centro(user, centro) -> bool:
 
 
 def filter_centros_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
-    if is_vat_sse(user):
+    if is_vat_sse(user) or is_vat_cfpinet(user):
         return base_qs
 
     provincia_id = get_user_provincia_id(user)
@@ -147,7 +157,7 @@ def filter_centros_queryset_for_management(base_qs: QuerySet, user) -> QuerySet:
 
 
 def can_user_access_centro(user, centro) -> bool:
-    if is_vat_sse(user):
+    if is_vat_sse(user) or is_vat_cfpinet(user):
         return True
 
     provincia_id = get_user_provincia_id(user)
@@ -161,7 +171,7 @@ def can_user_access_centro(user, centro) -> bool:
 
 
 def filter_ofertas_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
-    if is_vat_sse(user):
+    if is_vat_sse(user) or is_vat_cfpinet(user):
         return base_qs
 
     provincia_id = get_user_provincia_id(user)
@@ -201,7 +211,7 @@ def filter_ofertas_queryset_for_management(base_qs: QuerySet, user) -> QuerySet:
 
 
 def filter_comisiones_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
-    if is_vat_sse(user):
+    if is_vat_sse(user) or is_vat_cfpinet(user):
         return base_qs
 
     provincia_id = get_user_provincia_id(user)
@@ -243,7 +253,7 @@ def filter_comisiones_queryset_for_management(base_qs: QuerySet, user) -> QueryS
 
 
 def filter_sesiones_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
-    if is_vat_sse(user):
+    if is_vat_sse(user) or is_vat_cfpinet(user):
         return base_qs
 
     provincia_id = get_user_provincia_id(user)
