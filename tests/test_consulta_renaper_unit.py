@@ -1,8 +1,11 @@
 """Tests unitarios para centrodefamilia.services.consulta_renaper.impl."""
 
+from types import SimpleNamespace
+
 import requests
 
 import centrodefamilia.services.consulta_renaper as module
+import VAT.services.consulta_renaper as vat_module
 
 
 class _ResponseMock:
@@ -144,3 +147,73 @@ def test_consultar_datos_renaper_clasifica_payload_invalido(mocker):
 
     assert out["success"] is False
     assert out["error_type"] == "invalid_response"
+
+
+def test_consultar_datos_renaper_ignora_placeholders_no_numericos(mocker):
+    client = mocker.Mock()
+    client.consultar_ciudadano.return_value = {
+        "success": True,
+        "data": {
+            "cuil": "20957903119",
+            "apellido": "Perez",
+            "nombres": "Ana",
+            "fechaNacimiento": "2000-01-01",
+            "provincia": "Buenos Aires",
+            "municipio": "La Plata",
+            "ciudad": "La Plata",
+            "cpostal": "-",
+            "calle": "Sin calle",
+            "numero": "S/N",
+            "pais": "Argentina",
+        },
+    }
+    mocker.patch(
+        "centrodefamilia.services.consulta_renaper.impl.APIClient", return_value=client
+    )
+    mocker.patch(
+        "centrodefamilia.services.consulta_renaper.impl.Sexo.objects.filter",
+        return_value=SimpleNamespace(first=lambda: SimpleNamespace(pk=1)),
+    )
+    log_error = mocker.patch(
+        "centrodefamilia.services.consulta_renaper.impl.logger.error"
+    )
+
+    out = module.consultar_datos_renaper("95790311", "F")
+
+    assert out["success"] is True
+    assert out["data"]["codigo_postal"] is None
+    assert out["data"]["altura"] is None
+    log_error.assert_not_called()
+
+
+def test_vat_consultar_datos_renaper_ignora_placeholders_no_numericos(mocker):
+    client = mocker.Mock()
+    client.consultar_ciudadano.return_value = {
+        "success": True,
+        "data": {
+            "cuil": "20957903119",
+            "apellido": "Perez",
+            "nombres": "Ana",
+            "fechaNacimiento": "2000-01-01",
+            "provincia": "Buenos Aires",
+            "municipio": "La Plata",
+            "ciudad": "La Plata",
+            "cpostal": "-",
+            "calle": "Sin calle",
+            "numero": "S/N",
+            "pais": "Argentina",
+        },
+    }
+    mocker.patch("VAT.services.consulta_renaper.impl.APIClient", return_value=client)
+    mocker.patch(
+        "VAT.services.consulta_renaper.impl.Sexo.objects.filter",
+        return_value=SimpleNamespace(first=lambda: SimpleNamespace(pk=1)),
+    )
+    log_error = mocker.patch("VAT.services.consulta_renaper.impl.logger.error")
+
+    out = vat_module.consultar_datos_renaper("95790311", "F")
+
+    assert out["success"] is True
+    assert out["data"]["codigo_postal"] is None
+    assert out["data"]["altura"] is None
+    log_error.assert_not_called()
