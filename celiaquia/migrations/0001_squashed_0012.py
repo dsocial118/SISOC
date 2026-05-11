@@ -5,7 +5,6 @@ from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
 
-
 def migrar_datos_a_nuevos_modelos(apps, schema_editor):
     ExpedienteCiudadano = apps.get_model("celiaquia", "ExpedienteCiudadano")
     ValidacionTecnica = apps.get_model("celiaquia", "ValidacionTecnica")
@@ -45,7 +44,6 @@ def migrar_datos_a_nuevos_modelos(apps, schema_editor):
             archivo=legajo.subsanacion_renaper_archivo,
         )
 
-
 def reverse_migration(apps, schema_editor):
     ValidacionTecnica = apps.get_model("celiaquia", "ValidacionTecnica")
     CruceResultado = apps.get_model("celiaquia", "CruceResultado")
@@ -58,7 +56,6 @@ def reverse_migration(apps, schema_editor):
     CruceResultado.objects.using(db_alias).all().delete()
     CupoTitular.objects.using(db_alias).all().delete()
     ValidacionRenaper.objects.using(db_alias).all().delete()
-
 
 def backfill_excel_masivo_audit(apps, _schema_editor):
     Expediente = apps.get_model("celiaquia", "Expediente")
@@ -90,7 +87,6 @@ def backfill_excel_masivo_audit(apps, _schema_editor):
 
         if update_data:
             Expediente.objects.filter(pk=expediente.pk).update(**update_data)
-
 
 class Migration(migrations.Migration):
 
@@ -498,7 +494,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Cupo Titular',
                 'verbose_name_plural': 'Cupos Titulares',
-                'indexes': [models.Index(fields=['estado_cupo', 'es_titular_activo'], name='celiaquia_c_estado__idx')],
+                'indexes': [models.Index(fields=['estado_cupo', 'es_titular_activo'], name='celiaquia_c_estado__b13c1c_idx')],
             },
         ),
         migrations.CreateModel(
@@ -532,7 +528,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Historial Validación Técnica',
                 'verbose_name_plural': 'Historiales Validación Técnica',
                 'ordering': ('-creado_en',),
-                'indexes': [models.Index(fields=['legajo', '-creado_en'], name='celiaquia_h_legajo__idx')],
+                'indexes': [models.Index(fields=['legajo', '-creado_en'], name='celiaquia_h_legajo__c4a426_idx')],
             },
         ),
         migrations.CreateModel(
@@ -553,7 +549,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Historial Cupo',
                 'verbose_name_plural': 'Historiales Cupo',
                 'ordering': ('-creado_en',),
-                'indexes': [models.Index(fields=['legajo', '-creado_en'], name='celiaquia_h_legajo__idx2'), models.Index(fields=['tipo_movimiento', '-creado_en'], name='celiaquia_h_tipo_mo__idx')],
+                'indexes': [models.Index(fields=['legajo', '-creado_en'], name='celiaquia_h_legajo__a5d2e4_idx'), models.Index(fields=['tipo_movimiento', '-creado_en'], name='celiaquia_h_tipo_mo_4ec6fb_idx')],
             },
         ),
         migrations.CreateModel(
@@ -573,7 +569,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Respuesta de Subsanación',
                 'verbose_name_plural': 'Respuestas de Subsanación',
                 'ordering': ('-creado_en',),
-                'indexes': [models.Index(fields=['legajo', '-creado_en'], name='celiaquia_s_legajo__idx'), models.Index(fields=['validacion_tecnica'], name='celiaquia_s_validac__idx')],
+                'indexes': [models.Index(fields=['legajo', '-creado_en'], name='celiaquia_s_legajo__b876fc_idx'), models.Index(fields=['validacion_tecnica'], name='celiaquia_s_validac_8850b2_idx')],
             },
         ),
         migrations.CreateModel(
@@ -601,11 +597,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='registroerroneoreprocesado',
-            index=models.Index(fields=['registro_erroneo', '-creado_en'], name='celiaquia_r_registr__idx'),
+            index=models.Index(fields=['registro_erroneo', '-creado_en'], name='celiaquia_r_registr_dd2d41_idx'),
         ),
         migrations.AddIndex(
             model_name='registroerroneoreprocesado',
-            index=models.Index(fields=['resultado'], name='celiaquia_r_resulta__idx'),
+            index=models.Index(fields=['resultado'], name='celiaquia_r_resulta_7d0d5f_idx'),
         ),
         migrations.RunPython(
             migrar_datos_a_nuevos_modelos,
@@ -615,46 +611,14 @@ class Migration(migrations.Migration):
             model_name='registroerroneoreprocesado',
             name='celiaquia_registroerroneoreprocesado_unique',
         ),
-        migrations.RenameIndex(
-            model_name='cupotitular',
-            new_name='celiaquia_c_estado__b13c1c_idx',
-            old_name='celiaquia_c_estado__idx',
-        ),
-        migrations.RenameIndex(
-            model_name='historialcupo',
-            new_name='celiaquia_h_legajo__a5d2e4_idx',
-            old_name='celiaquia_h_legajo__idx2',
-        ),
-        migrations.RenameIndex(
-            model_name='historialcupo',
-            new_name='celiaquia_h_tipo_mo_4ec6fb_idx',
-            old_name='celiaquia_h_tipo_mo__idx',
-        ),
-        migrations.RenameIndex(
-            model_name='historialvalidaciontecnica',
-            new_name='celiaquia_h_legajo__c4a426_idx',
-            old_name='celiaquia_h_legajo__idx',
-        ),
-        migrations.RenameIndex(
-            model_name='registroerroneoreprocesado',
-            new_name='celiaquia_r_registr_dd2d41_idx',
-            old_name='celiaquia_r_registr__idx',
-        ),
-        migrations.RenameIndex(
-            model_name='registroerroneoreprocesado',
-            new_name='celiaquia_r_resulta_7d0d5f_idx',
-            old_name='celiaquia_r_resulta__idx',
-        ),
-        migrations.RenameIndex(
-            model_name='subsanacionrespuesta',
-            new_name='celiaquia_s_legajo__b876fc_idx',
-            old_name='celiaquia_s_legajo__idx',
-        ),
-        migrations.RenameIndex(
-            model_name='subsanacionrespuesta',
-            new_name='celiaquia_s_validac_8850b2_idx',
-            old_name='celiaquia_s_validac__idx',
-        ),
+        
+        
+        
+        
+        
+        
+        
+        
         migrations.AlterUniqueTogether(
             name='registroerroneoreprocesado',
             unique_together={('registro_erroneo', 'intento_numero')},

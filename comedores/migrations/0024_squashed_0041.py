@@ -5,7 +5,6 @@ from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
 
-
 # --- RunPython: 0024_nomina_switch_comedor_to_admision ---
 
 def asignar_admision_a_nominas(apps, schema_editor):
@@ -33,18 +32,15 @@ def asignar_admision_a_nominas(apps, schema_editor):
                 admision=admision
             )
 
-
 # --- RunPython: 0028_nomina_estado_espera ---
 
 def pendiente_a_espera(apps, schema_editor):
     Nomina = apps.get_model("comedores", "Nomina")
     Nomina.objects.filter(estado="pendiente").update(estado="espera")
 
-
 def espera_a_pendiente(apps, schema_editor):
     Nomina = apps.get_model("comedores", "Nomina")
     Nomina.objects.filter(estado="espera").update(estado="pendiente")
-
 
 # --- RunPython: 0030_colaboradores_espacio ---
 
@@ -67,7 +63,6 @@ def cargar_actividades_colaborador(apps, schema_editor):
             defaults={"orden": actividad["orden"], "activo": True},
         )
 
-
 def revertir_actividades_colaborador(apps, schema_editor):
     ActividadColaboradorEspacio = apps.get_model("comedores", "ActividadColaboradorEspacio")
     ActividadColaboradorEspacio.objects.filter(
@@ -83,13 +78,11 @@ def revertir_actividades_colaborador(apps, schema_editor):
         ]
     ).delete()
 
-
 # --- RunPython: 0030_programas_usa_admision_para_nomina ---
 
 def backfill_programas_sin_admision_para_nomina(apps, schema_editor):
     programas_model = apps.get_model("comedores", "Programas")
     programas_model.objects.filter(id__in=[3, 4]).update(usa_admision_para_nomina=False)
-
 
 # --- RunPython: 0033_rename_comedores_a_comedor_89ef7d_idx_... ---
 
@@ -111,13 +104,11 @@ INDEX_RENAMES = (
     ),
 )
 
-
 def _get_constraint_names(schema_editor, table_name):
     with schema_editor.connection.cursor() as cursor:
         return set(
             schema_editor.connection.introspection.get_constraints(cursor, table_name).keys()
         )
-
 
 def _sync_audit_index_names(apps, schema_editor, renames):
     model = apps.get_model("comedores", "AuditColaboradorEspacio")
@@ -136,17 +127,14 @@ def _sync_audit_index_names(apps, schema_editor, renames):
         constraint_names.discard(old_name)
         constraint_names.add(new_name)
 
-
 def forward_sync_audit_index_names(apps, schema_editor):
     _sync_audit_index_names(apps, schema_editor, INDEX_RENAMES)
-
 
 def backward_sync_audit_index_names(apps, schema_editor):
     reverse_renames = tuple(
         (new_name, old_name, fields) for old_name, new_name, fields in INDEX_RENAMES
     )
     _sync_audit_index_names(apps, schema_editor, reverse_renames)
-
 
 class Migration(migrations.Migration):
 
@@ -279,26 +267,18 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='colaboradorespacio',
-            index=models.Index(fields=['comedor', 'fecha_baja'], name='comedores_c_comedor_6a9f95_idx'),
+            index=models.Index(fields=['comedor', 'fecha_baja'], name='comedores_c_comedor_50396a_idx'),
         ),
         migrations.AddIndex(
             model_name='colaboradorespacio',
-            index=models.Index(fields=['ciudadano'], name='comedores_c_ciudada_05b1f7_idx'),
+            index=models.Index(fields=['ciudadano'], name='comedores_c_ciudada_1b9c51_idx'),
         ),
         migrations.RunPython(
             code=cargar_actividades_colaborador,
             reverse_code=revertir_actividades_colaborador,
         ),
-        migrations.RenameIndex(
-            model_name='colaboradorespacio',
-            new_name='comedores_c_comedor_50396a_idx',
-            old_name='comedores_c_comedor_6a9f95_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='colaboradorespacio',
-            new_name='comedores_c_ciudada_1b9c51_idx',
-            old_name='comedores_c_ciudada_05b1f7_idx',
-        ),
+        
+        
         migrations.RemoveConstraint(
             model_name='colaboradorespacio',
             name='uniq_colaborador_espacio_por_comedor_ciudadano',
@@ -322,9 +302,9 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Auditorías de colaboradores del espacio',
                 'ordering': ['-changed_at', '-id'],
                 'indexes': [
-                    models.Index(fields=['comedor', 'changed_at'], name='comedores_a_comedor_89ef7d_idx'),
-                    models.Index(fields=['ciudadano', 'changed_at'], name='comedores_a_ciudada_b3ff72_idx'),
-                    models.Index(fields=['accion', 'changed_at'], name='comedores_a_accion_825919_idx'),
+                    models.Index(fields=['comedor', 'changed_at'], name='comedores_a_comedor_4b1714_idx'),
+                    models.Index(fields=['ciudadano', 'changed_at'], name='comedores_a_ciudada_80944f_idx'),
+                    models.Index(fields=['accion', 'changed_at'], name='comedores_a_accion_7893a2_idx'),
                 ],
             },
         ),
@@ -336,31 +316,6 @@ class Migration(migrations.Migration):
         migrations.RunPython(
             code=backfill_programas_sin_admision_para_nomina,
             reverse_code=migrations.RunPython.noop,
-        ),
-        migrations.SeparateDatabaseAndState(
-            database_operations=[
-                migrations.RunPython(
-                    code=forward_sync_audit_index_names,
-                    reverse_code=backward_sync_audit_index_names,
-                ),
-            ],
-            state_operations=[
-                migrations.RenameIndex(
-                    model_name='auditcolaboradorespacio',
-                    new_name='comedores_a_comedor_4b1714_idx',
-                    old_name='comedores_a_comedor_89ef7d_idx',
-                ),
-                migrations.RenameIndex(
-                    model_name='auditcolaboradorespacio',
-                    new_name='comedores_a_ciudada_80944f_idx',
-                    old_name='comedores_a_ciudada_b3ff72_idx',
-                ),
-                migrations.RenameIndex(
-                    model_name='auditcolaboradorespacio',
-                    new_name='comedores_a_accion_7893a2_idx',
-                    old_name='comedores_a_accion_825919_idx',
-                ),
-            ],
         ),
         migrations.CreateModel(
             name='CapacitacionComedorCertificado',
@@ -433,8 +388,8 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Cursos App Mobile',
                 'ordering': ['orden', 'nombre', 'id'],
                 'indexes': [
-                    models.Index(fields=['programa_objetivo', 'activo'], name='comedores_c_program_1d6a38_idx'),
-                    models.Index(fields=['orden', 'nombre'], name='comedores_c_orden_7ff31f_idx'),
+                    models.Index(fields=['programa_objetivo', 'activo'], name='comedores_c_program_729666_idx'),
+                    models.Index(fields=['orden', 'nombre'], name='comedores_c_orden_115719_idx'),
                 ],
             },
             managers=[
@@ -442,16 +397,8 @@ class Migration(migrations.Migration):
                 ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
             ],
         ),
-        migrations.RenameIndex(
-            model_name='cursoappmobile',
-            new_name='comedores_c_program_729666_idx',
-            old_name='comedores_c_program_1d6a38_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='cursoappmobile',
-            new_name='comedores_c_orden_115719_idx',
-            old_name='comedores_c_orden_7ff31f_idx',
-        ),
+        
+        
         migrations.AddField(
             model_name='cursoappmobile',
             name='deleted_by',

@@ -306,7 +306,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Observacion',
                 'verbose_name_plural': 'Observaciones',
                 'indexes': [models.Index(fields=['comedor'], name='comedores_o_comedor_36d2df_idx')],
-                'unique_together': {('comedor', 'fecha_visita')},
             },
         ),
         migrations.CreateModel(
@@ -369,10 +368,6 @@ class Migration(migrations.Migration):
             name='provincia',
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to='core.provincia'),
         ),
-        migrations.AlterUniqueTogether(
-            name='observacion',
-            unique_together=set(),
-        ),
         migrations.CreateModel(
             name='TerritorialCache',
             fields=[
@@ -428,16 +423,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='territorialcache',
-            index=models.Index(fields=['provincia', 'activo'], name='comedores_territorial_provincia_activo_idx'),
+            index=models.Index(fields=['provincia', 'activo'], name='comedores_t_provinc_38a553_idx'),
         ),
         migrations.AlterModelOptions(
             name='territorialcache',
             options={'ordering': ['provincia__nombre', 'nombre'], 'verbose_name': 'Cache Territorial', 'verbose_name_plural': 'Cache Territoriales'},
-        ),
-        migrations.RenameIndex(
-            model_name='territorialcache',
-            new_name='comedores_t_provinc_38a553_idx',
-            old_name='comedores_territorial_provincia_activo_idx',
         ),
         migrations.AddField(
             model_name='comedor',
@@ -490,13 +480,8 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Historial de validación',
                 'verbose_name_plural': 'Historiales de validación',
                 'ordering': ['-fecha_validacion'],
-                'indexes': [models.Index(fields=['comedor', 'fecha_validacion'], name='comedores_h_comedor_b8b8c8_idx')],
+                'indexes': [models.Index(fields=['comedor', 'fecha_validacion'], name='comedores_h_comedor_86d7a4_idx')],
             },
-        ),
-        migrations.RenameIndex(
-            model_name='historialvalidacion',
-            new_name='comedores_h_comedor_86d7a4_idx',
-            old_name='comedores_h_comedor_b8b8c8_idx',
         ),
         migrations.CreateModel(
             name='EstadoActividad',

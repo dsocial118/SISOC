@@ -452,6 +452,8 @@ def ensure_ciudadano_geo_columns(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
+    atomic = False
+
     replaces = [('ciudadanos', '0009_remove_alerta_categoria_remove_archivo_ciudadano_and_more'), ('ciudadanos', '0010_historialciudadanoprogramas_ciudadanoprograma'), ('ciudadanos', '0011_alter_ciudadanoprograma_fecha_creado'), ('ciudadanos', '0012_fix_ciudadano_datetime_fields'), ('ciudadanos', '0013_fix_grupofamiliar_text_fields'), ('ciudadanos', '0014_remove_ciudadano_estado_column'), ('ciudadanos', '0015_cleanup_ciudadano_legacy_columns'), ('ciudadanos', '0016_add_ciudadano_etapa1_fields'), ('ciudadanos', '0017_programatransferencia'), ('ciudadanos', '0018_historialtransferencia'), ('ciudadanos', '0019_interaccion'), ('ciudadanos', '0020_remove_historialtransferencia_unique_historial_ciudadano_mes_anio_and_more'), ('ciudadanos', '0021_ensure_ciudadano_geo_columns'), ('ciudadanos', '0022_alter_ciudadano_managers_and_more'), ('ciudadanos', '0027_alter_ciudadano_telefono_longitud'), ('ciudadanos', '0023_ciudadano_identidad_fase1'), ('ciudadanos', '0024_ciudadano_revision_identidad_permission'), ('ciudadanos', '0025_alter_ciudadano_fecha_nacimiento_nullable'), ('ciudadanos', '0023_optimize_listado_ciudadanos_indexes'), ('ciudadanos', '0026_merge_0023_optimize_listado_ciudadanos_indexes_0025_alter_ciudadano_fecha_nacimiento_nullable'), ('ciudadanos', '0028_merge_20260505_1126')]
 
     dependencies = [

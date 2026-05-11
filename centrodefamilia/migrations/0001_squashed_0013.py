@@ -452,9 +452,6 @@ class Migration(migrations.Migration):
                         fields=["actividad_centro"],
                         name="centrodefam_activid_bb4135_idx",
                     ),
-                    models.Index(
-                        fields=["estado"], name="centrodefam_estado_c4c1b9_idx"
-                    ),
                 ],
             },
         ),
@@ -494,10 +491,6 @@ class Migration(migrations.Migration):
                 "verbose_name": "Expediente CABAL",
                 "verbose_name_plural": "Expedientes CABAL",
             },
-        ),
-        migrations.RemoveIndex(
-            model_name="participanteactividad",
-            name="centrodefam_estado_c4c1b9_idx",
         ),
         migrations.AddIndex(
             model_name="actividad",

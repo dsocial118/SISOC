@@ -11,7 +11,6 @@ from django.utils.text import slugify
 
 logger = logging.getLogger("django")
 
-
 # --- RunPython: 0003_assign_provincia_to_test_user ---
 
 def assign_provincia_to_test_user(apps, schema_editor):
@@ -28,7 +27,6 @@ def assign_provincia_to_test_user(apps, schema_editor):
     except Exception as e:
         logger.exception("Error al asignar provincia: %s", e)
 
-
 def reverse_assign_provincia(apps, schema_editor):
     User = get_user_model()
     Profile = apps.get_model('users', 'Profile')
@@ -41,18 +39,15 @@ def reverse_assign_provincia(apps, schema_editor):
     except (User.DoesNotExist, Profile.DoesNotExist):
         pass
 
-
 # --- RunPython: 0007_create_coordinador_gestion_group ---
 
 def create_coordinador_gestion_group(apps, schema_editor):
     from django.contrib.auth.models import Group
     Group.objects.get_or_create(name="Coordinador Gestion")
 
-
 def remove_coordinador_gestion_group(apps, schema_editor):
     from django.contrib.auth.models import Group
     Group.objects.filter(name="Coordinador Gestion").delete()
-
 
 # --- RunPython: 0009_remove_coordinador_and_rename_group ---
 
@@ -65,7 +60,6 @@ def rename_coordinador_group(apps, schema_editor):
     except Group.DoesNotExist:
         pass
 
-
 def reverse_rename_coordinador_group(apps, schema_editor):
     Group = apps.get_model('auth', 'Group')
     try:
@@ -74,7 +68,6 @@ def reverse_rename_coordinador_group(apps, schema_editor):
         group.save()
     except Group.DoesNotExist:
         pass
-
 
 # --- RunPython: 0010_remove_coordinador_if_exists ---
 
@@ -106,7 +99,6 @@ def remove_coordinador_field_if_exists(apps, schema_editor):
                     )
                 cursor.execute("ALTER TABLE `users_profile` DROP COLUMN `coordinador_id`")
 
-
 # --- RunPython: 0012_cleanup_unused_groups ---
 
 UNUSED_GROUPS = [
@@ -118,17 +110,14 @@ UNUSED_GROUPS = [
     "Técnico Registrar Informe Pago", "ApiCentroFamilia",
 ]
 
-
 def remove_unused_groups(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
     Group.objects.filter(name__in=UNUSED_GROUPS).delete()
-
 
 def restore_unused_groups(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
     for group_name in UNUSED_GROUPS:
         Group.objects.get_or_create(name=group_name)
-
 
 # --- RunPython: 0014_bootstrap_group_permissions ---
 
@@ -164,7 +153,6 @@ def bootstrap_group_permissions(apps, schema_editor):
             permission.save(update_fields=["name"])
 
         group.permissions.add(permission)
-
 
 # --- RunPython: 0015_assign_bootstrap_group_permissions ---
 
@@ -264,13 +252,11 @@ GROUP_BOOTSTRAP_ALIASES = {
     "Dashboard Centrodefamilia": ("Dashboard Centrodefamilia", "CDF SSE"),
 }
 
-
 def _legacy_permission_code(alias):
     base = f"role_{slugify(alias).replace('-', '_')}"[:100]
     if not base or base == "role_":
         base = "role_group"
     return f"auth.{base}"
-
 
 def _permission_codes_for_alias(alias):
     if not alias:
@@ -282,7 +268,6 @@ def _permission_codes_for_alias(alias):
         return mapped
     return (_legacy_permission_code(alias),)
 
-
 def _permission_codes_for_group(group_name):
     aliases = GROUP_BOOTSTRAP_ALIASES.get(group_name, (group_name,))
     result = []
@@ -293,7 +278,6 @@ def _permission_codes_for_group(group_name):
                 seen.add(code)
                 result.append(code)
     return result
-
 
 def assign_bootstrap_group_permissions(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
@@ -316,7 +300,6 @@ def assign_bootstrap_group_permissions(apps, schema_editor):
         if permissions:
             group.permissions.add(*permissions)
 
-
 # --- RunPython: 0016_bootstrap_formulario_cdi_permissions ---
 
 GROUP_PERMISSION_MAP_CDI = {
@@ -325,7 +308,6 @@ GROUP_PERMISSION_MAP_CDI = {
     "Centro de Infancia Formulario Editar": ("centrodeinfancia.change_formulariocdi",),
     "Centro de Infancia Formulario Borrar": ("centrodeinfancia.delete_formulariocdi",),
 }
-
 
 def bootstrap_formulario_cdi_permissions(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
@@ -344,7 +326,6 @@ def bootstrap_formulario_cdi_permissions(apps, schema_editor):
                 permissions.append(permission)
         if permissions:
             group.permissions.add(*permissions)
-
 
 # --- RunPython: 0023_rename_vat_sse_group_to_cfpinet ---
 
@@ -365,7 +346,6 @@ def rename_vat_sse_group_to_cfpinet(apps, schema_editor):
     new_group.user_set.add(*old_group.user_set.all())
     old_group.delete()
 
-
 # --- RunPython: 0024_rename_vat_secondary_groups_to_cfp ---
 
 def _rename_or_merge_group(Group, old_name, new_name):
@@ -381,19 +361,16 @@ def _rename_or_merge_group(Group, old_name, new_name):
     new_group.user_set.add(*old_group.user_set.all())
     old_group.delete()
 
-
 def rename_vat_secondary_groups_to_cfp(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
     _rename_or_merge_group(Group, "Provincia VAT", "CFPJuridicccion")
     _rename_or_merge_group(Group, "ReferenteCentroVAT", "CFP")
-
 
 # --- RunPython: 0026_admin_bulk_credentials_permission ---
 
 BULK_CRED_PERMISSION_CODENAME = "role_enviar_credenciales_masivas"
 BULK_CRED_PERMISSION_NAME = "Enviar credenciales masivas"
 BULK_CRED_ADMIN_GROUP = "Admin"
-
 
 def assign_bulk_credentials_permission(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
@@ -414,9 +391,9 @@ def assign_bulk_credentials_permission(apps, schema_editor):
     if admin_group:
         admin_group.permissions.add(permission)
 
-
 class Migration(migrations.Migration):
 
+    atomic = False
     initial = True
 
     replaces = [('users', '0001_initial'), ('users', '0002_profile_es_usuario_provincial_profile_provincia'), ('users', '0003_assign_provincia_to_test_user'), ('users', '0004_profile_rol'), ('users', '0005_profile_fecha_creacion'), ('users', '0006_add_coordinador_to_profile'), ('users', '0007_create_coordinador_gestion_group'), ('users', '0008_add_es_coordinador_and_duplas'), ('users', '0009_remove_coordinador_and_rename_group'), ('users', '0010_remove_coordinador_if_exists'), ('users', '0011_accesocomedorpwa_and_more'), ('users', '0012_cleanup_unused_groups'), ('users', '0013_profile_password_security_fields'), ('users', '0014_bootstrap_group_permissions'), ('users', '0015_assign_bootstrap_group_permissions'), ('users', '0016_bootstrap_formulario_cdi_permissions'), ('users', '0017_accesocomedorpwa_tipo_asociacion_and_more'), ('users', '0018_profile_temporary_password_plaintext'), ('users', '0019_accesocomedorpwa_fecha_baja_and_audit'), ('users', '0020_rename_users_audit_user_74b57d_idx_users_audit_user_id_0e2825_idx_and_more'), ('users', '0017_profile_delegation_scope_fields'), ('users', '0021_merge_20260330_0757'), ('users', '0022_profile_temporary_password_plaintext'), ('users', '0023_rename_vat_sse_group_to_cfpinet'), ('users', '0024_rename_vat_secondary_groups_to_cfp'), ('users', '0021_profile_password_reset_requested_at'), ('users', '0023_merge_20260331_1500'), ('users', '0025_merge_20260404_0000'), ('users', '0026_admin_bulk_credentials_permission'), ('users', '0027_bulk_credentials_jobs'), ('users', '0028_rename_users_bulk_status_dfc1d3_idx_users_bulkc_status_7d2f67_idx_and_more')]
@@ -582,24 +559,12 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Auditoría de acceso PWA',
                 'verbose_name_plural': 'Auditorías de accesos PWA',
                 'ordering': ['-fecha_evento', '-id'],
-                'indexes': [models.Index(fields=['user', 'fecha_evento'], name='users_audit_user_74b57d_idx'), models.Index(fields=['comedor', 'fecha_evento'], name='users_audit_comedor_4b01f7_idx'), models.Index(fields=['accion', 'fecha_evento'], name='users_audit_accion_9d4c59_idx')],
+                'indexes': [models.Index(fields=['user', 'fecha_evento'], name='users_audit_user_id_0e2825_idx'), models.Index(fields=['comedor', 'fecha_evento'], name='users_audit_comedor_fa16b0_idx'), models.Index(fields=['accion', 'fecha_evento'], name='users_audit_accion_71bafe_idx')],
             },
         ),
-        migrations.RenameIndex(
-            model_name='auditaccesocomedorpwa',
-            new_name='users_audit_user_id_0e2825_idx',
-            old_name='users_audit_user_74b57d_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='auditaccesocomedorpwa',
-            new_name='users_audit_comedor_fa16b0_idx',
-            old_name='users_audit_comedor_4b01f7_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='auditaccesocomedorpwa',
-            new_name='users_audit_accion_71bafe_idx',
-            old_name='users_audit_accion_9d4c59_idx',
-        ),
+        
+        
+        
         migrations.AddField(
             model_name='profile',
             name='grupos_asignables',
@@ -664,7 +629,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Lote de credenciales masivas',
                 'verbose_name_plural': 'Lotes de credenciales masivas',
                 'ordering': ['-requested_at', '-id'],
-                'indexes': [models.Index(fields=['status', 'requested_at'], name='users_bulk_status_dfc1d3_idx'), models.Index(fields=['requested_by', 'requested_at'], name='users_bulk_request_f960fc_idx')],
+                'indexes': [models.Index(fields=['status', 'requested_at'], name='users_bulkc_status_7d2f67_idx'), models.Index(fields=['requested_by', 'requested_at'], name='users_bulkc_request_2f0831_idx')],
             },
         ),
         migrations.CreateModel(
@@ -685,28 +650,12 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Resultado de fila de credenciales masivas',
                 'verbose_name_plural': 'Resultados de filas de credenciales masivas',
                 'ordering': ['fila', 'id'],
-                'indexes': [models.Index(fields=['job', 'status'], name='users_bulk_job_id_a52ddf_idx'), models.Index(fields=['job', 'processed_at'], name='users_bulk_job_id_1361d3_idx')],
+                'indexes': [models.Index(fields=['job', 'status'], name='users_bulkc_job_id_af9261_idx'), models.Index(fields=['job', 'processed_at'], name='users_bulkc_job_id_3d3e77_idx')],
                 'constraints': [models.UniqueConstraint(fields=('job', 'fila'), name='users_bulk_credentials_job_row_unique')],
             },
         ),
-        migrations.RenameIndex(
-            model_name='bulkcredentialsjob',
-            new_name='users_bulkc_status_7d2f67_idx',
-            old_name='users_bulk_status_dfc1d3_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='bulkcredentialsjob',
-            new_name='users_bulkc_request_2f0831_idx',
-            old_name='users_bulk_request_f960fc_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='bulkcredentialsjobrow',
-            new_name='users_bulkc_job_id_af9261_idx',
-            old_name='users_bulk_job_id_a52ddf_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='bulkcredentialsjobrow',
-            new_name='users_bulkc_job_id_3d3e77_idx',
-            old_name='users_bulk_job_id_1361d3_idx',
-        ),
+        
+        
+        
+        
     ]

@@ -9,13 +9,11 @@ from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
 
-
 # --- 0008_migrate_legacy_cdi_tables ---
 
 def _column_names(cursor, connection, table_name):
     description = connection.introspection.get_table_description(cursor, table_name)
     return {column.name for column in description}
-
 
 def _copy_rows_with_mapping(cursor, connection, source_table, target_table, column_mapping):
     source_columns = _column_names(cursor, connection, source_table)
@@ -66,7 +64,6 @@ def _copy_rows_with_mapping(cursor, connection, source_table, target_table, colu
         insert_values = [row_data[column] for column in insert_target_columns]
         cursor.execute(insert_query, insert_values)
         existing_target_ids.add(row_id)
-
 
 def migrate_legacy_cdi_tables(apps, schema_editor):
     connection = schema_editor.connection
@@ -166,7 +163,6 @@ def migrate_legacy_cdi_tables(apps, schema_editor):
                 continue
             _copy_rows_with_mapping(cursor, connection, source_table, target_table, column_mapping)
 
-
 # --- 0010_centrodeinfancia_cdi_code_formulariocdi_and_more ---
 
 def populate_cdi_codes(apps, schema_editor):
@@ -174,7 +170,6 @@ def populate_cdi_codes(apps, schema_editor):
     for centro in CentroDeInfancia.objects.filter(cdi_code__isnull=True).iterator():
         centro.cdi_code = f"CDI-{centro.pk:06d}"
         centro.save(update_fields=["cdi_code"])
-
 
 # --- 0016_alter_formulariocdi_options_and_more ---
 
@@ -199,14 +194,12 @@ UNIQUE_CONSTRAINT_RENAMES = (
     ),
 )
 
-
 def _build_unique_sql(table_name, constraint_name, columns):
     columns_sql = ", ".join(columns)
     return (
         f"ALTER TABLE {table_name} "
         f"ADD CONSTRAINT {constraint_name} UNIQUE ({columns_sql})"
     )
-
 
 def sync_unique_constraint_names(apps, schema_editor):
     if schema_editor.connection.vendor != "mysql":
@@ -233,7 +226,6 @@ def sync_unique_constraint_names(apps, schema_editor):
             continue
         schema_editor.execute(_build_unique_sql(table_name, new_name, columns))
 
-
 def reverse_sync_unique_constraint_names(apps, schema_editor):
     if schema_editor.connection.vendor != "mysql":
         return
@@ -259,12 +251,10 @@ def reverse_sync_unique_constraint_names(apps, schema_editor):
             continue
         schema_editor.execute(_build_unique_sql(table_name, old_name, columns))
 
-
 # --- 0019_formulariocdi_departamentos_ipi ---
 
 def _normalizar_nombre(valor):
     return " ".join((valor or "").strip().split()).casefold()
-
 
 def migrar_departamentos_formulario_cdi(apps, schema_editor):
     FormularioCDI = apps.get_model("centrodeinfancia", "FormularioCDI")
@@ -296,7 +286,6 @@ def migrar_departamentos_formulario_cdi(apps, schema_editor):
         if updates:
             formulario.save(update_fields=updates)
 
-
 def revertir_departamentos_formulario_cdi(apps, schema_editor):
     FormularioCDI = apps.get_model("centrodeinfancia", "FormularioCDI")
     for formulario in FormularioCDI.objects.select_related(
@@ -312,7 +301,6 @@ def revertir_departamentos_formulario_cdi(apps, schema_editor):
             updates.append("departamento_organizacion")
         if updates:
             formulario.save(update_fields=updates)
-
 
 # --- 0021_centrodeinfancia_ambito_and_more ---
 
@@ -348,7 +336,6 @@ MODALIDAD_GESTION_MAP = {
     "otra": "otra",
 }
 
-
 def _normalizar_lista(values, mapping):
     if not isinstance(values, list):
         return []
@@ -362,13 +349,11 @@ def _normalizar_lista(values, mapping):
         vistos.add(normalized)
     return normalizados
 
-
 def _solo_digitos(value):
     if value in (None, ""):
         return None
     digits = "".join(ch for ch in str(value) if ch.isdigit())
     return digits or None
-
 
 def migrar_datos_existentes(apps, schema_editor):
     CentroDeInfancia = apps.get_model("centrodeinfancia", "CentroDeInfancia")
@@ -416,7 +401,6 @@ def migrar_datos_existentes(apps, schema_editor):
                     },
                 )
 
-
 # --- 0026_oferta_servicio_multiple ---
 
 OFERTA_SERVICIOS = [
@@ -427,7 +411,6 @@ OFERTA_SERVICIOS = [
     ("cuatro_anos", "4 años"),
     ("multiedad", "Multiedad"),
 ]
-
 
 def forwards_migrate_oferta_servicios(apps, schema_editor):
     CentroDeInfancia = apps.get_model("centrodeinfancia", "CentroDeInfancia")
@@ -447,9 +430,9 @@ def forwards_migrate_oferta_servicios(apps, schema_editor):
         if oferta:
             centro.oferta_servicios_m2m.set([oferta])
 
-
 class Migration(migrations.Migration):
 
+    atomic = False
     initial = True
 
     replaces = [('centrodeinfancia', '0001_initial'), ('centrodeinfancia', '0002_alter_centrodeinfancia_managers_and_more'), ('centrodeinfancia', '0003_centrodeinfancia_calle_and_more'), ('centrodeinfancia', '0004_observacioncentroinfancia'), ('centrodeinfancia', '0005_observacioncentroinfancia_deleted_by'), ('centrodeinfancia', '0006_alter_observacioncentroinfancia_managers_and_more'), ('centrodeinfancia', '0007_centrodeinfancia_apellido_referente'), ('centrodeinfancia', '0008_migrate_legacy_cdi_tables'), ('centrodeinfancia', '0009_centrodeinfancia_numero'), ('centrodeinfancia', '0010_centrodeinfancia_cdi_code_formulariocdi_and_more'), ('centrodeinfancia', '0011_alter_formulariocdi_electrical_safety_and_more'), ('centrodeinfancia', '0012_trabajador'), ('centrodeinfancia', '0013_alter_trabajador_managers'), ('centrodeinfancia', '0014_update_verbose_names_centros_desarrollo_infantil'), ('centrodeinfancia', '0015_refactor_formulario_cdi_campos_en_espanol'), ('centrodeinfancia', '0016_alter_formulariocdi_options_and_more'), ('centrodeinfancia', '0017_departamentoipi_centrodeinfancia_departamento'), ('centrodeinfancia', '0018_alter_formulariocdiwaitlistbyagegroup_grupo_etario'), ('centrodeinfancia', '0019_formulariocdi_departamentos_ipi'), ('centrodeinfancia', '0020_alter_formulariocdi_cobertura_educadora_titulo_habilitante_and_more'), ('centrodeinfancia', '0021_centrodeinfancia_ambito_and_more'), ('centrodeinfancia', '0022_alter_centrodeinfancia_ambito_and_more'), ('centrodeinfancia', '0021_expandir_nomina_cdi'), ('centrodeinfancia', '0023_merge_0021_expandir_nomina_cdi_0022_alter_centrodeinfancia_ambito_and_more'), ('centrodeinfancia', '0024_alter_centrodeinfancia_nombre'), ('centrodeinfancia', '0025_alter_centrodeinfancia_fecha_inicio_and_more'), ('centrodeinfancia', '0026_oferta_servicio_multiple'), ('centrodeinfancia', '0024_intervencioncentroinfancia_creado_por'), ('centrodeinfancia', '0025_alter_intervencioncentroinfancia_creado_por'), ('centrodeinfancia', '0027_merge_20260427_1431'), ('centrodeinfancia', '0028_alter_formulariocdi_condiciones_almacenamiento_leche_humana')]
@@ -555,18 +538,14 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Observación Centro de Infancia',
                 'verbose_name_plural': 'Observaciones Centro de Infancia',
-                'indexes': [models.Index(fields=['centro'], name='centrodeinfa_centro__4974e2_idx')],
+                'indexes': [models.Index(fields=['centro'], name='centrodeinf_centro__720bd9_idx')],
             },
             managers=[
                 ('objects', core.soft_delete.base.SoftDeleteManager()),
                 ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
             ],
         ),
-        migrations.RenameIndex(
-            model_name='observacioncentroinfancia',
-            new_name='centrodeinf_centro__720bd9_idx',
-            old_name='centrodeinfa_centro__4974e2_idx',
-        ),
+        
         migrations.RemoveField(
             model_name='observacioncentroinfancia',
             name='is_deleted',

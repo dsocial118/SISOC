@@ -9,7 +9,6 @@ from django.db import migrations, models
 import django.db.models.deletion
 import uuid
 
-
 # --- 0005_actividades_pwa ---
 
 CATALOGO_ACTIVIDADES_INICIAL = [
@@ -91,7 +90,6 @@ CATALOGO_ACTIVIDADES_INICIAL = [
     ("Salud", "Aeroyoga"),
 ]
 
-
 def cargar_catalogo_actividades(apps, schema_editor):
     CatalogoActividadPWA = apps.get_model("pwa", "CatalogoActividadPWA")
     for categoria, actividad in CATALOGO_ACTIVIDADES_INICIAL:
@@ -101,7 +99,6 @@ def cargar_catalogo_actividades(apps, schema_editor):
             defaults={"activo": True},
         )
 
-
 def revertir_catalogo_actividades(apps, schema_editor):
     CatalogoActividadPWA = apps.get_model("pwa", "CatalogoActividadPWA")
     for categoria, actividad in CATALOGO_ACTIVIDADES_INICIAL:
@@ -110,13 +107,11 @@ def revertir_catalogo_actividades(apps, schema_editor):
             actividad=actividad,
         ).delete()
 
-
 # --- 0011_actividadespaciopwa_hora_inicio_hora_fin ---
 
 TIME_RANGE_REGEX = re.compile(
     r"^(?P<start>\d{1,2}:\d{2})(?:\s*(?:a|-)\s*(?P<end>\d{1,2}:\d{2}))?$"
 )
-
 
 def _parse_schedule(raw_value):
     value = (raw_value or "").strip()
@@ -129,7 +124,6 @@ def _parse_schedule(raw_value):
     end_raw = match.group("end")
     end_time = datetime.strptime(end_raw, "%H:%M").time() if end_raw else None
     return start_time, end_time
-
 
 def _infer_end_time(start_time, raw_duration):
     duration = (raw_duration or "").strip().lower()
@@ -146,7 +140,6 @@ def _infer_end_time(start_time, raw_duration):
         return None
     start_dt = datetime.combine(datetime.today().date(), start_time)
     return (start_dt + timedelta(minutes=total_minutes)).time()
-
 
 def forwards(apps, schema_editor):
     ActividadEspacioPWA = apps.get_model("pwa", "ActividadEspacioPWA")
@@ -168,7 +161,6 @@ def forwards(apps, schema_editor):
         )
         actividad.save(update_fields=["hora_inicio", "hora_fin", "horario_actividad"])
 
-
 def backwards(apps, schema_editor):
     ActividadEspacioPWA = apps.get_model("pwa", "ActividadEspacioPWA")
     for actividad in ActividadEspacioPWA.objects.all().iterator():
@@ -178,7 +170,6 @@ def backwards(apps, schema_editor):
                 f"{actividad.hora_fin.strftime('%H:%M')}"
             )
             actividad.save(update_fields=["horario_actividad"])
-
 
 # --- 0014_pushsubscriptionpwa_endpoint_hash ---
 
@@ -191,7 +182,6 @@ def populate_push_subscription_endpoint_hash(apps, schema_editor):
             endpoint.encode("utf-8")
         ).hexdigest()
         subscription.save(update_fields=["endpoint", "endpoint_hash"])
-
 
 class Migration(migrations.Migration):
 
@@ -232,24 +222,12 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Auditoría sesión PWA',
                 'verbose_name_plural': 'Auditorías sesiones PWA',
-                'indexes': [models.Index(fields=['user', 'fecha_evento'], name='pwa_auditor_user_id_52e452_idx'), models.Index(fields=['evento', 'fecha_evento'], name='pwa_auditor_evento_49cf48_idx'), models.Index(fields=['resultado', 'fecha_evento'], name='pwa_auditor_resulta_2d6494_idx')],
+                'indexes': [models.Index(fields=['user', 'fecha_evento'], name='pwa_auditor_user_id_951231_idx'), models.Index(fields=['evento', 'fecha_evento'], name='pwa_auditor_evento_5c0ad0_idx'), models.Index(fields=['resultado', 'fecha_evento'], name='pwa_auditor_resulta_ae14a4_idx')],
             },
         ),
-        migrations.RenameIndex(
-            model_name='auditoriasesionpwa',
-            new_name='pwa_auditor_user_id_951231_idx',
-            old_name='pwa_auditor_user_id_52e452_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='auditoriasesionpwa',
-            new_name='pwa_auditor_evento_5c0ad0_idx',
-            old_name='pwa_auditor_evento_49cf48_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='auditoriasesionpwa',
-            new_name='pwa_auditor_resulta_ae14a4_idx',
-            old_name='pwa_auditor_resulta_2d6494_idx',
-        ),
+        
+        
+        
         migrations.CreateModel(
             name='ColaboradorEspacioPWA',
             fields=[

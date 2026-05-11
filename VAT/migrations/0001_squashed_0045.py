@@ -29,10 +29,14 @@ def _add_plan_estudio_fk_columns_if_missing(apps, schema_editor):
 
 
 def _backfill_plan_estudio_sector_subsector(apps, schema_editor):
-    plan_model = apps.get_model("VAT", "PlanVersionCurricular")
-    tabla_plan = plan_model._meta.db_table
     titulo_model = apps.get_model("VAT", "TituloReferencia")
     tabla_titulo = titulo_model._meta.db_table
+    # On a fresh DB the column was never added (squash creates TituloReferencia
+    # already without sector_id), so there is nothing to backfill.
+    if not _column_exists(schema_editor, tabla_titulo, "sector_id"):
+        return
+    plan_model = apps.get_model("VAT", "PlanVersionCurricular")
+    tabla_plan = plan_model._meta.db_table
     with schema_editor.connection.cursor() as cursor:
         cursor.execute(
             f"""
@@ -452,6 +456,7 @@ def copy_legacy_referente_to_referentes(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
+    atomic = False
     initial = True
 
     replaces = [('VAT', '0001_initial'), ('VAT', '0002_remove_centro_faro_asociado_remove_centro_tipo'), ('VAT', '0003_add_encuentro_asistencia_fechas_actividad'), ('VAT', '0004_alter_centro_referente'), ('VAT', '0005_remove_cabal_models'), ('VAT', '0006_autoridadinstitucional_comision_comisionhorario_and_more'), ('VAT', '0007_voucherparametria_voucher_parametria'), ('VAT', '0008_voucherparametria_renovacion'), ('VAT', '0009_voucher_asignado_por'), ('VAT', '0010_remove_ofertainstitucional_aprobacion_inet_and_more'), ('VAT', '0011_ofertainstitucional_costo'), ('VAT', '0012_asistenciasesion'), ('VAT', '0013_voucherparametria_inscripcion_unica_activa'), ('VAT', '0014_institucionubicacion_nombre_ubicacion'), ('VAT', '0015_institucionidentificadorhist_ubicacion'), ('VAT', '0016_centro_campos_ubicacion_contacto_ampliado'), ('VAT', '0017_centro_remove_legacy_fields'), ('VAT', '0018_curso_comisioncurso'), ('VAT', '0019_alter_comisioncurso_managers_alter_curso_managers'), ('VAT', '0020_alter_planversioncurricular_options_and_more'), ('VAT', '0021_invert_titulo_plan_relation'), ('VAT', '0022_remove_tituloreferencia_sector_subsector'), ('VAT', '0023_ofertainstitucional_voucher_parametrias'), ('VAT', '0024_remove_curso_cupo_fechas'), ('VAT', '0025_alter_curso_options'), ('VAT', '0026_curso_costo_creditos_curso_programa_and_more'), ('VAT', '0027_curso_plan_estudio'), ('VAT', '0028_comisionhorario_comision_curso_and_more'), ('VAT', '0029_planversioncurricular_provincia'), ('VAT', '0030_alter_centro_referente_cfp_group'), ('VAT', '0031_remove_curso_programa'), ('VAT', '0032_move_curso_ubicacion_to_comisioncurso'), ('VAT', '0033_planversioncurricular_nombre'), ('VAT', '0034_institucioncontacto_documento'), ('VAT', '0035_merge_autoridades_into_contactos_and_remove_model'), ('VAT', '0036_alter_institucioncontacto_options_and_more'), ('VAT', '0037_planversioncurricular_provincia_activo_idx'), ('VAT', '0038_curso_prioritario'), ('VAT', '0039_comision_lista_espera'), ('VAT', '0040_curso_inscripcion_libre_solicitudinscripcionpublica'), ('VAT', '0041_alter_solicitudinscripcionpublica_managers'), ('VAT', '0042_alter_inscripcion_programa'), ('VAT', '0043_alter_curso_inscripcion_libre'), ('VAT', '0044_centro_listado_indexes'), ('VAT', '0045_centro_referentes_revisores')]
@@ -882,10 +887,6 @@ class Migration(migrations.Migration):
             model_name='participanteactividad',
             index=models.Index(fields=['estado'], name='vat_part_estado_idx'),
         ),
-        migrations.AlterUniqueTogether(
-            name='participanteactividad',
-            unique_together={('actividad_centro', 'ciudadano')},
-        ),
         migrations.AddIndex(
             model_name='informecabalregistro',
             index=models.Index(fields=['archivo'], name='vat_icr_archivo_idx'),
@@ -917,10 +918,6 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='cabalarchivo',
             index=models.Index(fields=['nombre_original'], name='vat_cabal_nombre_idx'),
-        ),
-        migrations.AlterUniqueTogether(
-            name='beneficiarioresponsable',
-            unique_together={('beneficiario', 'responsable')},
         ),
         migrations.AddIndex(
             model_name='actividadcentro',
@@ -968,7 +965,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Encuentro',
                 'verbose_name_plural': 'Encuentros',
                 'ordering': ['fecha', 'hora_inicio'],
-                'unique_together': {('actividad_centro', 'fecha')},
             },
         ),
         migrations.CreateModel(
@@ -1373,8 +1369,6 @@ class Migration(migrations.Migration):
                 ('descripcion', models.TextField(blank=True, null=True, verbose_name='Descripción')),
                 ('activo', models.BooleanField(default=True, verbose_name='Activo')),
                 ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('sector', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='titulos', to='VAT.sector', verbose_name='Sector')),
-                ('subsector', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='titulos', to='VAT.subsector', verbose_name='Subsector')),
             ],
             options={
                 'verbose_name': 'Título de Referencia',
@@ -1541,10 +1535,6 @@ class Migration(migrations.Migration):
             model_name='beneficiario',
             name='responsable',
         ),
-        migrations.AlterUniqueTogether(
-            name='beneficiarioresponsable',
-            unique_together=None,
-        ),
         migrations.RemoveField(
             model_name='beneficiarioresponsable',
             name='beneficiario',
@@ -1564,17 +1554,9 @@ class Migration(migrations.Migration):
             model_name='categoria',
             name='deleted_by',
         ),
-        migrations.AlterUniqueTogether(
-            name='encuentro',
-            unique_together=None,
-        ),
         migrations.RemoveField(
             model_name='encuentro',
             name='actividad_centro',
-        ),
-        migrations.AlterUniqueTogether(
-            name='participanteactividad',
-            unique_together=None,
         ),
         migrations.RemoveField(
             model_name='participanteactividad',
@@ -2181,23 +2163,9 @@ class Migration(migrations.Migration):
                 ),
             ],
         ),
-        migrations.SeparateDatabaseAndState(
-            database_operations=[
-                migrations.RunPython(
-                    code=_drop_titulo_sector_subsector,
-                    reverse_code=migrations.RunPython.noop,
-                ),
-            ],
-            state_operations=[
-                migrations.RemoveField(
-                    model_name='tituloreferencia',
-                    name='sector',
-                ),
-                migrations.RemoveField(
-                    model_name='tituloreferencia',
-                    name='subsector',
-                ),
-            ],
+        migrations.RunPython(
+            code=_drop_titulo_sector_subsector,
+            reverse_code=migrations.RunPython.noop,
         ),
         migrations.AddField(
             model_name='ofertainstitucional',
