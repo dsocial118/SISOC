@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from core.models import Municipio, Provincia
 
 from .models import Dispositivo
+from .validators import DOCUMENTACION_ACCEPT_ATTR, DOCUMENTACION_UPLOAD_FIELDS
 
 
 class DispositivoForm(forms.ModelForm):
@@ -285,6 +286,9 @@ class DispositivoForm(forms.ModelForm):
         self.fields["documentacion_dispositivo_adicional_4"].label = (
             "Documentación adicional 4"
         )
+        for field_name in DOCUMENTACION_UPLOAD_FIELDS:
+            self.fields[field_name].widget.attrs["accept"] = DOCUMENTACION_ACCEPT_ATTR
+            self.fields[field_name].help_text = "PDF, JPG o PNG. Máximo 10 MB."
         self._apply_widgets()
 
     def _apply_widgets(self):

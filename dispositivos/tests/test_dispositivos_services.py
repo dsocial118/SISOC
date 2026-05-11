@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 import pytest
+from django.utils import timezone
 
 from core.models import Municipio, Provincia
 from dispositivos.models import Dispositivo
@@ -38,6 +41,10 @@ def test_get_dispositivos_queryset_ordena_por_fecha_desc():
         modalidad_funcionamiento="permanente",
         capacidad_total_plazas="16_30",
     )
+    Dispositivo.objects.filter(pk=viejo.pk).update(
+        created_at=timezone.now() - timedelta(minutes=1)
+    )
+    Dispositivo.objects.filter(pk=nuevo.pk).update(created_at=timezone.now())
 
     queryset = list(get_dispositivos_queryset())
 

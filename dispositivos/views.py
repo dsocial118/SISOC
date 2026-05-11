@@ -88,7 +88,11 @@ class DispositivoListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["reset_url"] = reverse("dispositivos_listar")
-        context["add_url"] = reverse("dispositivos_crear")
+        context["add_url"] = (
+            reverse("dispositivos_crear")
+            if self.request.user.has_perm("dispositivos.add_dispositivo")
+            else None
+        )
         context["filters_mode"] = True
         context["filters_config"] = get_filters_ui_config()
         context["filters_action"] = reverse("dispositivos_listar")

@@ -4,6 +4,8 @@ from django.db import models
 
 from core.models import Municipio, Provincia
 
+from .validators import DOCUMENTACION_FILE_VALIDATORS
+
 
 class Dispositivo(models.Model):
     class TipoGestion(models.TextChoices):
@@ -186,26 +188,31 @@ class Dispositivo(models.Model):
     observaciones_adicionales = models.TextField(blank=True, null=True)
     documentacion_dispositivo = models.FileField(
         upload_to="dispositivos/documentacion/",
+        validators=DOCUMENTACION_FILE_VALIDATORS,
         blank=True,
         null=True,
     )
     documentacion_dispositivo_adicional_1 = models.FileField(
         upload_to="dispositivos/documentacion/",
+        validators=DOCUMENTACION_FILE_VALIDATORS,
         blank=True,
         null=True,
     )
     documentacion_dispositivo_adicional_2 = models.FileField(
         upload_to="dispositivos/documentacion/",
+        validators=DOCUMENTACION_FILE_VALIDATORS,
         blank=True,
         null=True,
     )
     documentacion_dispositivo_adicional_3 = models.FileField(
         upload_to="dispositivos/documentacion/",
+        validators=DOCUMENTACION_FILE_VALIDATORS,
         blank=True,
         null=True,
     )
     documentacion_dispositivo_adicional_4 = models.FileField(
         upload_to="dispositivos/documentacion/",
+        validators=DOCUMENTACION_FILE_VALIDATORS,
         blank=True,
         null=True,
     )
