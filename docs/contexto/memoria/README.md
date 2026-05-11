@@ -22,6 +22,17 @@ Objetivos:
 4. Si la memoria esta `stale` o `unknown`, tomarla solo como pista y revalidar el codigo.
 5. Cuando el analisis nuevo sea reusable, actualizar o crear memoria en esta carpeta.
 
+## Errores repetidos de agentes
+
+Registrar aca solo errores que probablemente se repitan y que puedan evitarse con contexto corto:
+
+- confundir boundaries, contratos o nombres publicos,
+- repetir fallas de setup, Docker, worktrees o validacion,
+- reabrir analisis largos ya estabilizados,
+- olvidar comandos o tests especificos de un modulo.
+
+No usar esta carpeta como diario de cada tarea. Si el dato es puntual de un cambio, va en `docs/registro/cambios/`; si es una decision, va en `docs/registro/decisiones/`.
+
 ## Formato
 
 Cada documento usa frontmatter TOML delimitado por `+++` con al menos:

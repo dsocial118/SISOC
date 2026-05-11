@@ -12,7 +12,8 @@ param(
         "djlint-check",
         "djlint-format",
         "pylint",
-        "manage"
+        "manage",
+        "validate"
     )]
     [string]$Action,
     [Parameter(ValueFromRemainingArguments = $true)]
@@ -50,6 +51,22 @@ function Invoke-DjangoOneOffCommand {
 
     Invoke-CodexBootstrap -NoStart
     Invoke-CodexCompose -RepoRoot $repoRoot -Arguments (@("run", "--rm", "--no-deps", "django") + $CommandArgs)
+}
+
+function Invoke-CodexValidation {
+    Invoke-CodexBootstrap -NoStart
+
+    $steps = @(
+        @{ Label = "black"; Command = @("black", "--check", ".", "--config", "pyproject.toml") },
+        @{ Label = "djlint"; Command = @("djlint", ".", "--configuration=.djlintrc", "--check") },
+        @{ Label = "smoke"; Command = @("pytest", "-m", "smoke") },
+        @{ Label = "migrations"; Command = @("python", "manage.py", "makemigrations", "--check", "--dry-run") }
+    )
+
+    foreach ($step in $steps) {
+        Write-Host ("== validate: {0} ==" -f $step.Label)
+        Invoke-CodexCompose -RepoRoot $repoRoot -Arguments (@("run", "--rm", "--no-deps", "django") + $step.Command)
+    }
 }
 
 switch ($Action) {
@@ -122,6 +139,10 @@ switch ($Action) {
             throw "manage requiere argumentos para manage.py."
         }
         Invoke-DjangoOneOffCommand -CommandArgs (@("python", "manage.py") + $Args)
+        break
+    }
+    "validate" {
+        Invoke-CodexValidation
         break
     }
 }
