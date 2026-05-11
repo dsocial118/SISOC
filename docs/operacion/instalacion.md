@@ -51,6 +51,11 @@
 - Por seguridad, no borra volumenes por defecto. Si se necesita un apagado con `--volumes`, usar `bash scripts/operacion/deploy_refresh.sh --volumes` y confirmar explicitamente. En entornos con MySQL local, `--volumes` puede borrar datos persistentes.
 - Si el servidor usa una branch distinta a la esperada para el `ENVIRONMENT`, corregir la branch antes de desplegar o usar `--allow-branch-mismatch` solo con una decision operativa explicita.
 
+## NGINX de produccion
+- Configuracion de referencia: `docs/operacion/nginx/sisoc-produccion.conf`.
+- La topologia esperada es Django en `127.0.0.1:8001`, SISOC-Mobile en `127.0.0.1:8080` y la app mobile publicada bajo `/mobile/`.
+- Antes de recargar NGINX en el servidor, validar con `sudo nginx -t`.
+
 ## Flujo de arranque en el contenedor Django
 - Con `DJANGO_SERVICE_ROLE=web` (default), el entrypoint ejecuta `makemigrations` (segun `RUN_MAKEMIGRATIONS_ON_START`), `migrate`, `load_fixtures`, `create_test_users` y `create_groups`; luego levanta Gunicorn en QA/Homologacion/PRD y runserver en DEV. Evidencia: docker/django/entrypoint.py:78-111 y docker/django/entrypoint.py:129-159.
 - Con `DJANGO_SERVICE_ROLE=bulk_credentials_worker`, el contenedor no levanta servidor web ni corre el flujo de migraciones/fixtures; ejecuta `manage.py process_bulk_credentials_jobs`. Evidencia: docker/django/entrypoint.py:114-127.
