@@ -25,6 +25,32 @@
 - En produccion, `docker-compose.produccion.yml` agrega `bulk_credentials_worker` con `DJANGO_SERVICE_ROLE=bulk_credentials_worker` para que el worker quede levantado junto con la aplicacion web.
 - En los deploys versionados no se levanta `mysql` dentro de Compose; la base se resuelve por variables `DATABASE_*` definidas en el `.env` del host.
 
+## Actualizacion operativa desde Git
+- Script versionado: `scripts/operacion/deploy_refresh.sh`.
+- Uso recomendado desde la raiz del checkout del servidor:
+  - `bash scripts/operacion/deploy_refresh.sh --dry-run`
+  - `bash scripts/operacion/deploy_refresh.sh`
+- Si el servidor tambien tiene `SISOC-Mobile` como checkout hermano en `../SISOC-Mobile`, usar:
+  - `bash scripts/operacion/deploy_refresh.sh --with-mobile --dry-run`
+  - `bash scripts/operacion/deploy_refresh.sh --with-mobile`
+- Si `SISOC-Mobile` esta en otra ruta, indicar el path:
+  - `bash scripts/operacion/deploy_refresh.sh --with-mobile --mobile-dir /srv/sisoc/SISOC-Mobile`
+- El script lee `ENVIRONMENT` desde `.env` y elige automaticamente:
+  - `dev|local|development`: `docker-compose.yml`
+  - `qa|homologacion`: `docker-compose.deploy.yml`
+  - `prd|prod|production`: `docker-compose.deploy.yml` + `docker-compose.produccion.yml`
+- Con `--with-mobile`, SISOC delega el deploy mobile ejecutando `bash ../SISOC-Mobile/scripts/operacion/deploy_refresh.sh` y le reenvia las opciones compatibles (`--dry-run`, `--yes`, `--volumes`, `--skip-pull`, `--allow-dirty`, `--allow-branch-mismatch`).
+- Flujo ejecutado:
+  1. valida `.env`, branch esperada y compose;
+  2. ejecuta `git fetch origin --prune`;
+  3. si corresponde, valida tambien el checkout mobile;
+  4. baja el stack con `docker compose down --remove-orphans`;
+  5. actualiza la branch actual con `git pull --ff-only`;
+  6. levanta con `docker compose up -d --build`;
+  7. muestra `docker compose ps`.
+- Por seguridad, no borra volumenes por defecto. Si se necesita un apagado con `--volumes`, usar `bash scripts/operacion/deploy_refresh.sh --volumes` y confirmar explicitamente. En entornos con MySQL local, `--volumes` puede borrar datos persistentes.
+- Si el servidor usa una branch distinta a la esperada para el `ENVIRONMENT`, corregir la branch antes de desplegar o usar `--allow-branch-mismatch` solo con una decision operativa explicita.
+
 ## Flujo de arranque en el contenedor Django
 - Con `DJANGO_SERVICE_ROLE=web` (default), el entrypoint ejecuta `makemigrations` (segun `RUN_MAKEMIGRATIONS_ON_START`), `migrate`, `load_fixtures`, `create_test_users` y `create_groups`; luego levanta Gunicorn en QA/Homologacion/PRD y runserver en DEV. Evidencia: docker/django/entrypoint.py:78-111 y docker/django/entrypoint.py:129-159.
 - Con `DJANGO_SERVICE_ROLE=bulk_credentials_worker`, el contenedor no levanta servidor web ni corre el flujo de migraciones/fixtures; ejecuta `manage.py process_bulk_credentials_jobs`. Evidencia: docker/django/entrypoint.py:114-127.
