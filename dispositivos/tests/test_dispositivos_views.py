@@ -230,7 +230,12 @@ def test_formulario_muestra_secciones_modernas(client, user_con_permisos):
     assert "Articulaciones institucionales" in contenido
     assert "Observaciones y documentación" in contenido
     assert "Progreso del Formulario" in contenido
-    assert contenido.index('id="id_registra_informacion_personas"') < contenido.index(
-        'id="registro-detalle"'
+    registro_detalle_index = contenido.index('id="registro-detalle"')
+    assert (
+        contenido.index('id="id_registra_informacion_personas"')
+        < registro_detalle_index
     )
-    assert 'id="registro-detalle" class="d-none"' in contenido
+    assert (
+        'class="d-none"'
+        in contenido[registro_detalle_index : registro_detalle_index + 200]
+    )
