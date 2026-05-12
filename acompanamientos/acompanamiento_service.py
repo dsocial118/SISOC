@@ -23,6 +23,17 @@ logger = logging.getLogger("django")
 
 
 class AcompanamientoService:
+    DIAS_PRESTACION = (
+        "lunes",
+        "martes",
+        "miercoles",
+        "jueves",
+        "viernes",
+        "sabado",
+        "domingo",
+    )
+    TIPOS_PRESTACION = ("desayuno", "almuerzo", "merienda", "cena")
+
     @staticmethod
     def crear_hitos(intervenciones: Intervencion):
         """Crear o actualizar los hitos para una intervención.
@@ -340,6 +351,7 @@ class AcompanamientoService:
                 defaults={"nro_convenio": nro},
             )
 
+            informe_tecnico = None
             try:
                 informe_tecnico = (
                     InformeTecnico.objects.filter(admision=admision)
@@ -367,18 +379,21 @@ class AcompanamientoService:
                 )
 
             try:
-                prestaciones_admision = admision.prestaciones.all()
-                with transaction.atomic():
-                    Prestacion.objects.filter(acompanamiento=acompanamiento).delete()
-                    for prestacion in prestaciones_admision:
-                        Prestacion.objects.create(
-                            acompanamiento=acompanamiento,
-                            dia=prestacion.dia,
-                            desayuno=prestacion.desayuno,
-                            almuerzo=prestacion.almuerzo,
-                            merienda=prestacion.merienda,
-                            cena=prestacion.cena,
+                if informe_tecnico:
+                    prestaciones_aprobadas = (
+                        AcompanamientoService._prestaciones_desde_informe_tecnico(
+                            informe_tecnico
                         )
+                    )
+                    with transaction.atomic():
+                        Prestacion.objects.filter(
+                            acompanamiento=acompanamiento
+                        ).delete()
+                        for prestacion in prestaciones_aprobadas:
+                            Prestacion.objects.create(
+                                acompanamiento=acompanamiento,
+                                **prestacion,
+                            )
             except Exception:
                 logger.exception(
                     f"Error al importar Prestaciones para admision: {admision.pk}"
@@ -393,6 +408,22 @@ class AcompanamientoService:
                 f"para admision: {admision.pk}",
             )
             raise
+
+    @staticmethod
+    def _prestaciones_desde_informe_tecnico(informe_tecnico):
+        prestaciones = []
+
+        for dia in AcompanamientoService.DIAS_PRESTACION:
+            prestacion = {"dia": dia}
+            for tipo in AcompanamientoService.TIPOS_PRESTACION:
+                campo_nombre = f"aprobadas_{tipo}_{dia}"
+                cantidad = getattr(informe_tecnico, campo_nombre, 0) or 0
+                prestacion[tipo] = int(cantidad) > 0
+
+            if any(prestacion[tipo] for tipo in AcompanamientoService.TIPOS_PRESTACION):
+                prestaciones.append(prestacion)
+
+        return prestaciones
 
     @staticmethod
     def obtener_datos_admision(comedor, admision_id=None):

@@ -145,36 +145,7 @@ class APIClient:
                 f"No se pudo consultar RENAPER: {str(exc)}", "remote_error"
             )
 
-        try:
-            data = response.json()
-        except ValueError as exc:
-            return _build_error_result(
-                f"No se pudo decodificar JSON de RENAPER: {str(exc)}",
-                "invalid_response",
-                raw_response=getattr(response, "text", None),
-            )
-
-        if not isinstance(data, dict):
-            return _build_error_result(
-                "RENAPER devolvio una estructura de respuesta invalida.",
-                "invalid_response",
-                raw_response=data,
-            )
-
-        if not data.get("isSuccess", False):
-            return _build_error_result(
-                "No se encontro coincidencia.", "no_match", raw_response=data
-            )
-
-        result = data.get("result")
-        if not isinstance(result, dict):
-            return _build_error_result(
-                "RENAPER devolvio una respuesta invalida.",
-                "invalid_response",
-                raw_response=data,
-            )
-
-        return {"success": True, "data": result}
+        return _build_consulta_result(response)
 
 
 def normalizar(texto):
@@ -187,6 +158,73 @@ def normalizar(texto):
         .decode("utf-8")
         .strip()
     )
+
+
+_RENAPER_INT_PLACEHOLDERS = {
+    "",
+    "0",
+    "-",
+    "n/a",
+    "na",
+    "n/d",
+    "nd",
+    "s/d",
+    "sd",
+    "s/n",
+    "sn",
+    "sinnumero",
+    "sinnro",
+}
+
+
+def _safe_int_renaper(value, dni):
+    if value is None:
+        return None
+
+    value_text = str(value).strip()
+    value_key = normalizar(value_text).replace(" ", "")
+    if value_key in _RENAPER_INT_PLACEHOLDERS:
+        return None
+
+    try:
+        parsed_value = int(value_text)
+        return parsed_value or None
+    except (ValueError, TypeError):
+        logger.error(f"Error safe_int RENAPER DNI {dni}: {value}")
+        return None
+
+
+def _build_consulta_result(response):
+    try:
+        data = response.json()
+    except ValueError as exc:
+        return _build_error_result(
+            f"No se pudo decodificar JSON de RENAPER: {str(exc)}",
+            "invalid_response",
+            raw_response=getattr(response, "text", None),
+        )
+
+    if not isinstance(data, dict):
+        return _build_error_result(
+            "RENAPER devolvio una estructura de respuesta invalida.",
+            "invalid_response",
+            raw_response=data,
+        )
+
+    if not data.get("isSuccess", False):
+        return _build_error_result(
+            "No se encontro coincidencia.", "no_match", raw_response=data
+        )
+
+    result = data.get("result")
+    if not isinstance(result, dict):
+        return _build_error_result(
+            "RENAPER devolvio una respuesta invalida.",
+            "invalid_response",
+            raw_response=data,
+        )
+
+    return {"success": True, "data": result}
 
 
 def consultar_datos_renaper(dni, sexo):
@@ -227,15 +265,7 @@ def consultar_datos_renaper(dni, sexo):
         # Solo datos basicos de RENAPER, sin mapeo de ubicacion
         # Mapeo optimizado de datos
         def safe_int(value):
-            try:
-                return (
-                    int(value)
-                    if value and str(value).strip() not in ["0", ""]
-                    else None
-                )
-            except (ValueError, TypeError):
-                logger.error(f"Error safe_int RENAPER DNI {dni}: {value}")
-                return None
+            return _safe_int_renaper(value, dni)
 
         datos_mapeados = {
             "cuil": safe_int(datos.get("cuil")),
