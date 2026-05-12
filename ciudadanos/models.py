@@ -39,6 +39,16 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         (TIPO_REGISTRO_DNI_NO_VALIDADO, "DNI no validado por RENAPER"),
     ]
 
+    # --- Estado de revision manual de identidad ---
+    REVISION_IDENTIDAD_PENDIENTE = "PENDIENTE"
+    REVISION_IDENTIDAD_APROBADA = "APROBADA"
+    REVISION_IDENTIDAD_DESCARTADA = "DESCARTADA"
+    REVISION_IDENTIDAD_CHOICES = [
+        (REVISION_IDENTIDAD_PENDIENTE, "Revisi\u00f3n pendiente"),
+        (REVISION_IDENTIDAD_APROBADA, "Aprobado"),
+        (REVISION_IDENTIDAD_DESCARTADA, "Descartado"),
+    ]
+
     # --- Estado de validación RENAPER ---
     RENAPER_NO_CONSULTADO = "NO_CONSULTADO"
     RENAPER_VALIDADO = "VALIDADO"
@@ -225,6 +235,12 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     )
     motivo_no_validacion_descripcion = models.TextField(null=True, blank=True)
     requiere_revision_manual = models.BooleanField(default=False, db_index=True)
+    estado_revision_manual = models.CharField(
+        max_length=20,
+        choices=REVISION_IDENTIDAD_CHOICES,
+        default=REVISION_IDENTIDAD_PENDIENTE,
+        db_index=True,
+    )
     # null=True es intencional: unique + nullable permite múltiples NULLs en
     # MySQL (NULL != NULL), lo que es necesario para ciudadanos sin identificador
     # asignado aún. Sin null=True, el unique constraint rechazaría el segundo
@@ -307,6 +323,13 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
             return True
         return self.requiere_revision_manual
 
+    def _estado_revision_manual(self, requiere_revision_manual, update_fields=None):
+        if update_fields is not None and "estado_revision_manual" in update_fields:
+            return self.estado_revision_manual
+        if requiere_revision_manual:
+            return self.REVISION_IDENTIDAD_PENDIENTE
+        return self.estado_revision_manual
+
     def normalizar_identidad(self, update_fields=None):
         changed_fields = set()
         tipo = self.tipo_registro_identidad or self.TIPO_REGISTRO_ESTANDAR
@@ -342,6 +365,13 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         changed_fields |= self._set_identity_field(
             "requiere_revision_manual",
             self._debe_requerir_revision_manual(tipo, update_fields=update_fields),
+        )
+        changed_fields |= self._set_identity_field(
+            "estado_revision_manual",
+            self._estado_revision_manual(
+                self.requiere_revision_manual,
+                update_fields=update_fields,
+            ),
         )
         return changed_fields
 
