@@ -642,3 +642,23 @@ def test_builder_exception_paths_raise(mocker, method_name, patch_target):
     method = getattr(module.RelevamientoService, method_name)
     with pytest.raises(RuntimeError, match="boom"):
         method({"x": 1})
+
+
+def test_resolver_tipo_espacio_fisico_mapea_alias_gestionar(mocker):
+    """GESTIONAR envía 'Alquilado'; debe resolverse a 'Espacio alquilado' en la DB."""
+    tipo_obj = SimpleNamespace(nombre="Espacio alquilado")
+    get_mock = mocker.patch(
+        "relevamientos.service.TipoEspacio.objects.get", return_value=tipo_obj
+    )
+    espacio_data = {"tipo_espacio_fisico": "Alquilado"}
+    module._resolver_tipo_espacio_fisico_espacio_data(espacio_data)
+    get_mock.assert_called_once_with(nombre__iexact="Espacio alquilado")
+    assert espacio_data["tipo_espacio_fisico"] is tipo_obj
+
+
+def test_resolver_tipo_espacio_fisico_valor_vacio_devuelve_none():
+    """Un tipo_espacio_fisico vacío o None debe quedar como None sin buscar en DB."""
+    for valor in ("", None):
+        espacio_data = {"tipo_espacio_fisico": valor}
+        module._resolver_tipo_espacio_fisico_espacio_data(espacio_data)
+        assert espacio_data["tipo_espacio_fisico"] is None
