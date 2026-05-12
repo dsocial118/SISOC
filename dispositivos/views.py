@@ -41,8 +41,8 @@ def _format_value(value):
 def _format_display_list(values, choices):
     labels = dict(choices)
     if not values:
-        return "-"
-    return ", ".join(labels.get(value, value) for value in values)
+        return []
+    return [labels.get(v, v) for v in values]
 
 
 def _format_file(file_field):
@@ -112,348 +112,117 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         dispositivo = self.object
+        context["breadcrumb_items"] = [
+            {"text": "Dispositivos", "url": reverse("dispositivos_listar")},
+            {"text": dispositivo.nombre_institucion},
+        ]
         context["detalle_secciones"] = [
             {
-                "titulo": "Identificación",
+                "titulo": "Identificación del dispositivo",
+                "icono": "fas fa-building",
                 "items": [
-                    {
-                        "label": "Nombre completo de la institución",
-                        "value": _format_value(dispositivo.nombre_institucion),
-                    },
-                    {
-                        "label": "Tipo de gestión",
-                        "value": dispositivo.get_tipo_gestion_display(),
-                    },
-                    {
-                        "label": "Tipo de gestión - detalle",
-                        "value": _format_value(dispositivo.tipo_gestion_otra),
-                    },
-                    {
-                        "label": "Razón social",
-                        "value": _format_value(dispositivo.razon_social),
-                    },
-                    {
-                        "label": "CUIT",
-                        "value": _format_value(dispositivo.cuit_institucion),
-                    },
-                    {
-                        "label": "Provincia",
-                        "value": _format_value(str(dispositivo.provincia)),
-                    },
-                    {
-                        "label": "Municipio",
-                        "value": _format_value(str(dispositivo.municipio)),
-                    },
-                    {
-                        "label": "Domicilio de la institución",
-                        "value": _format_value(dispositivo.domicilio_institucion),
-                    },
-                    {
-                        "label": "Teléfono de contacto",
-                        "value": _format_value(dispositivo.telefono_contacto),
-                    },
-                    {
-                        "label": "Correo electrónico",
-                        "value": _format_value(dispositivo.correo_electronico),
-                    },
-                    {
-                        "label": "Nombre completo del responsable",
-                        "value": _format_value(dispositivo.responsable_nombre_completo),
-                    },
-                    {
-                        "label": "DNI del responsable",
-                        "value": _format_value(dispositivo.responsable_dni),
-                    },
+                    {"label": "Nombre de la institución", "value": _format_value(dispositivo.nombre_institucion)},
+                    {"label": "Tipo de gestión", "value": dispositivo.get_tipo_gestion_display()},
+                    {"label": "Tipo de gestión - detalle", "value": _format_value(dispositivo.tipo_gestion_otra)},
+                    {"label": "Razón social", "value": _format_value(dispositivo.razon_social)},
+                    {"label": "CUIT", "value": _format_value(dispositivo.cuit_institucion)},
+                    {"label": "Provincia", "value": _format_value(str(dispositivo.provincia))},
+                    {"label": "Municipio", "value": _format_value(str(dispositivo.municipio))},
+                    {"label": "Domicilio", "value": _format_value(dispositivo.domicilio_institucion)},
+                    {"label": "Teléfono de contacto", "value": _format_value(dispositivo.telefono_contacto)},
+                    {"label": "Correo electrónico", "value": _format_value(dispositivo.correo_electronico)},
+                    {"label": "Responsable", "value": _format_value(dispositivo.responsable_nombre_completo)},
+                    {"label": "DNI del responsable", "value": _format_value(dispositivo.responsable_dni)},
                 ],
             },
             {
-                "titulo": "Características",
+                "titulo": "Características del dispositivo",
+                "icono": "fas fa-cogs",
                 "items": [
-                    {
-                        "label": "Tipo de dispositivo",
-                        "value": dispositivo.get_tipo_dispositivo_display(),
-                    },
-                    {
-                        "label": "Tipo de dispositivo - detalle",
-                        "value": _format_value(dispositivo.tipo_dispositivo_otro),
-                    },
-                    {
-                        "label": "Modalidad de funcionamiento",
-                        "value": dispositivo.get_modalidad_funcionamiento_display(),
-                    },
-                    {
-                        "label": "Días de atención",
-                        "value": _format_display_list(
-                            dispositivo.dias_atencion,
-                            DispositivoForm.DIAS_ATENCION_CHOICES,
-                        ),
-                    },
-                    {
-                        "label": "Horarios de funcionamiento",
-                        "value": _format_display_list(
-                            dispositivo.horarios_funcionamiento,
-                            DispositivoForm.HORARIOS_FUNCIONAMIENTO_CHOICES,
-                        ),
-                    },
-                    {
-                        "label": "Capacidad total de plazas",
-                        "value": dispositivo.get_capacidad_total_plazas_display(),
-                    },
+                    {"label": "Tipo de dispositivo", "value": dispositivo.get_tipo_dispositivo_display()},
+                    {"label": "Tipo de dispositivo - detalle", "value": _format_value(dispositivo.tipo_dispositivo_otro)},
+                    {"label": "Modalidad de funcionamiento", "value": dispositivo.get_modalidad_funcionamiento_display()},
+                    {"label": "Capacidad total de plazas", "value": dispositivo.get_capacidad_total_plazas_display()},
+                    {"label": "Días de atención", "value": _format_display_list(dispositivo.dias_atencion, DispositivoForm.DIAS_ATENCION_CHOICES), "kind": "list"},
+                    {"label": "Horarios de funcionamiento", "value": _format_display_list(dispositivo.horarios_funcionamiento, DispositivoForm.HORARIOS_FUNCIONAMIENTO_CHOICES), "kind": "list"},
                 ],
             },
             {
                 "titulo": "Población destinataria",
+                "icono": "fas fa-users",
                 "items": [
-                    {
-                        "label": "Población destinataria",
-                        "value": _format_display_list(
-                            dispositivo.poblacion_destinataria,
-                            DispositivoForm.POBLACION_DESTINATARIA_CHOICES,
-                        ),
-                    },
-                    {
-                        "label": "Población destinataria - detalle",
-                        "value": _format_value(dispositivo.poblacion_destinataria_otro),
-                    },
-                    {
-                        "label": "Franja etaria",
-                        "value": _format_display_list(
-                            dispositivo.franja_etaria_destinataria,
-                            DispositivoForm.FRANJA_ETARIA_CHOICES,
-                        ),
-                    },
-                    {
-                        "label": "Tiempo promedio de permanencia",
-                        "value": (
-                            dispositivo.get_tiempo_permanencia_promedio_display()
-                            if dispositivo.tiempo_permanencia_promedio
-                            else "-"
-                        ),
-                    },
-                    {
-                        "label": "Tiempo promedio de permanencia - detalle",
-                        "value": _format_value(dispositivo.tiempo_permanencia_otro),
-                    },
+                    {"label": "Población destinataria", "value": _format_display_list(dispositivo.poblacion_destinataria, DispositivoForm.POBLACION_DESTINATARIA_CHOICES), "kind": "list"},
+                    {"label": "Detalle población", "value": _format_value(dispositivo.poblacion_destinataria_otro)},
+                    {"label": "Franja etaria", "value": _format_display_list(dispositivo.franja_etaria_destinataria, DispositivoForm.FRANJA_ETARIA_CHOICES), "kind": "list"},
+                    {"label": "Tiempo promedio de permanencia", "value": dispositivo.get_tiempo_permanencia_promedio_display() if dispositivo.tiempo_permanencia_promedio else "-"},
+                    {"label": "Detalle permanencia", "value": _format_value(dispositivo.tiempo_permanencia_otro)},
                 ],
             },
             {
                 "titulo": "Modalidad de ingreso",
+                "icono": "fas fa-sign-in-alt",
                 "items": [
-                    {
-                        "label": "Modalidad de ingreso",
-                        "value": _format_display_list(
-                            dispositivo.modalidad_ingreso,
-                            DispositivoForm.MODALIDAD_INGRESO_CHOICES,
-                        ),
-                    },
-                    {
-                        "label": "Modalidad de ingreso - detalle",
-                        "value": _format_value(dispositivo.modalidad_ingreso_otro),
-                    },
-                    {
-                        "label": "Documentación necesaria para el ingreso",
-                        "value": _format_display_list(
-                            dispositivo.documentacion_ingreso,
-                            DispositivoForm.DOCUMENTACION_INGRESO_CHOICES,
-                        ),
-                    },
-                    {
-                        "label": "Documentación necesaria - detalle",
-                        "value": _format_value(dispositivo.documentacion_ingreso_otro),
-                    },
-                    {
-                        "label": "Requisitos para el ingreso",
-                        "value": _format_display_list(
-                            dispositivo.requisitos_ingreso,
-                            DispositivoForm.REQUISITOS_INGRESO_CHOICES,
-                        ),
-                    },
-                    {
-                        "label": "Requisitos para el ingreso - detalle",
-                        "value": _format_value(dispositivo.requisitos_ingreso_otro),
-                    },
+                    {"label": "Modalidad de ingreso", "value": _format_display_list(dispositivo.modalidad_ingreso, DispositivoForm.MODALIDAD_INGRESO_CHOICES), "kind": "list"},
+                    {"label": "Detalle modalidad", "value": _format_value(dispositivo.modalidad_ingreso_otro)},
+                    {"label": "Documentación para el ingreso", "value": _format_display_list(dispositivo.documentacion_ingreso, DispositivoForm.DOCUMENTACION_INGRESO_CHOICES), "kind": "list"},
+                    {"label": "Detalle documentación", "value": _format_value(dispositivo.documentacion_ingreso_otro)},
+                    {"label": "Requisitos para el ingreso", "value": _format_display_list(dispositivo.requisitos_ingreso, DispositivoForm.REQUISITOS_INGRESO_CHOICES), "kind": "list"},
+                    {"label": "Detalle requisitos", "value": _format_value(dispositivo.requisitos_ingreso_otro)},
                 ],
             },
             {
                 "titulo": "Servicios brindados",
+                "icono": "fas fa-hands-helping",
                 "items": [
-                    {
-                        "label": "Servicios brindados",
-                        "value": _format_display_list(
-                            dispositivo.servicios_brindados,
-                            DispositivoForm.SERVICIOS_BRINDADOS_CHOICES,
-                        ),
-                    },
-                    {
-                        "label": "Servicios brindados - detalle",
-                        "value": _format_value(dispositivo.servicios_brindados_otro),
-                    },
-                    {
-                        "label": "Ofrece actividades formativas",
-                        "value": (
-                            dispositivo.get_ofrece_actividades_formativas_display()
-                            if dispositivo.ofrece_actividades_formativas
-                            else "-"
-                        ),
-                    },
-                    {
-                        "label": "Tipos de actividades formativas",
-                        "value": _format_display_list(
-                            dispositivo.tipos_actividades_formativas,
-                            DispositivoForm.TIPO_ACTIVIDADES_FORMATIVAS_CHOICES,
-                        ),
-                    },
-                    {
-                        "label": "Tipos de actividades formativas - detalle",
-                        "value": _format_value(
-                            dispositivo.tipos_actividades_formativas_otro
-                        ),
-                    },
-                    {
-                        "label": "Certificación oficial de actividades",
-                        "value": (
-                            dispositivo.get_actividades_certificacion_oficial_display()
-                            if dispositivo.actividades_certificacion_oficial
-                            else "-"
-                        ),
-                    },
+                    {"label": "Servicios brindados", "value": _format_display_list(dispositivo.servicios_brindados, DispositivoForm.SERVICIOS_BRINDADOS_CHOICES), "kind": "list"},
+                    {"label": "Detalle servicios", "value": _format_value(dispositivo.servicios_brindados_otro)},
+                    {"label": "Ofrece actividades formativas", "value": dispositivo.get_ofrece_actividades_formativas_display() if dispositivo.ofrece_actividades_formativas else "-"},
+                    {"label": "Tipos de actividades formativas", "value": _format_display_list(dispositivo.tipos_actividades_formativas, DispositivoForm.TIPO_ACTIVIDADES_FORMATIVAS_CHOICES), "kind": "list"},
+                    {"label": "Detalle actividades", "value": _format_value(dispositivo.tipos_actividades_formativas_otro)},
+                    {"label": "Certificación oficial de actividades", "value": dispositivo.get_actividades_certificacion_oficial_display() if dispositivo.actividades_certificacion_oficial else "-"},
                 ],
             },
             {
                 "titulo": "Sistema de registro de personas usuarias",
+                "icono": "fas fa-clipboard-list",
                 "items": [
-                    {
-                        "label": "Registra información sobre personas alojadas o asistidas",
-                        "value": (
-                            dispositivo.get_registra_informacion_personas_display()
-                            if dispositivo.registra_informacion_personas
-                            else "-"
-                        ),
-                    },
-                    {
-                        "label": "Modo de registro",
-                        "value": (
-                            dispositivo.get_modo_registro_display()
-                            if dispositivo.modo_registro
-                            else "-"
-                        ),
-                    },
-                    {
-                        "label": "Modo de registro - detalle",
-                        "value": _format_value(dispositivo.modo_registro_otro),
-                    },
-                    {
-                        "label": "Tipo de información registrada",
-                        "value": _format_display_list(
-                            dispositivo.tipo_informacion_registrada,
-                            DispositivoForm.TIPO_INFO_REGISTRADA_CHOICES,
-                        ),
-                    },
-                    {
-                        "label": "Tipo de información registrada - detalle",
-                        "value": _format_value(
-                            dispositivo.tipo_informacion_registrada_otro
-                        ),
-                    },
+                    {"label": "Registra información de personas", "value": dispositivo.get_registra_informacion_personas_display() if dispositivo.registra_informacion_personas else "-"},
+                    {"label": "Modo de registro", "value": dispositivo.get_modo_registro_display() if dispositivo.modo_registro else "-"},
+                    {"label": "Detalle modo de registro", "value": _format_value(dispositivo.modo_registro_otro)},
+                    {"label": "Tipo de información registrada", "value": _format_display_list(dispositivo.tipo_informacion_registrada, DispositivoForm.TIPO_INFO_REGISTRADA_CHOICES), "kind": "list"},
+                    {"label": "Detalle información", "value": _format_value(dispositivo.tipo_informacion_registrada_otro)},
                 ],
             },
             {
                 "titulo": "Infraestructura y necesidades",
+                "icono": "fas fa-tools",
                 "items": [
-                    {
-                        "label": "Infraestructura disponible",
-                        "value": _format_display_list(
-                            dispositivo.infraestructura_disponible,
-                            DispositivoForm.INFRAESTRUCTURA_DISPONIBLE_CHOICES,
-                        ),
-                    },
-                    {
-                        "label": "Infraestructura disponible - detalle",
-                        "value": _format_value(
-                            dispositivo.infraestructura_disponible_otro
-                        ),
-                    },
-                    {
-                        "label": "Infraestructura de accesibilidad",
-                        "value": _format_display_list(
-                            dispositivo.infraestructura_accesibilidad,
-                            DispositivoForm.INFRAESTRUCTURA_ACCESIBILIDAD_CHOICES,
-                        ),
-                    },
-                    {
-                        "label": "Infraestructura de accesibilidad - detalle",
-                        "value": _format_value(
-                            dispositivo.infraestructura_accesibilidad_otro
-                        ),
-                    },
-                    {
-                        "label": "Principales limitaciones",
-                        "value": _format_value(dispositivo.principales_limitaciones),
-                    },
-                    {
-                        "label": "Necesidades prioritarias",
-                        "value": _format_value(dispositivo.necesidades_prioritarias),
-                    },
+                    {"label": "Infraestructura disponible", "value": _format_display_list(dispositivo.infraestructura_disponible, DispositivoForm.INFRAESTRUCTURA_DISPONIBLE_CHOICES), "kind": "list"},
+                    {"label": "Detalle infraestructura", "value": _format_value(dispositivo.infraestructura_disponible_otro)},
+                    {"label": "Infraestructura de accesibilidad", "value": _format_display_list(dispositivo.infraestructura_accesibilidad, DispositivoForm.INFRAESTRUCTURA_ACCESIBILIDAD_CHOICES), "kind": "list"},
+                    {"label": "Detalle accesibilidad", "value": _format_value(dispositivo.infraestructura_accesibilidad_otro)},
+                    {"label": "Principales limitaciones", "value": _format_value(dispositivo.principales_limitaciones), "wide": True},
+                    {"label": "Necesidades prioritarias", "value": _format_value(dispositivo.necesidades_prioritarias), "wide": True},
                 ],
             },
             {
                 "titulo": "Articulaciones institucionales",
+                "icono": "fas fa-network-wired",
                 "items": [
-                    {
-                        "label": "Articulaciones institucionales",
-                        "value": _format_display_list(
-                            dispositivo.articulaciones_institucionales,
-                            DispositivoForm.ARTICULACIONES_CHOICES,
-                        ),
-                    },
-                    {
-                        "label": "Articulaciones institucionales - detalle",
-                        "value": _format_value(
-                            dispositivo.articulaciones_institucionales_otro
-                        ),
-                    },
+                    {"label": "Articulaciones institucionales", "value": _format_display_list(dispositivo.articulaciones_institucionales, DispositivoForm.ARTICULACIONES_CHOICES), "kind": "list"},
+                    {"label": "Detalle articulaciones", "value": _format_value(dispositivo.articulaciones_institucionales_otro)},
                 ],
             },
             {
                 "titulo": "Observaciones y documentación",
+                "icono": "fas fa-file-alt",
                 "items": [
-                    {
-                        "label": "Observaciones adicionales",
-                        "value": _format_value(dispositivo.observaciones_adicionales),
-                    },
-                    {
-                        "label": "Documentación del dispositivo",
-                        "value": _format_file(dispositivo.documentacion_dispositivo),
-                        "kind": "file",
-                    },
-                    {
-                        "label": "Documentación adicional 1",
-                        "value": _format_file(
-                            dispositivo.documentacion_dispositivo_adicional_1
-                        ),
-                        "kind": "file",
-                    },
-                    {
-                        "label": "Documentación adicional 2",
-                        "value": _format_file(
-                            dispositivo.documentacion_dispositivo_adicional_2
-                        ),
-                        "kind": "file",
-                    },
-                    {
-                        "label": "Documentación adicional 3",
-                        "value": _format_file(
-                            dispositivo.documentacion_dispositivo_adicional_3
-                        ),
-                        "kind": "file",
-                    },
-                    {
-                        "label": "Documentación adicional 4",
-                        "value": _format_file(
-                            dispositivo.documentacion_dispositivo_adicional_4
-                        ),
-                        "kind": "file",
-                    },
+                    {"label": "Observaciones adicionales", "value": _format_value(dispositivo.observaciones_adicionales), "wide": True},
+                    {"label": "Documentación del dispositivo", "value": _format_file(dispositivo.documentacion_dispositivo), "kind": "file"},
+                    {"label": "Documentación adicional 1", "value": _format_file(dispositivo.documentacion_dispositivo_adicional_1), "kind": "file"},
+                    {"label": "Documentación adicional 2", "value": _format_file(dispositivo.documentacion_dispositivo_adicional_2), "kind": "file"},
+                    {"label": "Documentación adicional 3", "value": _format_file(dispositivo.documentacion_dispositivo_adicional_3), "kind": "file"},
+                    {"label": "Documentación adicional 4", "value": _format_file(dispositivo.documentacion_dispositivo_adicional_4), "kind": "file"},
                 ],
             },
         ]
