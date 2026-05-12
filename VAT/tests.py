@@ -1,5 +1,6 @@
 import importlib
 from io import BytesIO
+from types import SimpleNamespace
 from datetime import date, time
 import json
 
@@ -60,6 +61,7 @@ from VAT.services.access_scope import (
     filter_ofertas_queryset_for_user,
     is_vat_referente,
     is_vat_revisor,
+    is_vat_sse,
 )
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Programa, Sexo
@@ -1400,7 +1402,7 @@ def test_is_vat_revisor_reconoce_permiso_cfp_revisor():
 
 
 @pytest.mark.django_db
-def test_cfpinet_tiene_scope_global_de_lectura_en_centros(vat_geo_data):
+def test_cfpinet_tiene_scope_global_por_permiso_canonico_vat_sse(vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     otra_provincia = Provincia.objects.create(nombre="Otra provincia INET")
     otro_municipio = Municipio.objects.create(
@@ -1431,10 +1433,46 @@ def test_cfpinet_tiene_scope_global_de_lectura_en_centros(vat_geo_data):
         )
     )
 
+    assert is_vat_sse(user) is True
     assert centros_visibles == {centro_uno.pk, centro_dos.pk}
     assert can_user_access_centro(user, centro_uno) is True
     assert can_user_access_centro(user, centro_dos) is True
     assert can_user_edit_centro(user, centro_uno) is True
+
+
+@pytest.mark.django_db
+def test_cfpinet_sin_permiso_vat_sse_no_recibe_scope_global(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    user = SimpleNamespace(
+        id=999999,
+        is_authenticated=True,
+        is_superuser=False,
+        groups=SimpleNamespace(
+            filter=lambda **_kwargs: SimpleNamespace(exists=lambda: True)
+        ),
+    )
+    centro_uno = _create_vat_centro(
+        codigo="INET-NOROL-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    _create_vat_centro(
+        codigo="INET-NOROL-002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+
+    centros_visibles = set(
+        filter_centros_queryset_for_user(Centro.objects.all(), user).values_list(
+            "pk", flat=True
+        )
+    )
+
+    assert is_vat_sse(user) is False
+    assert centros_visibles == set()
+    assert can_user_access_centro(user, centro_uno) is False
 
 
 @pytest.mark.django_db
