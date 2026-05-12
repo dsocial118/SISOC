@@ -59,6 +59,7 @@ echo "- Crear worktrees de tarea fuera del repo principal"
 
 print_header "Comandos utiles"
 cat <<'CMDS'
+# Wrappers PowerShell (camino recomendado en Codex Desktop/Windows)
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_task.ps1 <slug>
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 validate
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 test <path>
@@ -66,6 +67,10 @@ powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 smoke
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 black-check <path>
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 djlint-check <path>
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 pylint <archivo.py>
+
+# Fallback Docker directo si este script se ejecuta sin PowerShell disponible
+docker compose -f docker-compose.yml -f docker-compose.codex.yml run --rm --no-deps django pytest -m smoke
+docker compose -f docker-compose.yml -f docker-compose.codex.yml run --rm --no-deps django python manage.py makemigrations --check --dry-run
 python scripts/ai/context_memory.py preflight --target <path>
 python scripts/ai/context_memory.py scaffold --slug <slug> --title <titulo> --summary <resumen> --path <path>
 CMDS

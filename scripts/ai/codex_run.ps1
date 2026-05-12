@@ -54,19 +54,15 @@ function Invoke-DjangoOneOffCommand {
 }
 
 function Invoke-CodexValidation {
-    Invoke-CodexBootstrap -NoStart
+    $validationScript = @(
+        "set -e",
+        "echo '== validate: black ==' ; black --check . --config pyproject.toml",
+        "echo '== validate: djlint ==' ; djlint . --configuration=.djlintrc --check",
+        "echo '== validate: smoke ==' ; pytest -m smoke",
+        "echo '== validate: migrations ==' ; python manage.py makemigrations --check --dry-run"
+    ) -join "; "
 
-    $steps = @(
-        @{ Label = "black"; Command = @("black", "--check", ".", "--config", "pyproject.toml") },
-        @{ Label = "djlint"; Command = @("djlint", ".", "--configuration=.djlintrc", "--check") },
-        @{ Label = "smoke"; Command = @("pytest", "-m", "smoke") },
-        @{ Label = "migrations"; Command = @("python", "manage.py", "makemigrations", "--check", "--dry-run") }
-    )
-
-    foreach ($step in $steps) {
-        Write-Host ("== validate: {0} ==" -f $step.Label)
-        Invoke-CodexCompose -RepoRoot $repoRoot -Arguments (@("run", "--rm", "--no-deps", "django") + $step.Command)
-    }
+    Invoke-DjangoOneOffCommand -CommandArgs @("sh", "-lc", $validationScript)
 }
 
 switch ($Action) {
