@@ -841,8 +841,11 @@ def marcar_revisado(request, pk):
         request,
         f"Ciudadano {ciudadano} marcado como revisado.",
     )
-    next_url = request.POST.get("next") or ciudadano.get_absolute_url()
-    return redirect(next_url)
+    return safe_redirect(
+        request,
+        default=ciudadano.get_absolute_url(),
+        target=request.POST.get("next"),
+    )
 
 
 @require_POST
@@ -858,5 +861,8 @@ def descartar_revision(request, pk):
         request,
         f"Ciudadano {ciudadano} marcado como descartado.",
     )
-    next_url = request.POST.get("next") or ciudadano.get_absolute_url()
-    return redirect(next_url)
+    return safe_redirect(
+        request,
+        default=ciudadano.get_absolute_url(),
+        target=request.POST.get("next"),
+    )

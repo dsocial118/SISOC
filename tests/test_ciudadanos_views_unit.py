@@ -371,6 +371,39 @@ def test_descartar_revision_persiste_estado_descartado(client, superuser):
     )
 
 
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("url_name", "estado_esperado"),
+    [
+        ("ciudadanos_marcar_revisado", module.Ciudadano.REVISION_IDENTIDAD_APROBADA),
+        (
+            "ciudadanos_descartar_revision",
+            module.Ciudadano.REVISION_IDENTIDAD_DESCARTADA,
+        ),
+    ],
+)
+def test_acciones_revision_bloquean_next_externo(
+    client, superuser, url_name, estado_esperado
+):
+    ciudadano = _ciudadano_revision_manual(
+        "NextExterno",
+        module.Ciudadano.REVISION_IDENTIDAD_PENDIENTE,
+        True,
+    )
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse(url_name, args=[ciudadano.pk]),
+        {"next": "https://example.com/phishing"},
+    )
+
+    ciudadano.refresh_from_db()
+    assert response.status_code == 302
+    assert response.url == ciudadano.get_absolute_url()
+    assert ciudadano.requiere_revision_manual is False
+    assert ciudadano.estado_revision_manual == estado_esperado
+
+
 def test_hydrate_ciudadanos_page_preserva_orden(mocker):
     ciudadano_2 = SimpleNamespace(pk=2)
     ciudadano_5 = SimpleNamespace(pk=5)
