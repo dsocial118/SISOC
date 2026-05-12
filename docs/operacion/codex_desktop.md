@@ -64,6 +64,7 @@ Todos usan el mismo entrypoint estable:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_task.ps1 fix-login-redirect
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 doctor
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 validate
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 test
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 test celiaquia/tests/test_registros_erroneos_obligatorios.py -q
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 black-check
@@ -76,7 +77,9 @@ powershell -ExecutionPolicy Bypass -File scripts/ai/codex_context.ps1
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_context.ps1 core/views.py
 ```
 
-Los comandos `test`, `smoke`, `black`, `djlint`, `pylint` y `manage` corren como contenedores one-off con `docker compose run --rm --no-deps django ...`. Eso evita depender de `pytest`/`black` instalados en Windows y evita levantar servicios persistentes solo para validar.
+Los comandos `test`, `smoke`, `black`, `djlint`, `pylint`, `manage` y `validate` corren como contenedores one-off con `docker compose run --rm --no-deps django ...`. Eso evita depender de `pytest`/`black` instalados en Windows y evita levantar servicios persistentes solo para validar.
+
+`validate` es el cierre automatico recomendado cuando aplica: ejecuta bootstrap sin publicar puertos, `black --check`, `djlint --check`, smoke tests y `makemigrations --check --dry-run`. No incluye `pylint` completo para evitar checks largos por defecto; para cambios Python usar `pylint <archivo.py>` sobre los archivos tocados.
 
 ## Diagnostico rapido
 
@@ -104,6 +107,7 @@ El repo expone `.codex/environments/environment.toml` para que Codex Desktop ten
 - accion de diagnostico
 - accion para levantar la app local con puertos publicados
 - accion para ver memoria IA reutilizable
+- accion de validacion general
 - accion de smoke tests
 - accion para abrir shell del contenedor Django
 

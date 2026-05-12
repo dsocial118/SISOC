@@ -10,6 +10,7 @@ from ciudadanos.views import (
     ColaRevisionView,
     GrupoFamiliarCreateView,
     GrupoFamiliarDeleteView,
+    descartar_revision,
     marcar_revisado,
 )
 from ciudadanos.api_views import buscar_ciudadanos
@@ -72,5 +73,10 @@ urlpatterns = [
         "ciudadanos/<int:pk>/marcar-revisado/",
         marcar_revisado,
         name="ciudadanos_marcar_revisado",
+    ),
+    path(
+        "ciudadanos/<int:pk>/descartar-revision/",
+        descartar_revision,
+        name="ciudadanos_descartar_revision",
     ),
 ]
