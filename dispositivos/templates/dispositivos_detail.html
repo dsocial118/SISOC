@@ -1,0 +1,70 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Detalle de dispositivo{% endblock %}
+
+{% block content %}
+	
+    <div class="container-fluid">
+	
+        <div class="d-flex justify-content-between align-items-center mb-3">
+	
+            <h2 class="mb-0">{{ dispositivo.nombre_institucion }}</h2>
+	
+            <div class="d-flex gap-2">
+                {% if perms.dispositivos.change_dispositivo %}
+                    <a href="{% url 'dispositivos_editar' dispositivo.pk %}"
+                       class="btn btn-warning">Editar</a>
+                {% endif %}
+                <a href="{% url 'dispositivos_listar' %}" class="btn btn-secondary">Volver</a>
+	
+            </div>
+	
+        </div>
+
+	
+        {% for seccion in detalle_secciones %}
+	
+            <div class="card mb-3">
+	
+                <div class="card-header">
+                    <h5 class="mb-0">{{ seccion.titulo }}</h5>
+                </div>
+	
+                <div class="card-body">
+	
+                    <div class="row g-3">
+	
+                        {% for item in seccion.items %}
+	
+                            <div class="{% if item.kind == 'file' or item.label == 'Observaciones adicionales' %}col-md-12{% else %}col-md-6{% endif %}">
+                                <strong>{{ item.label }}:</strong>
+	
+                                {% if item.kind == 'file' %}
+	
+                                    {% if item.value %}
+                                        <a href="{{ item.value.url }}" target="_blank" rel="noopener">{{ item.value.name }}</a>
+	
+                                    {% else %}
+                                        -
+	
+                                    {% endif %}
+	
+                                {% else %}
+                                    <span class="text-break">{{ item.value|default:"-" }}</span>
+	
+                                {% endif %}
+	
+                            </div>
+	
+                        {% endfor %}
+	
+                    </div>
+	
+                </div>
+	
+            </div>
+	
+        {% endfor %}
+	
+    </div>
+{% endblock %}

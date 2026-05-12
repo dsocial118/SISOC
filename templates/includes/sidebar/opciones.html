@@ -223,7 +223,7 @@
         {% endwith %}
     {% endif %}
     <!-- MENÚ LEGAJOS -->
-    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual %}menu-open{% endif %}"
+    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual or 'dispositivos' in pagina_actual %}menu-open{% endif %}"
         style="order: 2">
         <a href="#" class="nav-link">
             <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
@@ -257,7 +257,7 @@
                                     <a href="{% url 'ciudadanos_cola_revision' %}"
                                        class="nav-link ms-4 {% if 'ciudadanos/revision' in pagina_actual %}active{% endif %}">
                                         <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Cola de revisión</p>
+                                        <p>Revisi&oacute;n de Identidad</p>
                                     </a>
                                 </li>
                             {% endif %}
@@ -406,6 +406,27 @@
                                    class="nav-link ms-4 {% if 'centrodeinfancia/listar' in pagina_actual %}active{% endif %}">
                                     <i class="nav-icon bi bi-arrow-return-right"></i>
                                     <p>Ver Centros de Infancia</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% endif %}
+                <!-- SITUACION DE CALLE -->
+                {% if request.user|has_perm_code:"dispositivos.view_dispositivo" %}
+                    <li class="nav-item {% if 'dispositivos' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'dispositivos' in pagina_actual %}active{% endif %}">
+                            <p>
+                                Situación de Calle
+                                <i class="nav-arrow bi bi-chevron-right"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{% url 'dispositivos_listar' %}"
+                                   class="nav-link ms-4 {% if 'dispositivos/' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Ver Dispositivos</p>
                                 </a>
                             </li>
                         </ul>
