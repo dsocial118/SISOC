@@ -1,0 +1,92 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Dispositivos{% endblock %}
+
+{% block content %}
+	
+    <div class="container-fluid">
+	
+        {% include 'components/search_bar.html' with titulo=titulo reset_url=reset_url add_url_full=add_url filters_mode=filters_mode filters_config=filters_config filters_action=filters_action seccion_filtros_favoritos=seccion_filtros_favoritos show_add_button=perms.dispositivos.add_dispositivo add_text='Agregar dispositivo' %}
+
+	
+        <div class="card">
+	
+            <div class="card-body p-0">
+	
+                <div class="table-responsive">
+	
+                    <table class="table table-striped mb-0">
+	
+                        <thead>
+	
+                            <tr>
+	
+                                <th>Institución</th>
+	
+                                <th>Tipo</th>
+	
+                                <th>Provincia</th>
+	
+                                <th>Municipio</th>
+	
+                                <th class="text-end">Acciones</th>
+	
+                            </tr>
+	
+                        </thead>
+	
+                        <tbody>
+	
+                            {% for dispositivo in dispositivos %}
+	
+                                <tr>
+	
+                                    <td>{{ dispositivo.nombre_institucion }}</td>
+	
+                                    <td>{{ dispositivo.get_tipo_dispositivo_display }}</td>
+	
+                                    <td>{{ dispositivo.provincia }}</td>
+	
+                                    <td>{{ dispositivo.municipio }}</td>
+	
+                                    <td class="text-end">
+                                        <a class="btn btn-sm btn-primary"
+                                           href="{% url 'dispositivos_detalle' dispositivo.pk %}">Ver</a>
+                                        {% if perms.dispositivos.change_dispositivo %}
+                                            <a class="btn btn-sm btn-warning"
+                                               href="{% url 'dispositivos_editar' dispositivo.pk %}"
+                                               title="Editar">Editar</a>
+                                        {% endif %}
+                                        {% if perms.dispositivos.delete_dispositivo %}
+                                            <a class="btn btn-sm btn-danger"
+                                               href="{% url 'dispositivos_eliminar' dispositivo.pk %}"
+                                               title="Eliminar">Eliminar</a>
+                                        {% endif %}
+	
+                                    </td>
+	
+                                </tr>
+                            {% empty %}
+	
+                                <tr>
+	
+                                    <td colspan="5" class="text-center py-4">No hay dispositivos cargados.</td>
+	
+                                </tr>
+	
+                            {% endfor %}
+	
+                        </tbody>
+	
+                    </table>
+	
+                </div>
+	
+            </div>
+	
+        </div>
+
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+	
+    </div>
+{% endblock %}
