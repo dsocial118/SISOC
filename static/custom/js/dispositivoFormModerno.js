@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeProgressTracking();
     moveTooltipsToLabels();
     initializeMunicipioAjax();
+    initializeConditionalFields();
 });
 
 // ============================================
@@ -267,6 +268,38 @@ function moveTooltipsToLabels() {
             }
         }
     });
+}
+
+// ============================================
+// CAMPOS CONDICIONALES (Si/No)
+// ============================================
+
+function initializeConditionalFields() {
+    bindConditional(
+        "id_ofrece_actividades_formativas",
+        "actividades-detalle"
+    );
+    bindConditional(
+        "id_registra_informacion_personas",
+        "registro-detalle"
+    );
+}
+
+function bindConditional(selectId, detailId) {
+    const select = document.getElementById(selectId);
+    const detail = document.getElementById(detailId);
+    if (!select || !detail) return;
+
+    const toggle = () => {
+        if (select.value === "si") {
+            detail.classList.remove("d-none");
+        } else {
+            detail.classList.add("d-none");
+        }
+    };
+
+    toggle();
+    select.addEventListener("change", toggle);
 }
 
 // ============================================
