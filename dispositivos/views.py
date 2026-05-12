@@ -465,6 +465,14 @@ class DispositivoCreateView(LoginRequiredMixin, CreateView):
     form_class = DispositivoForm
     template_name = "dispositivos_form.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = [
+            {"text": "Dispositivos", "url": reverse("dispositivos_listar")},
+            {"text": "Nuevo dispositivo"},
+        ]
+        return context
+
     def form_valid(self, form):
         self.object = save_dispositivo_from_form(form)
         messages.success(self.request, "Dispositivo creado correctamente.")
@@ -481,6 +489,15 @@ class DispositivoUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return get_dispositivos_queryset()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = [
+            {"text": "Dispositivos", "url": reverse("dispositivos_listar")},
+            {"text": self.object.nombre_institucion, "url": reverse("dispositivos_detalle", kwargs={"pk": self.object.pk})},
+            {"text": "Editar"},
+        ]
+        return context
 
     def form_valid(self, form):
         self.object = save_dispositivo_from_form(form, instance=self.get_object())
