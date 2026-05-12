@@ -2,7 +2,11 @@
 {% load crispy_forms_tags static %}
 
 {% block title %}
-    {% if form.instance.pk %}Editar dispositivo{% else %}Nuevo dispositivo{% endif %}
+    {% if form.instance.pk %}
+        Editar dispositivo
+    {% else %}
+        Nuevo dispositivo
+    {% endif %}
 {% endblock %}
 
 {% block titulo-pagina %}Dispositivos{% endblock %}
@@ -12,8 +16,10 @@
 {% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/dispositivoFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/dispositivoFormModerno.css' %}" />
 
     <div class="d-flex justify-content-between mb-3">
         <div>
@@ -247,7 +253,8 @@
                             </div>
                             <div class="col-md-4">
                                 {{ form.ofrece_actividades_formativas|as_crispy_field }}
-                                <div id="actividades-detalle" class="{% if form.instance.ofrece_actividades_formativas != 'si' %}d-none{% endif %}">
+                                <div id="actividades-detalle"
+                                     class="{% if form.ofrece_actividades_formativas.value != 'si' %}d-none{% endif %}">
                                     {{ form.tipos_actividades_formativas|as_crispy_field }}
                                     {{ form.tipos_actividades_formativas_otro|as_crispy_field }}
                                     {{ form.actividades_certificacion_oficial|as_crispy_field }}
@@ -279,10 +286,13 @@
                         </div>
                     </div>
                     <div class="section-body collapse show" id="section-registro">
-                        <div id="registro-detalle" class="{% if form.instance.registra_informacion_personas != 'si' %}d-none{% endif %}">
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.registra_informacion_personas|as_crispy_field }}</div>
+                        </div>
+                        <div id="registro-detalle"
+                             class="{% if form.registra_informacion_personas.value != 'si' %}d-none{% endif %}">
                             <div class="form-group row">
                                 <div class="col-md-4">
-                                    {{ form.registra_informacion_personas|as_crispy_field }}
                                     {{ form.modo_registro|as_crispy_field }}
                                     {{ form.modo_registro_otro|as_crispy_field }}
                                 </div>
@@ -405,36 +415,66 @@
                                 </div>
                                 <div class="doc-widget-hidden">{{ form.documentacion_dispositivo }}</div>
                                 {% if form.instance.documentacion_dispositivo %}
-                                <div class="doc-existente">
-                                    <div class="doc-file-icon">
-                                        {% with n=form.instance.documentacion_dispositivo.name %}{% if n|slice:"-4:"|lower == ".pdf" %}<i class="fas fa-file-pdf doc-icon-pdf"></i>{% elif n|slice:"-5:"|lower == ".jpeg" %}<i class="fas fa-file-image doc-icon-img"></i>{% else %}<i class="fas fa-file-image doc-icon-img"></i>{% endif %}{% endwith %}
+                                    <div class="doc-existente">
+                                        <div class="doc-file-icon">
+                                            {% with n=form.instance.documentacion_dispositivo.name %}
+                                                {% if n|slice:"-4:"|lower == ".pdf" %}
+                                                    <i class="fas fa-file-pdf doc-icon-pdf"></i>
+                                                {% elif n|slice:"-5:"|lower == ".jpeg" %}
+                                                    <i class="fas fa-file-image doc-icon-img"></i>
+                                                {% else %}
+                                                    <i class="fas fa-file-image doc-icon-img"></i>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <div class="doc-file-info">
+                                            <div class="doc-file-name">{{ form.instance.documentacion_dispositivo.name|slice:"27:" }}</div>
+                                            <div class="doc-file-status">
+                                                <i class="fas fa-check-circle"></i> Guardado
+                                            </div>
+                                        </div>
+                                        <div class="doc-file-actions">
+                                            <a href="{{ form.instance.documentacion_dispositivo.url }}"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger btn-eliminar-doc"
+                                                    data-field="documentacion_dispositivo">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="doc-eliminar-overlay d-none">
+                                            <i class="fas fa-trash-alt"></i> Marcado para eliminar
+                                        </div>
                                     </div>
-                                    <div class="doc-file-info">
-                                        <div class="doc-file-name">{{ form.instance.documentacion_dispositivo.name|slice:"27:" }}</div>
-                                        <div class="doc-file-status"><i class="fas fa-check-circle"></i> Guardado</div>
-                                    </div>
-                                    <div class="doc-file-actions">
-                                        <a href="{{ form.instance.documentacion_dispositivo.url }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
-                                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-doc" data-field="documentacion_dispositivo"><i class="fas fa-trash-alt"></i></button>
-                                    </div>
-                                    <div class="doc-eliminar-overlay d-none"><i class="fas fa-trash-alt"></i> Marcado para eliminar</div>
-                                </div>
                                 {% endif %}
                                 <div class="doc-upload-area">
                                     <label class="btn-subir-doc" for="id_documentacion_dispositivo">
                                         <i class="fas fa-upload"></i>
-                                        {% if form.instance.documentacion_dispositivo %}Cambiar{% else %}Subir documento{% endif %}
+                                        {% if form.instance.documentacion_dispositivo %}
+                                            Cambiar
+                                        {% else %}
+                                            Subir documento
+                                        {% endif %}
                                     </label>
                                     <small class="doc-hint">PDF, JPG o PNG — máx. 10 MB</small>
                                 </div>
                                 <div class="doc-preview d-none" id="preview-documentacion_dispositivo">
-                                    <div class="doc-preview-icon"><i class="fas fa-file-alt"></i></div>
+                                    <div class="doc-preview-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
                                     <div class="doc-preview-info">
                                         <div class="doc-preview-name"></div>
                                         <div class="doc-preview-size"></div>
-                                        <div class="doc-preview-status"><i class="fas fa-clock"></i> Pendiente de guardar</div>
+                                        <div class="doc-preview-status">
+                                            <i class="fas fa-clock"></i> Pendiente de guardar
+                                        </div>
                                     </div>
-                                    <button type="button" class="btn-quitar-preview" data-field="documentacion_dispositivo"><i class="fas fa-times"></i></button>
+                                    <button type="button"
+                                            class="btn-quitar-preview"
+                                            data-field="documentacion_dispositivo">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -446,36 +486,65 @@
                                 </div>
                                 <div class="doc-widget-hidden">{{ form.documentacion_dispositivo_adicional_1 }}</div>
                                 {% if form.instance.documentacion_dispositivo_adicional_1 %}
-                                <div class="doc-existente">
-                                    <div class="doc-file-icon">
-                                        {% with n=form.instance.documentacion_dispositivo_adicional_1.name %}{% if n|slice:"-4:"|lower == ".pdf" %}<i class="fas fa-file-pdf doc-icon-pdf"></i>{% else %}<i class="fas fa-file-image doc-icon-img"></i>{% endif %}{% endwith %}
+                                    <div class="doc-existente">
+                                        <div class="doc-file-icon">
+                                            {% with n=form.instance.documentacion_dispositivo_adicional_1.name %}
+                                                {% if n|slice:"-4:"|lower == ".pdf" %}
+                                                    <i class="fas fa-file-pdf doc-icon-pdf"></i>
+                                                {% else %}
+                                                    <i class="fas fa-file-image doc-icon-img"></i>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <div class="doc-file-info">
+                                            <div class="doc-file-name">{{ form.instance.documentacion_dispositivo_adicional_1.name|slice:"27:" }}</div>
+                                            <div class="doc-file-status">
+                                                <i class="fas fa-check-circle"></i> Guardado
+                                            </div>
+                                        </div>
+                                        <div class="doc-file-actions">
+                                            <a href="{{ form.instance.documentacion_dispositivo_adicional_1.url }}"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger btn-eliminar-doc"
+                                                    data-field="documentacion_dispositivo_adicional_1">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="doc-eliminar-overlay d-none">
+                                            <i class="fas fa-trash-alt"></i> Marcado para eliminar
+                                        </div>
                                     </div>
-                                    <div class="doc-file-info">
-                                        <div class="doc-file-name">{{ form.instance.documentacion_dispositivo_adicional_1.name|slice:"27:" }}</div>
-                                        <div class="doc-file-status"><i class="fas fa-check-circle"></i> Guardado</div>
-                                    </div>
-                                    <div class="doc-file-actions">
-                                        <a href="{{ form.instance.documentacion_dispositivo_adicional_1.url }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
-                                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-doc" data-field="documentacion_dispositivo_adicional_1"><i class="fas fa-trash-alt"></i></button>
-                                    </div>
-                                    <div class="doc-eliminar-overlay d-none"><i class="fas fa-trash-alt"></i> Marcado para eliminar</div>
-                                </div>
                                 {% endif %}
                                 <div class="doc-upload-area">
                                     <label class="btn-subir-doc" for="id_documentacion_dispositivo_adicional_1">
                                         <i class="fas fa-upload"></i>
-                                        {% if form.instance.documentacion_dispositivo_adicional_1 %}Cambiar{% else %}Subir documento{% endif %}
+                                        {% if form.instance.documentacion_dispositivo_adicional_1 %}
+                                            Cambiar
+                                        {% else %}
+                                            Subir documento
+                                        {% endif %}
                                     </label>
                                     <small class="doc-hint">PDF, JPG o PNG — máx. 10 MB</small>
                                 </div>
-                                <div class="doc-preview d-none" id="preview-documentacion_dispositivo_adicional_1">
-                                    <div class="doc-preview-icon"><i class="fas fa-file-alt"></i></div>
+                                <div class="doc-preview d-none"
+                                     id="preview-documentacion_dispositivo_adicional_1">
+                                    <div class="doc-preview-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
                                     <div class="doc-preview-info">
                                         <div class="doc-preview-name"></div>
                                         <div class="doc-preview-size"></div>
-                                        <div class="doc-preview-status"><i class="fas fa-clock"></i> Pendiente de guardar</div>
+                                        <div class="doc-preview-status">
+                                            <i class="fas fa-clock"></i> Pendiente de guardar
+                                        </div>
                                     </div>
-                                    <button type="button" class="btn-quitar-preview" data-field="documentacion_dispositivo_adicional_1"><i class="fas fa-times"></i></button>
+                                    <button type="button"
+                                            class="btn-quitar-preview"
+                                            data-field="documentacion_dispositivo_adicional_1">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -487,36 +556,65 @@
                                 </div>
                                 <div class="doc-widget-hidden">{{ form.documentacion_dispositivo_adicional_2 }}</div>
                                 {% if form.instance.documentacion_dispositivo_adicional_2 %}
-                                <div class="doc-existente">
-                                    <div class="doc-file-icon">
-                                        {% with n=form.instance.documentacion_dispositivo_adicional_2.name %}{% if n|slice:"-4:"|lower == ".pdf" %}<i class="fas fa-file-pdf doc-icon-pdf"></i>{% else %}<i class="fas fa-file-image doc-icon-img"></i>{% endif %}{% endwith %}
+                                    <div class="doc-existente">
+                                        <div class="doc-file-icon">
+                                            {% with n=form.instance.documentacion_dispositivo_adicional_2.name %}
+                                                {% if n|slice:"-4:"|lower == ".pdf" %}
+                                                    <i class="fas fa-file-pdf doc-icon-pdf"></i>
+                                                {% else %}
+                                                    <i class="fas fa-file-image doc-icon-img"></i>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <div class="doc-file-info">
+                                            <div class="doc-file-name">{{ form.instance.documentacion_dispositivo_adicional_2.name|slice:"27:" }}</div>
+                                            <div class="doc-file-status">
+                                                <i class="fas fa-check-circle"></i> Guardado
+                                            </div>
+                                        </div>
+                                        <div class="doc-file-actions">
+                                            <a href="{{ form.instance.documentacion_dispositivo_adicional_2.url }}"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger btn-eliminar-doc"
+                                                    data-field="documentacion_dispositivo_adicional_2">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="doc-eliminar-overlay d-none">
+                                            <i class="fas fa-trash-alt"></i> Marcado para eliminar
+                                        </div>
                                     </div>
-                                    <div class="doc-file-info">
-                                        <div class="doc-file-name">{{ form.instance.documentacion_dispositivo_adicional_2.name|slice:"27:" }}</div>
-                                        <div class="doc-file-status"><i class="fas fa-check-circle"></i> Guardado</div>
-                                    </div>
-                                    <div class="doc-file-actions">
-                                        <a href="{{ form.instance.documentacion_dispositivo_adicional_2.url }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
-                                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-doc" data-field="documentacion_dispositivo_adicional_2"><i class="fas fa-trash-alt"></i></button>
-                                    </div>
-                                    <div class="doc-eliminar-overlay d-none"><i class="fas fa-trash-alt"></i> Marcado para eliminar</div>
-                                </div>
                                 {% endif %}
                                 <div class="doc-upload-area">
                                     <label class="btn-subir-doc" for="id_documentacion_dispositivo_adicional_2">
                                         <i class="fas fa-upload"></i>
-                                        {% if form.instance.documentacion_dispositivo_adicional_2 %}Cambiar{% else %}Subir documento{% endif %}
+                                        {% if form.instance.documentacion_dispositivo_adicional_2 %}
+                                            Cambiar
+                                        {% else %}
+                                            Subir documento
+                                        {% endif %}
                                     </label>
                                     <small class="doc-hint">PDF, JPG o PNG — máx. 10 MB</small>
                                 </div>
-                                <div class="doc-preview d-none" id="preview-documentacion_dispositivo_adicional_2">
-                                    <div class="doc-preview-icon"><i class="fas fa-file-alt"></i></div>
+                                <div class="doc-preview d-none"
+                                     id="preview-documentacion_dispositivo_adicional_2">
+                                    <div class="doc-preview-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
                                     <div class="doc-preview-info">
                                         <div class="doc-preview-name"></div>
                                         <div class="doc-preview-size"></div>
-                                        <div class="doc-preview-status"><i class="fas fa-clock"></i> Pendiente de guardar</div>
+                                        <div class="doc-preview-status">
+                                            <i class="fas fa-clock"></i> Pendiente de guardar
+                                        </div>
                                     </div>
-                                    <button type="button" class="btn-quitar-preview" data-field="documentacion_dispositivo_adicional_2"><i class="fas fa-times"></i></button>
+                                    <button type="button"
+                                            class="btn-quitar-preview"
+                                            data-field="documentacion_dispositivo_adicional_2">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -528,36 +626,65 @@
                                 </div>
                                 <div class="doc-widget-hidden">{{ form.documentacion_dispositivo_adicional_3 }}</div>
                                 {% if form.instance.documentacion_dispositivo_adicional_3 %}
-                                <div class="doc-existente">
-                                    <div class="doc-file-icon">
-                                        {% with n=form.instance.documentacion_dispositivo_adicional_3.name %}{% if n|slice:"-4:"|lower == ".pdf" %}<i class="fas fa-file-pdf doc-icon-pdf"></i>{% else %}<i class="fas fa-file-image doc-icon-img"></i>{% endif %}{% endwith %}
+                                    <div class="doc-existente">
+                                        <div class="doc-file-icon">
+                                            {% with n=form.instance.documentacion_dispositivo_adicional_3.name %}
+                                                {% if n|slice:"-4:"|lower == ".pdf" %}
+                                                    <i class="fas fa-file-pdf doc-icon-pdf"></i>
+                                                {% else %}
+                                                    <i class="fas fa-file-image doc-icon-img"></i>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <div class="doc-file-info">
+                                            <div class="doc-file-name">{{ form.instance.documentacion_dispositivo_adicional_3.name|slice:"27:" }}</div>
+                                            <div class="doc-file-status">
+                                                <i class="fas fa-check-circle"></i> Guardado
+                                            </div>
+                                        </div>
+                                        <div class="doc-file-actions">
+                                            <a href="{{ form.instance.documentacion_dispositivo_adicional_3.url }}"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger btn-eliminar-doc"
+                                                    data-field="documentacion_dispositivo_adicional_3">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="doc-eliminar-overlay d-none">
+                                            <i class="fas fa-trash-alt"></i> Marcado para eliminar
+                                        </div>
                                     </div>
-                                    <div class="doc-file-info">
-                                        <div class="doc-file-name">{{ form.instance.documentacion_dispositivo_adicional_3.name|slice:"27:" }}</div>
-                                        <div class="doc-file-status"><i class="fas fa-check-circle"></i> Guardado</div>
-                                    </div>
-                                    <div class="doc-file-actions">
-                                        <a href="{{ form.instance.documentacion_dispositivo_adicional_3.url }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
-                                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-doc" data-field="documentacion_dispositivo_adicional_3"><i class="fas fa-trash-alt"></i></button>
-                                    </div>
-                                    <div class="doc-eliminar-overlay d-none"><i class="fas fa-trash-alt"></i> Marcado para eliminar</div>
-                                </div>
                                 {% endif %}
                                 <div class="doc-upload-area">
                                     <label class="btn-subir-doc" for="id_documentacion_dispositivo_adicional_3">
                                         <i class="fas fa-upload"></i>
-                                        {% if form.instance.documentacion_dispositivo_adicional_3 %}Cambiar{% else %}Subir documento{% endif %}
+                                        {% if form.instance.documentacion_dispositivo_adicional_3 %}
+                                            Cambiar
+                                        {% else %}
+                                            Subir documento
+                                        {% endif %}
                                     </label>
                                     <small class="doc-hint">PDF, JPG o PNG — máx. 10 MB</small>
                                 </div>
-                                <div class="doc-preview d-none" id="preview-documentacion_dispositivo_adicional_3">
-                                    <div class="doc-preview-icon"><i class="fas fa-file-alt"></i></div>
+                                <div class="doc-preview d-none"
+                                     id="preview-documentacion_dispositivo_adicional_3">
+                                    <div class="doc-preview-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
                                     <div class="doc-preview-info">
                                         <div class="doc-preview-name"></div>
                                         <div class="doc-preview-size"></div>
-                                        <div class="doc-preview-status"><i class="fas fa-clock"></i> Pendiente de guardar</div>
+                                        <div class="doc-preview-status">
+                                            <i class="fas fa-clock"></i> Pendiente de guardar
+                                        </div>
                                     </div>
-                                    <button type="button" class="btn-quitar-preview" data-field="documentacion_dispositivo_adicional_3"><i class="fas fa-times"></i></button>
+                                    <button type="button"
+                                            class="btn-quitar-preview"
+                                            data-field="documentacion_dispositivo_adicional_3">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -569,36 +696,65 @@
                                 </div>
                                 <div class="doc-widget-hidden">{{ form.documentacion_dispositivo_adicional_4 }}</div>
                                 {% if form.instance.documentacion_dispositivo_adicional_4 %}
-                                <div class="doc-existente">
-                                    <div class="doc-file-icon">
-                                        {% with n=form.instance.documentacion_dispositivo_adicional_4.name %}{% if n|slice:"-4:"|lower == ".pdf" %}<i class="fas fa-file-pdf doc-icon-pdf"></i>{% else %}<i class="fas fa-file-image doc-icon-img"></i>{% endif %}{% endwith %}
+                                    <div class="doc-existente">
+                                        <div class="doc-file-icon">
+                                            {% with n=form.instance.documentacion_dispositivo_adicional_4.name %}
+                                                {% if n|slice:"-4:"|lower == ".pdf" %}
+                                                    <i class="fas fa-file-pdf doc-icon-pdf"></i>
+                                                {% else %}
+                                                    <i class="fas fa-file-image doc-icon-img"></i>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <div class="doc-file-info">
+                                            <div class="doc-file-name">{{ form.instance.documentacion_dispositivo_adicional_4.name|slice:"27:" }}</div>
+                                            <div class="doc-file-status">
+                                                <i class="fas fa-check-circle"></i> Guardado
+                                            </div>
+                                        </div>
+                                        <div class="doc-file-actions">
+                                            <a href="{{ form.instance.documentacion_dispositivo_adicional_4.url }}"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger btn-eliminar-doc"
+                                                    data-field="documentacion_dispositivo_adicional_4">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="doc-eliminar-overlay d-none">
+                                            <i class="fas fa-trash-alt"></i> Marcado para eliminar
+                                        </div>
                                     </div>
-                                    <div class="doc-file-info">
-                                        <div class="doc-file-name">{{ form.instance.documentacion_dispositivo_adicional_4.name|slice:"27:" }}</div>
-                                        <div class="doc-file-status"><i class="fas fa-check-circle"></i> Guardado</div>
-                                    </div>
-                                    <div class="doc-file-actions">
-                                        <a href="{{ form.instance.documentacion_dispositivo_adicional_4.url }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
-                                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-doc" data-field="documentacion_dispositivo_adicional_4"><i class="fas fa-trash-alt"></i></button>
-                                    </div>
-                                    <div class="doc-eliminar-overlay d-none"><i class="fas fa-trash-alt"></i> Marcado para eliminar</div>
-                                </div>
                                 {% endif %}
                                 <div class="doc-upload-area">
                                     <label class="btn-subir-doc" for="id_documentacion_dispositivo_adicional_4">
                                         <i class="fas fa-upload"></i>
-                                        {% if form.instance.documentacion_dispositivo_adicional_4 %}Cambiar{% else %}Subir documento{% endif %}
+                                        {% if form.instance.documentacion_dispositivo_adicional_4 %}
+                                            Cambiar
+                                        {% else %}
+                                            Subir documento
+                                        {% endif %}
                                     </label>
                                     <small class="doc-hint">PDF, JPG o PNG — máx. 10 MB</small>
                                 </div>
-                                <div class="doc-preview d-none" id="preview-documentacion_dispositivo_adicional_4">
-                                    <div class="doc-preview-icon"><i class="fas fa-file-alt"></i></div>
+                                <div class="doc-preview d-none"
+                                     id="preview-documentacion_dispositivo_adicional_4">
+                                    <div class="doc-preview-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
                                     <div class="doc-preview-info">
                                         <div class="doc-preview-name"></div>
                                         <div class="doc-preview-size"></div>
-                                        <div class="doc-preview-status"><i class="fas fa-clock"></i> Pendiente de guardar</div>
+                                        <div class="doc-preview-status">
+                                            <i class="fas fa-clock"></i> Pendiente de guardar
+                                        </div>
                                     </div>
-                                    <button type="button" class="btn-quitar-preview" data-field="documentacion_dispositivo_adicional_4"><i class="fas fa-times"></i></button>
+                                    <button type="button"
+                                            class="btn-quitar-preview"
+                                            data-field="documentacion_dispositivo_adicional_4">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -629,8 +785,6 @@
 {% endblock %}
 
 {% block customJS %}
-    <script nonce="{{ request.csp_nonce }}">
-        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
-    </script>
+    <script nonce="{{ request.csp_nonce }}">var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";</script>
     <script src="{% static 'custom/js/dispositivoFormModerno.js' %}"></script>
 {% endblock %}

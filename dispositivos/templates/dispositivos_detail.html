@@ -10,8 +10,10 @@
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/comedor_detail.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/dispositivoFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/dispositivoFormModerno.css' %}" />
     <style nonce="{{ request.csp_nonce }}">
         .detail-item-label {
             font-size: 11px;
@@ -155,27 +157,21 @@
         <div>
             <h1 class="detail-page-title">{{ dispositivo.nombre_institucion }}</h1>
             <div class="detail-page-meta">
-                {% if dispositivo.tipo_dispositivo %}
-                    <span>{{ dispositivo.get_tipo_dispositivo_display }}</span>
-                {% endif %}
-                {% if dispositivo.provincia %}
-                    &middot; <span>{{ dispositivo.provincia }}</span>
-                {% endif %}
-                {% if dispositivo.municipio %}
-                    &middot; <span>{{ dispositivo.municipio }}</span>
-                {% endif %}
-                {% if dispositivo.updated_at %}
-                    &middot; Actualizado el {{ dispositivo.updated_at|date:"d/m/Y" }}
-                {% endif %}
+                {% if dispositivo.tipo_dispositivo %}<span>{{ dispositivo.get_tipo_dispositivo_display }}</span>{% endif %}
+                {% if dispositivo.provincia %}&middot; <span>{{ dispositivo.provincia }}</span>{% endif %}
+                {% if dispositivo.municipio %}&middot; <span>{{ dispositivo.municipio }}</span>{% endif %}
+                {% if dispositivo.updated_at %}&middot; Actualizado el {{ dispositivo.updated_at|date:"d/m/Y" }}{% endif %}
             </div>
         </div>
         <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
             {% if perms.dispositivos.change_dispositivo %}
-                <a href="{% url 'dispositivos_editar' dispositivo.pk %}" class="btn btn-warning btn-sm">
+                <a href="{% url 'dispositivos_editar' dispositivo.pk %}"
+                   class="btn btn-warning btn-sm">
                     <i class="fas fa-pencil-alt mr-1"></i> Editar
                 </a>
             {% endif %}
-            <a href="{% url 'dispositivos_listar' %}" class="btn btn-secondary btn-sm">
+            <a href="{% url 'dispositivos_listar' %}"
+               class="btn btn-secondary btn-sm">
                 <i class="fas fa-arrow-left mr-1"></i> Volver
             </a>
         </div>
@@ -208,9 +204,7 @@
                                 {% if item.kind == "list" %}
                                     {% if item.value %}
                                         <div class="chip-list">
-                                            {% for chip in item.value %}
-                                                <span class="chip">{{ chip }}</span>
-                                            {% endfor %}
+                                            {% for chip in item.value %}<span class="chip">{{ chip }}</span>{% endfor %}
                                         </div>
                                     {% else %}
                                         <div class="detail-item-value empty">—</div>
@@ -218,7 +212,11 @@
 
                                 {% else %}
                                     <div class="detail-item-value {% if item.value == '-' %}empty{% endif %}">
-                                        {% if item.value == "-" %}—{% else %}{{ item.value }}{% endif %}
+                                        {% if item.value == "-" %}
+                                            —
+                                        {% else %}
+                                            {{ item.value }}
+                                        {% endif %}
                                     </div>
                                 {% endif %}
                             </div>
@@ -228,20 +226,29 @@
 
                 <!-- Archivos adjuntos (solo si hay alguno con valor) -->
                 {% with file_items=seccion.items %}
-                    {% for item in file_items %}{% if item.kind == "file" and item.value %}{% if forloop.first %}
-                        <div class="docs-section-divider"></div>
-                        <div class="docs-section-label"><i class="fas fa-paperclip mr-1"></i>Archivos adjuntos</div>
-                        <div class="doc-cards-grid">
-                    {% endif %}
-                            {% with ext=item.value.name|slice:"-4:"|lower %}
-                            <a href="{{ item.value.url }}" target="_blank" rel="noopener" class="doc-card-ro" title="{{ item.label }}">
-                                <i class="doc-card-icon fas {% if ext == '.pdf' %}fa-file-pdf pdf{% else %}fa-file-image img{% endif %}"></i>
-                                <span class="doc-card-name">{{ item.value.name }}</span>
-                                <i class="fas fa-external-link-alt" style="font-size:10px; opacity:0.5;"></i>
-                            </a>
-                            {% endwith %}
-                    {% if forloop.last %}</div>{% endif %}
-                    {% endif %}{% endfor %}
+                    {% for item in file_items %}
+                        {% if item.kind == "file" and item.value %}
+                            {% if forloop.first %}
+                                <div class="docs-section-divider"></div>
+                                <div class="docs-section-label">
+                                    <i class="fas fa-paperclip mr-1"></i>Archivos adjuntos
+                                </div>
+                                <div class="doc-cards-grid">
+                                {% endif %}
+                                {% with ext=item.value.name|slice:"-4:"|lower %}
+                                    <a href="{{ item.value.url }}"
+                                       target="_blank"
+                                       rel="noopener"
+                                       class="doc-card-ro"
+                                       title="{{ item.label }}">
+                                        <i class="doc-card-icon fas {% if ext == '.pdf' %}fa-file-pdf pdf{% else %}fa-file-image img{% endif %}"></i>
+                                        <span class="doc-card-name">{{ item.value.name }}</span>
+                                        <i class="fas fa-external-link-alt" style="font-size:10px; opacity:0.5;"></i>
+                                    </a>
+                                {% endwith %}
+                                {% if forloop.last %}</div>{% endif %}
+                        {% endif %}
+                    {% endfor %}
                 {% endwith %}
 
             </div>
