@@ -168,6 +168,14 @@ class ReferenteModelChoiceField(forms.ModelChoiceField):
         return obj.username
 
 
+class UserModelMultipleChoiceField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, obj):
+        full_name = f"{obj.first_name} {obj.last_name}".strip()
+        if full_name:
+            return f"{obj.username} - {full_name}"
+        return obj.username
+
+
 HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
     (f"{h:02d}:30", f"{h:02d}:30") for h in range(0, 24)
 ]
@@ -208,6 +216,7 @@ NORMATIVA_ANIO_CHOICES = [("", "Seleccionar año...")] + [
 
 NORMATIVA_STORAGE_SEPARATOR = " || "
 REFERENTE_GROUP_NAMES = ("CFP",)
+REVISOR_GROUP_NAMES = ("CFPRevisor",)
 
 
 def _clean_non_empty_text(value, field_label):
@@ -334,6 +343,19 @@ def _assign_contact_type_and_value(instance, cleaned_data):
 
 
 class CentroForm(forms.ModelForm):
+    referentes = UserModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        label="Referente/s",
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "form-control"}),
+    )
+    revisores = UserModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        label="Usuario Revisor",
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "form-control"}),
+    )
+
     class Meta:
         model = Centro
         fields = [
@@ -357,6 +379,8 @@ class CentroForm(forms.ModelForm):
             "apellido_referente",
             "telefono_referente",
             "correo_referente",
+            "referentes",
+            "revisores",
             "referente",
             "activo",
             "tipo_gestion",
@@ -367,21 +391,52 @@ class CentroForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields["referente"].queryset = (
+        referente_queryset = (
             User.objects.filter(groups__name__in=REFERENTE_GROUP_NAMES)
             .only("id", "username", "first_name", "last_name")
             .distinct()
         )
-        self.fields["referente"].error_messages[
-            "invalid_choice"
-        ] = "El referente seleccionado debe tener un rol valido de referente VAT."
+        revisor_queryset = (
+            User.objects.filter(groups__name__in=REVISOR_GROUP_NAMES)
+            .only("id", "username", "first_name", "last_name")
+            .distinct()
+        )
+        self.fields["referentes"].queryset = referente_queryset
+        self.fields["referente"].queryset = referente_queryset
+        self.fields["revisores"].queryset = revisor_queryset
+        referente_error = (
+            "El referente seleccionado debe tener un rol valido de referente VAT."
+        )
+        revisor_error = (
+            "El revisor seleccionado debe tener un rol valido de revisor VAT."
+        )
+        self.fields["referentes"].error_messages["invalid_choice"] = referente_error
+        self.fields["referente"].error_messages["invalid_choice"] = referente_error
+        self.fields["revisores"].error_messages["invalid_choice"] = revisor_error
+        if self.instance.pk:
+            referentes_ids = list(self.instance.referentes.values_list("pk", flat=True))
+            if not referentes_ids and self.instance.referente_id:
+                referentes_ids = [self.instance.referente_id]
+            self.initial.setdefault("referentes", referentes_ids)
+            self.initial.setdefault(
+                "revisores",
+                list(self.instance.revisores.values_list("pk", flat=True)),
+            )
         self.referente_search_options = [
             {
                 "id": str(user.pk),
                 "username": user.username,
-                "label": self.fields["referente"].label_from_instance(user),
+                "label": self.fields["referentes"].label_from_instance(user),
             }
-            for user in self.fields["referente"].queryset.order_by("username")
+            for user in referente_queryset.order_by("username")
+        ]
+        self.revisor_search_options = [
+            {
+                "id": str(user.pk),
+                "username": user.username,
+                "label": self.fields["revisores"].label_from_instance(user),
+            }
+            for user in revisor_queryset.order_by("username")
         ]
 
     def clean_referente(self):
@@ -394,6 +449,47 @@ class CentroForm(forms.ModelForm):
                 "El referente seleccionado debe tener un rol valido de referente VAT."
             )
         return referente
+
+    def clean_referentes(self):
+        referentes = self.cleaned_data.get("referentes")
+        if (
+            referentes
+            and referentes.exclude(groups__name__in=REFERENTE_GROUP_NAMES).exists()
+        ):
+            raise ValidationError(
+                "El referente seleccionado debe tener un rol valido de referente VAT."
+            )
+        return referentes
+
+    def clean_revisores(self):
+        revisores = self.cleaned_data.get("revisores")
+        if (
+            revisores
+            and revisores.exclude(groups__name__in=REVISOR_GROUP_NAMES).exists()
+        ):
+            raise ValidationError(
+                "El revisor seleccionado debe tener un rol valido de revisor VAT."
+            )
+        return revisores
+
+    def clean(self):
+        cleaned_data = super().clean()
+        referentes = cleaned_data.get("referentes")
+        legacy_referente = cleaned_data.get("referente")
+        if not referentes and legacy_referente:
+            cleaned_data["referentes"] = User.objects.filter(pk=legacy_referente.pk)
+        if not cleaned_data.get("referentes"):
+            self.add_error("referentes", "Debe seleccionar al menos un referente.")
+        return cleaned_data
+
+    def save(self, commit=True):
+        referentes = list(self.cleaned_data.get("referentes") or [])
+        instance = super().save(commit=False)
+        instance.referente = referentes[0] if referentes else None
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 
 class CentroAltaForm(CentroForm):
@@ -547,9 +643,12 @@ class CentroAltaForm(CentroForm):
             self.fields[hidden_field].widget = forms.HiddenInput()
         self.fields["autoridad_dni"].required = False
         self.fields["autoridad_dni"].widget = forms.HiddenInput()
-        self.fields["referente"].widget.attrs["class"] = "referente-hidden-select"
-        self.fields["referente"].widget.attrs["tabindex"] = "-1"
-        self.fields["referente"].empty_label = "Seleccionar referente..."
+        self.fields["referente"].required = False
+        self.fields["referente"].widget = forms.HiddenInput()
+        self.fields["referentes"].widget.attrs["class"] = "referente-hidden-select"
+        self.fields["referentes"].widget.attrs["tabindex"] = "-1"
+        self.fields["revisores"].widget.attrs["class"] = "referente-hidden-select"
+        self.fields["revisores"].widget.attrs["tabindex"] = "-1"
         self.fields["provincia"].empty_label = "Seleccionar jurisdicción..."
         self.fields["municipio"].empty_label = "Seleccionar municipio..."
         self.fields["localidad"].empty_label = "Seleccionar localidad..."
