@@ -127,13 +127,30 @@
 
     function tryInitSelect2(el, opts) {
         if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
-            window.jQuery(el).select2(Object.assign({ width: '100%' }, opts || {}));
+            const $el = window.jQuery(el);
+            if (!$el.data('select2')) {
+                $el.select2(Object.assign({ width: '100%' }, opts || {}));
+            }
         }
     }
 
     function tryDestroySelect2(el) {
         if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
-            try { window.jQuery(el).select2('destroy'); } catch (_) {}
+            const $el = window.jQuery(el);
+            if ($el.data('select2')) {
+                $el.select2('destroy');
+            }
+        }
+    }
+
+    function bindSelect2FieldEvents(el, handler) {
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+            window.jQuery(el)
+                .off('select2:select.advancedFilters select2:clear.advancedFilters')
+                .on(
+                    'select2:select.advancedFilters select2:clear.advancedFilters',
+                    handler
+                );
         }
     }
 
@@ -341,7 +358,7 @@
             }
         }
 
-        fieldSel.addEventListener('change', () => {
+        function handleFieldChange() {
             const fieldDef = currentFieldDef();
             refreshOperators(false);
             adjustVisibility();
@@ -350,7 +367,11 @@
             } else {
                 selectValue.value = getChoiceOptions(fieldDef)[0]?.value || '';
             }
-        });
+        }
+
+        refs.handleFieldChange = handleFieldChange;
+
+        fieldSel.addEventListener('change', handleFieldChange);
 
         opSel.addEventListener('change', () => adjustVisibility());
         removeBtn.addEventListener('click', () => {
@@ -397,6 +418,7 @@
         row._advancedFilterRefs = refs;
 
         tryInitSelect2(fieldSel, { width: '100%' });
+        bindSelect2FieldEvents(fieldSel, handleFieldChange);
     }
 
     addBtn.addEventListener('click', () => addRow());
@@ -473,6 +495,7 @@
             var refs = row._advancedFilterRefs;
             if (!refs) { return; }
             tryInitSelect2(refs.fieldSel, { width: '100%' });
+            bindSelect2FieldEvents(refs.fieldSel, refs.handleFieldChange);
             if (refs.selectValue.style.display !== 'none') {
                 tryInitSelect2(refs.selectValue, { width: '100%' });
             }
