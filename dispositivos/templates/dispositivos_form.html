@@ -123,7 +123,7 @@
                     <div class="section-body collapse show" id="section-caracteristicas">
                         <div class="form-group row">
                             <div class="col-md-6">{{ form.tipo_dispositivo|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.tipo_dispositivo_otro|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.tipo_dispositivo_otro|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
                             <div class="col-md-6">{{ form.modalidad_funcionamiento|as_crispy_field }}</div>
@@ -159,15 +159,17 @@
                     </div>
                     <div class="section-body collapse show" id="section-poblacion">
                         <div class="form-group row">
-                            <div class="col-md-6">{{ form.poblacion_destinataria|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.poblacion_destinataria_otro|as_crispy_field }}</div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-6">{{ form.franja_etaria_destinataria|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.tiempo_permanencia_promedio|as_crispy_field }}</div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-6">{{ form.tiempo_permanencia_otro|as_crispy_field }}</div>
+                            <div class="col-md-6">
+                                {{ form.poblacion_destinataria|as_crispy_field }}
+                                {{ form.poblacion_destinataria_otro|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.franja_etaria_destinataria|as_crispy_field }}
+                                <div class="row">
+                                    <div class="col-md-7">{{ form.tiempo_permanencia_promedio|as_crispy_field }}</div>
+                                    <div class="col-md-5">{{ form.tiempo_permanencia_otro|as_crispy_field }}</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -195,16 +197,20 @@
                     </div>
                     <div class="section-body collapse show" id="section-ingreso">
                         <div class="form-group row">
-                            <div class="col-md-6">{{ form.modalidad_ingreso|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.modalidad_ingreso_otro|as_crispy_field }}</div>
+                            <div class="col-md-6">
+                                {{ form.modalidad_ingreso|as_crispy_field }}
+                                {{ form.modalidad_ingreso_otro|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.documentacion_ingreso|as_crispy_field }}
+                                {{ form.documentacion_ingreso_otro|as_crispy_field }}
+                            </div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-md-6">{{ form.documentacion_ingreso|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.documentacion_ingreso_otro|as_crispy_field }}</div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-6">{{ form.requisitos_ingreso|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.requisitos_ingreso_otro|as_crispy_field }}</div>
+                            <div class="col-md-6">
+                                {{ form.requisitos_ingreso|as_crispy_field }}
+                                {{ form.requisitos_ingreso_otro|as_crispy_field }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -232,16 +238,18 @@
                     </div>
                     <div class="section-body collapse show" id="section-servicios">
                         <div class="form-group row">
-                            <div class="col-md-6">{{ form.servicios_brindados|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.servicios_brindados_otro|as_crispy_field }}</div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-4">{{ form.ofrece_actividades_formativas|as_crispy_field }}</div>
-                            <div class="col-md-8">{{ form.tipos_actividades_formativas|as_crispy_field }}</div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-6">{{ form.tipos_actividades_formativas_otro|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.actividades_certificacion_oficial|as_crispy_field }}</div>
+                            <div class="col-md-6">
+                                {{ form.servicios_brindados|as_crispy_field }}
+                                {{ form.servicios_brindados_otro|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.ofrece_actividades_formativas|as_crispy_field }}
+                                <div id="actividades-detalle" class="{% if form.instance.ofrece_actividades_formativas != 'si' %}d-none{% endif %}">
+                                    {{ form.tipos_actividades_formativas|as_crispy_field }}
+                                    {{ form.tipos_actividades_formativas_otro|as_crispy_field }}
+                                    {{ form.actividades_certificacion_oficial|as_crispy_field }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -270,12 +278,18 @@
                     <div class="section-body collapse show" id="section-registro">
                         <div class="form-group row">
                             <div class="col-md-4">{{ form.registra_informacion_personas|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.modo_registro|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.modo_registro_otro|as_crispy_field }}</div>
                         </div>
-                        <div class="form-group row">
-                            <div class="col-md-6">{{ form.tipo_informacion_registrada|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.tipo_informacion_registrada_otro|as_crispy_field }}</div>
+                        <div id="registro-detalle" class="{% if form.instance.registra_informacion_personas != 'si' %}d-none{% endif %}">
+                            <div class="form-group row">
+                                <div class="col-md-4">
+                                    {{ form.modo_registro|as_crispy_field }}
+                                    {{ form.modo_registro_otro|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.tipo_informacion_registrada|as_crispy_field }}
+                                    {{ form.tipo_informacion_registrada_otro|as_crispy_field }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -303,12 +317,14 @@
                     </div>
                     <div class="section-body collapse show" id="section-infraestructura">
                         <div class="form-group row">
-                            <div class="col-md-6">{{ form.infraestructura_disponible|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.infraestructura_disponible_otro|as_crispy_field }}</div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-6">{{ form.infraestructura_accesibilidad|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.infraestructura_accesibilidad_otro|as_crispy_field }}</div>
+                            <div class="col-md-6">
+                                {{ form.infraestructura_disponible|as_crispy_field }}
+                                {{ form.infraestructura_disponible_otro|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.infraestructura_accesibilidad|as_crispy_field }}
+                                {{ form.infraestructura_accesibilidad_otro|as_crispy_field }}
+                            </div>
                         </div>
                         <div class="form-group row">
                             <div class="col-md-6">{{ form.principales_limitaciones|as_crispy_field }}</div>
@@ -340,8 +356,10 @@
                     </div>
                     <div class="section-body collapse show" id="section-articulaciones">
                         <div class="form-group row">
-                            <div class="col-md-6">{{ form.articulaciones_institucionales|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.articulaciones_institucionales_otro|as_crispy_field }}</div>
+                            <div class="col-md-6">
+                                {{ form.articulaciones_institucionales|as_crispy_field }}
+                                {{ form.articulaciones_institucionales_otro|as_crispy_field }}
+                            </div>
                         </div>
                     </div>
                 </div>
