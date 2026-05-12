@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
     moveTooltipsToLabels();
     initializeMunicipioAjax();
     initializeConditionalFields();
+    initializeDocumentSlots();
 });
 
 // ============================================
@@ -336,6 +337,87 @@ function initializeMunicipioAjax() {
             })
             .catch(resetMunicipios);
     });
+}
+
+// ============================================
+// SLOTS DE DOCUMENTOS
+// ============================================
+
+function initializeDocumentSlots() {
+    document.querySelectorAll(".doc-slot").forEach((slot) => {
+        const fieldName = slot.dataset.field;
+        const fileInput = slot.querySelector(".doc-widget-hidden input[type='file']");
+        if (!fileInput) return;
+
+        // Selección de nuevo archivo
+        fileInput.addEventListener("change", () => handleDocFileChange(slot, fieldName, fileInput));
+
+        // Botón "Eliminar archivo guardado"
+        const btnEliminar = slot.querySelector(".btn-eliminar-doc");
+        if (btnEliminar) {
+            btnEliminar.addEventListener("click", () => handleDocEliminar(slot));
+        }
+
+        // Botón "Quitar preview"
+        const btnQuitar = slot.querySelector(".btn-quitar-preview");
+        if (btnQuitar) {
+            btnQuitar.addEventListener("click", () => handleDocQuitarPreview(slot, fileInput));
+        }
+
+        // Click en overlay "Marcado para eliminar" = desmarcar
+        const overlay = slot.querySelector(".doc-eliminar-overlay");
+        if (overlay) {
+            overlay.addEventListener("click", () => handleDocEliminar(slot));
+        }
+    });
+}
+
+function handleDocFileChange(slot, fieldName, fileInput) {
+    const file = fileInput.files[0];
+    const preview = document.getElementById("preview-" + fieldName);
+    if (!preview) return;
+
+    if (!file) {
+        preview.classList.add("d-none");
+        return;
+    }
+
+    const ext = file.name.split(".").pop().toLowerCase();
+    const icon = preview.querySelector(".doc-preview-icon i");
+    if (ext === "pdf") {
+        icon.className = "fas fa-file-pdf doc-icon-pdf";
+    } else if (["jpg", "jpeg", "png"].includes(ext)) {
+        icon.className = "fas fa-file-image doc-icon-img";
+    } else {
+        icon.className = "fas fa-file-alt doc-icon-other";
+    }
+
+    preview.querySelector(".doc-preview-name").textContent = file.name;
+    preview.querySelector(".doc-preview-size").textContent = formatFileSize(file.size);
+    preview.classList.remove("d-none");
+}
+
+function handleDocEliminar(slot) {
+    const clearCheckbox = slot.querySelector(".doc-widget-hidden input[type='checkbox']");
+    const overlay = slot.querySelector(".doc-eliminar-overlay");
+    if (!clearCheckbox || !overlay) return;
+
+    clearCheckbox.checked = !clearCheckbox.checked;
+    overlay.classList.toggle("d-none", !clearCheckbox.checked);
+}
+
+function handleDocQuitarPreview(slot, fileInput) {
+    fileInput.value = "";
+    const fieldName = slot.dataset.field;
+    const preview = document.getElementById("preview-" + fieldName);
+    if (preview) preview.classList.add("d-none");
+    updateProgress();
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
 // ============================================
