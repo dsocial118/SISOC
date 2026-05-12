@@ -27,7 +27,7 @@ if (-not $PreferLocalFallback -and (Test-CodexDockerAvailable)) {
     if (-not $NoStart) {
         Invoke-CodexCompose -RepoRoot $repoRoot -Arguments @("up", "-d", "mysql", "django") -ExposePorts:$ExposePorts
     }
-    exit 0
+    return
 }
 
 if (-not (Test-CodexLocalPythonAvailable)) {
