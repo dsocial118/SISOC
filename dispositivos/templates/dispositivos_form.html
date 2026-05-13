@@ -1,492 +1,790 @@
 {% extends "includes/main.html" %}
-{% load crispy_forms_tags %}
+{% load crispy_forms_tags static %}
 
 {% block title %}
-	
     {% if form.instance.pk %}
         Editar dispositivo
-	
     {% else %}
-        Crear dispositivo
-	
+        Nuevo dispositivo
     {% endif %}
 {% endblock %}
 
+{% block titulo-pagina %}Dispositivos{% endblock %}
+
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+
 {% block content %}
-	
-    <div class="container-fluid">
-	
-        <div class="d-flex justify-content-between align-items-center mb-3">
-	
-            <h2 class="mb-0">
-	
-                {% if form.instance.pk %}
-                    Editar dispositivo
-	
-                {% else %}
-                    Nuevo dispositivo
-	
-                {% endif %}
-	
-            </h2>
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/dispositivoFormModerno.css' %}" />
+
+    <div class="d-flex justify-content-between mb-3">
+        <div>
             <a href="{% url 'dispositivos_listar' %}" class="btn btn-secondary">Volver</a>
-	
         </div>
+        <div>
+            <a href="#" data-history-back="true" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </div>
 
-	
-        <form method="post" enctype="multipart/form-data" novalidate>
-            {% csrf_token %}
-	
-            {% if form.errors %}
-	
-                <div class="alert alert-danger">No se pudo guardar el formulario. Revisá los campos marcados.</div>
-	
-            {% endif %}
+    <div class="row comedor-form">
+        <div class="col-12">
+            <form method="post"
+                  id="dispositivoForm"
+                  class="w-100"
+                  enctype="multipart/form-data"
+                  novalidate>
+                {% csrf_token %}
 
-	
-            <div class="accordion mb-3" id="dispositivo-secciones-accordion">
-	
-                <div class="accordion-item">
-	
-                    <h2 class="accordion-header" id="heading-section-1">
-	
-                        <button class="accordion-button collapsed"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#collapse-section-1"
-                                aria-expanded="false"
-                                aria-controls="collapse-section-1">SECCIÓN 1 - Identificación del dispositivo</button>
-	
-                    </h2>
-	
-                    <div id="collapse-section-1"
-                         class="accordion-collapse collapse"
-                         aria-labelledby="heading-section-1"
-                         data-bs-parent="#dispositivo-secciones-accordion">
-	
-                        <div class="accordion-body">
-	
-                            <div class="row g-3">
-	
-                                <div class="col-md-6">{{ form.nombre_institucion|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.tipo_gestion|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.tipo_gestion_otra|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.razon_social|as_crispy_field }}</div>
-	
-                                <div class="col-md-4">{{ form.cuit_institucion|as_crispy_field }}</div>
-	
-                                <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
-	
-                                <div class="col-md-4">{{ form.municipio|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.domicilio_institucion|as_crispy_field }}</div>
-	
-                                <div class="col-md-3">{{ form.telefono_contacto|as_crispy_field }}</div>
-	
-                                <div class="col-md-3">{{ form.correo_electronico|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.responsable_nombre_completo|as_crispy_field }}</div>
-	
-                                <div class="col-md-3">{{ form.responsable_dni|as_crispy_field }}</div>
-	
-                            </div>
-	
-                        </div>
-	
+                {% if form.errors %}
+                    <div class="alert alert-danger">No se pudo guardar el formulario. Revisá los campos marcados.</div>
+                {% endif %}
+
+                <!-- Indicador de progreso global -->
+                <div class="progress-indicator">
+                    <div class="progress-header">
+                        <h4 class="progress-title">
+                            <i class="fas fa-clipboard-check mr-2"></i>
+                            Progreso del Formulario
+                        </h4>
+                        <span class="progress-stats">
+                            <span id="completedSections">0</span>/9 secciones completadas
+                        </span>
                     </div>
-	
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+                    </div>
                 </div>
 
-	
-                <div class="accordion-item">
-	
-                    <h2 class="accordion-header" id="heading-section-2">
-	
-                        <button class="accordion-button collapsed"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#collapse-section-2"
-                                aria-expanded="false"
-                                aria-controls="collapse-section-2">SECCIÓN 2 - Características del dispositivo</button>
-	
-                    </h2>
-	
-                    <div id="collapse-section-2"
-                         class="accordion-collapse collapse"
-                         aria-labelledby="heading-section-2"
-                         data-bs-parent="#dispositivo-secciones-accordion">
-	
-                        <div class="accordion-body">
-	
-                            <div class="row g-3">
-	
-                                <div class="col-md-6">{{ form.tipo_dispositivo|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.tipo_dispositivo_otro|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.modalidad_funcionamiento|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.capacidad_total_plazas|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.dias_atencion|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.horarios_funcionamiento|as_crispy_field }}</div>
-	
+                <!-- Sección 1: Identificación del dispositivo -->
+                <div class="section-card" data-section="identificacion">
+                    <div class="section-header" data-toggle-section="identificacion">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-building"></i>
                             </div>
-	
+                            <div class="section-title-group">
+                                <h3 class="section-title">Identificación del dispositivo</h3>
+                                <p class="section-subtitle">Datos generales e institución responsable</p>
+                            </div>
                         </div>
-	
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-identificacion">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
                     </div>
-	
+                    <div class="section-body collapse show" id="section-identificacion">
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.nombre_institucion|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.tipo_gestion|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.tipo_gestion_otra|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.razon_social|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.cuit_institucion|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.provincia|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.municipio|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.domicilio_institucion|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.telefono_contacto|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.correo_electronico|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.responsable_nombre_completo|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.responsable_dni|as_crispy_field }}</div>
+                        </div>
+                    </div>
                 </div>
 
-	
-                <div class="accordion-item">
-	
-                    <h2 class="accordion-header" id="heading-section-3">
-	
-                        <button class="accordion-button collapsed"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#collapse-section-3"
-                                aria-expanded="false"
-                                aria-controls="collapse-section-3">SECCIÓN 3 - Población destinataria</button>
-	
-                    </h2>
-	
-                    <div id="collapse-section-3"
-                         class="accordion-collapse collapse"
-                         aria-labelledby="heading-section-3"
-                         data-bs-parent="#dispositivo-secciones-accordion">
-	
-                        <div class="accordion-body">
-	
-                            <div class="row g-3">
-	
-                                <div class="col-md-6">{{ form.poblacion_destinataria|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.poblacion_destinataria_otro|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.franja_etaria_destinataria|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.tiempo_permanencia_promedio|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.tiempo_permanencia_otro|as_crispy_field }}</div>
-	
+                <!-- Sección 2: Características del dispositivo -->
+                <div class="section-card" data-section="caracteristicas">
+                    <div class="section-header" data-toggle-section="caracteristicas">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-cogs"></i>
                             </div>
-	
+                            <div class="section-title-group">
+                                <h3 class="section-title">Características del dispositivo</h3>
+                                <p class="section-subtitle">Tipo, modalidad, capacidad y horarios</p>
+                            </div>
                         </div>
-	
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-caracteristicas">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
                     </div>
-	
+                    <div class="section-body collapse show" id="section-caracteristicas">
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.tipo_dispositivo|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.tipo_dispositivo_otro|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.modalidad_funcionamiento|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.capacidad_total_plazas|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.dias_atencion|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.horarios_funcionamiento|as_crispy_field }}</div>
+                        </div>
+                    </div>
                 </div>
 
-	
-                <div class="accordion-item">
-	
-                    <h2 class="accordion-header" id="heading-section-4">
-	
-                        <button class="accordion-button collapsed"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#collapse-section-4"
-                                aria-expanded="false"
-                                aria-controls="collapse-section-4">SECCIÓN 4 - Modalidad de ingreso</button>
-	
-                    </h2>
-	
-                    <div id="collapse-section-4"
-                         class="accordion-collapse collapse"
-                         aria-labelledby="heading-section-4"
-                         data-bs-parent="#dispositivo-secciones-accordion">
-	
-                        <div class="accordion-body">
-	
-                            <div class="row g-3">
-	
-                                <div class="col-md-6">{{ form.modalidad_ingreso|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.modalidad_ingreso_otro|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.documentacion_ingreso|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.documentacion_ingreso_otro|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.requisitos_ingreso|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.requisitos_ingreso_otro|as_crispy_field }}</div>
-	
+                <!-- Sección 3: Población destinataria -->
+                <div class="section-card" data-section="poblacion">
+                    <div class="section-header" data-toggle-section="poblacion">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-users"></i>
                             </div>
-	
+                            <div class="section-title-group">
+                                <h3 class="section-title">Población destinataria</h3>
+                                <p class="section-subtitle">Perfil y franjas etarias de las personas atendidas</p>
+                            </div>
                         </div>
-	
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-poblacion">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
                     </div>
-	
+                    <div class="section-body collapse show" id="section-poblacion">
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {{ form.poblacion_destinataria|as_crispy_field }}
+                                <div class="row">
+                                    <div class="col-md-8">{{ form.poblacion_destinataria_otro|as_crispy_field }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.franja_etaria_destinataria|as_crispy_field }}
+                                <div class="row">
+                                    <div class="col-md-6">{{ form.tiempo_permanencia_promedio|as_crispy_field }}</div>
+                                    <div class="col-md-6">{{ form.tiempo_permanencia_otro|as_crispy_field }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-	
-                <div class="accordion-item">
-	
-                    <h2 class="accordion-header" id="heading-section-5">
-	
-                        <button class="accordion-button collapsed"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#collapse-section-5"
-                                aria-expanded="false"
-                                aria-controls="collapse-section-5">SECCIÓN 5 - Servicios brindados</button>
-	
-                    </h2>
-	
-                    <div id="collapse-section-5"
-                         class="accordion-collapse collapse"
-                         aria-labelledby="heading-section-5"
-                         data-bs-parent="#dispositivo-secciones-accordion">
-	
-                        <div class="accordion-body">
-	
-                            <div class="row g-3">
-	
-                                <div class="col-md-6">{{ form.servicios_brindados|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.servicios_brindados_otro|as_crispy_field }}</div>
-	
-                                <div class="col-md-4">{{ form.ofrece_actividades_formativas|as_crispy_field }}</div>
-	
-                                <div class="col-md-8">{{ form.tipos_actividades_formativas|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.tipos_actividades_formativas_otro|as_crispy_field }}</div>
-	
-                                <div class="col-md-4">{{ form.actividades_certificacion_oficial|as_crispy_field }}</div>
-	
+                <!-- Sección 4: Modalidad de ingreso -->
+                <div class="section-card" data-section="ingreso">
+                    <div class="section-header" data-toggle-section="ingreso">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-sign-in-alt"></i>
                             </div>
-	
+                            <div class="section-title-group">
+                                <h3 class="section-title">Modalidad de ingreso</h3>
+                                <p class="section-subtitle">Cómo acceden las personas al dispositivo</p>
+                            </div>
                         </div>
-	
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-ingreso">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
                     </div>
-	
+                    <div class="section-body collapse show" id="section-ingreso">
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {{ form.modalidad_ingreso|as_crispy_field }}
+                                {{ form.modalidad_ingreso_otro|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.documentacion_ingreso|as_crispy_field }}
+                                {{ form.documentacion_ingreso_otro|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {{ form.requisitos_ingreso|as_crispy_field }}
+                                {{ form.requisitos_ingreso_otro|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-	
-                <div class="accordion-item">
-	
-                    <h2 class="accordion-header" id="heading-section-6">
-	
-                        <button class="accordion-button collapsed"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#collapse-section-6"
-                                aria-expanded="false"
-                                aria-controls="collapse-section-6">
-                            SECCIÓN 6 - Sistema de registro de personas usuarias
+                <!-- Sección 5: Servicios brindados -->
+                <div class="section-card" data-section="servicios">
+                    <div class="section-header" data-toggle-section="servicios">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-hands-helping"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Servicios brindados</h3>
+                                <p class="section-subtitle">Prestaciones y actividades ofrecidas</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-servicios">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-servicios">
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {{ form.servicios_brindados|as_crispy_field }}
+                                {{ form.servicios_brindados_otro|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.ofrece_actividades_formativas|as_crispy_field }}
+                                <div id="actividades-detalle"
+                                     class="{% if form.ofrece_actividades_formativas.value != 'si' %}d-none{% endif %}">
+                                    {{ form.tipos_actividades_formativas|as_crispy_field }}
+                                    {{ form.tipos_actividades_formativas_otro|as_crispy_field }}
+                                    {{ form.actividades_certificacion_oficial|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 6: Sistema de registro de personas usuarias -->
+                <div class="section-card" data-section="registro">
+                    <div class="section-header" data-toggle-section="registro">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Sistema de registro de personas usuarias</h3>
+                                <p class="section-subtitle">Cómo se registra la información de quienes asisten</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-registro">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-registro">
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.registra_informacion_personas|as_crispy_field }}</div>
+                        </div>
+                        <div id="registro-detalle"
+                             class="{% if form.registra_informacion_personas.value != 'si' %}d-none{% endif %}">
+                            <div class="form-group row">
+                                <div class="col-md-4">
+                                    {{ form.modo_registro|as_crispy_field }}
+                                    {{ form.modo_registro_otro|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.tipo_informacion_registrada|as_crispy_field }}
+                                    {{ form.tipo_informacion_registrada_otro|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 7: Infraestructura y necesidades -->
+                <div class="section-card" data-section="infraestructura">
+                    <div class="section-header" data-toggle-section="infraestructura">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-tools"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Infraestructura y necesidades</h3>
+                                <p class="section-subtitle">Espacios disponibles y limitaciones del dispositivo</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-infraestructura">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-infraestructura">
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {{ form.infraestructura_disponible|as_crispy_field }}
+                                {{ form.infraestructura_disponible_otro|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.infraestructura_accesibilidad|as_crispy_field }}
+                                {{ form.infraestructura_accesibilidad_otro|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.principales_limitaciones|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.necesidades_prioritarias|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 8: Articulaciones institucionales -->
+                <div class="section-card" data-section="articulaciones">
+                    <div class="section-header" data-toggle-section="articulaciones">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-network-wired"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Articulaciones institucionales</h3>
+                                <p class="section-subtitle">Organismos y redes con las que trabaja el dispositivo</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-articulaciones">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-articulaciones">
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {{ form.articulaciones_institucionales|as_crispy_field }}
+                                {{ form.articulaciones_institucionales_otro|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección Final: Observaciones y documentación -->
+                <div class="section-card" data-section="final">
+                    <div class="section-header" data-toggle-section="final">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Observaciones y documentación</h3>
+                                <p class="section-subtitle">Notas adicionales y archivos adjuntos</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-final">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-final">
+                        <div class="form-group row">
+                            <div class="col-md-12">{{ form.observaciones_adicionales|as_crispy_field }}</div>
+                        </div>
+
+                        <p class="doc-section-title mt-3">
+                            <i class="fas fa-paperclip mr-1"></i> Archivos adjuntos
+                        </p>
+
+                        <div class="doc-grid">
+
+                            <!-- Slot: Documentación del dispositivo -->
+                            <div class="doc-slot" data-field="documentacion_dispositivo">
+                                <div class="doc-slot-header">
+                                    <i class="fas fa-file-contract"></i>
+                                    Documentación del dispositivo
+                                </div>
+                                <div class="doc-widget-hidden">{{ form.documentacion_dispositivo }}</div>
+                                {% if form.instance.documentacion_dispositivo %}
+                                    <div class="doc-existente">
+                                        <div class="doc-file-icon">
+                                            {% with n=form.instance.documentacion_dispositivo.name %}
+                                                {% if n|slice:"-4:"|lower == ".pdf" %}
+                                                    <i class="fas fa-file-pdf doc-icon-pdf"></i>
+                                                {% elif n|slice:"-5:"|lower == ".jpeg" %}
+                                                    <i class="fas fa-file-image doc-icon-img"></i>
+                                                {% else %}
+                                                    <i class="fas fa-file-image doc-icon-img"></i>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <div class="doc-file-info">
+                                            <div class="doc-file-name">{{ form.instance.documentacion_dispositivo.name|slice:"27:" }}</div>
+                                            <div class="doc-file-status">
+                                                <i class="fas fa-check-circle"></i> Guardado
+                                            </div>
+                                        </div>
+                                        <div class="doc-file-actions">
+                                            <a href="{{ form.instance.documentacion_dispositivo.url }}"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger btn-eliminar-doc"
+                                                    data-field="documentacion_dispositivo">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="doc-eliminar-overlay d-none">
+                                            <i class="fas fa-trash-alt"></i> Marcado para eliminar
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                <div class="doc-upload-area">
+                                    <label class="btn-subir-doc" for="id_documentacion_dispositivo">
+                                        <i class="fas fa-upload"></i>
+                                        {% if form.instance.documentacion_dispositivo %}
+                                            Cambiar
+                                        {% else %}
+                                            Subir documento
+                                        {% endif %}
+                                    </label>
+                                    <small class="doc-hint">PDF, JPG o PNG — máx. 10 MB</small>
+                                </div>
+                                <div class="doc-preview d-none" id="preview-documentacion_dispositivo">
+                                    <div class="doc-preview-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div class="doc-preview-info">
+                                        <div class="doc-preview-name"></div>
+                                        <div class="doc-preview-size"></div>
+                                        <div class="doc-preview-status">
+                                            <i class="fas fa-clock"></i> Pendiente de guardar
+                                        </div>
+                                    </div>
+                                    <button type="button"
+                                            class="btn-quitar-preview"
+                                            data-field="documentacion_dispositivo">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Slot: Adicional 1 -->
+                            <div class="doc-slot" data-field="documentacion_dispositivo_adicional_1">
+                                <div class="doc-slot-header">
+                                    <i class="fas fa-file"></i>
+                                    Documentación adicional 1
+                                </div>
+                                <div class="doc-widget-hidden">{{ form.documentacion_dispositivo_adicional_1 }}</div>
+                                {% if form.instance.documentacion_dispositivo_adicional_1 %}
+                                    <div class="doc-existente">
+                                        <div class="doc-file-icon">
+                                            {% with n=form.instance.documentacion_dispositivo_adicional_1.name %}
+                                                {% if n|slice:"-4:"|lower == ".pdf" %}
+                                                    <i class="fas fa-file-pdf doc-icon-pdf"></i>
+                                                {% else %}
+                                                    <i class="fas fa-file-image doc-icon-img"></i>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <div class="doc-file-info">
+                                            <div class="doc-file-name">{{ form.instance.documentacion_dispositivo_adicional_1.name|slice:"27:" }}</div>
+                                            <div class="doc-file-status">
+                                                <i class="fas fa-check-circle"></i> Guardado
+                                            </div>
+                                        </div>
+                                        <div class="doc-file-actions">
+                                            <a href="{{ form.instance.documentacion_dispositivo_adicional_1.url }}"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger btn-eliminar-doc"
+                                                    data-field="documentacion_dispositivo_adicional_1">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="doc-eliminar-overlay d-none">
+                                            <i class="fas fa-trash-alt"></i> Marcado para eliminar
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                <div class="doc-upload-area">
+                                    <label class="btn-subir-doc" for="id_documentacion_dispositivo_adicional_1">
+                                        <i class="fas fa-upload"></i>
+                                        {% if form.instance.documentacion_dispositivo_adicional_1 %}
+                                            Cambiar
+                                        {% else %}
+                                            Subir documento
+                                        {% endif %}
+                                    </label>
+                                    <small class="doc-hint">PDF, JPG o PNG — máx. 10 MB</small>
+                                </div>
+                                <div class="doc-preview d-none"
+                                     id="preview-documentacion_dispositivo_adicional_1">
+                                    <div class="doc-preview-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div class="doc-preview-info">
+                                        <div class="doc-preview-name"></div>
+                                        <div class="doc-preview-size"></div>
+                                        <div class="doc-preview-status">
+                                            <i class="fas fa-clock"></i> Pendiente de guardar
+                                        </div>
+                                    </div>
+                                    <button type="button"
+                                            class="btn-quitar-preview"
+                                            data-field="documentacion_dispositivo_adicional_1">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Slot: Adicional 2 -->
+                            <div class="doc-slot" data-field="documentacion_dispositivo_adicional_2">
+                                <div class="doc-slot-header">
+                                    <i class="fas fa-file"></i>
+                                    Documentación adicional 2
+                                </div>
+                                <div class="doc-widget-hidden">{{ form.documentacion_dispositivo_adicional_2 }}</div>
+                                {% if form.instance.documentacion_dispositivo_adicional_2 %}
+                                    <div class="doc-existente">
+                                        <div class="doc-file-icon">
+                                            {% with n=form.instance.documentacion_dispositivo_adicional_2.name %}
+                                                {% if n|slice:"-4:"|lower == ".pdf" %}
+                                                    <i class="fas fa-file-pdf doc-icon-pdf"></i>
+                                                {% else %}
+                                                    <i class="fas fa-file-image doc-icon-img"></i>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <div class="doc-file-info">
+                                            <div class="doc-file-name">{{ form.instance.documentacion_dispositivo_adicional_2.name|slice:"27:" }}</div>
+                                            <div class="doc-file-status">
+                                                <i class="fas fa-check-circle"></i> Guardado
+                                            </div>
+                                        </div>
+                                        <div class="doc-file-actions">
+                                            <a href="{{ form.instance.documentacion_dispositivo_adicional_2.url }}"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger btn-eliminar-doc"
+                                                    data-field="documentacion_dispositivo_adicional_2">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="doc-eliminar-overlay d-none">
+                                            <i class="fas fa-trash-alt"></i> Marcado para eliminar
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                <div class="doc-upload-area">
+                                    <label class="btn-subir-doc" for="id_documentacion_dispositivo_adicional_2">
+                                        <i class="fas fa-upload"></i>
+                                        {% if form.instance.documentacion_dispositivo_adicional_2 %}
+                                            Cambiar
+                                        {% else %}
+                                            Subir documento
+                                        {% endif %}
+                                    </label>
+                                    <small class="doc-hint">PDF, JPG o PNG — máx. 10 MB</small>
+                                </div>
+                                <div class="doc-preview d-none"
+                                     id="preview-documentacion_dispositivo_adicional_2">
+                                    <div class="doc-preview-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div class="doc-preview-info">
+                                        <div class="doc-preview-name"></div>
+                                        <div class="doc-preview-size"></div>
+                                        <div class="doc-preview-status">
+                                            <i class="fas fa-clock"></i> Pendiente de guardar
+                                        </div>
+                                    </div>
+                                    <button type="button"
+                                            class="btn-quitar-preview"
+                                            data-field="documentacion_dispositivo_adicional_2">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Slot: Adicional 3 -->
+                            <div class="doc-slot" data-field="documentacion_dispositivo_adicional_3">
+                                <div class="doc-slot-header">
+                                    <i class="fas fa-file"></i>
+                                    Documentación adicional 3
+                                </div>
+                                <div class="doc-widget-hidden">{{ form.documentacion_dispositivo_adicional_3 }}</div>
+                                {% if form.instance.documentacion_dispositivo_adicional_3 %}
+                                    <div class="doc-existente">
+                                        <div class="doc-file-icon">
+                                            {% with n=form.instance.documentacion_dispositivo_adicional_3.name %}
+                                                {% if n|slice:"-4:"|lower == ".pdf" %}
+                                                    <i class="fas fa-file-pdf doc-icon-pdf"></i>
+                                                {% else %}
+                                                    <i class="fas fa-file-image doc-icon-img"></i>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <div class="doc-file-info">
+                                            <div class="doc-file-name">{{ form.instance.documentacion_dispositivo_adicional_3.name|slice:"27:" }}</div>
+                                            <div class="doc-file-status">
+                                                <i class="fas fa-check-circle"></i> Guardado
+                                            </div>
+                                        </div>
+                                        <div class="doc-file-actions">
+                                            <a href="{{ form.instance.documentacion_dispositivo_adicional_3.url }}"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger btn-eliminar-doc"
+                                                    data-field="documentacion_dispositivo_adicional_3">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="doc-eliminar-overlay d-none">
+                                            <i class="fas fa-trash-alt"></i> Marcado para eliminar
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                <div class="doc-upload-area">
+                                    <label class="btn-subir-doc" for="id_documentacion_dispositivo_adicional_3">
+                                        <i class="fas fa-upload"></i>
+                                        {% if form.instance.documentacion_dispositivo_adicional_3 %}
+                                            Cambiar
+                                        {% else %}
+                                            Subir documento
+                                        {% endif %}
+                                    </label>
+                                    <small class="doc-hint">PDF, JPG o PNG — máx. 10 MB</small>
+                                </div>
+                                <div class="doc-preview d-none"
+                                     id="preview-documentacion_dispositivo_adicional_3">
+                                    <div class="doc-preview-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div class="doc-preview-info">
+                                        <div class="doc-preview-name"></div>
+                                        <div class="doc-preview-size"></div>
+                                        <div class="doc-preview-status">
+                                            <i class="fas fa-clock"></i> Pendiente de guardar
+                                        </div>
+                                    </div>
+                                    <button type="button"
+                                            class="btn-quitar-preview"
+                                            data-field="documentacion_dispositivo_adicional_3">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Slot: Adicional 4 -->
+                            <div class="doc-slot" data-field="documentacion_dispositivo_adicional_4">
+                                <div class="doc-slot-header">
+                                    <i class="fas fa-file"></i>
+                                    Documentación adicional 4
+                                </div>
+                                <div class="doc-widget-hidden">{{ form.documentacion_dispositivo_adicional_4 }}</div>
+                                {% if form.instance.documentacion_dispositivo_adicional_4 %}
+                                    <div class="doc-existente">
+                                        <div class="doc-file-icon">
+                                            {% with n=form.instance.documentacion_dispositivo_adicional_4.name %}
+                                                {% if n|slice:"-4:"|lower == ".pdf" %}
+                                                    <i class="fas fa-file-pdf doc-icon-pdf"></i>
+                                                {% else %}
+                                                    <i class="fas fa-file-image doc-icon-img"></i>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <div class="doc-file-info">
+                                            <div class="doc-file-name">{{ form.instance.documentacion_dispositivo_adicional_4.name|slice:"27:" }}</div>
+                                            <div class="doc-file-status">
+                                                <i class="fas fa-check-circle"></i> Guardado
+                                            </div>
+                                        </div>
+                                        <div class="doc-file-actions">
+                                            <a href="{{ form.instance.documentacion_dispositivo_adicional_4.url }}"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger btn-eliminar-doc"
+                                                    data-field="documentacion_dispositivo_adicional_4">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="doc-eliminar-overlay d-none">
+                                            <i class="fas fa-trash-alt"></i> Marcado para eliminar
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                <div class="doc-upload-area">
+                                    <label class="btn-subir-doc" for="id_documentacion_dispositivo_adicional_4">
+                                        <i class="fas fa-upload"></i>
+                                        {% if form.instance.documentacion_dispositivo_adicional_4 %}
+                                            Cambiar
+                                        {% else %}
+                                            Subir documento
+                                        {% endif %}
+                                    </label>
+                                    <small class="doc-hint">PDF, JPG o PNG — máx. 10 MB</small>
+                                </div>
+                                <div class="doc-preview d-none"
+                                     id="preview-documentacion_dispositivo_adicional_4">
+                                    <div class="doc-preview-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div class="doc-preview-info">
+                                        <div class="doc-preview-name"></div>
+                                        <div class="doc-preview-size"></div>
+                                        <div class="doc-preview-status">
+                                            <i class="fas fa-clock"></i> Pendiente de guardar
+                                        </div>
+                                    </div>
+                                    <button type="button"
+                                            class="btn-quitar-preview"
+                                            data-field="documentacion_dispositivo_adicional_4">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones sticky -->
+                <div class="sticky-actions">
+                    <div>
+                        <a href="{% url 'dispositivos_listar' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left mr-1"></i> Volver
+                        </a>
+                    </div>
+                    <div>
+                        <button type="button" data-history-back="true" class="btn btn-secondary mr-2">
+                            <i class="fas fa-times mr-1"></i> Cancelar
                         </button>
-	
-                    </h2>
-	
-                    <div id="collapse-section-6"
-                         class="accordion-collapse collapse"
-                         aria-labelledby="heading-section-6"
-                         data-bs-parent="#dispositivo-secciones-accordion">
-	
-                        <div class="accordion-body">
-	
-                            <div class="row g-3">
-	
-                                <div class="col-md-4">{{ form.registra_informacion_personas|as_crispy_field }}</div>
-	
-                                <div class="col-md-4">{{ form.modo_registro|as_crispy_field }}</div>
-	
-                                <div class="col-md-4">{{ form.modo_registro_otro|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.tipo_informacion_registrada|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.tipo_informacion_registrada_otro|as_crispy_field }}</div>
-	
-                            </div>
-	
-                        </div>
-	
-                    </div>
-	
-                </div>
-
-	
-                <div class="accordion-item">
-	
-                    <h2 class="accordion-header" id="heading-section-7">
-	
-                        <button class="accordion-button collapsed"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#collapse-section-7"
-                                aria-expanded="false"
-                                aria-controls="collapse-section-7">SECCIÓN 7 - Infraestructura y necesidades</button>
-	
-                    </h2>
-	
-                    <div id="collapse-section-7"
-                         class="accordion-collapse collapse"
-                         aria-labelledby="heading-section-7"
-                         data-bs-parent="#dispositivo-secciones-accordion">
-	
-                        <div class="accordion-body">
-	
-                            <div class="row g-3">
-	
-                                <div class="col-md-6">{{ form.infraestructura_disponible|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.infraestructura_disponible_otro|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.infraestructura_accesibilidad|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.infraestructura_accesibilidad_otro|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.principales_limitaciones|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.necesidades_prioritarias|as_crispy_field }}</div>
-	
-                            </div>
-	
-                        </div>
-	
-                    </div>
-	
-                </div>
-
-	
-                <div class="accordion-item">
-	
-                    <h2 class="accordion-header" id="heading-section-8">
-	
-                        <button class="accordion-button collapsed"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#collapse-section-8"
-                                aria-expanded="false"
-                                aria-controls="collapse-section-8">SECCIÓN 8 - Articulaciones institucionales</button>
-	
-                    </h2>
-	
-                    <div id="collapse-section-8"
-                         class="accordion-collapse collapse"
-                         aria-labelledby="heading-section-8"
-                         data-bs-parent="#dispositivo-secciones-accordion">
-	
-                        <div class="accordion-body">
-	
-                            <div class="row g-3">
-	
-                                <div class="col-md-6">{{ form.articulaciones_institucionales|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.articulaciones_institucionales_otro|as_crispy_field }}</div>
-	
-                            </div>
-	
-                        </div>
-	
-                    </div>
-	
-                </div>
-
-	
-                <div class="accordion-item">
-	
-                    <h2 class="accordion-header" id="heading-section-final">
-	
-                        <button class="accordion-button collapsed"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#collapse-section-final"
-                                aria-expanded="false"
-                                aria-controls="collapse-section-final">
-                            SECCIÓN FINAL - Observaciones y documentación del dispositivo
+                        <button class="btn btn-success" type="submit">
+                            <i class="fas fa-save mr-1"></i> Guardar dispositivo
                         </button>
-	
-                    </h2>
-	
-                    <div id="collapse-section-final"
-                         class="accordion-collapse collapse"
-                         aria-labelledby="heading-section-final"
-                         data-bs-parent="#dispositivo-secciones-accordion">
-	
-                        <div class="accordion-body">
-	
-                            <div class="row g-3">
-	
-                                <div class="col-md-12">{{ form.observaciones_adicionales|as_crispy_field }}</div>
-	
-                                <div class="col-md-12">{{ form.documentacion_dispositivo|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.documentacion_dispositivo_adicional_1|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.documentacion_dispositivo_adicional_2|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.documentacion_dispositivo_adicional_3|as_crispy_field }}</div>
-	
-                                <div class="col-md-6">{{ form.documentacion_dispositivo_adicional_4|as_crispy_field }}</div>
-	
-                            </div>
-	
-                        </div>
-	
                     </div>
-	
                 </div>
-	
-            </div>
 
-	
-            <div class="d-flex justify-content-end gap-2 mt-3">
-	
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <a href="{% url 'dispositivos_listar' %}" class="btn btn-secondary">Cancelar</a>
-	
-            </div>
-	
-        </form>
-	
+            </form>
+        </div>
     </div>
 {% endblock %}
 
 {% block customJS %}
-    <script nonce="{{ request.csp_nonce }}">
-		(() => {
-			const provinciaSelect = document.getElementById("id_provincia");
-			const municipioSelect = document.getElementById("id_municipio");
-			const loadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
-
-			if (!provinciaSelect || !municipioSelect) {
-				return;
-			}
-
-			const resetMunicipios = () => {
-				municipioSelect.innerHTML = '<option value="">---------</option>';
-			};
-
-			provinciaSelect.addEventListener("change", () => {
-				const provinciaId = provinciaSelect.value;
-				resetMunicipios();
-				if (!provinciaId) {
-					return;
-				}
-				fetch(`${loadMunicipiosUrl}?provincia_id=${encodeURIComponent(provinciaId)}`)
-					.then((response) => response.json())
-					.then((data) => {
-						data.forEach((municipio) => {
-							const option = document.createElement("option");
-							option.value = municipio.id;
-							option.textContent = municipio.nombre;
-							municipioSelect.appendChild(option);
-						});
-					})
-					.catch(() => {
-						resetMunicipios();
-					});
-			});
-		})();
-	
-    </script>
+    <script nonce="{{ request.csp_nonce }}">var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";</script>
+    <script src="{% static 'custom/js/dispositivoFormModerno.js' %}"></script>
 {% endblock %}

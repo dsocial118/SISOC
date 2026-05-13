@@ -213,18 +213,29 @@ def test_listado_renderiza_paginacion_con_mas_de_quince_dispositivos(
 
 
 @pytest.mark.django_db
-def test_formulario_muestra_ocho_secciones(client, user_con_permisos):
+def test_formulario_muestra_secciones_modernas(client, user_con_permisos):
     client.force_login(user_con_permisos)
 
     response = client.get(reverse("dispositivos_crear"))
 
     assert response.status_code == 200
     contenido = response.content.decode("utf-8")
-    assert "SECCIÓN 1 - Identificación del dispositivo" in contenido
-    assert "SECCIÓN 2 - Características del dispositivo" in contenido
-    assert "SECCIÓN 3 - Población destinataria" in contenido
-    assert "SECCIÓN 4 - Modalidad de ingreso" in contenido
-    assert "SECCIÓN 5 - Servicios brindados" in contenido
-    assert "SECCIÓN 6 - Sistema de registro de personas usuarias" in contenido
-    assert "SECCIÓN 7 - Infraestructura y necesidades" in contenido
-    assert "SECCIÓN 8 - Articulaciones institucionales" in contenido
+    assert "Identificación del dispositivo" in contenido
+    assert "Características del dispositivo" in contenido
+    assert "Población destinataria" in contenido
+    assert "Modalidad de ingreso" in contenido
+    assert "Servicios brindados" in contenido
+    assert "Sistema de registro de personas usuarias" in contenido
+    assert "Infraestructura y necesidades" in contenido
+    assert "Articulaciones institucionales" in contenido
+    assert "Observaciones y documentación" in contenido
+    assert "Progreso del Formulario" in contenido
+    registro_detalle_index = contenido.index('id="registro-detalle"')
+    assert (
+        contenido.index('id="id_registra_informacion_personas"')
+        < registro_detalle_index
+    )
+    assert (
+        'class="d-none"'
+        in contenido[registro_detalle_index : registro_detalle_index + 200]
+    )
