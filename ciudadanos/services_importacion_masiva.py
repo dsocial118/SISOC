@@ -26,7 +26,6 @@ SYSTEMIC_RENAPER_ERROR_TYPES = {
     "auth_error",
     "remote_error",
     "invalid_response",
-    "unexpected_error",
 }
 CUIL_WEIGHTS = (5, 4, 3, 2, 7, 6, 5, 4, 3, 2)
 SEXO_LABELS = {

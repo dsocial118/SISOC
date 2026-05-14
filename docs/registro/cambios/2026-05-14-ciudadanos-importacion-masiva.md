@@ -34,8 +34,10 @@ digito verificador antes de consultar.
   con `origen_dato="renaper"`, `estado_validacion_renaper=VALIDADO` y
   `datos_renaper`.
 - Errores sistemicos de RENAPER (`timeout`, `auth_error`, `remote_error`,
-  `invalid_response`, `unexpected_error`) pausan el lote en `failed` y permiten
-  reanudar sin consumir filas pendientes.
+  `invalid_response`) pausan el lote en `failed` y permiten reanudar sin
+  consumir filas pendientes. `unexpected_error` se registra como error de fila
+  para no bloquear el resto del lote cuando RENAPER devuelve datos anómalos para
+  un DNI puntual.
 
 ## Configuracion
 
