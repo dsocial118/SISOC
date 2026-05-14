@@ -37,7 +37,7 @@ from ciudadanos.views_importacion_masiva import (
     CiudadanosImportTemplateView,
     CiudadanosImportUploadView,
 )
-from core.models import Sexo
+from core.models import Localidad, Municipio, Nacionalidad, Provincia, Sexo
 
 User = get_user_model()
 
@@ -809,3 +809,42 @@ def test_process_ciudadanos_import_job_uses_existing_sexo_catalog(mocker):
 
     ciudadano = Ciudadano.objects.get(documento=30111222)
     assert ciudadano.sexo == sexo
+
+
+@pytest.mark.django_db
+def test_process_ciudadanos_import_job_normalizes_renaper_foreign_key_ids(mocker):
+    sexo = Sexo.objects.create(sexo="Masculino")
+    nacionalidad = Nacionalidad.objects.create(nacionalidad="Argentina")
+    provincia = Provincia.objects.create(nombre="Chaco")
+    municipio = Municipio.objects.create(nombre="Resistencia", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Resistencia", municipio=municipio)
+    user = User.objects.create_user(username="ciudadanos_fk_ids")
+    upload = _build_excel_file([("30111223", "M")])
+    job = create_ciudadanos_import_job(uploaded_file=upload, requested_by=user)
+    renaper_result = _renaper_success(
+        dni="30111223",
+        sexo="M",
+        cuil="20301112239",
+    )
+    renaper_result["data"].update(
+        {
+            "sexo": sexo.pk,
+            "nacionalidad_api": "Argentina",
+            "provincia_api": "Chaco",
+            "municipio_api": "Resistencia",
+            "localidad_api": "Resistencia",
+        }
+    )
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva.consultar_datos_renaper",
+        return_value=renaper_result,
+    )
+
+    process_ciudadanos_import_job(job)
+
+    ciudadano = Ciudadano.objects.get(documento=30111223)
+    assert ciudadano.sexo_id == sexo.pk
+    assert ciudadano.nacionalidad_id == nacionalidad.pk
+    assert ciudadano.provincia_id == provincia.pk
+    assert ciudadano.municipio_id == municipio.pk
+    assert ciudadano.localidad_id == localidad.pk

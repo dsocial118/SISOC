@@ -33,6 +33,13 @@ SEXO_LABELS = {
     "F": "Femenino",
     "X": "X",
 }
+CIUDADANO_RENAPER_FK_FIELDS = (
+    "sexo",
+    "provincia",
+    "municipio",
+    "localidad",
+    "nacionalidad",
+)
 
 
 @dataclass(frozen=True)
@@ -416,11 +423,14 @@ def _build_ciudadano_payload_from_renaper(
 def _normalize_ciudadano_payload_foreign_keys(
     ciudadano_data: dict[str, object]
 ) -> None:
-    sexo_value = ciudadano_data.pop("sexo", None)
-    if isinstance(sexo_value, Sexo):
-        ciudadano_data["sexo"] = sexo_value
-    elif sexo_value:
-        ciudadano_data["sexo_id"] = sexo_value
+    for field_name in CIUDADANO_RENAPER_FK_FIELDS:
+        value = ciudadano_data.pop(field_name, None)
+        if value in (None, ""):
+            continue
+        if hasattr(value, "pk"):
+            ciudadano_data[field_name] = value
+        else:
+            ciudadano_data[f"{field_name}_id"] = value
 
 
 def _lookup_renaper_for_row(
