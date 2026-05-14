@@ -137,6 +137,18 @@ def test_run_bulk_credentials_worker_lanza_comando_dedicado(mocker):
     )
 
 
+def test_run_ciudadanos_import_worker_lanza_comando_dedicado(mocker):
+    module = _load_entrypoint_module()
+    mock_run_command = mocker.patch.object(module, "run_command")
+
+    module.run_ciudadanos_import_worker()
+
+    mock_run_command.assert_called_once_with(
+        ["python", "manage.py", "process_ciudadanos_import_jobs"],
+        stage="ciudadanos_import_worker",
+    )
+
+
 def test_main_ejecuta_worker_segun_service_role(mocker, monkeypatch):
     module = _load_entrypoint_module()
     mocker.patch.object(module, "wait_for_mysql")
@@ -153,10 +165,32 @@ def test_main_ejecuta_worker_segun_service_role(mocker, monkeypatch):
     mock_run_django.assert_not_called()
 
 
+def test_main_ejecuta_worker_import_ciudadanos_segun_service_role(mocker, monkeypatch):
+    module = _load_entrypoint_module()
+    mocker.patch.object(module, "wait_for_mysql")
+    mock_run_bulk_worker = mocker.patch.object(module, "run_bulk_credentials_worker")
+    mock_run_import_worker = mocker.patch.object(
+        module,
+        "run_ciudadanos_import_worker",
+    )
+    mock_run_django = mocker.patch.object(module, "run_django_commands")
+    monkeypatch.setenv(
+        "DJANGO_SERVICE_ROLE",
+        module.SERVICE_ROLE_CIUDADANOS_IMPORT_WORKER,
+    )
+
+    module.main()
+
+    mock_run_import_worker.assert_called_once_with()
+    mock_run_bulk_worker.assert_not_called()
+    mock_run_django.assert_not_called()
+
+
 def test_main_ejecuta_web_por_defecto(mocker, monkeypatch):
     module = _load_entrypoint_module()
     mock_wait = mocker.patch.object(module, "wait_for_mysql")
     mock_run_worker = mocker.patch.object(module, "run_bulk_credentials_worker")
+    mock_run_import_worker = mocker.patch.object(module, "run_ciudadanos_import_worker")
     mock_run_django = mocker.patch.object(module, "run_django_commands")
     monkeypatch.delenv("DJANGO_SERVICE_ROLE", raising=False)
 
@@ -165,3 +199,4 @@ def test_main_ejecuta_web_por_defecto(mocker, monkeypatch):
     mock_wait.assert_called_once_with()
     mock_run_django.assert_called_once_with()
     mock_run_worker.assert_not_called()
+    mock_run_import_worker.assert_not_called()
