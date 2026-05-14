@@ -235,7 +235,7 @@
         <ul class="nav nav-treeview">
             {% if not vat_sidebar_only %}
                 <!-- CIUDADANOS -->
-                {% if request.user|has_perm_code:"ciudadanos.view_ciudadano" %}
+                {% if request.user|has_any_perm:"ciudadanos.view_ciudadano,ciudadanos.add_ciudadano" %}
                     <li class="nav-item {% if 'ciudadanos' in pagina_actual %}menu-open{% endif %}">
                         <a href="#"
                            class="nav-link nav-dot ms-2 {% if 'ciudadanos' in pagina_actual %}active{% endif %}">
@@ -245,19 +245,30 @@
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{% url 'ciudadanos' %}"
-                                   class="nav-link ms-4 {% if 'ciudadanos/listar' in pagina_actual %}active{% endif %}">
-                                    <i class="nav-icon bi bi-arrow-return-right"></i>
-                                    <p>Búsqueda</p>
-                                </a>
-                            </li>
+                            {% if request.user|has_perm_code:"ciudadanos.view_ciudadano" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'ciudadanos' %}"
+                                       class="nav-link ms-4 {% if 'ciudadanos/listar' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Búsqueda</p>
+                                    </a>
+                                </li>
+                            {% endif %}
                             {% if request.user|has_perm_code:"ciudadanos.revision_identidad" %}
                                 <li class="nav-item">
                                     <a href="{% url 'ciudadanos_cola_revision' %}"
                                        class="nav-link ms-4 {% if 'ciudadanos/revision' in pagina_actual %}active{% endif %}">
                                         <i class="nav-icon bi bi-arrow-return-right"></i>
                                         <p>Revisi&oacute;n de Identidad</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if request.user|has_perm_code:"ciudadanos.add_ciudadano" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'ciudadanos_importacion_masiva' %}"
+                                       class="nav-link ms-4 {% if 'ciudadanos/importacion-masiva' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Importaci&oacute;n masiva</p>
                                     </a>
                                 </li>
                             {% endif %}
