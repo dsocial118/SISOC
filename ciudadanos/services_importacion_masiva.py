@@ -7,6 +7,7 @@ from io import BytesIO
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.urls import reverse
 from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 
@@ -265,6 +266,86 @@ def generate_ciudadanos_import_template() -> bytes:
 
 def get_ciudadanos_import_template_filename() -> str:
     return TEMPLATE_FILENAME
+
+
+def get_ciudadanos_import_results_filename(job) -> str:
+    return f"resultado_importacion_ciudadanos_{job.pk}.xlsx"
+
+
+def _format_datetime(value) -> str:
+    if not value:
+        return ""
+    return timezone.localtime(value).strftime("%d/%m/%Y %H:%M")
+
+
+def generate_ciudadanos_import_job_results_workbook(job) -> bytes:
+    workbook = Workbook()
+    summary = workbook.active
+    summary.title = "resumen"
+    summary.append(["campo", "valor"])
+    summary_rows = [
+        ("lote", job.pk),
+        ("archivo", job.original_filename),
+        ("estado", job.status),
+        ("total", job.total_rows),
+        ("procesadas", job.processed_rows),
+        ("creados", job.created_rows),
+        ("existentes", job.existing_rows),
+        ("fallidos", job.failed_rows),
+        ("pendientes", job.pending_rows),
+        ("ultimo_intentado", job.last_attempted_documento),
+        ("error_sistemico", job.last_error_message),
+        ("fecha", _format_datetime(job.requested_at)),
+    ]
+    for label, value in summary_rows:
+        summary.append([label, value])
+
+    worksheet = workbook.create_sheet("filas")
+    worksheet.append(
+        [
+            "fila",
+            "cuil_o_dni",
+            "dni",
+            "cuil",
+            "sexo",
+            "estado",
+            "ciudadano_id",
+            "ciudadano_detalle",
+            "sexos_intentados",
+            "intentos",
+            "error_type",
+            "mensaje",
+            "procesado",
+        ]
+    )
+    rows = job.rows.select_related("ciudadano").order_by("fila", "id")
+    for row in rows:
+        detalle_url = (
+            reverse("ciudadanos_ver", kwargs={"pk": row.ciudadano_id})
+            if row.ciudadano_id
+            else ""
+        )
+        worksheet.append(
+            [
+                row.fila,
+                row.documento_raw,
+                row.dni,
+                row.cuil,
+                row.sexo,
+                row.status,
+                row.ciudadano_id or "",
+                detalle_url,
+                row.sexos_intentados,
+                row.attempts,
+                row.error_type,
+                row.mensaje,
+                _format_datetime(row.processed_at),
+            ]
+        )
+
+    output = BytesIO()
+    workbook.save(output)
+    return output.getvalue()
 
 
 def build_ciudadanos_import_error_message(exc: Exception) -> str:
