@@ -109,7 +109,7 @@ def parse_cuil_o_dni(value: object) -> ParsedDocumento:
             cuil=digits,
             input_type="cuil",
         )
-    if 7 <= len(digits) <= 8 and int(digits or "0") > 0:
+    if len(digits) == 8 and int(digits or "0") > 0:
         return ParsedDocumento(
             dni=digits,
             cuil="",
