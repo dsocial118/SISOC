@@ -1,5 +1,6 @@
 import importlib.util
 from pathlib import Path
+from unittest import mock
 from uuid import uuid4
 
 
@@ -10,7 +11,8 @@ def _load_settings_module():
     module_name = f"config_settings_test_{uuid4().hex}"
     spec = importlib.util.spec_from_file_location(module_name, SETTINGS_PATH)
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    with mock.patch("dotenv.load_dotenv", return_value=False):
+        spec.loader.exec_module(module)
     return module
 
 
@@ -69,6 +71,8 @@ def test_settings_email_backend_falls_back_to_console_when_smtp_is_incomplete(
 
 def test_settings_homologacion_usa_perfil_similar_a_produccion(monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "homologacion")
+    monkeypatch.delenv("DB_CONN_MAX_AGE", raising=False)
+    monkeypatch.delenv("DB_CONN_HEALTH_CHECKS", raising=False)
 
     module = _load_settings_module()
 
@@ -111,3 +115,31 @@ def test_settings_qa_mantiene_runtime_no_productivo(monkeypatch):
     assert module.GESTIONAR_INTEGRATION_ENABLED is False
     assert module.SECURE_SSL_REDIRECT is False
     assert module.SENTRY_REPLAY_ENABLED is False
+
+
+def test_env_example_declares_valid_email_assignments():
+    env_example_path = Path(__file__).resolve().parents[1] / ".env.example"
+    lines = env_example_path.read_text(encoding="utf-8").splitlines()
+
+    email_section_started = False
+    email_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped == "# EMAIL / PASSWORD RESET":
+            email_section_started = True
+            continue
+        if email_section_started and stripped == "# PWA WEB PUSH":
+            break
+        if email_section_started:
+            email_lines.append(stripped)
+
+    active_assignments = [
+        line for line in email_lines if line and not line.startswith("#")
+    ]
+
+    assert not any(line.startswith("- ") for line in active_assignments)
+    assert 'EMAIL_BACKEND=""' in active_assignments
+    assert 'EMAIL_HOST="localhost"' in active_assignments
+    assert 'EMAIL_HOST_USER=""' in active_assignments
+    assert 'EMAIL_HOST_PASSWORD=""' in active_assignments
+    assert 'DEFAULT_FROM_EMAIL="no-reply@sisoc.local"' in active_assignments

@@ -9,13 +9,17 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% with titulo_search='Buscar ciudadano' placeholder_text='Apellido, nombre o documento' help_text='Ingresá apellido, nombre o DNI' reset_url_name='ciudadanos' %}
         {% url 'ciudadanos_exportar' as export_url %}
-        {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name query=filter_form.q.value show_add_button=True add_url='ciudadanos_crear' add_text='Nuevo ciudadano' export_url=export_url %}
+        {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name query=filter_form.q.value show_add_button=True add_url='ciudadanos_crear' add_text='Nuevo ciudadano' export_url=export_url additional_buttons=additional_buttons %}
     {% endwith %}
     <input type="hidden"
            name="q"
            id="hidden-q-input"
            form="simple-search-form"
            value="{{ filter_form.q.value|default:'' }}" />
+    <input type="hidden"
+           name="filters_mode"
+           form="simple-search-form"
+           value="ui" />
     <div class="row mt-5 max-width-100">
         <div class="col-12">
             <div class="card">
@@ -24,17 +28,28 @@
                 </div>
                 <div class="card-body">
                     <form method="get"
-                          class="row g-3 align-items-end mb-4"
+                          class="row g-2 align-items-end mb-4"
                           id="province-filter-form">
-                        <div class="col-12 col-md-8">
+                        <div class="col-12 col-lg-3">
                             {{ filter_form.provincia.label_tag }}
                             {{ filter_form.provincia }}
+                        </div>
+                        <div class="col-12 col-lg-3">
+                            {{ filter_form.tipo_registro.label_tag }}
+                            {{ filter_form.tipo_registro }}
+                        </div>
+                        <div class="col-12 col-lg-3"
+                             id="estado-revision-group"
+                             data-enabled-values=",SIN_DNI,DNI_NO_VALIDADO_RENAPER">
+                            {{ filter_form.estado_revision.label_tag }}
+                            {{ filter_form.estado_revision }}
                         </div>
                         <input type="hidden"
                                name="q"
                                id="province-hidden-q"
                                value="{{ filter_form.q.value|default:'' }}" />
-                        <div class="col-12 col-md-4">
+                        <input type="hidden" name="filters_mode" value="ui" />
+                        <div class="col-12 col-lg-3">
                             <button type="submit" class="btn btn-outline-secondary w-100">Aplicar</button>
                         </div>
                     </form>
@@ -62,17 +77,32 @@
                                         Provincia
                                         <i class="fas fa-sort sort-icon"></i>
                                     </th>
+                                    <th>Estado identidad</th>
                                     <th style="width: 15%" class="text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="ciudadanos-table-body">
                                 {% for ciudadano in object_list %}
                                     <tr>
-                                        <td data-apellido="{{ ciudadano.apellido }}">{{ ciudadano.apellido }}</td>
-                                        <td data-nombre="{{ ciudadano.nombre }}">{{ ciudadano.nombre }}</td>
+                                        <td data-apellido="{{ ciudadano.apellido }}">{{ ciudadano.apellido|default:"-" }}</td>
+                                        <td data-nombre="{{ ciudadano.nombre }}">{{ ciudadano.nombre|default:"-" }}</td>
                                         <td data-documento="{{ ciudadano.documento|default:'' }}">{{ ciudadano.documento|default:"-" }}</td>
                                         <td data-sexo="{{ ciudadano.sexo|default:'' }}">{{ ciudadano.sexo|default:"-" }}</td>
                                         <td data-provincia="{{ ciudadano.provincia|default:'' }}">{{ ciudadano.provincia|default:"-" }}</td>
+                                        <td>
+                                            {% if ciudadano.tipo_registro_identidad == "SIN_DNI" %}
+                                                <span class="badge bg-warning text-dark" title="Sin DNI">Sin DNI</span>
+                                            {% elif ciudadano.tipo_registro_identidad == "DNI_NO_VALIDADO_RENAPER" %}
+                                                <span class="badge bg-danger" title="DNI no validado por RENAPER">RENAPER no validado</span>
+                                            {% else %}
+                                                <span class="badge bg-success" title="Estándar">Estándar</span>
+                                            {% endif %}
+                                            {% if ciudadano.requiere_revision_manual %}
+                                                <span class="badge bg-secondary ms-1" title="Requiere revisión manual">
+                                                    <i class="fas fa-exclamation-triangle"></i> Revisión
+                                                </span>
+                                            {% endif %}
+                                        </td>
                                         <td class="text-center">
                                             <a href="{% url 'ciudadanos_ver' ciudadano.pk %}"
                                                class="btn btn-primary"
@@ -84,7 +114,7 @@
                                     </tr>
                                 {% empty %}
                                     <tr>
-                                        <td colspan="6" class="text-center">No se encontraron ciudadanos.</td>
+                                        <td colspan="7" class="text-center">No se encontraron ciudadanos.</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -113,6 +143,9 @@
             const provinceHiddenQ = document.getElementById("province-hidden-q");
             const searchForm = document.getElementById("simple-search-form");
             const provinceForm = document.getElementById("province-filter-form");
+            const tipoRegistroSelect = document.getElementById("id_tipo_registro");
+            const estadoRevisionGroup = document.getElementById("estado-revision-group");
+            const estadoRevisionSelect = document.getElementById("id_estado_revision");
 
             function syncHiddenFields() {
                 if (searchInput) {
@@ -120,6 +153,17 @@
                     if (hiddenQInput) hiddenQInput.value = value;
                     if (provinceHiddenQ) provinceHiddenQ.value = value;
                 }
+            }
+
+            function shouldShowEstadoRevision(tipoRegistro) {
+                return ["", "SIN_DNI", "DNI_NO_VALIDADO_RENAPER"].includes(tipoRegistro || "");
+            }
+
+            function syncEstadoRevisionVisibility() {
+                if (!estadoRevisionGroup || !estadoRevisionSelect) return;
+                const visible = shouldShowEstadoRevision(tipoRegistroSelect ? tipoRegistroSelect.value : "");
+                estadoRevisionGroup.classList.toggle("invisible", !visible);
+                estadoRevisionSelect.disabled = !visible;
             }
 
             if (searchForm) {
@@ -132,8 +176,14 @@
                 });
             }
 
+            if (tipoRegistroSelect) {
+                tipoRegistroSelect.addEventListener("change", syncEstadoRevisionVisibility);
+                tipoRegistroSelect.addEventListener("input", syncEstadoRevisionVisibility);
+            }
+
             // Inicializar valores al cargar
             syncHiddenFields();
+            syncEstadoRevisionVisibility();
         });
     </script>
 {% endblock %}

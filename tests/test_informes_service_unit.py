@@ -249,6 +249,14 @@ def test_guardar_informe_and_detail_context(mocker):
         module.InformeService, "generar_docx_borrador", return_value=SimpleNamespace()
     )
     mocker.patch(
+        "admisiones.services.admisiones_service.AdmisionService._todos_obligatorios_tienen_archivos",
+        return_value=True,
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.AdmisionService._todos_obligatorios_aceptados",
+        return_value=True,
+    )
+    mocker.patch(
         "admisiones.services.admisiones_service.AdmisionService.actualizar_estado_admision"
     )
 
@@ -269,6 +277,80 @@ def test_guardar_informe_and_detail_context(mocker):
     )
     detail = module.InformeService.get_context_informe_detail(informe_det, "base")
     assert detail["pdf"] == "pdf"
+
+
+def test_guardar_informe_submit_bloquea_si_faltan_obligatorios(mocker):
+    admision = SimpleNamespace(id=9, save=mocker.Mock())
+    instance = SimpleNamespace(
+        tipo="base",
+        pk=None,
+        _state=SimpleNamespace(adding=True),
+        estado_formulario="finalizado",
+        observaciones_subsanacion="obs",
+        admision=None,
+        save=mocker.Mock(),
+    )
+    form = mocker.Mock(
+        instance=instance,
+        save=mocker.Mock(return_value=instance),
+        save_m2m=mocker.Mock(),
+    )
+
+    mocker.patch(
+        "admisiones.services.admisiones_service.AdmisionService._todos_obligatorios_tienen_archivos",
+        return_value=False,
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.AdmisionService._todos_obligatorios_aceptados",
+        return_value=True,
+    )
+    docx_mock = mocker.patch.object(module.InformeService, "generar_docx_borrador")
+
+    res = module.InformeService.guardar_informe(
+        form, admision, es_creacion=True, action="submit", usuario=SimpleNamespace()
+    )
+
+    assert res["success"] is False
+    assert "faltan documentos obligatorios" in res["error"]
+    assert not form.save.called
+    docx_mock.assert_not_called()
+
+
+def test_guardar_informe_submit_bloquea_si_obligatorios_no_validados(mocker):
+    admision = SimpleNamespace(id=10, save=mocker.Mock())
+    instance = SimpleNamespace(
+        tipo="base",
+        pk=None,
+        _state=SimpleNamespace(adding=True),
+        estado_formulario="finalizado",
+        observaciones_subsanacion="obs",
+        admision=None,
+        save=mocker.Mock(),
+    )
+    form = mocker.Mock(
+        instance=instance,
+        save=mocker.Mock(return_value=instance),
+        save_m2m=mocker.Mock(),
+    )
+
+    mocker.patch(
+        "admisiones.services.admisiones_service.AdmisionService._todos_obligatorios_tienen_archivos",
+        return_value=True,
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.AdmisionService._todos_obligatorios_aceptados",
+        return_value=False,
+    )
+    docx_mock = mocker.patch.object(module.InformeService, "generar_docx_borrador")
+
+    res = module.InformeService.guardar_informe(
+        form, admision, es_creacion=True, action="submit", usuario=SimpleNamespace()
+    )
+
+    assert res["success"] is False
+    assert "sin validar" in res["error"]
+    assert not form.save.called
+    docx_mock.assert_not_called()
 
 
 def test_revision_and_complementarios_flows(mocker):

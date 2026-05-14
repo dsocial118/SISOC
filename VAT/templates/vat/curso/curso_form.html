@@ -73,6 +73,23 @@
                                 {% if form.usa_voucher.help_text %}<div class="form-text text-muted">{{ form.usa_voucher.help_text }}</div>{% endif %}
                             </div>
                         </div>
+                        <div class="col-md-3 d-flex align-items-center pt-3">
+                            <div>
+                                <div class="form-check form-switch">
+                                    {{ form.inscripcion_libre }}
+                                    <label class="form-check-label fw-600"
+                                           for="{{ form.inscripcion_libre.id_for_label }}">
+                                        {{ form.inscripcion_libre.label }}
+                                    </label>
+                                </div>
+                                {% if form.inscripcion_libre.help_text %}
+                                    <div class="form-text text-muted">{{ form.inscripcion_libre.help_text }}</div>
+                                {% endif %}
+                                {% if form.inscripcion_libre.errors %}
+                                    <div class="text-danger small mt-1">{{ form.inscripcion_libre.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
                         <div class="col-md-5" id="campo-vouchers" style="display:none">
                             <label for="{{ form.voucher_parametrias.id_for_label }}"
                                    class="form-label fw-600">{{ form.voucher_parametrias.label }}</label>
@@ -139,12 +156,16 @@
 (function () {
     const isEmbedded = {{ is_embedded|yesno:"true,false" }};
     const toggle = document.getElementById('{{ form.usa_voucher.id_for_label }}');
+    const toggleLibre = document.getElementById('{{ form.inscripcion_libre.id_for_label }}');
     const vouchersSelect = document.getElementById('{{ form.voucher_parametrias.id_for_label }}');
     const costoInput = document.getElementById('{{ form.costo_creditos.id_for_label }}');
     const campoCosto = document.getElementById('campo-costo-creditos');
     const campoVouchers = document.getElementById('campo-vouchers');
 
     function actualizarCosto() {
+        if (toggle && toggleLibre && toggle.checked && toggleLibre.checked) {
+            toggleLibre.checked = false;
+        }
         campoCosto.style.display = toggle.checked ? 'block' : 'none';
         campoVouchers.style.display = toggle.checked ? 'block' : 'none';
         if (!toggle.checked) {
@@ -168,6 +189,14 @@
     }
 
     toggle.addEventListener('change', actualizarCosto);
+    if (toggleLibre) {
+        toggleLibre.addEventListener('change', function () {
+            if (toggleLibre.checked && toggle.checked) {
+                toggle.checked = false;
+            }
+            actualizarCosto();
+        });
+    }
 
     if (isEmbedded) {
         const closeModal = function () {

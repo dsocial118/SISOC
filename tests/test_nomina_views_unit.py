@@ -47,7 +47,15 @@ def test_nomina_detail_context_data(mocker):
     )
     get_nomina_detail_mock = mocker.patch(
         "comedores.views.nomina.ComedorService.get_nomina_detail",
-        return_value=("page_obj", 1, 2, 3, 4, 10, {"ninos": 2, "adolescentes": 3}),
+        return_value=(
+            "page_obj",
+            1,
+            2,
+            3,
+            4,
+            10,
+            {"ninos": 2, "adolescentes": 3, "cantidad_activos": 6},
+        ),
     )
     mocker.patch(
         "comedores.views.nomina._get_admision_del_comedor_or_404",
@@ -62,7 +70,7 @@ def test_nomina_detail_context_data(mocker):
 
     ctx = view.get_context_data()
     assert ctx["object"] == "comedor"
-    assert ctx["cantidad_nomina"] == 10
+    assert ctx["cantidad_nomina"] == 6
     assert ctx["menores"] == 5
     assert ctx["dni_query"] == "1234"
     get_nomina_detail_mock.assert_called_once_with(77, 2, dni_query="1234")
@@ -131,6 +139,94 @@ def test_nomina_create_get_context_data_with_renaper(mocker):
     assert form_ciudadano.called
 
 
+def test_nomina_create_get_context_data_muestra_form_si_solo_hay_revision(mocker):
+    mocker.patch(
+        "django.views.generic.base.ContextMixin.get_context_data", return_value={}
+    )
+    mocker.patch(
+        "comedores.views.nomina._get_admision_del_comedor_or_404",
+        return_value=SimpleNamespace(pk=77, comedor="comedor"),
+    )
+    ciudadano_revision = SimpleNamespace(requiere_revision_manual=True)
+    mocker.patch(
+        "comedores.views.nomina.ComedorService.buscar_ciudadanos_por_documento",
+        return_value=[ciudadano_revision],
+    )
+    mocker.patch(
+        "comedores.views.nomina.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        return_value={"success": True, "message": "precargado", "data": {"dni": "1"}},
+    )
+    mocker.patch.object(
+        module.NominaCreateView,
+        "_prepare_renaper_initial_data",
+        return_value={"dni": "1"},
+    )
+    mocker.patch("comedores.views.nomina.messages.info")
+
+    view = module.NominaCreateView()
+    view.kwargs = {"pk": 1, "admision_pk": 77}
+    view.object = None
+    view.request = SimpleNamespace(
+        method="GET",
+        GET={"query": "12345678"},
+        POST={},
+        user=SimpleNamespace(),
+    )
+    mocker.patch.object(view, "get_form", return_value="main_form")
+    mocker.patch("comedores.views.nomina.CiudadanoFormParaNomina", return_value="form")
+    mocker.patch("comedores.views.nomina.NominaExtraForm", return_value="extra")
+
+    ctx = view.get_context_data()
+
+    assert ctx["no_resultados"] is False
+    assert ctx["renaper_precarga"] is True
+    assert ctx["mostrar_form_ciudadano"] is True
+
+
+def test_nomina_directa_get_context_data_muestra_form_si_solo_hay_revision(mocker):
+    mocker.patch(
+        "django.views.generic.base.ContextMixin.get_context_data", return_value={}
+    )
+    mocker.patch(
+        "comedores.views.nomina._get_comedor_directo_or_404",
+        return_value=SimpleNamespace(pk=77),
+    )
+    ciudadano_revision = SimpleNamespace(requiere_revision_manual=True)
+    mocker.patch(
+        "comedores.views.nomina.ComedorService.buscar_ciudadanos_por_documento",
+        return_value=[ciudadano_revision],
+    )
+    mocker.patch(
+        "comedores.views.nomina.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        return_value={"success": True, "message": "precargado", "data": {"dni": "1"}},
+    )
+    mocker.patch.object(
+        module.NominaCreateView,
+        "_prepare_renaper_initial_data",
+        return_value={"dni": "1"},
+    )
+    mocker.patch("comedores.views.nomina.messages.info")
+
+    view = module.NominaDirectaCreateView()
+    view.kwargs = {"pk": 1}
+    view.object = None
+    view.request = SimpleNamespace(
+        method="GET",
+        GET={"query": "12345678"},
+        POST={},
+        user=SimpleNamespace(),
+    )
+    mocker.patch.object(view, "get_form", return_value="main_form")
+    mocker.patch("comedores.views.nomina.CiudadanoFormParaNomina", return_value="form")
+    mocker.patch("comedores.views.nomina.NominaExtraForm", return_value="extra")
+
+    ctx = view.get_context_data()
+
+    assert ctx["no_resultados"] is False
+    assert ctx["renaper_precarga"] is True
+    assert ctx["mostrar_form_ciudadano"] is True
+
+
 def test_nomina_create_post_ciudadano_existente(mocker):
     view = module.NominaCreateView()
     view.kwargs = {"pk": 5, "admision_pk": 88}
@@ -141,6 +237,12 @@ def test_nomina_create_post_ciudadano_existente(mocker):
     mocker.patch(
         "comedores.views.nomina._get_admision_del_comedor_or_404",
         return_value=SimpleNamespace(pk=88),
+    )
+    # Mock de la validación de identidad agregada en Fix_dni
+    _ciudadano_validado = SimpleNamespace(requiere_revision_manual=False)
+    mocker.patch(
+        "comedores.views.nomina.Ciudadano.objects.only",
+        return_value=SimpleNamespace(get=lambda **kw: _ciudadano_validado),
     )
 
     form = SimpleNamespace(

@@ -1,5 +1,6 @@
 """Tests unitarios para organizaciones.views."""
 
+import json
 from types import SimpleNamespace
 
 from django.forms import ValidationError
@@ -30,7 +31,11 @@ class _QS:
 
     def order_by(self, *args, **kwargs):
         self.calls.append(("order_by", args, kwargs))
-        return "ordered"
+        return self
+
+    def values_list(self, *args, **kwargs):
+        self.calls.append(("values_list", args, kwargs))
+        return [1, 2]
 
 
 class _Page:
@@ -50,32 +55,66 @@ class _Page:
 
 class _PaginatorFake:
     def __init__(self, _items, _per_page):
-        self.count = 2
-        self.num_pages = 1
+        self.count = None
+        self.num_pages = None
         self._page = _Page()
 
     def get_page(self, page):
         if page == "bad":
-            raise ValueError("bad")
+            page = 1
         return self._page
 
 
-def test_organizacion_list_queryset_with_and_without_busqueda(mocker):
-    qs = _QS()
-    mocker.patch("organizaciones.views.Organizacion.objects.filter", return_value=qs)
-    mocker.patch(
-        "organizaciones.views.Organizacion.objects.select_related", return_value=qs
+def test_organizacion_list_view_uses_shared_builder(mocker):
+    builder = mocker.patch(
+        "organizaciones.views._build_organizacion_list_queryset", return_value="qs"
     )
 
     view = module.OrganizacionListView()
     view.request = SimpleNamespace(GET={"busqueda": "abc"})
-    out_query = view.get_queryset()
-    assert out_query is qs
+    assert view.get_queryset() == "qs"
+    builder.assert_called_once_with("abc")
 
-    view2 = module.OrganizacionListView()
-    view2.request = SimpleNamespace(GET={})
-    out_no_query = view2.get_queryset()
-    assert out_no_query == "ordered"
+
+def test_organizacion_list_view_paginates_without_count(mocker):
+    hydrate = mocker.patch(
+        "organizaciones.views._hydrate_organizaciones_page",
+        return_value=["row1", "row2"],
+    )
+    view = module.OrganizacionListView()
+    view.request = SimpleNamespace(GET={"page": "2"})
+    view.page_kwarg = "page"
+
+    paginator, page_obj, object_list, is_paginated = view.paginate_queryset(_QS(), 10)
+
+    assert paginator.count is None
+    assert object_list == ["row1", "row2"]
+    assert page_obj.object_list == ["row1", "row2"]
+    assert hydrate.called
+    assert is_paginated is False
+
+
+def test_organizacion_list_context_adds_page_range_for_no_count(mocker):
+    page_obj = SimpleNamespace(
+        paginator=SimpleNamespace(count=None),
+        number=2,
+        has_next=lambda: True,
+    )
+    mocker.patch(
+        "django.views.generic.list.ListView.get_context_data",
+        return_value={"page_obj": page_obj},
+    )
+    range_builder = mocker.patch(
+        "organizaciones.views.build_no_count_page_range", return_value=[1, 2, "…"]
+    )
+
+    view = module.OrganizacionListView()
+    view.request = SimpleNamespace(GET={"busqueda": "abc"})
+
+    ctx = view.get_context_data()
+    assert ctx["query"] == "abc"
+    assert ctx["page_range"] == [1, 2, "…"]
+    range_builder.assert_called_once_with(page_obj)
 
 
 def test_firmante_create_roles_form_and_valid_paths(mocker):
@@ -215,10 +254,19 @@ def test_ajax_views_subtipo_and_organizaciones(mocker):
     assert isinstance(resp, JsonResponse)
     assert resp.status_code == 200
 
-    # organizaciones_ajax with invalid page number fallback
+    # organizaciones_ajax con paginacion sin count exacto
     org_qs = _QS()
-    mocker.patch("organizaciones.views.Organizacion.objects.all", return_value=org_qs)
-    mocker.patch("organizaciones.views.Paginator", _PaginatorFake)
+    mocker.patch(
+        "organizaciones.views._build_organizacion_list_queryset", return_value=org_qs
+    )
+    mocker.patch(
+        "organizaciones.views._hydrate_organizaciones_page",
+        return_value=["org-1", "org-2"],
+    )
+    mocker.patch("organizaciones.views.NoCountPaginator", _PaginatorFake)
+    mocker.patch(
+        "organizaciones.views.build_no_count_page_range", return_value=[1, "…"]
+    )
     mocker.patch(
         "organizaciones.views.render_to_string", side_effect=["<rows>", "<pager>"]
     )
@@ -229,3 +277,5 @@ def test_ajax_views_subtipo_and_organizaciones(mocker):
     )
     out = module.organizaciones_ajax.__wrapped__(req2)
     assert out.status_code == 200
+    payload = json.loads(out.content)
+    assert payload["count"] is None

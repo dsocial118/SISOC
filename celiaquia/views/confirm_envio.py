@@ -3,16 +3,16 @@
 
 import logging
 
-from django.contrib import messages  # ✅ import correcto
-from django.views import View
-from django.http import JsonResponse, HttpResponseNotAllowed
-from django.shortcuts import get_object_or_404, redirect
-from django.core.exceptions import ValidationError
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.core.exceptions import ValidationError
+from django.http import HttpResponseNotAllowed, JsonResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.views import View
 
-from celiaquia.models import Expediente, ExpedienteCiudadano, RegistroErroneo
+from celiaquia.models import Expediente, RegistroErroneo
 from celiaquia.services.expediente_service import ExpedienteService
+from celiaquia.services.legajo_service import LegajoService
 from celiaquia.views.expediente import _is_ajax
 
 logger = logging.getLogger("django")
@@ -20,14 +20,13 @@ logger = logging.getLogger("django")
 
 class ExpedienteConfirmView(LoginRequiredMixin, View):
     """
-    POST: confirma el envío del expediente (provincia). Responde JSON.
+    POST: confirma el envio del expediente (provincia). Responde JSON.
     - Si faltan archivos => 400 con mensaje (o messages.error si no es AJAX).
     - Si no tiene permisos => 403 con mensaje.
     - Nunca 404 por reglas de negocio.
     """
 
     def post(self, request, pk: int):
-        # 1) Traer el expediente por PK (sin filtrar por usuario para evitar 404 falsos)
         expediente = get_object_or_404(
             Expediente.objects.select_related(
                 "usuario_provincia", "usuario_provincia__profile"
@@ -35,13 +34,12 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
             pk=pk,
         )
 
-        # 2) Chequeo de permisos: dueño, misma provincia o staff
         user = request.user
         same_owner = user == expediente.usuario_provincia
 
-        def _prov_id(u):
+        def _prov_id(usuario):
             try:
-                return getattr(getattr(u, "profile", None), "provincia_id", None)
+                return getattr(getattr(usuario, "profile", None), "provincia_id", None)
             except Exception:
                 return None
 
@@ -55,105 +53,97 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
             msg = "No tiene permisos para confirmar este expediente."
             return JsonResponse({"success": False, "error": msg}, status=403)
 
-        # 3) Validación de negocio: estado correcto
         if expediente.estado.nombre != "EN_ESPERA":
             msg = (
-                "El expediente no está en estado EN_ESPERA. "
+                "El expediente no esta en estado EN_ESPERA. "
                 f"Estado actual: {expediente.estado.nombre}"
             )
-            logger.info("Validación en confirmar envío falló: %s", msg)
+            logger.info("Validacion en confirmar envio fallo: %s", msg)
             if _is_ajax(request):
                 return JsonResponse({"success": False, "error": msg}, status=400)
             messages.error(request, msg)
             return redirect("expediente_detail", pk=expediente.pk)
 
-        # 4) Validación de negocio: no hay registros erróneos pendientes
         registros_erroneos = RegistroErroneo.objects.filter(
             expediente=expediente, procesado=False
         )
         if registros_erroneos.exists():
             msg = (
-                "No se puede confirmar el envío: hay "
+                "No se puede confirmar el envio: hay "
                 f"{registros_erroneos.count()} registros con errores pendientes."
             )
-            logger.info("Validación en confirmar envío falló: %s", msg)
+            logger.info("Validacion en confirmar envio fallo: %s", msg)
             if _is_ajax(request):
                 return JsonResponse({"success": False, "error": msg}, status=400)
             messages.error(request, msg)
             return redirect("expediente_detail", pk=expediente.pk)
 
-        # 5) Validación de negocio: todos los legajos con los 2 archivos requeridos
-        faltantes_qs = (
-            ExpedienteCiudadano.objects.select_related("ciudadano")
-            .filter(expediente_id=expediente.pk)
-            .filter(
-                Q(archivo2__isnull=True)
-                | Q(archivo2="")
-                | Q(archivo3__isnull=True)
-                | Q(archivo3="")
-            )
-        )
-
-        if faltantes_qs.exists():
+        faltantes = LegajoService.faltantes_archivos(expediente, limit=10)
+        if faltantes:
             ejemplos = [
-                f"{l.ciudadano.apellido}, {l.ciudadano.nombre} (DNI {l.ciudadano.documento})"
-                for l in faltantes_qs[:10]
+                (
+                    f"{item['apellido']}, {item['nombre']} (DNI {item['documento']})"
+                    f" - faltan: {', '.join(item['faltan_nombres'])}"
+                )
+                for item in faltantes
             ]
             msg = (
-                "No podés confirmar el envío: hay legajos sin los 2 archivos requeridos. "
+                "No podes confirmar el envio: hay legajos sin toda la documentacion "
+                "obligatoria segun su tipo de ciudadano. "
                 + (
                     "Ejemplos: "
                     + "; ".join(ejemplos)
-                    + (" …" if faltantes_qs.count() > 10 else "")
+                    + (" ..." if len(faltantes) >= 10 else "")
                 )
             )
-            logger.info("Validación en confirmar envío falló: %s", msg)
+            logger.info("Validacion en confirmar envio fallo: %s", msg)
 
             if _is_ajax(request):
                 return JsonResponse(
                     {
                         "success": False,
                         "error": msg,
-                        "faltantes_ids": list(
-                            faltantes_qs.values_list("id", flat=True)
-                        ),
+                        "faltantes_ids": [item["legajo_id"] for item in faltantes],
                     },
                     status=400,
                 )
             messages.error(request, msg)
             return redirect("expediente_detail", pk=expediente.pk)
 
-        # 6) Transición de estado / lógica de confirmación
         try:
             result = ExpedienteService.confirmar_envio(expediente, request.user)
             logger.info(
-                "Confirmación de envío OK. Expediente %s por %s",
+                "Confirmacion de envio OK. Expediente %s por %s",
                 expediente.pk,
                 request.user.username,
             )
             return JsonResponse(
                 {
                     "success": True,
-                    "message": "Expediente enviado a Subsecretaría.",
+                    "message": "Expediente enviado a Subsecretaria.",
                     "estado": expediente.estado.display_name(),
                     "datos": result,
                 }
             )
-        except ValidationError as e:
-            logger.warning("Validación en confirmar envío falló: %s", e, exc_info=True)
-            if getattr(e, "messages", None):
-                error_msg = "; ".join(str(m) for m in e.messages if m)
-            elif getattr(e, "message", None):
-                error_msg = str(e.message)
+        except ValidationError as exc:
+            logger.warning(
+                "Validacion en confirmar envio fallo: %s", exc, exc_info=True
+            )
+            if getattr(exc, "messages", None):
+                error_msg = "; ".join(
+                    str(message) for message in exc.messages if message
+                )
+            elif getattr(exc, "message", None):
+                error_msg = str(exc.message)
             else:
-                error_msg = str(e)
+                error_msg = str(exc)
             return JsonResponse({"success": False, "error": error_msg}, status=400)
-        except Exception as e:
-            logger.error("Error inesperado al confirmar envío: %s", e, exc_info=True)
+        except Exception as exc:
+            logger.error("Error inesperado al confirmar envio: %s", exc, exc_info=True)
             return JsonResponse(
                 {
                     "success": False,
-                    "error": "No se pudo confirmar el envío. Revisa los datos e intenta de nuevo.",
+                    "error": "No se pudo confirmar el envio. Revisa los datos e intenta de nuevo.",
                 },
                 status=500,
             )

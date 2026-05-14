@@ -1,9 +1,9 @@
 from django.views.generic import View
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
 from core.mixins import CSVExportMixin
 from ciudadanos.models import Ciudadano
 from ciudadanos.forms import CiudadanoFiltroForm
+from ciudadanos.views import apply_ciudadanos_filters
 
 
 class CiudadanosExportView(LoginRequiredMixin, CSVExportMixin, View):
@@ -20,22 +20,19 @@ class CiudadanosExportView(LoginRequiredMixin, CSVExportMixin, View):
             ("Localidad", "localidad__nombre"),
         ]
 
+    def get_filter_form_data(self):
+        data = self.request.GET.copy()
+        if "filters_mode" not in data:
+            data["filters_mode"] = CiudadanoFiltroForm.FILTERS_MODE_UI
+        return data
+
     def get_queryset(self):
         queryset = Ciudadano.objects.select_related(
             "sexo", "provincia", "municipio", "localidad"
         )
-        form = CiudadanoFiltroForm(self.request.GET or None)
+        form = CiudadanoFiltroForm(self.get_filter_form_data())
         if form.is_valid():
-            data = form.cleaned_data
-            if data.get("q"):
-                term = data["q"].strip()
-                queryset = queryset.filter(
-                    Q(apellido__icontains=term)
-                    | Q(nombre__icontains=term)
-                    | Q(documento__icontains=term)
-                )
-            if data.get("provincia"):
-                queryset = queryset.filter(provincia=data["provincia"])
+            queryset = apply_ciudadanos_filters(queryset, form.cleaned_data)
 
         # Sorting
         sort_col = self.request.GET.get("sort")

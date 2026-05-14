@@ -57,6 +57,7 @@ urlpatterns = [
     path("expedientespagos/", include("expedientespagos.urls")),
     path("", include("rendicioncuentasfinal.urls")),
     path("", include("relevamientos.urls")),
+    path("", include("dispositivos.urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
     path(
         "reporter-provincias/",
@@ -80,7 +81,10 @@ urlpatterns = [
 
 if settings.DEBUG and not getattr(settings, "RUNNING_TESTS", False):
     urlpatterns += [path("__debug__/", include("debug_toolbar.urls"))]
-    urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
+
+    if getattr(settings, "ENABLE_SILK", False):
+        urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
+
     urlpatterns += staticfiles_urlpatterns()
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -6,6 +6,7 @@ from datetime import date
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Sexo
@@ -46,7 +47,128 @@ class VoucherParametriaSelectMultiple(forms.SelectMultiple):
         return option
 
 
+def _normalize_related_ids(values):
+    return [value for value in dict.fromkeys(values or []) if value]
+
+
+def _get_including_deleted_manager(model_class):
+    """Devuelve el manager publico con borrados incluidos cuando existe."""
+
+    return getattr(model_class, "all_objects", model_class.objects)
+
+
+def _merge_css_classes(*class_names):
+    classes = []
+    for class_name in class_names:
+        if not class_name:
+            continue
+        for token in str(class_name).split():
+            if token not in classes:
+                classes.append(token)
+    return " ".join(classes)
+
+
+def _select2_attrs(
+    base_class="form-control",
+    placeholder=None,
+    allow_clear=None,
+    **attrs,
+):
+    attrs = dict(attrs)
+    attrs["class"] = _merge_css_classes(base_class, attrs.get("class"), "select2")
+    attrs.setdefault("data-width", "100%")
+
+    if placeholder is not None:
+        attrs["data-placeholder"] = placeholder
+    if allow_clear is not None:
+        attrs["data-allow-clear"] = str(bool(allow_clear)).lower()
+
+    return attrs
+
+
+def build_plan_estudio_queryset_for_centro(
+    centro_provincia_id=None, include_plan_ids=None
+):
+    base_queryset = PlanVersionCurricular.objects.filter(activo=True)
+    if centro_provincia_id:
+        base_queryset = base_queryset.filter(provincia_id=centro_provincia_id)
+    else:
+        base_queryset = PlanVersionCurricular.objects.none()
+
+    include_plan_ids = _normalize_related_ids(include_plan_ids)
+    if include_plan_ids:
+        base_queryset = PlanVersionCurricular.objects.filter(
+            Q(pk__in=include_plan_ids) | Q(pk__in=base_queryset.values("pk"))
+        )
+
+    return base_queryset.select_related("sector", "modalidad_cursada").order_by(
+        "sector__nombre",
+        "modalidad_cursada__nombre",
+    )
+
+
+def build_voucher_parametria_queryset(include_voucher_ids=None):
+    base_queryset = VoucherParametria.objects.filter(activa=True)
+    include_voucher_ids = _normalize_related_ids(include_voucher_ids)
+    if include_voucher_ids:
+        base_queryset = VoucherParametria.objects.filter(
+            Q(pk__in=include_voucher_ids) | Q(pk__in=base_queryset.values("pk"))
+        )
+
+    return base_queryset.select_related("programa").order_by("nombre")
+
+
+def build_curso_queryset_for_centros(centro_ids, include_curso_ids=None):
+    base_queryset = Curso.objects.filter(
+        centro_id__in=_normalize_related_ids(centro_ids)
+    )
+    include_curso_ids = _normalize_related_ids(include_curso_ids)
+    if include_curso_ids:
+        manager = _get_including_deleted_manager(Curso)
+        base_queryset = manager.filter(
+            Q(pk__in=include_curso_ids) | Q(pk__in=base_queryset.values("pk"))
+        )
+
+    return base_queryset.select_related("centro").order_by("nombre")
+
+
+def build_ubicacion_queryset_for_centros(centro_ids, include_ubicacion_ids=None):
+    base_queryset = InstitucionUbicacion.objects.filter(
+        centro_id__in=_normalize_related_ids(centro_ids)
+    )
+    include_ubicacion_ids = _normalize_related_ids(include_ubicacion_ids)
+    if include_ubicacion_ids:
+        manager = _get_including_deleted_manager(InstitucionUbicacion)
+        base_queryset = manager.filter(
+            Q(pk__in=include_ubicacion_ids) | Q(pk__in=base_queryset.values("pk"))
+        )
+
+    return base_queryset.select_related("localidad").order_by(
+        "-es_principal",
+        "rol_ubicacion",
+    )
+
+
+def build_localidad_queryset_for_centro(centro):
+    queryset = Localidad.objects.order_by("nombre")
+    if centro.municipio_id:
+        municipio_queryset = queryset.filter(municipio_id=centro.municipio_id)
+        if municipio_queryset.exists():
+            return municipio_queryset
+    if centro.provincia_id:
+        return queryset.filter(municipio__provincia_id=centro.provincia_id)
+    return queryset
+
+
 class ReferenteModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        full_name = f"{obj.first_name} {obj.last_name}".strip()
+        if full_name:
+            return f"{obj.username} - {full_name}"
+        return obj.username
+
+
+class UserModelMultipleChoiceField(forms.ModelMultipleChoiceField):
     def label_from_instance(self, obj):
         full_name = f"{obj.first_name} {obj.last_name}".strip()
         if full_name:
@@ -94,6 +216,7 @@ NORMATIVA_ANIO_CHOICES = [("", "Seleccionar año...")] + [
 
 NORMATIVA_STORAGE_SEPARATOR = " || "
 REFERENTE_GROUP_NAMES = ("CFP",)
+REVISOR_GROUP_NAMES = ("CFPRevisor",)
 
 
 def _clean_non_empty_text(value, field_label):
@@ -220,6 +343,19 @@ def _assign_contact_type_and_value(instance, cleaned_data):
 
 
 class CentroForm(forms.ModelForm):
+    referentes = UserModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        label="Referente/s",
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "form-control"}),
+    )
+    revisores = UserModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        label="Usuario Revisor",
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "form-control"}),
+    )
+
     class Meta:
         model = Centro
         fields = [
@@ -243,6 +379,8 @@ class CentroForm(forms.ModelForm):
             "apellido_referente",
             "telefono_referente",
             "correo_referente",
+            "referentes",
+            "revisores",
             "referente",
             "activo",
             "tipo_gestion",
@@ -253,21 +391,52 @@ class CentroForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields["referente"].queryset = (
+        referente_queryset = (
             User.objects.filter(groups__name__in=REFERENTE_GROUP_NAMES)
             .only("id", "username", "first_name", "last_name")
             .distinct()
         )
-        self.fields["referente"].error_messages[
-            "invalid_choice"
-        ] = "El referente seleccionado debe tener un rol valido de referente VAT."
+        revisor_queryset = (
+            User.objects.filter(groups__name__in=REVISOR_GROUP_NAMES)
+            .only("id", "username", "first_name", "last_name")
+            .distinct()
+        )
+        self.fields["referentes"].queryset = referente_queryset
+        self.fields["referente"].queryset = referente_queryset
+        self.fields["revisores"].queryset = revisor_queryset
+        referente_error = (
+            "El referente seleccionado debe tener un rol valido de referente VAT."
+        )
+        revisor_error = (
+            "El revisor seleccionado debe tener un rol valido de revisor VAT."
+        )
+        self.fields["referentes"].error_messages["invalid_choice"] = referente_error
+        self.fields["referente"].error_messages["invalid_choice"] = referente_error
+        self.fields["revisores"].error_messages["invalid_choice"] = revisor_error
+        if self.instance.pk:
+            referentes_ids = list(self.instance.referentes.values_list("pk", flat=True))
+            if not referentes_ids and self.instance.referente_id:
+                referentes_ids = [self.instance.referente_id]
+            self.initial.setdefault("referentes", referentes_ids)
+            self.initial.setdefault(
+                "revisores",
+                list(self.instance.revisores.values_list("pk", flat=True)),
+            )
         self.referente_search_options = [
             {
                 "id": str(user.pk),
                 "username": user.username,
-                "label": self.fields["referente"].label_from_instance(user),
+                "label": self.fields["referentes"].label_from_instance(user),
             }
-            for user in self.fields["referente"].queryset.order_by("username")
+            for user in referente_queryset.order_by("username")
+        ]
+        self.revisor_search_options = [
+            {
+                "id": str(user.pk),
+                "username": user.username,
+                "label": self.fields["revisores"].label_from_instance(user),
+            }
+            for user in revisor_queryset.order_by("username")
         ]
 
     def clean_referente(self):
@@ -280,6 +449,47 @@ class CentroForm(forms.ModelForm):
                 "El referente seleccionado debe tener un rol valido de referente VAT."
             )
         return referente
+
+    def clean_referentes(self):
+        referentes = self.cleaned_data.get("referentes")
+        if (
+            referentes
+            and referentes.exclude(groups__name__in=REFERENTE_GROUP_NAMES).exists()
+        ):
+            raise ValidationError(
+                "El referente seleccionado debe tener un rol valido de referente VAT."
+            )
+        return referentes
+
+    def clean_revisores(self):
+        revisores = self.cleaned_data.get("revisores")
+        if (
+            revisores
+            and revisores.exclude(groups__name__in=REVISOR_GROUP_NAMES).exists()
+        ):
+            raise ValidationError(
+                "El revisor seleccionado debe tener un rol valido de revisor VAT."
+            )
+        return revisores
+
+    def clean(self):
+        cleaned_data = super().clean()
+        referentes = cleaned_data.get("referentes")
+        legacy_referente = cleaned_data.get("referente")
+        if not referentes and legacy_referente:
+            cleaned_data["referentes"] = User.objects.filter(pk=legacy_referente.pk)
+        if not cleaned_data.get("referentes"):
+            self.add_error("referentes", "Debe seleccionar al menos un referente.")
+        return cleaned_data
+
+    def save(self, commit=True):
+        referentes = list(self.cleaned_data.get("referentes") or [])
+        instance = super().save(commit=False)
+        instance.referente = referentes[0] if referentes else None
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 
 class CentroAltaForm(CentroForm):
@@ -310,19 +520,25 @@ class CentroAltaForm(CentroForm):
             "provincia"
         ).remote_field.model.objects.order_by("nombre"),
         label="Jurisdicción",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar jurisdicción...")
+        ),
     )
     municipio = forms.ModelChoiceField(
         queryset=Centro._meta.get_field(
             "municipio"
         ).remote_field.model.objects.order_by("nombre"),
         label="Municipio / Partido",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar municipio...")
+        ),
     )
     localidad = forms.ModelChoiceField(
         queryset=Localidad.objects.order_by("nombre"),
         label="Localidad",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar localidad...")
+        ),
     )
     domicilio_actividad = forms.CharField(
         label="Dirección completa",
@@ -416,6 +632,7 @@ class CentroAltaForm(CentroForm):
         provincia_inicial = kwargs.pop("provincia_inicial", None)
         super().__init__(*args, **kwargs)
         self.fields["activo"].required = False
+        self.fields["activo"].widget.attrs["class"] = "form-check-input"
         for hidden_field in [
             "nombre_referente",
             "apellido_referente",
@@ -426,9 +643,12 @@ class CentroAltaForm(CentroForm):
             self.fields[hidden_field].widget = forms.HiddenInput()
         self.fields["autoridad_dni"].required = False
         self.fields["autoridad_dni"].widget = forms.HiddenInput()
-        self.fields["referente"].widget.attrs["class"] = "referente-hidden-select"
-        self.fields["referente"].widget.attrs["tabindex"] = "-1"
-        self.fields["referente"].empty_label = "Seleccionar referente..."
+        self.fields["referente"].required = False
+        self.fields["referente"].widget = forms.HiddenInput()
+        self.fields["referentes"].widget.attrs["class"] = "referente-hidden-select"
+        self.fields["referentes"].widget.attrs["tabindex"] = "-1"
+        self.fields["revisores"].widget.attrs["class"] = "referente-hidden-select"
+        self.fields["revisores"].widget.attrs["tabindex"] = "-1"
         self.fields["provincia"].empty_label = "Seleccionar jurisdicción..."
         self.fields["municipio"].empty_label = "Seleccionar municipio..."
         self.fields["localidad"].empty_label = "Seleccionar localidad..."
@@ -513,6 +733,12 @@ class CentroAltaForm(CentroForm):
             self.cleaned_data.get("telefono_referente"),
             "El teléfono del director/a",
         )
+
+    def clean_activo(self):
+        activo = self.cleaned_data.get("activo")
+        if self.instance.pk and "activo_present" not in self.data:
+            return self.instance.activo
+        return activo
 
     def clean_autoridad_dni(self):
         return _clean_numeric_text(
@@ -706,7 +932,7 @@ class SubsectorForm(forms.ModelForm):
     sector = forms.ModelChoiceField(
         queryset=Sector.objects.all(),
         label="Sector",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs=_select2_attrs(placeholder="Seleccionar sector...")),
     )
     nombre = forms.CharField(
         label="Nombre del Subsector",
@@ -749,7 +975,12 @@ class TituloReferenciaForm(forms.ModelForm):
         queryset=PlanVersionCurricular.objects.filter(activo=True),
         label="Plan de Estudio",
         required=False,
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(
+                placeholder="Seleccionar plan de estudio...",
+                allow_clear=True,
+            )
+        ),
     )
 
     class Meta:
@@ -800,18 +1031,25 @@ class PlanVersionCurricularForm(forms.ModelForm):
     sector = forms.ModelChoiceField(
         queryset=Sector.objects.all(),
         label="Sector",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs=_select2_attrs(placeholder="Seleccionar sector...")),
     )
     subsector = forms.ModelChoiceField(
         queryset=Subsector.objects.all(),
         label="Subsector",
         required=False,
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(
+                placeholder="Seleccionar subsector...",
+                allow_clear=True,
+            )
+        ),
     )
     modalidad_cursada = forms.ModelChoiceField(
         queryset=ModalidadCursada.objects.all(),
         label="Modalidad",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar modalidad...")
+        ),
     )
     normativa_tipo = forms.ChoiceField(
         label="Normativa - Tipo",
@@ -1002,12 +1240,16 @@ class InscripcionOfertaForm(forms.ModelForm):
     oferta = forms.ModelChoiceField(
         queryset=Comision.objects.filter(estado__in=["planificada", "activa"]),
         label="Comisión",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar comisión...")
+        ),
     )
     ciudadano = forms.ModelChoiceField(
         queryset=Ciudadano.objects.all(),
         label="Ciudadano",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar ciudadano...")
+        ),
     )
     estado = forms.ChoiceField(
         label="Estado",
@@ -1029,7 +1271,7 @@ class InstitucionContactoForm(forms.ModelForm):
     centro = forms.ModelChoiceField(
         queryset=Centro.objects.all(),
         label="Centro",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs=_select2_attrs(placeholder="Seleccionar centro...")),
     )
     nombre_contacto = forms.CharField(
         label="Nombre y apellido del responsable",
@@ -1124,7 +1366,7 @@ class InstitucionIdentificadorHistForm(forms.ModelForm):
     centro = forms.ModelChoiceField(
         queryset=Centro.objects.all(),
         label="Centro",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs=_select2_attrs(placeholder="Seleccionar centro...")),
     )
     tipo_identificador = forms.ChoiceField(
         label="Tipo de Identificador",
@@ -1139,7 +1381,11 @@ class InstitucionIdentificadorHistForm(forms.ModelForm):
         queryset=InstitucionUbicacion.objects.none(),
         label="Ubicación Asociada",
         required=False,
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(
+                placeholder="Seleccionar ubicación...", allow_clear=True
+            )
+        ),
     )
     es_actual = forms.BooleanField(
         label="Es Actual",
@@ -1202,12 +1448,14 @@ class InstitucionUbicacionForm(forms.ModelForm):
     centro = forms.ModelChoiceField(
         queryset=Centro.objects.all(),
         label="Centro",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs=_select2_attrs(placeholder="Seleccionar centro...")),
     )
     localidad = forms.ModelChoiceField(
         queryset=Localidad.objects.order_by("nombre"),
         label="Localidad",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar localidad...")
+        ),
     )
     rol_ubicacion = forms.ChoiceField(
         label="Rol de la ubicación",
@@ -1235,6 +1483,22 @@ class InstitucionUbicacionForm(forms.ModelForm):
         widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        modal_dropdown_parent = "#modalUbicacion .modal-body"
+        self.fields["centro"].widget.attrs.update(
+            {
+                "id": "id_centro_ubicacion",
+                "data-dropdown-parent": modal_dropdown_parent,
+            }
+        )
+        self.fields["localidad"].widget.attrs.update(
+            {
+                "id": "id_localidad_ubicacion",
+                "data-dropdown-parent": modal_dropdown_parent,
+            }
+        )
+
     class Meta:
         model = InstitucionUbicacion
         fields = [
@@ -1255,12 +1519,12 @@ class InstitucionUbicacionForm(forms.ModelForm):
 
 class CursoForm(forms.ModelForm):
     plan_estudio = forms.ModelChoiceField(
-        queryset=PlanVersionCurricular.objects.filter(activo=True)
-        .select_related("sector", "modalidad_cursada")
-        .order_by("sector__nombre", "modalidad_cursada__nombre"),
+        queryset=build_plan_estudio_queryset_for_centro(),
         label="Plan Curricular",
         required=True,
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar plan curricular...")
+        ),
         help_text="Se listan todos los planes curriculares activos de la provincia del centro.",
     )
     nombre = forms.CharField(
@@ -1278,15 +1542,24 @@ class CursoForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
         help_text="Al inscribirse, se valida y descuenta crédito del voucher del ciudadano.",
     )
-    voucher_parametrias = forms.ModelMultipleChoiceField(
-        queryset=VoucherParametria.objects.filter(activa=True).select_related(
-            "programa"
+    inscripcion_libre = forms.BooleanField(
+        label="Inscripción libre",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        help_text=(
+            "Permite altas públicas aunque el ciudadano todavía no exista en SISOC."
         ),
+    )
+    voucher_parametrias = forms.ModelMultipleChoiceField(
+        queryset=build_voucher_parametria_queryset(),
         label="Vouchers",
         required=False,
         widget=VoucherParametriaSelectMultiple(
             attrs={
-                "class": "form-select",
+                **_select2_attrs(
+                    base_class="form-select",
+                    placeholder="Seleccionar vouchers...",
+                ),
                 "size": "7",
                 "style": "min-height: 170px;",
             }
@@ -1314,6 +1587,7 @@ class CursoForm(forms.ModelForm):
             "nombre",
             "estado",
             "usa_voucher",
+            "inscripcion_libre",
             "voucher_parametrias",
             "costo_creditos",
             "observaciones",
@@ -1322,17 +1596,18 @@ class CursoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["plan_estudio"].empty_label = "Seleccionar plan de estudio..."
-        self.fields["voucher_parametrias"].queryset = (
-            VoucherParametria.objects.filter(activa=True)
-            .select_related("programa")
-            .order_by("nombre")
-        )
         centro_id = None
         centro_provincia_id = None
+        current_plan_id = None
+        current_voucher_ids = []
 
         if self.instance and self.instance.pk and self.instance.centro_id:
             centro_id = self.instance.centro_id
             centro_provincia_id = self.instance.centro.provincia_id
+            current_plan_id = self.instance.plan_estudio_id
+            current_voucher_ids = list(
+                self.instance.voucher_parametrias.values_list("pk", flat=True)
+            )
         elif self.initial.get("centro"):
             centro = self.initial.get("centro")
             if isinstance(centro, Centro):
@@ -1348,22 +1623,19 @@ class CursoForm(forms.ModelForm):
                 .first()
             )
 
-        if centro_provincia_id:
-            self.fields["plan_estudio"].queryset = (
-                PlanVersionCurricular.objects.filter(
-                    activo=True,
-                    provincia_id=centro_provincia_id,
-                )
-                .select_related("sector", "modalidad_cursada")
-                .order_by("sector__nombre", "modalidad_cursada__nombre")
-            )
-        else:
-            self.fields["plan_estudio"].queryset = PlanVersionCurricular.objects.none()
+        self.fields["plan_estudio"].queryset = build_plan_estudio_queryset_for_centro(
+            centro_provincia_id,
+            include_plan_ids=[current_plan_id],
+        )
+        self.fields["voucher_parametrias"].queryset = build_voucher_parametria_queryset(
+            current_voucher_ids
+        )
 
     def clean(self):
         cleaned_data = super().clean()
         plan_estudio = cleaned_data.get("plan_estudio")
         usa_voucher = cleaned_data.get("usa_voucher")
+        inscripcion_libre = cleaned_data.get("inscripcion_libre")
         voucher_parametrias = cleaned_data.get("voucher_parametrias")
         costo_creditos = cleaned_data.get("costo_creditos")
 
@@ -1374,6 +1646,12 @@ class CursoForm(forms.ModelForm):
             )
         else:
             cleaned_data["modalidad"] = plan_estudio.modalidad_cursada
+
+        if usa_voucher and inscripcion_libre:
+            self.add_error(
+                "inscripcion_libre",
+                "No podés activar inscripción libre y voucher al mismo tiempo.",
+            )
 
         if usa_voucher and not voucher_parametrias:
             self.add_error(
@@ -1416,17 +1694,24 @@ class ComisionCursoForm(forms.ModelForm):
     curso = forms.ModelChoiceField(
         queryset=Curso.objects.all(),
         label="Curso",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs=_select2_attrs(placeholder="Seleccionar curso...")),
     )
     ubicacion = forms.ModelChoiceField(
         queryset=InstitucionUbicacion.objects.none(),
         label="Ubicación",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar ubicación...")
+        ),
     )
     cupo_total = forms.IntegerField(
         label="Cupo Total",
         min_value=1,
         widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    acepta_lista_espera = forms.BooleanField(
+        label="Acepta Lista de Espera",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
     fecha_inicio = forms.DateField(
         label="Fecha de Inicio",
@@ -1453,6 +1738,7 @@ class ComisionCursoForm(forms.ModelForm):
             "curso",
             "ubicacion",
             "cupo_total",
+            "acepta_lista_espera",
             "fecha_inicio",
             "fecha_fin",
             "estado",
@@ -1462,6 +1748,7 @@ class ComisionCursoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         curso_id = None
+        current_ubicacion_id = self.instance.ubicacion_id if self.instance else None
 
         if self.is_bound:
             curso_id = self.data.get("curso")
@@ -1475,11 +1762,15 @@ class ComisionCursoForm(forms.ModelForm):
                 curso_id = curso_inicial
 
         if curso_id:
-            self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.filter(
-                centro_id=Curso.objects.filter(pk=curso_id)
+            centro_id = (
+                Curso.all_objects.filter(pk=curso_id)
                 .values_list("centro_id", flat=True)
                 .first()
-            ).select_related("localidad")
+            )
+            self.fields["ubicacion"].queryset = build_ubicacion_queryset_for_centros(
+                [centro_id],
+                include_ubicacion_ids=[current_ubicacion_id],
+            )
         else:
             self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.none()
 
@@ -1518,14 +1809,16 @@ class OfertaInstitucionalForm(forms.ModelForm):
     centro = forms.ModelChoiceField(
         queryset=Centro.objects.all(),
         label="Centro",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs=_select2_attrs(placeholder="Seleccionar centro...")),
     )
     titulo_referencia = forms.ModelChoiceField(
         queryset=TituloReferencia.objects.filter(activo=True).select_related(
             "plan_estudio"
         ),
         label="Título de Referencia",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar título de referencia...")
+        ),
     )
     plan_curricular = forms.ModelChoiceField(
         queryset=PlanVersionCurricular.objects.all(),
@@ -1535,7 +1828,9 @@ class OfertaInstitucionalForm(forms.ModelForm):
     programa = forms.ModelChoiceField(
         queryset=Programa.objects.all(),
         label="Programa",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar programa...")
+        ),
     )
     nombre_local = forms.CharField(
         label="Nombre Local",
@@ -1573,7 +1868,10 @@ class OfertaInstitucionalForm(forms.ModelForm):
         required=False,
         widget=VoucherParametriaSelectMultiple(
             attrs={
-                "class": "form-select",
+                **_select2_attrs(
+                    base_class="form-select",
+                    placeholder="Seleccionar vouchers...",
+                ),
                 "size": "7",
                 "style": "min-height: 170px;",
             }
@@ -1664,13 +1962,19 @@ class ComisionForm(forms.ModelForm):
     oferta = forms.ModelChoiceField(
         queryset=OfertaInstitucional.objects.all(),
         label="Oferta Institucional",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar oferta institucional...")
+        ),
     )
     ubicacion = forms.ModelChoiceField(
         queryset=InstitucionUbicacion.objects.all(),
         label="Ubicación",
         required=False,
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(
+                placeholder="Seleccionar ubicación...", allow_clear=True
+            )
+        ),
     )
     codigo_comision = forms.CharField(
         label="Código de Comisión",
@@ -1691,6 +1995,11 @@ class ComisionForm(forms.ModelForm):
     cupo = forms.IntegerField(
         label="Cupo Total",
         widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    acepta_lista_espera = forms.BooleanField(
+        label="Acepta Lista de Espera",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
     estado = forms.ChoiceField(
         label="Estado",
@@ -1713,6 +2022,7 @@ class ComisionForm(forms.ModelForm):
             "fecha_inicio",
             "fecha_fin",
             "cupo",
+            "acepta_lista_espera",
             "estado",
             "observaciones",
         ]
@@ -1722,7 +2032,9 @@ class ComisionHorarioForm(forms.ModelForm):
     comision = forms.ModelChoiceField(
         queryset=Comision.objects.all(),
         label="Comisión",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar comisión...")
+        ),
     )
     dia_semana = forms.ModelChoiceField(
         queryset=Dia.objects.all(),
@@ -1764,7 +2076,9 @@ class ComisionCursoHorarioForm(forms.ModelForm):
     comision_curso = forms.ModelChoiceField(
         queryset=ComisionCurso.objects.all(),
         label="Comisión de Curso",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar comisión de curso...")
+        ),
     )
     dia_semana = forms.ModelChoiceField(
         queryset=Dia.objects.all(),
@@ -1811,17 +2125,23 @@ class InscripcionForm(forms.ModelForm):
     ciudadano = forms.ModelChoiceField(
         queryset=Ciudadano.objects.all(),
         label="Ciudadano",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar ciudadano...")
+        ),
     )
     comision = forms.ModelChoiceField(
         queryset=Comision.objects.all(),
         label="Comisión",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar comisión...")
+        ),
     )
     programa = forms.ModelChoiceField(
         queryset=Programa.objects.all(),
         label="Programa",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar programa...")
+        ),
     )
     estado = forms.ChoiceField(
         label="Estado",
@@ -1902,7 +2222,9 @@ class EvaluacionForm(forms.ModelForm):
     comision = forms.ModelChoiceField(
         queryset=Comision.objects.all(),
         label="Comisión",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar comisión...")
+        ),
     )
     tipo = forms.ChoiceField(
         label="Tipo de Evaluación",
@@ -1955,12 +2277,16 @@ class ResultadoEvaluacionForm(forms.ModelForm):
     evaluacion = forms.ModelChoiceField(
         queryset=Evaluacion.objects.all(),
         label="Evaluación",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar evaluación...")
+        ),
     )
     inscripcion = forms.ModelChoiceField(
         queryset=Inscripcion.objects.all(),
         label="Inscripción",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar inscripción...")
+        ),
     )
     calificacion = forms.DecimalField(
         label="Calificación",
@@ -2010,7 +2336,9 @@ class VoucherParametriaForm(forms.ModelForm):
     programa = forms.ModelChoiceField(
         queryset=Programa.objects.all(),
         label="Programa",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar programa...")
+        ),
     )
     cantidad_inicial = forms.IntegerField(
         label="Créditos por ciudadano",
@@ -2082,12 +2410,16 @@ class VoucherForm(forms.ModelForm):
     ciudadano = forms.ModelChoiceField(
         queryset=Ciudadano.objects.all(),
         label="Ciudadano",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar ciudadano...")
+        ),
     )
     programa = forms.ModelChoiceField(
         queryset=Programa.objects.all(),
         label="Programa",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar programa...")
+        ),
     )
     cantidad_inicial = forms.IntegerField(
         label="Cantidad de créditos",
@@ -2136,7 +2468,9 @@ class VoucherAsignacionMasivaForm(forms.Form):
     programa = forms.ModelChoiceField(
         queryset=Programa.objects.all(),
         label="Programa",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Seleccionar programa...")
+        ),
     )
     cantidad_inicial = forms.IntegerField(
         label="Cantidad de créditos por ciudadano",

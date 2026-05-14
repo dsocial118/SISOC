@@ -16,6 +16,12 @@ from users.models import AccesoComedorPWA, AuditAccesoComedorPWA
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 
 
+def test_user_creation_form_provincia_usa_select2():
+    field = UserCreationForm.base_fields["provincia"]
+
+    assert "select2" in field.widget.attrs["class"].split()
+
+
 @pytest.fixture
 def comedor(db):
     provincia = Provincia.objects.create(nombre="Mendoza")

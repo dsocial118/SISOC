@@ -6,6 +6,7 @@
 - `docs/contexto/dominio.md`: modelo del dominio central y relaciones clave entre entidades.
 - `docs/contexto/arquitectura.md`: resumen de la arquitectura técnica (apps, servicios, dependencias).
 - `docs/contexto/aplicaciones.md`: inventario y notas por aplicaciones del sistema.
+- `docs/contexto/memoria/`: memoria operativa reusable curada para reducir reconstruccion de contexto entre tareas de IA.
 - `docs/contexto/features/`: contexto incremental generado por PR para continuidad entre agentes y revisión.
 - `docs/contexto/documentacion_base_datos_celiaquia.md`: detalles específicos de la base de datos de Celiaquía.
 
@@ -20,6 +21,7 @@
 
 ### 3. Seguridad
 - `docs/seguridad/security_baseline.md`: baseline de seguridad general del proyecto.
+- `docs/seguridad/iam_infraestructura.md`: matriz de accesos operativos a servidores, bases de datos y storage de backups provista por Infraestructura.
 - `docs/seguridad/security_baseline_pwa.md`: baseline de seguridad para capacidades PWA.
 
 ### 4. Guías funcionales e implementaciones

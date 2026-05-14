@@ -44,6 +44,7 @@ from centrodeinfancia.access import (
 from centrodeinfancia.forms import (
     CentroDeInfanciaForm,
     IntervencionCentroInfanciaForm,
+    NominaCentroInfanciaFormEdit,
     NominaCentroInfanciaCreateForm,
     NominaCentroInfanciaForm,
     ObservacionCentroInfanciaForm,
@@ -322,7 +323,10 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             "ciudadano__sexo",
         ).order_by("-fecha")
         intervenciones_qs = self.object.intervenciones.select_related(
-            "tipo_intervencion", "subintervencion", "destinatario"
+            "tipo_intervencion",
+            "subintervencion",
+            "destinatario",
+            "creado_por",
         ).order_by("-fecha")
 
         today = timezone.now().date()
@@ -424,7 +428,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
                 intervencion.fecha.strftime("%d/%m/%Y") if intervencion.fecha else None
             )
 
-            actor = creator_map.get(intervencion.pk)
+            actor = intervencion.creado_por or creator_map.get(intervencion.pk)
             usuario_creador = "-"
             if actor:
                 full_name = actor.get_full_name()
@@ -594,11 +598,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
                 else "-"
             ),
             "tipo_jornada_otra": self.object.tipo_jornada_otra or "",
-            "oferta_servicios": (
-                self.object.get_oferta_servicios_display()
-                if self.object.oferta_servicios
-                else "-"
-            ),
+            "oferta_servicios": self.object.get_oferta_servicios_display() or "-",
             "modalidad_gestion": (
                 self.object.get_modalidad_gestion_display()
                 if self.object.modalidad_gestion
@@ -1011,6 +1011,44 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
         return context
 
 
+class NominaCentroInfanciaFormularioDetailView(LoginRequiredMixin, DetailView):
+    model = NominaCentroInfancia
+    template_name = "centrodeinfancia/nomina_formulario_detail.html"
+    context_object_name = "nomina"
+
+    def get_queryset(self):
+        return _nomina_cdi_queryset_scoped(self.request.user).filter(
+            id=self.kwargs["pk"]
+        )
+
+
+class NominaCentroInfanciaEditView(LoginRequiredMixin, UpdateView):
+    model = NominaCentroInfancia
+    form_class = NominaCentroInfanciaFormEdit
+    template_name = "centrodeinfancia/nomina_form_edit.html"
+    pk_url_kwarg = "nomina_id"
+
+    def get_queryset(self):
+        return _nomina_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["object"] = (
+            NominaCentroInfancia.objects.select_related("centro")
+            .filter(pk=self.kwargs["nomina_id"], centro_id=self.kwargs["pk"])
+            .first()
+        )
+        context["centro"] = CentroDeInfancia.objects.filter(
+            pk=self.kwargs["pk"]
+        ).first()
+        return context
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
+
+
 class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     model = NominaCentroInfancia
     form_class = NominaCentroInfanciaCreateForm
@@ -1048,6 +1086,11 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         nomina.clean()
         nomina.save()
         return True
+
+    def get_queryset(self):
+        return _nomina_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
 
     def get_success_url(self):
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
@@ -1180,12 +1223,18 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     @staticmethod
     def _build_nomina_initial_from_renaper(renaper_result):
         renaper_data = dict(renaper_result.get("data") or {})
+        renaper_result_data = dict(renaper_result.get("result") or {})
         datos_api = renaper_result.get("datos_api") or {}
         if not renaper_data:
             return renaper_data
 
-        fecha_raw = renaper_data.get("fecha_nacimiento") or datos_api.get(
-            "fechaNacimiento"
+        fecha_raw = (
+            renaper_data.get("fecha_nacimiento")
+            or renaper_data.get("fechaNacimiento")
+            or renaper_result_data.get("fechaNacimiento")
+            or renaper_result_data.get("fecha_nacimiento")
+            or datos_api.get("fechaNacimiento")
+            or datos_api.get("fecha_nacimiento")
         )
         fecha_nacimiento = NominaCentroInfanciaCreateView._parse_fecha_renaper(
             fecha_raw
@@ -1376,8 +1425,11 @@ class IntervencionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         centro = _get_centro_cdi_scoped_or_404(self.request.user, pk=self.kwargs["pk"])
         form.instance.centro = centro
+        if self.request.user.is_authenticated:
+            form.instance.creado_por = self.request.user
         if form.destinatario_fijo_instance:
             form.instance.destinatario = form.destinatario_fijo_instance
+
         messages.success(self.request, "Intervención creada correctamente.")
         return super().form_valid(form)
 

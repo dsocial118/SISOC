@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function() {
     modalBody.appendChild(div);
   }
 
-  document.querySelectorAll(".editar-nomina").forEach(function(btn) {
+/*  document.querySelectorAll(".editar-nomina").forEach(function(btn) {
     btn.addEventListener("click", function(e) {
       e.preventDefault();
       const id = this.dataset.id;
@@ -79,10 +79,9 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
   });
+*/
 
   // Dropdown inline de estado por fila
-  const estadoLabels = { activo: "Activo", espera: "En espera", baja: "Baja" };
-
   document.querySelectorAll(".nomina-estado-opcion").forEach(function(item) {
     item.addEventListener("click", function(e) {
       e.preventDefault();
@@ -108,11 +107,7 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .then(function(data) {
           if (data.success) {
-            btn.textContent = estadoLabels[nuevoEstado] || nuevoEstado;
-            btn.className = "nomina-btn nomina-estado-btn nomina-estado-" + nuevoEstado + " dropdown-toggle";
-            dropdown.querySelectorAll(".nomina-estado-opcion").forEach(function(op) {
-              op.classList.toggle("active", op.dataset.estado === nuevoEstado);
-            });
+            location.reload();
           } else {
             alert("No se pudo cambiar el estado: " + (data.error || "error desconocido"));
           }

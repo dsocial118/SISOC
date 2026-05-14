@@ -648,6 +648,60 @@
           "response": []
         },
         {
+          "name": "Consultar estado de voucher por documento",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{authHeader}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/ciudadanos/voucher-estado/?documento={{documento}}",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "vat",
+                "web",
+                "ciudadanos",
+                "voucher-estado",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "documento",
+                  "value": "{{documento}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('Devuelve un estado funcional de voucher', function () {",
+                  "  pm.expect(['Disponible', 'En uso', 'No disponible']).to.include(body.estado);",
+                  "});",
+                  "pm.test('Devuelve flags booleanos', function () {",
+                  "  pm.expect(body.tiene_voucher).to.be.a('boolean');",
+                  "  pm.expect(body.esta_inscripto).to.be.a('boolean');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
           "name": "Listar inscripciones por documento",
           "request": {
             "method": "GET",

@@ -32,6 +32,27 @@
     background-color: rgba(40, 167, 69, 0.1) !important;
 }
 
+.form-editar-error .field-error-soft,
+.form-editar-error .field-error-soft.form-control,
+.form-editar-error .field-error-soft.form-select {
+    border: 1px solid #dc3545 !important;
+    outline: 2px solid rgba(255, 107, 122, 0.35) !important;
+    outline-offset: 0 !important;
+    box-shadow:
+        0 0 0 0.2rem rgba(220, 53, 69, 0.14),
+        inset 0 0 0 1px rgba(255, 107, 122, 0.18) !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, outline-color 0.2s ease;
+}
+
+.form-editar-error .field-error-soft.form-select {
+    background-position: right 0.75rem center, center right 2.25rem;
+}
+
+.form-editar-error select.field-error-soft option {
+    color: inherit;
+    background-color: inherit;
+}
+
 /* Animación para el botón de reprocesar */
 .btn-reprocesar-loading {
     animation: pulse 1.5s infinite;

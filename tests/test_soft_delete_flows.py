@@ -6,6 +6,7 @@ from django.db.utils import OperationalError
 from django.urls import reverse
 from django.utils import timezone
 
+from VAT.models import Centro as VatCentro
 from comedores.models import (
     Comedor,
     EstadoActividad,
@@ -14,7 +15,9 @@ from comedores.models import (
     EstadoProceso,
 )
 from centrodefamilia.models import Actividad, Categoria
+from core.models import Localidad, Municipio, Provincia
 from core.soft_delete.preview import build_delete_preview
+from core.soft_delete.signals import post_soft_delete
 
 
 def _categoria_model_key():
@@ -30,6 +33,39 @@ def _create_deleted_categoria(nombre, deleted_by):
     categoria = Categoria.objects.create(nombre=nombre)
     categoria.delete(user=deleted_by, cascade=True)
     return Categoria.all_objects.get(pk=categoria.pk)
+
+
+def _create_vat_centro_for_soft_delete():
+    provincia = Provincia.objects.create(nombre="Provincia SD VAT")
+    municipio = Municipio.objects.create(
+        nombre="Municipio SD VAT",
+        provincia=provincia,
+    )
+    localidad = Localidad.objects.create(
+        nombre="Localidad SD VAT",
+        municipio=municipio,
+    )
+    return VatCentro.objects.create(
+        nombre="Centro SD VAT",
+        codigo="CFP-SD-1",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="1",
+        numero=100,
+        domicilio_actividad="Calle 1 100",
+        telefono="221111111",
+        celular="221111112",
+        correo="centro-sd@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Perez",
+        telefono_referente="221111113",
+        correo_referente="referente-sd@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="CFP",
+        situacion="Activa",
+        activo=True,
+    )
 
 
 @pytest.mark.django_db
@@ -73,6 +109,47 @@ def test_soft_delete_cascade_and_restore_cascade():
     categoria_deleted.restore(user=user, cascade=True)
     assert Categoria.objects.filter(pk=categoria.pk).exists()
     assert Actividad.objects.filter(pk=actividad.pk).exists()
+
+
+@pytest.mark.django_db
+def test_soft_delete_apaga_activo_antes_de_emitir_post_soft_delete():
+    user = get_user_model().objects.create_user(
+        username="softdelete-flag",
+        password="x",
+    )
+    centro = _create_vat_centro_for_soft_delete()
+    observed = []
+
+    def _receiver(sender, instance, **kwargs):
+        observed.append(instance.activo)
+
+    post_soft_delete.connect(_receiver, sender=VatCentro, weak=False)
+    try:
+        centro.delete(user=user, cascade=False)
+    finally:
+        post_soft_delete.disconnect(_receiver, sender=VatCentro)
+
+    deleted = VatCentro.all_objects.get(pk=centro.pk)
+    assert deleted.deleted_at is not None
+    assert deleted.activo is False
+    assert observed == [False]
+
+
+@pytest.mark.django_db
+def test_restore_reactiva_activo_despues_de_soft_delete():
+    user = get_user_model().objects.create_user(
+        username="restore-flag",
+        password="x",
+    )
+    centro = _create_vat_centro_for_soft_delete()
+
+    centro.delete(user=user, cascade=True)
+    deleted = VatCentro.all_objects.get(pk=centro.pk)
+    deleted.restore(user=user, cascade=True)
+
+    restored = VatCentro.objects.get(pk=centro.pk)
+    assert restored.deleted_at is None
+    assert restored.activo is True
 
 
 @pytest.mark.django_db

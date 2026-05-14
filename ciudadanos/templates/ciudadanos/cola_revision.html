@@ -1,0 +1,154 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Revisi&oacute;n de Identidades No Validadas{% endblock %}
+{% block titulo-pagina %}Revisi&oacute;n de Identidades No Validadas{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="mb-1">Revisi&oacute;n manual</h3>
+            <p class="text-muted mb-0">
+                {{ total_pendientes }} ciudadano{{ total_pendientes|pluralize }} requiere{{ total_pendientes|pluralize:"n" }} revisi&oacute;n manual.
+            </p>
+        </div>
+        <a href="{% url 'ciudadanos' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left mr-1"></i> Volver al listado
+        </a>
+    </div>
+
+    <form method="get" class="card mb-3">
+        <div class="card-body">
+            <label for="estado" class="form-label fw-bold">Estado</label>
+            <div class="d-flex flex-wrap gap-2 align-items-end">
+                <select id="estado"
+                        name="estado"
+                        class="form-select"
+                        style="max-width: 280px"
+                        onchange="this.form.submit();">
+                    {% for value, label in filtros_estado %}
+                        <option value="{{ value }}"
+                                {% if value == estado_filtro %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <span class="text-muted small">{{ total_filtrado }} resultado{{ total_filtrado|pluralize }}</span>
+            </div>
+        </div>
+    </form>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Apellido y nombre</th>
+                            <th>Identificador</th>
+                            <th>Documento</th>
+                            <th>Tipo de registro</th>
+                            <th>Motivo</th>
+                            <th>Provincia</th>
+                            <th class="text-center" style="width: 300px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ciudadano in ciudadanos %}
+                            <tr>
+                                <td>{{ ciudadano.apellido|default:"-" }}, {{ ciudadano.nombre|default:"-" }}</td>
+                                <td>
+                                    <code>{{ ciudadano.identificador_interno|default:"-" }}</code>
+                                </td>
+                                <td>{{ ciudadano.documento|default:"-" }}</td>
+                                <td>
+                                    {% if ciudadano.tipo_registro_identidad == "SIN_DNI" %}
+                                        <span class="badge bg-warning text-dark">Sin DNI</span>
+                                    {% elif ciudadano.tipo_registro_identidad == "DNI_NO_VALIDADO_RENAPER" %}
+                                        <span class="badge bg-danger">RENAPER no validado</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Est&aacute;ndar</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small">
+                                    {% if ciudadano.tipo_registro_identidad == "SIN_DNI" %}
+                                        {{ ciudadano.get_motivo_sin_dni_display|default:"-" }}
+                                        {% if ciudadano.motivo_sin_dni_descripcion %}
+                                            <br />
+                                            <em>{{ ciudadano.motivo_sin_dni_descripcion|truncatechars:60 }}</em>
+                                        {% endif %}
+                                    {% elif ciudadano.tipo_registro_identidad == "DNI_NO_VALIDADO_RENAPER" %}
+                                        {{ ciudadano.get_motivo_no_validacion_renaper_display|default:"-" }}
+                                        {% if ciudadano.motivo_no_validacion_descripcion %}
+                                            <br />
+                                            <em>{{ ciudadano.motivo_no_validacion_descripcion|truncatechars:60 }}</em>
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ ciudadano.provincia|default:"-" }}</td>
+                                <td class="text-center text-nowrap">
+                                    {% if ciudadano.estado_revision_manual == "APROBADA" %}
+                                        <span class="badge bg-success px-3 py-2">
+                                            <i class="fas fa-check"></i> Aprobado
+                                        </span>
+                                    {% elif ciudadano.estado_revision_manual == "DESCARTADA" %}
+                                        <span class="badge bg-danger px-3 py-2">
+                                            <i class="fas fa-times"></i> Descartado
+                                        </span>
+                                    {% else %}
+                                        <div class="d-inline-flex align-items-center gap-1 flex-nowrap">
+                                            <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
+                                               class="btn btn-sm btn-warning"
+                                               title="Editar legajo">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </a>
+                                            <form method="post"
+                                                  action="{% url 'ciudadanos_marcar_revisado' ciudadano.pk %}"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('&iquest;Marcar este ciudadano como revisado?');">
+                                                {% csrf_token %}
+                                                <input type="hidden"
+                                                       name="next"
+                                                       value="{% url 'ciudadanos_cola_revision' %}?estado={{ estado_filtro }}" />
+                                                <button type="submit"
+                                                        class="btn btn-sm btn-outline-success"
+                                                        title="Marcar como revisado">
+                                                    <i class="fas fa-check"></i> Revisado
+                                                </button>
+                                            </form>
+                                            <form method="post"
+                                                  action="{% url 'ciudadanos_descartar_revision' ciudadano.pk %}"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('&iquest;Descartar esta solicitud?');">
+                                                {% csrf_token %}
+                                                <input type="hidden"
+                                                       name="next"
+                                                       value="{% url 'ciudadanos_cola_revision' %}?estado={{ estado_filtro }}" />
+                                                <button type="submit"
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        title="Descartar solicitud">
+                                                    <i class="fas fa-times"></i> Descartar
+                                                </button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    <i class="fas fa-check-circle fa-2x mb-2 d-block text-success"></i>
+                                    No hay ciudadanos para el filtro seleccionado.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+        <div class="mt-3">{% include 'components/pagination.html' %}</div>
+    {% endif %}
+{% endblock %}

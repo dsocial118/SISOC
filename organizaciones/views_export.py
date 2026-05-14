@@ -1,8 +1,9 @@
 from django.views.generic import View
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q, Count
+from django.db.models import Count
 from core.mixins import CSVExportMixin
 from organizaciones.models import Organizacion
+from organizaciones.views import _apply_organizacion_search
 
 
 class OrganizacionExportView(LoginRequiredMixin, CSVExportMixin, View):
@@ -27,12 +28,7 @@ class OrganizacionExportView(LoginRequiredMixin, CSVExportMixin, View):
         ).annotate(comedores_count=Count("comedor"))
 
         if busqueda:
-            organizaciones = organizaciones.filter(
-                Q(nombre__icontains=busqueda)
-                | Q(cuit__icontains=busqueda)
-                | Q(telefono__icontains=busqueda)
-                | Q(email__icontains=busqueda)
-            )
+            organizaciones = _apply_organizacion_search(organizaciones, busqueda)
 
         # Sorting from request
         sort_col = self.request.GET.get("sort")

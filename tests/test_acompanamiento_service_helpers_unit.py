@@ -3,6 +3,7 @@
 from contextlib import nullcontext
 from datetime import date, datetime
 from types import SimpleNamespace
+from unittest.mock import call
 
 from acompanamientos.acompanamiento_service import AcompanamientoService
 
@@ -155,7 +156,7 @@ def test_obtener_datos_admision_with_and_without_admision(mocker):
     )
     admision_qs = _QS(first_value=admision)
 
-    mocker.patch(
+    admision_filter = mocker.patch(
         "acompanamientos.acompanamiento_service.Admision.objects.filter",
         return_value=admision_qs,
     )
@@ -173,6 +174,11 @@ def test_obtener_datos_admision_with_and_without_admision(mocker):
     assert out["comedor"] == "comedor-db"
     assert out["info_relevante"] == "info"
     assert out["numero_if"] == "IF-1"
+    admision_filter.assert_called_once_with(
+        comedor=comedor,
+        enviado_acompaniamiento=True,
+        activa=True,
+    )
 
     mocker.patch(
         "acompanamientos.acompanamiento_service.Admision.objects.filter",
@@ -183,18 +189,90 @@ def test_obtener_datos_admision_with_and_without_admision(mocker):
     assert out_none["numero_if"] is None
 
 
+def test_obtener_datos_admision_con_admision_id_permite_cerradas(mocker):
+    comedor = SimpleNamespace(pk=2)
+    admision = SimpleNamespace(
+        id=14,
+        comedor_id=8,
+        legales_num_if="IF-14",
+        numero_disposicion="DISP-14",
+    )
+    admision_filter = mocker.patch(
+        "acompanamientos.acompanamiento_service.Admision.objects.filter",
+        return_value=_QS(first_value=admision),
+    )
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.InformeTecnico.objects.filter",
+        return_value=_QS(first_value="info-cerrada"),
+    )
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Comedor.objects.filter",
+        return_value=_QS(first_value="comedor-cerrado"),
+    )
+
+    out = AcompanamientoService.obtener_datos_admision(comedor, admision_id=14)
+
+    assert out["admision"] is admision
+    assert out["info_relevante"] == "info-cerrada"
+    admision_filter.assert_called_once_with(
+        comedor=comedor,
+        enviado_acompaniamiento=True,
+        id=14,
+    )
+
+
+def test_obtener_hitos_con_admision_id_restringe_por_comedor(mocker):
+    comedor = SimpleNamespace(pk=3)
+    hitos_filter = mocker.patch(
+        "acompanamientos.acompanamiento_service.Hitos.objects.filter",
+        return_value=SimpleNamespace(first=lambda: "hitos-filtrados"),
+    )
+
+    out = AcompanamientoService.obtener_hitos(comedor, admision_id=22)
+
+    assert out == "hitos-filtrados"
+    hitos_filter.assert_called_once_with(
+        acompanamiento__admision__comedor=comedor,
+        acompanamiento__admision_id=22,
+    )
+
+
+def test_crear_hitos_con_admision_id_restringe_acompanamiento_por_comedor(mocker):
+    acompanamiento_filter = mocker.patch(
+        "acompanamientos.acompanamiento_service.Acompanamiento.objects.filter",
+        return_value=SimpleNamespace(first=lambda: None),
+    )
+    intervencion = SimpleNamespace(
+        comedor=SimpleNamespace(id=4),
+        admision_id=18,
+        subintervencion_id=1,
+        tipo_intervencion=SimpleNamespace(nombre="Intervencion 1"),
+    )
+
+    AcompanamientoService.crear_hitos(intervencion)
+
+    acompanamiento_filter.assert_called_once_with(
+        admision_id=18,
+        admision__comedor=intervencion.comedor,
+    )
+
+
 def test_crear_hitos_crea_subintervencion_y_nuevo_hito(mocker):
     mocker.patch(
         "acompanamientos.acompanamiento_service.Hitos._meta.fields",
         [SimpleNamespace(verbose_name="Hito Uno", name="hito_uno")],
     )
 
-    chain = SimpleNamespace(
-        filter=lambda **_k: SimpleNamespace(first=lambda: None),
+    acompanamiento = SimpleNamespace(pk=1)
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Acompanamiento.objects.filter",
+        return_value=SimpleNamespace(
+            order_by=lambda *_: SimpleNamespace(first=lambda: acompanamiento)
+        ),
     )
     mocker.patch(
-        "acompanamientos.acompanamiento_service.Hitos.objects.select_related",
-        return_value=chain,
+        "acompanamientos.acompanamiento_service.Hitos.objects.filter",
+        return_value=SimpleNamespace(first=lambda: None),
     )
 
     sub = SimpleNamespace(nombre="Sub 1")
@@ -222,10 +300,32 @@ def test_crear_hitos_crea_subintervencion_y_nuevo_hito(mocker):
 
     AcompanamientoService.crear_hitos(intervencion)
 
-    crear_hito.assert_called_once()
+    crear_hito.assert_called_once_with(acompanamiento=acompanamiento)
     assert intervencion.subintervencion is sub
     assert nuevo.hito_uno is True
     nuevo.save.assert_called_once()
+
+
+def test_crear_hitos_sin_acompanamiento_no_hace_nada(mocker):
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Acompanamiento.objects.filter",
+        return_value=SimpleNamespace(
+            order_by=lambda *_: SimpleNamespace(first=lambda: None)
+        ),
+    )
+    crear_hito = mocker.patch(
+        "acompanamientos.acompanamiento_service.Hitos.objects.create"
+    )
+
+    intervencion = SimpleNamespace(
+        comedor=SimpleNamespace(id=1),
+        subintervencion_id=1,
+        tipo_intervencion=SimpleNamespace(nombre="Intervencion 1"),
+    )
+
+    AcompanamientoService.crear_hitos(intervencion)
+
+    crear_hito.assert_not_called()
 
 
 def test_obtener_fechas_hitos_mapea_hito_y_omite_sin_tipo(mocker):
@@ -272,14 +372,23 @@ def test_obtener_fechas_hitos_mapea_hito_y_omite_sin_tipo(mocker):
     assert out == {"hito_uno": "02/02/2024"}
 
 
-def test_importar_datos_desde_admision_ok_y_sin_admision(mocker):
-    class _Missing(Exception):
-        pass
-
+def test_importar_datos_desde_admision_ok(mocker):
+    acompanamiento = SimpleNamespace(pk=1)
     mocker.patch(
-        "acompanamientos.acompanamiento_service.Admision.DoesNotExist", _Missing
+        "acompanamientos.acompanamiento_service.Acompanamiento.objects.get_or_create",
+        return_value=(acompanamiento, True),
     )
-
+    informe_tecnico = SimpleNamespace(
+        fecha_vencimiento_mandatos=date(2026, 1, 1),
+        if_relevamiento="IF-1",
+        aprobadas_desayuno_lunes=3,
+        aprobadas_merienda_lunes=1,
+        aprobadas_almuerzo_martes=2,
+    )
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.InformeTecnico.objects.filter",
+        return_value=_QS(first_value=informe_tecnico),
+    )
     update_or_create = mocker.patch(
         "acompanamientos.acompanamiento_service.InformacionRelevante.objects.update_or_create"
     )
@@ -295,39 +404,48 @@ def test_importar_datos_desde_admision_ok_y_sin_admision(mocker):
         "acompanamientos.acompanamiento_service.transaction.atomic",
         return_value=nullcontext(),
     )
+    hitos_get_or_create = mocker.patch(
+        "acompanamientos.acompanamiento_service.Hitos.objects.get_or_create",
+    )
 
     admision = SimpleNamespace(
-        numero_expediente="EX-1",
-        numero_resolucion="RES-1",
-        vencimiento_mandato=date(2026, 1, 1),
-        if_relevamiento="IF-1",
-        prestaciones=SimpleNamespace(
-            all=lambda: [
-                SimpleNamespace(
-                    dia="lunes", desayuno=1, almuerzo=2, merienda=0, cena=0
-                ),
-                SimpleNamespace(
-                    dia="martes", desayuno=0, almuerzo=1, merienda=1, cena=0
-                ),
-            ]
-        ),
-    )
-    get_admision = mocker.patch(
-        "acompanamientos.acompanamiento_service.Admision.objects.get",
-        return_value=admision,
+        pk=5,
+        numero_convenio="CONV-1",
+        convenio_numero=None,
+        comedor=SimpleNamespace(pk=10),
+        num_expediente="EX-1",
+        numero_disposicion="DISP-1",
     )
 
-    comedor = SimpleNamespace(pk=10)
-    AcompanamientoService.importar_datos_desde_admision(comedor)
+    resultado = AcompanamientoService.importar_datos_desde_admision(admision)
 
-    get_admision.assert_called_once_with(comedor=comedor)
-    update_or_create.assert_called_once()
+    assert resultado is acompanamiento
+    update_or_create.assert_called_once_with(
+        acompanamiento=acompanamiento,
+        defaults={
+            "numero_expediente": "EX-1",
+            "numero_resolucion": "DISP-1",
+            "vencimiento_mandato": date(2026, 1, 1),
+            "if_relevamiento": "IF-1",
+        },
+    )
     delete_qs.delete.assert_called_once()
-    assert crear_prestacion.call_count == 2
-
-    get_admision.side_effect = _Missing("no admision")
-    try:
-        AcompanamientoService.importar_datos_desde_admision(comedor)
-        assert False, "Se esperaba ValueError"
-    except ValueError as exc:
-        assert "No se encontró una admisión" in str(exc)
+    assert crear_prestacion.call_args_list == [
+        call(
+            acompanamiento=acompanamiento,
+            dia="lunes",
+            desayuno=True,
+            almuerzo=False,
+            merienda=True,
+            cena=False,
+        ),
+        call(
+            acompanamiento=acompanamiento,
+            dia="martes",
+            desayuno=False,
+            almuerzo=True,
+            merienda=False,
+            cena=False,
+        ),
+    ]
+    hitos_get_or_create.assert_called_once_with(acompanamiento=acompanamiento)

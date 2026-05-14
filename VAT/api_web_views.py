@@ -11,6 +11,7 @@ from VAT.models import (
     Centro,
     ComisionCurso,
     Inscripcion,
+    SolicitudInscripcionPublica,
     TituloReferencia,
     VoucherParametria,
 )
@@ -21,9 +22,14 @@ from VAT.serializers import (
     VatWebInscripcionPrevalidacionResponseSerializer,
     VatWebInscripcionPrevalidacionSerializer,
     VatWebInscripcionSerializer,
+    VatWebSolicitudInscripcionPublicaSerializer,
     VatWebTituloSerializer,
+    VatWebVoucherEstadoSerializer,
 )
-from VAT.services.inscripcion_service import InscripcionService
+from VAT.services.inscripcion_service import (
+    ESTADOS_INSCRIPCION_OCUPAN_CUPO,
+    InscripcionService,
+)
 
 
 @extend_schema(
@@ -122,6 +128,76 @@ class VatWebCentroViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(localidad_id=localidad_id)
 
         return queryset
+
+
+@extend_schema(
+    tags=["VAT Web - Ciudadanos"],
+    description="Consultas de estado de ciudadanos para consumo de integraciones web.",
+)
+class VatWebCiudadanoViewSet(viewsets.ViewSet):
+    permission_classes = [HasAPIKeyOrToken]
+
+    @extend_schema(
+        summary="Consultar estado de voucher por DNI",
+        description=(
+            "Devuelve un estado calculado a partir del voucher usable del ciudadano "
+            "y sus inscripciones VAT activas."
+        ),
+        parameters=[
+            OpenApiParameter(
+                "documento",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                required=True,
+                description="DNI numerico del ciudadano.",
+            ),
+        ],
+        responses={200: VatWebVoucherEstadoSerializer},
+        examples=[
+            OpenApiExample(
+                "Voucher disponible",
+                value={
+                    "documento": "30111222",
+                    "estado": "Disponible",
+                    "tiene_voucher": True,
+                    "esta_inscripto": False,
+                },
+                response_only=True,
+            ),
+            OpenApiExample(
+                "Voucher en uso",
+                value={
+                    "documento": "30111222",
+                    "estado": "En uso",
+                    "tiene_voucher": True,
+                    "esta_inscripto": True,
+                },
+                response_only=True,
+            ),
+            OpenApiExample(
+                "Sin voucher usable",
+                value={
+                    "documento": "30111222",
+                    "estado": "No disponible",
+                    "tiene_voucher": False,
+                    "esta_inscripto": False,
+                },
+                response_only=True,
+            ),
+        ],
+    )
+    @action(detail=False, methods=["get"], url_path="voucher-estado")
+    def voucher_estado(self, request, *args, **kwargs):
+        documento = str(request.query_params.get("documento") or "").strip()
+        if not documento:
+            raise ValidationError({"documento": ["Este parametro es requerido."]})
+        if not documento.isdigit():
+            raise ValidationError({"documento": ["El documento debe ser numerico."]})
+
+        return Response(
+            InscripcionService.consultar_estado_voucher_por_documento(documento),
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema(
@@ -294,6 +370,7 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
                         "ciclo_lectivo": 2026,
                         "costo": 1,
                         "usa_voucher": True,
+                        "inscripcion_libre": False,
                         "observaciones": "Comisión presencial turno tarde",
                         "horarios": [
                             {
@@ -331,7 +408,13 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
                     ).order_by("programa_id", "id"),
                 ),
             )
-            .annotate(total_inscriptos=Count("inscripciones", distinct=True))
+            .annotate(
+                total_inscriptos=Count(
+                    "inscripciones",
+                    filter=Q(inscripciones__estado__in=ESTADOS_INSCRIPCION_OCUPAN_CUPO),
+                    distinct=True,
+                )
+            )
             .exclude(estado__in=["cerrada", "suspendida"])
             .exclude(curso__estado__in=["finalizado", "cancelado"])
             .order_by("fecha_inicio", "codigo_comision")
@@ -492,12 +575,20 @@ class VatWebInscripcionViewSet(
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            inscripcion = serializer.save()
+            resultado = serializer.save()
         except ValueError as exc:
             raise ValidationError({"error": [str(exc)]}) from exc
-        response_serializer = VatWebInscripcionSerializer(
-            inscripcion, context={"request": request}
-        )
+
+        if isinstance(resultado, SolicitudInscripcionPublica):
+            response_serializer = VatWebSolicitudInscripcionPublicaSerializer(
+                resultado,
+                context={"request": request},
+            )
+        else:
+            response_serializer = VatWebInscripcionSerializer(
+                resultado,
+                context={"request": request},
+            )
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(

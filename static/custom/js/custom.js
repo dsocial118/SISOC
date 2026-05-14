@@ -1,14 +1,117 @@
+function parseSelect2Boolean(value, fallbackValue) {
+	if (value === undefined || value === null || value === "") {
+		return fallbackValue;
+	}
 
+	return ["1", "true", "yes", "si"].includes(String(value).toLowerCase());
+}
+
+function buildSelect2Options($element, overrides) {
+	const dataPlaceholder = $element.attr("data-placeholder");
+	const emptyOption = $element.find('option[value=""]').first();
+	const derivedPlaceholder =
+		dataPlaceholder !== undefined
+			? dataPlaceholder
+			: emptyOption.length && !$element.prop("multiple")
+			? emptyOption.text()
+			: undefined;
+	const options = {
+		width: $element.attr("data-width") || "100%",
+	};
+	const minimumInputLength = Number($element.attr("data-minimum-input-length"));
+	const minimumResultsForSearch = Number(
+		$element.attr("data-minimum-results-for-search")
+	);
+	const dropdownParentSelector = $element.attr("data-dropdown-parent");
+
+	if (derivedPlaceholder !== undefined) {
+		options.placeholder = derivedPlaceholder;
+		options.allowClear = parseSelect2Boolean(
+			$element.attr("data-allow-clear"),
+			!$element.prop("multiple")
+		);
+	}
+
+	if (!Number.isNaN(minimumInputLength)) {
+		options.minimumInputLength = minimumInputLength;
+	}
+
+	if (!Number.isNaN(minimumResultsForSearch)) {
+		options.minimumResultsForSearch = minimumResultsForSearch;
+	}
+
+	if (dropdownParentSelector) {
+		const $dropdownParent = $(dropdownParentSelector);
+		if ($dropdownParent.length) {
+			options.dropdownParent = $dropdownParent;
+		}
+	}
+
+	return Object.assign(options, overrides || {});
+}
+
+function resolveSelect2Targets(scope) {
+	if (!scope) {
+		return $("select.select2");
+	}
+
+	const $scope = scope.jquery ? scope : $(scope);
+	if (!$scope.length) {
+		return $();
+	}
+
+	return $scope.filter("select.select2").add($scope.find("select.select2"));
+}
+
+window.initSelect2Elements = function (scope, overrides) {
+	if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) {
+		return;
+	}
+
+	resolveSelect2Targets(scope).each(function () {
+		const $element = $(this);
+
+		if ($element.data("select2")) {
+			return;
+		}
+
+		$element.select2(buildSelect2Options($element, overrides));
+	});
+};
+
+window.refreshSelect2Element = function (target, overrides) {
+	if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) {
+		return;
+	}
+
+	const $element = target.jquery ? target : $(target);
+
+	if (!$element.length || !$element.hasClass("select2")) {
+		return;
+	}
+
+	const currentValue = $element.val();
+
+	if ($element.data("select2")) {
+		$element.select2("destroy");
+	}
+
+	$element.select2(buildSelect2Options($element, overrides));
+
+	if (currentValue !== undefined) {
+		$element.val(currentValue).trigger("change.select2");
+	}
+};
 
 $(function () {
 	//Initialize input Elements
 	bsCustomFileInput.init();
 
 	//Initialize Select2 Elements
-	$('.select2').select2()
+	window.initSelect2Elements();
 
 	//Initialize Select2 Elements
-	$('.custom-select').find('[value=""]').text('');
+	$(".custom-select").find('[value=""]').text("");
 
 	$(".print").click(function () {
 		//imprime los div excepto los elementos que tengan la clase 'd-print-none'
@@ -18,7 +121,6 @@ $(function () {
 		// se agrrega la clase en filas <tr> de un table para que sean links a la vista de detalle del elemento
 		window.location = $(this).data("href");
 	});
-
 });
 
 

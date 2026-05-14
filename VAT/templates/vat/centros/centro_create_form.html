@@ -188,6 +188,44 @@
             font-size: .875rem;
         }
 
+        .vp-field .referente-selected-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .45rem;
+            margin-top: .55rem;
+        }
+
+        .vp-field .referente-selected-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            border: 1px solid rgba(126, 179, 255, 0.32);
+            border-radius: 999px;
+            background: rgba(74, 141, 219, 0.16);
+            color: #dceafe;
+            padding: .35rem .55rem .35rem .7rem;
+            font-size: .875rem;
+        }
+
+        .vp-field .referente-chip-remove {
+            border: 0;
+            border-radius: 50%;
+            width: 1.25rem;
+            height: 1.25rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #dceafe;
+            background: rgba(255, 255, 255, 0.12);
+            line-height: 1;
+        }
+
+        .vp-field .referente-chip-remove:hover,
+        .vp-field .referente-chip-remove:focus {
+            background: rgba(255, 255, 255, 0.22);
+            outline: none;
+        }
+
         .vp-contact-item {
             border: 1px solid rgba(126, 179, 255, 0.25);
             border-radius: 14px;
@@ -198,6 +236,53 @@
         .vp-contact-item .form-check-label {
             color: #dceafe;
             font-weight: 600;
+        }
+
+        .vp-status-card {
+            margin-top: 1rem;
+            border: 1px solid rgba(126, 179, 255, 0.25);
+            border-radius: 14px;
+            padding: 1rem 1.1rem;
+            background: linear-gradient(180deg, rgba(20, 44, 73, 0.82) 0%, rgba(18, 39, 65, 0.8) 100%);
+        }
+
+        .vp-status-card h4 {
+            margin: 0 0 .35rem;
+            color: #f8fbff;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .vp-status-card p {
+            margin: 0;
+            color: #c9ddf6;
+        }
+
+        .vp-switch {
+            min-height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 1rem 1.1rem;
+            border-radius: 14px;
+            border: 1px solid rgba(126, 179, 255, 0.22);
+            background: rgba(9, 22, 39, 0.28);
+            color: #f8fbff;
+        }
+
+        .vp-switch .form-check-label {
+            color: #f8fbff;
+            font-weight: 600;
+        }
+
+        .vp-switch .form-check-input {
+            margin-right: .65rem;
+        }
+
+        .vp-inline-errors {
+            color: #ffc9c9;
+            margin-top: .35rem;
+            font-size: .875rem;
         }
 
         .vp-actions {
@@ -285,20 +370,41 @@
                         <div class="col-md-4 vp-field">{{ form.tipo_gestion|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.situacion|as_crispy_field }}</div>
                         <div class="col-md-6 vp-field">
-                            <div id="div_id_referente" class="form-group">
-                                <label for="id_referente_search" class="requiredField">
-                                    {{ form.referente.label }}<span class="asteriskField">*</span>
+                            <div id="div_id_referentes" class="form-group">
+                                <label for="id_referentes_search" class="requiredField">
+                                    {{ form.referentes.label }}<span class="asteriskField">*</span>
                                 </label>
                                 <div class="referente-search-wrapper">
                                     <input type="search"
-                                           id="id_referente_search"
-                                           class="form-control{% if form.referente.errors %} is-invalid{% endif %}"
+                                           id="id_referentes_search"
+                                           class="form-control{% if form.referentes.errors or form.referente.errors %} is-invalid{% endif %}"
                                            placeholder="Buscar referente por usuario o nombre"
                                            autocomplete="off" />
-                                    <div id="referente-search-results" class="referente-search-results" hidden></div>
+                                    <div id="referentes-search-results"
+                                         class="referente-search-results"
+                                         hidden></div>
                                 </div>
+                                <div id="referentes-selected-items" class="referente-selected-items"></div>
+                                {{ form.referentes }}
                                 {{ form.referente }}
+                                {% for error in form.referentes.errors %}<span class="referente-search-error">{{ error }}</span>{% endfor %}
                                 {% for error in form.referente.errors %}<span class="referente-search-error">{{ error }}</span>{% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-6 vp-field">
+                            <div id="div_id_revisores" class="form-group">
+                                <label for="id_revisores_search">{{ form.revisores.label }}</label>
+                                <div class="referente-search-wrapper">
+                                    <input type="search"
+                                           id="id_revisores_search"
+                                           class="form-control{% if form.revisores.errors %} is-invalid{% endif %}"
+                                           placeholder="Buscar revisor por usuario o nombre"
+                                           autocomplete="off" />
+                                    <div id="revisores-search-results" class="referente-search-results" hidden></div>
+                                </div>
+                                <div id="revisores-selected-items" class="referente-selected-items"></div>
+                                {{ form.revisores }}
+                                {% for error in form.revisores.errors %}<span class="referente-search-error">{{ error }}</span>{% endfor %}
                             </div>
                         </div>
                     </div>
@@ -393,6 +499,24 @@
                             </div>
                         {% endfor %}
                     </div>
+                    {% if show_activo_toggle %}
+                        <div class="vp-status-card">
+                            <div class="row align-items-center gy-3">
+                                <div class="col-md-8">
+                                    <h4>4. Estado de la sede</h4>
+                                    <p>Las ediciones conservan el estado actual salvo que cambies este switch de forma explícita.</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="hidden" name="activo_present" value="1" />
+                                    <div class="vp-switch form-check form-switch mb-0">
+                                        {{ form.activo }}
+                                        <label class="form-check-label" for="{{ form.activo.id_for_label }}">{{ form.activo.label }}</label>
+                                    </div>
+                                    {% if form.activo.errors %}<div class="vp-inline-errors">{{ form.activo.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                     <div class="vp-actions">
                         <a href="{{ cancel_url }}" class="btn btn-secondary">
                             <i class="fas fa-times mr-1"></i>Cancelar
@@ -425,6 +549,15 @@
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
         var referenteSearchOptions = [
             {% for option in form.referente_search_options %}
+                {
+                    id: "{{ option.id|escapejs }}",
+                    username: "{{ option.username|escapejs }}",
+                    label: "{{ option.label|escapejs }}"
+                }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        var revisorSearchOptions = [
+            {% for option in form.revisor_search_options %}
                 {
                     id: "{{ option.id|escapejs }}",
                     username: "{{ option.username|escapejs }}",

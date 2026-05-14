@@ -2,141 +2,224 @@ document.addEventListener("DOMContentLoaded", function () {
     var provinciaSelect = document.getElementById("id_provincia");
     var municipioSelect = document.getElementById("id_municipio");
     var localidadSelect = document.getElementById("id_localidad");
-    var referenteSelect = document.getElementById("id_referente");
-    var referenteSearchInput = document.getElementById("id_referente_search");
-    var referenteSearchResults = document.getElementById("referente-search-results");
+    var referentesSelect = document.getElementById("id_referentes");
+    var revisoresSelect = document.getElementById("id_revisores");
     var addContactoBtn = document.getElementById("add-contacto-btn");
     var contactosContainer = document.getElementById("contactos-formset");
     var totalFormsInput = document.getElementById("id_contactos-TOTAL_FORMS");
 
-    function getReferenteOptionById(id) {
-        if (!window.referenteSearchOptions || !id) {
-            return null;
-        }
-
-        return window.referenteSearchOptions.find(function (option) {
+    function getOptionById(options, id) {
+        return (options || []).find(function (option) {
             return option.id === String(id);
         }) || null;
     }
 
-    function getMatchingReferenteOptions(term) {
+    function escapeHtml(value) {
+        return String(value || "").replace(/[&<>"']/g, function (character) {
+            return {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
+            }[character];
+        });
+    }
+
+    function getSelectedValues(selectElement) {
+        if (!selectElement) {
+            return [];
+        }
+        return Array.from(selectElement.selectedOptions).map(function (option) {
+            return option.value;
+        });
+    }
+
+    function getMatchingUserOptions(options, term, selectedValues) {
         var normalizedTerm = (term || "").trim().toLowerCase();
-        if (!normalizedTerm || !window.referenteSearchOptions) {
+        if (!normalizedTerm || !options) {
             return [];
         }
 
-        return window.referenteSearchOptions.filter(function (option) {
-            return option.username.toLowerCase().includes(normalizedTerm);
+        return options.filter(function (option) {
+            var matchesTerm = option.username.toLowerCase().includes(normalizedTerm) ||
+                option.label.toLowerCase().includes(normalizedTerm);
+            return matchesTerm && selectedValues.indexOf(option.id) === -1;
         }).slice(0, 8);
     }
 
-    function closeReferenteResults() {
-        if (referenteSearchResults) {
-            referenteSearchResults.hidden = true;
-            referenteSearchResults.innerHTML = "";
+    function closeUserResults(resultsElement) {
+        if (resultsElement) {
+            resultsElement.hidden = true;
+            resultsElement.innerHTML = "";
         }
     }
 
-    function selectReferenteOption(option) {
-        if (!referenteSelect || !referenteSearchInput || !option) {
+    function renderSelectedChips(config) {
+        if (!config.selectedContainer || !config.selectElement) {
             return;
         }
-
-        referenteSelect.value = option.id;
-        referenteSearchInput.value = option.label;
-        referenteSearchInput.setCustomValidity("");
-        closeReferenteResults();
-    }
-
-    function renderReferenteResults(matches) {
-        if (!referenteSearchResults) {
-            return;
-        }
-
-        if (!matches.length) {
-            referenteSearchResults.innerHTML =
-                '<div class="referente-search-empty">No hay usuarios CFP para ese username.</div>';
-            referenteSearchResults.hidden = false;
-            return;
-        }
-
-        referenteSearchResults.innerHTML = matches.map(function (option) {
+        var selectedValues = getSelectedValues(config.selectElement);
+        config.selectedContainer.innerHTML = selectedValues.map(function (id) {
+            var option = getOptionById(config.options, id);
+            if (!option) {
+                return "";
+            }
+            var escapedId = escapeHtml(option.id);
+            var escapedLabel = escapeHtml(option.label);
             return (
-                '<button type="button" class="referente-search-option" data-referente-id="' +
-                option.id +
-                '">' +
-                option.label +
-                "</button>"
+                '<span class="referente-selected-chip">' +
+                escapedLabel +
+                '<button type="button" class="referente-chip-remove" aria-label="Quitar" data-user-id="' +
+                escapedId +
+                '">&times;</button></span>'
             );
         }).join("");
-        referenteSearchResults.hidden = false;
 
-        referenteSearchResults.querySelectorAll(".referente-search-option").forEach(function (button) {
+        config.selectedContainer.querySelectorAll(".referente-chip-remove").forEach(function (button) {
             button.addEventListener("click", function () {
-                var option = getReferenteOptionById(button.dataset.referenteId);
-                selectReferenteOption(option);
+                var optionElement = config.selectElement.querySelector(
+                    'option[value="' + button.dataset.userId + '"]'
+                );
+                if (optionElement) {
+                    optionElement.selected = false;
+                }
+                renderSelectedChips(config);
             });
         });
     }
 
-    function syncReferenteSelectFromSearch() {
-        if (!referenteSelect || !referenteSearchInput) {
+    function selectUserOption(config, option) {
+        if (!config.selectElement || !config.searchInput || !option) {
             return;
         }
 
-        var searchTerm = referenteSearchInput.value;
+        var optionElement = config.selectElement.querySelector(
+            'option[value="' + option.id + '"]'
+        );
+        if (optionElement) {
+            optionElement.selected = true;
+        }
+        config.searchInput.value = "";
+        config.searchInput.setCustomValidity("");
+        renderSelectedChips(config);
+        closeUserResults(config.resultsElement);
+    }
+
+    function renderUserResults(config, matches) {
+        if (!config.resultsElement) {
+            return;
+        }
+
+        if (!matches.length) {
+            config.resultsElement.innerHTML =
+                '<div class="referente-search-empty">' +
+                escapeHtml(config.emptyMessage) +
+                "</div>";
+            config.resultsElement.hidden = false;
+            return;
+        }
+
+        config.resultsElement.innerHTML = matches.map(function (option) {
+            var escapedId = escapeHtml(option.id);
+            var escapedLabel = escapeHtml(option.label);
+            return (
+                '<button type="button" class="referente-search-option" data-user-id="' +
+                escapedId +
+                '">' +
+                escapedLabel +
+                "</button>"
+            );
+        }).join("");
+        config.resultsElement.hidden = false;
+
+        config.resultsElement.querySelectorAll(".referente-search-option").forEach(function (button) {
+            button.addEventListener("click", function () {
+                selectUserOption(config, getOptionById(config.options, button.dataset.userId));
+            });
+        });
+    }
+
+    function syncUserSelectFromSearch(config) {
+        if (!config.selectElement || !config.searchInput) {
+            return;
+        }
+
+        var searchTerm = config.searchInput.value;
         if (!searchTerm.trim()) {
-            referenteSelect.value = "";
-            referenteSearchInput.setCustomValidity("");
-            closeReferenteResults();
+            config.searchInput.setCustomValidity("");
+            closeUserResults(config.resultsElement);
             return;
         }
 
-        referenteSelect.value = "";
-        referenteSearchInput.setCustomValidity("");
-        renderReferenteResults(getMatchingReferenteOptions(searchTerm));
+        config.searchInput.setCustomValidity("");
+        renderUserResults(
+            config,
+            getMatchingUserOptions(
+                config.options,
+                searchTerm,
+                getSelectedValues(config.selectElement)
+            )
+        );
     }
 
-    function syncReferenteSearchFromSelect() {
-        if (!referenteSelect || !referenteSearchInput) {
+    function bindUserMultiSearch(config) {
+        if (!config.selectElement || !config.searchInput) {
             return;
         }
-
-        var selectedOption = referenteSelect.options[referenteSelect.selectedIndex];
-        if (selectedOption && selectedOption.value) {
-            referenteSearchInput.value = selectedOption.textContent.trim();
-        } else {
-            referenteSearchInput.value = "";
-        }
-        referenteSearchInput.setCustomValidity("");
-        closeReferenteResults();
-    }
-
-    if (referenteSelect && referenteSearchInput) {
-        syncReferenteSearchFromSelect();
-        referenteSearchInput.addEventListener("input", syncReferenteSelectFromSearch);
-        referenteSearchInput.addEventListener("focus", function () {
-            if (referenteSearchInput.value.trim() && !referenteSelect.value) {
-                renderReferenteResults(
-                    getMatchingReferenteOptions(referenteSearchInput.value)
+        renderSelectedChips(config);
+        config.searchInput.addEventListener("input", function () {
+            syncUserSelectFromSearch(config);
+        });
+        config.searchInput.addEventListener("focus", function () {
+            if (config.searchInput.value.trim()) {
+                renderUserResults(
+                    config,
+                    getMatchingUserOptions(
+                        config.options,
+                        config.searchInput.value,
+                        getSelectedValues(config.selectElement)
+                    )
                 );
             }
         });
-        referenteSearchInput.addEventListener("blur", function () {
-            window.setTimeout(closeReferenteResults, 150);
+        config.searchInput.addEventListener("blur", function () {
+            window.setTimeout(function () {
+                closeUserResults(config.resultsElement);
+            }, 150);
         });
-        referenteSelect.form.addEventListener("submit", function (event) {
-            if (!referenteSelect.value) {
-                referenteSearchInput.setCustomValidity(
-                    "Seleccioná un referente válido de la lista."
+        config.selectElement.form.addEventListener("submit", function (event) {
+            if (config.required && getSelectedValues(config.selectElement).length === 0) {
+                config.searchInput.setCustomValidity(
+                    "Selecciona al menos un usuario valido de la lista."
                 );
-                referenteSearchInput.reportValidity();
+                config.searchInput.reportValidity();
                 event.preventDefault();
             } else {
-                referenteSearchInput.setCustomValidity("");
+                config.searchInput.setCustomValidity("");
             }
         });
     }
+
+    bindUserMultiSearch({
+        selectElement: referentesSelect,
+        searchInput: document.getElementById("id_referentes_search"),
+        resultsElement: document.getElementById("referentes-search-results"),
+        selectedContainer: document.getElementById("referentes-selected-items"),
+        options: window.referenteSearchOptions || [],
+        emptyMessage: "No hay usuarios CFP para esa busqueda.",
+        required: true
+    });
+
+    bindUserMultiSearch({
+        selectElement: revisoresSelect,
+        searchInput: document.getElementById("id_revisores_search"),
+        resultsElement: document.getElementById("revisores-search-results"),
+        selectedContainer: document.getElementById("revisores-selected-items"),
+        options: window.revisorSearchOptions || [],
+        emptyMessage: "No hay usuarios CFPRevisor para esa busqueda.",
+        required: false
+    });
 
     function buildEmptyOption(label) {
         var option = document.createElement("option");
@@ -145,12 +228,21 @@ document.addEventListener("DOMContentLoaded", function () {
         return option;
     }
 
+    function refreshSelect2(targetSelect) {
+        if (!targetSelect || !window.refreshSelect2Element) {
+            return;
+        }
+
+        window.refreshSelect2Element(targetSelect);
+    }
+
     function loadOptions(url, targetSelect, emptyLabel, mapValue) {
         if (!targetSelect) {
             return;
         }
         targetSelect.innerHTML = "";
         targetSelect.appendChild(buildEmptyOption(emptyLabel));
+        refreshSelect2(targetSelect);
 
         fetch(url)
             .then(function (response) {
@@ -166,6 +258,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                     targetSelect.appendChild(option);
                 });
+                refreshSelect2(targetSelect);
             });
     }
 
@@ -176,6 +269,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 municipioSelect.appendChild(buildEmptyOption("Seleccionar municipio..."));
                 localidadSelect.innerHTML = "";
                 localidadSelect.appendChild(buildEmptyOption("Seleccionar localidad..."));
+                refreshSelect2(municipioSelect);
+                refreshSelect2(localidadSelect);
                 return;
             }
             loadOptions(
@@ -192,6 +287,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!this.value) {
                 localidadSelect.innerHTML = "";
                 localidadSelect.appendChild(buildEmptyOption("Seleccionar localidad..."));
+                refreshSelect2(localidadSelect);
                 return;
             }
             loadOptions(

@@ -468,7 +468,7 @@ class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
     provincia = forms.ModelChoiceField(
         queryset=Provincia.objects.all(),
         required=False,
-        widget=forms.Select(attrs={"class": "select"}),
+        widget=forms.Select(attrs={"class": "select2"}),
         label="Provincia",
     )
     es_coordinador = forms.BooleanField(
@@ -743,7 +743,7 @@ class CustomUserChangeForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm
                 )
             elif not self.cleaned_data.get("es_representante_pwa", False):
                 profile.password_reset_requested_at = None
-                profile.must_change_password = True
+                profile.must_change_password = False
                 profile.password_changed_at = None
                 profile.initial_password_expires_at = timezone.now() + timedelta(
                     hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS

@@ -6,10 +6,15 @@ from comedores.views import (
     ColaboradorEspacioDeleteView,
     ColaboradorEspacioUpdateView,
     ComedorCreateView,
+    ComedorDatosConvenioPnudUpdateView,
     ComedorDeleteView,
     ComedorDetailView,
     ComedorListView,
     ComedorUpdateView,
+    CursoAppMobileCreateView,
+    CursoAppMobileDeleteView,
+    CursoAppMobileListView,
+    CursoAppMobileUpdateView,
     ObservacionCreateView,
     ObservacionDeleteView,
     ObservacionDetailView,
@@ -184,6 +189,32 @@ urlpatterns = [
         name="dupla_asignar",
     ),
     path(
+        "comedores/configuracion/cursos-app-mobile/",
+        permissions_any_required(["auth.role_admin"])(CursoAppMobileListView.as_view()),
+        name="cursos_app_mobile_list",
+    ),
+    path(
+        "comedores/configuracion/cursos-app-mobile/crear/",
+        permissions_any_required(["auth.role_admin"])(
+            CursoAppMobileCreateView.as_view()
+        ),
+        name="cursos_app_mobile_crear",
+    ),
+    path(
+        "comedores/configuracion/cursos-app-mobile/<int:pk>/editar/",
+        permissions_any_required(["auth.role_admin"])(
+            CursoAppMobileUpdateView.as_view()
+        ),
+        name="cursos_app_mobile_editar",
+    ),
+    path(
+        "comedores/configuracion/cursos-app-mobile/<int:pk>/eliminar/",
+        permissions_any_required(["auth.role_admin"])(
+            CursoAppMobileDeleteView.as_view()
+        ),
+        name="cursos_app_mobile_eliminar",
+    ),
+    path(
         "comedores/ajax/load-subestadosintervenciones/",
         login_required(sub_estados_intervenciones_ajax),
         name="ajax_load_subestadosintervenciones",
@@ -316,6 +347,13 @@ urlpatterns = [
         "comedores/<int:pk>/validar/",
         login_required(validar_comedor),
         name="validar_comedor",
+    ),
+    path(
+        "comedores/<int:pk>/convenio-pnud/",
+        permissions_any_required(["comedores.change_comedor"])(
+            ComedorDatosConvenioPnudUpdateView.as_view()
+        ),
+        name="comedor_convenio_pnud",
     ),
     path(
         "comedores/<int:pk>/capacitaciones/<int:certificado_id>/estado/",

@@ -99,7 +99,7 @@ def test_get_success_returns_legajo_data(mocker):
 
     mocker.patch(
         "celiaquia.views.legajo_editar._get_nacionalidad_argentina",
-        return_value=None,
+        return_value=SimpleNamespace(id=7, nacionalidad="Argentina"),
     )
     mocker.patch(
         "celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo]
@@ -126,7 +126,7 @@ def test_post_validation_error_and_internal_error(mocker):
     )
     mocker.patch(
         "celiaquia.views.legajo_editar._get_nacionalidad_argentina",
-        return_value=None,
+        return_value=SimpleNamespace(id=7, nacionalidad="Argentina"),
     )
 
     # faltan obligatorios
@@ -205,7 +205,7 @@ def test_post_success(mocker):
     )
     mocker.patch(
         "celiaquia.views.legajo_editar._get_nacionalidad_argentina",
-        return_value=None,
+        return_value=SimpleNamespace(id=7, nacionalidad="Argentina"),
     )
     mocker.patch(
         "celiaquia.views.legajo_editar.Sexo.objects.get",

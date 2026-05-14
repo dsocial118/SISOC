@@ -28,8 +28,15 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from admisiones.models.admisiones import Admision, EstadoAdmision, InformeTecnico
 from comedores.forms.comedor_form import ComedorForm, ReferenteForm
+from comedores.forms.convenio_pnud_form import ComedorDatosConvenioPnudForm
 from comedores.forms.observacion_form import ObservacionForm
-from comedores.models import Comedor, HistorialValidacion, ImagenComedor, Observacion
+from comedores.models import (
+    Comedor,
+    ComedorDatosConvenioPnud,
+    HistorialValidacion,
+    ImagenComedor,
+    Observacion,
+)
 from comedores.services.comedor_service import ComedorService
 from comedores.services.capacitaciones_certificados_service import (
     is_alimentar_comunidad_program,
@@ -38,10 +45,12 @@ from comedores.services.capacitaciones_certificados_service import (
 )
 from comedores.services.filter_config import get_filters_ui_config
 from comedores.utils import comedor_usa_admision_para_nomina
+from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from core.utils import convert_string_to_int
+from acompanamientos.acompanamiento_service import AcompanamientoService
 from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm, build_programa_aliases
 
@@ -246,12 +255,19 @@ def _build_intervencion_creator_map(intervencion_ids):
     return creator_map
 
 
-def _build_intervenciones_table_context(comedor_obj, request):
-    intervenciones_qs = (
-        Intervencion.objects.filter(comedor=comedor_obj)
-        .select_related("tipo_intervencion", "subintervencion", "destinatario")
-        .order_by("-fecha")
-    )
+def _build_intervenciones_table_context(comedor_obj, request, admision_id=None):
+    if admision_id:
+        intervenciones_qs = Intervencion.objects.filter(
+            comedor=comedor_obj,
+            admision_id=admision_id,
+        )
+    else:
+        intervenciones_qs = Intervencion.objects.filter(comedor=comedor_obj)
+    intervenciones_qs = intervenciones_qs.select_related(
+        "tipo_intervencion",
+        "subintervencion",
+        "destinatario",
+    ).order_by("-fecha")
     intervenciones_paginator = Paginator(intervenciones_qs, 10)
     intervenciones_page_number = request.GET.get("intervenciones_page", 1)
     intervenciones_page_obj = intervenciones_paginator.get_page(
@@ -783,6 +799,30 @@ def _build_selected_admision_context(relaciones_data, request_get):
     }
 
 
+def _build_domicilio_completo(comedor: Comedor) -> str:
+    partes = []
+    calle = getattr(comedor, "calle", None)
+    numero = getattr(comedor, "numero", None)
+    if calle:
+        calle_numero = calle
+        if numero:
+            calle_numero = f"{calle_numero} {numero}"
+        partes.append(calle_numero)
+    barrio = getattr(comedor, "barrio", None)
+    if barrio:
+        partes.append(barrio)
+    localidad = getattr(comedor, "localidad", None)
+    if localidad:
+        partes.append(localidad.nombre)
+    municipio = getattr(comedor, "municipio", None)
+    if municipio:
+        partes.append(municipio.nombre)
+    provincia = getattr(comedor, "provincia", None)
+    if provincia:
+        partes.append(provincia.nombre)
+    return ", ".join(partes) if partes else "Sin información"
+
+
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class ComedorListView(LoginRequiredMixin, ListView):
     model = Comedor
@@ -794,6 +834,12 @@ class ComedorListView(LoginRequiredMixin, ListView):
         return ComedorService.get_filtered_comedores(
             self.request, user=self.request.user
         )
+
+    def paginate_queryset(self, queryset, page_size):
+        paginator = NoCountPaginator(queryset, page_size)
+        page_obj = paginator.get_page(self.request.GET.get(self.page_kwarg))
+        object_list = page_obj.object_list
+        return paginator, page_obj, object_list, page_obj.has_other_pages()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -890,6 +936,10 @@ class ComedorListView(LoginRequiredMixin, ListView):
             }
         )
         context.update(columns_context)
+
+        page_obj = context.get("page_obj")
+        if page_obj and getattr(page_obj.paginator, "count", None) is None:
+            context["page_range"] = build_no_count_page_range(page_obj)
 
         return context
 
@@ -1040,9 +1090,30 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         }
 
     def _build_relaciones_table_contexts(self, admisiones_qs):
+        raw_admision_id = self.request.GET.get("admision_id")
+        admision_id = (
+            int(raw_admision_id)
+            if raw_admision_id and raw_admision_id.isdigit()
+            else None
+        )
+        admisiones_disponibles = list(
+            AcompanamientoService.obtener_admisiones_para_selector(self.object)
+        )
+        admisiones_ids_disponibles = {
+            admision.id for admision in admisiones_disponibles
+        }
+        if admision_id not in admisiones_ids_disponibles:
+            admision_id = None
+        if admision_id is None and admisiones_disponibles:
+            active = next(
+                (a for a in admisiones_disponibles if getattr(a, "activa", False)),
+                None,
+            )
+            admision_id = (active or admisiones_disponibles[0]).id
         intervenciones_context = _build_intervenciones_table_context(
             comedor_obj=self.object,
             request=self.request,
+            admision_id=admision_id,
         )
         observaciones_context = _build_observaciones_table_context(
             comedor_obj=self.object,
@@ -1064,6 +1135,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             **interacciones_context,
             **admisiones_context,
             **validaciones_context,
+            "intervenciones_admision_id": admision_id,
+            "intervenciones_admisiones_disponibles": admisiones_disponibles,
         }
 
     def _redirect_to_detail(self):
@@ -1250,6 +1323,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     if is_alimentar_comunidad_program(self.object)
                     else []
                 ),
+                "es_programa_pnud": getattr(self.object, "programa_id", None) in (3, 4),
+                "datos_convenio_pnud": getattr(
+                    self.object, "datos_convenio_pnud", None
+                ),
+                "domicilio_completo_comedor": _build_domicilio_completo(self.object),
                 **responsables_context,
             }
         )
@@ -1257,6 +1335,53 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             selected_admision
         )
         context.update(timeline_selected)
+        return context
+
+
+class ComedorDatosConvenioPnudUpdateView(LoginRequiredMixin, UpdateView):
+    model = ComedorDatosConvenioPnud
+    form_class = ComedorDatosConvenioPnudForm
+    template_name = "comedor/comedor_convenio_pnud_form.html"
+    context_object_name = "datos_convenio_pnud"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.comedor = ComedorService.get_comedor_detail_object(
+            self.kwargs["pk"], user=request.user
+        )
+        if self.comedor.programa_id not in (3, 4):
+            messages.error(request, "Esta opción solo aplica para comedores PNUD.")
+            return redirect("comedor_detalle", pk=self.comedor.pk)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self, queryset=None):
+        obj, _ = ComedorDatosConvenioPnud.objects.get_or_create(comedor=self.comedor)
+        return obj
+
+    def get_success_url(self):
+        return reverse("comedor_detalle", kwargs={"pk": self.comedor.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comedor"] = self.comedor
+        context["prefill_data"] = {
+            "organizacion_solicitante": getattr(
+                getattr(self.comedor, "organizacion", None), "nombre", None
+            )
+            or "Sin información",
+            "codigo_proyecto": self.comedor.codigo_de_proyecto or "Sin información",
+            "estado_general": self.comedor.get_estado_general_display()
+            or "Sin información",
+            "subestado": (
+                self.comedor.ultimo_estado.estado_general.estado_proceso.estado
+                if self.comedor.ultimo_estado
+                and self.comedor.ultimo_estado.estado_general
+                and self.comedor.ultimo_estado.estado_general.estado_proceso
+                else "Sin información"
+            ),
+            "nombre_espacio": self.comedor.nombre or "Sin información",
+            "id_externo": self.comedor.id_externo or "Sin información",
+            "domicilio_completo": _build_domicilio_completo(self.comedor),
+        }
         return context
 
 

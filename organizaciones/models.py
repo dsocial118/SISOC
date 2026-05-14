@@ -114,7 +114,7 @@ class Organizacion(SoftDeleteModelMixin, models.Model):
     cuit = models.BigIntegerField(
         blank=True,
         null=True,
-        unique=True,
+        db_index=True,
         validators=[MinValueValidator(0), MaxValueValidator(99999999999)],
     )
     telefono = models.BigIntegerField(blank=True, null=True)
@@ -154,3 +154,6 @@ class Organizacion(SoftDeleteModelMixin, models.Model):
         ordering = ["id"]
         verbose_name = "Organizacion"
         verbose_name_plural = "Organizaciones"
+        indexes = [
+            models.Index(fields=["telefono"], name="org_telefono_idx"),
+        ]

@@ -14,6 +14,14 @@ class _Req:
         self.FILES = files or SimpleNamespace(getlist=lambda _k: [])
 
 
+class _PageQS:
+    def __init__(self, items):
+        self.items = list(items)
+
+    def __getitem__(self, index):
+        return self.items[index]
+
+
 class _AdmisionesQS:
     def __init__(self, items):
         self.items = list(items)
@@ -61,6 +69,23 @@ def test_comedor_list_queryset_and_context(mocker):
     assert ctx["filters_mode"] is True
     assert ctx["active_columns"] == ["nombre"]
     assert "judicializado" in ctx["column_keys_all"]
+
+
+def test_comedor_list_paginates_without_count():
+    view = module.ComedorListView()
+    view.request = _Req(post={"page": "1"})
+    view.request.GET = {"page": "1"}
+    view.page_kwarg = "page"
+    items = [SimpleNamespace(pk=1), SimpleNamespace(pk=2)]
+
+    paginator, page_obj, object_list, is_paginated = view.paginate_queryset(
+        _PageQS(items), 10
+    )
+
+    assert paginator.count is None
+    assert object_list == items
+    assert page_obj.object_list == items
+    assert is_paginated is False
 
 
 def test_comedor_create_helpers_and_form_valid_paths(mocker):
@@ -455,6 +480,10 @@ def test_comedor_detail_get_relaciones_optimizadas_compone_contextos(mocker):
     mocker.patch(
         "comedores.views.comedor._build_validaciones_table_context",
         return_value={"validaciones_items": [4]},
+    )
+    mocker.patch(
+        "comedores.views.comedor.AcompanamientoService.obtener_admisiones_para_selector",
+        return_value=[],
     )
 
     ctx = view.get_relaciones_optimizadas()

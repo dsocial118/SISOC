@@ -280,15 +280,13 @@
                                     <ul class="dropdown-menu dropdown-menu-dark">
                                         <li>
                                             <a class="dropdown-item editar-nomina"
-                                               href="#"
-                                               data-id="{{ e.id }}"
-                                               data-edit-url="{% url 'centrodeinfancia_nomina_editar_ajax' e.id %}">
+                                               href="{% url 'centrodeinfancia_nomina_editar' object.id e.id %}">
                                                 <i class="fas fa-edit"></i> Editar
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item"
-                                               href="{% url 'ciudadanos_ver' e.ciudadano.id %}">
+                                               href="{% url 'centrodeinfancia_nomina_formulario_ver' e.id %}">
                                                 <i class="fas fa-eye"></i> Ver detalles
                                             </a>
                                         </li>

@@ -156,9 +156,22 @@ class CiudadanoService:
             datos.get("piso_departamento")
         )
 
-        ciudadano = Ciudadano.objects.filter(
-            tipo_documento=tipo_documento, documento=documento
-        ).first()
+        # Preferir registro ESTANDAR vía documento_unico_key para evitar
+        # retornar un duplicado ambiguo (DNI_NO_VALIDADO_RENAPER).
+        doc_key = f"{tipo_documento}_{documento}"
+        ciudadano = Ciudadano.objects.filter(documento_unico_key=doc_key).first()
+        if ciudadano is None:
+            # Fallback: backfill no corrió aún o registro previo a Fase 1.
+            ciudadano = Ciudadano.objects.filter(
+                tipo_documento=tipo_documento,
+                documento=documento,
+                tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR,
+            ).first()
+        if ciudadano is None:
+            ciudadano = Ciudadano.objects.filter(
+                tipo_documento=tipo_documento,
+                documento=documento,
+            ).first()
 
         created = False
         if ciudadano is None:

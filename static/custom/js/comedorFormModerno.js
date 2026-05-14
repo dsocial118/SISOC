@@ -346,6 +346,15 @@ function initializeCollapsibleSections() {
 /**
  * Inicializa la validación en tiempo real de campos requeridos
  */
+function getFieldValidationWrapper(field) {
+    return field.closest('.col-md-2') ||
+           field.closest('.col-md-3') ||
+           field.closest('.col-md-4') ||
+           field.closest('.col-md-6') ||
+           field.closest('.col-12') ||
+           field.closest('.form-group');
+}
+
 function initializeRealTimeValidation() {
     // Seleccionar todos los campos del formulario
     const allFields = document.querySelectorAll('#comedorForm input, #comedorForm select, #comedorForm textarea');
@@ -354,16 +363,19 @@ function initializeRealTimeValidation() {
         // Solo agregar validación si el campo tiene el atributo required del HTML
         if (field.hasAttribute('required')) {
             // Buscar el contenedor MÁS ESPECÍFICO (columna, no el form-group row)
-            const wrapper = field.closest('.col-md-2') ||
-                           field.closest('.col-md-3') ||
-                           field.closest('.col-md-4') ||
-                           field.closest('.col-md-6') ||
-                           field.closest('.col-12') ||
-                           field.closest('.form-group');
+            const wrapper = getFieldValidationWrapper(field);
 
-            field.addEventListener('blur', function() {
-                validateField(this, wrapper);
-            });
+            const revalidateField = function() {
+                validateField(field, wrapper);
+            };
+
+            if (field.tagName === 'SELECT') {
+                field.addEventListener('change', revalidateField);
+                $(field).on('select2:select select2:unselect', revalidateField);
+                return;
+            }
+
+            field.addEventListener('blur', revalidateField);
 
             field.addEventListener('input', function() {
                 if (wrapper && wrapper.classList.contains('field-validated')) {
@@ -373,22 +385,6 @@ function initializeRealTimeValidation() {
         }
     });
 
-    // Validación especial para Select2 con required
-    $('.select2').each(function() {
-        const originalSelect = $(this);
-        if (originalSelect.prop('required')) {
-            originalSelect.on('select2:select select2:unselect', function() {
-                // Buscar el contenedor MÁS ESPECÍFICO (columna, no el form-group row)
-                const wrapper = $(this).closest('.col-md-2')[0] ||
-                               $(this).closest('.col-md-3')[0] ||
-                               $(this).closest('.col-md-4')[0] ||
-                               $(this).closest('.col-md-6')[0] ||
-                               $(this).closest('.col-12')[0] ||
-                               $(this).closest('.form-group')[0];
-                validateField(this, wrapper);
-            });
-        }
-    });
 }
 
 /**
@@ -398,11 +394,15 @@ function initializeRealTimeValidation() {
 function validateField(field, wrapper) {
     if (!wrapper) return;
 
-    const value = field.value ? field.value.trim() : '';
-    const isRequired = field.hasAttribute('required');
-
     // Limpiar clases previas
     wrapper.classList.remove('field-validated', 'valid', 'invalid');
+
+    if (field.disabled) {
+        return;
+    }
+
+    const value = field.value ? field.value.trim() : '';
+    const isRequired = field.hasAttribute('required');
 
     // CRÍTICO: Solo validar y mostrar indicador visual si el campo es requerido
     if (!isRequired) {

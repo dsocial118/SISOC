@@ -250,6 +250,52 @@ def test_archivos_requeridos_respeta_flag_es_doble_rol():
     assert out["archivo3"] == "Certificacion de ANSES"
 
 
+def test_faltantes_archivos_incluye_archivo1_para_doble_rol(mocker):
+    class Leg:
+        def __init__(self):
+            self.id = 15
+            self.pk = 15
+            self.archivo1 = None
+            self.archivo2 = object()
+            self.archivo3 = object()
+            self.rol = module.ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+            self.ciudadano = SimpleNamespace(
+                id=3, documento="300", nombre="Ana", apellido="Perez"
+            )
+            self.ciudadano_id = 3
+            self.estado = SimpleNamespace(nombre="E")
+            self.revision_tecnico = "R"
+            self.archivos_ok = True
+
+    class Qs:
+        def select_related(self, *args, **kwargs):
+            return self
+
+        def only(self, *args, **kwargs):
+            return self
+
+        def filter(self, *args, **kwargs):
+            return self
+
+        def values_list(self, *args, **kwargs):
+            return [3]
+
+        def iterator(self):
+            return iter([Leg()])
+
+    exp = SimpleNamespace(id=2, expediente_ciudadanos=Qs())
+    mocker.patch(
+        "celiaquia.services.legajo_service.FamiliaService.obtener_ids_responsables",
+        return_value={3},
+    )
+
+    out = module.LegajoService.faltantes_archivos(exp)
+
+    assert len(out) == 1
+    assert out[0]["faltan"] == ["archivo1"]
+    assert out[0]["faltan_nombres"] == ["Biopsia / Constancia medica"]
+
+
 def test_actualizar_subsanacion_warning_and_estado_cache_missing(mocker):
     class Missing(Exception):
         pass

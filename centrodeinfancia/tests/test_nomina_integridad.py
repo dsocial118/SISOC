@@ -1,9 +1,12 @@
 from datetime import date
+from pathlib import Path
 
 import pytest
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.test import RequestFactory
 from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
@@ -121,6 +124,52 @@ def test_form_nomina_resuelve_geografia_inicial_desde_texto():
 
 
 @pytest.mark.django_db
+def test_create_view_precarga_fecha_renaper_desde_contrato_servicio(mocker):
+    user = User.objects.create_superuser(
+        username="super-cdi-renaper",
+        email="super-cdi-renaper@example.com",
+        password="test1234",
+    )
+    centro = CentroDeInfancia.objects.create(nombre="CDI RENAPER")
+    request = RequestFactory().get(
+        reverse("centrodeinfancia_nomina_crear", kwargs={"pk": centro.pk}),
+        {"query": "30111222"},
+    )
+    request.user = user
+    mock_obtener = mocker.patch(
+        "centrodeinfancia.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        return_value={
+            "success": True,
+            "data": {
+                "documento": 30111222,
+                "apellido": "Lopez",
+                "nombre": "Ana",
+                "sexo": "Femenino",
+            },
+            "datos_api": {
+                "fechaNacimiento": "2018-05-10",
+            },
+        },
+    )
+
+    view = NominaCentroInfanciaCreateView()
+    view.setup(request, pk=centro.pk)
+    view.object = None
+    context = view.get_context_data()
+    initial = context["form"].initial
+
+    assert initial["dni"] == 30111222
+    assert initial["apellido"] == "Lopez"
+    assert initial["nombre"] == "Ana"
+    assert initial["fecha_nacimiento"] == date(2018, 5, 10)
+    fecha_html = str(context["form"]["fecha_nacimiento"])
+    assert 'type="date"' in fecha_html
+    assert 'value="2018-05-10"' in fecha_html
+    assert context["renaper_precarga"] is True
+    mock_obtener.assert_called_once_with("30111222")
+
+
+@pytest.mark.django_db
 def test_create_view_crea_ficha_cdi_para_ciudadano_existente(client):
     user = User.objects.create_superuser(
         username="super-cdi-nomina",
@@ -161,3 +210,18 @@ def test_create_view_crea_ficha_cdi_para_ciudadano_existente(client):
     assert nomina.sala == "Sala Roja"
     assert nomina.posee_cud is False
     assert nomina.posee_obra_social is True
+
+
+def test_nomina_crear_template_conserva_ajax_nativo_ubicacion():
+    template_path = (
+        Path(settings.BASE_DIR)
+        / "centrodeinfancia/templates/centrodeinfancia/nomina_form.html"
+    )
+    content = template_path.read_text(encoding="utf-8")
+
+    assert "ajaxLoadMunicipiosUrl" in content
+    assert "ajaxLoadLocalidadesUrl" in content
+    assert "id_provincia_domicilio" in content
+    assert "id_municipio_domicilio" in content
+    assert "id_localidad_domicilio" in content
+    assert "fetch(url" in content
