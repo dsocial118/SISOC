@@ -10,7 +10,9 @@ from django.views.generic import FormView, TemplateView
 
 from ciudadanos.forms import CiudadanosImportUploadForm
 from ciudadanos.services_importacion_masiva import (
+    generate_ciudadanos_import_job_results_workbook,
     generate_ciudadanos_import_template,
+    get_ciudadanos_import_results_filename,
     get_ciudadanos_import_template_filename,
 )
 from ciudadanos.services_importacion_masiva_jobs import (
@@ -85,6 +87,20 @@ class CiudadanosImportJobDetailView(CiudadanosImportPermissionMixin, TemplateVie
             }
         )
         return context
+
+
+class CiudadanosImportJobExportView(CiudadanosImportPermissionMixin, View):
+    def get(self, request, *args, **kwargs):
+        job = get_ciudadanos_import_job_or_404(job_id=kwargs["pk"])
+        response = HttpResponse(
+            generate_ciudadanos_import_job_results_workbook(job),
+            content_type=(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ),
+        )
+        filename = get_ciudadanos_import_results_filename(job)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
 
 class CiudadanosImportJobResumeView(CiudadanosImportPermissionMixin, View):
