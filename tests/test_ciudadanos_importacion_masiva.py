@@ -362,6 +362,42 @@ def test_process_ciudadanos_import_job_continues_after_invalid_short_dni(mocker)
 
 @pytest.mark.django_db
 @override_settings(CIUDADANOS_IMPORT_RENAPER_SLEEP_SECONDS=0)
+def test_process_ciudadanos_import_job_continues_after_renaper_unexpected_error(
+    mocker,
+):
+    user = User.objects.create_user(username="ciudadanos_import_unexpected")
+    upload = _build_excel_file(
+        [
+            ("44535032", "M"),
+            ("30111222", "M"),
+        ]
+    )
+    job = create_ciudadanos_import_job(uploaded_file=upload, requested_by=user)
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva.consultar_datos_renaper",
+        side_effect=[
+            _renaper_error(
+                "Ocurrio un error inesperado al consultar RENAPER.",
+                "unexpected_error",
+            ),
+            _renaper_success(dni="30111222", cuil="20301112220"),
+        ],
+    )
+
+    process_ciudadanos_import_job(job)
+    job.refresh_from_db()
+
+    assert job.status == CiudadanosImportJob.Status.COMPLETED_WITH_ERRORS
+    assert job.created_rows == 1
+    assert job.failed_rows == 1
+    assert job.pending_rows == 0
+    failed_row = job.rows.get(fila=2)
+    assert failed_row.status == CiudadanosImportJobRow.Status.FAILED
+    assert failed_row.error_type == "unexpected_error"
+
+
+@pytest.mark.django_db
+@override_settings(CIUDADANOS_IMPORT_RENAPER_SLEEP_SECONDS=0)
 def test_process_ciudadanos_import_job_pauses_on_systemic_error_and_resumes(mocker):
     user = User.objects.create_user(username="ciudadanos_import_pause")
     upload = _build_excel_file([("30111222", "M")])
