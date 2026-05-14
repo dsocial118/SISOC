@@ -499,13 +499,13 @@ def process_ciudadanos_import_job(
                 row.documento_raw,
             )
             result = {
-                "status": "pending",
-                "mensaje": "Ocurrio un error inesperado al consultar RENAPER.",
-                "error_type": "unexpected_error",
+                "status": "failed",
+                "mensaje": "Ocurrio un error inesperado al procesar la fila.",
+                "error_type": "unexpected_row_error",
                 "sexos_intentados": "",
                 "ciudadano": None,
-                "systemic": True,
-                "contacted_renaper": True,
+                "systemic": False,
+                "contacted_renaper": False,
             }
 
         if result.get("systemic"):

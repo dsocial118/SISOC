@@ -137,6 +137,11 @@ def test_parse_cuil_o_dni_accepts_direct_dni():
     assert parsed.input_type == "dni"
 
 
+def test_parse_cuil_o_dni_rejects_short_direct_dni():
+    with pytest.raises(ValidationError, match="DNI"):
+        parse_cuil_o_dni("4435031")
+
+
 def test_parse_cuil_o_dni_rejects_invalid_verifier():
     with pytest.raises(ValidationError, match="CUIL"):
         parse_cuil_o_dni("20-44535030-5")
@@ -170,6 +175,16 @@ def test_load_ciudadanos_import_rows_keeps_invalid_row_for_history():
     assert len(rows) == 1
     assert rows[0].parse_error
     assert rows[0].error_type == "invalid_cuil"
+
+
+def test_load_ciudadanos_import_rows_marks_short_dni_as_invalid_row():
+    upload = _build_excel_file([("4435031", "M")])
+
+    rows = load_ciudadanos_import_rows(upload)
+
+    assert len(rows) == 1
+    assert rows[0].parse_error
+    assert rows[0].error_type == "invalid_dni"
 
 
 def test_generate_ciudadanos_import_template_headers():
@@ -315,6 +330,34 @@ def test_process_ciudadanos_import_job_fails_row_on_cuil_mismatch_and_continues(
     assert mismatch_row.status == CiudadanosImportJobRow.Status.FAILED
     assert mismatch_row.error_type == "cuil_mismatch"
     assert created_row.status == CiudadanosImportJobRow.Status.CREATED
+
+
+@pytest.mark.django_db
+@override_settings(CIUDADANOS_IMPORT_RENAPER_SLEEP_SECONDS=0)
+def test_process_ciudadanos_import_job_continues_after_invalid_short_dni(mocker):
+    user = User.objects.create_user(username="ciudadanos_import_invalid_dni")
+    upload = _build_excel_file(
+        [
+            ("4435031", "M"),
+            ("30111222", "M"),
+        ]
+    )
+    job = create_ciudadanos_import_job(uploaded_file=upload, requested_by=user)
+    mock_consultar = mocker.patch(
+        "ciudadanos.services_importacion_masiva.consultar_datos_renaper",
+        return_value=_renaper_success(dni="30111222", cuil="20301112220"),
+    )
+
+    process_ciudadanos_import_job(job)
+    job.refresh_from_db()
+
+    assert job.status == CiudadanosImportJob.Status.COMPLETED_WITH_ERRORS
+    assert job.created_rows == 1
+    assert job.failed_rows == 1
+    mock_consultar.assert_called_once_with("30111222", "M")
+    failed_row = job.rows.get(fila=2)
+    assert failed_row.status == CiudadanosImportJobRow.Status.FAILED
+    assert failed_row.error_type == "invalid_dni"
 
 
 @pytest.mark.django_db
