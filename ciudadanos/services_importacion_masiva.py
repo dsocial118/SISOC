@@ -421,7 +421,18 @@ def _build_ciudadano_payload_from_renaper(
     renaper_cuil = _extract_renaper_cuil(result)
     if renaper_cuil:
         ciudadano_data["cuil_cuit"] = renaper_cuil
+    _normalize_ciudadano_payload_foreign_keys(ciudadano_data)
     return ciudadano_data, None
+
+
+def _normalize_ciudadano_payload_foreign_keys(
+    ciudadano_data: dict[str, object]
+) -> None:
+    sexo_value = ciudadano_data.pop("sexo", None)
+    if isinstance(sexo_value, Sexo):
+        ciudadano_data["sexo"] = sexo_value
+    elif sexo_value:
+        ciudadano_data["sexo_id"] = sexo_value
 
 
 def _lookup_renaper_for_row(
