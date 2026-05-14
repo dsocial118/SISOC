@@ -7,12 +7,11 @@ from io import BytesIO
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.urls import reverse
 from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
-from ciudadanos.models import Ciudadano
+from ciudadanos.models import Ciudadano, CiudadanosImportJobRow
 from comedores.services.comedor_service import ComedorService
 from core.models import Sexo
 
@@ -272,76 +271,65 @@ def get_ciudadanos_import_results_filename(job) -> str:
     return f"resultado_importacion_ciudadanos_{job.pk}.xlsx"
 
 
-def _format_datetime(value) -> str:
-    if not value:
-        return ""
-    return timezone.localtime(value).strftime("%d/%m/%Y %H:%M")
+def _format_import_result(row: CiudadanosImportJobRow) -> str:
+    if row.status in {
+        CiudadanosImportJobRow.Status.CREATED,
+        CiudadanosImportJobRow.Status.EXISTING,
+    }:
+        return "OK"
+    if row.status == CiudadanosImportJobRow.Status.FAILED:
+        return "Fallo"
+    return "Pendiente"
+
+
+def _format_import_row_detail(row: CiudadanosImportJobRow) -> str:
+    message = (row.mensaje or "").strip()
+    error_type = (row.error_type or "").strip()
+    if message and error_type:
+        return f"{message} ({error_type})"
+    return message or error_type or "-"
 
 
 def generate_ciudadanos_import_job_results_workbook(job) -> bytes:
     workbook = Workbook()
-    summary = workbook.active
-    summary.title = "resumen"
-    summary.append(["campo", "valor"])
-    summary_rows = [
-        ("lote", job.pk),
-        ("archivo", job.original_filename),
-        ("estado", job.status),
-        ("total", job.total_rows),
-        ("procesadas", job.processed_rows),
-        ("creados", job.created_rows),
-        ("existentes", job.existing_rows),
-        ("fallidos", job.failed_rows),
-        ("pendientes", job.pending_rows),
-        ("ultimo_intentado", job.last_attempted_documento),
-        ("error_sistemico", job.last_error_message),
-        ("fecha", _format_datetime(job.requested_at)),
-    ]
-    for label, value in summary_rows:
-        summary.append([label, value])
-
-    worksheet = workbook.create_sheet("filas")
+    worksheet = workbook.active
+    worksheet.title = "filas"
+    worksheet.freeze_panes = "A2"
     worksheet.append(
         [
-            "fila",
-            "cuil_o_dni",
-            "dni",
-            "cuil",
-            "sexo",
-            "estado",
-            "ciudadano_id",
-            "ciudadano_detalle",
-            "sexos_intentados",
-            "intentos",
-            "error_type",
-            "mensaje",
-            "procesado",
+            "Fila",
+            "CUIL/DNI",
+            "DNI",
+            "Sexo",
+            "Resultado",
+            "Estado",
+            "Intentos sexo",
+            "Intentos",
+            "Detalle",
+            "Ciudadano",
         ]
     )
     rows = job.rows.select_related("ciudadano").order_by("fila", "id")
     for row in rows:
-        detalle_url = (
-            reverse("ciudadanos_ver", kwargs={"pk": row.ciudadano_id})
-            if row.ciudadano_id
-            else ""
-        )
+        detalle_url = f"/ciudadanos/ver/{row.ciudadano_id}" if row.ciudadano_id else ""
         worksheet.append(
             [
                 row.fila,
-                row.documento_raw,
-                row.dni,
-                row.cuil,
-                row.sexo,
-                row.status,
-                row.ciudadano_id or "",
-                detalle_url,
-                row.sexos_intentados,
+                row.documento_raw or "-",
+                row.dni or "-",
+                row.sexo or "-",
+                _format_import_result(row),
+                row.get_status_display(),
+                row.sexos_intentados or "-",
                 row.attempts,
-                row.error_type,
-                row.mensaje,
-                _format_datetime(row.processed_at),
+                _format_import_row_detail(row),
+                "Ver" if detalle_url else "-",
             ]
         )
+        if detalle_url:
+            ciudadano_cell = worksheet.cell(row=worksheet.max_row, column=10)
+            ciudadano_cell.hyperlink = detalle_url
+            ciudadano_cell.style = "Hyperlink"
 
     output = BytesIO()
     workbook.save(output)

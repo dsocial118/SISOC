@@ -610,7 +610,7 @@ def test_ciudadanos_import_job_detail_view_lists_global_history_row():
 
 
 @pytest.mark.django_db
-def test_generate_ciudadanos_import_job_results_workbook_includes_all_row_statuses():
+def test_generate_ciudadanos_import_job_results_workbook_matches_visible_rows():
     user = User.objects.create_user(username="ciudadanos_export_results")
     ciudadano = Ciudadano.objects.create(
         apellido="Exportado",
@@ -669,19 +669,36 @@ def test_generate_ciudadanos_import_job_results_workbook_includes_all_row_status
     content = generate_ciudadanos_import_job_results_workbook(job)
     workbook = load_workbook(BytesIO(content))
 
-    assert workbook.sheetnames == ["resumen", "filas"]
-    rows = list(workbook["filas"].iter_rows(values_only=True))
-    assert rows[0][:6] == (
-        "fila",
-        "cuil_o_dni",
-        "dni",
-        "cuil",
-        "sexo",
-        "estado",
+    assert workbook.sheetnames == ["filas"]
+    worksheet = workbook["filas"]
+    rows = list(worksheet.iter_rows(values_only=True))
+    assert rows[0] == (
+        "Fila",
+        "CUIL/DNI",
+        "DNI",
+        "Sexo",
+        "Resultado",
+        "Estado",
+        "Intentos sexo",
+        "Intentos",
+        "Detalle",
+        "Ciudadano",
     )
-    assert [row[5] for row in rows[1:]] == ["created", "existing", "failed", "pending"]
-    assert rows[3][10] == "unexpected_error"
-    assert "RENAPER" in rows[3][11]
+    assert "error_type" not in rows[0]
+    assert "ciudadano_id" not in rows[0]
+    assert [row[4] for row in rows[1:]] == ["OK", "OK", "Fallo", "Pendiente"]
+    assert [row[5] for row in rows[1:]] == [
+        "Creado",
+        "Existente",
+        "Fallido",
+        "Pendiente",
+    ]
+    assert (
+        rows[3][8]
+        == "Ocurrio un error inesperado al consultar RENAPER. (unexpected_error)"
+    )
+    assert worksheet["J2"].value == "Ver"
+    assert worksheet["J2"].hyperlink.target.endswith(f"/ciudadanos/ver/{ciudadano.pk}")
 
 
 @pytest.mark.django_db

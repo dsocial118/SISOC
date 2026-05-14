@@ -33,6 +33,9 @@ digito verificador antes de consultar.
 - Si RENAPER devuelve datos validos y no existe ciudadano `ESTANDAR`, se crea
   con `origen_dato="renaper"`, `estado_validacion_renaper=VALIDADO` y
   `datos_renaper`.
+- La exportacion del resultado del lote prioriza la misma lectura que la tabla
+  de detalle: fila, documento, DNI, sexo, resultado, estado, intentos, detalle y
+  acceso al ciudadano cuando exista, sin exponer columnas tecnicas internas.
 - Errores sistemicos de RENAPER (`timeout`, `auth_error`, `remote_error`,
   `invalid_response`) pausan el lote en `failed` y permiten reanudar sin
   consumir filas pendientes. `unexpected_error` se registra como error de fila
