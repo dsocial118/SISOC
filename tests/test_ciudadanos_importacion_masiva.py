@@ -37,7 +37,7 @@ from ciudadanos.views_importacion_masiva import (
     CiudadanosImportTemplateView,
     CiudadanosImportUploadView,
 )
-from core.models import Sexo
+from core.models import Localidad, Municipio, Nacionalidad, Provincia, Sexo
 
 User = get_user_model()
 
@@ -610,7 +610,7 @@ def test_ciudadanos_import_job_detail_view_lists_global_history_row():
 
 
 @pytest.mark.django_db
-def test_generate_ciudadanos_import_job_results_workbook_includes_all_row_statuses():
+def test_generate_ciudadanos_import_job_results_workbook_matches_visible_rows():
     user = User.objects.create_user(username="ciudadanos_export_results")
     ciudadano = Ciudadano.objects.create(
         apellido="Exportado",
@@ -669,19 +669,36 @@ def test_generate_ciudadanos_import_job_results_workbook_includes_all_row_status
     content = generate_ciudadanos_import_job_results_workbook(job)
     workbook = load_workbook(BytesIO(content))
 
-    assert workbook.sheetnames == ["resumen", "filas"]
-    rows = list(workbook["filas"].iter_rows(values_only=True))
-    assert rows[0][:6] == (
-        "fila",
-        "cuil_o_dni",
-        "dni",
-        "cuil",
-        "sexo",
-        "estado",
+    assert workbook.sheetnames == ["filas"]
+    worksheet = workbook["filas"]
+    rows = list(worksheet.iter_rows(values_only=True))
+    assert rows[0] == (
+        "Fila",
+        "CUIL/DNI",
+        "DNI",
+        "Sexo",
+        "Resultado",
+        "Estado",
+        "Intentos sexo",
+        "Intentos",
+        "Detalle",
+        "Ciudadano",
     )
-    assert [row[5] for row in rows[1:]] == ["created", "existing", "failed", "pending"]
-    assert rows[3][10] == "unexpected_error"
-    assert "RENAPER" in rows[3][11]
+    assert "error_type" not in rows[0]
+    assert "ciudadano_id" not in rows[0]
+    assert [row[4] for row in rows[1:]] == ["OK", "OK", "Fallo", "Pendiente"]
+    assert [row[5] for row in rows[1:]] == [
+        "Creado",
+        "Existente",
+        "Fallido",
+        "Pendiente",
+    ]
+    assert (
+        rows[3][8]
+        == "Ocurrio un error inesperado al consultar RENAPER. (unexpected_error)"
+    )
+    assert worksheet["J2"].value == "Ver"
+    assert worksheet["J2"].hyperlink.target.endswith(f"/ciudadanos/ver/{ciudadano.pk}")
 
 
 @pytest.mark.django_db
@@ -792,3 +809,42 @@ def test_process_ciudadanos_import_job_uses_existing_sexo_catalog(mocker):
 
     ciudadano = Ciudadano.objects.get(documento=30111222)
     assert ciudadano.sexo == sexo
+
+
+@pytest.mark.django_db
+def test_process_ciudadanos_import_job_normalizes_renaper_foreign_key_ids(mocker):
+    sexo = Sexo.objects.create(sexo="Masculino")
+    nacionalidad = Nacionalidad.objects.create(nacionalidad="Argentina")
+    provincia = Provincia.objects.create(nombre="Chaco")
+    municipio = Municipio.objects.create(nombre="Resistencia", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Resistencia", municipio=municipio)
+    user = User.objects.create_user(username="ciudadanos_fk_ids")
+    upload = _build_excel_file([("30111223", "M")])
+    job = create_ciudadanos_import_job(uploaded_file=upload, requested_by=user)
+    renaper_result = _renaper_success(
+        dni="30111223",
+        sexo="M",
+        cuil="20301112239",
+    )
+    renaper_result["data"].update(
+        {
+            "sexo": sexo.pk,
+            "nacionalidad_api": "Argentina",
+            "provincia_api": "Chaco",
+            "municipio_api": "Resistencia",
+            "localidad_api": "Resistencia",
+        }
+    )
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva.consultar_datos_renaper",
+        return_value=renaper_result,
+    )
+
+    process_ciudadanos_import_job(job)
+
+    ciudadano = Ciudadano.objects.get(documento=30111223)
+    assert ciudadano.sexo_id == sexo.pk
+    assert ciudadano.nacionalidad_id == nacionalidad.pk
+    assert ciudadano.provincia_id == provincia.pk
+    assert ciudadano.municipio_id == municipio.pk
+    assert ciudadano.localidad_id == localidad.pk

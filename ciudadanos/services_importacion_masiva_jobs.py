@@ -488,7 +488,7 @@ def process_ciudadanos_import_job(
                 row=row,
                 requested_by=job.requested_by,
             )
-        except Exception:
+        except Exception as exc:
             logger.exception(
                 (
                     "Fallo inesperado procesando lote de ciudadanos. "
