@@ -68,13 +68,15 @@ def _expediente_pago_ya_cargado(numero_expediente, batch_id=None):
 
 
 def _periodo_desde_registro_importado(batch):
-    return (
-        RegistroImportado.objects.filter(exito_importacion__archivo_importado=batch)
-        .exclude(expediente_pago__mes_pago__isnull=True)
-        .exclude(expediente_pago__ano__isnull=True)
-        .values_list("expediente_pago__mes_pago", "expediente_pago__ano")
-        .first()
-        or (None, None)
+    return RegistroImportado.objects.filter(
+        exito_importacion__archivo_importado=batch
+    ).exclude(expediente_pago__mes_pago__isnull=True).exclude(
+        expediente_pago__ano__isnull=True
+    ).values_list(
+        "expediente_pago__mes_pago", "expediente_pago__ano"
+    ).first() or (
+        None,
+        None,
     )
 
 

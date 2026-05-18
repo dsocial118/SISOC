@@ -54,7 +54,9 @@ def _clean_period_value(value):
 
 def format_periodo_pago(mes_pago, ano_pago):
     mes = MONTH_NUMBERS.get(_clean_period_value(mes_pago))
-    ano_digits = "".join(char for char in _clean_period_value(ano_pago) if char.isdigit())
+    ano_digits = "".join(
+        char for char in _clean_period_value(ano_pago) if char.isdigit()
+    )
     ano = ano_digits[:4] if len(ano_digits) >= 4 else ""
     if mes and ano:
         return f"{mes}/{ano}"
