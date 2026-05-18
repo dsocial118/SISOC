@@ -8,30 +8,30 @@ Este documento define el procedimiento base. Los valores concretos de cada entor
 
 Completar antes de empezar:
 
-| Variable | Descripcion | Ejemplo QA |
-| --- | --- | --- |
-| `ENV_NAME` | Nombre operativo del entorno | `qa` |
-| `SITE_HOST` | Alias SSH o hostname del servidor app | `qa-site-aws` |
-| `SITE_IP` | IP del servidor app | `10.1.131.121` |
-| `DB_HOST` | Alias SSH o hostname del servidor DB | `qa-db-aws` |
-| `DB_IP` | IP del servidor DB | `10.1.130.88` |
-| `APP_USER` | Usuario Linux propietario del repo | `sisoc-deploy` |
-| `APP_ROOT` | Ruta del repo SISOC en SITE | `/opt/sisoc/SISOC` |
-| `DB_ROOT` | Ruta operativa MySQL en DB | `/opt/sisoc-mysql` |
-| `GIT_BRANCH` | Branch a desplegar | `development` |
-| `DB_NAME` | Base de datos Django | `sisoc_qa` |
-| `DB_APP_USER` | Usuario MySQL de Django | `djangoapp` |
-| `PUBLIC_ORIGIN` | URL publica o interna del entorno | `http://10.1.131.121` |
-| `PUBLIC_HOSTNAME` | Hostname publico o interno sin esquema; si no existe, dejar vacio | `` |
-| `USE_PROD_OVERRIDE` | Si agrega compose extra de produccion | `false` |
+| Variable            | Descripcion                                                       | Ejemplo QA            |
+| ------------------- | ----------------------------------------------------------------- | --------------------- |
+| `ENV_NAME`          | Nombre operativo del entorno                                      | `qa`                  |
+| `SITE_HOST`         | Alias SSH o hostname del servidor app                             | `qa-site-aws`         |
+| `SITE_IP`           | IP del servidor app                                               | `10.1.131.121`        |
+| `DB_HOST`           | Alias SSH o hostname del servidor DB                              | `qa-db-aws`           |
+| `DB_IP`             | IP del servidor DB                                                | `10.1.130.88`         |
+| `APP_USER`          | Usuario Linux propietario del repo                                | `sisoc-deploy`        |
+| `APP_ROOT`          | Ruta del repo SISOC en SITE                                       | `/opt/sisoc/SISOC`    |
+| `DB_ROOT`           | Ruta operativa MySQL en DB                                        | `/opt/sisoc-mysql`    |
+| `GIT_BRANCH`        | Branch a desplegar                                                | `development`         |
+| `DB_NAME`           | Base de datos Django                                              | `sisoc_qa`            |
+| `DB_APP_USER`       | Usuario MySQL de Django                                           | `djangoapp`           |
+| `PUBLIC_ORIGIN`     | URL publica o interna del entorno                                 | `http://10.1.131.121` |
+| `PUBLIC_HOSTNAME`   | Hostname publico o interno sin esquema; si no existe, dejar vacio | ``                    |
+| `USE_PROD_OVERRIDE` | Si agrega compose extra de produccion                             | `false`               |
 
 Convenciones recomendadas:
 
-| Entorno | Branch | `ENVIRONMENT` | Compose app |
-| --- | --- | --- | --- |
-| QA | `development` | `qa` | `docker-compose.deploy.yml` |
-| Homologacion | `homologacion` | `homologacion` | `docker-compose.deploy.yml` |
-| Produccion | `main` | `prd` | `docker-compose.deploy.yml` + `docker-compose.produccion.yml` |
+| Entorno      | Branch         | `ENVIRONMENT`  | Compose app                                                   |
+| ------------ | -------------- | -------------- | ------------------------------------------------------------- |
+| QA           | `development`  | `qa`           | `docker-compose.deploy.yml`                                   |
+| Homologacion | `homologacion` | `homologacion` | `docker-compose.deploy.yml`                                   |
+| Produccion   | `main`         | `prd`          | `docker-compose.deploy.yml` + `docker-compose.produccion.yml` |
 
 No usar para deploy:
 
@@ -55,6 +55,405 @@ export PUBLIC_HOSTNAME=
 ```
 
 Los passwords no se exportan como variables de shell salvo para pruebas puntuales. Editar `.env` explicitamente o generar SQL con los scripts de este runbook.
+
+## Camino copy-paste recomendado
+
+Este es el camino operativo principal. Copiar los bloques en orden y cambiar solo las variables del entorno.
+
+### A. DB: variables del entorno
+
+Ejecutar en el servidor DB:
+
+```bash
+export ENV_NAME=qa
+export SITE_IP=10.1.131.121
+export DB_ROOT=/opt/sisoc-mysql
+export DB_NAME=sisoc_qa
+export DB_APP_USER=djangoapp
+export DUMP_PATH=/opt/sisoc-mysql/dump.sql.gz
+```
+
+Ingresar secretos sin dejarlos en el historial:
+
+```bash
+read -rsp "MYSQL_ROOT_PASSWORD: " MYSQL_ROOT_PASSWORD; echo
+read -rsp "DB_APP_PASSWORD: " DB_APP_PASSWORD; echo
+```
+
+### B. DB: crear compose, `.env` y SQL de usuario
+
+Ejecutar en el servidor DB:
+
+```bash
+set -Eeuo pipefail
+
+sudo install -d -m 700 "$DB_ROOT"
+sudo install -d -m 755 "$DB_ROOT/data" "$DB_ROOT/conf" "$DB_ROOT/init" "$DB_ROOT/backups"
+
+sudo tee "$DB_ROOT/compose.yml" >/dev/null <<'YAML'
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: sisoc-mysql
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${SISOC_DB_NAME}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data:/var/lib/mysql
+      - ./conf:/etc/mysql/conf.d:ro
+      - ./init:/docker-entrypoint-initdb.d:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=-03:00
+YAML
+
+sudo env \
+  MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+  DB_NAME="$DB_NAME" \
+  DB_APP_USER="$DB_APP_USER" \
+  DB_APP_PASSWORD="$DB_APP_PASSWORD" \
+  DB_ROOT="$DB_ROOT" \
+  python3 - <<'PY'
+from pathlib import Path
+import os
+
+db_root = Path(os.environ["DB_ROOT"])
+root_password = os.environ["MYSQL_ROOT_PASSWORD"]
+db_name = os.environ["DB_NAME"]
+db_user = os.environ["DB_APP_USER"]
+db_password = os.environ["DB_APP_PASSWORD"]
+
+def sql_quote(value: str) -> str:
+    return "'" + value.replace("\\", "\\\\").replace("'", "''") + "'"
+
+(db_root / ".env").write_text(
+    f"MYSQL_ROOT_PASSWORD={root_password}\n"
+    f"SISOC_DB_NAME={db_name}\n"
+    f"SISOC_DB_USER={db_user}\n"
+    f"SISOC_DB_PASSWORD={db_password}\n"
+)
+
+(db_root / "init" / "01-users.sql").write_text(
+    f"CREATE USER IF NOT EXISTS {sql_quote(db_user)}@'%' IDENTIFIED WITH mysql_native_password BY {sql_quote(db_password)};\n"
+    f"ALTER USER {sql_quote(db_user)}@'%' IDENTIFIED WITH mysql_native_password BY {sql_quote(db_password)};\n"
+    "GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, INDEX, REFERENCES,\n"
+    "      CREATE TEMPORARY TABLES, LOCK TABLES, TRIGGER\n"
+    f"ON `{db_name}`.* TO {sql_quote(db_user)}@'%';\n"
+    "FLUSH PRIVILEGES;\n"
+)
+PY
+
+sudo chmod 600 "$DB_ROOT/.env" "$DB_ROOT/init/01-users.sql"
+```
+
+### C. DB: levantar MySQL y validar root
+
+Ejecutar en el servidor DB:
+
+```bash
+set -Eeuo pipefail
+cd "$DB_ROOT"
+
+sudo docker compose -f compose.yml up -d
+sudo docker compose -f compose.yml ps
+
+if sudo docker exec sisoc-mysql sh -lc 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -N -e "SELECT VERSION();"' >/dev/null 2>&1; then
+  echo "root_mysql=ok"
+else
+  echo "root_mysql=fallo; usar seccion 5 para reset sin borrar datos"
+  exit 1
+fi
+```
+
+### D. DB: restaurar dump con backup preventivo
+
+Ejecutar en el servidor DB despues de copiar el dump a `$DUMP_PATH`:
+
+```bash
+set -Eeuo pipefail
+cd "$DB_ROOT"
+
+gzip -t "$DUMP_PATH"
+stamp=$(date +%Y%m%d_%H%M%S)
+sudo mkdir -p "$DB_ROOT/backups"
+
+if sudo docker exec sisoc-mysql sh -lc "mysql -uroot -p\"\$MYSQL_ROOT_PASSWORD\" -N -e \"SHOW DATABASES LIKE '$DB_NAME';\"" | grep -qx "$DB_NAME"; then
+  sudo docker exec sisoc-mysql sh -lc \
+    "mysqldump -uroot -p\"\$MYSQL_ROOT_PASSWORD\" --single-transaction --routines --triggers $DB_NAME" \
+    | gzip -c | sudo tee "$DB_ROOT/backups/${DB_NAME}_pre_restore_${stamp}.sql.gz" >/dev/null
+fi
+
+sudo docker exec -i sisoc-mysql sh -lc 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' <<SQL
+DROP DATABASE IF EXISTS \`$DB_NAME\`;
+CREATE DATABASE \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+SQL
+
+gzip -dc "$DUMP_PATH" \
+  | sudo docker exec -i sisoc-mysql sh -lc "mysql -uroot -p\"\$MYSQL_ROOT_PASSWORD\" --database=$DB_NAME"
+
+sudo docker exec -i sisoc-mysql sh -lc 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' <"$DB_ROOT/init/01-users.sql"
+
+sudo docker exec sisoc-mysql sh -lc \
+  'MYSQL_PWD="$SISOC_DB_PASSWORD" mysql --ssl-mode=DISABLED -h127.0.0.1 -u"$SISOC_DB_USER" -D"$SISOC_DB_NAME" -N -e "SELECT DATABASE(); SELECT COUNT(*) FROM django_migrations;"'
+```
+
+### E. DB: firewall minimo
+
+Ejecutar en el servidor DB:
+
+```bash
+sudo ufw allow OpenSSH
+sudo ufw allow from "$SITE_IP" to any port 3306 proto tcp
+sudo ufw status
+```
+
+Si ya habia reglas viejas de `3306`, revisarlas y borrar las que no correspondan:
+
+```bash
+sudo ufw status numbered
+```
+
+### F. SITE: variables del entorno
+
+Ejecutar en el servidor SITE:
+
+```bash
+export ENV_NAME=qa
+export SITE_IP=10.1.131.121
+export DB_IP=10.1.130.88
+export APP_USER=sisoc-deploy
+export APP_ROOT=/opt/sisoc/SISOC
+export GIT_BRANCH=development
+export DB_NAME=sisoc_qa
+export DB_APP_USER=djangoapp
+export PUBLIC_ORIGIN=http://10.1.131.121
+export PUBLIC_HOSTNAME=
+```
+
+Ingresar el password del usuario MySQL de Django sin dejarlo en el historial:
+
+```bash
+read -rsp "DB_APP_PASSWORD: " DB_APP_PASSWORD; echo
+```
+
+### G. SITE: branch correcta y `.env`
+
+Ejecutar en el servidor SITE:
+
+```bash
+set -Eeuo pipefail
+
+sudo -H -u "$APP_USER" git -C "$APP_ROOT" fetch origin --prune
+sudo -H -u "$APP_USER" git -C "$APP_ROOT" checkout "$GIT_BRANCH"
+sudo -H -u "$APP_USER" git -C "$APP_ROOT" pull --ff-only origin "$GIT_BRANCH"
+
+sudo env \
+  APP_ROOT="$APP_ROOT" \
+  ENV_NAME="$ENV_NAME" \
+  SITE_IP="$SITE_IP" \
+  DB_IP="$DB_IP" \
+  DB_NAME="$DB_NAME" \
+  DB_APP_USER="$DB_APP_USER" \
+  DB_APP_PASSWORD="$DB_APP_PASSWORD" \
+  PUBLIC_ORIGIN="$PUBLIC_ORIGIN" \
+  PUBLIC_HOSTNAME="$PUBLIC_HOSTNAME" \
+  python3 - <<'PY'
+from pathlib import Path
+import os
+
+app_root = Path(os.environ["APP_ROOT"])
+public_origin = os.environ["PUBLIC_ORIGIN"].rstrip("/")
+allowed_hosts = [os.environ["SITE_IP"], "127.0.0.1", "localhost"]
+public_hostname = os.environ.get("PUBLIC_HOSTNAME", "").strip()
+if public_hostname:
+    allowed_hosts.append(public_hostname)
+
+updates = {
+    "DJANGO_DEBUG": "False",
+    "ENVIRONMENT": os.environ["ENV_NAME"],
+    "DJANGO_ALLOWED_HOSTS": ",".join(allowed_hosts),
+    "DJANGO_CSRF_TRUSTED_ORIGINS": ",".join([public_origin, "http://127.0.0.1", "http://localhost"]),
+    "DATABASE_HOST": os.environ["DB_IP"],
+    "DATABASE_PORT": "3306",
+    "DATABASE_USER": os.environ["DB_APP_USER"],
+    "DATABASE_PASSWORD": os.environ["DB_APP_PASSWORD"],
+    "DATABASE_NAME": os.environ["DB_NAME"],
+    "WAIT_FOR_DB": "true",
+    "RUN_MAKEMIGRATIONS_ON_START": "false",
+    "DOMINIO": public_origin + "/",
+}
+
+env_path = app_root / ".env"
+existing = env_path.read_text(errors="replace").splitlines() if env_path.exists() else []
+seen = set()
+out = []
+for raw in existing:
+    if raw.strip() and not raw.lstrip().startswith("#") and "=" in raw:
+        key = raw.split("=", 1)[0].strip()
+        if key in updates:
+            out.append(f"{key}={updates[key]}")
+            seen.add(key)
+            continue
+    out.append(raw)
+
+for key, value in updates.items():
+    if key not in seen:
+        out.append(f"{key}={value}")
+
+env_path.write_text("\n".join(out).rstrip() + "\n")
+PY
+
+sudo chown "$APP_USER:$APP_USER" "$APP_ROOT/.env"
+sudo chmod 600 "$APP_ROOT/.env"
+sudo -H -u "$APP_USER" git -C "$APP_ROOT" status -sb
+```
+
+### H. SITE: validar DB desde SITE
+
+Ejecutar en el servidor SITE:
+
+```bash
+MYSQL_PWD="$DB_APP_PASSWORD" mysql --ssl=0 \
+  -h"$DB_IP" -P3306 -u"$DB_APP_USER" -D"$DB_NAME" \
+  -N -e "SELECT DATABASE(); SELECT COUNT(*) FROM django_migrations;"
+```
+
+### I. SITE: levantar SISOC
+
+Ejecutar en el servidor SITE:
+
+```bash
+set -Eeuo pipefail
+cd "$APP_ROOT"
+
+if [ "${USE_PROD_OVERRIDE:-false}" = "true" ]; then
+  sudo -H -u "$APP_USER" docker compose \
+    -f docker-compose.deploy.yml \
+    -f docker-compose.produccion.yml \
+    up -d --build
+else
+  sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml up -d --build
+fi
+
+sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml ps
+sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml logs --tail 200 django
+```
+
+### J. SITE: configurar NGINX
+
+Ejecutar en el servidor SITE:
+
+```bash
+set -Eeuo pipefail
+
+server_names="$SITE_IP _"
+if [ -n "${PUBLIC_HOSTNAME:-}" ]; then
+  server_names="$SITE_IP $PUBLIC_HOSTNAME _"
+fi
+
+sudo tee "/etc/nginx/sites-available/sisoc-$ENV_NAME" >/dev/null <<NGINX
+server {
+    listen 80;
+    server_name $server_names;
+
+    client_max_body_size 50m;
+
+    access_log /var/log/nginx/sisoc-$ENV_NAME.access.log;
+    error_log  /var/log/nginx/sisoc-$ENV_NAME.error.log;
+
+    location /static/ {
+        alias $APP_ROOT/static_root/;
+        try_files \\$uri =404;
+        access_log off;
+        expires 7d;
+    }
+
+    location /media/ {
+        alias $APP_ROOT/media/;
+        try_files \\$uri =404;
+        expires 1h;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8001;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host \\$host;
+        proxy_set_header X-Real-IP \\$remote_addr;
+        proxy_set_header X-Forwarded-For \\$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \\$scheme;
+
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 120s;
+        proxy_read_timeout 120s;
+    }
+}
+NGINX
+
+sudo ln -sfn "/etc/nginx/sites-available/sisoc-$ENV_NAME" "/etc/nginx/sites-enabled/sisoc-$ENV_NAME"
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### K. SITE: firewall minimo
+
+Ejecutar en el servidor SITE:
+
+```bash
+sudo ufw allow OpenSSH
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw status
+```
+
+### L. Validacion final copy-paste
+
+Ejecutar en SITE:
+
+```bash
+set -Eeuo pipefail
+cd "$APP_ROOT"
+
+curl -i --max-time 20 http://127.0.0.1:8001/health/
+curl -i --max-time 20 http://127.0.0.1/health/
+curl -i --max-time 20 "$PUBLIC_ORIGIN/health/"
+
+sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml ps
+
+if sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml logs --tail 500 django | grep -iE 'traceback|exception|\[error\]|error 1045|error 2061'; then
+  echo "django_log_scan=found"
+  exit 1
+else
+  echo "django_log_scan=none"
+fi
+
+sudo nginx -t
+sudo tail -n 100 "/var/log/nginx/sisoc-$ENV_NAME.error.log" || true
+```
+
+Ejecutar en DB:
+
+```bash
+set -Eeuo pipefail
+cd "$DB_ROOT"
+
+sudo docker compose -f compose.yml ps
+sudo docker exec sisoc-mysql sh -lc \
+  'MYSQL_PWD="$SISOC_DB_PASSWORD" mysql --ssl-mode=DISABLED -h127.0.0.1 -u"$SISOC_DB_USER" -D"$SISOC_DB_NAME" -N -e "SELECT DATABASE(); SELECT COUNT(*) FROM django_migrations;"'
+
+if sudo docker logs --tail 300 sisoc-mysql 2>&1 | grep -iE 'error|fatal|denied|failed'; then
+  echo "mysql_log_scan=found"
+  exit 1
+else
+  echo "mysql_log_scan=none"
+fi
+```
 
 ## 2. Reglas de seguridad
 
