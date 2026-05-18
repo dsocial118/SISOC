@@ -16,6 +16,7 @@
 - `docs/operacion/integraciones.md`: conexiones con servicios externos, caches y manejo de estáticos/media.
 - `docs/operacion/operaciones.md`: tareas recurrentes, cron jobs y endpoints de health de producción.
 - `docs/operacion/infraestructura.md`: inventario de infraestructura operativo (entornos, arquitectura, networking, deploy, observabilidad, seguridad y roadmap infra).
+- `docs/operacion/deploy_entornos_docker_nginx_mysql.md`: runbook generico parametrizado para replicar entornos SISOC con Docker Compose, MySQL dedicado y NGINX.
 - `docs/operacion/qa_trixie_deploy.md`: runbook para desplegar QA en Debian 13 con SITE-QA, DB-QA, Docker Compose, MySQL 8.0 y NGINX.
 - `docs/operacion/comandos_administracion.md`: utilidades de management (`manage.py`) disponibles para el equipo.
 - `docs/operacion/pwa_web_push_deploy.md`: checklist de despliegue y validacion de web push para la PWA.

@@ -2,6 +2,8 @@
 
 Estado: runbook operativo para replicar QA en servidores Debian GNU/Linux 13 (trixie).
 
+Para otros entornos, usar primero la plantilla generica `docs/operacion/deploy_entornos_docker_nginx_mysql.md` y tomar este documento como ejemplo aplicado a QA.
+
 ## Topologia esperada
 
 | Rol | Host actual QA | Ruta principal | Servicio |
