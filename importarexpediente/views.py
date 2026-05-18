@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponseNotAllowed, JsonResponse
+from django.http import FileResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
@@ -25,6 +25,7 @@ from importarexpediente.services import (
     ensure_import_required_defaults,
     expediente_pago_from_row,
     extract_numero_expediente_pago,
+    extract_periodo_pago,
     friendly_error_message,
     parse_import_file,
 )
@@ -33,44 +34,109 @@ from importarexpediente.services import (
 MAX_ERROR_MESSAGES = 20
 
 
-def _register_batch_file_error(batch, message):
-    ErroresImportacion.objects.create(
-        archivo_importado=batch,
-        fila=0,
-        mensaje=message,
+def _first_import_value(parsed_file, extractor):
+    for _row_number, row in parsed_file.rows:
+        value = extractor(parsed_file, row)
+        if isinstance(value, tuple):
+            if any(value):
+                return value
+        elif value:
+            return value
+    if extractor is extract_periodo_pago:
+        return None, None
+    return None
+
+
+def _normalizar_periodo_pago(mes_pago, ano_pago):
+    ano_digits = "".join(char for char in str(ano_pago or "") if char.isdigit())
+    return mes_pago, ano_digits[:4] if len(ano_digits) >= 4 else ano_pago
+
+
+def _expediente_pago_ya_cargado(numero_expediente, batch_id=None):
+    if not numero_expediente:
+        return False
+    numero_expediente = numero_expediente.strip()
+    expediente_qs = ExpedientePago.objects.filter(
+        expediente_pago__iexact=numero_expediente
     )
-    batch.count_errores = 1
-    batch.count_exitos = 0
-    batch.save(update_fields=["count_errores", "count_exitos"])
+    archivo_qs = ArchivosImportados.objects.filter(
+        numero_expediente_pago__iexact=numero_expediente
+    )
+    if batch_id is not None:
+        archivo_qs = archivo_qs.exclude(pk=batch_id)
+    return expediente_qs.exists() or archivo_qs.exists()
+
+
+def _periodo_desde_registro_importado(batch):
+    return (
+        RegistroImportado.objects.filter(exito_importacion__archivo_importado=batch)
+        .exclude(expediente_pago__mes_pago__isnull=True)
+        .exclude(expediente_pago__ano__isnull=True)
+        .values_list("expediente_pago__mes_pago", "expediente_pago__ano")
+        .first()
+        or (None, None)
+    )
+
+
+def _periodo_desde_archivo_importado(batch):
+    if not batch.archivo:
+        return None, None
+    try:
+        batch.archivo.open("rb")
+        data = batch.archivo.read()
+    except Exception:
+        return None, None
+    finally:
+        try:
+            batch.archivo.close()
+        except Exception:
+            pass
+
+    try:
+        parsed_file = parse_import_file(
+            data,
+            batch.archivo.name,
+            getattr(batch, "delimiter", ",") or ",",
+            has_header=True,
+        )
+    except Exception:
+        return None, None
+    return _first_import_value(parsed_file, extract_periodo_pago)
+
+
+def _completar_periodos_faltantes(batches):
+    for batch in batches:
+        if batch.periodo_pago:
+            continue
+
+        mes_pago, ano_pago = _periodo_desde_registro_importado(batch)
+        if not (mes_pago and ano_pago):
+            mes_pago, ano_pago = _periodo_desde_archivo_importado(batch)
+
+        if mes_pago or ano_pago:
+            mes_pago, ano_pago = _normalizar_periodo_pago(mes_pago, ano_pago)
+            batch.mes_pago = mes_pago
+            batch.ano_pago = ano_pago
+            batch.save(update_fields=["mes_pago", "ano_pago"])
 
 
 class ImportExpedientesView(LoginRequiredMixin, FormView):
     template_name = "upload.html"
     form_class = CSVUploadForm
     success_url = reverse_lazy("importarexpedientes_list")
+    error_url = reverse_lazy("upload")
+
+    def form_invalid(self, form):
+        for field_errors in form.errors.values():
+            for error in field_errors:
+                messages.error(self.request, error)
+        return redirect(self.error_url)
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def form_valid(self, form):
         uploaded_file = form.cleaned_data["file"]
         delimiter = form.cleaned_data["delimiter"]
         has_header = form.cleaned_data["has_header"]
-
-        try:
-            try:
-                uploaded_file.seek(0)
-            except Exception:
-                pass
-            base_upload = ArchivosImportados(
-                usuario=self.request.user,
-                delimiter=delimiter,
-            )
-            base_upload.archivo.save(uploaded_file.name, uploaded_file, save=True)
-            if hasattr(base_upload, "id_archivo"):
-                base_upload.id_archivo = base_upload.pk
-                base_upload.save(update_fields=["id_archivo"])
-        except Exception as e:
-            messages.error(self.request, f"No se pudo guardar el archivo: {e}")
-            return redirect(self.success_url)
 
         try:
             uploaded_file.seek(0)
@@ -87,14 +153,51 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
             )
         except (EmptyImportFileError, HeaderlessImportFileError) as e:
             error_message = str(e)
-            _register_batch_file_error(base_upload, error_message)
             messages.error(self.request, error_message)
-            return redirect(self.success_url)
+            return redirect(self.error_url)
         except Exception as e:
             error_message = f"No se pudo leer el archivo: {e}"
-            _register_batch_file_error(base_upload, error_message)
             messages.error(self.request, error_message)
-            return redirect(self.success_url)
+            return redirect(self.error_url)
+
+        numero_expediente_archivo = _first_import_value(
+            parsed_file,
+            extract_numero_expediente_pago,
+        )
+        mes_pago_archivo, ano_pago_archivo = _first_import_value(
+            parsed_file,
+            extract_periodo_pago,
+        )
+        mes_pago_archivo, ano_pago_archivo = _normalizar_periodo_pago(
+            mes_pago_archivo,
+            ano_pago_archivo,
+        )
+        if _expediente_pago_ya_cargado(numero_expediente_archivo):
+            messages.error(
+                self.request,
+                "No se puede adjuntar el archivo ya que el expediente de pago se encuentra cargado anteriormente",
+            )
+            return redirect(self.error_url)
+
+        try:
+            try:
+                uploaded_file.seek(0)
+            except Exception:
+                pass
+            base_upload = ArchivosImportados(
+                usuario=self.request.user,
+                delimiter=delimiter,
+                numero_expediente_pago=numero_expediente_archivo,
+                mes_pago=mes_pago_archivo,
+                ano_pago=ano_pago_archivo,
+            )
+            base_upload.archivo.save(uploaded_file.name, uploaded_file, save=True)
+            if hasattr(base_upload, "id_archivo"):
+                base_upload.id_archivo = base_upload.pk
+                base_upload.save(update_fields=["id_archivo"])
+        except Exception as e:
+            messages.error(self.request, f"No se pudo guardar el archivo: {e}")
+            return redirect(self.error_url)
 
         detected_delimiter = parsed_file.detected_delimiter
         if (
@@ -113,7 +216,6 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
             base_upload.delimiter = delimiter
             base_upload.save(update_fields=["delimiter"])
 
-        numero_expediente_guardado = False
         success_count = 0
         error_count = 0
 
@@ -128,10 +230,27 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                         parsed_file,
                         row,
                     )
-                    if not numero_expediente_guardado and numero_expediente:
-                        base_upload.numero_expediente_pago = numero_expediente
-                        base_upload.save(update_fields=["numero_expediente_pago"])
-                        numero_expediente_guardado = True
+                    if (
+                        numero_expediente
+                        and numero_expediente != numero_expediente_archivo
+                        and _expediente_pago_ya_cargado(
+                            numero_expediente,
+                            batch_id=base_upload.pk,
+                        )
+                    ):
+                        message = (
+                            "No se puede adjuntar el archivo ya que el expediente "
+                            "de pago se encuentra cargado anteriormente"
+                        )
+                        if error_count < MAX_ERROR_MESSAGES:
+                            messages.error(self.request, message)
+                        ErroresImportacion.objects.create(
+                            archivo_importado=base_upload,
+                            fila=row_number,
+                            mensaje=message,
+                        )
+                        error_count += 1
+                        continue
 
                     if specific_errors:
                         for message in specific_errors:
@@ -204,6 +323,7 @@ class ImportarExpedienteListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        _completar_periodos_faltantes(context["archivos_importados"])
         context["query"] = self.request.GET.get("busqueda", "")
         return context
 
@@ -228,6 +348,8 @@ def importarexpedientes_ajax(request):
         page_obj = paginator.get_page(page)
     except (ValueError, TypeError):
         page_obj = paginator.get_page(1)
+
+    _completar_periodos_faltantes(page_obj.object_list)
 
     table_html = render_to_string(
         "partials/importarexpediente_list_rows.html",
@@ -257,6 +379,16 @@ def importarexpedientes_ajax(request):
             "has_previous": page_obj.has_previous(),
             "has_next": page_obj.has_next(),
         }
+    )
+
+
+@login_required
+def descargar_archivo_importado(request, id_archivo):
+    batch = get_object_or_404(ArchivosImportados, pk=id_archivo, usuario=request.user)
+    return FileResponse(
+        batch.archivo.open("rb"),
+        as_attachment=True,
+        filename=batch.archivo.name.rsplit("/", 1)[-1],
     )
 
 
