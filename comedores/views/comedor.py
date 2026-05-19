@@ -1339,7 +1339,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         context.update(timeline_selected)
 
         context["resumen_dw_transacciones"] = None
-        if user_has_permission_code(self.request.user, "comedores.view_comedor"):
+        request_user = getattr(self.request, "user", None)
+        if user_has_permission_code(request_user, "comedores.view_comedor"):
             context["resumen_dw_transacciones"] = (
                 DWTransaccionesService.obtener_resumen_ultimo_periodo(self.object.id)
             )

@@ -423,7 +423,7 @@ def test_comedor_detail_no_consulta_transacciones_sin_permiso_comedor(mocker):
     mocker.patch.object(
         view,
         "get_relaciones_optimizadas",
-        return_value={"admision": _AdmisionesQS([])},
+        return_value={"admision": None, "admision_activa": None},
     )
     mocker.patch(
         "comedores.views.comedor._get_informe_tecnico_finalizado_from_admision",
@@ -464,7 +464,7 @@ def test_comedor_detail_consulta_transacciones_con_permiso_comedor(mocker):
     mocker.patch.object(
         view,
         "get_relaciones_optimizadas",
-        return_value={"admision": _AdmisionesQS([])},
+        return_value={"admision": None, "admision_activa": None},
     )
     mocker.patch(
         "comedores.views.comedor._get_informe_tecnico_finalizado_from_admision",
