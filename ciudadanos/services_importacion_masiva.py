@@ -405,7 +405,7 @@ def _build_ciudadano_payload_from_renaper(
     sexo: str,
 ) -> tuple[dict[str, object] | None, str | None]:
     data = _apply_sexo_to_renaper_data(result.get("data") or {}, sexo)
-    ciudadano_data, error = ComedorService._build_ciudadano_data_from_renaper(data, dni)
+    ciudadano_data, error = ComedorService.build_ciudadano_data_from_renaper(data, dni)
     if not ciudadano_data:
         return None, error
     ciudadano_data.update(
@@ -466,50 +466,13 @@ def _lookup_renaper_for_row(
     return last_result
 
 
-def process_ciudadanos_import_row(
+def _process_successful_renaper_import(
     *,
     row: ParsedCiudadanosImportRow,
     requested_by,
+    result: dict[str, object],
+    sexos_intentados: str,
 ) -> dict[str, object]:
-    if row.parse_error:
-        return {
-            "status": "failed",
-            "mensaje": row.parse_error,
-            "error_type": row.error_type,
-            "sexos_intentados": "",
-            "ciudadano": None,
-            "systemic": False,
-            "contacted_renaper": False,
-        }
-
-    existing = _get_existing_estandar_by_dni(row.dni)
-    if existing:
-        return {
-            "status": "existing",
-            "mensaje": "Ya existe un ciudadano estandar para el DNI informado.",
-            "error_type": "",
-            "sexos_intentados": row.sexo or "",
-            "ciudadano": existing,
-            "systemic": False,
-            "contacted_renaper": False,
-        }
-
-    result = _lookup_renaper_for_row(row)
-    sexos_intentados = ",".join(result.get("sexos_intentados") or [])
-    if not result.get("success"):
-        error_type = str(result.get("error_type") or "renaper_error")
-        return {
-            "status": "pending" if is_systemic_renaper_error(error_type) else "failed",
-            "mensaje": str(
-                result.get("error") or "No se encontraron datos en RENAPER."
-            ),
-            "error_type": error_type,
-            "sexos_intentados": sexos_intentados,
-            "ciudadano": None,
-            "systemic": is_systemic_renaper_error(error_type),
-            "contacted_renaper": True,
-        }
-
     renaper_cuil = _extract_renaper_cuil(result)
     if row.cuil and renaper_cuil and row.cuil != renaper_cuil:
         return {
@@ -565,3 +528,55 @@ def process_ciudadanos_import_row(
         "systemic": False,
         "contacted_renaper": True,
     }
+
+
+def process_ciudadanos_import_row(
+    *,
+    row: ParsedCiudadanosImportRow,
+    requested_by,
+) -> dict[str, object]:
+    if row.parse_error:
+        return {
+            "status": "failed",
+            "mensaje": row.parse_error,
+            "error_type": row.error_type,
+            "sexos_intentados": "",
+            "ciudadano": None,
+            "systemic": False,
+            "contacted_renaper": False,
+        }
+
+    existing = _get_existing_estandar_by_dni(row.dni)
+    if existing:
+        return {
+            "status": "existing",
+            "mensaje": "Ya existe un ciudadano estandar para el DNI informado.",
+            "error_type": "",
+            "sexos_intentados": row.sexo or "",
+            "ciudadano": existing,
+            "systemic": False,
+            "contacted_renaper": False,
+        }
+
+    result = _lookup_renaper_for_row(row)
+    sexos_intentados = ",".join(result.get("sexos_intentados") or [])
+    if not result.get("success"):
+        error_type = str(result.get("error_type") or "renaper_error")
+        return {
+            "status": "pending" if is_systemic_renaper_error(error_type) else "failed",
+            "mensaje": str(
+                result.get("error") or "No se encontraron datos en RENAPER."
+            ),
+            "error_type": error_type,
+            "sexos_intentados": sexos_intentados,
+            "ciudadano": None,
+            "systemic": is_systemic_renaper_error(error_type),
+            "contacted_renaper": True,
+        }
+
+    return _process_successful_renaper_import(
+        row=row,
+        requested_by=requested_by,
+        result=result,
+        sexos_intentados=sexos_intentados,
+    )
