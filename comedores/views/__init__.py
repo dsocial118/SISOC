@@ -4,6 +4,7 @@ from .comedor import (
     ComedorDeleteView,
     ComedorDetailView,
     ComedorListView,
+    ComedorTransaccionesDetailView,
     ComedorUpdateView,
 )
 from .colaborador import (
@@ -49,6 +50,7 @@ __all__ = [
     "ComedorDeleteView",
     "ComedorDetailView",
     "ComedorListView",
+    "ComedorTransaccionesDetailView",
     "ComedorUpdateView",
     "NominaCreateView",
     "NominaDeleteView",
