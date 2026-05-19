@@ -4,7 +4,10 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("relevamientos", "0006_alter_relevamiento_managers_relevamiento_deleted_at_and_more"),
+        (
+            "relevamientos",
+            "0006_alter_relevamiento_managers_relevamiento_deleted_at_and_more",
+        ),
     ]
 
     operations = [
@@ -12,7 +15,7 @@ class Migration(migrations.Migration):
             model_name="relevamiento",
             name="numero_if",
             field=models.CharField(
-                "NÃºmero de IF",
+                "Número de IF",
                 blank=True,
                 max_length=255,
                 null=True,

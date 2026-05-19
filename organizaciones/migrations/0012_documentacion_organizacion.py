@@ -148,7 +148,10 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("deleted_at", models.DateTimeField(blank=True, db_index=True, null=True)),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
                 (
                     "archivo",
                     models.FileField(upload_to="organizaciones/documentacion/"),
