@@ -1,0 +1,82 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Dispositivos{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+    <div class="list-container">
+        {% include 'components/search_bar.html' with titulo=titulo reset_url=reset_url add_url_full=add_url filters_mode=filters_mode filters_config=filters_config filters_action=filters_action seccion_filtros_favoritos=seccion_filtros_favoritos show_add_button=perms.dispositivos.add_dispositivo add_text='Agregar dispositivo' %}
+
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card comedor-table-card">
+                    <div class="card-body">
+                        <div class="table-responsive-lg">
+                            <table class="table table-comedor-moderno">
+                                <thead>
+                                    <tr>
+                                        <th>Institución</th>
+                                        <th>Tipo</th>
+                                        <th>Provincia</th>
+                                        <th>Municipio</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for dispositivo in dispositivos %}
+                                        <tr>
+                                            <td>{{ dispositivo.nombre_institucion }}</td>
+                                            <td>{{ dispositivo.get_tipo_dispositivo_display }}</td>
+                                            <td>{{ dispositivo.provincia }}</td>
+                                            <td>{{ dispositivo.municipio }}</td>
+                                            <td>
+                                                <div class="comedor-actions">
+                                                    <a href="{% url 'dispositivos_detalle' dispositivo.pk %}"
+                                                       class="btn btn-ver"
+                                                       title="Ver detalles">
+                                                        <i class="fas fa-eye"></i>
+                                                        Ver
+                                                    </a>
+                                                    {% if perms.dispositivos.change_dispositivo %}
+                                                        <a href="{% url 'dispositivos_editar' dispositivo.pk %}"
+                                                           class="btn btn-editar"
+                                                           title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                            Editar
+                                                        </a>
+                                                    {% endif %}
+                                                    {% if perms.dispositivos.delete_dispositivo %}
+                                                        <a href="{% url 'dispositivos_eliminar' dispositivo.pk %}"
+                                                           class="btn btn-eliminar"
+                                                           title="Eliminar">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                            Eliminar
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="5">
+                                                <div class="no-data-message">
+                                                    <h3>No se encontraron dispositivos</h3>
+                                                    <p>No hay dispositivos que coincidan con los criterios de búsqueda.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}

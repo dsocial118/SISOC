@@ -33,7 +33,7 @@
 
 | Entorno      | URL(s)                                 | Hosting                     | Notas                                                                                                 | Owner     |
 | ------------ | -------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------- | --------- |
-| qa           | http://10.80.9.15/                     | Self-hosted + NGINX interno | Deploy desde branch `development`; usa `docker-compose.deploy.yml` + `.env` del servidor            | Tech Lead |
+| qa           | http://10.1.131.121/                   | Self-hosted + NGINX interno | Deploy desde branch `development`; usa `docker-compose.deploy.yml` + `.env` del servidor; DB dedicada en `10.1.130.88` | Tech Lead |
 | homologacion | https://homologacion.sisoc.example.gov.ar/ | Self-hosted + NGINX interno | Deploy desde branch `homologacion`; entorno similar a produccion, definido por `.env` del servidor | Tech Lead |
 | prd          | https://sisoc.secretarianaf.gob.ar/    | Self-hosted + NGINX interno | Deploy desde branch `main`; usa `docker-compose.deploy.yml` + `docker-compose.produccion.yml`       | Tech Lead |
 

@@ -183,6 +183,7 @@ INSTALLED_APPS = [
     "importarexpediente",
     "comunicados",
     "centrodeinfancia",
+    "dispositivos",
     "pwa",
 ]
 
@@ -635,11 +636,11 @@ if IS_PRODUCTION_LIKE_ENVIRONMENT:
             "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
         },
     }
-    SECURE_HSTS_SECONDS = 1800  # 30 minutos
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = _safe_int_env("DJANGO_SECURE_HSTS_SECONDS", 1800)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = SECURE_HSTS_SECONDS > 0
+    SECURE_SSL_REDIRECT = _safe_bool_env("DJANGO_SECURE_SSL_REDIRECT", True)
+    SESSION_COOKIE_SECURE = _safe_bool_env("DJANGO_SESSION_COOKIE_SECURE", True)
+    CSRF_COOKIE_SECURE = _safe_bool_env("DJANGO_CSRF_COOKIE_SECURE", True)
     USE_X_FORWARDED_HOST = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_CONTENT_TYPE_NOSNIFF = True
