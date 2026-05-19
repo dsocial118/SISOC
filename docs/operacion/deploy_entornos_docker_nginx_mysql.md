@@ -346,6 +346,17 @@ sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml ps
 sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml logs --tail 200 django
 ```
 
+En produccion validar con el mismo set de compose usado para levantar el servicio:
+
+```bash
+sudo -H -u "$APP_USER" docker compose \
+  -f docker-compose.deploy.yml \
+  -f docker-compose.produccion.yml \
+  ps
+```
+
+Todo servicio definido por `docker-compose.produccion.yml` debe quedar arriba. En `origin/main` esto incluye `bulk_credentials_worker` y `ciudadanos_import_worker` ademas de `django`.
+
 ### J. SITE: configurar NGINX
 
 Ejecutar en el servidor SITE:
@@ -357,6 +368,13 @@ server_names="$SITE_IP _"
 if [ -n "${PUBLIC_HOSTNAME:-}" ]; then
   server_names="$SITE_IP $PUBLIC_HOSTNAME _"
 fi
+
+sudo tee "/etc/nginx/conf.d/sisoc-forwarded-proto.conf" >/dev/null <<'NGINX_MAP'
+map $http_x_forwarded_proto $sisoc_forwarded_proto {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+NGINX_MAP
 
 sudo tee "/etc/nginx/sites-available/sisoc-$ENV_NAME" >/dev/null <<NGINX
 server {
@@ -388,7 +406,7 @@ server {
         proxy_set_header Host \\$host;
         proxy_set_header X-Real-IP \\$remote_addr;
         proxy_set_header X-Forwarded-For \\$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \\$scheme;
+        proxy_set_header X-Forwarded-Proto \\$sisoc_forwarded_proto;
 
         proxy_connect_timeout 60s;
         proxy_send_timeout 120s;
@@ -403,6 +421,8 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
+Si PRD se prepara antes de apuntar DNS y emitir TLS, no configurar `listen 443` ni certificados todavia. Mantener el perfil `ENVIRONMENT=prd` y validar el backend HTTP enviando `X-Forwarded-Proto: https`; el HTTP plano directo puede responder `301` por `SECURE_SSL_REDIRECT`.
+
 ### K. SITE: firewall minimo
 
 Ejecutar en el servidor SITE:
@@ -410,7 +430,8 @@ Ejecutar en el servidor SITE:
 ```bash
 sudo ufw allow OpenSSH
 sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
+# Solo cuando TLS quede implementado en este SITE:
+# sudo ufw allow 443/tcp
 sudo ufw status
 ```
 
@@ -425,8 +446,16 @@ cd "$APP_ROOT"
 curl -i --max-time 20 http://127.0.0.1:8001/health/
 curl -i --max-time 20 http://127.0.0.1/health/
 curl -i --max-time 20 "$PUBLIC_ORIGIN/health/"
+curl -i --max-time 20 -H "Host: ${PUBLIC_HOSTNAME:-$SITE_IP}" -H "X-Forwarded-Proto: https" http://127.0.0.1/health/
 
-sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml ps
+if [ "${USE_PROD_OVERRIDE:-false}" = "true" ]; then
+  sudo -H -u "$APP_USER" docker compose \
+    -f docker-compose.deploy.yml \
+    -f docker-compose.produccion.yml \
+    ps
+else
+  sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml ps
+fi
 
 if sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml logs --tail 500 django | grep -iE 'traceback|exception|\[error\]|error 1045|error 2061'; then
   echo "django_log_scan=found"
@@ -437,6 +466,15 @@ fi
 
 sudo nginx -t
 sudo tail -n 100 "/var/log/nginx/sisoc-$ENV_NAME.error.log" || true
+```
+
+En produccion, repetir el scan para los workers definidos por el override:
+
+```bash
+sudo -H -u "$APP_USER" docker compose \
+  -f docker-compose.deploy.yml \
+  -f docker-compose.produccion.yml \
+  logs --tail 500 bulk_credentials_worker ciudadanos_import_worker | grep -iE 'traceback|exception|\[error\]' || true
 ```
 
 Ejecutar en DB:
@@ -459,7 +497,7 @@ fi
 
 ## 2. Reglas de seguridad
 
-- No usar `docker compose down -v` salvo aprobacion explicita.
+- No usar `docker compose down -v` en estos despliegues.
 - No borrar `/opt/sisoc-mysql/data` ni volumenes MySQL.
 - Antes de recrear o pisar una DB, hacer backup preventivo.
 - No dejar `root` MySQL remoto abierto; si existe `root`@`%`, bloquearlo.
@@ -717,7 +755,9 @@ RUN_MAKEMIGRATIONS_ON_START=false
 DOMINIO=<PUBLIC_ORIGIN>/
 ```
 
-Si un entorno production-like (`homologacion` o `prd`) se publica temporalmente solo por HTTP interno, agregar estos overrides explicitos al `.env` del servidor. No usarlos para un dominio con TLS real:
+En PRD no desactivar el hardening HTTPS aunque el servidor se prepare antes del cambio de DNS/TLS. Mantener `ENVIRONMENT=prd`, no agregar overrides `DJANGO_SECURE_*` y validar NGINX con `X-Forwarded-Proto: https`. Si el request llega por HTTP plano directo, `/health/` puede redirigir por `SECURE_SSL_REDIRECT`.
+
+Para un entorno temporal no PRD controlado por HTTP interno, y solo si se acepta explicitamente perder el hardening de HTTPS, se pueden agregar estos overrides al `.env` del servidor. No usarlos para PRD ni para un dominio con TLS real:
 
 ```dotenv
 DJANGO_SECURE_SSL_REDIRECT=False
@@ -760,6 +800,21 @@ sudo -H -u "$APP_USER" docker compose \
   up -d --build
 ```
 
+En produccion, revisar `ps` y logs con el mismo set de compose:
+
+```bash
+sudo -H -u "$APP_USER" docker compose \
+  -f docker-compose.deploy.yml \
+  -f docker-compose.produccion.yml \
+  ps
+sudo -H -u "$APP_USER" docker compose \
+  -f docker-compose.deploy.yml \
+  -f docker-compose.produccion.yml \
+  logs --tail 200 django bulk_credentials_worker ciudadanos_import_worker
+```
+
+Todo worker definido por `docker-compose.produccion.yml` debe quedar arriba. En `origin/main` esto incluye `bulk_credentials_worker` y `ciudadanos_import_worker`.
+
 Revisar logs hasta Gunicorn:
 
 ```bash
@@ -777,9 +832,30 @@ Listening at: http://0.0.0.0:8000
 
 ## 9. Configurar NGINX
 
+Crear el map HTTP para preservar `X-Forwarded-Proto` cuando exista un LB/TLS upstream. Esto permite preparar PRD con backend HTTP sin desactivar el hardening de Django:
+
+```nginx
+map $http_x_forwarded_proto $sisoc_forwarded_proto {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+```
+
+Por ejemplo:
+
+```bash
+sudo tee /etc/nginx/conf.d/sisoc-forwarded-proto.conf >/dev/null <<'NGINX_MAP'
+map $http_x_forwarded_proto $sisoc_forwarded_proto {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+NGINX_MAP
+```
+
 Crear `/etc/nginx/sites-available/sisoc-$ENV_NAME`. Si no hay hostname publico, quitar `<PUBLIC_HOSTNAME>` de `server_name`:
 
 ```nginx
+
 server {
     listen 80;
     server_name <SITE_IP> <PUBLIC_HOSTNAME> _;
@@ -809,7 +885,7 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $sisoc_forwarded_proto;
 
         proxy_connect_timeout 60s;
         proxy_send_timeout 120s;
@@ -835,6 +911,8 @@ sudo grep -RInE 'server_name|listen 80|sites-enabled' /etc/nginx
 
 Debe existir un solo include activo de `/etc/nginx/sites-enabled/*` en `nginx.conf`.
 
+Si PRD se prepara antes de apuntar DNS y emitir TLS, dejar solo HTTP en SITE hasta el corte. No crear `listen 443` ni referenciar certificados inexistentes. La validacion debe usar `X-Forwarded-Proto: https` para simular la futura terminacion TLS sin desactivar el hardening de Django.
+
 ## 10. Firewall
 
 SITE:
@@ -842,7 +920,8 @@ SITE:
 ```bash
 sudo ufw allow OpenSSH
 sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
+# Solo cuando TLS quede implementado en este SITE:
+# sudo ufw allow 443/tcp
 sudo ufw status
 ```
 
@@ -868,8 +947,14 @@ En SITE:
 curl -i "http://127.0.0.1:8001/health/"
 curl -i "http://127.0.0.1/health/"
 curl -i "$PUBLIC_ORIGIN/health/"
-sudo -H -u "$APP_USER" docker compose -f "$APP_ROOT/docker-compose.deploy.yml" ps
-sudo -H -u "$APP_USER" docker compose -f "$APP_ROOT/docker-compose.deploy.yml" logs --tail 500 django | grep -iE 'traceback|exception|\[error\]' || true
+curl -i -H "Host: ${PUBLIC_HOSTNAME:-$SITE_IP}" -H "X-Forwarded-Proto: https" "http://127.0.0.1/health/"
+if [ "${USE_PROD_OVERRIDE:-false}" = "true" ]; then
+  sudo -H -u "$APP_USER" docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" ps
+  sudo -H -u "$APP_USER" docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" logs --tail 500 django bulk_credentials_worker ciudadanos_import_worker | grep -iE 'traceback|exception|\[error\]' || true
+else
+  sudo -H -u "$APP_USER" docker compose -f "$APP_ROOT/docker-compose.deploy.yml" ps
+  sudo -H -u "$APP_USER" docker compose -f "$APP_ROOT/docker-compose.deploy.yml" logs --tail 500 django | grep -iE 'traceback|exception|\[error\]' || true
+fi
 sudo nginx -t
 sudo tail -n 100 "/var/log/nginx/sisoc-$ENV_NAME.error.log"
 ```

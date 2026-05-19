@@ -35,7 +35,7 @@
 | ------------ | -------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------- | --------- |
 | qa           | http://10.1.131.121/                   | Self-hosted + NGINX interno | Deploy desde branch `development`; usa `docker-compose.deploy.yml` + `.env` del servidor; DB dedicada en `10.1.130.88` | Tech Lead |
 | homologacion | https://homologacion.sisoc.example.gov.ar/ | Self-hosted + NGINX interno | Deploy desde branch `homologacion`; entorno similar a produccion, definido por `.env` del servidor | Tech Lead |
-| prd          | https://sisoc.secretarianaf.gob.ar/    | Self-hosted + NGINX interno | Deploy desde branch `main`; usa `docker-compose.deploy.yml` + `docker-compose.produccion.yml`       | Tech Lead |
+| prd          | https://sisoc.secretarianaf.gob.ar/    | Self-hosted + NGINX interno | Deploy desde branch `main`; SITE `10.1.135.170`, DB `10.1.138.80`; app preparada por HTTP interno, DNS/TLS pendiente de corte | Tech Lead |
 
 ## 3. Architecture (High-level)
 
@@ -54,12 +54,17 @@
 
 - Entry points (DNS/CDN/WAF/LB):
   - DNS publico para prd: `sisoc.secretarianaf.gob.ar`.
+  - SITE-PRD preparado: `10.1.135.170`.
+  - DB-PRD preparado: `10.1.138.80`.
+  - Hasta el corte DNS/TLS, el dominio publico puede seguir apuntando a la publicacion anterior.
   - DNS esperado para homologacion: `homologacion.sisoc.example.gov.ar`.
   - CDN/WAF/LB: Desconocido, trabajo de infra.
   - Edge interno: NGINX.
 
 - Puertos/protocolos de ingreso:
-  - HTTP en qa y HTTPS en homologacion/prd.
+  - HTTP en qa.
+  - PRD pre-corte: HTTP en SITE con perfil Django `prd`; TLS/443 se habilita cuando el dominio apunte al SITE y exista certificado valido.
+  - HTTPS en homologacion/prd despues del corte TLS.
   - Puerto 8001 para Django.
 
 - Dependencias de egreso:
@@ -83,6 +88,7 @@
   - Proceso web Django.
   - `docker-compose.yml` local define `mysql` + `django`.
   - Los deploys versionados usan `docker-compose.deploy.yml`; hoy solo produccion agrega `docker-compose.produccion.yml`.
+  - El override productivo levanta `django`, `bulk_credentials_worker` y `ciudadanos_import_worker`.
   - QA y homologacion se resuelven con el mismo compose base y el `.env` del servidor.
   - Jobs programados por cron del host (limpieza logs, prune Docker, hetrixtools, purge_auditlog).
 
@@ -106,6 +112,7 @@
 - Backups + retention + restore test status:
   - Gestion de backups a cargo de Infra.
   - Frecuencia/retencion/ultimo restore test: UNKNOWN.
+  - Setup PRD 2026-05-19: restore inicial desde dump operativo y backup preventivo previo registrado en el cambio operativo correspondiente.
 
 ## 7. Async / Queues / Schedulers
 
