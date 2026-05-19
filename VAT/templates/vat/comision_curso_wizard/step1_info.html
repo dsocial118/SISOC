@@ -1,0 +1,105 @@
+{% extends "vat/comision_curso_wizard/_base.html" %}
+
+{% block titulo-pagina %}{% endblock %}
+
+{% block wizard_step %}
+<div class="sisoc-wizard-card">
+    <div class="sisoc-wizard-card-header">
+        <i class="fas fa-info-circle"></i>
+        <span>Información básica</span>
+    </div>
+    <div class="sisoc-wizard-card-body">
+        <p class="sisoc-wizard-intro">
+            Complete los datos generales de la comisión. Todos los campos marcados con <strong>*</strong> son obligatorios.
+        </p>
+
+        <div class="sisoc-wizard-row sisoc-wizard-row--info-grid">
+            <div class="sisoc-wizard-field">
+                <label class="sisoc-wizard-label" for="curso-display">Curso<span class="text-danger">*</span></label>
+                <input id="curso-display" type="text" class="form-control sisoc-wizard-input"
+                       value="{{ curso.nombre|default:'Trae el dato' }}" readonly>
+            </div>
+
+            <div class="sisoc-wizard-field">
+                <label class="sisoc-wizard-label" for="{{ form.ubicacion.id_for_label }}">
+                    Ubicación<span class="text-danger">*</span>
+                </label>
+                {{ form.ubicacion }}
+                {% if form.ubicacion.errors %}
+                    <div class="text-danger">{{ form.ubicacion.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="sisoc-wizard-row sisoc-wizard-row--metrics-grid">
+            <div class="sisoc-wizard-field">
+                <label class="sisoc-wizard-label" for="{{ form.cupo_total.id_for_label }}">
+                    Cupo total<span class="text-danger">*</span>
+                </label>
+                {{ form.cupo_total }}
+                {% if form.cupo_total.errors %}
+                    <div class="text-danger">{{ form.cupo_total.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="sisoc-wizard-field">
+                <label class="sisoc-wizard-label" for="{{ form.estado.id_for_label }}">
+                    Estado<span class="text-danger">*</span>
+                </label>
+                {{ form.estado }}
+                {% if form.estado.errors %}
+                    <div class="text-danger">{{ form.estado.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="sisoc-wizard-field">
+                <label class="sisoc-wizard-label" for="{{ form.fecha_inicio.id_for_label }}">
+                    Fecha de inicio<span class="text-danger">*</span>
+                </label>
+                {{ form.fecha_inicio }}
+                {% if form.fecha_inicio.errors %}
+                    <div class="text-danger">{{ form.fecha_inicio.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="sisoc-wizard-field">
+                <label class="sisoc-wizard-label" for="{{ form.fecha_fin.id_for_label }}">
+                    Fecha de finalización<span class="text-danger">*</span>
+                </label>
+                {{ form.fecha_fin }}
+                {% if form.fecha_fin.errors %}
+                    <div class="text-danger">{{ form.fecha_fin.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="sisoc-wizard-field">
+            <label class="sisoc-wizard-label" for="{{ form.observaciones.id_for_label }}">Observaciones</label>
+            {{ form.observaciones }}
+            {% if form.observaciones.errors %}
+                <div class="text-danger">{{ form.observaciones.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="text-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block wizard_footer_left %}
+<div class="sisoc-wizard-validations">
+    <h4><i class="fas fa-exclamation-circle"></i> Códigos de validación</h4>
+    <ul>
+        <li>La fecha de inicio debe ser igual o posterior a hoy</li>
+        <li>La fecha de finalización debe ser posterior a la fecha de inicio</li>
+        <li>El cupo debe estar entre 5 y 100 estudiantes</li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block wizard_buttons %}
+<a href="{{ wizard_cancel_url }}" class="sisoc-wizard-btn sisoc-wizard-btn--light">Cancelar</a>
+<button type="submit" class="sisoc-wizard-btn sisoc-wizard-btn--primary">
+    Avanzar al paso siguiente
+    <i class="fas fa-arrow-right"></i>
+</button>
+{% endblock %}

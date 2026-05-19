@@ -1,0 +1,175 @@
+{% extends "vat/comision_curso_wizard/_base.html" %}
+
+
+{% block wizard_step %}
+<div class="sisoc-wizard-card">
+    <div class="sisoc-wizard-card-header">
+        <i class="fas fa-clock"></i>
+        <span>Horarios de clase</span>
+    </div>
+    <div class="sisoc-wizard-card-body">
+        <p class="sisoc-wizard-intro">
+            Defina los días y horarios en que se dictará la comisión. Debe agregar al menos 1 horario y el total semanal debe ser mínimo 2 horas.
+        </p>
+
+        {{ form.management_form }}
+        {% if form.non_form_errors %}
+            <div class="text-danger">{{ form.non_form_errors }}</div>
+        {% endif %}
+
+        <div id="sisoc-wizard-horarios" data-horarios-prefix="{{ form.prefix }}">
+            {% for horario_form in form.forms %}
+                {% include "vat/comision_curso_wizard/_horario_block.html" with horario_form=horario_form forloop_counter=forloop.counter forloop_counter0=forloop.counter0 %}
+            {% endfor %}
+        </div>
+
+        <template id="sisoc-wizard-horario-template">
+            {% include "vat/comision_curso_wizard/_horario_block.html" with horario_form=form.empty_form forloop_counter="__counter__" forloop_counter0="__prefix__" %}
+        </template>
+
+        <div class="sisoc-wizard-add-horario-row">
+            <button type="button" class="sisoc-wizard-btn sisoc-wizard-btn--add" data-action="add-horario">
+                <i class="fas fa-plus"></i> Agregar horario
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block wizard_footer_left %}
+<div class="sisoc-wizard-total" data-total-semanal>
+    <h4>Total semanal</h4>
+    <div class="value"><span data-total-value>0</span> <span data-total-unit>Min</span></div>
+    <div class="note">• Mínimo requerido 2 hs semanales</div>
+</div>
+{% endblock %}
+
+{% block wizard_footer_right %}
+<div class="sisoc-wizard-validations">
+    <h4><i class="fas fa-exclamation-circle"></i> Códigos de validación</h4>
+    <ul>
+        <li>Al menos 1 horario definido (obligatorio)</li>
+        <li>Duración de cada clase: entre 45 minutos y 4 horas</li>
+        <li>Total semanal mínimo: 2 horas</li>
+        <li>No puede haber 2 horarios el mismo día</li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block wizard_buttons %}
+<button type="submit" name="wizard_goto_step" value="info" class="sisoc-wizard-btn sisoc-wizard-btn--light" formnovalidate>
+    <i class="fas fa-arrow-left"></i> Volver al paso anterior
+</button>
+<button type="submit" class="sisoc-wizard-btn sisoc-wizard-btn--primary">
+    Avanzar al paso siguiente <i class="fas fa-arrow-right"></i>
+</button>
+{% endblock %}
+
+{% block content %}
+{{ block.super }}
+<script nonce="{{ request.csp_nonce }}">
+(function () {
+    var container = document.getElementById('sisoc-wizard-horarios');
+    var tmpl = document.getElementById('sisoc-wizard-horario-template');
+    if (!container || !tmpl) return;
+    var prefix = container.dataset.horariosPrefix;
+    var totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+    var totalValueEl = document.querySelector('[data-total-value]');
+    var totalUnitEl = document.querySelector('[data-total-unit]');
+    var totalBox = document.querySelector('[data-total-semanal]');
+
+    function renumberTitles() {
+        var visible = container.querySelectorAll('.sisoc-wizard-horario:not([data-deleted="1"])');
+        visible.forEach(function (block, idx) {
+            var title = block.querySelector('.sisoc-wizard-horario-title');
+            if (title) title.textContent = 'Horario ' + (idx + 1);
+        });
+    }
+
+    function parseTime(value) {
+        if (!value) return null;
+        var parts = value.split(':');
+        if (parts.length < 2) return null;
+        var h = parseInt(parts[0], 10);
+        var m = parseInt(parts[1], 10);
+        if (isNaN(h) || isNaN(m)) return null;
+        return h * 60 + m;
+    }
+
+    function recomputeTotal() {
+        var total = 0;
+        container.querySelectorAll('.sisoc-wizard-horario').forEach(function (block) {
+            if (block.dataset.deleted === '1') return;
+            var hd = block.querySelector('input[name$="-hora_desde"]');
+            var hh = block.querySelector('input[name$="-hora_hasta"]');
+            var inicio = parseTime(hd && hd.value);
+            var fin = parseTime(hh && hh.value);
+            if (inicio !== null && fin !== null && fin > inicio) {
+                total += fin - inicio;
+            }
+        });
+        if (!totalValueEl) return;
+        if (total >= 60) {
+            var horas = Math.floor(total / 60);
+            var mins = total % 60;
+            totalValueEl.textContent = mins ? (horas + ' h ' + mins) : horas;
+            totalUnitEl.textContent = mins ? 'min' : (horas === 1 ? 'Hora' : 'Horas');
+        } else {
+            totalValueEl.textContent = total;
+            totalUnitEl.textContent = 'Min';
+        }
+        if (totalBox) {
+            totalBox.classList.toggle('is-ok', total >= 120);
+        }
+    }
+
+    container.addEventListener('input', recomputeTotal);
+    container.addEventListener('change', recomputeTotal);
+
+    container.addEventListener('click', function (e) {
+        var removeBtn = e.target.closest('[data-action="remove-horario"]');
+        if (!removeBtn) return;
+        var block = removeBtn.closest('.sisoc-wizard-horario');
+        if (!block) return;
+        var visibleBlocks = container.querySelectorAll('.sisoc-wizard-horario:not([data-deleted="1"])');
+        if (visibleBlocks.length <= 1) {
+            block.querySelectorAll('input, select').forEach(function (input) {
+                if (input.name && input.name.endsWith('-DELETE')) return;
+                if (input.type === 'checkbox' || input.type === 'radio') {
+                    input.checked = false;
+                } else {
+                    input.value = '';
+                }
+            });
+        } else {
+            var deleteInput = block.querySelector('input[name$="-DELETE"]');
+            if (deleteInput) {
+                deleteInput.checked = true;
+            }
+            block.dataset.deleted = '1';
+            block.style.display = 'none';
+        }
+        renumberTitles();
+        recomputeTotal();
+    });
+
+    document.querySelectorAll('[data-action="add-horario"]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var nextIndex = parseInt(totalForms.value, 10);
+            var raw = tmpl.innerHTML.replace(/__prefix__/g, nextIndex);
+            raw = raw.replace(/__counter__/g, (nextIndex + 1));
+            var wrapper = document.createElement('div');
+            wrapper.innerHTML = raw.trim();
+            var newBlock = wrapper.firstElementChild;
+            if (!newBlock) return;
+            container.appendChild(newBlock);
+            totalForms.value = nextIndex + 1;
+            renumberTitles();
+            recomputeTotal();
+        });
+    });
+
+    recomputeTotal();
+})();
+</script>
+{% endblock %}

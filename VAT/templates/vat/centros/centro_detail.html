@@ -1984,6 +1984,7 @@
             position: relative;
             justify-content: center;
             padding: 1rem 1.15rem .7rem;
+            background: #2e3b69;
         }
 
         .sisoc-curso-modal-header::after {
@@ -2159,6 +2160,53 @@
             box-shadow: 0 10px 22px rgba(7, 26, 11, 0.24);
         }
 
+        /* Vouchers — header con contador chip */
+        .sisoc-curso-vouchers-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .6rem;
+            margin-bottom: .4rem;
+        }
+
+        .sisoc-curso-voucher-counter {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .18rem .55rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: rgba(255, 255, 255, 0.78);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .02em;
+            line-height: 1;
+            transition: background .18s ease, border-color .18s ease, color .18s ease;
+        }
+
+        .sisoc-curso-voucher-counter i {
+            font-size: 10px;
+            opacity: .85;
+        }
+
+        .sisoc-curso-voucher-counter.is-active {
+            background: rgba(46, 125, 51, 0.22);
+            border-color: rgba(120, 220, 130, 0.55);
+            color: #d6f5da;
+        }
+
+        .sisoc-curso-voucher-counter-label {
+            text-transform: lowercase;
+            opacity: .82;
+        }
+
+        /* Fallback nativo del <select multiple> antes de Select2 */
+        #modalCurso select[name="voucher_parametrias"][multiple] {
+            min-height: 38px;
+            padding: .35rem .55rem;
+        }
+
         /* Select2 multiple dark mode para #modalOferta y #modalCurso */
         #modalOferta .select2-container--default .select2-selection--multiple,
         #modalCurso .select2-container--default .select2-selection--multiple {
@@ -2167,35 +2215,97 @@
             border-radius: 0.25rem;
             min-height: 38px;
         }
-        #modalOferta .select2-container--default.select2-container--focus .select2-selection--multiple,
-        #modalCurso .select2-container--default.select2-container--focus .select2-selection--multiple {
+
+        /* Select2 multiple — refinamiento visual para #modalCurso */
+        #modalCurso .select2-container--default .select2-selection--multiple {
+            border-radius: 8px !important;
+            border-color: rgba(255, 255, 255, 0.32) !important;
+            background-color: rgba(255, 255, 255, 0.04) !important;
+            min-height: 40px;
+            padding: 2px 6px;
+            transition: border-color .18s ease, box-shadow .18s ease;
+        }
+
+        #modalCurso .select2-container--default.select2-container--focus .select2-selection--multiple,
+        #modalCurso .select2-container--default.select2-container--open .select2-selection--multiple {
+            border-color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.07) !important;
+            box-shadow: 0 0 0 0.14rem rgba(255, 255, 255, 0.12) !important;
+        }
+
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+            padding: 0 2px;
+        }
+
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            background: linear-gradient(135deg, #3a8a40 0%, #2e7d33 100%) !important;
+            color: #ffffff !important;
+            border: 0 !important;
+            border-radius: 999px !important;
+            padding: 2px 10px 2px 4px !important;
+            margin: 3px 4px 3px 0 !important;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.4;
+            box-shadow: 0 2px 6px rgba(7, 26, 11, 0.28);
+        }
+
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            order: -1;
+            color: rgba(255, 255, 255, 0.85) !important;
+            border: 0 !important;
+            margin: 0 !important;
+            padding: 0 2px 0 4px !important;
+            font-size: 13px;
+            line-height: 1;
+            background: transparent !important;
+        }
+
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #ffffff !important;
+            background: transparent !important;
+            transform: scale(1.1);
+        }
+
+        #modalCurso .select2-container--default .select2-search--inline .select2-search__field {
+            color: #ffffff !important;
+            font-size: 12px;
+            margin-top: 6px;
+            margin-left: 4px;
+        }
+
+        #modalCurso .select2-container--default .select2-search--inline .select2-search__field::placeholder {
+            color: rgba(255, 255, 255, 0.55) !important;
+        }
+
+        /* Select2 multiple dark mode (regla base mantenida abajo) */
+
+        #modalOferta .select2-container--default.select2-container--focus .select2-selection--multiple {
             background-color: #253446 !important;
             border-color: #f39c12 !important;
             box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15) !important;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice,
-        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice {
             background-color: #2c3e50 !important;
             color: #f39c12 !important;
             border: 1px solid #3d4f63 !important;
             border-radius: 3px;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
-        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
             color: #9ca3af !important;
             border-right: 1px solid #3d4f63 !important;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover,
-        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
             color: #ef4444 !important;
             background-color: transparent !important;
         }
-        #modalOferta .select2-container--default .select2-search--inline .select2-search__field,
-        #modalCurso .select2-container--default .select2-search--inline .select2-search__field {
+        #modalOferta .select2-container--default .select2-search--inline .select2-search__field {
             color: #e5e7eb !important;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__rendered,
-        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__rendered {
             color: #e5e7eb !important;
         }
         /* Dropdown (se renderiza dentro de .modal-body por dropdownParent) */
@@ -2784,18 +2894,34 @@
             }
 
             var vouchersContainer = getFieldContainer(vouchersSelect);
-            var selectedInfo = document.createElement('div');
-            selectedInfo.className = 'form-text mt-1';
-            selectedInfo.textContent = 'Seleccionados: 0';
-            if (vouchersContainer) {
-                vouchersContainer.appendChild(selectedInfo);
+            var counterValue = vouchersContainer
+                ? vouchersContainer.querySelector('[data-voucher-counter-value="1"]')
+                : null;
+            var counterChip = vouchersContainer
+                ? vouchersContainer.querySelector('[data-voucher-counter="1"]')
+                : null;
+            var selectedInfo = null;
+            if (!counterValue) {
+                selectedInfo = document.createElement('div');
+                selectedInfo.className = 'form-text mt-1';
+                selectedInfo.textContent = 'Seleccionados: 0';
+                if (vouchersContainer) {
+                    vouchersContainer.appendChild(selectedInfo);
+                }
             }
 
             function refreshSelectedInfo() {
                 var selectedCount = Array.from(vouchersSelect.options).filter(function(option) {
                     return option.selected;
                 }).length;
-                selectedInfo.textContent = 'Seleccionados: ' + selectedCount;
+                if (counterValue) {
+                    counterValue.textContent = selectedCount;
+                    if (counterChip) {
+                        counterChip.classList.toggle('is-active', selectedCount > 0);
+                    }
+                } else if (selectedInfo) {
+                    selectedInfo.textContent = 'Seleccionados: ' + selectedCount;
+                }
             }
 
             function filtrarVouchersPorPrograma() {

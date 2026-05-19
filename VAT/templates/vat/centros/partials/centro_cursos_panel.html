@@ -4,21 +4,20 @@
         <div class="sisoc-section-card">
             <div class="sisoc-toolbar">
                 <div class="sisoc-toolbar-left">
-            <div class="modal-dialog sisoc-curso-modal-dialog modal-dialog-centered">
-                <div class="modal-content sisoc-curso-modal-content">
-                    <div class="modal-header sisoc-curso-modal-header">
+                    <label class="sisoc-toolbar-field" for="cursosFilterSearch">
+                        <i class="fas fa-search"></i>
+                        <input
                             type="search"
                             id="cursosFilterSearch"
-                                class="btn-close sisoc-curso-close"
+                            placeholder="Buscar curso..."
                             autocomplete="off" />
                     </label>
                     <label class="sisoc-toolbar-field" for="cursosFilterEstado">
                         <select id="cursosFilterEstado">
                             <option value="">Filtrar por Estado de carga</option>
-                            <option value="con_comision">Creado con comisión</option>
-                            <option value="sin_comision">Creado sin comisión</option>
-                        <input type="hidden" name="post_create_action" id="id_post_create_action" value="" />
-                        <div class="modal-body sisoc-curso-modal-body">
+                            <option value="con_comision">Creado con comision</option>
+                            <option value="sin_comision">Creado sin comision</option>
+                        </select>
                     </label>
                     <select id="cursosFilterPageSize" class="sisoc-hidden-control">
                         <option value="5">5</option>
@@ -29,74 +28,33 @@
                     </select>
                     <button type="button" id="cursosFilterClear" class="sisoc-hidden-control">Limpiar</button>
                 </div>
-                                            <label for="openPlanCurricularSelector" class="form-label sisoc-curso-label">
-                                                Plan curricular
+                {% if can_manage_centro and perms.VAT.add_curso %}
+                    <button
                         type="button"
                         class="sisoc-btn sisoc-btn--add"
                         data-bs-toggle="modal"
                         data-bs-target="#modalCurso"
                         data-curso-mode="create">
-                                                    class="sisoc-curso-select-trigger">
-                                                <span id="planCurricularSelectorButtonLabel">Selector de planes pre cargados</span>
-                                                <i class="fas fa-chevron-down"></i>
+                        <i class="fas fa-plus"></i>
+                        <span>Agregar curso</span>
+                    </button>
                 {% endif %}
-                                            <div id="planCurricularSelectorSummary" class="sisoc-curso-summary">No hay plan curricular seleccionado.</div>
+            </div>
 
-                                            {% if field.help_text %}<div class="form-text sisoc-curso-help">{{ field.help_text }}</div>{% endif %}
-                                        </div>
-                                    {% elif field.html_name == 'nombre' %}
-                                        <div class="col-12 mb-3">
-                                            <label for="{{ field.id_for_label }}" class="form-label sisoc-curso-label">
-                                                Nombre del curso
-                                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                            </label>
-                                            {{ field }}
-                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                        </div>
-                                    {% elif field.html_name == 'estado' %}
-                                        <div class="col-12 mb-3">
-                                            <label for="{{ field.id_for_label }}" class="form-label sisoc-curso-label">
-                                                Estado
-                                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                            </label>
-                                            {{ field }}
-                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                        </div>
-                                    {% elif field.html_name == 'usa_voucher' or field.html_name == 'inscripcion_libre' %}
-                                        {% if field.html_name == 'usa_voucher' %}
-                                            <div class="col-12 mb-3 sisoc-curso-check-row">
-                                                <label class="sisoc-curso-check" for="{{ curso_form.usa_voucher.id_for_label }}">
-                                                    {{ curso_form.usa_voucher }}
-                                                    <span>Usa voucher</span>
-                                                </label>
-                                                <label class="sisoc-curso-check" for="{{ curso_form.inscripcion_libre.id_for_label }}">
-                                                    {{ curso_form.inscripcion_libre }}
-                                                    <span>Inscripción libre</span>
-                                                </label>
-                                            </div>
-                                        {% endif %}
+            {% if cursos %}
                 <div class="sisoc-table-shell">
                     <div class="sisoc-table-wrap">
-                                            <label for="{{ field.id_for_label }}" class="form-label sisoc-curso-label">
+                        <table class="sisoc-table" id="tablaCursosCentro">
                             <thead>
                                 <tr>
                                     <th>Plan Curricular</th>
                                     <th>Curso FP</th>
                                     <th>Cant De Comisiones</th>
-                                            {% if field.help_text %}<div class="form-text sisoc-curso-help">{{ field.help_text }}</div>{% endif %}
-                                        </div>
-                                    {% elif field.html_name == 'costo_creditos' %}
-                                        <div class="col-12 mb-3">
-                                            <label for="{{ field.id_for_label }}" class="form-label sisoc-curso-label">
-                                                {{ field.label }}
-                                            </label>
-                                            {{ field }}
-                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                            {% if field.help_text %}<div class="form-text sisoc-curso-help">{{ field.help_text }}</div>{% endif %}
+                                    <th>Estado</th>
                                     <th>Acciones</th>
                                 </tr>
-                                        <div class="col-12 mb-3">
-                                            <label for="{{ field.id_for_label }}" class="form-label sisoc-curso-label">
+                            </thead>
+                            <tbody>
                                 {% for curso in cursos %}
                                     <tr
                                         class="curso-row"
@@ -112,26 +70,20 @@
                                         <td>{{ curso.comisiones_count }}</td>
                                         <td>
                                             {% if curso.comisiones_count %}
-                                                <span class="sisoc-data-badge sisoc-data-badge--commission">Creado con comisión</span>
+                                                <span class="sisoc-data-badge sisoc-data-badge--commission">Creado con comision</span>
                                             {% else %}
-                                                <span class="sisoc-data-badge sisoc-data-badge--no-commission">Creado sin comisión</span>
+                                                <span class="sisoc-data-badge sisoc-data-badge--no-commission">Creado sin comision</span>
                                             {% endif %}
                                         </td>
                                         <td>
                                             <div class="sisoc-table-actions">
                                                 {% if can_manage_centro and perms.VAT.add_comisioncurso %}
-                                                    <button
-                                                        type="button"
-                                                        class="sisoc-btn sisoc-btn--add"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalComisionCurso"
-                                                        data-comision-curso-mode="create"
-                                                        data-lock-curso="1"
-                                                        data-curso-id="{{ curso.id }}"
-                                                        data-curso-nombre="{{ curso.nombre }}">
+                                                    <a
+                                                        href="{% url 'vat_comision_curso_wizard' curso.id %}"
+                                                        class="sisoc-btn sisoc-btn--add">
                                                         <i class="fas fa-plus"></i>
-                                                        <span>comisión</span>
-                                                    </button>
+                                                        <span>comision</span>
+                                                    </a>
                                                 {% endif %}
                                                 {% if can_manage_centro and perms.VAT.change_curso %}
                                                     <button
@@ -194,7 +146,7 @@
                         <input
                             type="search"
                             id="comisionesFilterSearch"
-                            placeholder="Buscar Comisión..."
+                            placeholder="Buscar Comision..."
                             autocomplete="off" />
                     </label>
                     <label class="sisoc-toolbar-field" for="comisionesFilterCurso">
@@ -229,8 +181,8 @@
                             <thead>
                                 <tr>
                                     <th>Curso</th>
-                                    <th>Comisión</th>
-                                    <th>Ubicación</th>
+                                    <th>Comision</th>
+                                    <th>Ubicacion</th>
                                     <th>Fecha Inicio</th>
                                     <th>Fecha Fin</th>
                                     <th>Cupo</th>
@@ -330,12 +282,12 @@
              tabindex="-1"
              aria-labelledby="modalCursoLabel"
              aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
+            <div class="modal-dialog sisoc-curso-modal-dialog modal-dialog-centered">
+                <div class="modal-content sisoc-curso-modal-content">
+                    <div class="modal-header sisoc-curso-modal-header">
                         <h5 class="modal-title" id="modalCursoLabel">Nuevo Curso</h5>
                         <button type="button"
-                                class="btn-close"
+                                class="btn-close sisoc-curso-close"
                                 data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                     </div>
@@ -343,7 +295,8 @@
                           method="post"
                           action="{% url 'vat_curso_create' %}?centro={{ centro.id }}">
                         {% csrf_token %}
-                        <div class="modal-body">
+                        <input type="hidden" name="post_create_action" id="id_post_create_action" value="" />
+                        <div class="modal-body sisoc-curso-modal-body">
                             <div id="planEstudioSeleccionadoInfo"
                                  class="alert alert-info d-none"
                                  role="status"
@@ -354,34 +307,81 @@
                                         {{ field }}
                                     {% elif field.html_name == 'plan_estudio' %}
                                         <div class="col-12 mb-3">
-                                            <label for="openPlanCurricularSelector" class="form-label fw-bold">
-                                                {{ field.label }}
+                                            <label for="openPlanCurricularSelector" class="form-label sisoc-curso-label">
+                                                Plan curricular
                                                 {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
                                             </label>
                                             <div class="d-none">{{ field }}</div>
                                             <button type="button"
                                                     id="openPlanCurricularSelector"
-                                                    class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center">
-                                                <span id="planCurricularSelectorButtonLabel">Seleccionar plan curricular</span>
-                                                <i class="fas fa-table-list"></i>
+                                                    class="sisoc-curso-select-trigger">
+                                                <span id="planCurricularSelectorButtonLabel">Selector de planes pre cargados</span>
+                                                <i class="fas fa-chevron-down"></i>
                                             </button>
-                                            <div id="planCurricularSelectorSummary" class="small text-muted mt-2">No hay plan curricular seleccionado.</div>
+                                            <div id="planCurricularSelectorSummary" class="sisoc-curso-summary">No hay plan curricular seleccionado.</div>
                                             {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text sisoc-curso-help">{{ field.help_text }}</div>{% endif %}
                                         </div>
-                                    {% elif field.html_name == 'voucher_parametrias' %}
+                                    {% elif field.html_name == 'nombre' %}
                                         <div class="col-12 mb-3">
-                                            <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                                                {{ field.label }}
+                                            <label for="{{ field.id_for_label }}" class="form-label sisoc-curso-label">
+                                                Nombre del curso
                                                 {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
                                             </label>
                                             {{ field }}
                                             {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                        </div>
+                                    {% elif field.html_name == 'estado' %}
+                                        <div class="col-12 mb-3">
+                                            <label for="{{ field.id_for_label }}" class="form-label sisoc-curso-label">
+                                                Estado
+                                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                        </div>
+                                    {% elif field.html_name == 'usa_voucher' or field.html_name == 'inscripcion_libre' %}
+                                        {% if field.html_name == 'usa_voucher' %}
+                                            <div class="col-12 mb-3 sisoc-curso-check-row">
+                                                <label class="sisoc-curso-check" for="{{ curso_form.usa_voucher.id_for_label }}">
+                                                    {{ curso_form.usa_voucher }}
+                                                    <span>Usa voucher</span>
+                                                </label>
+                                                <label class="sisoc-curso-check" for="{{ curso_form.inscripcion_libre.id_for_label }}">
+                                                    {{ curso_form.inscripcion_libre }}
+                                                    <span>Inscripcion libre</span>
+                                                </label>
+                                            </div>
+                                        {% endif %}
+                                    {% elif field.html_name == 'voucher_parametrias' %}
+                                        <div class="col-12 mb-3 sisoc-curso-vouchers">
+                                            <div class="sisoc-curso-vouchers-head">
+                                                <label for="{{ field.id_for_label }}" class="form-label sisoc-curso-label mb-0">
+                                                    {{ field.label }}
+                                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                                </label>
+                                                <span class="sisoc-curso-voucher-counter" data-voucher-counter="1">
+                                                    <i class="fas fa-ticket-alt"></i>
+                                                    <span data-voucher-counter-value="1">0</span>
+                                                    <span class="sisoc-curso-voucher-counter-label">seleccionados</span>
+                                                </span>
+                                            </div>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text sisoc-curso-help">{{ field.help_text }}</div>{% endif %}
+                                        </div>
+                                    {% elif field.html_name == 'costo_creditos' %}
+                                        <div class="col-12 mb-3">
+                                            <label for="{{ field.id_for_label }}" class="form-label sisoc-curso-label">
+                                                {{ field.label }}
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text sisoc-curso-help">{{ field.help_text }}</div>{% endif %}
                                         </div>
                                     {% else %}
-                                        <div class="col-md-6 mb-3">
-                                            <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                        <div class="col-12 mb-3">
+                                            <label for="{{ field.id_for_label }}" class="form-label sisoc-curso-label">
                                                 {{ field.label }}
                                                 {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
                                             </label>
@@ -400,7 +400,7 @@
                             <button type="submit"
                                     class="sisoc-curso-submit sisoc-curso-submit--primary"
                                     id="cursoSaveAndCreateComisionBtn"
-                                    data-post-create-action="open-comision">Guardar y crear comisión</button>
+                                    data-post-create-action="open-comision">Guardar y crear comision</button>
                         </div>
                     </form>
                 </div>
@@ -446,15 +446,14 @@
                             </div>
                         </div>
                         <div class="table-responsive border rounded">
-                            <table class="table table-hover align-middle mb-0"
-                                   id="tablaPlanCurricularSelector">
+                            <table class="table table-hover align-middle mb-0" id="tablaPlanCurricularSelector">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Plan Curricular</th>
                                         <th>Sector</th>
                                         <th>Modalidad</th>
                                         <th>Normativa</th>
-                                        <th class="text-end">Acción</th>
+                                        <th class="text-end">Accion</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -492,8 +491,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div id="planCurricularSelectorEmpty"
-                             class="text-center py-4 text-muted d-none">
+                        <div id="planCurricularSelectorEmpty" class="text-center py-4 text-muted d-none">
                             <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
                             <p class="mb-0">No hay planes curriculares que coincidan con los filtros.</p>
                         </div>
@@ -513,7 +511,7 @@
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="modalComisionCursoLabel">Nueva Comisión de Curso</h5>
+                        <h5 class="modal-title" id="modalComisionCursoLabel">Nueva Comision de Curso</h5>
                         <button type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
@@ -524,8 +522,7 @@
                           action="{% url 'vat_comision_curso_create' %}">
                         {% csrf_token %}
                         <div class="modal-body">
-                            <div class="alert alert-light border small mb-3 d-none"
-                                 id="cursoSeleccionadoInfo"></div>
+                            <div class="alert alert-light border small mb-3 d-none" id="cursoSeleccionadoInfo"></div>
                             <div class="row">
                                 {% for field in comision_curso_form %}
                                     <div class="col-md-6 mb-3">

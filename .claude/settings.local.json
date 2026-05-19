@@ -31,7 +31,8 @@
       "Bash(pip show:*)",
       "Bash(gh auth:*)",
       "Bash(git stash:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(.venv/Scripts/python.exe -c ' *)"
     ]
   }
 }
