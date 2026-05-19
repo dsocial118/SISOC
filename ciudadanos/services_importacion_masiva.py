@@ -181,19 +181,19 @@ def _load_rows_from_workbook(uploaded_file) -> tuple[object, list[tuple]]:
     return workbook, rows
 
 
-def _parse_ciudadanos_import_row(
+def _get_row_value(row: tuple, index: int | None) -> str:
+    if index is None or index >= len(row):
+        return ""
+    return _clean_cell(row[index])
+
+
+def _parse_import_row(
     row_number: int,
     row: tuple,
     header_map: dict[str, int],
 ) -> ParsedCiudadanosImportRow | None:
-    documento_raw = _clean_cell(
-        row[header_map["documento"]] if header_map["documento"] < len(row) else ""
-    )
-    sexo_raw = _clean_cell(
-        row[header_map["sexo"]]
-        if "sexo" in header_map and header_map["sexo"] < len(row)
-        else ""
-    )
+    documento_raw = _get_row_value(row, header_map["documento"])
+    sexo_raw = _get_row_value(row, header_map.get("sexo"))
     if not documento_raw and not sexo_raw:
         return None
 
@@ -243,8 +243,8 @@ def load_ciudadanos_import_rows(uploaded_file) -> list[ParsedCiudadanosImportRow
 
         parsed_rows: list[ParsedCiudadanosImportRow] = []
         for row_number, row in enumerate(rows[1:], start=2):
-            parsed_row = _parse_ciudadanos_import_row(row_number, row, header_map)
-            if parsed_row:
+            parsed_row = _parse_import_row(row_number, row, header_map)
+            if parsed_row is not None:
                 parsed_rows.append(parsed_row)
 
         if not parsed_rows:
@@ -543,21 +543,27 @@ def process_ciudadanos_import_row(
         ciudadano_data["modificado_por"] = requested_by
 
     with transaction.atomic():
-        ciudadano = _get_existing_estandar_by_dni(row.dni)
-        created = ciudadano is None
-        if created:
+        existing = _get_existing_estandar_by_dni(row.dni)
+        if existing:
+            row_result = {
+                "status": "existing",
+                "mensaje": "Ya existe un ciudadano estandar para el DNI informado.",
+                "error_type": "",
+                "sexos_intentados": sexos_intentados,
+                "ciudadano": existing,
+                "systemic": False,
+                "contacted_renaper": True,
+            }
+        else:
             ciudadano = Ciudadano.objects.create(**ciudadano_data)
+            row_result = {
+                "status": "created",
+                "mensaje": "Ciudadano creado desde RENAPER.",
+                "error_type": "",
+                "sexos_intentados": sexos_intentados,
+                "ciudadano": ciudadano,
+                "systemic": False,
+                "contacted_renaper": True,
+            }
 
-    return {
-        "status": "created" if created else "existing",
-        "mensaje": (
-            "Ciudadano creado desde RENAPER."
-            if created
-            else "Ya existe un ciudadano estandar para el DNI informado."
-        ),
-        "error_type": "",
-        "sexos_intentados": sexos_intentados,
-        "ciudadano": ciudadano,
-        "systemic": False,
-        "contacted_renaper": True,
-    }
+    return row_result
