@@ -148,7 +148,9 @@ def sql_quote(value: str) -> str:
 )
 PY
 
-sudo chmod 600 "$DB_ROOT/.env" "$DB_ROOT/init/01-users.sql"
+sudo chmod 600 "$DB_ROOT/.env"
+sudo chown root:999 "$DB_ROOT/init/01-users.sql"
+sudo chmod 640 "$DB_ROOT/init/01-users.sql"
 ```
 
 ### C. DB: levantar MySQL y validar root
@@ -552,7 +554,7 @@ SISOC_DB_USER=<DB_APP_USER>
 SISOC_DB_PASSWORD=<DB_APP_PASSWORD>
 ```
 
-Crear `$DB_ROOT/init/01-users.sql` con permisos `600`:
+Crear `$DB_ROOT/init/01-users.sql` con permisos `640` y grupo `999` para que el usuario `mysql` del contenedor pueda leerlo al inicializar. Mantener `$DB_ROOT/.env` con permisos `600`:
 
 ```sql
 CREATE USER IF NOT EXISTS '<DB_APP_USER>'@'%' IDENTIFIED WITH mysql_native_password BY '<DB_APP_PASSWORD>';
@@ -713,6 +715,15 @@ DATABASE_NAME=<DB_NAME>
 WAIT_FOR_DB=true
 RUN_MAKEMIGRATIONS_ON_START=false
 DOMINIO=<PUBLIC_ORIGIN>/
+```
+
+Si un entorno production-like (`homologacion` o `prd`) se publica temporalmente solo por HTTP interno, agregar estos overrides explicitos al `.env` del servidor. No usarlos para un dominio con TLS real:
+
+```dotenv
+DJANGO_SECURE_SSL_REDIRECT=False
+DJANGO_SESSION_COOKIE_SECURE=False
+DJANGO_CSRF_COOKIE_SECURE=False
+DJANGO_SECURE_HSTS_SECONDS=0
 ```
 
 Permisos:
