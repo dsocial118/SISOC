@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.views.generic import View
 
-from centrodeinfancia.access import aplicar_filtro_provincia_usuario
+from centrodeinfancia.access import aplicar_scope_centros_cdi
 from centrodeinfancia.models import CentroDeInfancia
 from core.mixins import CSVExportMixin
 from core.services.column_preferences import build_columns_context_from_fields
@@ -72,7 +72,7 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
             "municipio",
             "localidad",
         )
-        queryset = aplicar_filtro_provincia_usuario(queryset, self.request.user)
+        queryset = aplicar_scope_centros_cdi(queryset, self.request.user)
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query) | Q(organizacion__icontains=query)
