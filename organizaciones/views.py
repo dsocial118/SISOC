@@ -4,8 +4,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
 from django.forms import ValidationError
 from django.http import HttpResponseRedirect, JsonResponse
+from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
+from django.utils.dateparse import parse_date
+from django.views.decorators.http import require_POST
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -15,9 +19,12 @@ from django.views.generic import (
 )
 from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from iam.services import user_has_permission_code
 
 from organizaciones.forms import OrganizacionForm, FirmanteForm, AvalForm
 from organizaciones.models import (
+    ArchivoOrganizacion,
+    DocumentacionOrganizacion,
     Organizacion,
     SubtipoEntidad,
     Firmante,
@@ -65,8 +72,27 @@ def _apply_organizacion_search(queryset, query):
     return queryset.filter(Q(nombre__icontains=busqueda) | Q(email__icontains=busqueda))
 
 
-def _build_organizacion_list_queryset(query):
-    return _apply_organizacion_search(_build_organizacion_list_base_queryset(), query)
+def _puede_ver_todas_las_organizaciones(user):
+    return user.is_superuser or user_has_permission_code(
+        user, "organizaciones.view_organizacion"
+    )
+
+
+def _filtrar_organizaciones_por_dupla(queryset, user):
+    if _puede_ver_todas_las_organizaciones(user):
+        return queryset
+    if not user.is_authenticated:
+        return queryset.none()
+    return queryset.filter(
+        Q(comedor__dupla__abogado=user) | Q(comedor__dupla__tecnico=user)
+    ).distinct()
+
+
+def _build_organizacion_list_queryset(query, user=None):
+    queryset = _apply_organizacion_search(
+        _build_organizacion_list_base_queryset(), query
+    )
+    return _filtrar_organizaciones_por_dupla(queryset, user) if user else queryset
 
 
 def _hydrate_organizaciones_page(page_ids):
@@ -77,6 +103,146 @@ def _hydrate_organizaciones_page(page_ids):
     return [organizaciones_by_id[pk] for pk in page_ids if pk in organizaciones_by_id]
 
 
+def _categoria_documental_organizacion(organizacion):
+    textos = " ".join(
+        str(valor or "")
+        for valor in (
+            getattr(getattr(organizacion, "tipo_entidad", None), "nombre", ""),
+            getattr(getattr(organizacion, "subtipo_entidad", None), "nombre", ""),
+        )
+    ).lower()
+    if "ecles" in textos or "culto" in textos:
+        return DocumentacionOrganizacion.CATEGORIA_ECLESIASTICA
+    if "base" in textos or "hecho" in textos:
+        return DocumentacionOrganizacion.CATEGORIA_BASE
+    return DocumentacionOrganizacion.CATEGORIA_PERSONERIA
+
+
+def _build_documentacion_organizacion_rows(organizacion):
+    categoria = _categoria_documental_organizacion(organizacion)
+    documentaciones = DocumentacionOrganizacion.objects.filter(categoria=categoria)
+    archivos = (
+        ArchivoOrganizacion.objects.filter(
+            organizacion=organizacion, documentacion__categoria=categoria
+        )
+        .select_related("documentacion")
+        .order_by("documentacion_id", "-creado", "-id")
+    )
+    archivos_por_doc = {}
+    for archivo in archivos:
+        archivos_por_doc.setdefault(archivo.documentacion_id, []).append(archivo)
+
+    rows = []
+    for documentacion in documentaciones:
+        versiones = archivos_por_doc.get(documentacion.id, [])
+        vigente = versiones[0] if versiones else None
+        rows.append(
+            {
+                "documentacion": documentacion,
+                "archivo": vigente,
+                "historial": versiones[1:],
+            }
+        )
+    return rows
+
+
+def _build_documentacion_organizacion_row(organizacion, documentacion):
+    archivos = list(
+        ArchivoOrganizacion.objects.filter(
+            organizacion=organizacion, documentacion=documentacion
+        )
+        .select_related("documentacion")
+        .order_by("-creado", "-id")
+    )
+    return {
+        "documentacion": documentacion,
+        "archivo": archivos[0] if archivos else None,
+        "historial": archivos[1:],
+    }
+
+
+def _render_documentacion_organizacion_row(request, organizacion, documentacion):
+    row = _build_documentacion_organizacion_row(organizacion, documentacion)
+    return render_to_string(
+        "organizaciones/partials/documentacion_organizacion_row.html",
+        {
+            "row": row,
+            "organizacion": organizacion,
+            "puede_validar_documentacion_organizacion": (
+                _puede_validar_documentacion_organizacion(request.user, organizacion)
+            ),
+            "puede_enviar_documentacion_organizacion": (
+                _puede_enviar_documentacion_organizacion(request.user, organizacion)
+            ),
+        },
+        request=request,
+    )
+
+
+def _usuario_en_dupla_organizacion(user, organizacion, lookup):
+    if not user.is_authenticated or not organizacion:
+        return False
+    return (
+        Organizacion.objects.filter(pk=organizacion.pk)
+        .filter(**{lookup: user})
+        .exists()
+    )
+
+
+def _puede_validar_documentacion_organizacion(user, organizacion=None):
+    if user.is_superuser:
+        return True
+    return _usuario_en_dupla_organizacion(user, organizacion, "comedor__dupla__abogado")
+
+
+def _puede_enviar_documentacion_organizacion(user, organizacion=None):
+    if user.is_superuser:
+        return True
+    return _usuario_en_dupla_organizacion(user, organizacion, "comedor__dupla__tecnico")
+
+
+def _puede_modificar_documentacion_organizacion(user, organizacion=None):
+    return _puede_validar_documentacion_organizacion(
+        user, organizacion
+    ) or _puede_enviar_documentacion_organizacion(user, organizacion)
+
+
+def _validar_cambio_estado_documento_organizacion(user, archivo, estado):
+    puede_validar = _puede_validar_documentacion_organizacion(
+        user, archivo.organizacion
+    )
+    puede_enviar = _puede_enviar_documentacion_organizacion(user, archivo.organizacion)
+
+    if estado in {
+        ArchivoOrganizacion.ESTADO_ACEPTADO,
+        ArchivoOrganizacion.ESTADO_RECTIFICAR,
+    }:
+        if puede_validar and archivo.estado == ArchivoOrganizacion.ESTADO_A_VALIDAR:
+            return None
+        return "El abogado solo puede validar documentos en estado A Validar Abogado."
+
+    if estado == ArchivoOrganizacion.ESTADO_A_VALIDAR:
+        if puede_validar and archivo.estado == ArchivoOrganizacion.ESTADO_A_VALIDAR:
+            return None
+        if puede_enviar and archivo.estado not in {
+            ArchivoOrganizacion.ESTADO_A_VALIDAR,
+            ArchivoOrganizacion.ESTADO_ACEPTADO,
+        }:
+            return None
+        if puede_enviar:
+            return "El documento no esta disponible para envio tecnico."
+        if puede_validar:
+            return (
+                "El abogado solo puede validar documentos en estado A Validar Abogado."
+            )
+
+    if puede_enviar:
+        return "El tecnico solo puede enviar documentos a validar."
+    if puede_validar:
+        return "El abogado solo puede validar documentos en estado A Validar Abogado."
+    return "Sin permisos para modificar este documento."
+
+
 class OrganizacionListView(LoginRequiredMixin, ListView):
     model = Organizacion
     template_name = "organizacion_list.html"
@@ -84,7 +250,9 @@ class OrganizacionListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return _build_organizacion_list_queryset(self.request.GET.get("busqueda"))
+        return _build_organizacion_list_queryset(
+            self.request.GET.get("busqueda"), self.request.user
+        )
 
     def paginate_queryset(self, queryset, page_size):
         paginator = NoCountPaginator(queryset.values_list("pk", flat=True), page_size)
@@ -96,6 +264,12 @@ class OrganizacionListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["query"] = self.request.GET.get("busqueda", "")
+        context["puede_crear_organizacion"] = _puede_ver_todas_las_organizaciones(
+            self.request.user
+        )
+        context["puede_gestionar_organizaciones"] = _puede_ver_todas_las_organizaciones(
+            self.request.user
+        )
         page_obj = context.get("page_obj")
         if page_obj and getattr(page_obj.paginator, "count", None) is None:
             context["page_range"] = build_no_count_page_range(page_obj)
@@ -457,6 +631,11 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
     template_name = "organizacion_detail.html"
     context_object_name = "organizacion"
 
+    def get_queryset(self):
+        return _filtrar_organizaciones_por_dupla(
+            super().get_queryset(), self.request.user
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["firmantes"] = self.object.firmantes.select_related("rol")
@@ -537,7 +716,244 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
             and getattr(tipo_entidad, "nombre", "") == "Asociación de hecho"
         )
 
+        context["documentacion_organizacion"] = _build_documentacion_organizacion_rows(
+            self.object
+        )
+        context["documentacion_organizacion_categoria"] = dict(
+            DocumentacionOrganizacion.CATEGORIAS
+        ).get(_categoria_documental_organizacion(self.object))
+        context["puede_validar_documentacion_organizacion"] = (
+            _puede_validar_documentacion_organizacion(self.request.user, self.object)
+        )
+        context["puede_enviar_documentacion_organizacion"] = (
+            _puede_enviar_documentacion_organizacion(self.request.user, self.object)
+        )
+        context["puede_gestionar_organizaciones"] = _puede_ver_todas_las_organizaciones(
+            self.request.user
+        )
+
         return context
+
+
+@login_required
+def historial_documento_organizacion(request, organizacion_id, documentacion_id):
+    organizacion = get_object_or_404(
+        _filtrar_organizaciones_por_dupla(Organizacion.objects.all(), request.user),
+        pk=organizacion_id,
+    )
+    documentacion = get_object_or_404(DocumentacionOrganizacion, pk=documentacion_id)
+    archivos = ArchivoOrganizacion.objects.filter(
+        organizacion=organizacion, documentacion=documentacion
+    ).order_by("-creado", "-id")
+
+    return render(
+        request,
+        "organizaciones/documentacion_historial.html",
+        {
+            "organizacion": organizacion,
+            "documentacion": documentacion,
+            "archivos": archivos,
+        },
+    )
+
+
+@login_required
+@require_POST
+def subir_documento_organizacion(request, organizacion_id, documentacion_id):
+    organizacion = get_object_or_404(Organizacion, pk=organizacion_id)
+    documentacion = get_object_or_404(DocumentacionOrganizacion, pk=documentacion_id)
+    if not _puede_enviar_documentacion_organizacion(request.user, organizacion):
+        return JsonResponse(
+            {"success": False, "error": "Sin permisos para cargar este documento."},
+            status=403,
+        )
+
+    archivo = request.FILES.get("archivo")
+    if not archivo:
+        return JsonResponse(
+            {"success": False, "error": "Debe adjuntar un archivo."}, status=400
+        )
+
+    fecha_vencimiento = request.POST.get("fecha_vencimiento") or None
+    if fecha_vencimiento:
+        fecha_vencimiento = parse_date(fecha_vencimiento)
+        if fecha_vencimiento is None:
+            return JsonResponse(
+                {"success": False, "error": "Fecha de vencimiento invalida."},
+                status=400,
+            )
+
+    archivo_actual = (
+        ArchivoOrganizacion.objects.filter(
+            organizacion=organizacion, documentacion=documentacion
+        )
+        .order_by("-creado", "-id")
+        .first()
+    )
+    if archivo_actual and archivo_actual.estado != ArchivoOrganizacion.ESTADO_ACEPTADO:
+        archivo_actual.archivo = archivo
+        archivo_actual.fecha_vencimiento = fecha_vencimiento
+        archivo_actual.estado = ArchivoOrganizacion.ESTADO_ADJUNTO
+        archivo_actual.observaciones = ""
+        archivo_actual.numero_gde = None
+        archivo_actual.creado = timezone.now()
+        archivo_actual.creado_por = request.user
+        archivo_actual.modificado_por = request.user
+        archivo_actual.save(
+            update_fields=[
+                "archivo",
+                "fecha_vencimiento",
+                "estado",
+                "observaciones",
+                "numero_gde",
+                "creado",
+                "creado_por",
+                "modificado_por",
+                "modificado",
+            ]
+        )
+    else:
+        ArchivoOrganizacion.objects.create(
+            organizacion=organizacion,
+            documentacion=documentacion,
+            archivo=archivo,
+            fecha_vencimiento=fecha_vencimiento,
+            estado=ArchivoOrganizacion.ESTADO_ADJUNTO,
+            creado_por=request.user,
+            modificado_por=request.user,
+        )
+    return JsonResponse(
+        {
+            "success": True,
+            "html": _render_documentacion_organizacion_row(
+                request, organizacion, documentacion
+            ),
+            "row_id": documentacion.id,
+        }
+    )
+
+
+@login_required
+@require_POST
+def actualizar_estado_documento_organizacion(request, archivo_id):
+    archivo = get_object_or_404(
+        ArchivoOrganizacion.objects.select_related("organizacion", "documentacion"),
+        pk=archivo_id,
+    )
+    estado = request.POST.get("estado")
+    estados_validos = {choice[0] for choice in ArchivoOrganizacion.ESTADOS}
+    if estado not in estados_validos:
+        return JsonResponse({"success": False, "error": "Estado invalido."}, status=400)
+    error_permiso = _validar_cambio_estado_documento_organizacion(
+        request.user, archivo, estado
+    )
+    if error_permiso:
+        return JsonResponse(
+            {"success": False, "error": error_permiso},
+            status=403,
+        )
+
+    observaciones = (request.POST.get("observaciones") or "").strip()
+    if (
+        estado == ArchivoOrganizacion.ESTADO_RECTIFICAR
+        and _puede_validar_documentacion_organizacion(
+            request.user, archivo.organizacion
+        )
+        and not observaciones
+    ):
+        return JsonResponse(
+            {"success": False, "error": "Debe indicar observaciones."},
+            status=400,
+        )
+
+    archivo.estado = estado
+    archivo.observaciones = (
+        observaciones if estado == ArchivoOrganizacion.ESTADO_RECTIFICAR else ""
+    )
+    archivo.modificado_por = request.user
+    archivo.save(
+        update_fields=["estado", "observaciones", "modificado_por", "modificado"]
+    )
+    return JsonResponse(
+        {
+            "success": True,
+            "estado": archivo.estado,
+            "html": _render_documentacion_organizacion_row(
+                request, archivo.organizacion, archivo.documentacion
+            ),
+            "row_id": archivo.documentacion_id,
+        }
+    )
+
+
+@login_required
+@require_POST
+def actualizar_gde_documento_organizacion(request, archivo_id):
+    archivo = get_object_or_404(
+        ArchivoOrganizacion.objects.select_related("organizacion", "documentacion"),
+        pk=archivo_id,
+    )
+    if not _puede_modificar_documentacion_organizacion(
+        request.user, archivo.organizacion
+    ):
+        return JsonResponse(
+            {"success": False, "error": "Sin permisos para modificar este documento."},
+            status=403,
+        )
+    archivo.numero_gde = (request.POST.get("numero_gde") or "").strip() or None
+    archivo.modificado_por = request.user
+    archivo.save(update_fields=["numero_gde", "modificado_por", "modificado"])
+    return JsonResponse(
+        {
+            "success": True,
+            "numero_gde": archivo.numero_gde,
+            "html": _render_documentacion_organizacion_row(
+                request, archivo.organizacion, archivo.documentacion
+            ),
+            "row_id": archivo.documentacion_id,
+        }
+    )
+
+
+@login_required
+@require_POST
+def actualizar_vencimiento_documento_organizacion(request, archivo_id):
+    archivo = get_object_or_404(
+        ArchivoOrganizacion.objects.select_related("organizacion", "documentacion"),
+        pk=archivo_id,
+    )
+    if not _puede_modificar_documentacion_organizacion(
+        request.user, archivo.organizacion
+    ):
+        return JsonResponse(
+            {"success": False, "error": "Sin permisos para modificar este documento."},
+            status=403,
+        )
+    fecha_vencimiento = (request.POST.get("fecha_vencimiento") or "").strip()
+    fecha_parseada = parse_date(fecha_vencimiento) if fecha_vencimiento else None
+    if fecha_vencimiento and fecha_parseada is None:
+        return JsonResponse(
+            {"success": False, "error": "Fecha de vencimiento invalida."},
+            status=400,
+        )
+
+    archivo.fecha_vencimiento = fecha_parseada
+    archivo.modificado_por = request.user
+    archivo.save(update_fields=["fecha_vencimiento", "modificado_por", "modificado"])
+    return JsonResponse(
+        {
+            "success": True,
+            "fecha_vencimiento": (
+                archivo.fecha_vencimiento.isoformat()
+                if archivo.fecha_vencimiento
+                else ""
+            ),
+            "html": _render_documentacion_organizacion_row(
+                request, archivo.organizacion, archivo.documentacion
+            ),
+            "row_id": archivo.documentacion_id,
+        }
+    )
 
 
 class OrganizacionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
@@ -633,14 +1049,22 @@ def organizaciones_ajax(request):
     """
     busqueda = request.GET.get("busqueda", "").strip()
     paginator = NoCountPaginator(
-        _build_organizacion_list_queryset(busqueda).values_list("pk", flat=True), 10
+        _build_organizacion_list_queryset(busqueda, request.user).values_list(
+            "pk", flat=True
+        ),
+        10,
     )
     page_obj = paginator.get_page(request.GET.get("page", 1))
     page_obj.object_list = _hydrate_organizaciones_page(page_obj.object_list)
 
     table_html = render_to_string(
         "organizaciones/partials/organizacion_rows.html",
-        {"organizaciones": page_obj.object_list},
+        {
+            "organizaciones": page_obj.object_list,
+            "puede_gestionar_organizaciones": _puede_ver_todas_las_organizaciones(
+                request.user
+            ),
+        },
         request=request,
     )
 

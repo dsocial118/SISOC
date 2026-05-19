@@ -169,7 +169,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if not vat_sidebar_only and request.user|has_perm_code:"organizaciones.view_organizacion" %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"organizaciones.view_organizacion" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_tecnico_comedor" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_abogado_dupla" %}
                 <li class="nav-item">
                     <a href="{% url 'organizaciones' %}"
                        class="nav-link {% if 'organizaciones/listar' in pagina_actual %}active{% endif %}">

@@ -16,6 +16,7 @@ from django.db.models import (
     IntegerField,
     F,
     Func,
+    OuterRef,
     Subquery,
 )
 from django.db import IntegrityError, transaction
@@ -52,6 +53,7 @@ from core.models import Provincia, Municipio, Localidad, Nacionalidad
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
+from expedientespagos.models import ExpedientePago
 from duplas.models import Dupla
 from organizaciones.models import Aval, Firmante
 
@@ -349,6 +351,11 @@ def _calcular_presupuesto_desde_prestaciones(count, valor_map):
 
 
 def _build_comedores_list_values_queryset(base_qs):
+    latest_mes_ejecucion = (
+        ExpedientePago.objects.filter(comedor_id=OuterRef("pk"))
+        .order_by("-fecha_creacion", "-id")
+        .values("mes_convenio")[:1]
+    )
     return (
         base_qs.select_related(
             "provincia",
@@ -364,12 +371,18 @@ def _build_comedores_list_values_queryset(base_qs):
             estado_general=Coalesce(
                 "ultimo_estado__estado_general__estado_actividad__estado",
                 Value(Comedor.ESTADO_GENERAL_DEFAULT),
-            )
+            ),
+            mes_ejecucion=Case(
+                When(programa_id=2, then=Subquery(latest_mes_ejecucion)),
+                default=Value(None),
+                output_field=IntegerField(),
+            ),
         )
         .values(
             "id",
             "nombre",
             "estado_general",
+            "mes_ejecucion",
             "tipocomedor__nombre",
             "organizacion__nombre",
             "programa__nombre",

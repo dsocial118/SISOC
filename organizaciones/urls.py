@@ -13,17 +13,27 @@ from organizaciones.views import (
     FirmanteUpdateView,
     FirmanteDeleteView,
     AvalDeleteView,
+    actualizar_gde_documento_organizacion,
+    actualizar_estado_documento_organizacion,
+    actualizar_vencimiento_documento_organizacion,
+    historial_documento_organizacion,
     sub_tipo_entidad_ajax,
     organizaciones_ajax,
     cuil_check_ajax,
+    subir_documento_organizacion,
 )
 from organizaciones.views_export import OrganizacionExportView
 
+ORGANIZACION_DOCUMENTACION_PERMS = [
+    "organizaciones.view_organizacion",
+    "auth.role_tecnico_comedor",
+    "auth.role_abogado_dupla",
+]
 
 urlpatterns = [
     path(
         "organizaciones/listar",
-        permissions_any_required(["organizaciones.view_organizacion"])(
+        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
             OrganizacionListView.as_view()
         ),
         name="organizaciones",
@@ -51,7 +61,7 @@ urlpatterns = [
     ),
     path(
         "organizaciones/detalle/<int:pk>",
-        permissions_any_required(["organizaciones.view_organizacion"])(
+        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
             OrganizacionDetailView.as_view()
         ),
         name="organizacion_detalle",
@@ -62,6 +72,41 @@ urlpatterns = [
             OrganizacionDeleteView.as_view()
         ),
         name="organizacion_eliminar",
+    ),
+    path(
+        "organizaciones/<int:organizacion_id>/documentacion/<int:documentacion_id>/subir/",
+        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
+            subir_documento_organizacion
+        ),
+        name="organizacion_documento_subir",
+    ),
+    path(
+        "organizaciones/documentacion/<int:archivo_id>/estado/",
+        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
+            actualizar_estado_documento_organizacion
+        ),
+        name="organizacion_documento_estado",
+    ),
+    path(
+        "organizaciones/documentacion/<int:archivo_id>/gde/",
+        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
+            actualizar_gde_documento_organizacion
+        ),
+        name="organizacion_documento_gde",
+    ),
+    path(
+        "organizaciones/documentacion/<int:archivo_id>/vencimiento/",
+        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
+            actualizar_vencimiento_documento_organizacion
+        ),
+        name="organizacion_documento_vencimiento",
+    ),
+    path(
+        "organizaciones/<int:organizacion_id>/documentacion/<int:documentacion_id>/historial/",
+        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
+            historial_documento_organizacion
+        ),
+        name="organizacion_documento_historial",
     ),
     path(
         "organizaciones/firmante/crear/<int:organizacion_pk>",
@@ -114,9 +159,7 @@ urlpatterns = [
     ),
     path(
         "organizaciones/ajax/",
-        permissions_any_required(["organizaciones.view_organizacion"])(
-            organizaciones_ajax
-        ),
+        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(organizaciones_ajax),
         name="organizaciones_ajax",
     ),
     path(

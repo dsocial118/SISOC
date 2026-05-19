@@ -96,8 +96,22 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
         return (
             Relevamiento.objects.filter(comedor=comedor)
             .order_by("-estado", "-id")
-            .values("id", "fecha_visita", "estado")
+            .values("id", "fecha_visita", "estado", "numero_if")
         )
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.has_perm("relevamientos.change_relevamiento"):
+            messages.error(request, "No tiene permisos para editar el NÃºmero de IF.")
+            return redirect("relevamientos", comedor_pk=kwargs["comedor_pk"])
+
+        relevamiento_id = request.POST.get("relevamiento_id")
+        numero_if = (request.POST.get("numero_if") or "").strip()
+        Relevamiento.objects.filter(
+            id=relevamiento_id,
+            comedor_id=kwargs["comedor_pk"],
+        ).update(numero_if=numero_if or None)
+        messages.success(request, "NÃºmero de IF actualizado correctamente.")
+        return redirect("relevamientos", comedor_pk=kwargs["comedor_pk"])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -1,4 +1,6 @@
 import os
+import re
+import unicodedata
 from datetime import datetime
 from django.conf import settings
 from django.db import models
@@ -36,6 +38,7 @@ from admisiones.services.admisiones_filter_config import (
     CHOICE_OPS as ADMISION_CHOICE_OPS,
 )
 from comedores.utils import comedor_usa_admision_para_nomina
+from organizaciones.models import ArchivoOrganizacion, DocumentacionOrganizacion
 
 from django.db.models import Prefetch, Q
 import logging
@@ -73,6 +76,73 @@ class AdmisionService:
         "informe_tecnico_en_proceso",
         *ESTADOS_BLOQUEO_ELIMINACION_DOCUMENTAL,
     )
+    ESTADOS_DOCUMENTACION_ORGANIZACIONAL_CONGELADA = (
+        "informe_tecnico_finalizado",
+        "informe_tecnico_docx_editado",
+        "informe_tecnico_en_revision",
+        "informe_tecnico_en_subsanacion",
+        "informe_tecnico_aprobado",
+        "if_informe_tecnico_cargado",
+        "enviado_a_legales",
+        "enviado_a_acompaniamiento",
+    )
+    CATEGORIA_ORGANIZACIONAL_POR_TIPO_CONVENIO = {
+        1: DocumentacionOrganizacion.CATEGORIA_BASE,
+        2: DocumentacionOrganizacion.CATEGORIA_ECLESIASTICA,
+        3: DocumentacionOrganizacion.CATEGORIA_PERSONERIA,
+    }
+    ALIAS_DOCUMENTACION_ORGANIZACIONAL = {
+        DocumentacionOrganizacion.CATEGORIA_PERSONERIA: {
+            "acta constitutiva": "acta constitutiva de la organizacion",
+            "estatuto": "estatuto social vigente",
+            "reso personeria juridica": "resolucion de otorgamiento de la personeria juridica",
+            "resolucion personeria juridica": "resolucion de otorgamiento de la personeria juridica",
+            "acta de designacion de autoridades": "acta de designacion de autoridades vigentes",
+            "dni presidente": "dni del presidente",
+            "dni tesorero": "dni del tesorero",
+            "dni secretario": "dni del secretario",
+            "acta de solicitud de subsidio": "acta de solicitud de subsidio al programa",
+            "constancia de arca": "constancia de inscripcion ante arca",
+            "preinscripcion renacom": "constancia de preinscripcion en renacom",
+            "validacion renacom": "constancia de validacion en renacom",
+            "inscripcion renacom": "constancia de inscripcion definitiva en renacom",
+        },
+        DocumentacionOrganizacion.CATEGORIA_ECLESIASTICA: {
+            "designacion autoridad maxima": "acta o documento de designacion de la autoridad maxima",
+            "certificado de culto": "certificado de culto vigente",
+            "dni obispo": "dni del obispo o autoridad eclesiastica",
+            "constancia de arca": "constancia de inscripcion ante arca",
+            "preinscripcion renacom": "constancia de preinscripcion en renacom",
+            "validacion renacom": "constancia de validacion en renacom",
+            "inscripcion renacom": "constancia de inscripcion definitiva en renacom",
+            "decreto de reconocimiento del estado nacional": "decreto de reconocimiento del estado nacional",
+            "apoderado": "documento de designacion de apoderado",
+            "dni apoderado": "dni del apoderado",
+            "estatuto": "estatuto institucional",
+            "conformacion de la comision diocesana": "acta de conformacion de la comision diocesana",
+            "autorizacion para gestionar": "autorizacion para gestionar",
+        },
+        DocumentacionOrganizacion.CATEGORIA_BASE: {
+            "acta de asamblea": "acta de asamblea constitutiva",
+            "dni responsable 1": "dni del responsable 1",
+            "dni responsable 2": "dni del responsable 2",
+            "acta designacion aval 1 designacion de cargo aval 1 persona fisica": "acta designacion aval 1 designacion de cargo aval 1 persona fisica o juridica",
+            "dni autoridad maxima aval 1 dni aval 1 persona fisica": "dni de la autoridad maxima del aval 1 dni del aval 1 segun corresponda",
+            "acta designacion aval 2 designacion de cargo aval 2 persona fisica": "acta designacion aval 2 designacion de cargo aval 2 persona fisica o juridica",
+            "dni autoridad maxima aval 2 dni aval 2 persona fisica": "dni de la autoridad maxima del aval 2 dni del aval 2 segun corresponda",
+            "nota aval 1": "nota de aval emitida por el aval 1",
+            "nota aval 2": "nota de aval emitida por el aval 2",
+            "acta constitutiva aval 1": "acta constitutiva del aval 1",
+            "estatuto aval 1": "estatuto del aval 1",
+            "reso personeria juridica aval 1": "resolucion de personeria juridica del aval 1",
+            "acta constitutiva aval 2": "acta constitutiva del aval 2",
+            "estatuto aval 2": "estatuto del aval 2",
+            "reso personeria juridica aval 2": "resolucion de personeria juridica del aval 2",
+            "preinscripcion renacom": "constancia de preinscripcion en renacom",
+            "validacion renacom": "constancia de validacion en renacom",
+            "inscripcion renacom": "constancia de inscripcion definitiva en renacom",
+        },
+    }
 
     @staticmethod
     def _normalize_estado_display(estado):
@@ -166,6 +236,72 @@ class AdmisionService:
         return "Documento adicional"
 
     @staticmethod
+    def _normalizar_nombre_documental(nombre):
+        texto = unicodedata.normalize("NFKD", str(nombre or ""))
+        texto = texto.encode("ascii", "ignore").decode("ascii").lower()
+        return re.sub(r"[^a-z0-9]+", " ", texto).strip()
+
+    @staticmethod
+    def _categoria_organizacional_admision(admision):
+        return AdmisionService.CATEGORIA_ORGANIZACIONAL_POR_TIPO_CONVENIO.get(
+            getattr(admision, "tipo_convenio_id", None)
+        )
+
+    @staticmethod
+    def _org_doc_key_desde_documentacion_admision(documentacion, categoria):
+        if not categoria or not documentacion:
+            return None
+        nombre_normalizado = AdmisionService._normalizar_nombre_documental(
+            documentacion.nombre
+        )
+        return AdmisionService.ALIAS_DOCUMENTACION_ORGANIZACIONAL.get(
+            categoria, {}
+        ).get(nombre_normalizado)
+
+    @staticmethod
+    def _get_archivos_organizacion_vigentes(admision, categoria):
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        if not organizacion or not categoria:
+            return {}
+
+        archivos = (
+            ArchivoOrganizacion.objects.filter(
+                organizacion=organizacion,
+                documentacion__categoria=categoria,
+            )
+            .select_related("documentacion")
+            .order_by("documentacion_id", "-creado", "-id")
+        )
+        vigentes = {}
+        for archivo in archivos:
+            vigentes.setdefault(archivo.documentacion_id, archivo)
+        return vigentes
+
+    @staticmethod
+    def _serializar_documentacion_organizacion(
+        org_doc, archivo=None, admision_doc=None
+    ):
+        estado_display, estado_valor = AdmisionService._estado_display_y_valor(
+            archivo.estado if archivo else "pendiente"
+        )
+        return {
+            "id": f"org-{org_doc.id}",
+            "documentacion_id": admision_doc.id if admision_doc else None,
+            "archivo_id": None,
+            "nombre": org_doc.nombre,
+            "obligatorio": org_doc.obligatorio,
+            "estado": estado_display,
+            "estado_valor": estado_valor,
+            "archivo_url": archivo.archivo.url if archivo and archivo.archivo else None,
+            "numero_gde": archivo.numero_gde if archivo else None,
+            "observaciones": archivo.observaciones if archivo else None,
+            "es_personalizado": False,
+            "es_documento_organizacion": True,
+            "origen": "organizacion",
+            "row_id": f"org-{org_doc.id}",
+        }
+
+    @staticmethod
     def _serialize_documentacion(documentacion, archivo=None):
 
         estado = archivo.estado if archivo else "pendiente"
@@ -191,11 +327,77 @@ class AdmisionService:
             "observaciones": archivo.observaciones if archivo else None,
             "es_personalizado": False,
             "row_id": row_id,
-            "observaciones": archivo.observaciones if archivo else None,
+            "es_documento_organizacion": False,
+            "origen": "admision",
         }
 
     @staticmethod
-    def _build_documentos_update_context(documentaciones, archivos_subidos):
+    def _build_documentos_organizacionales_update_context(
+        admision, documentaciones, archivos_por_documentacion
+    ):
+        categoria = AdmisionService._categoria_organizacional_admision(admision)
+        if not categoria:
+            return [], set()
+
+        org_docs = list(
+            DocumentacionOrganizacion.objects.filter(categoria=categoria).order_by(
+                "orden", "id"
+            )
+        )
+        org_docs_por_key = {
+            AdmisionService._normalizar_nombre_documental(org_doc.nombre): org_doc
+            for org_doc in org_docs
+        }
+        admision_doc_por_org_key = {}
+        ids_documentacion_admision_usados = set()
+
+        for documentacion in documentaciones:
+            org_key = AdmisionService._org_doc_key_desde_documentacion_admision(
+                documentacion, categoria
+            )
+            if org_key and org_key in org_docs_por_key:
+                admision_doc_por_org_key[org_key] = documentacion
+                ids_documentacion_admision_usados.add(documentacion.id)
+
+        archivos_org = AdmisionService._get_archivos_organizacion_vigentes(
+            admision, categoria
+        )
+        documentos = []
+        for org_doc in org_docs:
+            org_key = AdmisionService._normalizar_nombre_documental(org_doc.nombre)
+            admision_doc = admision_doc_por_org_key.get(org_key)
+            archivo_admision = (
+                archivos_por_documentacion.get(admision_doc.id)
+                if admision_doc
+                else None
+            )
+            if archivo_admision:
+                doc_serializado = AdmisionService._serialize_documentacion(
+                    admision_doc, archivo_admision
+                )
+                doc_serializado.update(
+                    {
+                        "nombre": org_doc.nombre,
+                        "obligatorio": org_doc.obligatorio,
+                        "es_documento_organizacion": True,
+                    }
+                )
+            else:
+                doc_serializado = (
+                    AdmisionService._serializar_documentacion_organizacion(
+                        org_doc,
+                        archivos_org.get(org_doc.id),
+                        admision_doc=admision_doc,
+                    )
+                )
+            documentos.append(doc_serializado)
+
+        return documentos, ids_documentacion_admision_usados
+
+    @staticmethod
+    def _build_documentos_update_context(
+        documentaciones, archivos_subidos, admision=None
+    ):
         archivos_por_documentacion = {
             archivo.documentacion_id: archivo
             for archivo in archivos_subidos
@@ -205,8 +407,26 @@ class AdmisionService:
         documentos_info = []
         obligatorios_totales = 0
         obligatorios_completos = 0
+        ids_documentacion_admision_usados = set()
+
+        if admision:
+            (
+                documentos_info,
+                ids_documentacion_admision_usados,
+            ) = AdmisionService._build_documentos_organizacionales_update_context(
+                admision,
+                documentaciones,
+                archivos_por_documentacion,
+            )
+            for doc_serializado in documentos_info:
+                if doc_serializado.get("obligatorio"):
+                    obligatorios_totales += 1
+                    if doc_serializado.get("estado") == "Aceptado":
+                        obligatorios_completos += 1
 
         for documentacion in documentaciones:
+            if documentacion.id in ids_documentacion_admision_usados:
+                continue
             archivo = archivos_por_documentacion.get(documentacion.id)
             doc_serializado = AdmisionService._serialize_documentacion(
                 documentacion, archivo
@@ -259,6 +479,8 @@ class AdmisionService:
             "numero_gde": archivo.numero_gde,
             "observaciones": archivo.observaciones,
             "es_personalizado": True,
+            "es_documento_organizacion": False,
+            "origen": "admision",
             "row_id": f"custom-{archivo.id}",
         }
 
@@ -571,6 +793,12 @@ class AdmisionService:
     @staticmethod
     def get_admision_update_context(admision, user=None):
         try:
+            if (
+                admision.estado_admision
+                in AdmisionService.ESTADOS_DOCUMENTACION_ORGANIZACIONAL_CONGELADA
+            ):
+                AdmisionService.congelar_documentacion_organizacional(admision, user)
+
             documentaciones = (
                 Documentacion.objects.filter(models.Q(convenios=admision.tipo_convenio))
                 .distinct()
@@ -583,6 +811,7 @@ class AdmisionService:
             documentos_context = AdmisionService._build_documentos_update_context(
                 documentaciones=documentaciones,
                 archivos_subidos=archivos_subidos,
+                admision=admision,
             )
             objetos_contexto = AdmisionService._build_objetos_update_context(admision)
             informe_complementario_context = (
@@ -2212,6 +2441,11 @@ class AdmisionService:
                     doc_obligatorio=doc_obligatorio,
                     estado="Aceptado",
                     requiere_archivo=False,
+                ) and not AdmisionService._existe_archivo_organizacion_obligatorio_admision(
+                    admision=admision,
+                    doc_obligatorio=doc_obligatorio,
+                    estado="Aceptado",
+                    requiere_archivo=False,
                 ):
                     return False
 
@@ -2240,6 +2474,124 @@ class AdmisionService:
                 to_attr="archivos_prefetch_para_admision",
             )
         )
+
+    @staticmethod
+    def _obtener_archivo_organizacion_para_documentacion_admision(
+        admision, documentacion
+    ):
+        categoria = AdmisionService._categoria_organizacional_admision(admision)
+        org_key = AdmisionService._org_doc_key_desde_documentacion_admision(
+            documentacion, categoria
+        )
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        if not org_key or not organizacion:
+            return None
+
+        org_doc = (
+            DocumentacionOrganizacion.objects.filter(categoria=categoria)
+            .filter(nombre__isnull=False)
+            .order_by("orden", "id")
+        )
+        org_doc = next(
+            (
+                doc
+                for doc in org_doc
+                if AdmisionService._normalizar_nombre_documental(doc.nombre) == org_key
+            ),
+            None,
+        )
+        if not org_doc:
+            return None
+
+        return (
+            ArchivoOrganizacion.objects.filter(
+                organizacion=organizacion,
+                documentacion=org_doc,
+            )
+            .order_by("-creado", "-id")
+            .first()
+        )
+
+    @staticmethod
+    def _existe_archivo_organizacion_obligatorio_admision(
+        *,
+        admision,
+        doc_obligatorio,
+        estado=None,
+        requiere_archivo=False,
+    ):
+        archivo = (
+            AdmisionService._obtener_archivo_organizacion_para_documentacion_admision(
+                admision, doc_obligatorio
+            )
+        )
+        if not archivo:
+            return False
+        if estado is not None and archivo.estado != estado:
+            return False
+        if requiere_archivo and not archivo.archivo:
+            return False
+        return True
+
+    @staticmethod
+    def congelar_documentacion_organizacional(admision, user=None):
+        categoria = AdmisionService._categoria_organizacional_admision(admision)
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        if not categoria or not organizacion:
+            return
+
+        documentaciones = Documentacion.objects.filter(
+            convenios=admision.tipo_convenio
+        ).order_by("orden", "id")
+        docs_admision_por_org_key = {}
+        for documentacion in documentaciones:
+            org_key = AdmisionService._org_doc_key_desde_documentacion_admision(
+                documentacion, categoria
+            )
+            if org_key:
+                docs_admision_por_org_key[org_key] = documentacion
+
+        archivos_org = AdmisionService._get_archivos_organizacion_vigentes(
+            admision, categoria
+        )
+        for org_doc in DocumentacionOrganizacion.objects.filter(
+            categoria=categoria
+        ).order_by("orden", "id"):
+            archivo_org = archivos_org.get(org_doc.id)
+            if not archivo_org or not archivo_org.archivo:
+                continue
+
+            org_key = AdmisionService._normalizar_nombre_documental(org_doc.nombre)
+            documentacion_admision = docs_admision_por_org_key.get(org_key)
+            if (
+                documentacion_admision
+                and ArchivoAdmision.objects.filter(
+                    admision=admision,
+                    documentacion=documentacion_admision,
+                ).exists()
+            ):
+                continue
+            if (
+                not documentacion_admision
+                and ArchivoAdmision.objects.filter(
+                    admision=admision,
+                    documentacion__isnull=True,
+                    nombre_personalizado=org_doc.nombre,
+                ).exists()
+            ):
+                continue
+
+            ArchivoAdmision.objects.create(
+                admision=admision,
+                documentacion=documentacion_admision,
+                nombre_personalizado=None if documentacion_admision else org_doc.nombre,
+                archivo=archivo_org.archivo.name,
+                estado=archivo_org.estado,
+                observaciones=archivo_org.observaciones,
+                numero_gde=archivo_org.numero_gde,
+                creado_por=user or archivo_org.creado_por,
+                modificado_por=user or archivo_org.modificado_por,
+            )
 
     @staticmethod
     def _existe_archivo_obligatorio_admision(
@@ -2398,6 +2750,10 @@ class AdmisionService:
                 doc_obligatorio
             ) in AdmisionService._iter_documentos_obligatorios_admision(admision):
                 if not AdmisionService._existe_archivo_obligatorio_admision(
+                    admision=admision,
+                    doc_obligatorio=doc_obligatorio,
+                    requiere_archivo=True,
+                ) and not AdmisionService._existe_archivo_organizacion_obligatorio_admision(
                     admision=admision,
                     doc_obligatorio=doc_obligatorio,
                     requiere_archivo=True,
