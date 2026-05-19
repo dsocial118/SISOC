@@ -181,7 +181,9 @@ def _load_rows_from_workbook(uploaded_file) -> tuple[object, list[tuple]]:
     return workbook, rows
 
 
-def load_ciudadanos_import_rows(uploaded_file) -> list[ParsedCiudadanosImportRow]:
+def load_ciudadanos_import_rows(  # pylint: disable=too-many-locals
+    uploaded_file,
+) -> list[ParsedCiudadanosImportRow]:
     workbook, rows = _load_rows_from_workbook(uploaded_file)
     try:
         if not rows:
@@ -401,7 +403,12 @@ def _build_ciudadano_payload_from_renaper(
     sexo: str,
 ) -> tuple[dict[str, object] | None, str | None]:
     data = _apply_sexo_to_renaper_data(result.get("data") or {}, sexo)
-    ciudadano_data, error = ComedorService._build_ciudadano_data_from_renaper(data, dni)
+    ciudadano_data, error = (
+        ComedorService._build_ciudadano_data_from_renaper(  # pylint: disable=protected-access
+            data,
+            dni,
+        )
+    )
     if not ciudadano_data:
         return None, error
     ciudadano_data.update(
@@ -462,7 +469,7 @@ def _lookup_renaper_for_row(
     return last_result
 
 
-def process_ciudadanos_import_row(
+def process_ciudadanos_import_row(  # pylint: disable=too-many-return-statements
     *,
     row: ParsedCiudadanosImportRow,
     requested_by,
