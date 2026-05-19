@@ -1,70 +1,258 @@
 {% extends "includes/main.html" %}
+{% load static %}
 
-{% block title %}Detalle de dispositivo{% endblock %}
+{% block title %}{{ dispositivo.nombre_institucion }}{% endblock %}
+{% block titulo-pagina %}Dispositivos{% endblock %}
+
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/comedor_detail.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/dispositivoFormModerno.css' %}" />
+    <style nonce="{{ request.csp_nonce }}">
+        .detail-item-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        .detail-item-value {
+            font-size: 14px;
+            color: #e2e8f0;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+        .detail-item-value.empty {
+            color: #3d4f63;
+        }
+        .chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 2px;
+        }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            background: #1e3a5f;
+            border: 1px solid #2d5280;
+            color: #93c5fd;
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .doc-card-ro {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #202f40;
+            border: 1px solid #2d4a6a;
+            border-radius: 8px;
+            padding: 8px 14px;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 13px;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+        .doc-card-ro:hover {
+            background: #253a52;
+            border-color: #f39c12;
+            color: #f39c12;
+            text-decoration: none;
+        }
+        .doc-card-ro .doc-card-icon { font-size: 20px; flex-shrink: 0; }
+        .doc-card-ro .doc-card-icon.pdf { color: #e74c3c; }
+        .doc-card-ro .doc-card-icon.img { color: #3498db; }
+        .doc-card-ro .doc-card-name {
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .doc-cards-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .docs-section-divider {
+            border-top: 1px solid #2d3f52;
+            margin: 20px 0 14px;
+        }
+        .docs-section-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #64748b;
+            margin: 12px 0 10px;
+        }
+        .detail-page-header {
+            background: #1a2535;
+            border: 1px solid #2d3f52;
+            border-radius: 10px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .detail-page-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin: 0 0 6px 0;
+            line-height: 1.2;
+        }
+        .detail-page-meta {
+            font-size: 13px;
+            color: #64748b;
+        }
+        .detail-page-meta span { color: #94a3b8; }
+        .section-body-detail {
+            padding: 20px 0 4px;
+        }
+        .section-body-detail .row { 
+            row-gap: 18px;
+            padding: 8px 28px 28px 28px;
+            }
+        /* Quita el chevron en modo detalle */
+        .section-card .collapse-indicator { display: none; }
+        /* Cards al tono de comedor_detail */
+        .section-card {
+            background: #232d4f;
+            border: 1px solid #2d3f5e;
+        }
+        .section-header {
+            background: #1a2340 !important;
+            border-bottom: 1px solid #2d3f5e;
+        }
+        .section-header:hover {
+            background: #1f2b4d !important;
+        }
+        .section-body-detail {
+            background: #232d4f;
+        }
+        /* Header de página al mismo tono */
+        .detail-page-header {
+            background: #1a2340;
+            border-color: #2d3f5e;
+        }
+    </style>
+{% endblock %}
 
 {% block content %}
-	
-    <div class="container-fluid">
-	
-        <div class="d-flex justify-content-between align-items-center mb-3">
-	
-            <h2 class="mb-0">{{ dispositivo.nombre_institucion }}</h2>
-	
-            <div class="d-flex gap-2">
-                {% if perms.dispositivos.change_dispositivo %}
-                    <a href="{% url 'dispositivos_editar' dispositivo.pk %}"
-                       class="btn btn-warning">Editar</a>
-                {% endif %}
-                <a href="{% url 'dispositivos_listar' %}" class="btn btn-secondary">Volver</a>
-	
-            </div>
-	
-        </div>
 
-	
-        {% for seccion in detalle_secciones %}
-	
-            <div class="card mb-3">
-	
-                <div class="card-header">
-                    <h5 class="mb-0">{{ seccion.titulo }}</h5>
-                </div>
-	
-                <div class="card-body">
-	
-                    <div class="row g-3">
-	
-                        {% for item in seccion.items %}
-	
-                            <div class="{% if item.kind == 'file' or item.label == 'Observaciones adicionales' %}col-md-12{% else %}col-md-6{% endif %}">
-                                <strong>{{ item.label }}:</strong>
-	
-                                {% if item.kind == 'file' %}
-	
-                                    {% if item.value %}
-                                        <a href="{{ item.value.url }}" target="_blank" rel="noopener">{{ item.value.name }}</a>
-	
-                                    {% else %}
-                                        -
-	
-                                    {% endif %}
-	
-                                {% else %}
-                                    <span class="text-break">{{ item.value|default:"-" }}</span>
-	
-                                {% endif %}
-	
-                            </div>
-	
-                        {% endfor %}
-	
-                    </div>
-	
-                </div>
-	
+    <!-- Header -->
+    <div class="detail-page-header">
+        <div>
+            <h1 class="detail-page-title">{{ dispositivo.nombre_institucion }}</h1>
+            <div class="detail-page-meta">
+                {% if dispositivo.tipo_dispositivo %}<span>{{ dispositivo.get_tipo_dispositivo_display }}</span>{% endif %}
+                {% if dispositivo.provincia %}&middot; <span>{{ dispositivo.provincia }}</span>{% endif %}
+                {% if dispositivo.municipio %}&middot; <span>{{ dispositivo.municipio }}</span>{% endif %}
+                {% if dispositivo.updated_at %}&middot; Actualizado el {{ dispositivo.updated_at|date:"d/m/Y" }}{% endif %}
             </div>
-	
-        {% endfor %}
-	
+        </div>
+        <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
+            {% if perms.dispositivos.change_dispositivo %}
+                <a href="{% url 'dispositivos_editar' dispositivo.pk %}"
+                   class="btn btn-warning btn-sm">
+                    <i class="fas fa-pencil-alt mr-1"></i> Editar
+                </a>
+            {% endif %}
+            <a href="{% url 'dispositivos_listar' %}"
+               class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i> Volver
+            </a>
+        </div>
     </div>
+
+    <!-- Secciones -->
+    {% for seccion in detalle_secciones %}
+        <div class="section-card" style="margin-bottom: 16px;">
+
+            <div class="section-header" style="cursor: default;">
+                <div class="section-header-left">
+                    <div class="section-icon">
+                        <i class="{{ seccion.icono }}"></i>
+                    </div>
+                    <div class="section-title-group">
+                        <h3 class="section-title">{{ seccion.titulo }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-body-detail">
+
+                <!-- Items de texto/lista -->
+                <div class="row">
+                    {% for item in seccion.items %}
+                        {% if item.kind != "file" %}
+                            <div class="{% if item.wide %}col-md-12{% elif item.kind == 'list' %}col-md-6{% else %}col-md-4{% endif %}">
+                                <div class="detail-item-label">{{ item.label }}</div>
+
+                                {% if item.kind == "list" %}
+                                    {% if item.value %}
+                                        <div class="chip-list">
+                                            {% for chip in item.value %}<span class="chip">{{ chip }}</span>{% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="detail-item-value empty">—</div>
+                                    {% endif %}
+
+                                {% else %}
+                                    <div class="detail-item-value {% if item.value == '-' %}empty{% endif %}">
+                                        {% if item.value == "-" %}
+                                            —
+                                        {% else %}
+                                            {{ item.value }}
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- Archivos adjuntos (solo si hay alguno con valor) -->
+                {% with file_items=seccion.items %}
+                    {% for item in file_items %}
+                        {% if item.kind == "file" and item.value %}
+                            {% if forloop.first %}
+                                <div class="docs-section-divider"></div>
+                                <div class="docs-section-label">
+                                    <i class="fas fa-paperclip mr-1"></i>Archivos adjuntos
+                                </div>
+                                <div class="doc-cards-grid">
+                                {% endif %}
+                                {% with ext=item.value.name|slice:"-4:"|lower %}
+                                    <a href="{{ item.value.url }}"
+                                       target="_blank"
+                                       rel="noopener"
+                                       class="doc-card-ro"
+                                       title="{{ item.label }}">
+                                        <i class="doc-card-icon fas {% if ext == '.pdf' %}fa-file-pdf pdf{% else %}fa-file-image img{% endif %}"></i>
+                                        <span class="doc-card-name">{{ item.value.name }}</span>
+                                        <i class="fas fa-external-link-alt" style="font-size:10px; opacity:0.5;"></i>
+                                    </a>
+                                {% endwith %}
+                                {% if forloop.last %}</div>{% endif %}
+                        {% endif %}
+                    {% endfor %}
+                {% endwith %}
+
+            </div>
+        </div>
+    {% endfor %}
+
 {% endblock %}

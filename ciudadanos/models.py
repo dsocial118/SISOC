@@ -12,6 +12,10 @@ from core.soft_delete import SoftDeleteModelMixin
 User = get_user_model()
 
 
+def ciudadanos_import_job_upload_to(instance, filename):
+    return f"ciudadanos/import_jobs/{instance.requested_by_id}/{filename}"
+
+
 class Ciudadano(SoftDeleteModelMixin, models.Model):
     """Datos básicos del ciudadano/a."""
 
@@ -449,6 +453,131 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
 
     def get_absolute_url(self):
         return reverse("ciudadanos_ver", kwargs={"pk": self.pk})
+
+
+class CiudadanosImportJob(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pendiente"
+        PROCESSING = "processing", "Procesando"
+        COMPLETED = "completed", "Completado"
+        COMPLETED_WITH_ERRORS = "completed_with_errors", "Completado con errores"
+        FAILED = "failed", "Fallido"
+
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        related_name="ciudadanos_import_jobs",
+    )
+    archivo = models.FileField(upload_to=ciudadanos_import_job_upload_to)
+    original_filename = models.CharField(max_length=255)
+    status = models.CharField(
+        max_length=30,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    total_rows = models.PositiveIntegerField(default=0)
+    processed_rows = models.PositiveIntegerField(default=0)
+    created_rows = models.PositiveIntegerField(default=0)
+    existing_rows = models.PositiveIntegerField(default=0)
+    failed_rows = models.PositiveIntegerField(default=0)
+    pending_rows = models.PositiveIntegerField(default=0)
+    next_row_index = models.PositiveIntegerField(default=0)
+    last_successful_row = models.PositiveIntegerField(null=True, blank=True)
+    last_successful_documento = models.CharField(max_length=32, blank=True)
+    last_attempted_row = models.PositiveIntegerField(null=True, blank=True)
+    last_attempted_documento = models.CharField(max_length=32, blank=True)
+    last_error_message = models.TextField(blank=True)
+    last_error_type = models.CharField(max_length=64, blank=True)
+    last_error_at = models.DateTimeField(null=True, blank=True)
+    resume_count = models.PositiveIntegerField(default=0)
+    requested_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    last_activity_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["-requested_at", "-id"]
+        indexes = [
+            models.Index(
+                fields=["status", "requested_at"],
+                name="ciudadanos__status_8d0a47_idx",
+            ),
+            models.Index(
+                fields=["requested_by", "requested_at"],
+                name="ciudadanos__request_5b2064_idx",
+            ),
+        ]
+        verbose_name = "Lote de importacion masiva de ciudadanos"
+        verbose_name_plural = "Lotes de importacion masiva de ciudadanos"
+
+    def __str__(self):
+        return f"Lote {self.id} ({self.get_status_display()})"
+
+
+class CiudadanosImportJobRow(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pendiente"
+        CREATED = "created", "Creado"
+        EXISTING = "existing", "Existente"
+        FAILED = "failed", "Fallido"
+
+    job = models.ForeignKey(
+        CiudadanosImportJob,
+        on_delete=models.CASCADE,
+        related_name="rows",
+    )
+    fila = models.PositiveIntegerField()
+    documento_raw = models.CharField(max_length=64, blank=True)
+    dni = models.CharField(max_length=16, blank=True)
+    cuil = models.CharField(max_length=11, blank=True)
+    sexo = models.CharField(max_length=1, blank=True)
+    sexos_intentados = models.CharField(max_length=16, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    ciudadano = models.ForeignKey(
+        Ciudadano,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="import_rows",
+    )
+    mensaje = models.TextField(blank=True)
+    error_type = models.CharField(max_length=64, blank=True)
+    attempts = models.PositiveIntegerField(default=0)
+    processed_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["fila", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job", "fila"],
+                name="ciudadanos_import_job_row_unique",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=["job", "status"],
+                name="ciudadanos__job_id_2121af_idx",
+            ),
+            models.Index(
+                fields=["job", "processed_at"],
+                name="ciudadanos__job_id_00c794_idx",
+            ),
+            models.Index(
+                fields=["ciudadano"],
+                name="ciudadanos__ciudada_76bc92_idx",
+            ),
+        ]
+        verbose_name = "Resultado de fila de importacion de ciudadanos"
+        verbose_name_plural = "Resultados de filas de importacion de ciudadanos"
+
+    def __str__(self):
+        return f"Lote {self.job_id} fila {self.fila} ({self.get_status_display()})"
 
 
 class GrupoFamiliar(SoftDeleteModelMixin, models.Model):

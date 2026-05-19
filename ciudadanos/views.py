@@ -156,6 +156,16 @@ class CiudadanosListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["filter_form"] = CiudadanoFiltroForm(self.get_filter_form_data())
+        ctx["additional_buttons"] = []
+        if self.request.user.has_perm("ciudadanos.add_ciudadano"):
+            ctx["additional_buttons"].append(
+                {
+                    "label": "IMPORTACION MASIVA",
+                    "url": str(reverse_lazy("ciudadanos_importacion_masiva")),
+                    "class": "btn btn-lg btn-export-csv",
+                    "title": "Importar ciudadanos desde Excel",
+                }
+            )
         page_obj = ctx.get("page_obj")
         if page_obj and getattr(page_obj.paginator, "count", None) is None:
             ctx["page_range"] = build_no_count_page_range(page_obj)

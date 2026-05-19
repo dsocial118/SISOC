@@ -1,5 +1,6 @@
 from django import forms
 from django.core.cache import cache
+from django.core.validators import FileExtensionValidator
 from django.db.models import Q
 
 from ciudadanos.models import Ciudadano, GrupoFamiliar
@@ -7,6 +8,19 @@ from core.models import Localidad, Municipio, Provincia
 
 PROVINCIA_FILTER_CHOICES_CACHE_KEY = "ciudadanos:filtro:provincias:v1"
 PROVINCIA_FILTER_CHOICES_CACHE_TTL = 60 * 60
+
+
+class CiudadanosImportUploadForm(forms.Form):
+    archivo = forms.FileField(
+        label="Archivo Excel",
+        validators=[FileExtensionValidator(allowed_extensions=["xlsx"])],
+        widget=forms.ClearableFileInput(
+            attrs={
+                "accept": ".xlsx",
+                "class": "form-control",
+            }
+        ),
+    )
 
 
 def get_cached_provincia_filter_choices():

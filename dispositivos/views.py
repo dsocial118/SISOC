@@ -41,8 +41,8 @@ def _format_value(value):
 def _format_display_list(values, choices):
     labels = dict(choices)
     if not values:
-        return "-"
-    return ", ".join(labels.get(value, value) for value in values)
+        return []
+    return [labels.get(v, v) for v in values]
 
 
 def _format_file(file_field):
@@ -112,12 +112,17 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         dispositivo = self.object
+        context["breadcrumb_items"] = [
+            {"text": "Dispositivos", "url": reverse("dispositivos_listar")},
+            {"text": dispositivo.nombre_institucion},
+        ]
         context["detalle_secciones"] = [
             {
-                "titulo": "Identificación",
+                "titulo": "Identificación del dispositivo",
+                "icono": "fas fa-building",
                 "items": [
                     {
-                        "label": "Nombre completo de la institución",
+                        "label": "Nombre de la institución",
                         "value": _format_value(dispositivo.nombre_institucion),
                     },
                     {
@@ -145,7 +150,7 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                         "value": _format_value(str(dispositivo.municipio)),
                     },
                     {
-                        "label": "Domicilio de la institución",
+                        "label": "Domicilio",
                         "value": _format_value(dispositivo.domicilio_institucion),
                     },
                     {
@@ -157,7 +162,7 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                         "value": _format_value(dispositivo.correo_electronico),
                     },
                     {
-                        "label": "Nombre completo del responsable",
+                        "label": "Responsable",
                         "value": _format_value(dispositivo.responsable_nombre_completo),
                     },
                     {
@@ -167,7 +172,8 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                 ],
             },
             {
-                "titulo": "Características",
+                "titulo": "Características del dispositivo",
+                "icono": "fas fa-cogs",
                 "items": [
                     {
                         "label": "Tipo de dispositivo",
@@ -182,11 +188,16 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                         "value": dispositivo.get_modalidad_funcionamiento_display(),
                     },
                     {
+                        "label": "Capacidad total de plazas",
+                        "value": dispositivo.get_capacidad_total_plazas_display(),
+                    },
+                    {
                         "label": "Días de atención",
                         "value": _format_display_list(
                             dispositivo.dias_atencion,
                             DispositivoForm.DIAS_ATENCION_CHOICES,
                         ),
+                        "kind": "list",
                     },
                     {
                         "label": "Horarios de funcionamiento",
@@ -194,15 +205,13 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                             dispositivo.horarios_funcionamiento,
                             DispositivoForm.HORARIOS_FUNCIONAMIENTO_CHOICES,
                         ),
-                    },
-                    {
-                        "label": "Capacidad total de plazas",
-                        "value": dispositivo.get_capacidad_total_plazas_display(),
+                        "kind": "list",
                     },
                 ],
             },
             {
                 "titulo": "Población destinataria",
+                "icono": "fas fa-users",
                 "items": [
                     {
                         "label": "Población destinataria",
@@ -210,9 +219,10 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                             dispositivo.poblacion_destinataria,
                             DispositivoForm.POBLACION_DESTINATARIA_CHOICES,
                         ),
+                        "kind": "list",
                     },
                     {
-                        "label": "Población destinataria - detalle",
+                        "label": "Detalle población",
                         "value": _format_value(dispositivo.poblacion_destinataria_otro),
                     },
                     {
@@ -221,6 +231,7 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                             dispositivo.franja_etaria_destinataria,
                             DispositivoForm.FRANJA_ETARIA_CHOICES,
                         ),
+                        "kind": "list",
                     },
                     {
                         "label": "Tiempo promedio de permanencia",
@@ -231,13 +242,14 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                         ),
                     },
                     {
-                        "label": "Tiempo promedio de permanencia - detalle",
+                        "label": "Detalle permanencia",
                         "value": _format_value(dispositivo.tiempo_permanencia_otro),
                     },
                 ],
             },
             {
                 "titulo": "Modalidad de ingreso",
+                "icono": "fas fa-sign-in-alt",
                 "items": [
                     {
                         "label": "Modalidad de ingreso",
@@ -245,20 +257,22 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                             dispositivo.modalidad_ingreso,
                             DispositivoForm.MODALIDAD_INGRESO_CHOICES,
                         ),
+                        "kind": "list",
                     },
                     {
-                        "label": "Modalidad de ingreso - detalle",
+                        "label": "Detalle modalidad",
                         "value": _format_value(dispositivo.modalidad_ingreso_otro),
                     },
                     {
-                        "label": "Documentación necesaria para el ingreso",
+                        "label": "Documentación para el ingreso",
                         "value": _format_display_list(
                             dispositivo.documentacion_ingreso,
                             DispositivoForm.DOCUMENTACION_INGRESO_CHOICES,
                         ),
+                        "kind": "list",
                     },
                     {
-                        "label": "Documentación necesaria - detalle",
+                        "label": "Detalle documentación",
                         "value": _format_value(dispositivo.documentacion_ingreso_otro),
                     },
                     {
@@ -267,15 +281,17 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                             dispositivo.requisitos_ingreso,
                             DispositivoForm.REQUISITOS_INGRESO_CHOICES,
                         ),
+                        "kind": "list",
                     },
                     {
-                        "label": "Requisitos para el ingreso - detalle",
+                        "label": "Detalle requisitos",
                         "value": _format_value(dispositivo.requisitos_ingreso_otro),
                     },
                 ],
             },
             {
                 "titulo": "Servicios brindados",
+                "icono": "fas fa-hands-helping",
                 "items": [
                     {
                         "label": "Servicios brindados",
@@ -283,9 +299,10 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                             dispositivo.servicios_brindados,
                             DispositivoForm.SERVICIOS_BRINDADOS_CHOICES,
                         ),
+                        "kind": "list",
                     },
                     {
-                        "label": "Servicios brindados - detalle",
+                        "label": "Detalle servicios",
                         "value": _format_value(dispositivo.servicios_brindados_otro),
                     },
                     {
@@ -302,9 +319,10 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                             dispositivo.tipos_actividades_formativas,
                             DispositivoForm.TIPO_ACTIVIDADES_FORMATIVAS_CHOICES,
                         ),
+                        "kind": "list",
                     },
                     {
-                        "label": "Tipos de actividades formativas - detalle",
+                        "label": "Detalle actividades",
                         "value": _format_value(
                             dispositivo.tipos_actividades_formativas_otro
                         ),
@@ -321,9 +339,10 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
             },
             {
                 "titulo": "Sistema de registro de personas usuarias",
+                "icono": "fas fa-clipboard-list",
                 "items": [
                     {
-                        "label": "Registra información sobre personas alojadas o asistidas",
+                        "label": "Registra información de personas",
                         "value": (
                             dispositivo.get_registra_informacion_personas_display()
                             if dispositivo.registra_informacion_personas
@@ -339,7 +358,7 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                         ),
                     },
                     {
-                        "label": "Modo de registro - detalle",
+                        "label": "Detalle modo de registro",
                         "value": _format_value(dispositivo.modo_registro_otro),
                     },
                     {
@@ -348,9 +367,10 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                             dispositivo.tipo_informacion_registrada,
                             DispositivoForm.TIPO_INFO_REGISTRADA_CHOICES,
                         ),
+                        "kind": "list",
                     },
                     {
-                        "label": "Tipo de información registrada - detalle",
+                        "label": "Detalle información",
                         "value": _format_value(
                             dispositivo.tipo_informacion_registrada_otro
                         ),
@@ -359,6 +379,7 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
             },
             {
                 "titulo": "Infraestructura y necesidades",
+                "icono": "fas fa-tools",
                 "items": [
                     {
                         "label": "Infraestructura disponible",
@@ -366,9 +387,10 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                             dispositivo.infraestructura_disponible,
                             DispositivoForm.INFRAESTRUCTURA_DISPONIBLE_CHOICES,
                         ),
+                        "kind": "list",
                     },
                     {
-                        "label": "Infraestructura disponible - detalle",
+                        "label": "Detalle infraestructura",
                         "value": _format_value(
                             dispositivo.infraestructura_disponible_otro
                         ),
@@ -379,9 +401,10 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                             dispositivo.infraestructura_accesibilidad,
                             DispositivoForm.INFRAESTRUCTURA_ACCESIBILIDAD_CHOICES,
                         ),
+                        "kind": "list",
                     },
                     {
-                        "label": "Infraestructura de accesibilidad - detalle",
+                        "label": "Detalle accesibilidad",
                         "value": _format_value(
                             dispositivo.infraestructura_accesibilidad_otro
                         ),
@@ -389,15 +412,18 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                     {
                         "label": "Principales limitaciones",
                         "value": _format_value(dispositivo.principales_limitaciones),
+                        "wide": True,
                     },
                     {
                         "label": "Necesidades prioritarias",
                         "value": _format_value(dispositivo.necesidades_prioritarias),
+                        "wide": True,
                     },
                 ],
             },
             {
                 "titulo": "Articulaciones institucionales",
+                "icono": "fas fa-network-wired",
                 "items": [
                     {
                         "label": "Articulaciones institucionales",
@@ -405,9 +431,10 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                             dispositivo.articulaciones_institucionales,
                             DispositivoForm.ARTICULACIONES_CHOICES,
                         ),
+                        "kind": "list",
                     },
                     {
-                        "label": "Articulaciones institucionales - detalle",
+                        "label": "Detalle articulaciones",
                         "value": _format_value(
                             dispositivo.articulaciones_institucionales_otro
                         ),
@@ -416,10 +443,12 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
             },
             {
                 "titulo": "Observaciones y documentación",
+                "icono": "fas fa-file-alt",
                 "items": [
                     {
                         "label": "Observaciones adicionales",
                         "value": _format_value(dispositivo.observaciones_adicionales),
+                        "wide": True,
                     },
                     {
                         "label": "Documentación del dispositivo",
@@ -465,6 +494,14 @@ class DispositivoCreateView(LoginRequiredMixin, CreateView):
     form_class = DispositivoForm
     template_name = "dispositivos_form.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = [
+            {"text": "Dispositivos", "url": reverse("dispositivos_listar")},
+            {"text": "Nuevo dispositivo"},
+        ]
+        return context
+
     def form_valid(self, form):
         self.object = save_dispositivo_from_form(form)
         messages.success(self.request, "Dispositivo creado correctamente.")
@@ -481,6 +518,18 @@ class DispositivoUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return get_dispositivos_queryset()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = [
+            {"text": "Dispositivos", "url": reverse("dispositivos_listar")},
+            {
+                "text": self.object.nombre_institucion,
+                "url": reverse("dispositivos_detalle", kwargs={"pk": self.object.pk}),
+            },
+            {"text": "Editar"},
+        ]
+        return context
 
     def form_valid(self, form):
         self.object = save_dispositivo_from_form(form, instance=self.get_object())

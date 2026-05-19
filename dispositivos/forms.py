@@ -292,7 +292,7 @@ class DispositivoForm(forms.ModelForm):
         self._apply_widgets()
 
     def _apply_widgets(self):
-        for field_name, field in self.fields.items():
+        for field in self.fields.values():
             widget = field.widget
             if isinstance(widget, (forms.Select, forms.SelectMultiple)):
                 widget.attrs["class"] = (

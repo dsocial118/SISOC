@@ -15,6 +15,13 @@ from ciudadanos.views import (
 )
 from ciudadanos.api_views import buscar_ciudadanos
 from ciudadanos.views_export import CiudadanosExportView
+from ciudadanos.views_importacion_masiva import (
+    CiudadanosImportJobDetailView,
+    CiudadanosImportJobExportView,
+    CiudadanosImportJobResumeView,
+    CiudadanosImportTemplateView,
+    CiudadanosImportUploadView,
+)
 
 
 urlpatterns = [
@@ -27,6 +34,31 @@ urlpatterns = [
         "ciudadanos/exportar",
         login_required(CiudadanosExportView.as_view()),
         name="ciudadanos_exportar",
+    ),
+    path(
+        "ciudadanos/importacion-masiva/",
+        login_required(CiudadanosImportUploadView.as_view()),
+        name="ciudadanos_importacion_masiva",
+    ),
+    path(
+        "ciudadanos/importacion-masiva/plantilla/",
+        login_required(CiudadanosImportTemplateView.as_view()),
+        name="ciudadanos_importacion_masiva_plantilla",
+    ),
+    path(
+        "ciudadanos/importacion-masiva/lotes/<int:pk>/",
+        login_required(CiudadanosImportJobDetailView.as_view()),
+        name="ciudadanos_importacion_masiva_lote",
+    ),
+    path(
+        "ciudadanos/importacion-masiva/lotes/<int:pk>/exportar/",
+        login_required(CiudadanosImportJobExportView.as_view()),
+        name="ciudadanos_importacion_masiva_lote_exportar",
+    ),
+    path(
+        "ciudadanos/importacion-masiva/lotes/<int:pk>/reanudar/",
+        login_required(CiudadanosImportJobResumeView.as_view()),
+        name="ciudadanos_importacion_masiva_reanudar",
     ),
     path(
         "ciudadanos/crear/",
