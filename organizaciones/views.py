@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 from pathlib import Path
 
 from django.contrib import messages
@@ -239,7 +240,9 @@ def _puede_modificar_documentacion_organizacion(user, organizacion=None):
     ) or _puede_enviar_documentacion_organizacion(user, organizacion)
 
 
-def _validar_cambio_estado_documento_organizacion(user, archivo, estado):
+def _validar_cambio_estado_documento_organizacion(  # pylint: disable=too-many-return-statements
+    user, archivo, estado
+):
     puede_validar = _puede_validar_documentacion_organizacion(
         user, archivo.organizacion
     )

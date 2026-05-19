@@ -130,7 +130,7 @@ def test_list_view_get_queryset_filtra_y_ordena(mocker):
     assert result == [{"id": 1}]
     filter_mock.assert_called_once_with(comedor=5)
     order_by_mock.assert_called_once_with("-estado", "-id")
-    values_mock.assert_called_once_with("id", "fecha_visita", "estado")
+    values_mock.assert_called_once_with("id", "fecha_visita", "estado", "numero_if")
 
 
 def test_list_view_get_context_data_agrega_comedor(mocker):
