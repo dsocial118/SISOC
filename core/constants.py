@@ -20,6 +20,7 @@ class UserGroups:
     ABOGADO_DUPLA = "Abogado Dupla"
     AREA_LEGALES = "Area Legales"
     AREA_CONTABLE = "Area Contable"
+    CDI_REFERENTE_CENTRO = "CDI - Referente centro"
 
     # =========================================================================
     # Grupos de permisos específicos
