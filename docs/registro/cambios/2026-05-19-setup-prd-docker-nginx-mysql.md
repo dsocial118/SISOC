@@ -71,6 +71,48 @@ docker compose -f docker-compose.deploy.yml -f docker-compose.produccion.yml up 
 - Confirmar si `10.1.14.181` corresponde a VPN; si no corresponde, retirar esa regla de DB-PRD.
 - Validar health final por `https://sisoc.secretarianaf.gob.ar/health/` despues del corte.
 
+## Actualizacion temporal: acceso HTTP por navegador
+
+Despues del setup inicial, operacion pidio que el entorno pueda abrirse desde navegador antes de tener dominio apuntado y certificado TLS. Para eso se habilito una excepcion temporal de HTTP directo en SITE-PRD.
+
+Backup previo del `.env`:
+
+```text
+/opt/sisoc/SISOC/.env.pre_http_tmp_20260519_161828
+```
+
+Overrides temporales activos:
+
+```dotenv
+DJANGO_SECURE_SSL_REDIRECT=False
+DJANGO_SESSION_COOKIE_SECURE=False
+DJANGO_CSRF_COOKIE_SECURE=False
+DJANGO_SECURE_HSTS_SECONDS=0
+DJANGO_CSRF_TRUSTED_ORIGINS=http://10.1.135.170,https://sisoc.secretarianaf.gob.ar
+DOMINIO=http://10.1.135.170/
+```
+
+Se recrearon `django`, `bulk_credentials_worker` y `ciudadanos_import_worker` con:
+
+```bash
+docker compose -f docker-compose.deploy.yml -f docker-compose.produccion.yml up -d --force-recreate django bulk_credentials_worker ciudadanos_import_worker
+```
+
+Validacion posterior:
+
+- `http://10.1.135.170/` devuelve `200 OK`.
+- `http://10.1.135.170/health/` devuelve `200 OK`.
+- La cookie CSRF queda sin flag `Secure`, requerido para operar temporalmente por HTTP.
+- El scan de logs de `django`, `bulk_credentials_worker` y `ciudadanos_import_worker` no mostro tracebacks ni errores nuevos.
+
+Reversa obligatoria al implementar TLS:
+
+1. Quitar los overrides temporales `DJANGO_SECURE_*`.
+2. Restaurar `DOMINIO=https://sisoc.secretarianaf.gob.ar/`.
+3. Dejar `DJANGO_CSRF_TRUSTED_ORIGINS=https://sisoc.secretarianaf.gob.ar` salvo que haya otros origenes aprobados.
+4. Recrear los tres servicios de app.
+5. Validar `https://sisoc.secretarianaf.gob.ar/health/` con `200 OK`.
+
 ## Operacion rapida
 
 Reiniciar app:

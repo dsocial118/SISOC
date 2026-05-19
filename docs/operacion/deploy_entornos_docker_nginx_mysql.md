@@ -757,6 +757,28 @@ DOMINIO=<PUBLIC_ORIGIN>/
 
 En PRD no desactivar el hardening HTTPS aunque el servidor se prepare antes del cambio de DNS/TLS. Mantener `ENVIRONMENT=prd`, no agregar overrides `DJANGO_SECURE_*` y validar NGINX con `X-Forwarded-Proto: https`. Si el request llega por HTTP plano directo, `/health/` puede redirigir por `SECURE_SSL_REDIRECT`.
 
+Excepcion temporal: si operacion necesita acceso por navegador antes de tener dominio y certificado, se puede habilitar HTTP directo solo con autorizacion explicita, dejando registro del backup de `.env` y una tarea de reversa para el corte TLS:
+
+```dotenv
+DJANGO_SECURE_SSL_REDIRECT=False
+DJANGO_SESSION_COOKIE_SECURE=False
+DJANGO_CSRF_COOKIE_SECURE=False
+DJANGO_SECURE_HSTS_SECONDS=0
+DOMINIO=http://<SITE_IP>/
+DJANGO_CSRF_TRUSTED_ORIGINS=http://<SITE_IP>,https://<PUBLIC_HOSTNAME>
+```
+
+Despues de editar `.env`, recrear los servicios de app para que Docker tome las variables nuevas:
+
+```bash
+sudo -H -u "$APP_USER" docker compose \
+  -f docker-compose.deploy.yml \
+  -f docker-compose.produccion.yml \
+  up -d --force-recreate django bulk_credentials_worker ciudadanos_import_worker
+```
+
+Al implementar TLS, retirar esos overrides temporales, restaurar `DOMINIO=https://<PUBLIC_HOSTNAME>/`, recrear servicios y validar por HTTPS.
+
 Para un entorno temporal no PRD controlado por HTTP interno, y solo si se acepta explicitamente perder el hardening de HTTPS, se pueden agregar estos overrides al `.env` del servidor. No usarlos para PRD ni para un dominio con TLS real:
 
 ```dotenv
