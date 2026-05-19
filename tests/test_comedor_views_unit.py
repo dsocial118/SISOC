@@ -431,7 +431,10 @@ def test_comedor_detail_no_consulta_transacciones_sin_permiso_comedor(mocker):
     )
     mocker.patch(
         "comedores.views.comedor._build_prestaciones_aprobadas_context",
-        return_value={},
+        return_value={
+            "prestaciones_aprobadas_total": None,
+            "monto_prestacion_mensual_aprobadas": None,
+        },
     )
     mocker.patch(
         "comedores.views.comedor.ComedorService.get_admision_timeline_context_from_admision",
@@ -472,7 +475,10 @@ def test_comedor_detail_consulta_transacciones_con_permiso_comedor(mocker):
     )
     mocker.patch(
         "comedores.views.comedor._build_prestaciones_aprobadas_context",
-        return_value={},
+        return_value={
+            "prestaciones_aprobadas_total": None,
+            "monto_prestacion_mensual_aprobadas": None,
+        },
     )
     mocker.patch(
         "comedores.views.comedor.ComedorService.get_admision_timeline_context_from_admision",
