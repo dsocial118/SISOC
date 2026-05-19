@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -31,6 +33,14 @@ from organizaciones.models import (
     Aval,
     RolFirmante,
 )
+
+MAX_DOCUMENTO_ORGANIZACION_FILE_SIZE = 10 * 1024 * 1024
+ALLOWED_DOCUMENTO_ORGANIZACION_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
+ALLOWED_DOCUMENTO_ORGANIZACION_CONTENT_TYPES = {
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+}
 
 ORGANIZACION_LIST_ONLY_FIELDS = (
     "id",
@@ -177,6 +187,28 @@ def _render_documentacion_organizacion_row(request, organizacion, documentacion)
         },
         request=request,
     )
+
+
+def _validar_archivo_documento_organizacion(archivo):
+    if not archivo:
+        return "Debe adjuntar un archivo."
+
+    size = getattr(archivo, "size", 0) or 0
+    if size > MAX_DOCUMENTO_ORGANIZACION_FILE_SIZE:
+        return "El archivo excede el tamaño máximo permitido de 10 MB."
+
+    extension = Path(getattr(archivo, "name", "") or "").suffix.lower()
+    if extension not in ALLOWED_DOCUMENTO_ORGANIZACION_EXTENSIONS:
+        return "Formato inválido. Solo se permiten archivos PDF, JPG o PNG."
+
+    content_type = getattr(archivo, "content_type", None)
+    if (
+        content_type
+        and content_type not in ALLOWED_DOCUMENTO_ORGANIZACION_CONTENT_TYPES
+    ):
+        return "Tipo de archivo no permitido. Formatos válidos: PDF, JPG o PNG."
+
+    return None
 
 
 def _usuario_en_dupla_organizacion(user, organizacion, lookup):
@@ -769,9 +801,11 @@ def subir_documento_organizacion(request, organizacion_id, documentacion_id):
         )
 
     archivo = request.FILES.get("archivo")
-    if not archivo:
+    error_archivo = _validar_archivo_documento_organizacion(archivo)
+    if error_archivo:
         return JsonResponse(
-            {"success": False, "error": "Debe adjuntar un archivo."}, status=400
+            {"success": False, "error": error_archivo},
+            status=400,
         )
 
     fecha_vencimiento = request.POST.get("fecha_vencimiento") or None

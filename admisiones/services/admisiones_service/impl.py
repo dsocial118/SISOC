@@ -793,12 +793,6 @@ class AdmisionService:
     @staticmethod
     def get_admision_update_context(admision, user=None):
         try:
-            if (
-                admision.estado_admision
-                in AdmisionService.ESTADOS_DOCUMENTACION_ORGANIZACIONAL_CONGELADA
-            ):
-                AdmisionService.congelar_documentacion_organizacional(admision, user)
-
             documentaciones = (
                 Documentacion.objects.filter(models.Q(convenios=admision.tipo_convenio))
                 .distinct()
@@ -2436,12 +2430,7 @@ class AdmisionService:
             for (
                 doc_obligatorio
             ) in AdmisionService._iter_documentos_obligatorios_admision(admision):
-                if not AdmisionService._existe_archivo_obligatorio_admision(
-                    admision=admision,
-                    doc_obligatorio=doc_obligatorio,
-                    estado="Aceptado",
-                    requiere_archivo=False,
-                ) and not AdmisionService._existe_archivo_organizacion_obligatorio_admision(
+                if not AdmisionService._documento_obligatorio_cumple_requisito(
                     admision=admision,
                     doc_obligatorio=doc_obligatorio,
                     estado="Aceptado",
@@ -2534,6 +2523,54 @@ class AdmisionService:
         return True
 
     @staticmethod
+    def _archivo_cumple_requisito_documental(
+        archivo, *, estado=None, requiere_archivo=False
+    ):
+        if not archivo:
+            return False
+        if estado is not None and archivo.estado != estado:
+            return False
+        if requiere_archivo and not archivo.archivo:
+            return False
+        return True
+
+    @staticmethod
+    def _documento_obligatorio_cumple_requisito(
+        *,
+        admision,
+        doc_obligatorio,
+        estado=None,
+        requiere_archivo=False,
+    ):
+        archivo_admision = AdmisionService._obtener_archivo_obligatorio_admision(
+            admision=admision,
+            doc_obligatorio=doc_obligatorio,
+            estado=estado,
+        )
+        if archivo_admision:
+            return AdmisionService._archivo_cumple_requisito_documental(
+                archivo_admision,
+                estado=estado,
+                requiere_archivo=requiere_archivo,
+            )
+
+        archivo_admision_existente = (
+            AdmisionService._obtener_archivo_obligatorio_admision(
+                admision=admision,
+                doc_obligatorio=doc_obligatorio,
+            )
+        )
+        if archivo_admision_existente:
+            return False
+
+        return AdmisionService._existe_archivo_organizacion_obligatorio_admision(
+            admision=admision,
+            doc_obligatorio=doc_obligatorio,
+            estado=estado,
+            requiere_archivo=requiere_archivo,
+        )
+
+    @staticmethod
     def congelar_documentacion_organizacional(admision, user=None):
         categoria = AdmisionService._categoria_organizacional_admision(admision)
         organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
@@ -2609,10 +2646,11 @@ class AdmisionService:
         if not archivo:
             return False
 
-        if requiere_archivo and not archivo.archivo:
-            return False
-
-        return True
+        return AdmisionService._archivo_cumple_requisito_documental(
+            archivo,
+            estado=estado,
+            requiere_archivo=requiere_archivo,
+        )
 
     @staticmethod
     def _obtener_archivo_obligatorio_admision(
@@ -2749,11 +2787,7 @@ class AdmisionService:
             for (
                 doc_obligatorio
             ) in AdmisionService._iter_documentos_obligatorios_admision(admision):
-                if not AdmisionService._existe_archivo_obligatorio_admision(
-                    admision=admision,
-                    doc_obligatorio=doc_obligatorio,
-                    requiere_archivo=True,
-                ) and not AdmisionService._existe_archivo_organizacion_obligatorio_admision(
+                if not AdmisionService._documento_obligatorio_cumple_requisito(
                     admision=admision,
                     doc_obligatorio=doc_obligatorio,
                     requiere_archivo=True,
