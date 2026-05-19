@@ -10,7 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 
-from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
+from centrodefamilia.services.consulta_renaper.impl import consultar_datos_renaper
 from ciudadanos.models import Ciudadano, CiudadanosImportJobRow
 from comedores.services.comedor_service import ComedorService
 from core.models import Sexo

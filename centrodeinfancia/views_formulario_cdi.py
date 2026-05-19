@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, ListView
 
-from centrodeinfancia.access import aplicar_filtro_provincia_usuario
+from centrodeinfancia.access import aplicar_scope_centros_cdi
 from centrodeinfancia.forms import (
     FormularioCDIForm,
     construir_filas_iniciales_fijas,
@@ -58,8 +58,11 @@ def _obtener_queryset_formularios_cdi_filtrado(user):
         "municipio_organizacion",
         "localidad_organizacion",
     )
-    return aplicar_filtro_provincia_usuario(
-        queryset, user, provincia_lookup="centro__provincia"
+    return aplicar_scope_centros_cdi(
+        queryset,
+        user,
+        id_lookup="centro_id",
+        provincia_lookup="centro__provincia",
     )
 
 
@@ -67,7 +70,7 @@ def _obtener_centro_filtrado_o_404(user, pk):
     queryset = CentroDeInfancia.objects.select_related(
         "provincia", "departamento", "municipio", "localidad"
     )
-    queryset = aplicar_filtro_provincia_usuario(queryset, user)
+    queryset = aplicar_scope_centros_cdi(queryset, user)
     return get_object_or_404(queryset, pk=pk)
 
 
