@@ -183,9 +183,59 @@ def _load_rows_from_workbook(uploaded_file) -> tuple[object, list[tuple]]:
     return workbook, rows
 
 
-def load_ciudadanos_import_rows(  # pylint: disable=too-many-locals
-    uploaded_file,
-) -> list[ParsedCiudadanosImportRow]:
+def _get_row_value(row: tuple, index: int | None) -> str:
+    if index is None or index >= len(row):
+        return ""
+    return _clean_cell(row[index])
+
+
+def _parse_import_row(
+    row_number: int,
+    row: tuple,
+    header_map: dict[str, int],
+) -> ParsedCiudadanosImportRow | None:
+    documento_raw = _get_row_value(row, header_map["documento"])
+    sexo_raw = _get_row_value(row, header_map.get("sexo"))
+    if not documento_raw and not sexo_raw:
+        return None
+
+    dni = ""
+    cuil = ""
+    input_type = ""
+    parse_error = ""
+    error_type = ""
+    try:
+        parsed_documento = parse_cuil_o_dni(documento_raw)
+        dni = parsed_documento.dni
+        cuil = parsed_documento.cuil
+        input_type = parsed_documento.input_type
+    except ValidationError as exc:
+        parse_error = " ".join(exc.messages)
+        error_type = (
+            "invalid_cuil" if len(_digits_only(documento_raw)) == 11 else "invalid_dni"
+        )
+
+    sexo = ""
+    if not parse_error:
+        try:
+            sexo = normalize_import_sexo(sexo_raw)
+        except ValidationError as exc:
+            parse_error = " ".join(exc.messages)
+            error_type = "invalid_sexo"
+
+    return ParsedCiudadanosImportRow(
+        fila=row_number,
+        documento_raw=documento_raw,
+        dni=dni,
+        cuil=cuil,
+        sexo=sexo,
+        input_type=input_type,
+        parse_error=parse_error,
+        error_type=error_type,
+    )
+
+
+def load_ciudadanos_import_rows(uploaded_file) -> list[ParsedCiudadanosImportRow]:
     workbook, rows = _load_rows_from_workbook(uploaded_file)
     try:
         if not rows:
@@ -195,57 +245,9 @@ def load_ciudadanos_import_rows(  # pylint: disable=too-many-locals
 
         parsed_rows: list[ParsedCiudadanosImportRow] = []
         for row_number, row in enumerate(rows[1:], start=2):
-            documento_raw = _clean_cell(
-                row[header_map["documento"]]
-                if header_map["documento"] < len(row)
-                else ""
-            )
-            sexo_raw = _clean_cell(
-                row[header_map["sexo"]]
-                if "sexo" in header_map and header_map["sexo"] < len(row)
-                else ""
-            )
-            if not documento_raw and not sexo_raw:
-                continue
-
-            dni = ""
-            cuil = ""
-            input_type = ""
-            parse_error = ""
-            error_type = ""
-            try:
-                parsed_documento = parse_cuil_o_dni(documento_raw)
-                dni = parsed_documento.dni
-                cuil = parsed_documento.cuil
-                input_type = parsed_documento.input_type
-            except ValidationError as exc:
-                parse_error = " ".join(exc.messages)
-                error_type = (
-                    "invalid_cuil"
-                    if len(_digits_only(documento_raw)) == 11
-                    else "invalid_dni"
-                )
-
-            sexo = ""
-            if not parse_error:
-                try:
-                    sexo = normalize_import_sexo(sexo_raw)
-                except ValidationError as exc:
-                    parse_error = " ".join(exc.messages)
-                    error_type = "invalid_sexo"
-
-            parsed_rows.append(
-                ParsedCiudadanosImportRow(
-                    fila=row_number,
-                    documento_raw=documento_raw,
-                    dni=dni,
-                    cuil=cuil,
-                    sexo=sexo,
-                    input_type=input_type,
-                    parse_error=parse_error,
-                    error_type=error_type,
-                )
-            )
+            parsed_row = _parse_import_row(row_number, row, header_map)
+            if parsed_row is not None:
+                parsed_rows.append(parsed_row)
 
         if not parsed_rows:
             raise ValidationError(
@@ -405,11 +407,7 @@ def _build_ciudadano_payload_from_renaper(
     sexo: str,
 ) -> tuple[dict[str, object] | None, str | None]:
     data = _apply_sexo_to_renaper_data(result.get("data") or {}, sexo)
-    ciudadano_data, error = (
-        ComedorService._build_ciudadano_data_from_renaper(  # pylint: disable=protected-access
-            data, dni
-        )
-    )
+    ciudadano_data, error = ComedorService.build_ciudadano_data_from_renaper(data, dni)
     if not ciudadano_data:
         return None, error
     ciudadano_data.update(
@@ -549,7 +547,7 @@ def process_ciudadanos_import_row(  # pylint: disable=too-many-return-statements
     with transaction.atomic():
         existing = _get_existing_estandar_by_dni(row.dni)
         if existing:
-            return {
+            row_result = {
                 "status": "existing",
                 "mensaje": "Ya existe un ciudadano estandar para el DNI informado.",
                 "error_type": "",
@@ -558,14 +556,16 @@ def process_ciudadanos_import_row(  # pylint: disable=too-many-return-statements
                 "systemic": False,
                 "contacted_renaper": True,
             }
-        ciudadano = Ciudadano.objects.create(**ciudadano_data)
+        else:
+            ciudadano = Ciudadano.objects.create(**ciudadano_data)
+            row_result = {
+                "status": "created",
+                "mensaje": "Ciudadano creado desde RENAPER.",
+                "error_type": "",
+                "sexos_intentados": sexos_intentados,
+                "ciudadano": ciudadano,
+                "systemic": False,
+                "contacted_renaper": True,
+            }
 
-    return {
-        "status": "created",
-        "mensaje": "Ciudadano creado desde RENAPER.",
-        "error_type": "",
-        "sexos_intentados": sexos_intentados,
-        "ciudadano": ciudadano,
-        "systemic": False,
-        "contacted_renaper": True,
-    }
+    return row_result
