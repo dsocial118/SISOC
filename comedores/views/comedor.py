@@ -51,6 +51,7 @@ from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from core.utils import convert_string_to_int
+from iam.services import user_has_permission_code
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm, build_programa_aliases
@@ -1337,11 +1338,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         )
         context.update(timeline_selected)
 
-        # Agregar resumen de transacciones DW
-        resumen_dw_transacciones = (
-            DWTransaccionesService.obtener_resumen_ultimo_periodo(self.object.id)
-        )
-        context["resumen_dw_transacciones"] = resumen_dw_transacciones
+        context["resumen_dw_transacciones"] = None
+        if user_has_permission_code(self.request.user, "comedores.view_comedor"):
+            context["resumen_dw_transacciones"] = (
+                DWTransaccionesService.obtener_resumen_ultimo_periodo(self.object.id)
+            )
 
         return context
 

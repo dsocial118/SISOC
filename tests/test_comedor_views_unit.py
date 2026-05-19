@@ -409,6 +409,89 @@ def test_comedor_detail_get_context_data_selected_admision_flow(mocker):
     assert ctx["timeline_key"] == "ok"
 
 
+def test_comedor_detail_no_consulta_transacciones_sin_permiso_comedor(mocker):
+    view = module.ComedorDetailView()
+    view.request = _Req(user=SimpleNamespace(is_superuser=False), post={})
+    view.request.GET = {}
+    view.object = SimpleNamespace(id=7)
+
+    mocker.patch(
+        "django.views.generic.detail.SingleObjectMixin.get_context_data",
+        return_value={},
+    )
+    mocker.patch.object(view, "get_presupuestos_data", return_value={})
+    mocker.patch.object(
+        view,
+        "get_relaciones_optimizadas",
+        return_value={"admision": _AdmisionesQS([])},
+    )
+    mocker.patch(
+        "comedores.views.comedor._get_informe_tecnico_finalizado_from_admision",
+        return_value=None,
+    )
+    mocker.patch(
+        "comedores.views.comedor._build_prestaciones_aprobadas_context",
+        return_value={},
+    )
+    mocker.patch(
+        "comedores.views.comedor.ComedorService.get_admision_timeline_context_from_admision",
+        return_value={},
+    )
+    mocker.patch("comedores.views.comedor.IntervencionForm", return_value="iform")
+    mocker.patch("comedores.views.comedor.ObservacionForm", return_value="oform")
+    mocker.patch("comedores.views.comedor.user_has_permission_code", return_value=False)
+    obtener_resumen = mocker.patch(
+        "comedores.views.comedor.DWTransaccionesService.obtener_resumen_ultimo_periodo"
+    )
+
+    ctx = view.get_context_data()
+
+    assert ctx["resumen_dw_transacciones"] is None
+    obtener_resumen.assert_not_called()
+
+
+def test_comedor_detail_consulta_transacciones_con_permiso_comedor(mocker):
+    view = module.ComedorDetailView()
+    view.request = _Req(user=SimpleNamespace(is_superuser=False), post={})
+    view.request.GET = {}
+    view.object = SimpleNamespace(id=7)
+
+    mocker.patch(
+        "django.views.generic.detail.SingleObjectMixin.get_context_data",
+        return_value={},
+    )
+    mocker.patch.object(view, "get_presupuestos_data", return_value={})
+    mocker.patch.object(
+        view,
+        "get_relaciones_optimizadas",
+        return_value={"admision": _AdmisionesQS([])},
+    )
+    mocker.patch(
+        "comedores.views.comedor._get_informe_tecnico_finalizado_from_admision",
+        return_value=None,
+    )
+    mocker.patch(
+        "comedores.views.comedor._build_prestaciones_aprobadas_context",
+        return_value={},
+    )
+    mocker.patch(
+        "comedores.views.comedor.ComedorService.get_admision_timeline_context_from_admision",
+        return_value={},
+    )
+    mocker.patch("comedores.views.comedor.IntervencionForm", return_value="iform")
+    mocker.patch("comedores.views.comedor.ObservacionForm", return_value="oform")
+    mocker.patch("comedores.views.comedor.user_has_permission_code", return_value=True)
+    obtener_resumen = mocker.patch(
+        "comedores.views.comedor.DWTransaccionesService.obtener_resumen_ultimo_periodo",
+        return_value="resumen",
+    )
+
+    ctx = view.get_context_data()
+
+    assert ctx["resumen_dw_transacciones"] == "resumen"
+    obtener_resumen.assert_called_once_with(7)
+
+
 def test_comedor_detail_get_relaciones_optimizadas_compone_contextos(mocker):
     view = module.ComedorDetailView()
     view.request = _Req(user=SimpleNamespace(is_superuser=False), post={})
