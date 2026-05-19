@@ -196,6 +196,15 @@
                     </a>
                 </li>
             {% endif %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"ciudadanos.add_ciudadano" %}
+                <li class="nav-item">
+                    <a href="{% url 'ciudadanos_importacion_masiva' %}"
+                       class="nav-link {% if 'ciudadanos/importacion-masiva' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-upload"></i>
+                        <p>Importacion masiva</p>
+                    </a>
+                </li>
+            {% endif %}
             {% if not vat_sidebar_only and request.user|has_perm_code:"centrodefamilia.view_centro" %}
                 <li class="nav-item">
                     <a href="{% url 'centro_list' %}"
