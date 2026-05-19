@@ -14,6 +14,7 @@ logger = logging.getLogger("django")
 DEPLOY_GUNICORN_ENVIRONMENTS = {"qa", "homologacion", "prd"}
 SERVICE_ROLE_WEB = "web"
 SERVICE_ROLE_BULK_CREDENTIALS_WORKER = "bulk_credentials_worker"
+SERVICE_ROLE_CIUDADANOS_IMPORT_WORKER = "ciudadanos_import_worker"
 
 
 def run_command(cmd, *, stage, **kwargs):
@@ -184,11 +185,23 @@ def run_bulk_credentials_worker():
     )
 
 
+def run_ciudadanos_import_worker():
+    """Inicia el worker dedicado de importacion masiva de ciudadanos."""
+    logger.info("[worker] Iniciando worker de importacion masiva de ciudadanos...")
+    run_command(
+        ["python", "manage.py", "process_ciudadanos_import_jobs"],
+        stage="ciudadanos_import_worker",
+    )
+
+
 def main():
     wait_for_mysql()
     service_role = os.getenv("DJANGO_SERVICE_ROLE", SERVICE_ROLE_WEB).strip().lower()
     if service_role == SERVICE_ROLE_BULK_CREDENTIALS_WORKER:
         run_bulk_credentials_worker()
+        return
+    if service_role == SERVICE_ROLE_CIUDADANOS_IMPORT_WORKER:
+        run_ciudadanos_import_worker()
         return
     run_django_commands()
 
