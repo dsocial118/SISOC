@@ -10,7 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 
-from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
+from centrodefamilia.services.consulta_renaper.impl import consultar_datos_renaper
 from ciudadanos.models import Ciudadano, CiudadanosImportJobRow
 from comedores.services.comedor_service import ComedorService
 from core.models import Sexo
@@ -181,6 +181,58 @@ def _load_rows_from_workbook(uploaded_file) -> tuple[object, list[tuple]]:
     return workbook, rows
 
 
+def _parse_ciudadanos_import_row(
+    row_number: int,
+    row: tuple,
+    header_map: dict[str, int],
+) -> ParsedCiudadanosImportRow | None:
+    documento_raw = _clean_cell(
+        row[header_map["documento"]] if header_map["documento"] < len(row) else ""
+    )
+    sexo_raw = _clean_cell(
+        row[header_map["sexo"]]
+        if "sexo" in header_map and header_map["sexo"] < len(row)
+        else ""
+    )
+    if not documento_raw and not sexo_raw:
+        return None
+
+    dni = ""
+    cuil = ""
+    input_type = ""
+    parse_error = ""
+    error_type = ""
+    try:
+        parsed_documento = parse_cuil_o_dni(documento_raw)
+        dni = parsed_documento.dni
+        cuil = parsed_documento.cuil
+        input_type = parsed_documento.input_type
+    except ValidationError as exc:
+        parse_error = " ".join(exc.messages)
+        error_type = (
+            "invalid_cuil" if len(_digits_only(documento_raw)) == 11 else "invalid_dni"
+        )
+
+    sexo = ""
+    if not parse_error:
+        try:
+            sexo = normalize_import_sexo(sexo_raw)
+        except ValidationError as exc:
+            parse_error = " ".join(exc.messages)
+            error_type = "invalid_sexo"
+
+    return ParsedCiudadanosImportRow(
+        fila=row_number,
+        documento_raw=documento_raw,
+        dni=dni,
+        cuil=cuil,
+        sexo=sexo,
+        input_type=input_type,
+        parse_error=parse_error,
+        error_type=error_type,
+    )
+
+
 def load_ciudadanos_import_rows(uploaded_file) -> list[ParsedCiudadanosImportRow]:
     workbook, rows = _load_rows_from_workbook(uploaded_file)
     try:
@@ -191,57 +243,9 @@ def load_ciudadanos_import_rows(uploaded_file) -> list[ParsedCiudadanosImportRow
 
         parsed_rows: list[ParsedCiudadanosImportRow] = []
         for row_number, row in enumerate(rows[1:], start=2):
-            documento_raw = _clean_cell(
-                row[header_map["documento"]]
-                if header_map["documento"] < len(row)
-                else ""
-            )
-            sexo_raw = _clean_cell(
-                row[header_map["sexo"]]
-                if "sexo" in header_map and header_map["sexo"] < len(row)
-                else ""
-            )
-            if not documento_raw and not sexo_raw:
-                continue
-
-            dni = ""
-            cuil = ""
-            input_type = ""
-            parse_error = ""
-            error_type = ""
-            try:
-                parsed_documento = parse_cuil_o_dni(documento_raw)
-                dni = parsed_documento.dni
-                cuil = parsed_documento.cuil
-                input_type = parsed_documento.input_type
-            except ValidationError as exc:
-                parse_error = " ".join(exc.messages)
-                error_type = (
-                    "invalid_cuil"
-                    if len(_digits_only(documento_raw)) == 11
-                    else "invalid_dni"
-                )
-
-            sexo = ""
-            if not parse_error:
-                try:
-                    sexo = normalize_import_sexo(sexo_raw)
-                except ValidationError as exc:
-                    parse_error = " ".join(exc.messages)
-                    error_type = "invalid_sexo"
-
-            parsed_rows.append(
-                ParsedCiudadanosImportRow(
-                    fila=row_number,
-                    documento_raw=documento_raw,
-                    dni=dni,
-                    cuil=cuil,
-                    sexo=sexo,
-                    input_type=input_type,
-                    parse_error=parse_error,
-                    error_type=error_type,
-                )
-            )
+            parsed_row = _parse_ciudadanos_import_row(row_number, row, header_map)
+            if parsed_row:
+                parsed_rows.append(parsed_row)
 
         if not parsed_rows:
             raise ValidationError(
@@ -401,7 +405,7 @@ def _build_ciudadano_payload_from_renaper(
     sexo: str,
 ) -> tuple[dict[str, object] | None, str | None]:
     data = _apply_sexo_to_renaper_data(result.get("data") or {}, sexo)
-    ciudadano_data, error = ComedorService._build_ciudadano_data_from_renaper(data, dni)
+    ciudadano_data, error = ComedorService.build_ciudadano_data_from_renaper(data, dni)
     if not ciudadano_data:
         return None, error
     ciudadano_data.update(
@@ -539,22 +543,18 @@ def process_ciudadanos_import_row(
         ciudadano_data["modificado_por"] = requested_by
 
     with transaction.atomic():
-        existing = _get_existing_estandar_by_dni(row.dni)
-        if existing:
-            return {
-                "status": "existing",
-                "mensaje": "Ya existe un ciudadano estandar para el DNI informado.",
-                "error_type": "",
-                "sexos_intentados": sexos_intentados,
-                "ciudadano": existing,
-                "systemic": False,
-                "contacted_renaper": True,
-            }
-        ciudadano = Ciudadano.objects.create(**ciudadano_data)
+        ciudadano = _get_existing_estandar_by_dni(row.dni)
+        created = ciudadano is None
+        if created:
+            ciudadano = Ciudadano.objects.create(**ciudadano_data)
 
     return {
-        "status": "created",
-        "mensaje": "Ciudadano creado desde RENAPER.",
+        "status": "created" if created else "existing",
+        "mensaje": (
+            "Ciudadano creado desde RENAPER."
+            if created
+            else "Ya existe un ciudadano estandar para el DNI informado."
+        ),
         "error_type": "",
         "sexos_intentados": sexos_intentados,
         "ciudadano": ciudadano,

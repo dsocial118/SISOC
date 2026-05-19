@@ -122,10 +122,14 @@ def _ids_centros_referente(user):
 
     from centrodeinfancia.models import AccesoCDI  # noqa: PLC0415
 
-    if not AccesoCDI.objects.filter(user=user).exists():
+    user_id = getattr(user, "pk", None)
+    if not user_id:
+        return None
+
+    if not AccesoCDI.objects.filter(user_id=user_id).exists():
         return None
     return list(
-        AccesoCDI.objects.filter(user=user, activo=True).values_list(
+        AccesoCDI.objects.filter(user_id=user_id, activo=True).values_list(
             "centro_id", flat=True
         )
     )

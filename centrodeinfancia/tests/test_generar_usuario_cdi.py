@@ -289,6 +289,52 @@ def test_referente_solo_ve_su_centro():
 
 
 @pytest.mark.django_db
+def test_detail_referente_solo_lista_su_propia_credencial():
+    provincia = Provincia.objects.create(nombre="Tucuman")
+    centro = CentroDeInfancia.objects.create(nombre="CDI Cred", provincia=provincia)
+    referente = _referente("ref-propio", centro)
+    otro_referente = _referente("ref-ajeno", centro)
+    referente.profile.temporary_password_plaintext = "propia-temporal"
+    referente.profile.save(update_fields=["temporary_password_plaintext"])
+    otro_referente.profile.temporary_password_plaintext = "ajena-temporal"
+    otro_referente.profile.save(update_fields=["temporary_password_plaintext"])
+
+    request = RequestFactory().get("/")
+    request.user = referente
+    view = CentroDeInfanciaDetailView()
+    view.setup(request, pk=centro.pk)
+    view.object = centro
+
+    usuarios_cdi = list(view.get_context_data(object=centro)["usuarios_cdi"])
+
+    assert [acceso.user_id for acceso in usuarios_cdi] == [referente.id]
+
+
+@pytest.mark.django_db
+def test_detail_superuser_lista_todas_las_credenciales_del_centro():
+    provincia = Provincia.objects.create(nombre="San Luis")
+    centro = CentroDeInfancia.objects.create(nombre="CDI Admin", provincia=provincia)
+    referente = _referente("ref-admin-1", centro)
+    otro_referente = _referente("ref-admin-2", centro)
+    superadmin = User.objects.create_superuser(
+        username="su-cdi", email="su-cdi@example.com", password="test1234"
+    )
+
+    request = RequestFactory().get("/")
+    request.user = superadmin
+    view = CentroDeInfanciaDetailView()
+    view.setup(request, pk=centro.pk)
+    view.object = centro
+
+    usuarios_cdi = list(view.get_context_data(object=centro)["usuarios_cdi"])
+
+    assert {acceso.user_id for acceso in usuarios_cdi} == {
+        referente.id,
+        otro_referente.id,
+    }
+
+
+@pytest.mark.django_db
 def test_provincial_no_se_ve_afectado_por_scope_referente():
     provincia = Provincia.objects.create(nombre="Formosa")
     centro = CentroDeInfancia.objects.create(nombre="CDI Prov", provincia=provincia)

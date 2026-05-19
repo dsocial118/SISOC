@@ -652,11 +652,15 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             self.request.user, self.object
         )
         if context["puede_ver_usuarios_cdi"]:
-            context["usuarios_cdi"] = (
-                AccesoCDI.objects.filter(centro=self.object)
-                .select_related("user", "user__profile")
-                .order_by("-activo", "user__username")
-            )
+            usuarios_cdi = AccesoCDI.objects.filter(centro=self.object)
+            if not getattr(self.request.user, "is_superuser", False):
+                usuarios_cdi = usuarios_cdi.filter(
+                    user=self.request.user,
+                    activo=True,
+                )
+            context["usuarios_cdi"] = usuarios_cdi.select_related(
+                "user", "user__profile"
+            ).order_by("-activo", "user__username")
         return context
 
 
