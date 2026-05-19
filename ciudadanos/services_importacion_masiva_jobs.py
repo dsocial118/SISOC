@@ -488,7 +488,7 @@ def process_ciudadanos_import_job(
                 row=row,
                 requested_by=job.requested_by,
             )
-        except Exception:
+        except Exception as exc:
             logger.exception(
                 (
                     "Fallo inesperado procesando lote de ciudadanos. "
@@ -498,9 +498,13 @@ def process_ciudadanos_import_job(
                 row.fila,
                 row.documento_raw,
             )
+            error_detail = str(exc).strip()
+            message = "Ocurrio un error inesperado al procesar la fila."
+            if error_detail:
+                message = f"{message} Detalle: {error_detail}"
             result = {
                 "status": "failed",
-                "mensaje": "Ocurrio un error inesperado al procesar la fila.",
+                "mensaje": message,
                 "error_type": "unexpected_row_error",
                 "sexos_intentados": "",
                 "ciudadano": None,

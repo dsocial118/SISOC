@@ -16,6 +16,7 @@ from openpyxl import Workbook, load_workbook
 from ciudadanos.models import Ciudadano, CiudadanosImportJob, CiudadanosImportJobRow
 from ciudadanos.services_importacion_masiva import (
     generate_ciudadanos_import_template,
+    generate_ciudadanos_import_job_results_workbook,
     load_ciudadanos_import_rows,
     parse_cuil_o_dni,
 )
@@ -30,12 +31,13 @@ from ciudadanos.services_importacion_masiva_jobs import (
 )
 from ciudadanos.views import CiudadanosListView
 from ciudadanos.views_importacion_masiva import (
+    CiudadanosImportJobExportView,
     CiudadanosImportJobDetailView,
     CiudadanosImportJobResumeView,
     CiudadanosImportTemplateView,
     CiudadanosImportUploadView,
 )
-from core.models import Sexo
+from core.models import Localidad, Municipio, Nacionalidad, Provincia, Sexo
 
 User = get_user_model()
 
@@ -398,6 +400,44 @@ def test_process_ciudadanos_import_job_continues_after_renaper_unexpected_error(
 
 @pytest.mark.django_db
 @override_settings(CIUDADANOS_IMPORT_RENAPER_SLEEP_SECONDS=0)
+def test_process_ciudadanos_import_job_records_unexpected_row_error_detail(mocker):
+    user = User.objects.create_user(username="ciudadanos_import_row_exception")
+    upload = _build_excel_file(
+        [
+            ("44535032", "M"),
+            ("44535030", "M"),
+        ]
+    )
+    job = create_ciudadanos_import_job(uploaded_file=upload, requested_by=user)
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva_jobs.process_ciudadanos_import_row",
+        side_effect=[
+            ValueError("RENAPER devolvio DNI invalido para la fila."),
+            {
+                "status": "failed",
+                "mensaje": "No se encontro coincidencia.",
+                "error_type": "no_match",
+                "sexos_intentados": "M",
+                "ciudadano": None,
+                "systemic": False,
+                "contacted_renaper": True,
+            },
+        ],
+    )
+
+    process_ciudadanos_import_job(job)
+    job.refresh_from_db()
+
+    assert job.status == CiudadanosImportJob.Status.COMPLETED_WITH_ERRORS
+    assert job.processed_rows == 2
+    failed_row = job.rows.get(fila=2)
+    assert failed_row.status == CiudadanosImportJobRow.Status.FAILED
+    assert failed_row.error_type == "unexpected_row_error"
+    assert "RENAPER devolvio DNI invalido" in failed_row.mensaje
+
+
+@pytest.mark.django_db
+@override_settings(CIUDADANOS_IMPORT_RENAPER_SLEEP_SECONDS=0)
 def test_process_ciudadanos_import_job_pauses_on_systemic_error_and_resumes(mocker):
     user = User.objects.create_user(username="ciudadanos_import_pause")
     upload = _build_excel_file([("30111222", "M")])
@@ -570,6 +610,134 @@ def test_ciudadanos_import_job_detail_view_lists_global_history_row():
 
 
 @pytest.mark.django_db
+def test_generate_ciudadanos_import_job_results_workbook_matches_visible_rows():
+    user = User.objects.create_user(username="ciudadanos_export_results")
+    ciudadano = Ciudadano.objects.create(
+        apellido="Exportado",
+        nombre="Ciudadano",
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=30111222,
+        tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR,
+    )
+    job = CiudadanosImportJob.objects.create(
+        requested_by=user,
+        original_filename="ciudadanos.xlsx",
+        archivo="ciudadanos/import_jobs/test/ciudadanos.xlsx",
+        status=CiudadanosImportJob.Status.COMPLETED_WITH_ERRORS,
+        total_rows=4,
+        processed_rows=3,
+        created_rows=1,
+        existing_rows=1,
+        failed_rows=1,
+        pending_rows=1,
+    )
+    CiudadanosImportJobRow.objects.create(
+        job=job,
+        fila=2,
+        documento_raw="30111222",
+        dni="30111222",
+        status=CiudadanosImportJobRow.Status.CREATED,
+        ciudadano=ciudadano,
+        mensaje="Ciudadano creado desde RENAPER.",
+    )
+    CiudadanosImportJobRow.objects.create(
+        job=job,
+        fila=3,
+        documento_raw="44535030",
+        dni="44535030",
+        status=CiudadanosImportJobRow.Status.EXISTING,
+        ciudadano=ciudadano,
+        mensaje="Ya existe.",
+    )
+    CiudadanosImportJobRow.objects.create(
+        job=job,
+        fila=4,
+        documento_raw="44535032",
+        dni="44535032",
+        status=CiudadanosImportJobRow.Status.FAILED,
+        error_type="unexpected_error",
+        mensaje="Ocurrio un error inesperado al consultar RENAPER.",
+    )
+    CiudadanosImportJobRow.objects.create(
+        job=job,
+        fila=5,
+        documento_raw="40111222",
+        dni="40111222",
+        status=CiudadanosImportJobRow.Status.PENDING,
+    )
+
+    content = generate_ciudadanos_import_job_results_workbook(job)
+    workbook = load_workbook(BytesIO(content))
+
+    assert workbook.sheetnames == ["filas"]
+    worksheet = workbook["filas"]
+    rows = list(worksheet.iter_rows(values_only=True))
+    assert rows[0] == (
+        "Fila",
+        "CUIL/DNI",
+        "DNI",
+        "Sexo",
+        "Resultado",
+        "Estado",
+        "Intentos sexo",
+        "Intentos",
+        "Detalle",
+        "Ciudadano",
+    )
+    assert "error_type" not in rows[0]
+    assert "ciudadano_id" not in rows[0]
+    assert [row[4] for row in rows[1:]] == ["OK", "OK", "Fallo", "Pendiente"]
+    assert [row[5] for row in rows[1:]] == [
+        "Creado",
+        "Existente",
+        "Fallido",
+        "Pendiente",
+    ]
+    assert (
+        rows[3][8]
+        == "Ocurrio un error inesperado al consultar RENAPER. (unexpected_error)"
+    )
+    assert worksheet["J2"].value == "Ver"
+    assert worksheet["J2"].hyperlink.target.endswith(f"/ciudadanos/ver/{ciudadano.pk}")
+
+
+@pytest.mark.django_db
+def test_ciudadanos_import_job_export_view_downloads_xlsx():
+    user = _grant_add_ciudadano(User.objects.create_user(username="ciudadanos_export"))
+    job = CiudadanosImportJob.objects.create(
+        requested_by=user,
+        original_filename="ciudadanos.xlsx",
+        archivo="ciudadanos/import_jobs/test/ciudadanos.xlsx",
+        status=CiudadanosImportJob.Status.COMPLETED,
+    )
+    CiudadanosImportJobRow.objects.create(
+        job=job,
+        fila=2,
+        documento_raw="30111222",
+        dni="30111222",
+        status=CiudadanosImportJobRow.Status.CREATED,
+    )
+
+    response = CiudadanosImportJobExportView.as_view()(
+        _build_request(
+            "get",
+            f"/ciudadanos/importacion-masiva/lotes/{job.pk}/exportar/",
+            user,
+        ),
+        pk=job.pk,
+    )
+
+    assert response.status_code == 200
+    assert (
+        response["Content-Type"]
+        == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert response["Content-Disposition"].startswith(
+        'attachment; filename="resultado_importacion_ciudadanos_'
+    )
+
+
+@pytest.mark.django_db
 def test_ciudadanos_import_resume_view_marks_failed_job_pending():
     user = _grant_add_ciudadano(User.objects.create_user(username="ciudadanos_resume"))
     job = CiudadanosImportJob.objects.create(
@@ -641,3 +809,42 @@ def test_process_ciudadanos_import_job_uses_existing_sexo_catalog(mocker):
 
     ciudadano = Ciudadano.objects.get(documento=30111222)
     assert ciudadano.sexo == sexo
+
+
+@pytest.mark.django_db
+def test_process_ciudadanos_import_job_normalizes_renaper_foreign_key_ids(mocker):
+    sexo = Sexo.objects.create(sexo="Masculino")
+    nacionalidad = Nacionalidad.objects.create(nacionalidad="Argentina")
+    provincia = Provincia.objects.create(nombre="Chaco")
+    municipio = Municipio.objects.create(nombre="Resistencia", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Resistencia", municipio=municipio)
+    user = User.objects.create_user(username="ciudadanos_fk_ids")
+    upload = _build_excel_file([("30111223", "M")])
+    job = create_ciudadanos_import_job(uploaded_file=upload, requested_by=user)
+    renaper_result = _renaper_success(
+        dni="30111223",
+        sexo="M",
+        cuil="20301112239",
+    )
+    renaper_result["data"].update(
+        {
+            "sexo": sexo.pk,
+            "nacionalidad_api": "Argentina",
+            "provincia_api": "Chaco",
+            "municipio_api": "Resistencia",
+            "localidad_api": "Resistencia",
+        }
+    )
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva.consultar_datos_renaper",
+        return_value=renaper_result,
+    )
+
+    process_ciudadanos_import_job(job)
+
+    ciudadano = Ciudadano.objects.get(documento=30111223)
+    assert ciudadano.sexo_id == sexo.pk
+    assert ciudadano.nacionalidad_id == nacionalidad.pk
+    assert ciudadano.provincia_id == provincia.pk
+    assert ciudadano.municipio_id == municipio.pk
+    assert ciudadano.localidad_id == localidad.pk

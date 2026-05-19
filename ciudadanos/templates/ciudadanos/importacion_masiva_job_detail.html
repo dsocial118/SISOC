@@ -25,6 +25,8 @@
                     <div class="d-flex flex-wrap gap-2">
                         <a href="{% url 'ciudadanos_importacion_masiva_lote' job.id %}"
                            class="btn btn-outline-primary">Actualizar estado</a>
+                        <a href="{% url 'ciudadanos_importacion_masiva_lote_exportar' job.id %}"
+                           class="btn btn-outline-success">Exportar Excel</a>
                         {% if can_resume %}
                             <form method="post"
                                   action="{% url 'ciudadanos_importacion_masiva_reanudar' job.id %}">
