@@ -91,6 +91,23 @@ def test_settings_homologacion_usa_perfil_similar_a_produccion(monkeypatch):
     )
 
 
+def test_settings_homologacion_permite_override_http_interno(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "homologacion")
+    monkeypatch.setenv("DJANGO_SECURE_SSL_REDIRECT", "false")
+    monkeypatch.setenv("DJANGO_SESSION_COOKIE_SECURE", "false")
+    monkeypatch.setenv("DJANGO_CSRF_COOKIE_SECURE", "false")
+    monkeypatch.setenv("DJANGO_SECURE_HSTS_SECONDS", "0")
+
+    module = _load_settings_module()
+
+    assert module.DEFAULT_SCHEME == "https"
+    assert module.SECURE_SSL_REDIRECT is False
+    assert module.SESSION_COOKIE_SECURE is False
+    assert module.CSRF_COOKIE_SECURE is False
+    assert module.SECURE_HSTS_SECONDS == 0
+    assert module.SECURE_HSTS_INCLUDE_SUBDOMAINS is False
+
+
 def test_settings_homologacion_agrega_origen_local_para_csrf(monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "homologacion")
     monkeypatch.setenv(
