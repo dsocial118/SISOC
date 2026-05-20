@@ -7,6 +7,7 @@
         {% if doc.estado_valor == "Rectificar" %}<i class="bi bi-x-circle text-danger fs-4 fw-bold me-1"></i>{% endif %}
         {{ doc.nombre }}
         {% if doc.obligatorio %}<span class="text-danger fs-5 ms-1">*</span>{% endif %}
+        {% if doc.origen == "organizacion" %}<div class="small text-muted">Documento de la organizacion</div>{% endif %}
     </td>
     <td id="estado-{{ doc.archivo_id|default:doc.row_id }}"
         class="ps-1 text-center"
@@ -73,7 +74,7 @@
             <a href="{{ doc.archivo_url }}"
                target="_blank"
                class="btn btn-primary btn-sm">Ver Archivo</a>
-            {% if not admision.enviada_a_archivo and admision.estado_admision != "descartado" and admision.estado_admision != "informe_tecnico_finalizado" and admision.estado_admision != "informe_tecnico_docx_editado" and admision.estado_admision != "informe_tecnico_en_revision" and admision.estado_admision != "informe_tecnico_en_subsanacion" and admision.estado_admision != "informe_tecnico_aprobado" and admision.estado_admision != "if_informe_tecnico_cargado" and admision.estado_admision != "enviado_a_legales" and admision.estado_admision != "enviado_a_acompaniamiento" %}
+            {% if doc.origen != "organizacion" and not admision.enviada_a_archivo and admision.estado_admision != "descartado" and admision.estado_admision != "informe_tecnico_finalizado" and admision.estado_admision != "informe_tecnico_docx_editado" and admision.estado_admision != "informe_tecnico_en_revision" and admision.estado_admision != "informe_tecnico_en_subsanacion" and admision.estado_admision != "informe_tecnico_aprobado" and admision.estado_admision != "if_informe_tecnico_cargado" and admision.estado_admision != "enviado_a_legales" and admision.estado_admision != "enviado_a_acompaniamiento" %}
                 {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
                     <button class="btn btn-sm btn-danger px-3 ms-2"
                             data-call-click="confirmarEliminar"
@@ -83,7 +84,7 @@
                 {% endif %}
             {% endif %}
         {% else %}
-            {% if not doc.es_personalizado and not admision.enviada_a_archivo and admision.estado_admision != "descartado" %}
+            {% if doc.origen != "organizacion" and not doc.es_personalizado and not admision.enviada_a_archivo and admision.estado_admision != "descartado" %}
                 {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
                     <input type="file"
                            id="file-{{ doc.documentacion_id }}"
@@ -108,7 +109,7 @@
     </td>
     <td id="gde-{{ doc.id }}">
         {% if doc.estado == "Aceptado" %}
-            {% if request.user.is_superuser or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" %}
+            {% if doc.archivo_id and request.user.is_superuser or doc.archivo_id and request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or doc.archivo_id and request.user|has_perm_code:"auth.role_tecnico_comedor" or doc.archivo_id and request.user|has_any_group:"Tecnico Comedor" %}
                 <!-- Modo vista (por defecto) -->
                 <div id="gde-display-{{ doc.id }}"
                      class="gde-display"

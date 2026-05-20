@@ -1,12 +1,22 @@
 """Tests for test admisiones service helpers unit."""
 
+import importlib
+import sys
 from datetime import datetime
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from io import BytesIO
 from contextlib import nullcontext
 
 import pytest
 from django.utils import timezone
+
+# WeasyPrint needs native GTK libraries on Windows; these helper tests do not render PDFs.
+try:
+    importlib.import_module("weasyprint")
+except OSError:
+    weasyprint_stub = ModuleType("weasyprint")
+    weasyprint_stub.HTML = object
+    sys.modules.setdefault("weasyprint", weasyprint_stub)
 
 from admisiones.services import admisiones_service as module
 
@@ -761,6 +771,28 @@ def test_transiciones_estado_y_helpers_obligatorios(mocker):
     assert module.AdmisionService._todos_obligatorios_tienen_archivos(adm) is True
 
 
+def test_obligatorio_no_usa_documento_organizacion_si_hay_archivo_admision(mocker):
+    adm = SimpleNamespace(pk=40, tipo_convenio=object())
+    doc = SimpleNamespace(
+        pk=1,
+        archivos_prefetch_para_admision=[
+            SimpleNamespace(estado="Rectificar", archivo="admisiones/doc.pdf")
+        ],
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.Documentacion.objects.filter",
+        return_value=_ListChain([doc]),
+    )
+    org_fallback = mocker.patch.object(
+        module.AdmisionService,
+        "_existe_archivo_organizacion_obligatorio_admision",
+        return_value=True,
+    )
+
+    assert module.AdmisionService._todos_obligatorios_aceptados(adm) is False
+    org_fallback.assert_not_called()
+
+
 def test_actualizar_estados_por_cambio_documento(mocker):
     """Actualiza estado documental según rectificación y completitud obligatoria."""
     adm = SimpleNamespace(
@@ -966,6 +998,7 @@ def test_generar_documento_admision_and_update_context(mocker):
         tipo_convenio=object(),
         comedor=SimpleNamespace(nombre="Comedor X"),
         estado_legales="Informe Complementario Solicitado",
+        estado_admision="informe_tecnico_finalizado",
         observaciones_informe_tecnico_complementario="obs",
     )
     mocker.patch(
@@ -1038,12 +1071,16 @@ def test_generar_documento_admision_and_update_context(mocker):
     mocker.patch.object(
         module.AdmisionService, "_verificar_permiso_tecnico_dupla", return_value=True
     )
+    freeze_mock = mocker.patch.object(
+        module.AdmisionService, "congelar_documentacion_organizacional"
+    )
 
     ctx = module.AdmisionService.get_admision_update_context(
         adm, user=SimpleNamespace(is_superuser=False)
     )
     assert ctx["obligatorios_totales"] == 1
     assert ctx["stats"]["aceptados"] == 1
+    freeze_mock.assert_not_called()
 
 
 def test_contextos_create_admision_y_instancia_paths(mocker):

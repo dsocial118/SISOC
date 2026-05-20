@@ -55,6 +55,7 @@ from iam.services import user_has_permission_code
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm, build_programa_aliases
+from expedientespagos.models import ExpedientePago
 
 MESES_ES_CORTOS = [
     "Ene",
@@ -825,6 +826,50 @@ def _build_domicilio_completo(comedor: Comedor) -> str:
     return ", ".join(partes) if partes else "Sin información"
 
 
+def _build_mes_ejecucion_context(comedor_obj):
+    if getattr(comedor_obj, "programa_id", None) != 2:
+        return {
+            "mostrar_mes_ejecucion": False,
+            "mes_ejecucion_resumen": None,
+        }
+
+    expediente = (
+        ExpedientePago.objects.filter(comedor_id=comedor_obj.id)
+        .order_by("-fecha_creacion", "-id")
+        .first()
+    )
+    resumen = {"expediente": expediente}
+
+    if expediente:
+        prestaciones = [
+            expediente.prestaciones_mensuales_desayuno,
+            expediente.prestaciones_mensuales_almuerzo,
+            expediente.prestaciones_mensuales_merienda,
+            expediente.prestaciones_mensuales_cena,
+        ]
+        montos = [
+            expediente.monto_mensual_desayuno,
+            expediente.monto_mensual_almuerzo,
+            expediente.monto_mensual_merienda,
+            expediente.monto_mensual_cena,
+        ]
+        resumen.update(
+            {
+                "cantidad_prestaciones": sum(valor or 0 for valor in prestaciones),
+                "monto_total": (
+                    expediente.total
+                    if expediente.total is not None
+                    else sum(valor or 0 for valor in montos)
+                ),
+            }
+        )
+
+    return {
+        "mostrar_mes_ejecucion": True,
+        "mes_ejecucion_resumen": resumen,
+    }
+
+
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class ComedorListView(LoginRequiredMixin, ListView):
     model = Comedor
@@ -852,6 +897,7 @@ class ComedorListView(LoginRequiredMixin, ListView):
             {"title": "Tipo"},
             {"title": "Organización"},
             {"title": "Programa"},
+            {"title": "Mes de ejecucion"},
             {"title": "Dupla"},
             {"title": "Estado general"},
             {"title": "Estado actividad"},
@@ -878,6 +924,7 @@ class ComedorListView(LoginRequiredMixin, ListView):
             {"name": "tipo"},
             {"name": "organizacion"},
             {"name": "programa"},
+            {"name": "mes_ejecucion"},
             {"name": "dupla"},
             {"name": "estado_general"},
             {"name": "estado_actividad"},
@@ -906,6 +953,7 @@ class ComedorListView(LoginRequiredMixin, ListView):
             default_keys=[
                 "nombre",
                 "tipo",
+                "mes_ejecucion",
                 "ubicacion",
                 "direccion",
                 "referente",
@@ -1259,6 +1307,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         selected_admision = selected_admision_context["selected_admision"]
         informe_tecnico = selected_admision_context["informe_tecnico"]
         responsables_context = _build_organizacion_responsables_context(self.object)
+        mes_ejecucion_context = _build_mes_ejecucion_context(self.object)
 
         # Nómina del convenio seleccionado
         selected_admision_pk = getattr(selected_admision, "pk", None)
@@ -1331,6 +1380,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 ),
                 "domicilio_completo_comedor": _build_domicilio_completo(self.object),
                 **responsables_context,
+                **mes_ejecucion_context,
             }
         )
         timeline_selected = ComedorService.get_admision_timeline_context_from_admision(

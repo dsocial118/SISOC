@@ -1,0 +1,178 @@
+{% with doc=row.documentacion archivo=row.archivo %}
+    <tr id="org-doc-row-{{ doc.id }}">
+        <td class="doc-name">
+            <strong>{{ doc.nombre }}</strong>
+            {% if doc.obligatorio %}<span class="text-danger fs-5 ms-1">*</span>{% endif %}
+            {% if archivo %}
+                <div class="mt-1">
+                    <a href="{% url 'organizacion_documento_historial' organizacion.id doc.id %}"
+                       class="btn btn-sm btn-outline-secondary">Historial</a>
+                </div>
+            {% endif %}
+        </td>
+        <td>
+            {% if archivo %}
+                {% if archivo.estado == "Aceptado" %}
+                    <span class="badge bg-success">Aceptado</span>
+                {% elif archivo.estado == "A Validar Abogado" %}
+                    {% if puede_validar_documentacion_organizacion %}
+                        <select class="form-control form-control-sm org-doc-state-select border border-2 border-primary"
+                                data-url="{% url 'organizacion_documento_estado' archivo.id %}"
+                                data-current-value="{{ archivo.estado }}"
+                                data-requires-observacion="1">
+                            <option value="A Validar Abogado" selected>A Validar Abogado</option>
+                            <option value="Aceptado">Aceptado</option>
+                            <option value="Rectificar">Rectificar</option>
+                        </select>
+                    {% else %}
+                        <span class="badge bg-primary">A Validar Abogado</span>
+                    {% endif %}
+                {% elif puede_enviar_documentacion_organizacion %}
+                    <select class="form-control form-control-sm org-doc-state-select{% if archivo.estado == 'Rectificar' %} border border-danger border-2{% endif %}"
+                            data-url="{% url 'organizacion_documento_estado' archivo.id %}"
+                            data-current-value="{{ archivo.estado }}"
+                            data-requires-observacion="0">
+                        {% if archivo.estado == "Rectificar" %}<option value="Rectificar" selected disabled>Rectificar</option>{% endif %}
+                        <option value="Documento adjunto"
+                                {% if archivo.estado == "Documento adjunto" %}selected disabled{% endif %}>
+                            Documento adjunto
+                        </option>
+                        <option value="A Validar Abogado">A Validar Abogado</option>
+                    </select>
+                {% else %}
+                    {% if archivo.estado == "Rectificar" %}
+                        <span class="badge bg-danger">Rectificar</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ archivo.estado }}</span>
+                    {% endif %}
+                {% endif %}
+                {% if archivo.observaciones %}<div class="small text-warning mt-1">{{ archivo.observaciones }}</div>{% endif %}
+            {% else %}
+                <span class="badge bg-secondary">Pendiente</span>
+            {% endif %}
+        </td>
+        <td>
+            {% if archivo %}
+                <div class="documentacion-compact-controls documentacion-gde">
+                    <a href="{{ archivo.archivo.url }}"
+                       target="_blank"
+                       class="btn btn-primary btn-sm">
+                        <i class="fas fa-eye"></i>
+                        Ver Archivo
+                    </a>
+                    <div id="org-gde-display-{{ archivo.id }}"
+                         class="{% if puede_validar_documentacion_organizacion or puede_enviar_documentacion_organizacion %}org-inline-display{% endif %}"
+                         {% if puede_validar_documentacion_organizacion or puede_enviar_documentacion_organizacion %}data-org-inline-edit="org-gde-edit-{{ archivo.id }}"{% endif %}>
+                        {% if archivo.numero_gde %}
+                            <span class="text-success fw-bold">{{ archivo.numero_gde }}</span>
+                            <i class="bi bi-pencil-square ms-2 text-muted" title="Editar numero GDE"></i>
+                        {% else %}
+                            <span class="text-muted">Sin numero GDE</span>
+                            <i class="bi bi-plus-circle ms-2 text-primary"
+                               title="Agregar numero GDE"></i>
+                        {% endif %}
+                    </div>
+                    {% if puede_validar_documentacion_organizacion or puede_enviar_documentacion_organizacion %}
+                        <div id="org-gde-edit-{{ archivo.id }}" class="org-inline-edit d-none">
+                            <div class="d-flex align-items-center">
+                                <input type="text"
+                                       class="form-control form-control-sm me-2 org-inline-input"
+                                       value="{{ archivo.numero_gde|default_if_none:'' }}"
+                                       data-empty-text="Sin numero GDE"
+                                       data-url="{% url 'organizacion_documento_gde' archivo.id %}"
+                                       data-field="numero_gde"
+                                       data-display-id="org-gde-display-{{ archivo.id }}"
+                                       data-edit-id="org-gde-edit-{{ archivo.id }}"
+                                       maxlength="50"
+                                       placeholder="Ingrese numero GDE" />
+                                <button type="button"
+                                        class="btn btn-success btn-sm me-1 org-inline-save"
+                                        title="Guardar">
+                                    <i class="bi bi-check"></i>
+                                </button>
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm org-inline-cancel"
+                                        title="Cancelar">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <span style="color: #9ca3af;">Sin archivo</span>
+            {% endif %}
+        </td>
+        <td>
+            <div class="documentacion-compact-controls">
+                {% if archivo %}
+                    <div id="org-venc-display-{{ archivo.id }}"
+                         class="{% if puede_validar_documentacion_organizacion or puede_enviar_documentacion_organizacion %}org-inline-display{% endif %}"
+                         {% if puede_validar_documentacion_organizacion or puede_enviar_documentacion_organizacion %}data-org-inline-edit="org-venc-edit-{{ archivo.id }}"{% endif %}>
+                        {% if archivo.fecha_vencimiento %}
+                            <span class="{% if archivo.esta_vencido %}text-danger{% elif archivo.esta_por_vencer %}text-warning{% else %}text-success{% endif %} fw-bold">
+                                {{ archivo.fecha_vencimiento|date:"d/m/Y" }}
+                            </span>
+                            {% if archivo.esta_vencido %}
+                                <span class="badge-status vencido ms-1">Vencido</span>
+                            {% elif archivo.esta_por_vencer %}
+                                <span class="badge-status por-vencer ms-1">Por vencer</span>
+                            {% else %}
+                                <span class="badge-status vigente ms-1">Vigente</span>
+                            {% endif %}
+                            <i class="bi bi-pencil-square ms-2 text-muted"
+                               title="Editar vencimiento"></i>
+                        {% else %}
+                            <span class="text-muted">Sin vencimiento</span>
+                            <i class="bi bi-plus-circle ms-2 text-primary"
+                               title="Agregar vencimiento"></i>
+                        {% endif %}
+                    </div>
+                    {% if puede_validar_documentacion_organizacion or puede_enviar_documentacion_organizacion %}
+                        <div id="org-venc-edit-{{ archivo.id }}" class="org-inline-edit d-none">
+                            <div class="d-flex align-items-center">
+                                <input type="date"
+                                       class="form-control form-control-sm me-2 org-inline-input"
+                                       value="{{ archivo.fecha_vencimiento|date:'Y-m-d' }}"
+                                       data-empty-text="Sin vencimiento"
+                                       data-url="{% url 'organizacion_documento_vencimiento' archivo.id %}"
+                                       data-field="fecha_vencimiento"
+                                       data-display-id="org-venc-display-{{ archivo.id }}"
+                                       data-edit-id="org-venc-edit-{{ archivo.id }}" />
+                                <button type="button"
+                                        class="btn btn-success btn-sm me-1 org-inline-save"
+                                        title="Guardar">
+                                    <i class="bi bi-check"></i>
+                                </button>
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm org-inline-cancel"
+                                        title="Cancelar">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+                {% if puede_enviar_documentacion_organizacion %}
+                    <input type="file"
+                           id="org-doc-file-{{ doc.id }}"
+                           class="d-none org-doc-file"
+                           data-upload-url="{% url 'organizacion_documento_subir' organizacion.id doc.id %}"
+                           data-vencimiento-id="org-doc-venc-{{ doc.id }}" />
+                    <button type="button"
+                            class="btn btn-sm btn-outline-light org-doc-open-file"
+                            data-file-id="org-doc-file-{{ doc.id }}">Adjuntar</button>
+                {% endif %}
+            </div>
+            {% if puede_enviar_documentacion_organizacion %}
+                <div class="progress mt-2 documentacion-upload-progress"
+                     id="org-progress-container-{{ doc.id }}">
+                    <div class="progress-bar progress-bar-striped"
+                         role="progressbar"
+                         id="org-progress-bar-{{ doc.id }}"
+                         style="width: 0%">0%</div>
+                </div>
+            {% endif %}
+        </td>
+    </tr>
+{% endwith %}
