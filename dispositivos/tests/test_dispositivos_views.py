@@ -348,6 +348,15 @@ def test_formulario_muestra_wrappers_otro_cuando_dispositivo_tiene_valor(
         ), f"{wrapper_id} no debe tener d-none cuando 'otro' está seleccionado"
 
 
+def _doc_slot_tag(contenido, field):
+    needle = f'data-field="{field}"'
+    idx = contenido.find(needle)
+    assert idx != -1, f"No se encontró slot {field} en el template"
+    tag_start = contenido.rfind("<div", 0, idx)
+    tag_end = contenido.find(">", idx)
+    return contenido[tag_start:tag_end]
+
+
 @pytest.mark.django_db
 def test_formulario_solo_muestra_primer_slot_documento_en_creacion(
     client, user_con_permisos
@@ -403,3 +412,27 @@ def test_formulario_muestra_slots_con_documentacion_persistida_en_edicion(
     assert "d-none" not in tag_2, "El slot con archivo persistido debe ser visible"
     tag_3 = _doc_slot_tag(contenido, "documentacion_dispositivo_adicional_3")
     assert "d-none" in tag_3, "Slots sin archivo deben mantenerse ocultos"
+
+
+@pytest.mark.django_db
+def test_formulario_micro_ajustes_visibles(client, user_con_permisos):
+    client.force_login(user_con_permisos)
+
+    response = client.get(reverse("dispositivos_crear"))
+
+    assert response.status_code == 200
+    contenido = response.content.decode("utf-8")
+    assert "La Razón Social es la identidad jurídica" in contenido
+    assert "Ninguna de las anteriores" in contenido
+    assert 'inputmode="numeric"' in contenido
+    assert "Debe ingresar los 11 dígitos sin puntos ni guiones" in contenido
+    limitaciones_idx = contenido.index('name="principales_limitaciones"')
+    necesidades_idx = contenido.index('name="necesidades_prioritarias"')
+    bloque_limitaciones = contenido[max(0, limitaciones_idx - 1500) : limitaciones_idx]
+    bloque_necesidades = contenido[max(0, necesidades_idx - 1500) : necesidades_idx]
+    assert (
+        'class="col-md-12"' in bloque_limitaciones
+    ), "Principales limitaciones debe estar en col-md-12"
+    assert (
+        'class="col-md-12"' in bloque_necesidades
+    ), "Necesidades prioritarias debe estar en col-md-12"
