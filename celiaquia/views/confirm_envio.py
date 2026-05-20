@@ -14,6 +14,7 @@ from celiaquia.models import Expediente, RegistroErroneo
 from celiaquia.services.expediente_service import ExpedienteService
 from celiaquia.services.legajo_service import LegajoService
 from celiaquia.views.expediente import _is_ajax
+from users.territorial_scope import is_territorial_user, user_can_access_territory
 
 logger = logging.getLogger("django")
 
@@ -35,21 +36,29 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
         )
 
         user = request.user
-        same_owner = user == expediente.usuario_provincia
 
-        def _prov_id(usuario):
-            try:
-                return getattr(getattr(usuario, "profile", None), "provincia_id", None)
-            except Exception:
-                return None
+        def _expediente_in_scope():
+            if not is_territorial_user(user):
+                return user == expediente.usuario_provincia
+            legajos = expediente.expediente_ciudadanos.select_related("ciudadano")
+            if not legajos.exists():
+                return user_can_access_territory(
+                    user,
+                    provincia_id=None,
+                    owner=expediente.usuario_provincia,
+                )
+            return all(
+                user_can_access_territory(
+                    user,
+                    provincia_id=getattr(legajo.ciudadano, "provincia_id", None),
+                    municipio_id=getattr(legajo.ciudadano, "municipio_id", None),
+                    localidad_id=getattr(legajo.ciudadano, "localidad_id", None),
+                    owner=expediente.usuario_provincia,
+                )
+                for legajo in legajos
+            )
 
-        same_province = (
-            _prov_id(user)
-            and _prov_id(expediente.usuario_provincia)
-            and _prov_id(user) == _prov_id(expediente.usuario_provincia)
-        )
-
-        if not (user.is_staff or same_owner or same_province):
+        if not (user.is_staff or _expediente_in_scope()):
             msg = "No tiene permisos para confirmar este expediente."
             return JsonResponse({"success": False, "error": msg}, status=403)
 

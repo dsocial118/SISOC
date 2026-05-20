@@ -65,7 +65,7 @@ from VAT.services.access_scope import (
 )
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Programa, Sexo
-from users.models import Profile
+from users.models import Profile, ProfileTerritorialScope
 
 
 @pytest.fixture
@@ -177,6 +177,15 @@ def _grant_vat_revisor_access(user, *permissions):
         defaults={"name": "RevisorCentroVAT"},
     )
     user.user_permissions.add(revisor_permission, *permissions)
+
+
+def _grant_vat_provincial_access(user, *permissions):
+    provincial_permission, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_provincia_vat",
+        defaults={"name": "Provincia VAT"},
+    )
+    user.user_permissions.add(provincial_permission, *permissions)
 
 
 def _create_vat_centro(
@@ -1263,6 +1272,100 @@ def test_filter_centros_queryset_usuario_con_role_provincia_vat_aplica_scope():
     centros = list(filter_centros_queryset_for_user(Centro.objects.all(), user))
 
     assert centros == [centro_corrientes]
+
+
+@pytest.mark.django_db
+def test_vat_scope_municipio_no_habilita_toda_la_provincia():
+    provincia = Provincia.objects.create(nombre="VAT Provincia Scope")
+    municipio_scope = Municipio.objects.create(
+        nombre="Municipio Scope", provincia=provincia
+    )
+    municipio_fuera = Municipio.objects.create(
+        nombre="Municipio Fuera", provincia=provincia
+    )
+    localidad_scope = Localidad.objects.create(
+        nombre="Localidad Scope", municipio=municipio_scope
+    )
+    localidad_fuera = Localidad.objects.create(
+        nombre="Localidad Fuera", municipio=municipio_fuera
+    )
+    user = User.objects.create_user(username="vat-municipio-scope", password="test1234")
+    profile = user.profile
+    profile.es_usuario_provincial = True
+    profile.save()
+    ProfileTerritorialScope.objects.create(
+        profile=profile,
+        provincia=provincia,
+        municipio=municipio_scope,
+    )
+    _grant_vat_provincial_access(user)
+
+    centro_visible = _create_vat_centro(
+        codigo="MUN-IN",
+        provincia=provincia,
+        municipio=municipio_scope,
+        localidad=localidad_scope,
+    )
+    centro_fuera = _create_vat_centro(
+        codigo="MUN-OUT",
+        provincia=provincia,
+        municipio=municipio_fuera,
+        localidad=localidad_fuera,
+    )
+
+    centros = list(filter_centros_queryset_for_user(Centro.objects.all(), user))
+
+    assert centros == [centro_visible]
+    assert can_user_access_centro(user, centro_visible)
+    assert not can_user_access_centro(user, centro_fuera)
+
+
+@pytest.mark.django_db
+def test_vat_scope_localidad_no_habilita_otra_localidad_para_edicion():
+    provincia = Provincia.objects.create(nombre="VAT Provincia Localidad")
+    municipio = Municipio.objects.create(
+        nombre="Municipio Localidad", provincia=provincia
+    )
+    localidad_scope = Localidad.objects.create(
+        nombre="Localidad Dentro", municipio=municipio
+    )
+    localidad_fuera = Localidad.objects.create(
+        nombre="Localidad Fuera", municipio=municipio
+    )
+    user = User.objects.create_user(username="vat-localidad-scope", password="test1234")
+    profile = user.profile
+    profile.es_usuario_provincial = True
+    profile.save()
+    ProfileTerritorialScope.objects.create(
+        profile=profile,
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad_scope,
+    )
+    change_perm = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="change_centro",
+    )
+    _grant_vat_provincial_access(user, change_perm)
+
+    centro_visible = _create_vat_centro(
+        codigo="LOC-IN",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad_scope,
+    )
+    centro_fuera = _create_vat_centro(
+        codigo="LOC-OUT",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad_fuera,
+    )
+
+    centros = list(filter_centros_queryset_for_management(Centro.objects.all(), user))
+
+    assert centros == [centro_visible]
+    assert can_user_edit_centro(user, centro_visible)
+    assert not can_user_edit_centro(user, centro_fuera)
 
 
 @pytest.mark.django_db
