@@ -267,6 +267,15 @@ def _tag_for(contenido, wrapper_id):
     return contenido[idx:tag_end]
 
 
+def _doc_slot_tag(contenido, field):
+    needle = f'data-field="{field}"'
+    idx = contenido.find(needle)
+    assert idx != -1, f"No se encontró slot {field} en el template"
+    tag_start = contenido.rfind("<div", 0, idx)
+    tag_end = contenido.find(">", idx)
+    return contenido[tag_start:tag_end]
+
+
 @pytest.mark.django_db
 def test_formulario_oculta_todos_los_wrappers_otro_en_creacion(
     client, user_con_permisos
@@ -337,3 +346,60 @@ def test_formulario_muestra_wrappers_otro_cuando_dispositivo_tiene_valor(
         assert (
             "d-none" not in tag
         ), f"{wrapper_id} no debe tener d-none cuando 'otro' está seleccionado"
+
+
+@pytest.mark.django_db
+def test_formulario_solo_muestra_primer_slot_documento_en_creacion(
+    client, user_con_permisos
+):
+    client.force_login(user_con_permisos)
+
+    response = client.get(reverse("dispositivos_crear"))
+
+    assert response.status_code == 200
+    contenido = response.content.decode("utf-8")
+    principal_tag = _doc_slot_tag(contenido, "documentacion_dispositivo")
+    assert "d-none" not in principal_tag, "El slot principal debe ser visible"
+
+    for field in [
+        "documentacion_dispositivo_adicional_1",
+        "documentacion_dispositivo_adicional_2",
+        "documentacion_dispositivo_adicional_3",
+        "documentacion_dispositivo_adicional_4",
+    ]:
+        tag = _doc_slot_tag(contenido, field)
+        assert "d-none" in tag, f"Slot {field} debe iniciar oculto"
+
+    assert 'id="btn-add-doc"' in contenido
+    assert "Añadir archivo" in contenido
+
+
+@pytest.mark.django_db
+def test_formulario_muestra_slots_con_documentacion_persistida_en_edicion(
+    client, user_con_permisos, provincia_municipio
+):
+    provincia, municipio = provincia_municipio
+    client.force_login(user_con_permisos)
+
+    dispositivo = _crear_dispositivo(
+        provincia,
+        municipio,
+        indice=55667788,
+        nombre_institucion="Dispositivo con docs",
+        cuit_institucion="20556677881",
+        responsable_dni="55667788",
+    )
+    dispositivo.documentacion_dispositivo_adicional_2.save(
+        "doc-2.pdf",
+        SimpleUploadedFile("doc-2.pdf", b"x", content_type="application/pdf"),
+        save=True,
+    )
+
+    response = client.get(reverse("dispositivos_editar", kwargs={"pk": dispositivo.pk}))
+
+    assert response.status_code == 200
+    contenido = response.content.decode("utf-8")
+    tag_2 = _doc_slot_tag(contenido, "documentacion_dispositivo_adicional_2")
+    assert "d-none" not in tag_2, "El slot con archivo persistido debe ser visible"
+    tag_3 = _doc_slot_tag(contenido, "documentacion_dispositivo_adicional_3")
+    assert "d-none" in tag_3, "Slots sin archivo deben mantenerse ocultos"
