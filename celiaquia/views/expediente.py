@@ -17,7 +17,7 @@ from django.http import (
 from django.utils.html import escape
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
-from django.core.exceptions import ValidationError, PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist, ValidationError, PermissionDenied
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
@@ -106,7 +106,10 @@ def _is_ajax(request) -> bool:
 
 
 def _is_provincial(user) -> bool:
-    return is_territorial_user(user)
+    try:
+        return is_territorial_user(user)
+    except ObjectDoesNotExist:
+        return False
 
 
 def _can_manage_registros_erroneos(user) -> bool:
@@ -501,7 +504,17 @@ def _registro_erroneo_responsable_requerido(payload):
 
 
 def _user_provincia(user):
-    provincia_id = get_single_full_province_scope_id(user)
+    try:
+        provincia = user.profile.provincia
+    except (AttributeError, ObjectDoesNotExist):
+        provincia = None
+    if provincia:
+        return provincia
+
+    try:
+        provincia_id = get_single_full_province_scope_id(user)
+    except ObjectDoesNotExist:
+        provincia_id = None
     if not provincia_id:
         return None
     return Provincia.objects.filter(pk=provincia_id).first()
@@ -578,13 +591,17 @@ class LocalidadesLookupView(View):
         # Filtrar por provincia del usuario solo si es provincial Y NO es coordinador
         is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
         if _is_provincial(user) and not is_coord:
-            localidades = apply_territorial_scope(
-                localidades,
-                user,
-                provincia_lookup="municipio__provincia_id",
-                municipio_lookup="municipio_id",
-                localidad_lookup="id",
-            )
+            prov = _user_provincia(user)
+            if prov:
+                localidades = localidades.filter(municipio__provincia=prov)
+            else:
+                localidades = apply_territorial_scope(
+                    localidades,
+                    user,
+                    provincia_lookup="municipio__provincia_id",
+                    municipio_lookup="municipio_id",
+                    localidad_lookup="id",
+                )
 
         if provincia_id:
             localidades = localidades.filter(municipio__provincia_id=provincia_id)
@@ -905,7 +922,8 @@ class ExpedienteCreateView(CreateView):
 
         # Filtrar provincias según el usuario
         if _is_provincial(user):
-            ctx["provincias"] = _user_scope_provincias(user)
+            prov = _user_provincia(user)
+            ctx["provincias"] = [prov] if prov else _user_scope_provincias(user)
         else:
             # Admin/Coordinador: todas las provincias
             ctx["provincias"] = Provincia.objects.order_by("nombre")

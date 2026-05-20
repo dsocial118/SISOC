@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction
 from django.db.models import Q
 
@@ -48,29 +48,38 @@ class TerritorialScope:
         }
 
 
-def _profile_from_user_or_profile(user_or_profile) -> Profile | None:
+def _profile_from_user_or_profile(user_or_profile):
     if isinstance(user_or_profile, Profile):
         return user_or_profile
     if not user_or_profile or not getattr(user_or_profile, "is_authenticated", False):
         return None
     user_id = getattr(user_or_profile, "pk", None)
-    if not user_id:
-        return None
-    return Profile.objects.filter(user_id=user_id).first()
+    if user_id:
+        profile = Profile.objects.filter(user_id=user_id).first()
+        if profile is not None:
+            return profile
+    try:
+        profile = getattr(user_or_profile, "profile", None)
+    except (AttributeError, ObjectDoesNotExist):
+        profile = None
+    if profile is not None:
+        return profile
+    return None
 
 
 def is_territorial_user(user) -> bool:
     profile = _profile_from_user_or_profile(user)
-    return bool(profile and profile.es_usuario_provincial)
+    return bool(profile and getattr(profile, "es_usuario_provincial", False))
 
 
 def get_effective_scopes(user_or_profile) -> list[TerritorialScope]:
     """Devuelve scopes reales; usa `Profile.provincia` solo como fallback legacy."""
     profile = _profile_from_user_or_profile(user_or_profile)
-    if not profile or not profile.es_usuario_provincial:
+    if not profile or not getattr(profile, "es_usuario_provincial", False):
         return []
 
-    if profile.pk:
+    profile_pk = getattr(profile, "pk", None)
+    if profile_pk:
         scopes = list(
             profile.territorial_scopes.order_by(
                 "provincia_id",
@@ -81,11 +90,12 @@ def get_effective_scopes(user_or_profile) -> list[TerritorialScope]:
         if scopes:
             return [TerritorialScope.from_model(scope) for scope in scopes]
 
-    if profile.provincia_id:
+    provincia_id = getattr(profile, "provincia_id", None)
+    if provincia_id:
         return [
             TerritorialScope(
-                profile_id=profile.pk,
-                provincia_id=profile.provincia_id,
+                profile_id=profile_pk,
+                provincia_id=provincia_id,
                 persisted=False,
             )
         ]
@@ -123,6 +133,90 @@ def _parse_optional_id(value, field_name: str) -> int | None:
     return parsed
 
 
+def _scope_validation_error(index: int, message: str) -> ValidationError:
+    return ValidationError(f"El alcance territorial #{index} {message}.")
+
+
+def _get_valid_provincia(provincia_id: int | None, index: int) -> Provincia:
+    if not provincia_id:
+        raise _scope_validation_error(index, "debe tener provincia")
+
+    provincia = Provincia.objects.filter(pk=provincia_id).first()
+    if provincia is None:
+        raise ValidationError(
+            f"La provincia del alcance territorial #{index} no existe."
+        )
+    return provincia
+
+
+def _get_valid_municipio(
+    municipio_id: int | None,
+    provincia_id: int,
+    index: int,
+) -> Municipio | None:
+    if not municipio_id:
+        return None
+
+    municipio = Municipio.objects.filter(pk=municipio_id).first()
+    if municipio is None:
+        raise ValidationError(
+            f"El municipio del alcance territorial #{index} no existe."
+        )
+    if municipio.provincia_id != provincia_id:
+        raise ValidationError(
+            f"El municipio del alcance territorial #{index} no pertenece a la provincia seleccionada."
+        )
+    return municipio
+
+
+def _get_valid_localidad(
+    localidad_id: int | None,
+    municipio_id: int | None,
+    provincia_id: int,
+    index: int,
+) -> Localidad | None:
+    if not localidad_id:
+        return None
+    if not municipio_id:
+        raise _scope_validation_error(index, "requiere municipio para localidad")
+
+    localidad = (
+        Localidad.objects.select_related("municipio").filter(pk=localidad_id).first()
+    )
+    if localidad is None:
+        raise ValidationError(
+            f"La localidad del alcance territorial #{index} no existe."
+        )
+    if localidad.municipio_id != municipio_id:
+        raise ValidationError(
+            f"La localidad del alcance territorial #{index} no pertenece al municipio seleccionado."
+        )
+    if localidad.municipio.provincia_id != provincia_id:
+        raise ValidationError(
+            f"La localidad del alcance territorial #{index} no pertenece a la provincia seleccionada."
+        )
+    return localidad
+
+
+def _clean_territorial_scope_item(item, index: int) -> dict[str, int | None]:
+    if not isinstance(item, dict):
+        raise ValidationError(f"El alcance territorial #{index} no es válido.")
+
+    provincia_id = _parse_optional_id(item.get("provincia_id"), "provincia")
+    municipio_id = _parse_optional_id(item.get("municipio_id"), "municipio")
+    localidad_id = _parse_optional_id(item.get("localidad_id"), "localidad")
+
+    _get_valid_provincia(provincia_id, index)
+    _get_valid_municipio(municipio_id, provincia_id, index)
+    _get_valid_localidad(localidad_id, municipio_id, provincia_id, index)
+
+    return {
+        "provincia_id": provincia_id,
+        "municipio_id": municipio_id,
+        "localidad_id": localidad_id,
+    }
+
+
 def clean_territorial_scope_payload(payload) -> list[dict[str, int | None]]:
     if payload in (None, "", []):
         return []
@@ -132,73 +226,17 @@ def clean_territorial_scope_payload(payload) -> list[dict[str, int | None]]:
     cleaned = []
     seen_keys = set()
     for index, item in enumerate(payload, start=1):
-        if not isinstance(item, dict):
-            raise ValidationError(f"El alcance territorial #{index} no es válido.")
-
-        provincia_id = _parse_optional_id(item.get("provincia_id"), "provincia")
-        municipio_id = _parse_optional_id(item.get("municipio_id"), "municipio")
-        localidad_id = _parse_optional_id(item.get("localidad_id"), "localidad")
-
-        if not provincia_id:
-            raise ValidationError(
-                f"El alcance territorial #{index} debe tener provincia."
-            )
-        if localidad_id and not municipio_id:
-            raise ValidationError(
-                f"El alcance territorial #{index} requiere municipio para localidad."
-            )
-
-        provincia = Provincia.objects.filter(pk=provincia_id).first()
-        if provincia is None:
-            raise ValidationError(
-                f"La provincia del alcance territorial #{index} no existe."
-            )
-
-        if municipio_id:
-            municipio = Municipio.objects.filter(pk=municipio_id).first()
-            if municipio is None:
-                raise ValidationError(
-                    f"El municipio del alcance territorial #{index} no existe."
-                )
-            if municipio.provincia_id != provincia_id:
-                raise ValidationError(
-                    f"El municipio del alcance territorial #{index} no pertenece a la provincia seleccionada."
-                )
-
-        if localidad_id:
-            localidad = (
-                Localidad.objects.select_related("municipio")
-                .filter(pk=localidad_id)
-                .first()
-            )
-            if localidad is None:
-                raise ValidationError(
-                    f"La localidad del alcance territorial #{index} no existe."
-                )
-            if localidad.municipio_id != municipio_id:
-                raise ValidationError(
-                    f"La localidad del alcance territorial #{index} no pertenece al municipio seleccionado."
-                )
-            if localidad.municipio.provincia_id != provincia_id:
-                raise ValidationError(
-                    f"La localidad del alcance territorial #{index} no pertenece a la provincia seleccionada."
-                )
+        scope_data = _clean_territorial_scope_item(item, index)
 
         scope_key = ProfileTerritorialScope.build_scope_key(
-            provincia_id,
-            municipio_id,
-            localidad_id,
+            scope_data["provincia_id"],
+            scope_data["municipio_id"],
+            scope_data["localidad_id"],
         )
         if scope_key in seen_keys:
             raise ValidationError(f"El alcance territorial #{index} está duplicado.")
         seen_keys.add(scope_key)
-        cleaned.append(
-            {
-                "provincia_id": provincia_id,
-                "municipio_id": municipio_id,
-                "localidad_id": localidad_id,
-            }
-        )
+        cleaned.append(scope_data)
     return cleaned
 
 
@@ -255,7 +293,29 @@ def build_territorial_scope_q(
     return scope_q
 
 
-def apply_territorial_scope(
+def _resolve_unscoped_queryset(queryset, user):
+    if not user or not getattr(user, "is_authenticated", False):
+        return queryset.none()
+    if getattr(user, "is_superuser", False):
+        return queryset
+    if not is_territorial_user(user):
+        return queryset
+    return None
+
+
+def _fallback_queryset_without_scopes(queryset, user, own_lookup: str | None):
+    if own_lookup:
+        return queryset.filter(**{own_lookup: user})
+    return queryset.none()
+
+
+def _apply_scope_q(queryset, scope_q: Q | None):
+    if scope_q is None:
+        return queryset.none()
+    return queryset.filter(scope_q).distinct()
+
+
+def apply_territorial_scope(  # pylint: disable=too-many-arguments
     queryset,
     user,
     *,
@@ -265,18 +325,13 @@ def apply_territorial_scope(
     own_lookup: str | None = None,
     include_own: bool = False,
 ):
-    if not user or not getattr(user, "is_authenticated", False):
-        return queryset.none()
-    if getattr(user, "is_superuser", False):
-        return queryset
-    if not is_territorial_user(user):
-        return queryset
+    resolved_queryset = _resolve_unscoped_queryset(queryset, user)
+    if resolved_queryset is not None:
+        return resolved_queryset
 
     scopes = get_effective_scopes(user)
     if not scopes:
-        if own_lookup:
-            return queryset.filter(**{own_lookup: user})
-        return queryset.none()
+        return _fallback_queryset_without_scopes(queryset, user, own_lookup)
 
     scope_q = build_territorial_scope_q(
         scopes,
@@ -288,9 +343,7 @@ def apply_territorial_scope(
         own_q = Q(**{own_lookup: user})
         scope_q = own_q if scope_q is None else scope_q | own_q
 
-    if scope_q is None:
-        return queryset.none()
-    return queryset.filter(scope_q).distinct()
+    return _apply_scope_q(queryset, scope_q)
 
 
 def apply_full_province_scope(
@@ -315,6 +368,25 @@ def apply_full_province_scope(
     return queryset.none()
 
 
+def _owner_matches_user(owner, user) -> bool:
+    return bool(owner is not None and getattr(owner, "pk", owner) == user.pk)
+
+
+def _scope_matches_territory(
+    scope: TerritorialScope,
+    provincia_id: int | None,
+    municipio_id: int | None,
+    localidad_id: int | None,
+) -> bool:
+    if scope.provincia_id != provincia_id:
+        return False
+    if scope.is_full_province:
+        return True
+    if scope.municipio_id != municipio_id:
+        return False
+    return scope.localidad_id is None or scope.localidad_id == localidad_id
+
+
 def user_can_access_territory(
     user,
     *,
@@ -332,17 +404,9 @@ def user_can_access_territory(
 
     scopes = get_effective_scopes(user)
     if not scopes:
-        return bool(owner is not None and getattr(owner, "pk", owner) == user.pk)
+        return _owner_matches_user(owner, user)
 
-    for scope in scopes:
-        if scope.provincia_id != provincia_id:
-            continue
-        if scope.is_full_province:
-            return True
-        if scope.municipio_id != municipio_id:
-            continue
-        if scope.localidad_id is None:
-            return True
-        if scope.localidad_id == localidad_id:
-            return True
-    return False
+    return any(
+        _scope_matches_territory(scope, provincia_id, municipio_id, localidad_id)
+        for scope in scopes
+    )

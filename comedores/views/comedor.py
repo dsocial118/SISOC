@@ -1523,7 +1523,7 @@ class ComedorTransaccionesDetailView(LoginRequiredMixin, DetailView):
     model = Comedor
     template_name = "comedor/comedor_transacciones_detail.html"
     context_object_name = "comedor"
-    paginate_by = 20
+    paginate_by = 1000
 
     def get_object(self, queryset=None):
         return ComedorService.get_comedor_detail_object(

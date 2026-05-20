@@ -16,6 +16,8 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 const NUMERIC_ONLY_INPUT_IDS = [
+    "id_cuit_institucion",
+    "id_responsable_dni",
     "id_telefono_prefijo",
     "id_telefono_numero",
 ];

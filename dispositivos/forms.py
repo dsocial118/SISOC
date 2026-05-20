@@ -8,6 +8,8 @@ from .validators import DOCUMENTACION_ACCEPT_ATTR, DOCUMENTACION_UPLOAD_FIELDS
 
 
 class DispositivoForm(forms.ModelForm):
+    NINGUNA_LABEL = "Ninguna de las anteriores"
+
     DIAS_ATENCION_CHOICES = [
         ("lunes", "Lunes"),
         ("martes", "Martes"),
@@ -90,7 +92,7 @@ class DispositivoForm(forms.ModelForm):
         ("apoyo_escolar", "Apoyo escolar"),
         ("alfabetizacion", "Alfabetización"),
         ("terminalidad", "Terminalidad educativa (primaria o secundaria)"),
-        ("ninguna", "Ninguna de las anteriores"),
+        ("ninguna", NINGUNA_LABEL),
         ("otro", "Otro"),
     ]
     TIPO_INFO_REGISTRADA_CHOICES = [
@@ -127,6 +129,7 @@ class DispositivoForm(forms.ModelForm):
             "discapacidad_visual_auditiva",
             "Accesibilidad para personas con discapacidad visual o auditiva",
         ),
+        ("ninguna", NINGUNA_LABEL),
         ("otro", "Otro"),
     ]
     ARTICULACIONES_CHOICES = [
@@ -141,7 +144,7 @@ class DispositivoForm(forms.ModelForm):
         ("seguridad", "Seguridad"),
         ("organizaciones_comunitarias", "Organizaciones comunitarias"),
         ("documentacion", "Organismos de documentación/migraciones"),
-        ("ninguna", "Ninguna de las anteriores"),
+        ("ninguna", NINGUNA_LABEL),
         ("otro", "Otro"),
     ]
 
@@ -291,6 +294,16 @@ class DispositivoForm(forms.ModelForm):
         for field_name in DOCUMENTACION_UPLOAD_FIELDS:
             self.fields[field_name].widget.attrs["accept"] = DOCUMENTACION_ACCEPT_ATTR
             self.fields[field_name].help_text = "PDF, JPG o PNG. Máximo 10 MB."
+
+        self.fields["cuit_institucion"].help_text = (
+            "Debe ingresar los 11 dígitos sin puntos ni guiones"
+        )
+        self.fields["cuit_institucion"].widget.attrs.update(
+            {"inputmode": "numeric", "pattern": r"\d{11}", "maxlength": "11"}
+        )
+        self.fields["responsable_dni"].widget.attrs.update(
+            {"inputmode": "numeric", "pattern": r"\d{7,8}", "maxlength": "8"}
+        )
 
         self.fields["calle"].label = "Calle"
         self.fields["calle"].required = True

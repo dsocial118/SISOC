@@ -1,7 +1,9 @@
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import ObjectDoesNotExist
 
 from core.constants import UserGroups
 from core.models import Provincia
+from users.models import Profile
 from users.territorial_scope import (
     apply_territorial_scope,
     get_single_full_province_scope_id,
@@ -91,6 +93,21 @@ def get_provincia_usuario(user):
     if not user or not user.is_authenticated:
         return None
 
+    user_id = getattr(user, "pk", None)
+    if user_id:
+        profile = (
+            Profile.objects.select_related("provincia").filter(user_id=user_id).first()
+        )
+        if profile and profile.provincia:
+            return profile.provincia
+
+    try:
+        provincia = user.profile.provincia
+    except (AttributeError, ObjectDoesNotExist):
+        provincia = None
+    if provincia:
+        return provincia
+
     provincia_id = get_single_full_province_scope_id(user)
     if not provincia_id:
         return None
@@ -109,6 +126,10 @@ def _sibling_territorial_lookup(provincia_lookup, sibling):
 
 
 def aplicar_filtro_provincia_usuario(queryset, user, provincia_lookup="provincia"):
+    provincia_usuario = get_provincia_usuario(user)
+    if provincia_usuario:
+        return queryset.filter(**{provincia_lookup: provincia_usuario})
+
     return apply_territorial_scope(
         queryset,
         user,
