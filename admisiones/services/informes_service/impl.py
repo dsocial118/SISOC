@@ -543,6 +543,9 @@ class InformeService:
                 resultado_docx = InformeService.generar_docx_borrador(informe)
                 if resultado_docx:
                     # Solo actualizar estado si el DOCX se generó exitosamente
+                    AdmisionService.congelar_documentacion_organizacional(
+                        admision, usuario
+                    )
                     admision.estado_admision = "informe_tecnico_finalizado"
                     admision.save()
                 else:

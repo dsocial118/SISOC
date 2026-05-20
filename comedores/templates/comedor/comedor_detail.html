@@ -990,7 +990,7 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-12 col-lg-6 mb-3 mb-lg-0">
+                <div class="col-12 col-lg-6 mb-3 mb-lg-0" style="margin-top:5px;">
                     <div class="card bg-card h-100">
                         <div class="card-header py-1">
                             <h6 class="fw-bold my-1 text-center">Asistencia por rango etareo</h6>
@@ -1188,6 +1188,11 @@
 </div>
 </div>
 </div>
+{% if resumen_dw_transacciones %}
+    <div class="row mt-3">
+        <div class="col-12">{% include "comedor/comedor_transacciones_card.html" %}</div>
+    </div>
+{% endif %}
 </div>
 <!-- /Cuadros con datos, Avisos y Detalles Admision-->
 <!-- Nomina-->
@@ -1553,6 +1558,55 @@
     <!-- /Capacitaciones -->
 {% endif %}
 <!-- Modal Intervención -->
+{% if mostrar_mes_ejecucion %}
+    <div class="card mb-3">
+        <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <h5 class="mb-0">Mes de ejecucion</h5>
+            <a href="{% url 'expedientespagos_list' comedor.id %}"
+               class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-box-arrow-up-right me-1"></i>Ver mas
+            </a>
+        </div>
+        <div class="card-body">
+            {% if mes_ejecucion_resumen.expediente %}
+                {% with expediente=mes_ejecucion_resumen.expediente %}
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <small class="text-muted d-block">Expediente del convenio</small>
+                            <strong>{{ expediente.expediente_convenio|default:"-" }}</strong>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <small class="text-muted d-block">Expediente de pago</small>
+                            <strong>{{ expediente.expediente_pago|default:"-" }}</strong>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <small class="text-muted d-block">Cantidad de prestaciones</small>
+                            <strong>{{ mes_ejecucion_resumen.cantidad_prestaciones|default:"0" }}</strong>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <small class="text-muted d-block">Monto total de prestaciones</small>
+                            <strong>${{ mes_ejecucion_resumen.monto_total|default:"0" }}</strong>
+                        </div>
+                        <div class="col-12 col-md-4 col-xl-2">
+                            <small class="text-muted d-block">Mes de pago</small>
+                            <strong>{{ expediente.mes_pago|default:"-" }}</strong>
+                        </div>
+                        <div class="col-12 col-md-4 col-xl-2">
+                            <small class="text-muted d-block">Anio</small>
+                            <strong>{{ expediente.ano|default:"-" }}</strong>
+                        </div>
+                        <div class="col-12 col-md-4 col-xl-2">
+                            <small class="text-muted d-block">Mes de ejecucion</small>
+                            <strong>{{ expediente.mes_convenio|default:"-" }}</strong>
+                        </div>
+                    </div>
+                {% endwith %}
+            {% else %}
+                <p class="mb-0 text-muted">No hay expedientes de pago cargados para este comedor.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
 <div class="modal fade"
      id="modalIntervencion"
      tabindex="-1"

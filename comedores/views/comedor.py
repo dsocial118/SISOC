@@ -43,6 +43,7 @@ from comedores.services.capacitaciones_certificados_service import (
     list_capacitaciones_certificados,
     serialize_certificate,
 )
+from comedores.services.dw_transacciones_service import DWTransaccionesService
 from comedores.services.filter_config import get_filters_ui_config
 from comedores.utils import comedor_usa_admision_para_nomina
 from core.pagination import NoCountPaginator, build_no_count_page_range
@@ -50,9 +51,11 @@ from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from core.utils import convert_string_to_int
+from iam.services import user_has_permission_code
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm, build_programa_aliases
+from expedientespagos.models import ExpedientePago
 
 MESES_ES_CORTOS = [
     "Ene",
@@ -823,6 +826,50 @@ def _build_domicilio_completo(comedor: Comedor) -> str:
     return ", ".join(partes) if partes else "Sin información"
 
 
+def _build_mes_ejecucion_context(comedor_obj):
+    if getattr(comedor_obj, "programa_id", None) != 2:
+        return {
+            "mostrar_mes_ejecucion": False,
+            "mes_ejecucion_resumen": None,
+        }
+
+    expediente = (
+        ExpedientePago.objects.filter(comedor_id=comedor_obj.id)
+        .order_by("-fecha_creacion", "-id")
+        .first()
+    )
+    resumen = {"expediente": expediente}
+
+    if expediente:
+        prestaciones = [
+            expediente.prestaciones_mensuales_desayuno,
+            expediente.prestaciones_mensuales_almuerzo,
+            expediente.prestaciones_mensuales_merienda,
+            expediente.prestaciones_mensuales_cena,
+        ]
+        montos = [
+            expediente.monto_mensual_desayuno,
+            expediente.monto_mensual_almuerzo,
+            expediente.monto_mensual_merienda,
+            expediente.monto_mensual_cena,
+        ]
+        resumen.update(
+            {
+                "cantidad_prestaciones": sum(valor or 0 for valor in prestaciones),
+                "monto_total": (
+                    expediente.total
+                    if expediente.total is not None
+                    else sum(valor or 0 for valor in montos)
+                ),
+            }
+        )
+
+    return {
+        "mostrar_mes_ejecucion": True,
+        "mes_ejecucion_resumen": resumen,
+    }
+
+
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class ComedorListView(LoginRequiredMixin, ListView):
     model = Comedor
@@ -850,6 +897,7 @@ class ComedorListView(LoginRequiredMixin, ListView):
             {"title": "Tipo"},
             {"title": "Organización"},
             {"title": "Programa"},
+            {"title": "Mes de ejecucion"},
             {"title": "Dupla"},
             {"title": "Estado general"},
             {"title": "Estado actividad"},
@@ -876,6 +924,7 @@ class ComedorListView(LoginRequiredMixin, ListView):
             {"name": "tipo"},
             {"name": "organizacion"},
             {"name": "programa"},
+            {"name": "mes_ejecucion"},
             {"name": "dupla"},
             {"name": "estado_general"},
             {"name": "estado_actividad"},
@@ -904,6 +953,7 @@ class ComedorListView(LoginRequiredMixin, ListView):
             default_keys=[
                 "nombre",
                 "tipo",
+                "mes_ejecucion",
                 "ubicacion",
                 "direccion",
                 "referente",
@@ -1257,6 +1307,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         selected_admision = selected_admision_context["selected_admision"]
         informe_tecnico = selected_admision_context["informe_tecnico"]
         responsables_context = _build_organizacion_responsables_context(self.object)
+        mes_ejecucion_context = _build_mes_ejecucion_context(self.object)
 
         # Nómina del convenio seleccionado
         selected_admision_pk = getattr(selected_admision, "pk", None)
@@ -1329,12 +1380,21 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 ),
                 "domicilio_completo_comedor": _build_domicilio_completo(self.object),
                 **responsables_context,
+                **mes_ejecucion_context,
             }
         )
         timeline_selected = ComedorService.get_admision_timeline_context_from_admision(
             selected_admision
         )
         context.update(timeline_selected)
+
+        context["resumen_dw_transacciones"] = None
+        request_user = getattr(self.request, "user", None)
+        if user_has_permission_code(request_user, "comedores.view_comedor"):
+            context["resumen_dw_transacciones"] = (
+                DWTransaccionesService.obtener_resumen_ultimo_periodo(self.object.id)
+            )
+
         return context
 
 
@@ -1455,3 +1515,47 @@ class ComedorDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteVie
 
     def get_queryset(self):
         return ComedorService.get_scoped_comedor_queryset(self.request.user)
+
+
+class ComedorTransaccionesDetailView(LoginRequiredMixin, DetailView):
+    """View para mostrar el histórico completo de transacciones DW de un comedor."""
+
+    model = Comedor
+    template_name = "comedor/comedor_transacciones_detail.html"
+    context_object_name = "comedor"
+    paginate_by = 20
+
+    def get_object(self, queryset=None):
+        return ComedorService.get_comedor_detail_object(
+            self.kwargs["pk"], user=self.request.user
+        )
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+
+        # Obtener página actual
+        page = self.request.GET.get("page", 1)
+        try:
+            page = int(page)
+        except (ValueError, TypeError):
+            page = 1
+
+        # Obtener transacciones paginadas
+        transacciones, total_count = DWTransaccionesService.obtener_historico_completo(
+            self.object.id, page=page, per_page=self.paginate_by
+        )
+
+        # Crear paginador
+        paginator = Paginator(range(total_count), self.paginate_by)
+        page_obj = paginator.get_page(page)
+
+        context.update(
+            {
+                "transacciones": transacciones,
+                "page_obj": page_obj,
+                "total_count": total_count,
+                "es_ultima_pagina": page_obj.number == paginator.num_pages,
+            }
+        )
+
+        return context

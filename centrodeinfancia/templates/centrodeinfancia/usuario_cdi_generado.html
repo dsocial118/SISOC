@@ -1,0 +1,72 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Usuario generado - Centro de Desarrollo Infantil{% endblock %}
+{% block titulo-pagina %}Usuario referente generado{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12 col-lg-8 mx-auto">
+            <div class="card card-primary card-outline">
+                <div class="card-header mb-3">
+                    <h3 class="card-title">
+                        Usuario generado para:
+                        <a href="{% url 'centrodeinfancia_detalle' centro.id %}">{{ centro.nombre }}</a>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if email_enviado %}
+                        <p class="text-success">
+                            Se envió un correo con las credenciales a
+                            <strong>{{ usuario.email }}</strong>.
+                        </p>
+                    {% else %}
+                        <p class="text-warning">
+                            No se pudo enviar el correo de credenciales. Entregue
+                            estos datos al referente de forma segura.
+                        </p>
+                    {% endif %}
+
+                    <p class="text-muted">
+                        Esta contraseña temporal también queda visible en la
+                        edición del usuario hasta su primer cambio. Cópiela ahora.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="cred-usuario">Usuario</label>
+                        <input class="form-control"
+                               id="cred-usuario"
+                               type="text"
+                               value="{{ usuario.username }}"
+                               readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="cred-email">Email</label>
+                        <input class="form-control"
+                               id="cred-email"
+                               type="text"
+                               value="{{ usuario.email }}"
+                               readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="cred-password">Contraseña temporal</label>
+                        <input class="form-control fs-5"
+                               id="cred-password"
+                               type="text"
+                               value="{{ password }}"
+                               readonly />
+                        <small class="text-muted">Seleccione el texto del campo y cópielo (Ctrl+C) antes de salir.</small>
+                    </div>
+
+                    <div class="mt-3">
+                        <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
+                           class="btn btn-primary">Volver al CDI</a>
+                        {% if puede_generar_otro %}
+                            <a href="{% url 'centrodeinfancia_generar_usuario' centro.id %}"
+                               class="btn btn-secondary">Generar otro</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1027,6 +1027,12 @@ class Relevamiento(SoftDeleteModelMixin, models.Model):
     )
     observacion = models.TextField(blank=True, null=True)
     docPDF = models.URLField(blank=True, null=True)
+    numero_if = models.CharField(
+        "Número de IF",
+        max_length=255,
+        blank=True,
+        null=True,
+    )
     responsable_es_referente = models.BooleanField(default=True, blank=True, null=True)
     responsable_relevamiento = models.ForeignKey(
         to=Referente,
