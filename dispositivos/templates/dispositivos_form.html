@@ -479,7 +479,8 @@
                             </div>
 
                             <!-- Slot: Adicional 1 -->
-                            <div class="doc-slot" data-field="documentacion_dispositivo_adicional_1">
+                            <div class="doc-slot {% if not form.instance.documentacion_dispositivo_adicional_1 %}d-none{% endif %}"
+                                 data-field="documentacion_dispositivo_adicional_1">
                                 <div class="doc-slot-header">
                                     <i class="fas fa-file"></i>
                                     Documentación adicional 1
@@ -549,7 +550,8 @@
                             </div>
 
                             <!-- Slot: Adicional 2 -->
-                            <div class="doc-slot" data-field="documentacion_dispositivo_adicional_2">
+                            <div class="doc-slot {% if not form.instance.documentacion_dispositivo_adicional_2 %}d-none{% endif %}"
+                                 data-field="documentacion_dispositivo_adicional_2">
                                 <div class="doc-slot-header">
                                     <i class="fas fa-file"></i>
                                     Documentación adicional 2
@@ -619,7 +621,8 @@
                             </div>
 
                             <!-- Slot: Adicional 3 -->
-                            <div class="doc-slot" data-field="documentacion_dispositivo_adicional_3">
+                            <div class="doc-slot {% if not form.instance.documentacion_dispositivo_adicional_3 %}d-none{% endif %}"
+                                 data-field="documentacion_dispositivo_adicional_3">
                                 <div class="doc-slot-header">
                                     <i class="fas fa-file"></i>
                                     Documentación adicional 3
@@ -689,7 +692,8 @@
                             </div>
 
                             <!-- Slot: Adicional 4 -->
-                            <div class="doc-slot" data-field="documentacion_dispositivo_adicional_4">
+                            <div class="doc-slot {% if not form.instance.documentacion_dispositivo_adicional_4 %}d-none{% endif %}"
+                                 data-field="documentacion_dispositivo_adicional_4">
                                 <div class="doc-slot-header">
                                     <i class="fas fa-file"></i>
                                     Documentación adicional 4
@@ -759,6 +763,10 @@
                             </div>
 
                         </div>
+
+                        <button type="button" id="btn-add-doc" class="btn btn-outline-primary mt-3">
+                            <i class="fas fa-plus mr-1"></i> Añadir archivo
+                        </button>
                     </div>
                 </div>
 

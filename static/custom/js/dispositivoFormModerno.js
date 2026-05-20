@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeMunicipioAjax();
     initializeConditionalFields();
     initializeDocumentSlots();
+    initializeAddDocButton();
 });
 
 // ============================================
@@ -423,6 +424,45 @@ function formatFileSize(bytes) {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
+
+// ============================================
+// BOTÓN AÑADIR ARCHIVO (slots dinámicos hasta 5)
+// ============================================
+
+const ADDITIONAL_DOC_FIELDS = [
+    "documentacion_dispositivo_adicional_1",
+    "documentacion_dispositivo_adicional_2",
+    "documentacion_dispositivo_adicional_3",
+    "documentacion_dispositivo_adicional_4",
+];
+
+function initializeAddDocButton() {
+    const btn = document.getElementById("btn-add-doc");
+    if (!btn) return;
+
+    const additionalSlots = ADDITIONAL_DOC_FIELDS.map((field) =>
+        document.querySelector(`.doc-slot[data-field="${field}"]`)
+    ).filter(Boolean);
+
+    const updateButtonVisibility = () => {
+        const hasHidden = additionalSlots.some((s) =>
+            s.classList.contains("d-none")
+        );
+        btn.classList.toggle("d-none", !hasHidden);
+    };
+
+    btn.addEventListener("click", () => {
+        const nextHidden = additionalSlots.find((s) =>
+            s.classList.contains("d-none")
+        );
+        if (nextHidden) {
+            nextHidden.classList.remove("d-none");
+            updateButtonVisibility();
+        }
+    });
+
+    updateButtonVisibility();
 }
 
 // ============================================
