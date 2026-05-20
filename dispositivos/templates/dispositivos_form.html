@@ -98,9 +98,11 @@
                             <div class="col-md-2">{{ form.municipio|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-md-4">{{ form.domicilio_institucion|as_crispy_field }}</div>
-                            <div class="col-md-2">{{ form.telefono_contacto|as_crispy_field }}</div>
-                            <div class="col-md-2">{{ form.correo_electronico|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.calle|as_crispy_field }}</div>
+                            <div class="col-md-1">{{ form.altura|as_crispy_field }}</div>
+                            <div class="col-md-1">{{ form.telefono_prefijo|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.telefono_numero|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.correo_electronico|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
                             <div class="col-md-4">{{ form.responsable_nombre_completo|as_crispy_field }}</div>
