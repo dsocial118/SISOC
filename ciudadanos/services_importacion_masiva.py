@@ -161,19 +161,39 @@ def _build_header_map(headers: list[str]) -> dict[str, int]:
     return header_map
 
 
-def _get_row_cell(row: tuple, index: int | None) -> str:
+def _load_rows_from_workbook(uploaded_file) -> tuple[object, list[tuple]]:
+    try:
+        uploaded_file.seek(0)
+        workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
+    except Exception as exc:
+        raise ValidationError("No se pudo leer el archivo Excel cargado.") from exc
+
+    try:
+        worksheet = (
+            workbook[SHEET_NAME]
+            if SHEET_NAME in workbook.sheetnames
+            else workbook.active
+        )
+        rows = list(worksheet.iter_rows(values_only=True))
+    except Exception:
+        workbook.close()
+        raise
+    return workbook, rows
+
+
+def _get_row_value(row: tuple, index: int | None) -> str:
     if index is None or index >= len(row):
         return ""
     return _clean_cell(row[index])
 
 
-def _parse_import_workbook_row(
+def _parse_import_row(
     row_number: int,
     row: tuple,
     header_map: dict[str, int],
 ) -> ParsedCiudadanosImportRow | None:
-    documento_raw = _get_row_cell(row, header_map["documento"])
-    sexo_raw = _get_row_cell(row, header_map.get("sexo"))
+    documento_raw = _get_row_value(row, header_map["documento"])
+    sexo_raw = _get_row_value(row, header_map.get("sexo"))
     if not documento_raw and not sexo_raw:
         return None
 
@@ -213,26 +233,6 @@ def _parse_import_workbook_row(
     )
 
 
-def _load_rows_from_workbook(uploaded_file) -> tuple[object, list[tuple]]:
-    try:
-        uploaded_file.seek(0)
-        workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
-    except Exception as exc:
-        raise ValidationError("No se pudo leer el archivo Excel cargado.") from exc
-
-    try:
-        worksheet = (
-            workbook[SHEET_NAME]
-            if SHEET_NAME in workbook.sheetnames
-            else workbook.active
-        )
-        rows = list(worksheet.iter_rows(values_only=True))
-    except Exception:
-        workbook.close()
-        raise
-    return workbook, rows
-
-
 def load_ciudadanos_import_rows(uploaded_file) -> list[ParsedCiudadanosImportRow]:
     workbook, rows = _load_rows_from_workbook(uploaded_file)
     try:
@@ -243,7 +243,7 @@ def load_ciudadanos_import_rows(uploaded_file) -> list[ParsedCiudadanosImportRow
 
         parsed_rows: list[ParsedCiudadanosImportRow] = []
         for row_number, row in enumerate(rows[1:], start=2):
-            parsed_row = _parse_import_workbook_row(row_number, row, header_map)
+            parsed_row = _parse_import_row(row_number, row, header_map)
             if parsed_row is not None:
                 parsed_rows.append(parsed_row)
 
@@ -508,7 +508,7 @@ def _process_successful_renaper_import(
     with transaction.atomic():
         existing = _get_existing_estandar_by_dni(row.dni)
         if existing:
-            return {
+            row_result = {
                 "status": "existing",
                 "mensaje": "Ya existe un ciudadano estandar para el DNI informado.",
                 "error_type": "",
@@ -517,17 +517,19 @@ def _process_successful_renaper_import(
                 "systemic": False,
                 "contacted_renaper": True,
             }
-        ciudadano = Ciudadano.objects.create(**ciudadano_data)
+        else:
+            ciudadano = Ciudadano.objects.create(**ciudadano_data)
+            row_result = {
+                "status": "created",
+                "mensaje": "Ciudadano creado desde RENAPER.",
+                "error_type": "",
+                "sexos_intentados": sexos_intentados,
+                "ciudadano": ciudadano,
+                "systemic": False,
+                "contacted_renaper": True,
+            }
 
-    return {
-        "status": "created",
-        "mensaje": "Ciudadano creado desde RENAPER.",
-        "error_type": "",
-        "sexos_intentados": sexos_intentados,
-        "ciudadano": ciudadano,
-        "systemic": False,
-        "contacted_renaper": True,
-    }
+    return row_result
 
 
 def process_ciudadanos_import_row(

@@ -36,6 +36,7 @@ from centrodeinfancia.views_formulario_cdi import (
     FormularioCDIUpdateView,
 )
 from centrodeinfancia.views_export import CentroDeInfanciaExportView
+from centrodeinfancia.views_usuario_cdi import GenerarUsuarioCDIView
 
 
 urlpatterns = [
@@ -66,6 +67,13 @@ urlpatterns = [
             CentroDeInfanciaDetailView.as_view()
         ),
         name="centrodeinfancia_detalle",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/generar-usuario/",
+        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
+            GenerarUsuarioCDIView.as_view()
+        ),
+        name="centrodeinfancia_generar_usuario",
     ),
     path(
         "centrodeinfancia/editar/<int:pk>",

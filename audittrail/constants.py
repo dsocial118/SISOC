@@ -75,6 +75,11 @@ def get_tracked_model_definitions():
             excluded_fields=("created_at", "updated_at"),
         ),
         TrackedModelDefinition(
+            label="Acceso CDI",
+            model_getter=_model_getter("centrodeinfancia.models.AccesoCDI"),
+            excluded_fields=("fecha_creacion",),
+        ),
+        TrackedModelDefinition(
             label="Relevamiento",
             model_getter=_model_getter("relevamientos.models.Relevamiento"),
             excluded_fields=("fecha_creacion",),

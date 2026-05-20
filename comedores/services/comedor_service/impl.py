@@ -1317,7 +1317,7 @@ class ComedorService:
 
     @staticmethod
     def build_ciudadano_data_from_renaper(datos, dni_str):
-        """Mapea datos de RENAPER a campos de Ciudadano para otros servicios."""
+        """Mapea datos de RENAPER a campos de Ciudadano para consumidores externos."""
         return ComedorService._build_ciudadano_data_from_renaper(datos, dni_str)
 
     @staticmethod

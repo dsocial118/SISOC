@@ -267,6 +267,96 @@ def test_upload_validation_success_creates_batch_and_logs_success(
     assert batch.count_errores == 0
 
 
+def test_upload_stores_periodo_pago_on_batch(client_logged, tmp_media, db):
+    comedor = Comedor.objects.create(nombre="Comedor Periodo")
+
+    uploaded = SimpleUploadedFile(
+        "expedientes.csv",
+        _make_csv(comedor.pk).encode("utf-8"),
+        content_type="text/csv",
+    )
+
+    resp = client_logged.post(
+        reverse("upload"),
+        {"file": uploaded, "delimiter": ";", "has_header": True},
+    )
+
+    assert resp.status_code in (302, 200)
+    batch = ArchivosImportados.objects.latest("id")
+    assert batch.mes_pago == "septiembre"
+    assert batch.ano_pago == "2025"
+    assert batch.periodo_pago == "09/2025"
+
+
+def test_upload_rejects_duplicate_expediente_pago_from_imported_file(
+    client_logged, tmp_media, db
+):
+    comedor = Comedor.objects.create(nombre="Comedor Duplicado Archivo")
+    ArchivosImportados.objects.create(
+        archivo="importados/anterior.csv",
+        usuario=User.objects.get(username="tester"),
+        numero_expediente_pago="EX-2025-DUP",
+    )
+    uploaded = SimpleUploadedFile(
+        "duplicado.csv",
+        _make_csv(comedor.pk, expediente_pago="EX-2025-DUP").encode("utf-8"),
+        content_type="text/csv",
+    )
+
+    resp = client_logged.post(
+        reverse("upload"),
+        {"file": uploaded, "delimiter": ";", "has_header": True},
+        follow=True,
+    )
+
+    assert resp.status_code == 200
+    assert resp.request["PATH_INFO"] == reverse("upload")
+    assert ArchivosImportados.objects.count() == 1
+    messages = [str(message) for message in resp.context["messages"]]
+    assert (
+        "No se puede adjuntar el archivo ya que el expediente de pago se encuentra cargado anteriormente"
+        in messages
+    )
+
+
+def test_upload_rejects_duplicate_expediente_pago_from_saved_expediente(
+    client_logged, tmp_media, db
+):
+    comedor = Comedor.objects.create(nombre="Comedor Duplicado Expediente")
+    ExpedientePago.objects.create(
+        expediente_convenio="EX-2024-AAA",
+        expediente_pago="EX-2025-SAVED",
+        prestaciones_mensuales_desayuno=0,
+        prestaciones_mensuales_almuerzo=0,
+        prestaciones_mensuales_merienda=0,
+        prestaciones_mensuales_cena=0,
+        monto_mensual_desayuno=0,
+        monto_mensual_almuerzo=0,
+        monto_mensual_merienda=0,
+        monto_mensual_cena=0,
+    )
+    uploaded = SimpleUploadedFile(
+        "duplicado-expediente.csv",
+        _make_csv(comedor.pk, expediente_pago="EX-2025-SAVED").encode("utf-8"),
+        content_type="text/csv",
+    )
+
+    resp = client_logged.post(
+        reverse("upload"),
+        {"file": uploaded, "delimiter": ";", "has_header": True},
+        follow=True,
+    )
+
+    assert resp.status_code == 200
+    assert resp.request["PATH_INFO"] == reverse("upload")
+    assert ArchivosImportados.objects.count() == 0
+    messages = [str(message) for message in resp.context["messages"]]
+    assert (
+        "No se puede adjuntar el archivo ya que el expediente de pago se encuentra cargado anteriormente"
+        in messages
+    )
+
+
 def test_upload_validation_xlsx_creates_batch_and_logs_mes_convenio_success(
     client_logged, tmp_media, db
 ):
@@ -328,19 +418,12 @@ def test_upload_validation_empty_csv_logs_error_and_counters(
             "delimiter": ",",
             "has_header": True,
         },
+        follow=True,
     )
-    assert resp.status_code in (302, 200)
-    # If form was invalid, there will be no batch
-    if ArchivosImportados.objects.count() == 0:
-        return
-
-    # Otherwise, a batch should exist with one error and zero successes
-    batch = ArchivosImportados.objects.order_by("-id").first()
-    assert batch is not None
-    batch.refresh_from_db()
-    assert batch.count_exitos == 0
-    assert batch.count_errores == 1
-    assert ErroresImportacion.objects.filter(archivo_importado=batch, fila=0).exists()
+    assert resp.status_code == 200
+    assert resp.request["PATH_INFO"] == reverse("upload")
+    assert ArchivosImportados.objects.count() == 0
+    assert b"alert-danger" in resp.content
 
 
 def test_import_persists_expedientepago_and_marks_completed(

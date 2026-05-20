@@ -51,6 +51,7 @@ HEADER_MAP = {
     "mes de pago": "mes_pago",
     "mes de convenio": "mes_convenio",
     "a\u00f1o": "ano",
+    "a\u00f1o de pago": "ano",
     # Prestaciones mensuales
     "prestaciones mensuales desayuno": "prestaciones_mensuales_desayuno",
     "prestaciones mensuales almuerzo": "prestaciones_mensuales_almuerzo",
@@ -297,6 +298,20 @@ def extract_numero_expediente_pago(parsed_file, row):
             if value:
                 return value
     return None
+
+
+def extract_periodo_pago(parsed_file, row):
+    mes_pago = None
+    ano_pago = None
+    for col_idx, field in enumerate(parsed_file.mapped_headers):
+        value = _cell_text(row[col_idx])
+        if not value:
+            continue
+        if field == "mes_pago" and mes_pago is None:
+            mes_pago = value
+        elif field == "ano" and ano_pago is None:
+            ano_pago = value
+    return mes_pago, ano_pago
 
 
 def ensure_import_required_defaults(kwargs):

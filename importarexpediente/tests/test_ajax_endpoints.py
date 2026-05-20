@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
+from comedores.models import Comedor
 from importarexpediente.models import ArchivosImportados
 
 User = get_user_model()
@@ -63,6 +64,74 @@ def test_list_view_and_ajax_filters(client_logged, seed_imports):
     assert {"html", "pagination_html", "count", "current_page", "total_pages"} <= set(
         data.keys()
     )
+    assert "01/2025" in data["html"]
+    assert "Descargar" in data["html"]
+
+
+def test_list_view_backfills_periodo_from_stored_file(client_logged, tmp_media):
+    content = (
+        "ID;COMEDOR;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;A\u00f1o de pago\n"
+        "1;Comedor;EX-2024-1;EX-2025-OLD;$ 1.000,00;septiembre;2025\n"
+    )
+    uploaded = SimpleUploadedFile(
+        "old.csv",
+        content.encode("utf-8"),
+        content_type="text/csv",
+    )
+    batch = ArchivosImportados.objects.create(
+        archivo=uploaded,
+        delimiter=";",
+        usuario=User.objects.get(username="tester"),
+    )
+
+    resp = client_logged.get(reverse("importarexpedientes_list"))
+
+    assert resp.status_code == 200
+    assert "09/2025" in resp.content.decode()
+    batch.refresh_from_db()
+    assert batch.periodo_pago == "09/2025"
+
+
+def test_list_view_backfills_periodo_from_imported_record(client_logged, tmp_media):
+    comedor = Comedor.objects.create(nombre="Comedor Periodo Importado")
+    batch = ArchivosImportados.objects.create(
+        archivo="importados/sin_periodo.csv",
+        usuario=User.objects.get(username="tester"),
+    )
+    exito = batch.exitos.create(fila=2, mensaje="Importado")
+    expediente = comedor.expedientes_pagos.create(
+        expediente_convenio="EX-2024-IMP",
+        expediente_pago="EX-2025-IMP",
+        mes_pago="8",
+        ano="2025",
+        prestaciones_mensuales_desayuno=0,
+        prestaciones_mensuales_almuerzo=0,
+        prestaciones_mensuales_merienda=0,
+        prestaciones_mensuales_cena=0,
+        monto_mensual_desayuno=0,
+        monto_mensual_almuerzo=0,
+        monto_mensual_merienda=0,
+        monto_mensual_cena=0,
+    )
+    exito.registros.create(expediente_pago=expediente)
+
+    resp = client_logged.get(reverse("importarexpedientes_list"))
+
+    assert resp.status_code == 200
+    assert "08/2025" in resp.content.decode()
+    batch.refresh_from_db()
+    assert batch.periodo_pago == "08/2025"
+
+
+def test_download_imported_file(client_logged, seed_imports):
+    batch = ArchivosImportados.objects.latest("id")
+
+    resp = client_logged.get(
+        reverse("descargar_archivo_importado", kwargs={"id_archivo": batch.id})
+    )
+
+    assert resp.status_code == 200
+    assert resp["Content-Disposition"].startswith("attachment;")
 
 
 def test_detail_view_and_ajax(client_logged, seed_imports):

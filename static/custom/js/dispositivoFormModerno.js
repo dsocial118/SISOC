@@ -36,6 +36,11 @@ function initializeCollapsibleSections() {
         header.setAttribute("role", "button");
         header.setAttribute("aria-expanded", "true");
 
+        header.addEventListener("click", function () {
+            const section = this.closest(".section-card").dataset.section;
+            toggleSection(section);
+        });
+
         header.addEventListener("keydown", function (e) {
             if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
