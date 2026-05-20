@@ -35,6 +35,7 @@ from VAT.services.access_scope import (
     is_vat_provincial,
     is_vat_sse,
 )
+from users.territorial_scope import apply_full_province_scope
 
 # ============ MODALIDAD CURSADA ============
 
@@ -406,11 +407,9 @@ class VATPlanScopeMixin:
         if is_vat_sse(user):
             return queryset
 
-        provincia_id = get_user_provincia_id(user)
-        if provincia_id:
-            return queryset.filter(provincia_id=provincia_id)
-
-        return queryset.none()
+        return apply_full_province_scope(
+            queryset, user, provincia_lookup="provincia_id"
+        )
 
 
 class VATPlanMutationPermissionMixin:

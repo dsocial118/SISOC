@@ -17,7 +17,7 @@ from django.http import (
 from django.utils.html import escape
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
-from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoesNotExist
+from django.core.exceptions import ValidationError, PermissionDenied
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
@@ -59,6 +59,12 @@ from django.db import transaction
 from core.models import Nacionalidad, Provincia, Localidad
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import is_soft_deletable_instance
+from users.territorial_scope import (
+    apply_territorial_scope,
+    get_effective_scopes,
+    get_single_full_province_scope_id,
+    is_territorial_user,
+)
 
 logger = logging.getLogger("django")
 
@@ -100,12 +106,7 @@ def _is_ajax(request) -> bool:
 
 
 def _is_provincial(user) -> bool:
-    if not user.is_authenticated:
-        return False
-    try:
-        return bool(user.profile.es_usuario_provincial and user.profile.provincia_id)
-    except (AttributeError, ObjectDoesNotExist):
-        return False
+    return is_territorial_user(user)
 
 
 def _can_manage_registros_erroneos(user) -> bool:
@@ -324,6 +325,10 @@ def _consolidar_datos_registro_erroneo(datos_previos, datos_nuevos):
 
 def _resolver_provincia_id_registro_erroneo(user, expediente):
     provincia = _user_provincia(user) or getattr(expediente, "provincia", None)
+    if provincia is None and _is_provincial(user):
+        provincia_ids = {scope.provincia_id for scope in get_effective_scopes(user)}
+        if len(provincia_ids) == 1:
+            return next(iter(provincia_ids))
     if provincia is None:
         try:
             provincia = expediente.usuario_provincia.profile.provincia
@@ -496,10 +501,36 @@ def _registro_erroneo_responsable_requerido(payload):
 
 
 def _user_provincia(user):
-    try:
-        return user.profile.provincia
-    except (AttributeError, ObjectDoesNotExist):
+    provincia_id = get_single_full_province_scope_id(user)
+    if not provincia_id:
         return None
+    return Provincia.objects.filter(pk=provincia_id).first()
+
+
+def _user_scope_provincias(user):
+    provincia_ids = sorted({scope.provincia_id for scope in get_effective_scopes(user)})
+    if not provincia_ids:
+        return Provincia.objects.none()
+    return Provincia.objects.filter(pk__in=provincia_ids).order_by("nombre")
+
+
+def _apply_provincial_expediente_scope(queryset, user):
+    return apply_territorial_scope(
+        queryset,
+        user,
+        provincia_lookup="expediente_ciudadanos__ciudadano__provincia_id",
+        municipio_lookup="expediente_ciudadanos__ciudadano__municipio_id",
+        localidad_lookup="expediente_ciudadanos__ciudadano__localidad_id",
+        own_lookup="usuario_provincia",
+        include_own=True,
+    )
+
+
+def _get_provincial_expediente_or_404(user, pk):
+    return get_object_or_404(
+        _apply_provincial_expediente_scope(Expediente.objects.all(), user),
+        pk=pk,
+    )
 
 
 def _tecnicos_queryset():
@@ -547,9 +578,13 @@ class LocalidadesLookupView(View):
         # Filtrar por provincia del usuario solo si es provincial Y NO es coordinador
         is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
         if _is_provincial(user) and not is_coord:
-            prov = _user_provincia(user)
-            if prov:
-                localidades = localidades.filter(municipio__provincia=prov)
+            localidades = apply_territorial_scope(
+                localidades,
+                user,
+                provincia_lookup="municipio__provincia_id",
+                municipio_lookup="municipio_id",
+                localidad_lookup="id",
+            )
 
         if provincia_id:
             localidades = localidades.filter(municipio__provincia_id=provincia_id)
@@ -635,8 +670,7 @@ class ExpedienteListView(ListView):
                 .order_by("-fecha_creacion")
             )
         elif _is_provincial(user):
-            prov = _user_provincia(user)
-            qs = qs.filter(usuario_provincia__profile__provincia=prov).order_by(
+            qs = _apply_provincial_expediente_scope(qs, user).order_by(
                 "-fecha_creacion"
             )
         else:
@@ -686,10 +720,7 @@ class ProcesarExpedienteView(View):
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
         elif _is_provincial(user):
-            prov = _user_provincia(user)
-            expediente = get_object_or_404(
-                Expediente, pk=pk, usuario_provincia__profile__provincia=prov
-            )
+            expediente = _get_provincial_expediente_or_404(user, pk)
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
@@ -776,10 +807,7 @@ class CrearLegajosView(View):
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
         elif _is_provincial(user):
-            prov = _user_provincia(user)
-            expediente = get_object_or_404(
-                Expediente, pk=pk, usuario_provincia__profile__provincia=prov
-            )
+            expediente = _get_provincial_expediente_or_404(user, pk)
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
@@ -877,9 +905,7 @@ class ExpedienteCreateView(CreateView):
 
         # Filtrar provincias según el usuario
         if _is_provincial(user):
-            # Usuario provincial: solo su provincia
-            prov = _user_provincia(user)
-            ctx["provincias"] = [prov] if prov else []
+            ctx["provincias"] = _user_scope_provincias(user)
         else:
             # Admin/Coordinador: todas las provincias
             ctx["provincias"] = Provincia.objects.order_by("nombre")
@@ -922,8 +948,7 @@ class ExpedienteDetailView(DetailView):
         if _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION):
             return base.filter(asignaciones_tecnicos__tecnico=user)
         if _is_provincial(user):
-            prov = _user_provincia(user)
-            return base.filter(usuario_provincia__profile__provincia=prov)
+            return _apply_provincial_expediente_scope(base, user)
         return base.filter(usuario_provincia=user)
 
     def get_context_data(self, **kwargs):
@@ -1354,10 +1379,7 @@ class ExpedienteImportView(View):
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
         elif _is_provincial(user):
-            prov = _user_provincia(user)
-            expediente = get_object_or_404(
-                Expediente, pk=pk, usuario_provincia__profile__provincia=prov
-            )
+            expediente = _get_provincial_expediente_or_404(user, pk)
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
@@ -1404,10 +1426,7 @@ class ExpedienteConfirmView(View):
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
         elif _is_provincial(user):
-            prov = _user_provincia(user)
-            expediente = get_object_or_404(
-                Expediente, pk=pk, usuario_provincia__profile__provincia=prov
-            )
+            expediente = _get_provincial_expediente_or_404(user, pk)
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
