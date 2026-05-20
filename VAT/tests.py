@@ -63,6 +63,7 @@ from VAT.services.access_scope import (
     is_vat_revisor,
     is_vat_sse,
 )
+from VAT.services import nomina_export
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Programa, Sexo
 from users.models import Profile
@@ -6072,6 +6073,26 @@ def _build_comision_curso_nomina_export_context(vat_geo_data, suffix):
 @override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
 def test_comision_curso_exporta_nomina_preinscriptos_en_excel(client, vat_geo_data):
     user, comision = _build_comision_curso_nomina_export_context(vat_geo_data, "PRE")
+    ciudadana_observaciones = Ciudadano.objects.create(
+        apellido="FEREZ",
+        nombre="Natasha Belen",
+        fecha_nacimiento=date(1995, 2, 10),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=None,
+        email="natasha.ferez@vat.test",
+    )
+    Inscripcion.objects.create(
+        ciudadano=ciudadana_observaciones,
+        comision_curso=comision,
+        estado="pre_inscripta",
+        origen_canal="front_publico",
+        observaciones=json.dumps(
+            {
+                "cuil": "27388338631",
+                "telefono": "+54-11-23327535",
+            }
+        ),
+    )
     client.force_login(user)
 
     response = client.get(
@@ -6111,7 +6132,7 @@ def test_comision_curso_exporta_nomina_preinscriptos_en_excel(client, vat_geo_da
         "Email",
         "Tel\u00e9fono",
     ]
-    assert len(rows) == 2
+    assert len(rows) == 3
     assert rows_by_name["Ana"]["Apellido"] == "Perez"
     assert rows_by_name["Ana"]["DNI / CUIL"] == "27-30111222-5"
     assert rows_by_name["Ana"]["Estado de Inscripci\u00f3n"] == "Inscripta"
@@ -6123,8 +6144,26 @@ def test_comision_curso_exporta_nomina_preinscriptos_en_excel(client, vat_geo_da
     assert rows_by_name["Juan"]["DNI / CUIL"] == "28123456"
     assert rows_by_name["Juan"]["Estado de Inscripci\u00f3n"] == "En Espera"
     assert rows_by_name["Juan"]["Canal de Inscripci\u00f3n"] == "Front P\u00fablico"
+    assert rows_by_name["Natasha Belen"]["Apellido"] == "FEREZ"
+    assert rows_by_name["Natasha Belen"]["DNI / CUIL"] == "27388338631"
+    assert rows_by_name["Natasha Belen"]["Tel\u00e9fono"] == "+54-11-23327535"
     assert rows_by_name["Ana"]["Fecha de Inscripci\u00f3n"]
     assert rows_by_name["Juan"]["Fecha de Inscripci\u00f3n"]
+
+
+def test_nomina_export_ignora_observaciones_no_json():
+    assert (
+        nomina_export._parse_observaciones_json(
+            SimpleNamespace(observaciones="No es JSON")
+        )
+        == {}
+    )
+    assert (
+        nomina_export._parse_observaciones_json(
+            SimpleNamespace(observaciones='["telefono"]')
+        )
+        == {}
+    )
 
 
 @pytest.mark.django_db
