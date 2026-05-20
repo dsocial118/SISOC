@@ -359,7 +359,7 @@
                     </li>
                 {% endif %}
                 <!-- ORGANIZACIONES -->
-                {% if request.user|has_perm_code:"organizaciones.view_organizacion" %}
+                {% if request.user|has_perm_code:"organizaciones.view_organizacion" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_perm_code:"auth.role_abogado_dupla" %}
                     <li class="nav-item {% if 'organizaciones' in pagina_actual %}menu-open{% endif %}">
                         <a href="#"
                            class="nav-link nav-dot ms-2 {% if 'organizaciones' in pagina_actual %}active{% endif %}">

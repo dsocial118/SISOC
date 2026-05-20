@@ -311,4 +311,4 @@ class RelevamientoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Relevamiento
-        fields = "__all__"
+        exclude = ("numero_if",)
