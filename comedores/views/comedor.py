@@ -43,6 +43,7 @@ from comedores.services.capacitaciones_certificados_service import (
     list_capacitaciones_certificados,
     serialize_certificate,
 )
+from comedores.services.dw_transacciones_service import DWTransaccionesService
 from comedores.services.filter_config import get_filters_ui_config
 from comedores.utils import comedor_usa_admision_para_nomina
 from core.pagination import NoCountPaginator, build_no_count_page_range
@@ -50,6 +51,7 @@ from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from core.utils import convert_string_to_int
+from iam.services import user_has_permission_code
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm, build_programa_aliases
@@ -1385,6 +1387,14 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             selected_admision
         )
         context.update(timeline_selected)
+
+        context["resumen_dw_transacciones"] = None
+        request_user = getattr(self.request, "user", None)
+        if user_has_permission_code(request_user, "comedores.view_comedor"):
+            context["resumen_dw_transacciones"] = (
+                DWTransaccionesService.obtener_resumen_ultimo_periodo(self.object.id)
+            )
+
         return context
 
 
@@ -1505,3 +1515,47 @@ class ComedorDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteVie
 
     def get_queryset(self):
         return ComedorService.get_scoped_comedor_queryset(self.request.user)
+
+
+class ComedorTransaccionesDetailView(LoginRequiredMixin, DetailView):
+    """View para mostrar el histórico completo de transacciones DW de un comedor."""
+
+    model = Comedor
+    template_name = "comedor/comedor_transacciones_detail.html"
+    context_object_name = "comedor"
+    paginate_by = 20
+
+    def get_object(self, queryset=None):
+        return ComedorService.get_comedor_detail_object(
+            self.kwargs["pk"], user=self.request.user
+        )
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+
+        # Obtener página actual
+        page = self.request.GET.get("page", 1)
+        try:
+            page = int(page)
+        except (ValueError, TypeError):
+            page = 1
+
+        # Obtener transacciones paginadas
+        transacciones, total_count = DWTransaccionesService.obtener_historico_completo(
+            self.object.id, page=page, per_page=self.paginate_by
+        )
+
+        # Crear paginador
+        paginator = Paginator(range(total_count), self.paginate_by)
+        page_obj = paginator.get_page(page)
+
+        context.update(
+            {
+                "transacciones": transacciones,
+                "page_obj": page_obj,
+                "total_count": total_count,
+                "es_ultima_pagina": page_obj.number == paginator.num_pages,
+            }
+        )
+
+        return context

@@ -9,6 +9,7 @@ from comedores.views import (
     ComedorDatosConvenioPnudUpdateView,
     ComedorDeleteView,
     ComedorDetailView,
+    ComedorTransaccionesDetailView,
     ComedorListView,
     ComedorUpdateView,
     CursoAppMobileCreateView,
@@ -103,6 +104,15 @@ urlpatterns = [
             ComedorDeleteView.as_view()
         ),
         name="comedor_eliminar",
+    ),
+    path(
+        "comedores/<int:pk>/transacciones",
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+            ]
+        )(ComedorTransaccionesDetailView.as_view()),
+        name="comedor_transacciones_detalle",
     ),
     path(
         "comedores/<comedor_pk>/observacion/crear",
