@@ -86,7 +86,10 @@
                             <div class="col-md-4">{{ form.tipo_gestion|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-md-4">{{ form.tipo_gestion_otra|as_crispy_field }}</div>
+                            <div id="wrapper-tipo_gestion_otra"
+                                 class="col-md-4 {% if form.tipo_gestion.value != 'otra' %}d-none{% endif %}">
+                                {{ form.tipo_gestion_otra|as_crispy_field }}
+                            </div>
                             <div class="col-md-4">{{ form.razon_social|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
@@ -130,7 +133,10 @@
                     <div class="section-body collapse show" id="section-caracteristicas">
                         <div class="form-group row">
                             <div class="col-md-4">{{ form.tipo_dispositivo|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.tipo_dispositivo_otro|as_crispy_field }}</div>
+                            <div id="wrapper-tipo_dispositivo_otro"
+                                 class="col-md-4 {% if form.tipo_dispositivo.value != 'otro' %}d-none{% endif %}">
+                                {{ form.tipo_dispositivo_otro|as_crispy_field }}
+                            </div>
                         </div>
                         <div class="form-group row">
                             <div class="col-md-4">{{ form.modalidad_funcionamiento|as_crispy_field }}</div>
@@ -168,15 +174,23 @@
                         <div class="form-group row">
                             <div class="col-md-4">
                                 {{ form.poblacion_destinataria|as_crispy_field }}
-                                <div class="row">
-                                    <div class="col-md-8">{{ form.poblacion_destinataria_otro|as_crispy_field }}</div>
-                                </div>
+                                {% with sel=form.poblacion_destinataria.value %}
+                                    <div class="row">
+                                        <div id="wrapper-poblacion_destinataria_otro"
+                                             class="col-md-8 {% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                            {{ form.poblacion_destinataria_otro|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                {% endwith %}
                             </div>
                             <div class="col-md-4">
                                 {{ form.franja_etaria_destinataria|as_crispy_field }}
                                 <div class="row">
                                     <div class="col-md-6">{{ form.tiempo_permanencia_promedio|as_crispy_field }}</div>
-                                    <div class="col-md-6">{{ form.tiempo_permanencia_otro|as_crispy_field }}</div>
+                                    <div id="wrapper-tiempo_permanencia_otro"
+                                         class="col-md-6 {% if form.tiempo_permanencia_promedio.value != 'otro' %}d-none{% endif %}">
+                                        {{ form.tiempo_permanencia_otro|as_crispy_field }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -208,17 +222,32 @@
                         <div class="form-group row">
                             <div class="col-md-4">
                                 {{ form.modalidad_ingreso|as_crispy_field }}
-                                {{ form.modalidad_ingreso_otro|as_crispy_field }}
+                                {% with sel=form.modalidad_ingreso.value %}
+                                    <div id="wrapper-modalidad_ingreso_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.modalidad_ingreso_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                             <div class="col-md-4">
                                 {{ form.documentacion_ingreso|as_crispy_field }}
-                                {{ form.documentacion_ingreso_otro|as_crispy_field }}
+                                {% with sel=form.documentacion_ingreso.value %}
+                                    <div id="wrapper-documentacion_ingreso_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.documentacion_ingreso_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                         </div>
                         <div class="form-group row">
                             <div class="col-md-4">
                                 {{ form.requisitos_ingreso|as_crispy_field }}
-                                {{ form.requisitos_ingreso_otro|as_crispy_field }}
+                                {% with sel=form.requisitos_ingreso.value %}
+                                    <div id="wrapper-requisitos_ingreso_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.requisitos_ingreso_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                         </div>
                     </div>
@@ -249,14 +278,24 @@
                         <div class="form-group row">
                             <div class="col-md-4">
                                 {{ form.servicios_brindados|as_crispy_field }}
-                                {{ form.servicios_brindados_otro|as_crispy_field }}
+                                {% with sel=form.servicios_brindados.value %}
+                                    <div id="wrapper-servicios_brindados_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.servicios_brindados_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                             <div class="col-md-4">
                                 {{ form.ofrece_actividades_formativas|as_crispy_field }}
                                 <div id="actividades-detalle"
                                      class="{% if form.ofrece_actividades_formativas.value != 'si' %}d-none{% endif %}">
                                     {{ form.tipos_actividades_formativas|as_crispy_field }}
-                                    {{ form.tipos_actividades_formativas_otro|as_crispy_field }}
+                                    {% with sel=form.tipos_actividades_formativas.value %}
+                                        <div id="wrapper-tipos_actividades_formativas_otro"
+                                             class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                            {{ form.tipos_actividades_formativas_otro|as_crispy_field }}
+                                        </div>
+                                    {% endwith %}
                                     {{ form.actividades_certificacion_oficial|as_crispy_field }}
                                 </div>
                             </div>
@@ -294,11 +333,19 @@
                             <div class="form-group row">
                                 <div class="col-md-4">
                                     {{ form.modo_registro|as_crispy_field }}
-                                    {{ form.modo_registro_otro|as_crispy_field }}
+                                    <div id="wrapper-modo_registro_otro"
+                                         class="{% if form.modo_registro.value != 'otro' %}d-none{% endif %}">
+                                        {{ form.modo_registro_otro|as_crispy_field }}
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     {{ form.tipo_informacion_registrada|as_crispy_field }}
-                                    {{ form.tipo_informacion_registrada_otro|as_crispy_field }}
+                                    {% with sel=form.tipo_informacion_registrada.value %}
+                                        <div id="wrapper-tipo_informacion_registrada_otro"
+                                             class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                            {{ form.tipo_informacion_registrada_otro|as_crispy_field }}
+                                        </div>
+                                    {% endwith %}
                                 </div>
                             </div>
                         </div>
@@ -330,11 +377,21 @@
                         <div class="form-group row">
                             <div class="col-md-4">
                                 {{ form.infraestructura_disponible|as_crispy_field }}
-                                {{ form.infraestructura_disponible_otro|as_crispy_field }}
+                                {% with sel=form.infraestructura_disponible.value %}
+                                    <div id="wrapper-infraestructura_disponible_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.infraestructura_disponible_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                             <div class="col-md-4">
                                 {{ form.infraestructura_accesibilidad|as_crispy_field }}
-                                {{ form.infraestructura_accesibilidad_otro|as_crispy_field }}
+                                {% with sel=form.infraestructura_accesibilidad.value %}
+                                    <div id="wrapper-infraestructura_accesibilidad_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.infraestructura_accesibilidad_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                         </div>
                         <div class="form-group row">
@@ -369,7 +426,12 @@
                         <div class="form-group row">
                             <div class="col-md-4">
                                 {{ form.articulaciones_institucionales|as_crispy_field }}
-                                {{ form.articulaciones_institucionales_otro|as_crispy_field }}
+                                {% with sel=form.articulaciones_institucionales.value %}
+                                    <div id="wrapper-articulaciones_institucionales_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.articulaciones_institucionales_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                         </div>
                     </div>
