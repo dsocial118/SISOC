@@ -1,39 +1,27 @@
 {% if resumen_dw_transacciones %}
-    <!-- Card: Transacciones - Nación Servicios (estilo global) -->
     <div class="card bg-card" id="card-transacciones">
-        <div class="card-header py-1 d-flex align-items-center justify-content-between">
-            <h4 class="fw-bold my-1">
-                <i class="bi bi-graph-up me-2"></i>Transacciones - Nación Servicios
-            </h4>
-            <a href="{% url 'comedor_transacciones_detalle' comedor.id %}"
-               class="btn btn-sm btn-outline-primary ms-auto">
-                <i class="bi bi-arrow-right me-1"></i>Ver detalle
-            </a>
+        <div class="card-header py-1">
+            <h4 class="fw-bold my-1 text-center">Transacciones - Naci&oacute;n Servicios</h4>
         </div>
-        <div class="card-body p-2">
-            <div class="row g-2">
-                <div class="col-6 col-lg-3">
-                    <small class="text-muted d-block mb-1">Período</small>
-                    <div class="fw-semibold">{{ resumen_dw_transacciones.periodo_display }}</div>
-                </div>
-                <div class="col-6 col-lg-3">
-                    <small class="text-muted d-block mb-1">Transferido</small>
-                    <div class="text-info fw-semibold">{{ resumen_dw_transacciones.transferido_display }}</div>
-                </div>
-                <div class="col-6 col-lg-3">
-                    <small class="text-muted d-block mb-1">Gastado</small>
-                    <div class="text-success fw-semibold">{{ resumen_dw_transacciones.gastado_display }}</div>
-                </div>
-                <div class="col-6 col-lg-3">
-                    <small class="text-muted d-block mb-1">Saldo Remanente</small>
-                    <div class="text-warning fw-semibold">{{ resumen_dw_transacciones.saldo_display }}</div>
-                </div>
-            </div>
-            <div class="row mt-2">
-                <div class="col-12">
-                    <small class="text-muted">Movimientos:</small>
-                    <div class="fw-semibold">{{ resumen_dw_transacciones.cantidad_debitos }}</div>
-                </div>
+        <div class="card-body">
+            <p class="mb-0 fs-7">
+                Per&iacute;odo: <strong>{{ resumen_dw_transacciones.periodo_display }}</strong>
+            </p>
+            <p class="mb-0 fs-7">
+                Movimientos: <strong>{{ resumen_dw_transacciones.cantidad_debitos }}</strong>
+            </p>
+            <p class="mb-0 fs-7">
+                Transferido: <strong>{{ resumen_dw_transacciones.transferido_display }}</strong>
+            </p>
+            <p class="mb-0 fs-7">
+                Gastado: <strong>{{ resumen_dw_transacciones.gastado_display }}</strong>
+            </p>
+            <p class="mb-0 fs-7">
+                Saldo Remanente: <strong>{{ resumen_dw_transacciones.saldo_display }}</strong>
+            </p>
+            <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
+                <a href="{% url 'comedor_transacciones_detalle' comedor.id %}"
+                   class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Ver detalles</a>
             </div>
         </div>
     </div>
