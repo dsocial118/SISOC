@@ -16,11 +16,20 @@ reporta conflictos.
   reflejar las implementaciones que viajan en el PR final `development -> main`.
 - Se aplicó el formato requerido por `djlint` en
   `users/templates/user/user_form.html`, sin cambios de comportamiento.
+- Se corrigió la resolución de perfiles territoriales para leer el perfil
+  persistido cuando hay usuario Django real y conservar el perfil adjunto para
+  helpers/tests livianos.
+- Se restauró el fallback histórico de `profile.provincia` en CDI y Celiaquía
+  para no relajar accesos fuera de alcance ni romper expedientes/legajos
+  históricos sin provincia completa.
 
 ## Impacto
 
-El saneamiento no cambia reglas de negocio. El ajuste de template solo compacta
-el render de errores de `territorial_scopes` según la regla de formato vigente.
+El saneamiento no agrega reglas de negocio nuevas. Los cambios corrigen
+regresiones de compatibilidad introducidas por el alcance territorial nuevo:
+usuarios con `profile.provincia` siguen filtrando CDI por provincia, los helpers
+provinciales toleran perfiles no existentes y los comentarios de legajos
+históricos sin provincia mantienen el comportamiento previo.
 
 El release sí incorpora migraciones y cambios funcionales en CDI/usuarios,
 organizaciones/admisiones, comedores, importación de expedientes, dispositivos,
@@ -35,6 +44,8 @@ VAT, Celiaquía y relevamientos.
   y los scopes territoriales queden disponibles para la operación.
 - Validar manualmente formularios con archivos y permisos territoriales porque
   el corte cruza templates, JavaScript, views y modelos.
+- Revisar con datos reales un usuario provincial con scope nuevo y otro con
+  `profile.provincia` legacy para confirmar que ambos caminos se mantienen.
 
 ## Validación esperada
 

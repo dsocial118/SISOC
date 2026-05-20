@@ -22,6 +22,7 @@
 - [Dispositivos] Se restaura el comportamiento de colapsar secciones por click en el formulario moderno.
 - [CI/Lint] Se corrigen regresiones de lint y formato detectadas durante los merges hacia `development`.
 - [Predeploy] Se sanea el formato `djlint` de `users/templates/user/user_form.html` para dejar `development` lista para promoción a `main`.
+- [Usuarios/CDI/Celiaquía] Se corrige el fallback de perfiles provinciales y scopes territoriales para mantener compatibilidad con usuarios con `profile.provincia`, comentarios de legajos sin provincia histórica y accesos CDI fuera de alcance.
 <!-- AUTO-GENERATED RELEASE END: 2026-05-20 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-05-06 -->
