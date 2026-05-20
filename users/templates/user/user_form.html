@@ -265,9 +265,7 @@
                              data-localidades-url="{% url 'ajax_load_localidades' %}">
                             <label class="form-label d-block">Alcances territoriales</label>
                             {% if form.territorial_scopes.errors %}
-                                <div class="invalid-feedback d-block mb-2">
-                                    {{ form.territorial_scopes.errors|striptags }}
-                                </div>
+                                <div class="invalid-feedback d-block mb-2">{{ form.territorial_scopes.errors|striptags }}</div>
                             {% endif %}
                             <div class="table-responsive">
                                 <table class="table table-sm align-middle mb-2">

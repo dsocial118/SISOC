@@ -1,3 +1,29 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-05-20 -->
+# Versión SISOC 20.05.2026
+
+## Nuevas Funcionalidades
+
+- [CDI/Usuarios] Se incorpora la generación de usuarios `CDI - Referente centro` desde el detalle del CDI, con credenciales temporales, envío por mail, panel de usuarios por centro y alcance acotado a los centros vinculados.
+- [Organizaciones/Admisiones] La documentación de organizaciones se integra al flujo de admisiones, con historial, carga de archivos, número GDE y trazabilidad reutilizable desde comedores y relevamientos.
+- [Comedores] Se agrega resumen y detalle de transacciones Nación Servicios en el legajo del comedor, con modelo DW, vistas web y pruebas de compatibilidad.
+- [Importar expedientes] Los lotes importados guardan período de pago, permiten descargar el archivo original y bloquean duplicados de expedientes de pago antes de crear lotes inconsistentes.
+- [Usuarios] Los usuarios provinciales incorporan alcance territorial configurable, reutilizado por VAT, Celiaquía, CDI y formularios de usuario para restringir visibilidad y gestión por provincia/localidad.
+- [Dispositivos] El formulario de dispositivos muestra campos condicionales `_otro/_otra` solo cuando corresponde y revela documentación adicional de forma progresiva.
+
+## Actualizaciones
+
+- [VAT] La exportación de nómina completa datos desde observaciones para evitar filas incompletas cuando la fuente principal no trae toda la información esperada.
+- [Celiaquía] Las vistas y permisos incorporan el alcance territorial de usuarios provinciales y refuerzan cobertura de listado, localidades y permisos operativos.
+- [CDI] Formularios, exportaciones y detalle aplican scope de referente de centro sin cambiar la visibilidad existente para provinciales y superusuarios.
+- [Relevamientos] Se agrega número IF y se ajusta el listado para sostener la nueva documentación asociada a organizaciones.
+
+## Corrección de Errores
+
+- [Dispositivos] Se restaura el comportamiento de colapsar secciones por click en el formulario moderno.
+- [CI/Lint] Se corrigen regresiones de lint y formato detectadas durante los merges hacia `development`.
+- [Predeploy] Se sanea el formato `djlint` de `users/templates/user/user_form.html` para dejar `development` lista para promoción a `main`.
+<!-- AUTO-GENERATED RELEASE END: 2026-05-20 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-05-06 -->
 # Versión SISOC 06.05.2026
 
