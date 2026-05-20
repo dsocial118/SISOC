@@ -239,3 +239,101 @@ def test_formulario_muestra_secciones_modernas(client, user_con_permisos):
         'class="d-none"'
         in contenido[registro_detalle_index : registro_detalle_index + 200]
     )
+
+
+WRAPPERS_OTRO = [
+    "wrapper-tipo_gestion_otra",
+    "wrapper-tipo_dispositivo_otro",
+    "wrapper-poblacion_destinataria_otro",
+    "wrapper-tiempo_permanencia_otro",
+    "wrapper-modalidad_ingreso_otro",
+    "wrapper-documentacion_ingreso_otro",
+    "wrapper-requisitos_ingreso_otro",
+    "wrapper-servicios_brindados_otro",
+    "wrapper-tipos_actividades_formativas_otro",
+    "wrapper-modo_registro_otro",
+    "wrapper-tipo_informacion_registrada_otro",
+    "wrapper-infraestructura_disponible_otro",
+    "wrapper-infraestructura_accesibilidad_otro",
+    "wrapper-articulaciones_institucionales_otro",
+]
+
+
+def _tag_for(contenido, wrapper_id):
+    needle = f'id="{wrapper_id}"'
+    idx = contenido.find(needle)
+    assert idx != -1, f"No se encontró {wrapper_id} en el template"
+    tag_end = contenido.find(">", idx)
+    return contenido[idx:tag_end]
+
+
+@pytest.mark.django_db
+def test_formulario_oculta_todos_los_wrappers_otro_en_creacion(
+    client, user_con_permisos
+):
+    client.force_login(user_con_permisos)
+
+    response = client.get(reverse("dispositivos_crear"))
+
+    assert response.status_code == 200
+    contenido = response.content.decode("utf-8")
+    for wrapper_id in WRAPPERS_OTRO:
+        tag = _tag_for(contenido, wrapper_id)
+        assert "d-none" in tag, f"{wrapper_id} debe iniciar con d-none"
+
+
+@pytest.mark.django_db
+def test_formulario_muestra_wrappers_otro_cuando_dispositivo_tiene_valor(
+    client, user_con_permisos, provincia_municipio
+):
+    provincia, municipio = provincia_municipio
+    client.force_login(user_con_permisos)
+
+    dispositivo = _crear_dispositivo(
+        provincia,
+        municipio,
+        indice=99887766,
+        nombre_institucion="Dispositivo Otros",
+        cuit_institucion="20998877661",
+        responsable_dni="99887766",
+        tipo_gestion="otra",
+        tipo_gestion_otra="Cooperativa local",
+        tipo_dispositivo="otro",
+        tipo_dispositivo_otro="Centro mixto",
+        poblacion_destinataria=["otro"],
+        poblacion_destinataria_otro="Personas migrantes",
+        tiempo_permanencia_promedio="otro",
+        tiempo_permanencia_otro="Variable",
+        modalidad_ingreso=["otro"],
+        modalidad_ingreso_otro="Acuerdo municipal",
+        documentacion_ingreso=["otro"],
+        documentacion_ingreso_otro="Acta",
+        requisitos_ingreso=["otro"],
+        requisitos_ingreso_otro="Compromiso",
+        servicios_brindados=["otro"],
+        servicios_brindados_otro="Talleres",
+        registra_informacion_personas="si",
+        modo_registro="otro",
+        modo_registro_otro="Sistema propio",
+        tipo_informacion_registrada=["otro"],
+        tipo_informacion_registrada_otro="Trayectoria",
+        infraestructura_disponible=["otro"],
+        infraestructura_disponible_otro="Patio",
+        infraestructura_accesibilidad=["otro"],
+        infraestructura_accesibilidad_otro="Ascensor",
+        articulaciones_institucionales=["otro"],
+        articulaciones_institucionales_otro="Iglesia local",
+        ofrece_actividades_formativas="si",
+        tipos_actividades_formativas=["otro"],
+        tipos_actividades_formativas_otro="Talleres ad-hoc",
+    )
+
+    response = client.get(reverse("dispositivos_editar", kwargs={"pk": dispositivo.pk}))
+
+    assert response.status_code == 200
+    contenido = response.content.decode("utf-8")
+    for wrapper_id in WRAPPERS_OTRO:
+        tag = _tag_for(contenido, wrapper_id)
+        assert (
+            "d-none" not in tag
+        ), f"{wrapper_id} no debe tener d-none cuando 'otro' está seleccionado"

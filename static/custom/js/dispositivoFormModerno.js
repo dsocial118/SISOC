@@ -280,6 +280,26 @@ function moveTooltipsToLabels() {
 // CAMPOS CONDICIONALES (Si/No)
 // ============================================
 
+const OTRO_MULTI_PAIRS = [
+    ["poblacion_destinataria", "poblacion_destinataria_otro"],
+    ["modalidad_ingreso", "modalidad_ingreso_otro"],
+    ["documentacion_ingreso", "documentacion_ingreso_otro"],
+    ["requisitos_ingreso", "requisitos_ingreso_otro"],
+    ["servicios_brindados", "servicios_brindados_otro"],
+    ["tipos_actividades_formativas", "tipos_actividades_formativas_otro"],
+    ["tipo_informacion_registrada", "tipo_informacion_registrada_otro"],
+    ["infraestructura_disponible", "infraestructura_disponible_otro"],
+    ["infraestructura_accesibilidad", "infraestructura_accesibilidad_otro"],
+    ["articulaciones_institucionales", "articulaciones_institucionales_otro"],
+];
+
+const OTRO_SELECT_PAIRS = [
+    ["id_tipo_gestion", "tipo_gestion_otra", "otra"],
+    ["id_tipo_dispositivo", "tipo_dispositivo_otro", "otro"],
+    ["id_tiempo_permanencia_promedio", "tiempo_permanencia_otro", "otro"],
+    ["id_modo_registro", "modo_registro_otro", "otro"],
+];
+
 function initializeConditionalFields() {
     bindConditional(
         "id_ofrece_actividades_formativas",
@@ -288,6 +308,12 @@ function initializeConditionalFields() {
     bindConditional(
         "id_registra_informacion_personas",
         "registro-detalle"
+    );
+    OTRO_MULTI_PAIRS.forEach(([listName, otroField]) =>
+        bindOtroForMulti(listName, otroField)
+    );
+    OTRO_SELECT_PAIRS.forEach(([selectId, otroField, triggerValue]) =>
+        bindOtroForSelect(selectId, otroField, triggerValue)
     );
 }
 
@@ -306,6 +332,50 @@ function bindConditional(selectId, detailId) {
 
     toggle();
     select.addEventListener("change", toggle);
+}
+
+function bindOtroForMulti(listName, otroFieldName) {
+    const wrapper = document.getElementById(`wrapper-${otroFieldName}`);
+    if (!wrapper) return;
+
+    const otroCheckbox = document.querySelector(
+        `input[name="${listName}"][value="otro"]`
+    );
+    if (!otroCheckbox) return;
+
+    const apply = (clearValue) => {
+        const show = otroCheckbox.checked;
+        wrapper.classList.toggle("d-none", !show);
+        if (!show && clearValue) {
+            const input = wrapper.querySelector(
+                "input[type='text'], input:not([type]), textarea"
+            );
+            if (input) input.value = "";
+        }
+    };
+
+    otroCheckbox.addEventListener("change", () => apply(true));
+    apply(false);
+}
+
+function bindOtroForSelect(selectId, otroFieldName, triggerValue) {
+    const select = document.getElementById(selectId);
+    const wrapper = document.getElementById(`wrapper-${otroFieldName}`);
+    if (!select || !wrapper) return;
+
+    const apply = (clearValue) => {
+        const show = select.value === triggerValue;
+        wrapper.classList.toggle("d-none", !show);
+        if (!show && clearValue) {
+            const input = wrapper.querySelector(
+                "input[type='text'], input:not([type]), textarea"
+            );
+            if (input) input.value = "";
+        }
+    };
+
+    select.addEventListener("change", () => apply(true));
+    apply(false);
 }
 
 // ============================================
