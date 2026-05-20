@@ -1,7 +1,13 @@
 from django.shortcuts import get_object_or_404
 
 from core.constants import UserGroups
-from users.models import Profile
+from core.models import Provincia
+from users.territorial_scope import (
+    apply_territorial_scope,
+    get_single_full_province_scope_id,
+    is_territorial_user,
+    user_can_access_territory,
+)
 
 GRUPO_CDI_REFERENTE_CENTRO = UserGroups.CDI_REFERENTE_CENTRO
 
@@ -54,11 +60,15 @@ def puede_generar_usuario_cdi(user, centro):
         return False
     if user.is_superuser:
         return True
-
-    provincia_usuario = get_provincia_usuario(user)
-    if provincia_usuario is None:
+    if not is_territorial_user(user):
         return False
-    return centro.provincia_id == provincia_usuario.id
+
+    return user_can_access_territory(
+        user,
+        provincia_id=centro.provincia_id,
+        municipio_id=getattr(centro, "municipio_id", None),
+        localidad_id=getattr(centro, "localidad_id", None),
+    )
 
 
 def puede_ver_usuarios_cdi(user, centro):
@@ -81,18 +91,31 @@ def get_provincia_usuario(user):
     if not user or not user.is_authenticated:
         return None
 
-    try:
-        profile = Profile.objects.select_related("provincia").get(user=user)
-    except Exception:
+    provincia_id = get_single_full_province_scope_id(user)
+    if not provincia_id:
         return None
-    return profile.provincia
+    return Provincia.objects.filter(pk=provincia_id).first()
+
+
+def _sibling_territorial_lookup(provincia_lookup, sibling):
+    parts = provincia_lookup.split("__")
+    if parts[-1] == "provincia_id":
+        parts[-1] = f"{sibling}_id"
+        return "__".join(parts)
+    if parts[-1] == "provincia":
+        parts[-1] = sibling
+        return "__".join(parts)
+    return None
 
 
 def aplicar_filtro_provincia_usuario(queryset, user, provincia_lookup="provincia"):
-    provincia_usuario = get_provincia_usuario(user)
-    if provincia_usuario:
-        return queryset.filter(**{provincia_lookup: provincia_usuario})
-    return queryset
+    return apply_territorial_scope(
+        queryset,
+        user,
+        provincia_lookup=provincia_lookup,
+        municipio_lookup=_sibling_territorial_lookup(provincia_lookup, "municipio"),
+        localidad_lookup=_sibling_territorial_lookup(provincia_lookup, "localidad"),
+    )
 
 
 def get_object_scoped_por_provincia_or_404(
