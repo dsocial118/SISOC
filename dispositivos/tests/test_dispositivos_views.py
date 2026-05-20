@@ -337,3 +337,27 @@ def test_formulario_muestra_wrappers_otro_cuando_dispositivo_tiene_valor(
         assert (
             "d-none" not in tag
         ), f"{wrapper_id} no debe tener d-none cuando 'otro' está seleccionado"
+
+
+@pytest.mark.django_db
+def test_formulario_micro_ajustes_visibles(client, user_con_permisos):
+    client.force_login(user_con_permisos)
+
+    response = client.get(reverse("dispositivos_crear"))
+
+    assert response.status_code == 200
+    contenido = response.content.decode("utf-8")
+    assert "La Razón Social es la identidad jurídica" in contenido
+    assert "Ninguna de las anteriores" in contenido
+    assert 'inputmode="numeric"' in contenido
+    assert "Debe ingresar los 11 dígitos sin puntos ni guiones" in contenido
+    limitaciones_idx = contenido.index('name="principales_limitaciones"')
+    necesidades_idx = contenido.index('name="necesidades_prioritarias"')
+    bloque_limitaciones = contenido[max(0, limitaciones_idx - 1500) : limitaciones_idx]
+    bloque_necesidades = contenido[max(0, necesidades_idx - 1500) : necesidades_idx]
+    assert (
+        'class="col-md-12"' in bloque_limitaciones
+    ), "Principales limitaciones debe estar en col-md-12"
+    assert (
+        'class="col-md-12"' in bloque_necesidades
+    ), "Necesidades prioritarias debe estar en col-md-12"
