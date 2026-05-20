@@ -986,6 +986,11 @@ class ExpedienteDetailView(DetailView):
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
         ctx["can_manage_registros_erroneos"] = can_manage_registros_erroneos
         ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
+        ctx["can_download_nomina_aprobados"] = bool(
+            (is_admin or is_coord or is_tecnico)
+            and expediente.estado.nombre == "CRUCE_FINALIZADO"
+            and expediente.excel_masivo
+        )
 
         preview = preview_error = None
         preview_limit_actual = None
