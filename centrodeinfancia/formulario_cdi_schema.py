@@ -682,7 +682,7 @@ SECCIONES_FORMULARIO_CDI = [
             "nombre_referente_organizacion",
             "apellido_referente_organizacion",
             "telefono_referente_organizacion",
-            "email_referente_organizacion",  
+            "email_referente_organizacion",
         ],
     },
     {
