@@ -417,8 +417,10 @@ class DispositivoForm(forms.ModelForm):
             "cuit_institucion",
             "provincia",
             "municipio",
-            "domicilio_institucion",
-            "telefono_contacto",
+            "calle",
+            "altura",
+            "telefono_prefijo",
+            "telefono_numero",
             "correo_electronico",
             "responsable_nombre_completo",
             "responsable_dni",
@@ -496,7 +498,25 @@ class DispositivoForm(forms.ModelForm):
         self.fields["responsable_dni"].widget.attrs.update(
             {"inputmode": "numeric", "pattern": r"\d{7,8}", "maxlength": "8"}
         )
-        self.fields["telefono_contacto"].widget.attrs["inputmode"] = "numeric"
+
+        self.fields["calle"].label = "Calle"
+        self.fields["calle"].required = True
+        self.fields["altura"].label = "Altura"
+        self.fields["altura"].required = True
+
+        self.fields["telefono_prefijo"].label = "Prefijo"
+        self.fields["telefono_prefijo"].required = True
+        self.fields["telefono_prefijo"].widget.attrs.update(
+            {"inputmode": "numeric", "pattern": r"\d+", "maxlength": "10"}
+        )
+        self.fields["telefono_numero"].label = "Teléfono"
+        self.fields["telefono_numero"].required = True
+        self.fields["telefono_numero"].widget.attrs.update(
+            {"inputmode": "numeric", "pattern": r"\d+", "maxlength": "20"}
+        )
+        self.fields["telefono_numero"].help_text = (
+            "Tanto el prefijo como el teléfono deben ingresarse sin puntos ni guiones"
+        )
 
     def _apply_widgets(self):
         for field in self.fields.values():
@@ -555,6 +575,26 @@ class DispositivoForm(forms.ModelForm):
         if len(dni) not in (7, 8):
             raise ValidationError("Ingrese un DNI válido (solo números).")
         return dni
+
+    def clean_telefono_prefijo(self):
+        value = "".join(
+            ch
+            for ch in (self.cleaned_data.get("telefono_prefijo") or "")
+            if ch.isdigit()
+        )
+        if not value:
+            raise ValidationError("Ingrese el prefijo (solo números).")
+        return value
+
+    def clean_telefono_numero(self):
+        value = "".join(
+            ch
+            for ch in (self.cleaned_data.get("telefono_numero") or "")
+            if ch.isdigit()
+        )
+        if not value:
+            raise ValidationError("Ingrese el teléfono (solo números).")
+        return value
 
     def _validate_otro_required(self, list_field, other_field, cleaned_data):
         selected = cleaned_data.get(list_field) or []
