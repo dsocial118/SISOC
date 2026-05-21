@@ -14,9 +14,11 @@ Evolutivo del formulario "Situación de Calle / Dispositivos" (issue #1655). Tic
 ### Modelo (`dispositivos/models.py`)
 - Removidos: `domicilio_institucion`, `telefono_contacto`.
 - Agregados: `calle` (CharField 255), `altura` (CharField 50), `telefono_prefijo` (CharField 10), `telefono_numero` (CharField 20). Todos con `blank=True` (convención Django: required se enfuerza en el form).
+- `Dispositivo.clean()` mantiene la obligatoriedad de los 4 campos también para admin/model forms y valida que prefijo y teléfono sean numéricos.
 
 ### Migración
 - `dispositivos/migrations/0005_remove_dispositivo_domicilio_institucion_and_more.py`: RemoveField (2) + AddField (4) en una sola operación.
+- Antes de remover campos legacy, la migración aborta si existen registros de `Dispositivo`, porque el approach directo depende de que el ambiente no tenga datos cargados.
 
 ### Form (`dispositivos/forms.py`)
 - `Meta.fields`: removidos los viejos, agregados los 4 nuevos.
@@ -40,7 +42,7 @@ Evolutivo del formulario "Situación de Calle / Dispositivos" (issue #1655). Tic
 - Reemplazo de los datos POST y de `_crear_dispositivo` para usar los nuevos campos.
 
 ## Riesgos / pendientes
-- Esta PR asume cero datos en producción. Si llegara a haber alguno en otro ambiente, la migración los va a perder porque hace `RemoveField` directo (no `RunPython` de back-fill).
+- Esta PR asume cero datos en producción. Si llegara a haber registros en otro ambiente, la migración falla antes de remover columnas para evitar pérdida silenciosa; en ese caso hay que usar una migración con back-fill o limpiar el ambiente explícitamente.
 - Si se mergea **antes** que `dispositivos-micro-ajustes` (#????), va a haber conflicto en `forms.py` (los dos toques en `__init__`) y en `dispositivoFormModerno.js` (los dos definen `NUMERIC_ONLY_INPUT_IDS`). La resolución es combinar las dos listas y poner ambos bloques de widget attrs.
 
 ## Cómo probar

@@ -3,6 +3,19 @@
 from django.db import migrations, models
 
 
+def assert_no_legacy_contact_data(apps, schema_editor):
+    Dispositivo = apps.get_model("dispositivos", "Dispositivo")
+    if not Dispositivo.objects.exists():
+        return
+
+    raise RuntimeError(
+        "La migración 0005 de dispositivos asume que no hay datos legacy de "
+        "Dispositivo. Existen registros cargados; antes de remover "
+        "domicilio_institucion y telefono_contacto se debe hacer una "
+        "migración con backfill o limpiar el ambiente explícitamente."
+    )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,6 +23,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(
+            assert_no_legacy_contact_data,
+            reverse_code=migrations.RunPython.noop,
+        ),
         migrations.RemoveField(
             model_name="dispositivo",
             name="domicilio_institucion",
