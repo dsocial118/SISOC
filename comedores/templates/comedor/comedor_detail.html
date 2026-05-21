@@ -1186,13 +1186,11 @@
 {% endif %}
 </div>
 </div>
-</div>
-</div>
 {% if resumen_dw_transacciones %}
-    <div class="row mt-3">
-        <div class="col-12 col-lg-6 mb-3 mb-lg-0">{% include "comedor/comedor_transacciones_card.html" %}</div>
-    </div>
+    <div class="mt-3">{% include "comedor/comedor_transacciones_card.html" %}</div>
 {% endif %}
+</div>
+</div>
 </div>
 <!-- /Cuadros con datos, Avisos y Detalles Admision-->
 <!-- Nomina-->
@@ -1592,7 +1590,7 @@
                             <strong>{{ expediente.mes_pago|default:"-" }}</strong>
                         </div>
                         <div class="col-12 col-md-4 col-xl-2">
-                            <small class="text-muted d-block">Anio</small>
+                            <small class="text-muted d-block">Año</small>
                             <strong>{{ expediente.ano|default:"-" }}</strong>
                         </div>
                         <div class="col-12 col-md-4 col-xl-2">

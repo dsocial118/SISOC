@@ -118,7 +118,14 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-md-6">{{ form.tipo_entidad|as_crispy_field }}</div>
+                            <div class="col-md-6">
+                                {{ form.tipo_entidad|as_crispy_field }}
+                                <div id="tipo-entidad-warning"
+                                     class="alert alert-warning d-none mt-2"
+                                     role="alert">
+                                    Al modificar el Tipo de Entidad, puede cambiar el Tipo de Convenio y la documentación requerida en las admisiones vinculadas.
+                                </div>
+                            </div>
                             <div class="col-md-6">{{ form.subtipo_entidad|as_crispy_field }}</div>
                         </div>
                     </div>
@@ -261,6 +268,7 @@
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
         var cuilCheckAjaxUrl = "{{ cuil_check_ajax_url }}";
         var organizacionPk = "{{ organizacion_pk|default:'' }}";
+        var tipoEntidadOriginal = "{{ form.instance.tipo_entidad_id|default:'' }}";
     </script>
 
     <!-- Scripts externos -->
@@ -269,6 +277,8 @@
 
     <script nonce="{{ request.csp_nonce }}">
     (function () {
+        var tipoEntidadInput = document.getElementById("id_tipo_entidad");
+        var tipoEntidadWarning = document.getElementById("tipo-entidad-warning");
         var cuitInput = document.getElementById("id_cuit");
         var warningBox = document.getElementById("cuil-warning");
         var tbody = document.getElementById("cuil-duplicados-tbody");
@@ -278,6 +288,13 @@
         var submitBtn = document.querySelector('#organizacionForm button[type="submit"]');
         var debounceTimer = null;
         var requestSeq = 0;
+
+        if (tipoEntidadInput && tipoEntidadWarning) {
+            tipoEntidadInput.addEventListener("change", function () {
+                var changed = organizacionPk && tipoEntidadInput.value !== tipoEntidadOriginal;
+                tipoEntidadWarning.classList.toggle("d-none", !changed);
+            });
+        }
 
         function escapeHtml(str) {
             var div = document.createElement("div");
