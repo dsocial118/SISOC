@@ -226,8 +226,15 @@ class ComedorForm(forms.ModelForm):
         if self._can_edit_estado_fields():
             return
 
-        for field_name in ("estado_general", "subestado", "motivo"):
+        for field_name, previous_value in zip(
+            ("estado_general", "subestado", "motivo"),
+            self.previous_estado_chain,
+        ):
             field = self.fields[field_name]
+            if previous_value:
+                field.initial = getattr(previous_value, "pk", None) or getattr(
+                    previous_value, "id", None
+                )
             field.disabled = True
             field.help_text = (
                 "Solo Coordinador o Superadmin puede modificar este campo para PAC."
