@@ -9,6 +9,15 @@
 ## Healthcheck
 - Endpoint `GET /health/` devuelve `OK` (200) para monitoreo. Evidencia: healthcheck/urls.py:1-5 y healthcheck/views.py:1-4.
 
+## Workers operativos
+- `bulk_credentials_worker`: procesa lotes de credenciales masivas. En produccion se levanta con `DJANGO_SERVICE_ROLE=bulk_credentials_worker` desde `docker-compose.produccion.yml`.
+- `ciudadanos_import_worker`: procesa lotes de importacion masiva de ciudadanos creados desde Historia Social Digital. En produccion se levanta con `DJANGO_SERVICE_ROLE=ciudadanos_import_worker` desde `docker-compose.produccion.yml` y ejecuta `python manage.py process_ciudadanos_import_jobs`.
+- Variables de ajuste para importacion masiva de ciudadanos:
+  - `CIUDADANOS_IMPORT_JOB_POLL_SECONDS`: intervalo de polling del worker; default `5`.
+  - `CIUDADANOS_IMPORT_JOB_STALE_SECONDS`: ventana para considerar un lote tomado como stale; default `900`.
+  - `CIUDADANOS_IMPORT_RENAPER_SLEEP_SECONDS`: pausa entre consultas RENAPER; default `1`.
+- El worker de ciudadanos no ejecuta migraciones, fixtures ni servidor web; el contenedor sale si el comando falla, por lo que el monitoreo debe mirar estado/restarts del servicio.
+
 ## Auditoría (MVP Fase 1)
 - Rutas de uso operativo: `/auditoria/` (listado), `/auditoria/evento/<id>/` (detalle) y vistas por instancia bajo `/auditoria/<app>/<model>/<pk>/`. Evidencia: audittrail/urls.py:1-15.
 - El acceso requiere autenticación + permiso `auditlog.view_logentry`. Evidencia: audittrail/views.py:316 y audittrail/views.py:459.

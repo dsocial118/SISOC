@@ -36,6 +36,11 @@
 - `docs/implementaciones/preferencias_columnas.md`: preferencias de columnas en listados.
 - `docs/implementaciones/pwa_backend.md`: implementación backend de funcionalidades PWA.
 - `docs/implementaciones/usuarios_perfil_iam.md`: implementación de Usuarios/Perfil + IAM por permisos Django y guía para extender nuevas features.
+- `docs/implementaciones/ciudadanos_importacion_masiva.md`: flujo de importacion masiva de ciudadanos, worker, RENAPER y operacion.
+- `docs/implementaciones/dispositivos_formulario.md`: comportamiento del formulario moderno de dispositivos.
+- `docs/implementaciones/comedores_transacciones_dw.md`: integracion de transacciones Nacion Servicios desde DW en legajos de comedor.
+- `docs/implementaciones/documentacion_organizaciones.md`: documentacion organizacional, versionado, GDE y reutilizacion en admisiones.
+- `docs/vat/nomina_exportacion.md`: reglas de exportacion de nominas VAT, incluyendo fallback desde observaciones.
 
 ### 5. Flujos y sincronizaciones
 - `docs/flujos/comedor_sync.md`: cómo funciona la sincronización de comedores con servicios externos.

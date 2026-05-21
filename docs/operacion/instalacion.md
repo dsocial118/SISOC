@@ -22,7 +22,9 @@
 - Comandos de referencia:
   - Base comun: `docker compose -f docker-compose.deploy.yml up -d --build`
   - Produccion con worker extra: `docker compose -f docker-compose.deploy.yml -f docker-compose.produccion.yml up -d --build`
-- En produccion, `docker-compose.produccion.yml` agrega `bulk_credentials_worker` con `DJANGO_SERVICE_ROLE=bulk_credentials_worker` para que el worker quede levantado junto con la aplicacion web.
+- En produccion, `docker-compose.produccion.yml` agrega workers extra para que queden levantados junto con la aplicacion web:
+  - `bulk_credentials_worker` con `DJANGO_SERVICE_ROLE=bulk_credentials_worker`.
+  - `ciudadanos_import_worker` con `DJANGO_SERVICE_ROLE=ciudadanos_import_worker`.
 - En los deploys versionados no se levanta `mysql` dentro de Compose; la base se resuelve por variables `DATABASE_*` definidas en el `.env` del host.
 
 ## Actualizacion operativa desde Git
@@ -59,6 +61,7 @@
 ## Flujo de arranque en el contenedor Django
 - Con `DJANGO_SERVICE_ROLE=web` (default), el entrypoint ejecuta `makemigrations` (segun `RUN_MAKEMIGRATIONS_ON_START`), `migrate`, `load_fixtures`, `create_test_users` y `create_groups`; luego levanta Gunicorn en QA/Homologacion/PRD y runserver en DEV. Evidencia: docker/django/entrypoint.py:78-111 y docker/django/entrypoint.py:129-159.
 - Con `DJANGO_SERVICE_ROLE=bulk_credentials_worker`, el contenedor no levanta servidor web ni corre el flujo de migraciones/fixtures; ejecuta `manage.py process_bulk_credentials_jobs`. Evidencia: docker/django/entrypoint.py:114-127.
+- Con `DJANGO_SERVICE_ROLE=ciudadanos_import_worker`, el contenedor no levanta servidor web ni corre el flujo de migraciones/fixtures; ejecuta `manage.py process_ciudadanos_import_jobs`. Evidencia: docker/django/entrypoint.py:130-147.
 
 ## Debug y desarrollo
 - Debug recomendado en VSCode con la configuracion "Django in Docker"; levantar servicios antes con `docker compose up`. Evidencia: README.md:66-68.

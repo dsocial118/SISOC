@@ -63,8 +63,39 @@ Compatibilidad:
   - Email obligatorio.
   - Permisos directos de usuario (`user_permissions`).
   - Grupos con permisos (dual listbox).
+- `users.models.ProfileTerritorialScope`
+  - Alcance territorial explicito para usuarios provinciales.
+  - Define provincia obligatoria, municipio opcional y localidad opcional.
+  - Usa `scope_key` para evitar duplicados equivalentes.
+  - Valida que municipio pertenezca a provincia y localidad pertenezca a municipio.
 - `users/views.py`, `users/views_export.py`, `users/urls.py`
   - Accesos de administración por permisos Django (no solo superuser).
+
+### Alcance territorial provincial
+
+`Profile.provincia` se conserva como compatibilidad legacy, pero la regla nueva de autorizacion territorial vive en `ProfileTerritorialScope`.
+
+Reglas:
+
+- Un usuario provincial sin scopes explicitos no debe recibir acceso global por defecto.
+- Un scope con solo `provincia` habilita toda la provincia.
+- Un scope con `provincia + municipio` habilita solo ese municipio.
+- Un scope con `provincia + municipio + localidad` habilita solo esa localidad.
+- Municipio y localidad deben respetar la jerarquia geografica seleccionada.
+- Las superficies nuevas deben consumir `users.territorial_scope` en lugar de leer autorizacion directamente desde `profile.provincia`.
+
+Superficies que ya consumen el servicio central:
+
+- VAT: filtros de centros, cursos, comisiones y catalogos relacionados.
+- Celiaquia: expedientes, legajos, comentarios, reporter provincial y lookup de localidades.
+- CDI: listado, detalle, formularios y exportaciones segun el rol efectivo.
+- ABM de usuarios: edicion de filas dinamicas de alcance territorial y exposicion API de `territorial_scopes`.
+
+Operacion:
+
+- La migracion `users/migrations/0030_profile_territorial_scope.py` crea un scope provincia-only para perfiles provinciales legacy con `profile.provincia`.
+- Luego de migrar, validar un usuario provincial legacy y otro con scopes subprovinciales antes de habilitar cambios masivos de permisos.
+- Si una feature todavia depende de `profile.provincia`, tratarlo como compatibilidad temporal y migrarla al helper central antes de ampliar alcance.
 
 ## 3) Seguridad de contraseña y recuperación
 
@@ -132,6 +163,7 @@ Reglas actuales para usuarios con acceso PWA creados desde web:
 - `users/migrations/0013_profile_password_security_fields.py`
 - `users/migrations/0014_bootstrap_group_permissions.py`
 - `users/migrations/0015_assign_bootstrap_group_permissions.py`
+- `users/migrations/0030_profile_territorial_scope.py`
 
 ## 5) Operación post-deploy
 

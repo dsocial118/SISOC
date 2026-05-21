@@ -16,6 +16,9 @@
 - `import_users_from_csv`: crea/actualiza usuarios replicando grupos desde un usuario de referencia. Evidencia: `users/management/commands/import_users_from_csv.py`.
 - `assign_provincia_to_test_user`: asigna `provincia_id=1` al usuario `ProvinciaCeliaquia`. Evidencia: `users/management/commands/assign_provincia_to_test_user.py`.
 
+## Ciudadanos
+- `process_ciudadanos_import_jobs`: procesa lotes pendientes de importacion masiva de ciudadanos creados desde Historia Social Digital. Corre como worker continuo por defecto y acepta `--once` para ejecutar un solo ciclo y terminar. Evidencia: `ciudadanos/management/commands/process_ciudadanos_import_jobs.py`.
+
 ## Relevamientos
 - `import_relevamientos`: importa relevamientos desde CSV respetando signals/validaciones. Evidencia: `relevamientos/management/commands/import_relevamientos.py`.
 - `delete_relevamientos`: elimina IDs en lotes disparando `pre_delete`/`post_delete`. Evidencia: `relevamientos/management/commands/delete_relevamientos.py`.

@@ -19,12 +19,17 @@
 | Relevamiento | Registro de visita/encuesta al comedor. | `comedor`, `estado`, `fecha_visita`, `territorial_uid/nombre`, varias OneToOne a componentes (espacio, recursos, etc.), `responsable_relevamiento`, `docPDF`. Evidencia: relevamientos/models.py:986-1040,1018-1034. | Único por `comedor` + `fecha_visita`; validación evita más de un relevamiento activo (“Pendiente”/“Visita pendiente”); puede asignar responsable al referente del comedor. Evidencia: relevamientos/models.py:1050-1071. |
 | Observacion | Nota con fecha sobre un comedor. | `comedor`, `observador`, `fecha_visita`, `observacion`. Evidencia: comedores/models.py:500-518. | Índice por comedor; sincroniza con GESTIONAR en post_save. Evidencia: comedores/signals.py:70-75. |
 | Nomina | Relación comedor↔ciudadano con estado. | `comedor`, `ciudadano`, `estado` (pendiente/activo/baja), `fecha`. Evidencia: comedores/models.py:451-488. | Estado con choices; index por comedor. Evidencia: comedores/models.py:451-488. |
+| DocumentacionOrganizacion / ArchivoOrganizacion | Catalogo y archivos versionados de documentacion organizacional reutilizable. | `organizacion`, `documentacion`, `archivo`, `estado`, `fecha_vencimiento`, `numero_gde`. Evidencia: organizaciones/models.py:163-232. | Estados Pendiente/Documento adjunto/A Validar Abogado/Rectificar/Aceptado; los aceptados se conservan como historial. |
+| DWECRResumenTransacciones | Vista externa de resumen de transacciones Nacion Servicios por comedor. | `comedor_id_sisoc`, `periodo`, `cantidad_debitos`, `credito_total`, `debito_total`, `cereo`. Evidencia: comedores/models.py:530-570. | `managed=False`; fuente de solo lectura en `DW_sisoc.vw_EC_resumen_transacciones`. |
+| ProfileTerritorialScope | Alcance territorial explicito para usuarios provinciales. | `profile`, `provincia`, `municipio`, `localidad`, `scope_key`. Evidencia: users/models.py:136-214. | Provincia obligatoria; municipio/localidad opcionales y jerarquicos; `scope_key` evita duplicados equivalentes. |
 
 ## 3) Relaciones importantes
 - Comedor tiene FK a Programa, TipoDeComedor, Provincia/Municipio/Localidad, Dupla, Referente, Organizacion; historial de estados (`EstadoHistorial`) y observaciones/nóminas. Evidencia: comedores/models.py:225-405,176-200,500-518,451-488.
 - Relevamiento FK a Comedor; OneToOne a subcomponentes (FuncionamientoPrestacion, Espacio, Colaboradores, FuenteRecursos, FuenteCompras, Prestacion, Anexo, Excepcion, PuntoEntregas). Evidencia: relevamientos/models.py:986-1034.
 - Referente puede ligarse a múltiples comedores y relevamientos (responsable). Evidencia: comedores/models.py:341-343; relevamientos/models.py:1018-1024.
 - EstadoGeneral agrupa estado_actividad/proceso/detalle; EstadoHistorial vincula Comedor ↔ EstadoGeneral (timeline). Evidencia: comedores/models.py:152-200.
+- Organizacion agrupa documentos requeridos mediante ArchivoOrganizacion; admisiones puede reutilizar esa documentacion y congelarla al finalizar informe tecnico.
+- Profile se relaciona con multiples ProfileTerritorialScope para expresar alcance provincial, municipal o local.
 
 ## 4) Estados y transiciones
 - Comedor.estado: choices “Sin Ingreso”, “Asignado a Dupla Técnica” (filtro operativo). Evidencia: comedores/models.py:264-276.
@@ -39,16 +44,22 @@
 - Al crear/actualizar Comedor/Referente/Observacion se dispara sincronización a GESTIONAR (asincrónica). Evidencia: comedores/signals.py:24-82.
 - Al eliminar Comedor se limpia `ultimo_estado` y su historial en transacción. Evidencia: comedores/models.py:382-396.
 - Relevamiento puede forzar responsable al referente del comedor cuando `responsable_es_referente=True`. Evidencia: relevamientos/models.py:1042-1049.
+- Usuarios provinciales deben evaluarse con `users.territorial_scope`: provincia-only habilita toda la provincia, provincia+municipio acota al municipio y provincia+municipio+localidad acota a esa localidad.
+- `Profile.provincia` sigue existiendo solo como compatibilidad para datos legacy; no debe ser la fuente primaria de reglas nuevas.
+- Transacciones Nacion Servicios se consultan en una vista DW externa; SISOC no administra esa estructura con migraciones.
 
 ## 6) Eventos colaterales (signals, tasks, side effects)
 - post_save Comedor → `AsyncSendComedorToGestionar`; pre_save Comedor → audit de cambio de programa y sync; pre_delete Comedor → `AsyncRemoveComedorToGestionar`. Evidencia: comedores/signals.py:24-68.
 - post_save Observacion/Referente → sync con GESTIONAR. Evidencia: comedores/signals.py:70-82.
 - post_save Relevamiento → clasifica comedor (ClasificacionComedorService). Evidencia: comedores/signals.py:91-93.
 - Tasks usan hilos y llamadas HTTP a GESTIONAR; relevamientos/comedores exportan payloads y actualizan docPDF/estado externo. Evidencia: comedores/tasks.py:1-249; relevamientos/tasks.py:1-144.
+- El worker `ciudadanos_import_worker` procesa lotes de importacion masiva fuera de la request web y consulta RENAPER fila por fila.
+- La consulta de transacciones DW falla de forma tolerante: registra error y devuelve ausencia de datos para no romper el legajo del comedor.
 
 ## 7) Permisos a nivel dominio
 - Roles/grupos creados por comando incluyen “Comedores Listar/Crear/Ver/Editar/Eliminar”, “Comedores Relevamiento Ver/Crear/Detalle/Editar”, “Comedores Observaciones …”, “Comedores Nomina …”, roles técnicos, legales, contables y dashboards. Evidencia: users/management/commands/create_groups.py:1-61.
 - Acceso API/Views protegido por auth Django y `IsAuthenticated` por defecto en DRF. Evidencia: config/settings.py:130-135,195-203.
+- Alcance territorial provincial se aplica en VAT, Celiaquia y CDI mediante helper central; una vista nueva no debe reimplementar filtros leyendo `profile.provincia` directamente.
 - No se documentan restricciones adicionales por objeto (permisos granulares no visibles en modelos). Evidencia: DESCONOCIDO.
 
 ## Notas de negocio (provistas)
