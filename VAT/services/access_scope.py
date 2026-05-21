@@ -3,6 +3,12 @@ from __future__ import annotations
 from django.db.models import Q, QuerySet
 
 from iam.services import user_has_permission_code
+from users.territorial_scope import (
+    apply_territorial_scope,
+    get_effective_scopes,
+    get_single_full_province_scope_id,
+    user_can_access_territory,
+)
 
 ROLE_VAT_SSE_PERMISSION = "auth.role_vat_sse"
 ROLE_VAT_PROVINCIAL_PERMISSION = "auth.role_provincia_vat"
@@ -25,12 +31,7 @@ def _get_profile(user):
 
 
 def get_user_provincia_id(user) -> int | None:
-    profile = _get_profile(user)
-    if not profile:
-        return None
-    if not getattr(profile, "es_usuario_provincial", False):
-        return None
-    return getattr(profile, "provincia_id", None)
+    return get_single_full_province_scope_id(user)
 
 
 def is_vat_sse(user) -> bool:
@@ -56,12 +57,41 @@ def is_vat_revisor(user) -> bool:
 def is_vat_provincial(user) -> bool:
     if not user:
         return False
-    provincia_id = get_user_provincia_id(user)
-    if not provincia_id:
+    profile = _get_profile(user)
+    if not getattr(profile, "es_usuario_provincial", False):
         return False
     return _user_has_any_permission_code(
         user,
         (ROLE_VAT_PROVINCIAL_PERMISSION, VAT_VIEW_CENTRO_PERMISSION),
+    )
+
+
+def _has_effective_territorial_scopes(user) -> bool:
+    return bool(get_effective_scopes(user))
+
+
+def _filter_centros_by_territorial_scope(base_qs: QuerySet, user) -> QuerySet:
+    return apply_territorial_scope(
+        base_qs,
+        user,
+        provincia_lookup="provincia_id",
+        municipio_lookup="municipio_id",
+        localidad_lookup="localidad_id",
+    )
+
+
+def _filter_related_centros_by_territorial_scope(
+    base_qs: QuerySet,
+    user,
+    *,
+    prefix: str,
+) -> QuerySet:
+    return apply_territorial_scope(
+        base_qs,
+        user,
+        provincia_lookup=f"{prefix}provincia_id",
+        municipio_lookup=f"{prefix}municipio_id",
+        localidad_lookup=f"{prefix}localidad_id",
     )
 
 
@@ -124,9 +154,8 @@ def filter_centros_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
     if is_vat_sse(user):
         return base_qs
 
-    provincia_id = get_user_provincia_id(user)
-    if provincia_id and is_vat_provincial(user):
-        return base_qs.filter(provincia_id=provincia_id)
+    if is_vat_provincial(user) and _has_effective_territorial_scopes(user):
+        return _filter_centros_by_territorial_scope(base_qs, user)
 
     return _filter_centros_by_assignment(base_qs, user, include_revisores=True)
 
@@ -135,13 +164,12 @@ def filter_centros_queryset_for_management(base_qs: QuerySet, user) -> QuerySet:
     if is_vat_sse(user):
         return base_qs
 
-    provincia_id = get_user_provincia_id(user)
     if (
-        provincia_id
-        and is_vat_provincial(user)
+        is_vat_provincial(user)
+        and _has_effective_territorial_scopes(user)
         and user_has_permission_code(user, VAT_CHANGE_CENTRO_PERMISSION)
     ):
-        return base_qs.filter(provincia_id=provincia_id)
+        return _filter_centros_by_territorial_scope(base_qs, user)
 
     return _filter_centros_by_assignment(base_qs, user, include_revisores=False)
 
@@ -150,9 +178,13 @@ def can_user_access_centro(user, centro) -> bool:
     if is_vat_sse(user):
         return True
 
-    provincia_id = get_user_provincia_id(user)
-    if provincia_id and is_vat_provincial(user):
-        return centro.provincia_id == provincia_id
+    if is_vat_provincial(user) and _has_effective_territorial_scopes(user):
+        return user_can_access_territory(
+            user,
+            provincia_id=centro.provincia_id,
+            municipio_id=centro.municipio_id,
+            localidad_id=centro.localidad_id,
+        )
 
     return bool(
         _user_is_referente_for_centro(user, centro)
@@ -164,9 +196,12 @@ def filter_ofertas_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
     if is_vat_sse(user):
         return base_qs
 
-    provincia_id = get_user_provincia_id(user)
-    if provincia_id and is_vat_provincial(user):
-        return base_qs.filter(centro__provincia_id=provincia_id)
+    if is_vat_provincial(user) and _has_effective_territorial_scopes(user):
+        return _filter_related_centros_by_territorial_scope(
+            base_qs,
+            user,
+            prefix="centro__",
+        )
 
     query = Q()
     has_scope = False
@@ -186,13 +221,16 @@ def filter_ofertas_queryset_for_management(base_qs: QuerySet, user) -> QuerySet:
     if is_vat_sse(user):
         return base_qs
 
-    provincia_id = get_user_provincia_id(user)
     if (
-        provincia_id
-        and is_vat_provincial(user)
+        is_vat_provincial(user)
+        and _has_effective_territorial_scopes(user)
         and user_has_permission_code(user, VAT_CHANGE_CENTRO_PERMISSION)
     ):
-        return base_qs.filter(centro__provincia_id=provincia_id)
+        return _filter_related_centros_by_territorial_scope(
+            base_qs,
+            user,
+            prefix="centro__",
+        )
 
     if is_vat_referente(user):
         return base_qs.filter(_centro_referente_q(user, prefix="centro__")).distinct()
@@ -204,9 +242,12 @@ def filter_comisiones_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
     if is_vat_sse(user):
         return base_qs
 
-    provincia_id = get_user_provincia_id(user)
-    if provincia_id and is_vat_provincial(user):
-        return base_qs.filter(oferta__centro__provincia_id=provincia_id)
+    if is_vat_provincial(user) and _has_effective_territorial_scopes(user):
+        return _filter_related_centros_by_territorial_scope(
+            base_qs,
+            user,
+            prefix="oferta__centro__",
+        )
 
     query = Q()
     has_scope = False
@@ -226,13 +267,16 @@ def filter_comisiones_queryset_for_management(base_qs: QuerySet, user) -> QueryS
     if is_vat_sse(user):
         return base_qs
 
-    provincia_id = get_user_provincia_id(user)
     if (
-        provincia_id
-        and is_vat_provincial(user)
+        is_vat_provincial(user)
+        and _has_effective_territorial_scopes(user)
         and user_has_permission_code(user, VAT_CHANGE_CENTRO_PERMISSION)
     ):
-        return base_qs.filter(oferta__centro__provincia_id=provincia_id)
+        return _filter_related_centros_by_territorial_scope(
+            base_qs,
+            user,
+            prefix="oferta__centro__",
+        )
 
     if is_vat_referente(user):
         return base_qs.filter(
@@ -246,9 +290,12 @@ def filter_sesiones_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
     if is_vat_sse(user):
         return base_qs
 
-    provincia_id = get_user_provincia_id(user)
-    if provincia_id and is_vat_provincial(user):
-        return base_qs.filter(comision__oferta__centro__provincia_id=provincia_id)
+    if is_vat_provincial(user) and _has_effective_territorial_scopes(user):
+        return _filter_related_centros_by_territorial_scope(
+            base_qs,
+            user,
+            prefix="comision__oferta__centro__",
+        )
 
     query = Q()
     has_scope = False
@@ -268,13 +315,16 @@ def filter_sesiones_queryset_for_management(base_qs: QuerySet, user) -> QuerySet
     if is_vat_sse(user):
         return base_qs
 
-    provincia_id = get_user_provincia_id(user)
     if (
-        provincia_id
-        and is_vat_provincial(user)
+        is_vat_provincial(user)
+        and _has_effective_territorial_scopes(user)
         and user_has_permission_code(user, VAT_CHANGE_CENTRO_PERMISSION)
     ):
-        return base_qs.filter(comision__oferta__centro__provincia_id=provincia_id)
+        return _filter_related_centros_by_territorial_scope(
+            base_qs,
+            user,
+            prefix="comision__oferta__centro__",
+        )
 
     if is_vat_referente(user):
         return base_qs.filter(
@@ -294,6 +344,7 @@ def can_user_create_centro(user) -> bool:
 
     return bool(
         is_vat_provincial(user)
+        and _has_effective_territorial_scopes(user)
         and user_has_permission_code(user, VAT_ADD_CENTRO_PERMISSION)
     )
 
@@ -302,12 +353,16 @@ def can_user_edit_centro(user, centro) -> bool:
     if is_vat_sse(user):
         return True
 
-    provincia_id = get_user_provincia_id(user)
     if (
-        provincia_id
-        and is_vat_provincial(user)
+        is_vat_provincial(user)
+        and _has_effective_territorial_scopes(user)
         and user_has_permission_code(user, VAT_CHANGE_CENTRO_PERMISSION)
     ):
-        return centro.provincia_id == provincia_id
+        return user_can_access_territory(
+            user,
+            provincia_id=centro.provincia_id,
+            municipio_id=centro.municipio_id,
+            localidad_id=centro.localidad_id,
+        )
 
     return _user_is_referente_for_centro(user, centro)

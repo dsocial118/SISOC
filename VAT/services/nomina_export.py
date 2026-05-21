@@ -1,3 +1,4 @@
+import json
 from io import BytesIO
 
 from django.utils import timezone
@@ -37,12 +38,44 @@ def _format_datetime(value):
     return value.strftime("%d/%m/%Y %H:%M")
 
 
-def _resolve_document(ciudadano):
-    if ciudadano.cuil_cuit:
-        return ciudadano.cuil_cuit
-    if ciudadano.documento is None:
-        return ""
-    return str(ciudadano.documento)
+def _parse_observaciones_json(inscripcion):
+    observaciones = getattr(inscripcion, "observaciones", "")
+    if not isinstance(observaciones, str):
+        return {}
+
+    observaciones = observaciones.strip()
+    if not observaciones:
+        return {}
+
+    try:
+        parsed = json.loads(observaciones)
+    except (TypeError, ValueError):
+        return {}
+
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _first_non_empty(*values):
+    for value in values:
+        if value is None:
+            continue
+        value = str(value).strip()
+        if value:
+            return value
+    return ""
+
+
+def _resolve_document(ciudadano, observaciones):
+    return _first_non_empty(
+        ciudadano.cuil_cuit,
+        ciudadano.documento,
+        observaciones.get("cuil"),
+        observaciones.get("documento"),
+    )
+
+
+def _resolve_phone(ciudadano, observaciones):
+    return _first_non_empty(ciudadano.telefono, observaciones.get("telefono"))
 
 
 def build_comision_curso_nomina_excel(comision, inscripciones):
@@ -57,11 +90,12 @@ def build_comision_curso_nomina_excel(comision, inscripciones):
 
     for inscripcion in inscripciones:
         ciudadano = inscripcion.ciudadano
+        observaciones = _parse_observaciones_json(inscripcion)
         worksheet.append(
             [
                 ciudadano.apellido or "",
                 ciudadano.nombre or "",
-                _resolve_document(ciudadano),
+                _resolve_document(ciudadano, observaciones),
                 _format_date(ciudadano.fecha_nacimiento),
                 ciudadano.sexo.sexo if ciudadano.sexo_id and ciudadano.sexo else "",
                 str(comision),
@@ -71,7 +105,7 @@ def build_comision_curso_nomina_excel(comision, inscripciones):
                 _format_datetime(inscripcion.fecha_inscripcion),
                 inscripcion.get_origen_canal_display(),
                 ciudadano.email or "",
-                ciudadano.telefono or "",
+                _resolve_phone(ciudadano, observaciones),
             ]
         )
 

@@ -11,7 +11,28 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeMunicipioAjax();
     initializeConditionalFields();
     initializeDocumentSlots();
+    initializeAddDocButton();
+    initializeNumericInputs();
 });
+
+const NUMERIC_ONLY_INPUT_IDS = [
+    "id_cuit_institucion",
+    "id_responsable_dni",
+    "id_telefono_contacto",
+];
+
+function initializeNumericInputs() {
+    NUMERIC_ONLY_INPUT_IDS.forEach((id) => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.addEventListener("input", () => {
+            const stripped = input.value.replace(/\D/g, "");
+            if (stripped !== input.value) {
+                input.value = stripped;
+            }
+        });
+    });
+}
 
 // ============================================
 // SECCIONES COLAPSABLES
@@ -35,6 +56,11 @@ function initializeCollapsibleSections() {
         header.setAttribute("tabindex", "0");
         header.setAttribute("role", "button");
         header.setAttribute("aria-expanded", "true");
+
+        header.addEventListener("click", function () {
+            const section = this.closest(".section-card").dataset.section;
+            toggleSection(section);
+        });
 
         header.addEventListener("keydown", function (e) {
             if (e.key === "Enter" || e.key === " ") {
@@ -275,6 +301,26 @@ function moveTooltipsToLabels() {
 // CAMPOS CONDICIONALES (Si/No)
 // ============================================
 
+const OTRO_MULTI_PAIRS = [
+    ["poblacion_destinataria", "poblacion_destinataria_otro"],
+    ["modalidad_ingreso", "modalidad_ingreso_otro"],
+    ["documentacion_ingreso", "documentacion_ingreso_otro"],
+    ["requisitos_ingreso", "requisitos_ingreso_otro"],
+    ["servicios_brindados", "servicios_brindados_otro"],
+    ["tipos_actividades_formativas", "tipos_actividades_formativas_otro"],
+    ["tipo_informacion_registrada", "tipo_informacion_registrada_otro"],
+    ["infraestructura_disponible", "infraestructura_disponible_otro"],
+    ["infraestructura_accesibilidad", "infraestructura_accesibilidad_otro"],
+    ["articulaciones_institucionales", "articulaciones_institucionales_otro"],
+];
+
+const OTRO_SELECT_PAIRS = [
+    ["id_tipo_gestion", "tipo_gestion_otra", "otra"],
+    ["id_tipo_dispositivo", "tipo_dispositivo_otro", "otro"],
+    ["id_tiempo_permanencia_promedio", "tiempo_permanencia_otro", "otro"],
+    ["id_modo_registro", "modo_registro_otro", "otro"],
+];
+
 function initializeConditionalFields() {
     bindConditional(
         "id_ofrece_actividades_formativas",
@@ -283,6 +329,12 @@ function initializeConditionalFields() {
     bindConditional(
         "id_registra_informacion_personas",
         "registro-detalle"
+    );
+    OTRO_MULTI_PAIRS.forEach(([listName, otroField]) =>
+        bindOtroForMulti(listName, otroField)
+    );
+    OTRO_SELECT_PAIRS.forEach(([selectId, otroField, triggerValue]) =>
+        bindOtroForSelect(selectId, otroField, triggerValue)
     );
 }
 
@@ -301,6 +353,50 @@ function bindConditional(selectId, detailId) {
 
     toggle();
     select.addEventListener("change", toggle);
+}
+
+function bindOtroForMulti(listName, otroFieldName) {
+    const wrapper = document.getElementById(`wrapper-${otroFieldName}`);
+    if (!wrapper) return;
+
+    const otroCheckbox = document.querySelector(
+        `input[name="${listName}"][value="otro"]`
+    );
+    if (!otroCheckbox) return;
+
+    const apply = (clearValue) => {
+        const show = otroCheckbox.checked;
+        wrapper.classList.toggle("d-none", !show);
+        if (!show && clearValue) {
+            const input = wrapper.querySelector(
+                "input[type='text'], input:not([type]), textarea"
+            );
+            if (input) input.value = "";
+        }
+    };
+
+    otroCheckbox.addEventListener("change", () => apply(true));
+    apply(false);
+}
+
+function bindOtroForSelect(selectId, otroFieldName, triggerValue) {
+    const select = document.getElementById(selectId);
+    const wrapper = document.getElementById(`wrapper-${otroFieldName}`);
+    if (!select || !wrapper) return;
+
+    const apply = (clearValue) => {
+        const show = select.value === triggerValue;
+        wrapper.classList.toggle("d-none", !show);
+        if (!show && clearValue) {
+            const input = wrapper.querySelector(
+                "input[type='text'], input:not([type]), textarea"
+            );
+            if (input) input.value = "";
+        }
+    };
+
+    select.addEventListener("change", () => apply(true));
+    apply(false);
 }
 
 // ============================================
@@ -418,6 +514,45 @@ function formatFileSize(bytes) {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
+
+// ============================================
+// BOTÓN AÑADIR ARCHIVO (slots dinámicos hasta 5)
+// ============================================
+
+const ADDITIONAL_DOC_FIELDS = [
+    "documentacion_dispositivo_adicional_1",
+    "documentacion_dispositivo_adicional_2",
+    "documentacion_dispositivo_adicional_3",
+    "documentacion_dispositivo_adicional_4",
+];
+
+function initializeAddDocButton() {
+    const btn = document.getElementById("btn-add-doc");
+    if (!btn) return;
+
+    const additionalSlots = ADDITIONAL_DOC_FIELDS.map((field) =>
+        document.querySelector(`.doc-slot[data-field="${field}"]`)
+    ).filter(Boolean);
+
+    const updateButtonVisibility = () => {
+        const hasHidden = additionalSlots.some((s) =>
+            s.classList.contains("d-none")
+        );
+        btn.classList.toggle("d-none", !hasHidden);
+    };
+
+    btn.addEventListener("click", () => {
+        const nextHidden = additionalSlots.find((s) =>
+            s.classList.contains("d-none")
+        );
+        if (nextHidden) {
+            nextHidden.classList.remove("d-none");
+            updateButtonVisibility();
+        }
+    });
+
+    updateButtonVisibility();
 }
 
 // ============================================

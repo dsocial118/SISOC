@@ -71,9 +71,10 @@ def test_organizacion_list_view_uses_shared_builder(mocker):
     )
 
     view = module.OrganizacionListView()
-    view.request = SimpleNamespace(GET={"busqueda": "abc"})
+    user = SimpleNamespace(is_superuser=False, is_authenticated=True)
+    view.request = SimpleNamespace(GET={"busqueda": "abc"}, user=user)
     assert view.get_queryset() == "qs"
-    builder.assert_called_once_with("abc")
+    builder.assert_called_once_with("abc", user)
 
 
 def test_organizacion_list_view_paginates_without_count(mocker):
@@ -109,7 +110,11 @@ def test_organizacion_list_context_adds_page_range_for_no_count(mocker):
     )
 
     view = module.OrganizacionListView()
-    view.request = SimpleNamespace(GET={"busqueda": "abc"})
+    view.request = SimpleNamespace(
+        GET={"busqueda": "abc"},
+        user=SimpleNamespace(is_superuser=False, is_authenticated=True),
+    )
+    mocker.patch("organizaciones.views.user_has_permission_code", return_value=False)
 
     ctx = view.get_context_data()
     assert ctx["query"] == "abc"
@@ -190,6 +195,7 @@ def test_firmante_create_roles_form_and_valid_paths(mocker):
         "organizaciones.views.Firmante.objects.filter",
         return_value=SimpleNamespace(exists=lambda: False),
     )
+    mocker.patch("organizaciones.views.reverse", return_value="/firmantes/nuevo/")
     resp = view.form_valid(ok_form)
     assert resp.status_code == 302
 
@@ -211,6 +217,7 @@ def test_aval_create_view_form_valid_paths(mocker):
     view.request = SimpleNamespace(
         POST={"organizacion_id": "3", "guardar_otro": "1"}, GET={}
     )
+    mocker.patch("organizaciones.views.reverse", return_value="/avales/nuevo/")
     out = view.form_valid(form_ok)
     assert out.status_code == 302
 
@@ -273,9 +280,47 @@ def test_ajax_views_subtipo_and_organizaciones(mocker):
 
     req2 = SimpleNamespace(
         GET={"busqueda": "abc", "page": "bad"},
-        user=SimpleNamespace(is_authenticated=True),
+        user=SimpleNamespace(is_authenticated=True, is_superuser=False),
     )
+    mocker.patch("organizaciones.views.user_has_permission_code", return_value=False)
     out = module.organizaciones_ajax.__wrapped__(req2)
     assert out.status_code == 200
     payload = json.loads(out.content)
     assert payload["count"] is None
+
+
+def test_validar_archivo_documento_organizacion():
+    archivo_ok = SimpleNamespace(
+        name="documento.pdf",
+        size=1024,
+        content_type="application/pdf",
+    )
+    assert module._validar_archivo_documento_organizacion(archivo_ok) is None
+
+    archivo_grande = SimpleNamespace(
+        name="documento.pdf",
+        size=module.MAX_DOCUMENTO_ORGANIZACION_FILE_SIZE + 1,
+        content_type="application/pdf",
+    )
+    assert "tamaño máximo" in module._validar_archivo_documento_organizacion(
+        archivo_grande
+    )
+
+    archivo_extension_invalida = SimpleNamespace(
+        name="script.exe",
+        size=1024,
+        content_type="application/octet-stream",
+    )
+    assert "Formato inválido" in module._validar_archivo_documento_organizacion(
+        archivo_extension_invalida
+    )
+
+    archivo_content_type_invalido = SimpleNamespace(
+        name="documento.pdf",
+        size=1024,
+        content_type="application/octet-stream",
+    )
+    assert (
+        "Tipo de archivo no permitido"
+        in module._validar_archivo_documento_organizacion(archivo_content_type_invalido)
+    )

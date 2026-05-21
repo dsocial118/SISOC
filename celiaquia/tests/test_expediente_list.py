@@ -1,12 +1,28 @@
 """Tests for test expediente list."""
 
+from datetime import date
+
 import pytest
 from django.urls import reverse
 from django.contrib.auth.models import Permission, User
 
-from users.models import Profile
-from core.models import Provincia
-from celiaquia.models import Expediente, EstadoExpediente
+from ciudadanos.models import Ciudadano
+from users.models import Profile, ProfileTerritorialScope
+from core.models import Localidad, Municipio, Provincia
+from celiaquia.models import (
+    Expediente,
+    ExpedienteCiudadano,
+    EstadoExpediente,
+    EstadoLegajo,
+)
+
+
+def _grant_view_expediente(user):
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
 
 
 @pytest.mark.django_db
@@ -32,3 +48,139 @@ def test_expediente_list_displays_id_and_provincia(client):
     content = response.content.decode()
     assert str(expediente.pk) in content
     assert provincia.nombre in content
+
+
+def _crear_expediente_con_ciudadano(
+    *,
+    owner,
+    estado,
+    documento,
+    provincia,
+    municipio,
+    localidad,
+):
+    expediente = Expediente.objects.create(usuario_provincia=owner, estado=estado)
+    ciudadano = Ciudadano.objects.create(
+        apellido="Perez",
+        nombre=f"Ciudadano {documento}",
+        fecha_nacimiento=date(2010, 1, 1),
+        documento=documento,
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    estado_legajo, _ = EstadoLegajo.objects.get_or_create(nombre="DOCUMENTO_PENDIENTE")
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+    )
+    return expediente
+
+
+@pytest.mark.django_db
+def test_expediente_list_scope_municipio_no_muestra_otro_municipio(client):
+    provincia = Provincia.objects.create(nombre="Buenos Aires Municipio")
+    municipio_visible = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    municipio_oculto = Municipio.objects.create(nombre="Azul", provincia=provincia)
+    localidad_visible = Localidad.objects.create(
+        nombre="Tolosa",
+        municipio=municipio_visible,
+    )
+    localidad_oculta = Localidad.objects.create(
+        nombre="Centro",
+        municipio=municipio_oculto,
+    )
+    user = User.objects.create_user(
+        username="prov-municipio-celiaquia", password="pass"
+    )
+    _grant_view_expediente(user)
+    owner = User.objects.create_user(username="owner-celiaquia", password="pass")
+    profile = user.profile
+    profile.es_usuario_provincial = True
+    profile.save()
+    ProfileTerritorialScope.objects.create(
+        profile=profile,
+        provincia=provincia,
+        municipio=municipio_visible,
+    )
+    estado = EstadoExpediente.objects.create(nombre="CREADO")
+    expediente_visible = _crear_expediente_con_ciudadano(
+        owner=owner,
+        estado=estado,
+        documento=301,
+        provincia=provincia,
+        municipio=municipio_visible,
+        localidad=localidad_visible,
+    )
+    expediente_oculto = _crear_expediente_con_ciudadano(
+        owner=owner,
+        estado=estado,
+        documento=302,
+        provincia=provincia,
+        municipio=municipio_oculto,
+        localidad=localidad_oculta,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_list"))
+    expedientes = list(response.context["expedientes"])
+
+    assert response.status_code == 200
+    assert expediente_visible in expedientes
+    assert expediente_oculto not in expedientes
+
+
+@pytest.mark.django_db
+def test_expediente_list_scope_localidad_no_muestra_otra_localidad(client):
+    provincia = Provincia.objects.create(nombre="Buenos Aires Localidad")
+    municipio = Municipio.objects.create(
+        nombre="La Plata Localidad", provincia=provincia
+    )
+    localidad_visible = Localidad.objects.create(
+        nombre="Tolosa Norte", municipio=municipio
+    )
+    localidad_oculta = Localidad.objects.create(
+        nombre="Tolosa Sur", municipio=municipio
+    )
+    user = User.objects.create_user(
+        username="prov-localidad-celiaquia", password="pass"
+    )
+    _grant_view_expediente(user)
+    owner = User.objects.create_user(
+        username="owner-localidad-celiaquia", password="pass"
+    )
+    profile = user.profile
+    profile.es_usuario_provincial = True
+    profile.save()
+    ProfileTerritorialScope.objects.create(
+        profile=profile,
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad_visible,
+    )
+    estado = EstadoExpediente.objects.create(nombre="CREADO")
+    expediente_visible = _crear_expediente_con_ciudadano(
+        owner=owner,
+        estado=estado,
+        documento=401,
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad_visible,
+    )
+    expediente_oculto = _crear_expediente_con_ciudadano(
+        owner=owner,
+        estado=estado,
+        documento=402,
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad_oculta,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_list"))
+    expedientes = list(response.context["expedientes"])
+
+    assert response.status_code == 200
+    assert expediente_visible in expedientes
+    assert expediente_oculto not in expedientes

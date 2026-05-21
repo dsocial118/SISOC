@@ -238,6 +238,13 @@ def _normalizar_dataframe_importacion(df: pd.DataFrame) -> pd.DataFrame:
 def _obtener_provincia_usuario_id(usuario):
     provincia_usuario_id = None
     try:
+        from users.territorial_scope import get_effective_scopes
+
+        scopes = get_effective_scopes(usuario)
+        provincia_ids = {scope.provincia_id for scope in scopes}
+        if len(provincia_ids) == 1:
+            return next(iter(provincia_ids))
+
         profile = getattr(usuario, "profile", None)
         if profile and profile.provincia_id:
             provincia_usuario_id = profile.provincia_id
