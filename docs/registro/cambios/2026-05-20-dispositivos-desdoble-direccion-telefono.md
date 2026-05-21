@@ -18,7 +18,7 @@ Evolutivo del formulario "Situación de Calle / Dispositivos" (issue #1655). Tic
 
 ### Migración
 - `dispositivos/migrations/0005_remove_dispositivo_domicilio_institucion_and_more.py`: RemoveField (2) + AddField (4) en una sola operación.
-- Antes de remover campos legacy, la migración aborta si existen registros de `Dispositivo`, porque el approach directo depende de que el ambiente no tenga datos cargados.
+- Antes de remover campos legacy, la migración agrega los campos nuevos y hace back-fill desde `domicilio_institucion` y `telefono_contacto` para preservar registros ya cargados.
 
 ### Form (`dispositivos/forms.py`)
 - `Meta.fields`: removidos los viejos, agregados los 4 nuevos.
@@ -42,7 +42,7 @@ Evolutivo del formulario "Situación de Calle / Dispositivos" (issue #1655). Tic
 - Reemplazo de los datos POST y de `_crear_dispositivo` para usar los nuevos campos.
 
 ## Riesgos / pendientes
-- Esta PR asume cero datos en producción. Si llegara a haber registros en otro ambiente, la migración falla antes de remover columnas para evitar pérdida silenciosa; en ese caso hay que usar una migración con back-fill o limpiar el ambiente explícitamente.
+- El back-fill usa una heurística conservadora: intenta partir la altura cuando el domicilio termina en número y, si no puede, usa `S/N`; si el domicilio legacy estaba vacío usa `S/D`. Para teléfonos de 10 dígitos que empiezan con `11`, usa prefijo `11`; para otros teléfonos largos usa los primeros 3 dígitos como prefijo; y si el teléfono legacy estaba vacío usa `0`. Conviene revisar registros migrados si el ambiente ya tenía datos.
 - Si se mergea **antes** que `dispositivos-micro-ajustes` (#????), va a haber conflicto en `forms.py` (los dos toques en `__init__`) y en `dispositivoFormModerno.js` (los dos definen `NUMERIC_ONLY_INPUT_IDS`). La resolución es combinar las dos listas y poner ambos bloques de widget attrs.
 
 ## Cómo probar
