@@ -87,7 +87,7 @@
                 <div class="modal-content">
                     <form method="POST">
                         {% csrf_token %}
-                        <input type="hidden" name="confirmar_tipo_convenio" value="1">
+                        <input type="hidden" name="confirmar_tipo_convenio" value="1" />
                         <div class="modal-header">
                             <h5 class="modal-title">Selección de Convenio</h5>
                         </div>
@@ -97,7 +97,7 @@
                                 <input type="text"
                                        class="form-control"
                                        value="{{ comedor.organizacion.tipo_entidad|default:'Sin información' }}"
-                                       readonly>
+                                       readonly />
                                 <div class="form-text">Esta información debe editarse desde el legajo de la Organización</div>
                             </div>
                             <div>
@@ -105,7 +105,7 @@
                                 <input type="text"
                                        class="form-control"
                                        value="{{ tipo_convenio_precargado.nombre|default:'Sin información' }}"
-                                       readonly>
+                                       readonly />
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -132,8 +132,7 @@
                         <li class="nav-item">
                             <div class="comment-text">
                                 Tipo Convenio:
-                                <span class="fw-bold">{{ admision.tipo_convenio.nombre| default_if_none:"Sin información" }}
-                                </span>
+                                <span class="fw-bold">{{ admision.tipo_convenio.nombre| default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">

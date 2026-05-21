@@ -51,9 +51,7 @@
                                                          class="d-flex align-items-end gap-2">
                                                         <div class="flex-grow-1 d-flex align-items-center gap-2">
                                                             <span>Número de IF:</span>
-                                                            <span class="fw-semibold">
-                                                                {{ relevamiento.numero_if|default:"Sin número de IF" }}
-                                                            </span>
+                                                            <span class="fw-semibold">{{ relevamiento.numero_if|default:"Sin número de IF" }}</span>
                                                         </div>
                                                         {% if perms.relevamientos.change_relevamiento %}
                                                             <button type="button"
@@ -80,7 +78,9 @@
                                                             <button type="submit" class="btn btn-sm btn-primary mb-0">Guardar</button>
                                                             <button type="button"
                                                                     class="btn btn-sm btn-secondary mb-0"
-                                                                    data-numero-if-cancel="{{ relevamiento.id }}">Cancelar</button>
+                                                                    data-numero-if-cancel="{{ relevamiento.id }}">
+                                                                Cancelar
+                                                            </button>
                                                         </form>
                                                     {% endif %}
                                                 </div>

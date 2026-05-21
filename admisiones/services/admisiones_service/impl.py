@@ -417,41 +417,13 @@ class AdmisionService:
                     }
                 )
             else:
-                if archivo_org and archivo_org.archivo and admision_doc:
-                    archivo_admision = (
-                        AdmisionService._crear_archivo_admision_desde_archivo_organizacion(
-                            admision,
-                            org_doc,
-                            archivo_org,
-                            documentacion_admision=admision_doc,
-                        )
+                doc_serializado = (
+                    AdmisionService._serializar_documentacion_organizacion(
+                        org_doc,
+                        archivo_org,
+                        admision_doc=admision_doc,
                     )
-                    doc_serializado = (
-                        AdmisionService._serialize_documentacion(
-                            admision_doc, archivo_admision
-                        )
-                        if admision_doc
-                        else AdmisionService.serialize_documento_personalizado(
-                            archivo_admision
-                        )
-                    )
-                    doc_serializado.update(
-                        {
-                            "nombre": org_doc.nombre,
-                            "obligatorio": org_doc.obligatorio,
-                            "es_documento_organizacion": True,
-                            "origen": "organizacion",
-                            "fecha_vencimiento": archivo_org.fecha_vencimiento,
-                        }
-                    )
-                else:
-                    doc_serializado = (
-                        AdmisionService._serializar_documentacion_organizacion(
-                            org_doc,
-                            archivo_org,
-                            admision_doc=admision_doc,
-                        )
-                    )
+                )
             documentos.append(doc_serializado)
 
         return documentos, ids_documentacion_admision_usados
@@ -878,8 +850,6 @@ class AdmisionService:
                 archivos_subidos=archivos_subidos,
                 admision=admision,
             )
-            AdmisionService._sincronizar_estado_documental_si_corresponde(admision)
-            admision.refresh_from_db()
             objetos_contexto = AdmisionService._build_objetos_update_context(admision)
             informe_complementario_context = (
                 AdmisionService._build_informe_complementario_update_context(
@@ -1137,11 +1107,15 @@ class AdmisionService:
             getattr(getattr(admision, "comedor", None), "organizacion", None)
         )
         if not tipo_convenio:
-            return False, "No se pudo resolver el Tipo de Convenio desde el Tipo de Entidad de la organización."
+            return (
+                False,
+                "No se pudo resolver el Tipo de Convenio desde el Tipo de Entidad de la organización.",
+            )
 
         admision.tipo_convenio = tipo_convenio
         admision.estado_admision = "convenio_seleccionado"
         admision.save(update_fields=["tipo_convenio", "estado_admision"])
+        AdmisionService.congelar_documentacion_organizacional(admision)
         return True, "Tipo de convenio precargado desde la organización."
 
     @staticmethod
@@ -1840,7 +1814,9 @@ class AdmisionService:
             from comedores.models import Comedor
 
             comedor = get_object_or_404(
-                Comedor.objects.select_related("programa", "organizacion__tipo_entidad"),
+                Comedor.objects.select_related(
+                    "programa", "organizacion__tipo_entidad"
+                ),
                 id=comedor_id,
             )
             if not comedor_usa_admision_para_nomina(comedor):
@@ -1867,6 +1843,7 @@ class AdmisionService:
                 tipo="incorporacion",
                 estado_admision="convenio_seleccionado",
             )
+            AdmisionService.congelar_documentacion_organizacional(admision)
 
             return admision
         except Exception:
@@ -2734,6 +2711,7 @@ class AdmisionService:
         archivos_org = AdmisionService._get_archivos_organizacion_vigentes(
             admision, categoria
         )
+        creo_archivos = False
         for org_doc in DocumentacionOrganizacion.objects.filter(
             categoria=categoria
         ).order_by("orden", "id"):
@@ -2773,6 +2751,10 @@ class AdmisionService:
                 archivo_admision.creado_por = user
                 archivo_admision.modificado_por = user
                 archivo_admision.save(update_fields=["creado_por", "modificado_por"])
+            creo_archivos = True
+
+        if creo_archivos:
+            AdmisionService._sincronizar_estado_documental_si_corresponde(admision)
 
     @staticmethod
     def _existe_archivo_obligatorio_admision(

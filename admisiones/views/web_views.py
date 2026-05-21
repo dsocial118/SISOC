@@ -787,6 +787,8 @@ class AdmisionesTecnicosCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def post(self, request, *args, **kwargs):
+        if "confirmar_tipo_convenio" not in request.POST:
+            return self.get(request, *args, **kwargs)
         return self._crear_admision(request)
 
 
@@ -1084,9 +1086,6 @@ class InformeTecnicosCreateView(LoginRequiredMixin, CreateView):
         return InformeService.get_queryset_informe_por_tipo(self.tipo)
 
     def get_form_kwargs(self):
-        AdmisionService.congelar_documentacion_organizacional(
-            self.admision_obj, self.request.user
-        )
         return _build_informe_form_kwargs(
             base_kwargs=super().get_form_kwargs(),
             request=self.request,
@@ -1147,9 +1146,6 @@ class InformeTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         )
 
     def get_form_kwargs(self):
-        AdmisionService.congelar_documentacion_organizacional(
-            self.object.admision, self.request.user
-        )
         return _build_informe_form_kwargs(
             base_kwargs=super().get_form_kwargs(),
             request=self.request,
