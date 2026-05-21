@@ -106,6 +106,22 @@ class CentroDeInfanciaForm(forms.ModelForm):
         self._aplicar_campo_decil_ipi()
         self._aplicar_clases_y_placeholders()
 
+    # Mostrar/editar solo el año en el formulario: aceptamos AAAA y lo convertimos
+    # a una fecha internalmente como <AAAA>-01-01 para mantener compatibilidad
+    # con el modelo (`DateField`).
+    fecha_inicio = forms.CharField(
+        required=False,
+        label="Año de inicio de actividades del CDI",
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "AAAA",
+                "inputmode": "numeric",
+                "pattern": "\\d{4}",
+                "class": "form-control",
+            }
+        ),
+    )
+
     def _aplicar_requeridos(self):
         self.fields["telefono"].required = True
         self.fields["telefono"].error_messages[
@@ -318,10 +334,16 @@ class CentroDeInfanciaForm(forms.ModelForm):
         raw = self.cleaned_data.get("fecha_inicio")
         if raw in (None, ""):
             return None
+        # If it's already a date, normalize to Jan 1 of that year
         if isinstance(raw, date):
-            return raw
+            return date(raw.year, 1, 1)
         if isinstance(raw, str):
             raw = raw.strip()
+            # Accept plain year "AAAA"
+            if raw.isdigit() and len(raw) == 4:
+                year = int(raw)
+                return date(year, 1, 1)
+            # Fallback: accept dd/mm/YYYY or YYYY-mm-dd for compatibility
             try:
                 return datetime.strptime(raw, "%d/%m/%Y").date()
             except ValueError:
@@ -329,9 +351,9 @@ class CentroDeInfanciaForm(forms.ModelForm):
                     return datetime.strptime(raw, "%Y-%m-%d").date()
                 except ValueError as exc2:
                     raise forms.ValidationError(
-                        "Formato inválido para Fecha de inicio. Use dd/mm/aaaa."
+                        "Formato inválido para Año de inicio. Use AAAA."
                     ) from exc2
-        raise forms.ValidationError("Formato inválido para Fecha de inicio.")
+        raise forms.ValidationError("Formato inválido para Año de inicio.")
 
     def clean_telefono(self):
         value = (self.cleaned_data.get("telefono") or "").strip()
