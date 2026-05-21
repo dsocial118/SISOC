@@ -771,25 +771,25 @@ class AdmisionesTecnicosCreateView(LoginRequiredMixin, CreateView):
     form_class = AdmisionForm
     context_object_name = "admision"
 
+    def _crear_admision(self, request):
+        admision = AdmisionService.create_admision(self.kwargs["pk"])
+        if admision is None:
+            messages.error(
+                request,
+                "No se pudo crear la admision. Verifique el tipo de entidad de la organizacion.",
+            )
+            return redirect("comedor_detalle", pk=self.kwargs["pk"])
+        return redirect("admisiones_tecnicos_editar", pk=admision.pk)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(AdmisionService.get_admision_create_context(self.kwargs["pk"]))
         return context
 
     def post(self, request, *args, **kwargs):
-        tipo_convenio_id = request.POST.get("tipo_convenio")
-        if tipo_convenio_id:
-            admision = AdmisionService.create_admision(
-                self.kwargs["pk"], tipo_convenio_id
-            )
-            if admision is None:
-                messages.error(
-                    request,
-                    "No se pudo crear la admisión para este comedor. Intente nuevamente más tarde.",
-                )
-                return redirect("comedor_detalle", pk=self.kwargs["pk"])
-            return redirect("admisiones_tecnicos_editar", pk=admision.pk)
-        return self.get(request, *args, **kwargs)
+        if "confirmar_tipo_convenio" not in request.POST:
+            return self.get(request, *args, **kwargs)
+        return self._crear_admision(request)
 
 
 class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):

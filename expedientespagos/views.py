@@ -14,7 +14,10 @@ from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from core.services.column_preferences import build_columns_context_from_fields
 from expedientespagos.models import ExpedientePago
 from expedientespagos.forms import ExpedientePagoForm
-from expedientespagos.services import ExpedientesPagosService
+from expedientespagos.services import (
+    ExpedientesPagosService,
+    ordenar_expedientes_por_periodo_desc,
+)
 from comedores.models import Comedor
 from iam.services import user_has_any_permission_codes
 
@@ -28,7 +31,7 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         """Retorna expedientes ordenados para evitar warning de paginación"""
-        return ExpedientePago.objects.order_by("-id")
+        return ordenar_expedientes_por_periodo_desc(ExpedientePago.objects.all())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -56,6 +56,7 @@ from acompanamientos.acompanamiento_service import AcompanamientoService
 from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm, build_programa_aliases
 from expedientespagos.models import ExpedientePago
+from expedientespagos.services import ordenar_expedientes_por_periodo_desc
 
 MESES_ES_CORTOS = [
     "Ene",
@@ -833,11 +834,9 @@ def _build_mes_ejecucion_context(comedor_obj):
             "mes_ejecucion_resumen": None,
         }
 
-    expediente = (
+    expediente = ordenar_expedientes_por_periodo_desc(
         ExpedientePago.objects.filter(comedor_id=comedor_obj.id)
-        .order_by("-fecha_creacion", "-id")
-        .first()
-    )
+    ).first()
     resumen = {"expediente": expediente}
 
     if expediente:

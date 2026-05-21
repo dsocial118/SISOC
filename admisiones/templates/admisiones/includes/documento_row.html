@@ -7,7 +7,14 @@
         {% if doc.estado_valor == "Rectificar" %}<i class="bi bi-x-circle text-danger fs-4 fw-bold me-1"></i>{% endif %}
         {{ doc.nombre }}
         {% if doc.obligatorio %}<span class="text-danger fs-5 ms-1">*</span>{% endif %}
-        {% if doc.origen == "organizacion" %}<div class="small text-muted">Documento de la organizacion</div>{% endif %}
+        {% if doc.origen == "organizacion" %}
+            <div class="small text-muted">
+                Documento de la organizacion
+                {% if doc.fecha_vencimiento %}
+                    <span class="ms-2">Vencimiento: {{ doc.fecha_vencimiento|date:"d/m/Y" }}</span>
+                {% endif %}
+            </div>
+        {% endif %}
     </td>
     <td id="estado-{{ doc.archivo_id|default:doc.row_id }}"
         class="ps-1 text-center"

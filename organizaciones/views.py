@@ -36,11 +36,25 @@ from organizaciones.models import (
 )
 
 MAX_DOCUMENTO_ORGANIZACION_FILE_SIZE = 10 * 1024 * 1024
-ALLOWED_DOCUMENTO_ORGANIZACION_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
+DOCUMENTO_ORGANIZACION_FORMATOS_VALIDOS = "PDF, JPG, PNG, Excel o Word"
+ALLOWED_DOCUMENTO_ORGANIZACION_EXTENSIONS = {
+    ".pdf",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".xls",
+    ".xlsx",
+    ".doc",
+    ".docx",
+}
 ALLOWED_DOCUMENTO_ORGANIZACION_CONTENT_TYPES = {
     "application/pdf",
     "image/jpeg",
     "image/png",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 }
 
 ORGANIZACION_LIST_ONLY_FIELDS = (
@@ -200,14 +214,14 @@ def _validar_archivo_documento_organizacion(archivo):
 
     extension = Path(getattr(archivo, "name", "") or "").suffix.lower()
     if extension not in ALLOWED_DOCUMENTO_ORGANIZACION_EXTENSIONS:
-        return "Formato inválido. Solo se permiten archivos PDF, JPG o PNG."
+        return f"Formato inválido. Solo se permiten archivos {DOCUMENTO_ORGANIZACION_FORMATOS_VALIDOS}."
 
     content_type = getattr(archivo, "content_type", None)
     if (
         content_type
         and content_type not in ALLOWED_DOCUMENTO_ORGANIZACION_CONTENT_TYPES
     ):
-        return "Tipo de archivo no permitido. Formatos válidos: PDF, JPG o PNG."
+        return f"Tipo de archivo no permitido. Formatos válidos: {DOCUMENTO_ORGANIZACION_FORMATOS_VALIDOS}."
 
     return None
 
