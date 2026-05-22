@@ -38,6 +38,74 @@
             {% endfor %}
         </div>
     </div>
+    {% if admision_desincronizada and not admision.enviada_a_archivo %}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-warning" role="alert" id="alertResyncConvenio">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle"></i> El tipo de convenio fue actualizado desde el Legajo de la Organización
+                    </h5>
+                    <p class="mb-2">
+                        Para continuar con la admisión debe seleccionar una de las siguientes opciones:
+                    </p>
+                    <div class="row align-items-end g-2">
+                        <div class="col-md-8">
+                            <select id="accionResyncConvenio"
+                                    class="form-select"
+                                    required>
+                                <option value="" selected disabled>Seleccione una opción...</option>
+                                <option value="actualizar">Actualizar Información desde Legajo Organización</option>
+                                <option value="continuar">Continuar operando con la Admisión actual</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-grid">
+                            <button type="button"
+                                    class="btn btn-warning"
+                                    id="btnAplicarResyncConvenio"
+                                    disabled>Aplicar</button>
+                        </div>
+                    </div>
+                    <div class="small text-muted mt-2">
+                        Tipo de Entidad actual de la Organización:
+                        <strong>{{ tipo_entidad_actual_organizacion|default:"Sin información" }}</strong>.
+                        Tipo registrado en esta admisión:
+                        <strong>{{ tipo_entidad_origen_snapshot|default:"Sin información" }}</strong>.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade"
+             id="modalConfirmarResyncConvenio"
+             data-bs-backdrop="static"
+             data-bs-keyboard="false"
+             tabindex="-1"
+             aria-labelledby="modalConfirmarResyncConvenioLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalConfirmarResyncConvenioLabel">
+                            <i class="fas fa-exclamation-triangle text-warning mr-2"></i>
+                            Confirmar acción
+                        </h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="modalConfirmarResyncConvenioMensaje" class="mb-0"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="btnConfirmarResyncConvenio">
+                            Confirmar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     {% if mostrar_informe_complementario %}
         <div class="row mb-3">
             <div class="col-12">
@@ -936,9 +1004,11 @@
                      data-csrf-token="{{ csrf_token }}"
                      data-url-actualizar-estado="{% url 'actualizar_estado_archivo' %}"
                      data-url-actualizar-numero-gde="{% url 'actualizar_numero_gde_archivo' %}"
+                     data-url-actualizar-numero-gde-organizacion="{% url 'actualizar_numero_gde_organizacion_admision' %}"
                      data-url-actualizar-convenio-numero="{% url 'actualizar_convenio_numero' %}"
                      data-url-actualizar-num-expediente="{% url 'actualizar_num_expediente' %}"
                      data-url-crear-documento-personalizado="{% url 'documento_personalizado_crear' admision.id %}"
+                     data-url-resync-convenio="{% url 'admision_resync_convenio' admision.id %}"
                      data-admision-id="{{ admision.id }}"
                      hidden></div>
                 {% if not admision.tipo_convenio and not admision.enviada_a_archivo %}
@@ -953,6 +1023,7 @@
                 <script src="{% static 'custom/js/admisionestecnico.js' %}"></script>
                 <script src="{% static 'custom/js/admisionesactualizarestado.js' %}"></script>
                 <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
+                <script src="{% static 'custom/js/admisionResyncConvenio.js' %}"></script>
                 <script nonce="{{ request.csp_nonce }}">
                         document.addEventListener('DOMContentLoaded', function() {
                             const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

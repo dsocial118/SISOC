@@ -119,6 +119,19 @@ class Admision(models.Model):
     tipo_convenio = models.ForeignKey(
         TipoConvenio, on_delete=models.SET_NULL, null=True
     )
+    tipo_entidad_origen = models.ForeignKey(
+        "organizaciones.TipoEntidad",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admisiones_con_snapshot",
+        verbose_name="Tipo de entidad de origen",
+        help_text=(
+            "Snapshot del tipo de entidad de la organizacion en el momento en"
+            " que la admision quedo sincronizada (creacion, resync manual o"
+            " aceptacion de divergencia)."
+        ),
+    )
     num_expediente = models.CharField(max_length=255, blank=True, null=True)
     num_if = models.CharField(max_length=100, blank=True, null=True)
     legales_num_if = models.CharField(max_length=100, blank=True, null=True)
@@ -1178,3 +1191,55 @@ class InformeTecnicoComplementarioPDF(models.Model):
 
     def __str__(self):
         return f"PDF Complementario Final - Admision #{self.admision_id}"
+
+
+class NumeroGdeOrganizacion(models.Model):
+    """Vincula un ``ArchivoOrganizacion`` con una ``Admision`` para registrar el
+    Numero de GDE propio de esa combinacion. Permite que el mismo documento de
+    la organizacion tenga distintos GDE en distintas admisiones."""
+
+    admision = models.ForeignKey(
+        Admision,
+        on_delete=models.CASCADE,
+        related_name="numeros_gde_organizacion",
+    )
+    archivo_organizacion = models.ForeignKey(
+        "organizaciones.ArchivoOrganizacion",
+        on_delete=models.CASCADE,
+        related_name="numeros_gde_por_admision",
+    )
+    numero_gde = models.CharField(
+        "Numero de GDE",
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Numero de expediente GDE asignado por la admision al documento de la organizacion.",
+    )
+    creado = models.DateTimeField(auto_now_add=True)
+    modificado = models.DateTimeField(auto_now=True)
+    modificado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="numeros_gde_organizacion_modificados",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["admision", "archivo_organizacion"],
+                name="unq_gde_admision_archivoorg",
+            )
+        ]
+        verbose_name = "Numero GDE de archivo de organizacion por admision"
+        verbose_name_plural = (
+            "Numeros GDE de archivos de organizacion por admision"
+        )
+
+    def __str__(self):
+        return (
+            f"Admision #{self.admision_id} - "
+            f"Archivo Org #{self.archivo_organizacion_id} - "
+            f"GDE={self.numero_gde or '-'}"
+        )
