@@ -662,14 +662,26 @@ class OrganizacionUpdateView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context["cuil_check_ajax_url"] = reverse("organizacion_cuil_check_ajax")
         context["organizacion_pk"] = self.object.pk
+        context["tipo_entidad_actual_id"] = (
+            self.object.tipo_entidad_id if self.object else None
+        )
         return context
 
     def form_valid(self, form):
-        if form.is_valid():
-            self.object = form.save()
-            return HttpResponseRedirect(self.get_success_url())
-        else:
+        if not form.is_valid():
             return self.form_invalid(form)
+
+        tipo_entidad_anterior_id = Organizacion.objects.values_list(
+            "tipo_entidad_id", flat=True
+        ).get(pk=self.object.pk)
+        self.object = form.save()
+        if tipo_entidad_anterior_id != self.object.tipo_entidad_id:
+            ArchivoOrganizacion.objects.filter(organizacion=self.object).delete()
+            messages.warning(
+                self.request,
+                "Se reinicio la documentacion del legajo porque cambio el Tipo de Entidad.",
+            )
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
@@ -929,35 +941,6 @@ def actualizar_estado_documento_organizacion(request, archivo_id):
         {
             "success": True,
             "estado": archivo.estado,
-            "html": _render_documentacion_organizacion_row(
-                request, archivo.organizacion, archivo.documentacion
-            ),
-            "row_id": archivo.documentacion_id,
-        }
-    )
-
-
-@login_required
-@require_POST
-def actualizar_gde_documento_organizacion(request, archivo_id):
-    archivo = get_object_or_404(
-        ArchivoOrganizacion.objects.select_related("organizacion", "documentacion"),
-        pk=archivo_id,
-    )
-    if not _puede_modificar_documentacion_organizacion(
-        request.user, archivo.organizacion
-    ):
-        return JsonResponse(
-            {"success": False, "error": "Sin permisos para modificar este documento."},
-            status=403,
-        )
-    archivo.numero_gde = (request.POST.get("numero_gde") or "").strip() or None
-    archivo.modificado_por = request.user
-    archivo.save(update_fields=["numero_gde", "modificado_por", "modificado"])
-    return JsonResponse(
-        {
-            "success": True,
-            "numero_gde": archivo.numero_gde,
             "html": _render_documentacion_organizacion_row(
                 request, archivo.organizacion, archivo.documentacion
             ),
