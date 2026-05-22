@@ -8,6 +8,13 @@ from django.contrib.auth.models import Permission
 from django.test import Client
 from django.urls import reverse
 
+from admisiones.models.admisiones import (
+    Admision,
+    ArchivoAdmision,
+    EstadoAdmision,
+    TipoConvenio,
+)
+from comedores.models import Comedor
 from core.models import Provincia
 from organizaciones.models import (
     ArchivoOrganizacion,
@@ -164,3 +171,89 @@ def test_volver_al_tipo_anterior_no_recupera_archivos_borrados(
         ).count()
         == 0
     )
+
+
+def test_cambio_tipo_entidad_materializa_archivos_en_admision_activa(
+    organizacion_con_documentos, tipos, usuario
+):
+    """Si una admision activa esta viendo los archivos de la organizacion como
+    heredados, al cambiar el `tipo_entidad` los archivos deben clonarse a
+    `ArchivoAdmision` ANTES de borrarlos. Asi el tecnico que elija "Continuar
+    operando con la Admision actual" no pierde la documentacion."""
+
+    # EstadoAdmision con id=2 lo requiere
+    # _sincronizar_estado_documental_si_corresponde cuando todos los
+    # obligatorios estan aceptados.
+    EstadoAdmision.objects.create(nombre="Inicial")
+    EstadoAdmision.objects.create(nombre="Avanzada")
+    tipo_convenio = TipoConvenio.objects.create(
+        pk=3, nombre="Personería Jurídica"
+    )
+    comedor = Comedor.objects.create(
+        nombre="Comedor afectado", organizacion=organizacion_con_documentos
+    )
+    admision = Admision.objects.create(
+        comedor=comedor,
+        tipo_convenio=tipo_convenio,
+        tipo_entidad_origen=tipos["juridica"],
+        estado_admision="documentacion_en_proceso",
+    )
+    assert ArchivoAdmision.objects.filter(admision=admision).count() == 0
+
+    client = Client()
+    client.force_login(usuario)
+    url = reverse(
+        "organizacion_editar", kwargs={"pk": organizacion_con_documentos.pk}
+    )
+
+    response = client.post(
+        url, _post_payload(organizacion_con_documentos, tipos["eclesiastica"])
+    )
+
+    assert response.status_code in (302, 303), response.content[:300]
+    assert (
+        ArchivoOrganizacion.objects.filter(
+            organizacion=organizacion_con_documentos
+        ).count()
+        == 0
+    ), "El legajo se debe vaciar"
+    archivos_clonados = ArchivoAdmision.objects.filter(admision=admision)
+    assert archivos_clonados.count() == 2, (
+        "Los 2 archivos heredados deben quedar materializados en la admision "
+        "para preservar el progreso ante 'Continuar operando'"
+    )
+
+
+def test_cambio_tipo_entidad_no_materializa_en_admisiones_archivadas(
+    organizacion_con_documentos, tipos, usuario
+):
+    """Admisiones ya enviadas a archivo no deben recibir clones — ya son
+    historico inmutable."""
+
+    tipo_convenio = TipoConvenio.objects.create(
+        pk=3, nombre="Personería Jurídica"
+    )
+    comedor = Comedor.objects.create(
+        nombre="Comedor archivado", organizacion=organizacion_con_documentos
+    )
+    admision = Admision.objects.create(
+        comedor=comedor,
+        tipo_convenio=tipo_convenio,
+        tipo_entidad_origen=tipos["juridica"],
+        estado_admision="documentacion_en_proceso",
+        enviada_a_archivo=True,
+    )
+
+    client = Client()
+    client.force_login(usuario)
+    url = reverse(
+        "organizacion_editar", kwargs={"pk": organizacion_con_documentos.pk}
+    )
+
+    client.post(
+        url, _post_payload(organizacion_con_documentos, tipos["eclesiastica"])
+    )
+
+    assert (
+        ArchivoAdmision.objects.filter(admision=admision).count() == 0
+    ), "Una admision archivada no debe recibir clones materializados"

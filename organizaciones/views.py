@@ -676,6 +676,22 @@ class OrganizacionUpdateView(LoginRequiredMixin, UpdateView):
         ).get(pk=self.object.pk)
         self.object = form.save()
         if tipo_entidad_anterior_id != self.object.tipo_entidad_id:
+            # Antes de borrar los ArchivoOrganizacion del legajo, materializar
+            # los archivos heredados en cada admision activa de la organizacion.
+            # Asi, si el tecnico elige "Continuar operando", su admision conserva
+            # los archivos como ArchivoAdmision propios; si elige "Actualizar
+            # Información desde Legajo Organización", el reset posterior los
+            # destruira igualmente.
+            from admisiones.models.admisiones import Admision
+            from admisiones.services.admisiones_service import AdmisionService
+
+            admisiones_afectadas = Admision.objects.filter(
+                comedor__organizacion=self.object,
+                enviada_a_archivo=False,
+            ).select_related("comedor__organizacion")
+            for admision in admisiones_afectadas:
+                AdmisionService.congelar_documentacion_organizacional(admision)
+
             ArchivoOrganizacion.objects.filter(organizacion=self.object).delete()
             messages.warning(
                 self.request,
