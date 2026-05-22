@@ -34,9 +34,7 @@ def estado_inicial():
 @pytest.fixture
 def tipo_entidades():
     juridica = TipoEntidad.objects.create(nombre="Personería Jurídica")
-    eclesiastica = TipoEntidad.objects.create(
-        nombre="Personería Jurídica Eclesiástica"
-    )
+    eclesiastica = TipoEntidad.objects.create(nombre="Personería Jurídica Eclesiástica")
     hecho = TipoEntidad.objects.create(nombre="Asociación de Hecho")
     return {"juridica": juridica, "eclesiastica": eclesiastica, "hecho": hecho}
 
@@ -55,9 +53,7 @@ def _crear_admision(tipo_entidad, tipo_convenio, estado_inicial):
     organizacion = Organizacion.objects.create(
         nombre="Org Test", tipo_entidad=tipo_entidad
     )
-    comedor = Comedor.objects.create(
-        nombre="Comedor Test", organizacion=organizacion
-    )
+    comedor = Comedor.objects.create(nombre="Comedor Test", organizacion=organizacion)
     return Admision.objects.create(
         comedor=comedor,
         tipo_convenio=tipo_convenio,
@@ -96,7 +92,9 @@ def test_admision_desincronizada_false_si_falta_tipo_actual(
     estado_inicial, tipos_convenio
 ):
     organizacion = Organizacion.objects.create(nombre="Org sin tipo")
-    comedor = Comedor.objects.create(nombre="Comedor sin tipo", organizacion=organizacion)
+    comedor = Comedor.objects.create(
+        nombre="Comedor sin tipo", organizacion=organizacion
+    )
     admision = Admision.objects.create(
         comedor=comedor,
         tipo_convenio=tipos_convenio["juridica"],
@@ -116,9 +114,7 @@ def test_admision_legacy_sin_snapshot_se_inicializa_lazy(
     organizacion = Organizacion.objects.create(
         nombre="Org legacy", tipo_entidad=tipo_entidades["juridica"]
     )
-    comedor = Comedor.objects.create(
-        nombre="Comedor legacy", organizacion=organizacion
-    )
+    comedor = Comedor.objects.create(nombre="Comedor legacy", organizacion=organizacion)
     admision = Admision.objects.create(
         comedor=comedor,
         tipo_convenio=tipos_convenio["juridica"],
@@ -207,9 +203,9 @@ def test_aceptar_desincronizacion_solo_actualiza_snapshot(
     assert (
         admision.tipo_convenio_id == tipos_convenio["juridica"].id
     ), "El tipo_convenio NO debe modificarse al aceptar la desincronizacion"
-    assert ArchivoAdmision.objects.filter(pk=archivo.pk).exists(), (
-        "Los archivos previos deben preservarse al continuar con la admision"
-    )
+    assert ArchivoAdmision.objects.filter(
+        pk=archivo.pk
+    ).exists(), "Los archivos previos deben preservarse al continuar con la admision"
     assert AdmisionService.admision_desincronizada(admision) is False
 
 

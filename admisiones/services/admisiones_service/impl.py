@@ -407,9 +407,7 @@ class AdmisionService:
                 else None
             )
             numero_gde_admision = (
-                numeros_gde_por_archivo_org.get(archivo_org.id)
-                if archivo_org
-                else None
+                numeros_gde_por_archivo_org.get(archivo_org.id) if archivo_org else None
             )
             if archivo_admision:
                 doc_serializado = (
@@ -836,9 +834,7 @@ class AdmisionService:
         puede_editar_convenio_numero,
         puede_editar_num_expediente,
     ):
-        organizacion = getattr(
-            getattr(admision, "comedor", None), "organizacion", None
-        )
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
         tipo_entidad_actual = getattr(organizacion, "tipo_entidad", None)
         return {
             "documentos": documentos_context["documentos"],
@@ -1083,9 +1079,7 @@ class AdmisionService:
 
         if getattr(admision, "tipo_entidad_origen_id", None):
             return
-        organizacion = getattr(
-            getattr(admision, "comedor", None), "organizacion", None
-        )
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
         tipo_actual_id = getattr(organizacion, "tipo_entidad_id", None)
         if not tipo_actual_id:
             return
@@ -1100,9 +1094,7 @@ class AdmisionService:
         considera sincronizada hasta el proximo cambio.
         """
 
-        organizacion = getattr(
-            getattr(admision, "comedor", None), "organizacion", None
-        )
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
         if not organizacion:
             return False
         tipo_actual_id = getattr(organizacion, "tipo_entidad_id", None)
@@ -1121,9 +1113,7 @@ class AdmisionService:
         ajusta ``tipo_convenio`` segun el nuevo ``tipo_entidad`` y actualiza el
         snapshot."""
 
-        organizacion = getattr(
-            getattr(admision, "comedor", None), "organizacion", None
-        )
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
         if not organizacion:
             return False, "La admision no tiene organizacion asociada."
 
@@ -1157,9 +1147,7 @@ class AdmisionService:
         de ``tipo_entidad_origen`` para que la advertencia desaparezca hasta el
         proximo cambio en la organizacion."""
 
-        organizacion = getattr(
-            getattr(admision, "comedor", None), "organizacion", None
-        )
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
         if not organizacion:
             return False, "La admision no tiene organizacion asociada."
 
@@ -2351,9 +2339,7 @@ class AdmisionService:
             valor_anterior = registro.numero_gde
             registro.numero_gde = numero_gde
             registro.modificado_por = request.user
-            registro.save(
-                update_fields=["numero_gde", "modificado_por", "modificado"]
-            )
+            registro.save(update_fields=["numero_gde", "modificado_por", "modificado"])
 
             AdmisionService._limpiar_if_gde_admision_por_cambio_documental(admision)
 
